@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentFieldImage")
+@GraphQLName(
+	description = "Represents a fragment field with an image.",
+	value = "FragmentFieldImage"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentFieldImage")
-public class FragmentFieldImage {
+public class FragmentFieldImage implements Serializable {
 
 	public static FragmentFieldImage toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentFieldImage.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The fragment field's image.")
 	@Valid
 	public FragmentImage getFragmentImage() {
 		return fragmentImage;
@@ -76,11 +81,11 @@ public class FragmentFieldImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment field's image.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentImage fragmentImage;
 
-	@Schema
+	@Schema(description = "A link to a fragment.")
 	@Valid
 	public FragmentLink getFragmentLink() {
 		return fragmentLink;
@@ -105,7 +110,7 @@ public class FragmentFieldImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A link to a fragment.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentLink fragmentLink;
 
@@ -162,6 +167,7 @@ public class FragmentFieldImage {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentFieldImage",
 		name = "x-class-name"
 	)
@@ -197,7 +203,7 @@ public class FragmentFieldImage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -236,7 +242,7 @@ public class FragmentFieldImage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

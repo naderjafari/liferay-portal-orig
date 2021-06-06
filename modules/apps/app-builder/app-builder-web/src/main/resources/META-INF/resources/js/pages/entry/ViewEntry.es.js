@@ -12,19 +12,21 @@
  * details.
  */
 
-import {usePrevious} from 'frontend-js-react-web';
+import {usePrevious} from '@liferay/frontend-js-react-web';
+import Loading from 'data-engine-js-components-web/js/components/loading/Loading.es';
+import useQuery from 'data-engine-js-components-web/js/hooks/useQuery.es';
+import {getItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {errorToast} from 'data-engine-js-components-web/js/utils/toast.es';
+import {isEqualObjects} from 'data-engine-js-components-web/js/utils/utils.es';
 import React, {useContext, useEffect, useState} from 'react';
 
 import {AppContext} from '../../AppContext.es';
 import ControlMenu from '../../components/control-menu/ControlMenu.es';
-import {Loading} from '../../components/loading/Loading.es';
 import useDataLayout from '../../hooks/useDataLayout.es';
-import useQuery from '../../hooks/useQuery.es';
-import {getItem} from '../../utils/client.es';
-import {errorToast} from '../../utils/toast.es';
-import {isEqualObjects} from '../../utils/utils.es';
 import FieldPreview, {SectionRenderer} from './FieldPreview.es';
+import ViewEntryInfoBar from './ViewEntryInfoBar.es';
 import ViewEntryUpperToolbar from './ViewEntryUpperToolbar.es';
+import {ENTRY_STATUS} from './constants.es';
 
 const getSections = ({dataDefinitionFields = []}) => {
 	const sections = {};
@@ -54,6 +56,7 @@ export function ViewDataLayoutPageValues({
 	dataRecordValues,
 }) {
 	const {dataLayoutRows} = dataLayoutPage;
+	const {defaultLanguageId} = dataDefinition;
 	const sections = getSections(dataDefinition);
 
 	return dataLayoutRows
@@ -80,10 +83,12 @@ export function ViewDataLayoutPageValues({
 						{fieldGroup.fields.map((field) => (
 							<FieldPreview
 								dataDefinition={{
+									...dataDefinition,
 									dataDefinitionFields:
 										fieldGroup.nestedDataDefinitionFields,
 								}}
 								dataRecordValues={dataRecordValues}
+								defaultLanguageId={defaultLanguageId}
 								fieldName={field}
 								key={field}
 							/>
@@ -96,6 +101,7 @@ export function ViewDataLayoutPageValues({
 				<FieldPreview
 					dataDefinition={dataDefinition}
 					dataRecordValues={dataRecordValues}
+					defaultLanguageId={defaultLanguageId}
 					fieldName={fieldName}
 					key={fieldName}
 				/>
@@ -109,7 +115,12 @@ export default function ViewEntry({
 		params: {entryIndex},
 	},
 }) {
-	const {dataDefinitionId, dataLayoutId} = useContext(AppContext);
+	const {
+		dataDefinitionId,
+		dataLayoutId,
+		dataListViewId,
+		workflowClassName,
+	} = useContext(AppContext);
 	const {
 		dataDefinition,
 		dataLayout: {dataLayoutPages},
@@ -123,7 +134,7 @@ export default function ViewEntry({
 		totalCount: 0,
 	});
 
-	const {dataRecordValues = {}, id: dataRecordId} = dataRecord;
+	const {dataRecordValues = {}, id: dataRecordId, status} = dataRecord;
 
 	const [query] = useQuery(history, {
 		keywords: '',
@@ -141,7 +152,7 @@ export default function ViewEntry({
 		) {
 			getItem(
 				`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}/data-records`,
-				{...query, page: entryIndex, pageSize: 1}
+				{...query, dataListViewId, page: entryIndex, pageSize: 1}
 			)
 				.then(({items = [], ...response}) => {
 					if (items.length > 0) {
@@ -164,10 +175,35 @@ export default function ViewEntry({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [entryIndex, query]);
 
+	useEffect(() => {
+		if (dataRecordId && status !== ENTRY_STATUS.APPROVED) {
+			getItem(`/o/headless-admin-workflow/v1.0/workflow-instances`, {
+				assetClassName: [workflowClassName],
+				assetPrimaryKey: [dataRecordId],
+				completed: false,
+			}).then(({items}) => {
+				setState((prevState) => ({
+					...prevState,
+					dataRecord: {
+						...prevState.dataRecord,
+						stepName: items.pop()?.state,
+					},
+				}));
+			});
+		}
+	}, [dataRecordId, status, workflowClassName]);
+
+	const getBackURL = () => {
+		const urlParams = new URLSearchParams(window.location.hash);
+		const backURL = urlParams.get('backURL') || '../../';
+
+		return backURL;
+	};
+
 	return (
 		<div className="view-entry">
 			<ControlMenu
-				backURL="../../"
+				backURL={getBackURL()}
 				title={Liferay.Language.get('details-view')}
 			/>
 
@@ -175,9 +211,14 @@ export default function ViewEntry({
 				dataRecordId={dataRecordId}
 				page={page}
 				totalCount={totalCount}
-			/>
+			>
+				{dataRecord && <ViewEntryInfoBar {...dataRecord} />}
+			</ViewEntryUpperToolbar>
 
-			<Loading isLoading={isLoading || isFetching}>
+			<Loading
+				className="loading-wrapper"
+				isLoading={isLoading || isFetching}
+			>
 				<div className="container">
 					<div className="justify-content-center row">
 						<div className="col-lg-8">

@@ -166,8 +166,20 @@ public class ExpandoRowLocalServiceWrapper
 	}
 
 	@Override
+	public void deleteRows(long companyId, long classNameId, long classPK) {
+		_expandoRowLocalService.deleteRows(companyId, classNameId, classPK);
+	}
+
+	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _expandoRowLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _expandoRowLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override

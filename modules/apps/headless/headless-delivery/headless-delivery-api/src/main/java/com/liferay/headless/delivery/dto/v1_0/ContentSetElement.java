@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentSetElement")
+@GraphQLName(
+	description = "Represents each member of a content set and can contain different types of assets.",
+	value = "ContentSetElement"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentSetElement")
-public class ContentSetElement {
+public class ContentSetElement implements Serializable {
 
 	public static ContentSetElement toDTO(String json) {
 		return ObjectMapperUtil.readValue(ContentSetElement.class, json);
@@ -162,7 +167,7 @@ public class ContentSetElement {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String title;
 
-	@Schema
+	@Schema(description = "The localized content's titles.")
 	@Valid
 	public Map<String, String> getTitle_i18n() {
 		return title_i18n;
@@ -188,7 +193,7 @@ public class ContentSetElement {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized content's titles.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> title_i18n;
 
@@ -283,6 +288,7 @@ public class ContentSetElement {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentSetElement",
 		name = "x-class-name"
 	)
@@ -318,7 +324,7 @@ public class ContentSetElement {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -357,7 +363,7 @@ public class ContentSetElement {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

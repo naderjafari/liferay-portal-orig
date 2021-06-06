@@ -16,6 +16,9 @@ package com.liferay.source.formatter.checkstyle.checks;
 
 import com.liferay.portal.kernel.util.ListUtil;
 
+import com.puppycrawl.tools.checkstyle.api.DetailAST;
+
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,7 +33,7 @@ public class ItemListBuilderCheck extends BaseBuilderCheck {
 
 	@Override
 	protected List<BaseBuilderCheck.BuilderInformation>
-		getBuilderInformationList() {
+		doGetBuilderInformationList() {
 
 		return ListUtil.fromArray(
 			new BaseBuilderCheck.BuilderInformation(
@@ -40,6 +43,16 @@ public class ItemListBuilderCheck extends BaseBuilderCheck {
 				"LabelItemList", "LabelItemListBuilder", "add"),
 			new BaseBuilderCheck.BuilderInformation(
 				"NavigationItemList", "NavigationItemListBuilder", "add"));
+	}
+
+	@Override
+	protected String getAssignClassName(DetailAST assignDetailAST) {
+		return getNewInstanceTypeName(assignDetailAST);
+	}
+
+	@Override
+	protected List<String> getSupportsFunctionMethodNames() {
+		return Collections.emptyList();
 	}
 
 	@Override

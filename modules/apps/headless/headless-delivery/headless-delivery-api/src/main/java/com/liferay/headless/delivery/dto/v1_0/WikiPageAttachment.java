@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WikiPageAttachment")
+@GraphQLName(
+	description = "A binary file attached to a wiki page.",
+	value = "WikiPageAttachment"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WikiPageAttachment")
-public class WikiPageAttachment {
+public class WikiPageAttachment implements Serializable {
 
 	public static WikiPageAttachment toDTO(String json) {
 		return ObjectMapperUtil.readValue(WikiPageAttachment.class, json);
@@ -77,7 +82,9 @@ public class WikiPageAttachment {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentUrl;
 
-	@Schema
+	@Schema(
+		description = "Optional field with the content of the document in Base64, can be embedded with nestedFields."
+	)
 	public String getContentValue() {
 		return contentValue;
 	}
@@ -101,7 +108,9 @@ public class WikiPageAttachment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Optional field with the content of the document in Base64, can be embedded with nestedFields."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentValue;
 
@@ -370,6 +379,7 @@ public class WikiPageAttachment {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.WikiPageAttachment",
 		name = "x-class-name"
 	)
@@ -405,7 +415,7 @@ public class WikiPageAttachment {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -444,7 +454,7 @@ public class WikiPageAttachment {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

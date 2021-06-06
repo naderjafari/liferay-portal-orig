@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("RowViewportConfig")
+@GraphQLName(
+	description = "Deprecated as of Athanasius (7.3.x), replaced by rowViewports",
+	value = "RowViewportConfig"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "RowViewportConfig")
-public class RowViewportConfig {
+public class RowViewportConfig implements Serializable {
 
 	public static RowViewportConfig toDTO(String json) {
 		return ObjectMapperUtil.readValue(RowViewportConfig.class, json);
@@ -203,6 +208,7 @@ public class RowViewportConfig {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.RowViewportConfig",
 		name = "x-class-name"
 	)
@@ -238,7 +244,7 @@ public class RowViewportConfig {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -277,7 +283,7 @@ public class RowViewportConfig {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

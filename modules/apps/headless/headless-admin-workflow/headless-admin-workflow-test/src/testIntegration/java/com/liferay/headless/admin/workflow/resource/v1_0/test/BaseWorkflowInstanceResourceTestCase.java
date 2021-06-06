@@ -47,8 +47,6 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
@@ -73,7 +71,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -114,7 +111,9 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 		WorkflowInstanceResource.Builder builder =
 			WorkflowInstanceResource.builder();
 
-		workflowInstanceResource = builder.locale(
+		workflowInstanceResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -184,6 +183,7 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 
 		WorkflowInstance workflowInstance = randomWorkflowInstance();
 
+		workflowInstance.setState(regex);
 		workflowInstance.setWorkflowDefinitionName(regex);
 		workflowInstance.setWorkflowDefinitionVersion(regex);
 
@@ -193,6 +193,7 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 
 		workflowInstance = WorkflowInstanceSerDes.toDTO(json);
 
+		Assert.assertEquals(regex, workflowInstance.getState());
 		Assert.assertEquals(
 			regex, workflowInstance.getWorkflowDefinitionName());
 		Assert.assertEquals(
@@ -203,7 +204,7 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 	public void testGetWorkflowInstancesPage() throws Exception {
 		Page<WorkflowInstance> page =
 			workflowInstanceResource.getWorkflowInstancesPage(
-				null, null, null, Pagination.of(1, 2));
+				RandomTestUtil.randomString(), null, null, Pagination.of(1, 2));
 
 		Assert.assertEquals(0, page.getTotalCount());
 
@@ -390,27 +391,19 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 						})),
 				"JSONObject/data", "Object/deleteWorkflowInstance"));
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"workflowInstance",
+					new HashMap<String, Object>() {
+						{
+							put("workflowInstanceId", workflowInstance.getId());
+						}
+					},
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-			JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"workflowInstance",
-						new HashMap<String, Object>() {
-							{
-								put(
-									"workflowInstanceId",
-									workflowInstance.getId());
-							}
-						},
-						new GraphQLField("id"))),
-				"JSONArray/errors");
-
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		Assert.assertTrue(errorsJSONArray.length() > 0);
 	}
 
 	@Test
@@ -563,7 +556,9 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 		}
 	}
 
-	protected void assertValid(WorkflowInstance workflowInstance) {
+	protected void assertValid(WorkflowInstance workflowInstance)
+		throws Exception {
+
 		boolean valid = true;
 
 		if (workflowInstance.getDateCreated() == null) {
@@ -595,6 +590,14 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 
 			if (Objects.equals("objectReviewed", additionalAssertFieldName)) {
 				if (workflowInstance.getObjectReviewed() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("state", additionalAssertFieldName)) {
+				if (workflowInstance.getState() == null) {
 					valid = false;
 				}
 
@@ -655,7 +658,7 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.headless.admin.workflow.dto.v1_0.
 						WorkflowInstance.class)) {
 
@@ -690,7 +693,7 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -769,6 +772,17 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("state", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						workflowInstance1.getState(),
+						workflowInstance2.getState())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals(
 					"workflowDefinitionName", additionalAssertFieldName)) {
 
@@ -822,9 +836,22 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -961,6 +988,14 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("state")) {
+			sb.append("'");
+			sb.append(String.valueOf(workflowInstance.getState()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
 		if (entityFieldName.equals("workflowDefinitionName")) {
 			sb.append("'");
 			sb.append(
@@ -1028,6 +1063,7 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 				dateCompletion = RandomTestUtil.nextDate();
 				dateCreated = RandomTestUtil.nextDate();
 				id = RandomTestUtil.randomLong();
+				state = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				workflowDefinitionName = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				workflowDefinitionVersion = StringUtil.toLowerCase(
@@ -1093,12 +1129,12 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1108,10 +1144,10 @@ public abstract class BaseWorkflowInstanceResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

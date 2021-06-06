@@ -20,7 +20,7 @@
 </tr>
 <tr>
 	<td>CHECKOUT_SUCCESS</td>
-	<td>//div[contains(@class,'content')]/div[contains(@class,'alert-info')]</td>
+	<td>//div[contains(@class,'content')]//div[contains(@class,'alert-info')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -30,7 +30,7 @@
 </tr>
 <tr>
 	<td>CUSTOMIZED_PAGE_INFO</td>
-	<td>//div[contains(@class,'layout')]/span[contains(@class,'message-info')]</td>
+	<td>//div[contains(@class,'popover')]//p[contains(@class,'message-info')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -59,8 +59,18 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ROLE_EMPTY_MUTED_INFO</td>
+	<td>//div[h3[*[*[contains(text(),'${key_RoleType}')]]]]//div[*[contains(@class,'text-muted')]or contains(@class,'text-muted')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>EMPTY_INFO_DEPOT</td>
 	<td>//p[contains(@class,'text-muted')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EMPTY_INFO_DEPOT_HIDE</td>
+	<td>//div[not(contains(@class,'hide'))]//p[contains(@class,'text-muted')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -175,7 +185,7 @@
 </tr>
 <tr>
 	<td>ERROR_FIELD_REQUIRED</td>
-	<td>//div[@role='alert' and contains(.,'This field is required')] | //span[contains(@id,'title')]//div[contains(.,'This field is required.')]</td>
+	<td>//label[contains(.,'${key_fieldFieldLabel}')]/..//div[@role='alert' and contains(.,'This field is required')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -189,13 +199,28 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ERROR_INVALID_FACEBOOK_VIDEO</td>
+	<td>//div[contains(@class,'pluginSkinLight')]//div</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ERROR_INVALID_VIMEO_VIDEO</td>
+	<td>//div[contains(@id,'sun')]//p</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ERROR_INVALID_YOUTUBE_VIDEO</td>
+	<td>//div[contains(@class,'ytp-error-content-wrap')]//span</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ERROR_PUBLISH_UNSUCCESSFUL_EXTENSION</td>
 	<td>//div[contains(@class,'alert-danger') and contains(.,'The source file does not have the same extension as the original file')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>ERROR_REQUEST_FAILED</td>
-	<td>//div[contains(@class,'alert-danger')][contains(@class,'alert-dismissible')][contains(@class,'show')]</td>
+	<td>//div[contains(@class,'alert-danger')][contains(@class,'alert-dismissible')][contains(.,'Your request failed to complete.')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -226,6 +251,11 @@
 <tr>
 	<td>INFO</td>
 	<td>//div[contains(@class,'alert alert-info') and not(contains(@class,'hide'))]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>INFO_EXTERNAL_VIDEO_PREVIEW</td>
+	<td>//div[contains(@class,'video-preview-placeholder-text')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -371,6 +401,11 @@
 <tr>
 	<td>USER_BLOCKED</td>
 	<td>//div[contains(@class,'alert-block')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>WARNING_FEEDBACK</td>
+	<td>//div[contains(@class,'form-feedback-item')]</td>
 	<td></td>
 </tr>
 <tr>

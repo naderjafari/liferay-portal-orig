@@ -73,8 +73,8 @@ public abstract class BaseCalendarResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/portal-workflow-metrics/v1.0/calendars'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Path("/calendars")
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "Calendar")})
@@ -180,6 +180,14 @@ public abstract class BaseCalendarResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

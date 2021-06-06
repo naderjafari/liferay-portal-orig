@@ -22,15 +22,19 @@ import com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflowTask;
 import com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflowTransition;
 import com.liferay.dynamic.data.lists.model.DDLRecord;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.NoSuchModelException;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.WorkflowDefinitionLink;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowDefinition;
 import com.liferay.portal.kernel.workflow.WorkflowDefinitionManager;
+import com.liferay.portal.kernel.workflow.WorkflowException;
 import com.liferay.portal.workflow.kaleo.definition.Action;
 import com.liferay.portal.workflow.kaleo.definition.AssigneesRecipient;
 import com.liferay.portal.workflow.kaleo.definition.Definition;
@@ -47,8 +51,10 @@ import com.liferay.portal.workflow.kaleo.definition.Task;
 import com.liferay.portal.workflow.kaleo.definition.TemplateLanguage;
 import com.liferay.portal.workflow.kaleo.definition.Transition;
 import com.liferay.portal.workflow.kaleo.definition.UserRecipient;
+import com.liferay.portal.workflow.kaleo.definition.exception.KaleoDefinitionValidationException;
 import com.liferay.portal.workflow.kaleo.definition.export.DefinitionExporter;
 import com.liferay.portal.workflow.kaleo.definition.export.builder.DefinitionBuilder;
+import com.liferay.portal.workflow.kaleo.runtime.WorkflowEngine;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -68,45 +74,65 @@ import org.osgi.service.component.annotations.Reference;
 public class AppWorkflowResourceHelper {
 
 	public WorkflowDefinition deployWorkflowDefinition(
-			AppBuilderApp appBuilderApp, long companyId, Definition definition,
-			long userId)
+			AppBuilderApp appBuilderApp, Definition definition, long userId)
 		throws PortalException {
 
 		String content = _definitionExporter.export(definition);
 
-		return _workflowDefinitionManager.deployWorkflowDefinition(
-			companyId, userId, appBuilderApp.getName(), appBuilderApp.getUuid(),
-			AppBuilderApp.class.getSimpleName(), content.getBytes());
+		ServiceContext serviceContext = new ServiceContext();
+
+		serviceContext.setAttribute("checkPermission", Boolean.FALSE);
+		serviceContext.setCompanyId(appBuilderApp.getCompanyId());
+		serviceContext.setUserId(userId);
+
+		return _workflowEngine.deployWorkflowDefinition(
+			appBuilderApp.getName(),
+			String.valueOf(appBuilderApp.getAppBuilderAppId()),
+			AppBuilderApp.class.getSimpleName(),
+			new UnsyncByteArrayInputStream(content.getBytes()), serviceContext);
 	}
 
-	public Definition getDefinition(AppBuilderApp appBuilderApp)
+	public Definition getDefinition(long appId, long companyId)
 		throws PortalException {
 
 		WorkflowDefinitionLink workflowDefinitionLink =
 			_workflowDefinitionLinkLocalService.getWorkflowDefinitionLink(
-				appBuilderApp.getCompanyId(), 0,
+				companyId, 0,
 				ResourceActionsUtil.getCompositeModelName(
 					AppBuilderApp.class.getName(), DDLRecord.class.getName()),
-				appBuilderApp.getAppBuilderAppId(), 0);
+				appId, 0);
 
 		return _definitionBuilder.buildDefinition(
-			appBuilderApp.getCompanyId(),
-			workflowDefinitionLink.getWorkflowDefinitionName(),
+			companyId, workflowDefinitionLink.getWorkflowDefinitionName(),
 			workflowDefinitionLink.getWorkflowDefinitionVersion());
 	}
 
-	public WorkflowDefinition getWorkflowDefinition(AppBuilderApp appBuilderApp)
+	public WorkflowDefinition getLatestWorkflowDefinition(
+			long appId, long companyId)
 		throws PortalException {
 
-		return _workflowDefinitionManager.getLatestWorkflowDefinition(
-			appBuilderApp.getCompanyId(), appBuilderApp.getUuid());
+		try {
+			return _workflowDefinitionManager.getLatestWorkflowDefinition(
+				companyId, String.valueOf(appId));
+		}
+		catch (WorkflowException workflowException) {
+			Throwable throwable = workflowException.getCause();
+
+			if (throwable instanceof NoSuchModelException) {
+				throw (NoSuchModelException)throwable;
+			}
+
+			throw workflowException;
+		}
 	}
 
 	public Definition toDefinition(
-		AppBuilderApp appBuilderApp, AppWorkflow appWorkflow, Locale locale) {
+			AppBuilderApp appBuilderApp, AppWorkflow appWorkflow, Locale locale)
+		throws KaleoDefinitionValidationException {
 
 		Definition definition = new Definition(
-			appBuilderApp.getUuid(), StringPool.BLANK, StringPool.BLANK, 0);
+			String.valueOf(appBuilderApp.getAppBuilderAppId()),
+			StringPool.BLANK, StringPool.BLANK, 0);
 
 		for (AppWorkflowState appWorkflowState :
 				appWorkflow.getAppWorkflowStates()) {
@@ -175,6 +201,31 @@ public class AppWorkflowResourceHelper {
 		return definition;
 	}
 
+	public void undeployWorkflowDefinition(
+			long appId, long companyId, long userId)
+		throws PortalException {
+
+		int workflowDefinitionsCount =
+			_workflowDefinitionManager.getWorkflowDefinitionsCount(
+				companyId, String.valueOf(appId));
+
+		if (workflowDefinitionsCount == 0) {
+			return;
+		}
+
+		WorkflowDefinition workflowDefinition = getLatestWorkflowDefinition(
+			appId, companyId);
+
+		_workflowDefinitionManager.updateActive(
+			workflowDefinition.getCompanyId(), userId,
+			workflowDefinition.getName(), workflowDefinition.getVersion(),
+			false);
+
+		_workflowDefinitionManager.undeployWorkflowDefinition(
+			workflowDefinition.getCompanyId(), userId,
+			workflowDefinition.getName(), workflowDefinition.getVersion());
+	}
+
 	private void _addTransition(
 		boolean defaultTransition, String name, Node sourceNode,
 		Node targetNode) {
@@ -206,7 +257,9 @@ public class AppWorkflowResourceHelper {
 		}
 	}
 
-	private Action _createApproveAction() {
+	private Action _createApproveAction()
+		throws KaleoDefinitionValidationException {
+
 		return new Action(
 			"approve", StringPool.BLANK, ExecutionType.ON_ENTRY.getValue(),
 			StringUtil.read(getClass(), "dependencies/approve-script.groovy"),
@@ -214,7 +267,8 @@ public class AppWorkflowResourceHelper {
 	}
 
 	private Notification _createAssigneesNotification(
-		AppBuilderApp appBuilderApp, Locale locale) {
+			AppBuilderApp appBuilderApp, Locale locale)
+		throws KaleoDefinitionValidationException {
 
 		AssigneesRecipient assigneesRecipient = new AssigneesRecipient();
 
@@ -236,8 +290,9 @@ public class AppWorkflowResourceHelper {
 	}
 
 	private Notification _createNotification(
-		String description, ExecutionType executionType, String name,
-		Recipient recipient, String template) {
+			String description, ExecutionType executionType, String name,
+			Recipient recipient, String template)
+		throws KaleoDefinitionValidationException {
 
 		Notification notification = new Notification(
 			name, description, executionType.getValue(), template,
@@ -252,8 +307,9 @@ public class AppWorkflowResourceHelper {
 	}
 
 	private Notification _createUserNotification(
-		AppBuilderApp appBuilderApp, AppWorkflowTask appWorkflowTask,
-		Locale locale) {
+			AppBuilderApp appBuilderApp, AppWorkflowTask appWorkflowTask,
+			Locale locale)
+		throws KaleoDefinitionValidationException {
 
 		UserRecipient userRecipient = new UserRecipient();
 
@@ -285,5 +341,8 @@ public class AppWorkflowResourceHelper {
 
 	@Reference
 	private WorkflowDefinitionManager _workflowDefinitionManager;
+
+	@Reference
+	private WorkflowEngine _workflowEngine;
 
 }

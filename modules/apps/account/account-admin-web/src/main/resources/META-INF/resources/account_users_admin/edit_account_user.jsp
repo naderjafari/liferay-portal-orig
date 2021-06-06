@@ -18,26 +18,29 @@
 
 <%
 User selUser = PortalUtil.getSelectedUser(request, false);
-
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("p_u_i_d", String.valueOf(selUser.getUserId()));
-portletURL.setParameter("mvcPath", "/account_users_admin/edit_account_user.jsp");
 %>
 
 <liferay-frontend:screen-navigation
 	containerCssClass="col-lg-8"
 	containerWrapperCssClass="container-fluid container-fluid-max-xl container-form-lg"
 	context="<%= selUser %>"
-	headerContainerCssClass=""
 	key="<%= AccountScreenNavigationEntryConstants.SCREEN_NAVIGATION_KEY_ACCOUNT_USER %>"
 	menubarCssClass="menubar menubar-transparent menubar-vertical-expand-lg"
 	navCssClass="col-lg-3"
-	portletURL="<%= portletURL %>"
+	portletURL='<%=
+		PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/account_users_admin/edit_account_user.jsp"
+		).setParameter(
+			"p_u_i_d", selUser.getUserId()
+		).build()
+	%>'
 />
 
 <%
 String screenNavigationCategoryKey = ParamUtil.getString(request, "screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_GENERAL);
+
 String screenNavigationEntryKey = ParamUtil.getString(request, "screenNavigationEntryKey");
 
 if (Validator.isNull(screenNavigationEntryKey)) {
@@ -47,29 +50,39 @@ if (Validator.isNull(screenNavigationEntryKey)) {
 AccountUserDisplay accountUserDisplay = AccountUserDisplay.of(selUser);
 %>
 
-<c:if test="<%= accountUserDisplay.isValidateEmailAddress() && Objects.equals(AccountScreenNavigationEntryConstants.CATEGORY_KEY_GENERAL, screenNavigationCategoryKey) && Objects.equals(AccountScreenNavigationEntryConstants.ENTRY_KEY_INFORMATION, screenNavigationEntryKey) %>">
+<c:if test="<%= Objects.equals(AccountScreenNavigationEntryConstants.CATEGORY_KEY_GENERAL, screenNavigationCategoryKey) && Objects.equals(AccountScreenNavigationEntryConstants.ENTRY_KEY_INFORMATION, screenNavigationEntryKey) %>">
+	<c:if test="<%= accountUserDisplay.isValidateEmailAddress() || Validator.isNotNull(AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId())) %>">
 
-	<%
-	PortletURL viewValidDomainsURL = renderResponse.createRenderURL();
+		<%
+		Map<String, Object> context = HashMapBuilder.<String, Object>put(
+			"accountEntryNames", accountUserDisplay.getAccountEntryNamesString(request)
+		).build();
 
-	viewValidDomainsURL.setParameter("mvcPath", "/account_users_admin/account_user/view_valid_domains.jsp");
-	viewValidDomainsURL.setParameter("validDomains", accountUserDisplay.getValidDomainsString());
-	viewValidDomainsURL.setWindowState(LiferayWindowState.POP_UP);
-	%>
+		if (Validator.isNotNull(AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()))) {
+			context.put("blockedDomains", AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()));
+		}
 
-	<liferay-frontend:component
-		componentId="AccountUserEmailDomainValidator"
-		context='<%=
-			HashMapBuilder.<String, Object>put(
-				"accountEntryNames", accountUserDisplay.getAccountEntryNamesString(request)
-			).put(
-				"blockedDomains", AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId())
-			).put(
+		if (accountUserDisplay.isValidateEmailAddress()) {
+			context.put("validDomains", accountUserDisplay.getValidDomainsString());
+
+			PortletURL viewValidDomainsURL = PortletURLBuilder.createRenderURL(
+				renderResponse
+			).setMVCPath(
+				"/account_users_admin/account_user/view_valid_domains.jsp"
+			).setParameter(
 				"validDomains", accountUserDisplay.getValidDomainsString()
-			).put(
-				"viewValidDomainsURL", viewValidDomainsURL.toString()
-			).build()
-		%>'
-		module="account_users_admin/js/AccountUserEmailDomainValidator.es"
-	/>
+			).setWindowState(
+				LiferayWindowState.POP_UP
+			).build();
+
+			context.put("viewValidDomainsURL", viewValidDomainsURL.toString());
+		}
+		%>
+
+		<liferay-frontend:component
+			componentId="AccountUserEmailDomainValidator"
+			context="<%= context %>"
+			module="account_users_admin/js/AccountUserEmailDomainValidator.es"
+		/>
+	</c:if>
 </c:if>

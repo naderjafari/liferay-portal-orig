@@ -15,6 +15,8 @@
 package com.liferay.app.builder.workflow.rest.resource.v1_0;
 
 import com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflow;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 
 import java.util.Locale;
@@ -44,6 +46,8 @@ public interface AppWorkflowResource {
 		return FactoryHolder.factory.create();
 	}
 
+	public void deleteAppWorkflow(Long appId) throws Exception;
+
 	public AppWorkflow getAppWorkflow(Long appId) throws Exception;
 
 	public AppWorkflow postAppWorkflow(Long appId, AppWorkflow appWorkflow)
@@ -72,6 +76,10 @@ public interface AppWorkflowResource {
 
 	public void setContextUser(
 		com.liferay.portal.kernel.model.User contextUser);
+
+	public void setGroupLocalService(GroupLocalService groupLocalService);
+
+	public void setRoleLocalService(RoleLocalService roleLocalService);
 
 	public static class FactoryHolder {
 

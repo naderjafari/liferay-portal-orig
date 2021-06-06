@@ -41,15 +41,16 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 	public static Version getCurrentSchemaVersion(Connection connection)
 		throws SQLException {
 
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"select schemaVersion from Release_ where servletContextName " +
 					"= ?")) {
 
-			ps.setString(1, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
+			preparedStatement.setString(
+				1, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					String schemaVersion = rs.getString("schemaVersion");
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				while (resultSet.next()) {
+					String schemaVersion = resultSet.getString("schemaVersion");
 
 					return Version.parseVersion(schemaVersion);
 				}
@@ -61,6 +62,12 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 	public static Version getLatestSchemaVersion() {
 		return _upgradeProcesses.lastKey();
+	}
+
+	public static SortedMap<Version, UpgradeProcess> getPendingUpgradeProcesses(
+		Version schemaVersion) {
+
+		return _upgradeProcesses.tailMap(schemaVersion, false);
 	}
 
 	public static Version getRequiredSchemaVersion() {
@@ -145,28 +152,30 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 	protected void updateSchemaVersion(Version newSchemaVersion)
 		throws SQLException {
 
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Release_ set schemaVersion = ? where " +
 					"servletContextName = ?")) {
 
-			ps.setString(1, newSchemaVersion.toString());
-			ps.setString(2, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
+			preparedStatement.setString(1, newSchemaVersion.toString());
+			preparedStatement.setString(
+				2, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
-			ps.execute();
+			preparedStatement.execute();
 		}
 	}
 
-	private static void _initializeSchemaVersion(Connection connection)
+	private void _initializeSchemaVersion(Connection connection)
 		throws Exception {
 
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Release_ set schemaVersion = ? where " +
 					"servletContextName = ? and buildNumber < 7100")) {
 
-			ps.setString(1, _initialSchemaVersion.toString());
-			ps.setString(2, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
+			preparedStatement.setString(1, _initialSchemaVersion.toString());
+			preparedStatement.setString(
+				2, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
-			ps.execute();
+			preparedStatement.execute();
 		}
 	}
 
@@ -174,7 +183,9 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 		PortalUpgradeProcessRegistryImpl.class,
 		com.liferay.portal.upgrade.v7_2_x.PortalUpgradeProcessRegistryImpl.
 			class,
-		com.liferay.portal.upgrade.v7_3_x.PortalUpgradeProcessRegistryImpl.class
+		com.liferay.portal.upgrade.v7_3_x.PortalUpgradeProcessRegistryImpl.
+			class,
+		com.liferay.portal.upgrade.v7_4_x.PortalUpgradeProcessRegistryImpl.class
 	};
 
 	private static final Version _initialSchemaVersion = new Version(0, 1, 0);

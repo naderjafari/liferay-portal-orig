@@ -101,8 +101,8 @@ public class JournalContentImpl
 					ClusterInvokeAcceptor.class, this, _clearArticleCacheMethod,
 					new Object[] {groupId, articleId, ddmTemplateKey});
 			}
-			catch (Throwable t) {
-				ReflectionUtil.throwException(t);
+			catch (Throwable throwable) {
+				ReflectionUtil.throwException(throwable);
 			}
 		}
 	}
@@ -117,8 +117,8 @@ public class JournalContentImpl
 					ClusterInvokeAcceptor.class, this,
 					_clearTemplateCacheMethod, new Object[] {ddmTemplateKey});
 			}
-			catch (Throwable t) {
-				ReflectionUtil.throwException(t);
+			catch (Throwable throwable) {
+				ReflectionUtil.throwException(throwable);
 			}
 		}
 	}
@@ -225,6 +225,9 @@ public class JournalContentImpl
 				}
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 
 			LayoutSet layoutSet = themeDisplay.getLayoutSet();
@@ -465,7 +468,8 @@ public class JournalContentImpl
 				_log.warn(
 					StringBundler.concat(
 						"Unable to get display for ", groupId, StringPool.SPACE,
-						articleId, StringPool.SPACE, languageId));
+						articleId, StringPool.SPACE, languageId),
+					exception);
 			}
 
 			return null;

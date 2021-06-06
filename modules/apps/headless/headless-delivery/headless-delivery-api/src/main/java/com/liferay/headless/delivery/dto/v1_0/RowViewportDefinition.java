@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,16 +42,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("RowViewportDefinition")
+@GraphQLName(
+	description = "The definition of the row vieport.",
+	value = "RowViewportDefinition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "RowViewportDefinition")
-public class RowViewportDefinition {
+public class RowViewportDefinition implements Serializable {
 
 	public static RowViewportDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(RowViewportDefinition.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The number of modules per row.")
 	public Integer getModulesPerRow() {
 		return modulesPerRow;
 	}
@@ -73,11 +78,13 @@ public class RowViewportDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The number of modules per row.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Integer modulesPerRow;
 
-	@Schema
+	@Schema(
+		description = "A flag that indicates whether the row viewport has reverse order."
+	)
 	public Boolean getReverseOrder() {
 		return reverseOrder;
 	}
@@ -101,11 +108,13 @@ public class RowViewportDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A flag that indicates whether the row viewport has reverse order."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Boolean reverseOrder;
 
-	@Schema
+	@Schema(description = "The vertical aligment property of the row viewport.")
 	public String getVerticalAlignment() {
 		return verticalAlignment;
 	}
@@ -129,7 +138,9 @@ public class RowViewportDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The vertical aligment property of the row viewport."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String verticalAlignment;
 
@@ -201,6 +212,7 @@ public class RowViewportDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.RowViewportDefinition",
 		name = "x-class-name"
 	)
@@ -236,7 +248,7 @@ public class RowViewportDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -275,7 +287,7 @@ public class RowViewportDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

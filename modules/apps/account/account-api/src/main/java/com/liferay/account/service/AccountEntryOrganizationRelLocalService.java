@@ -59,7 +59,7 @@ public interface AccountEntryOrganizationRelLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link AccountEntryOrganizationRelLocalServiceUtil} to access the account entry organization rel local service. Add custom service methods to <code>com.liferay.account.service.impl.AccountEntryOrganizationRelLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.account.service.impl.AccountEntryOrganizationRelLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the account entry organization rel local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link AccountEntryOrganizationRelLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -138,6 +138,12 @@ public interface AccountEntryOrganizationRelLocalService
 			long accountEntryId, long[] organizationIds)
 		throws PortalException;
 
+	public void deleteAccountEntryOrganizationRelsByAccountEntryId(
+		long accountEntryId);
+
+	public void deleteAccountEntryOrganizationRelsByOrganizationId(
+		long organizationId);
+
 	/**
 	 * @throws PortalException
 	 */
@@ -147,6 +153,9 @@ public interface AccountEntryOrganizationRelLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -218,6 +227,10 @@ public interface AccountEntryOrganizationRelLocalService
 	public AccountEntryOrganizationRel fetchAccountEntryOrganizationRel(
 		long accountEntryOrganizationRelId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public AccountEntryOrganizationRel fetchAccountEntryOrganizationRel(
+		long accountEntryId, long organizationId);
+
 	/**
 	 * Returns the account entry organization rel with the primary key.
 	 *
@@ -228,6 +241,11 @@ public interface AccountEntryOrganizationRelLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public AccountEntryOrganizationRel getAccountEntryOrganizationRel(
 			long accountEntryOrganizationRelId)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public AccountEntryOrganizationRel getAccountEntryOrganizationRel(
+			long accountEntryId, long organizationId)
 		throws PortalException;
 
 	/**
@@ -250,8 +268,21 @@ public interface AccountEntryOrganizationRelLocalService
 		long accountEntryId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AccountEntryOrganizationRel> getAccountEntryOrganizationRels(
+		long accountEntryId, int start, int end);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<AccountEntryOrganizationRel>
 		getAccountEntryOrganizationRelsByOrganizationId(long organizationId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AccountEntryOrganizationRel>
+		getAccountEntryOrganizationRelsByOrganizationId(
+			long organizationId, int start, int end);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getAccountEntryOrganizationRelsByOrganizationIdCount(
+		long organizationId);
 
 	/**
 	 * Returns the number of account entry organization rels.

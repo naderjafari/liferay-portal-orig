@@ -21,7 +21,9 @@ ContributedFragmentManagementToolbarDisplayContext contributedFragmentManagement
 %>
 
 <clay:management-toolbar
-	displayContext="<%= contributedFragmentManagementToolbarDisplayContext %>"
+	additionalProps="<%= contributedFragmentManagementToolbarDisplayContext.getComponentContext() %>"
+	managementToolbarDisplayContext="<%= contributedFragmentManagementToolbarDisplayContext %>"
+	propsTransformer="js/ViewContributedFragmentEntriesManagementToolbarPropsTransformer"
 />
 
 <aui:form name="fm">
@@ -33,11 +35,6 @@ ContributedFragmentManagementToolbarDisplayContext contributedFragmentManagement
 			keyProperty="fragmentEntryKey"
 			modelVar="fragmentEntry"
 		>
-
-			<%
-			row.setCssClass("card-page-item-asset " + row.getCssClass());
-			%>
-
 			<liferay-ui:search-container-column-text>
 				<clay:vertical-card
 					verticalCard="<%= new ContributedFragmentEntryVerticalCard(fragmentEntry, renderRequest, renderResponse, searchContainer.getRowChecker()) %>"
@@ -48,7 +45,6 @@ ContributedFragmentManagementToolbarDisplayContext contributedFragmentManagement
 		<liferay-ui:search-iterator
 			displayStyle="icon"
 			markupView="lexicon"
-			searchResultCssClass="card-page"
 		/>
 	</liferay-ui:search-container>
 </aui:form>
@@ -61,10 +57,4 @@ ContributedFragmentManagementToolbarDisplayContext contributedFragmentManagement
 <liferay-frontend:component
 	componentId="<%= FragmentWebKeys.FRAGMENT_ENTRY_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
 	module="js/FragmentEntryDropdownDefaultEventHandler.es"
-/>
-
-<liferay-frontend:component
-	componentId="<%= contributedFragmentManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	context="<%= contributedFragmentManagementToolbarDisplayContext.getComponentContext() %>"
-	module="js/ManagementToolbarDefaultEventHandler.es"
 />

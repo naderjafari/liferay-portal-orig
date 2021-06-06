@@ -18,15 +18,15 @@ import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
 import {ColumnWithControls} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items';
 import {updateNewLayoutDataContext} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items/ColumnWithControls';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 
 const LAYOUT_DATA = {
 	deletedItems: [],
@@ -100,6 +100,7 @@ const renderColumn = ({
 			<ControlsProvider>
 				<StoreAPIContextProvider
 					getState={() => ({
+						layoutData,
 						permissions: {
 							LOCKED_SEGMENTS_EXPERIMENT: lockedExperience,
 							UPDATE: hasUpdatePermissions,
@@ -110,7 +111,6 @@ const renderColumn = ({
 					<AutoSelect />
 					<ColumnWithControls
 						item={columnIndex ? columnB : columnA}
-						layoutData={layoutData}
 					/>
 				</StoreAPIContextProvider>
 			</ControlsProvider>

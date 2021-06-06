@@ -107,7 +107,9 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 		DataDefinitionFieldLinkResource.Builder builder =
 			DataDefinitionFieldLinkResource.builder();
 
-		dataDefinitionFieldLinkResource = builder.locale(
+		dataDefinitionFieldLinkResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -208,7 +210,7 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 		Long irrelevantDataDefinitionId =
 			testGetDataDefinitionDataDefinitionFieldLinkPage_getIrrelevantDataDefinitionId();
 
-		if ((irrelevantDataDefinitionId != null)) {
+		if (irrelevantDataDefinitionId != null) {
 			DataDefinitionFieldLink irrelevantDataDefinitionFieldLink =
 				testGetDataDefinitionDataDefinitionFieldLinkPage_addDataDefinitionFieldLink(
 					irrelevantDataDefinitionId,
@@ -339,8 +341,8 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 		}
 	}
 
-	protected void assertValid(
-		DataDefinitionFieldLink dataDefinitionFieldLink) {
+	protected void assertValid(DataDefinitionFieldLink dataDefinitionFieldLink)
+		throws Exception {
 
 		boolean valid = true;
 
@@ -405,7 +407,7 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.data.engine.rest.dto.v2_0.
 						DataDefinitionFieldLink.class)) {
 
@@ -440,7 +442,7 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -525,9 +527,22 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -707,12 +722,12 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -722,10 +737,10 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

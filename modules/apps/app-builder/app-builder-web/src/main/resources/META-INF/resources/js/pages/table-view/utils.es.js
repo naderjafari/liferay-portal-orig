@@ -12,16 +12,20 @@
  * details.
  */
 
-import dom from 'metal-dom';
+import {
+	addItem,
+	updateItem,
+} from 'data-engine-js-components-web/js/utils/client.es';
+import {DataDefinitionUtils} from 'data-engine-taglib';
 
 export const getColumnIndex = (node) => {
-	const rowNode = dom.closest(node, 'tr');
+	const rowNode = node.closest('tr');
 
 	if (!rowNode) {
 		return -1;
 	}
 
-	const columnNode = dom.closest(node, 'td,th');
+	const columnNode = node.closest('td,th');
 
 	if (!columnNode) {
 		return -1;
@@ -50,6 +54,22 @@ export const getColumns = (container) => {
 	return container.querySelectorAll(`table tbody > tr:first-of-type > td`);
 };
 
+export const getFieldLabel = (dataDefinition, editingLanguageId, fieldName) => {
+	const field = DataDefinitionUtils.getDataDefinitionField(
+		dataDefinition,
+		fieldName
+	);
+
+	if (field) {
+		return (
+			field.label[editingLanguageId] ||
+			field.label[dataDefinition.defaultLanguageId]
+		);
+	}
+
+	return fieldName;
+};
+
 export const getFieldTypeLabel = (fieldTypes, fieldType) => {
 	const fieldTypeObject = fieldTypes.find(({name}) => name === fieldType);
 
@@ -58,4 +78,52 @@ export const getFieldTypeLabel = (fieldTypes, fieldType) => {
 	}
 
 	return fieldType;
+};
+
+export const getDestructuredFields = (dataDefinition, dataListView) => {
+	const {fieldNames} = dataListView;
+	const fields = [];
+
+	fieldNames.forEach((fieldName) => {
+		dataDefinition.dataDefinitionFields.forEach((dataDefinitionField) => {
+			const {name, nestedDataDefinitionFields} = dataDefinitionField;
+
+			if (nestedDataDefinitionFields.length) {
+				const nested = nestedDataDefinitionFields.find(
+					({name: nestedName}) => nestedName === fieldName
+				);
+
+				if (nested) {
+					fields.push(nested);
+				}
+			}
+			else if (name === fieldName) {
+				fields.push(dataDefinitionField);
+			}
+		});
+	});
+
+	return fields;
+};
+
+export const getTableViewTitle = ({id}) => {
+	if (id) {
+		return Liferay.Language.get('edit-table-view');
+	}
+
+	return Liferay.Language.get('new-table-view');
+};
+
+export const saveTableView = (dataDefinition, dataListView) => {
+	if (dataListView.id) {
+		return updateItem({
+			endpoint: `/o/data-engine/v2.0/data-list-views/${dataListView.id}`,
+			item: dataListView,
+		});
+	}
+
+	return addItem(
+		`/o/data-engine/v2.0/data-definitions/${dataDefinition.id}/data-list-views`,
+		dataListView
+	);
 };

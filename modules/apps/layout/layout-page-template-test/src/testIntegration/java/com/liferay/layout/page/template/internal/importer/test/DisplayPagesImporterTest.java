@@ -24,6 +24,7 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServ
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
@@ -176,7 +177,7 @@ public class DisplayPagesImporterTest {
 	private File _generateZipFile(String testCaseName) throws Exception {
 		ZipWriter zipWriter = ZipWriterFactoryUtil.getZipWriter();
 
-		StringBuilder sb = new StringBuilder(3);
+		StringBundler sb = new StringBundler(3);
 
 		sb.append(_BASE_PATH + testCaseName);
 		sb.append(StringPool.FORWARD_SLASH + _ROOT_FOLDER);
@@ -288,9 +289,9 @@ public class DisplayPagesImporterTest {
 			true);
 
 		while (enumeration.hasMoreElements()) {
-			URL elementUrl = enumeration.nextElement();
+			URL elementURL = enumeration.nextElement();
 
-			_addZipWriterEntry(zipWriter, elementUrl);
+			_addZipWriterEntry(zipWriter, elementURL);
 		}
 
 		enumeration = _bundle.findEntries(
@@ -299,9 +300,9 @@ public class DisplayPagesImporterTest {
 			true);
 
 		while (enumeration.hasMoreElements()) {
-			URL elementUrl = enumeration.nextElement();
+			URL elementURL = enumeration.nextElement();
 
-			_addZipWriterEntry(zipWriter, elementUrl);
+			_addZipWriterEntry(zipWriter, elementURL);
 		}
 	}
 

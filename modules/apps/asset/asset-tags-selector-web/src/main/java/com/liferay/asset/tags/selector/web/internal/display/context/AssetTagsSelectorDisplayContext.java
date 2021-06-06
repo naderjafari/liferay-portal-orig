@@ -17,6 +17,7 @@ package com.liferay.asset.tags.selector.web.internal.display.context;
 import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.asset.kernel.service.AssetTagServiceUtil;
 import com.liferay.asset.tags.selector.web.internal.search.EntriesChecker;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -80,15 +81,17 @@ public class AssetTagsSelectorDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", _getMvcPath());
-		portletURL.setParameter("groupIds", StringUtil.merge(_getGroupIds()));
-		portletURL.setParameter("eventName", getEventName());
-		portletURL.setParameter(
-			"selectedTagNames", StringUtil.merge(getSelectedTagNames()));
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			_getMvcPath()
+		).setParameter(
+			"eventName", getEventName()
+		).setParameter(
+			"groupIds", StringUtil.merge(_getGroupIds())
+		).setParameter(
+			"selectedTagNames", StringUtil.merge(getSelectedTagNames())
+		).build();
 	}
 
 	public String[] getSelectedTagNames() {
@@ -110,9 +113,7 @@ public class AssetTagsSelectorDisplayContext {
 		SearchContainer<AssetTag> tagsSearchContainer = new SearchContainer(
 			_renderRequest, getPortletURL(), null, "there-are-no-tags");
 
-		String orderByCol = _getOrderByCol();
-
-		tagsSearchContainer.setOrderByCol(orderByCol);
+		tagsSearchContainer.setOrderByCol(_getOrderByCol());
 
 		boolean orderByAsc = false;
 
@@ -154,14 +155,14 @@ public class AssetTagsSelectorDisplayContext {
 			return _groupIds;
 		}
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)_httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
 		_groupIds = StringUtil.split(
 			ParamUtil.getString(_httpServletRequest, "groupIds"), 0L);
 
 		if (ArrayUtil.isEmpty(_groupIds)) {
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)_httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
+
 			_groupIds = new long[] {themeDisplay.getScopeGroupId()};
 		}
 

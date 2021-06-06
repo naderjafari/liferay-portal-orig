@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -44,10 +46,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WorkflowTaskAssignToMe")
+@GraphQLName(
+	description = "Represents a write-only schema to assign a workflow task to the currently logged-in user.",
+	value = "WorkflowTaskAssignToMe"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WorkflowTaskAssignToMe")
-public class WorkflowTaskAssignToMe {
+public class WorkflowTaskAssignToMe implements Serializable {
 
 	public static WorkflowTaskAssignToMe toDTO(String json) {
 		return ObjectMapperUtil.readValue(WorkflowTaskAssignToMe.class, json);
@@ -220,6 +225,7 @@ public class WorkflowTaskAssignToMe {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.WorkflowTaskAssignToMe",
 		name = "x-class-name"
 	)
@@ -255,7 +261,7 @@ public class WorkflowTaskAssignToMe {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -294,7 +300,7 @@ public class WorkflowTaskAssignToMe {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

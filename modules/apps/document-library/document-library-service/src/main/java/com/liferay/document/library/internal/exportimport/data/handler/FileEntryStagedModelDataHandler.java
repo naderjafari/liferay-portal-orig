@@ -58,6 +58,7 @@ import com.liferay.exportimport.kernel.lar.StagedModelModifiedDateComparator;
 import com.liferay.exportimport.portlet.data.handler.util.ExportImportGroupedModelUtil;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -463,7 +464,7 @@ public class FileEntryStagedModelDataHandler
 				return;
 			}
 
-			importMetaData(
+			boolean updateFileEntry = importMetaData(
 				portletDataContext, fileEntryElement, fileEntry,
 				serviceContext);
 
@@ -479,13 +480,14 @@ public class FileEntryStagedModelDataHandler
 
 						FileEntry existingTitleFileEntry =
 							FileEntryUtil.fetchByR_F_T(
-								repositoryId, folderId, fileEntry.getTitle());
+								portletDataContext.getScopeGroupId(), folderId,
+								fileEntry.getTitle());
 
 						if (existingTitleFileEntry == null) {
 							existingTitleFileEntry =
 								FileEntryUtil.fetchByR_F_FN(
-									repositoryId, folderId,
-									fileEntry.getFileName());
+									portletDataContext.getScopeGroupId(),
+									folderId, fileEntry.getFileName());
 						}
 
 						if (existingTitleFileEntry != null) {
@@ -504,10 +506,12 @@ public class FileEntryStagedModelDataHandler
 							fileEntry.getTitle(), fileEntry.getExtension());
 
 					importedFileEntry = _dlAppLocalService.addFileEntry(
-						userId, repositoryId, folderId, fileEntry.getFileName(),
+						fileEntry.getExternalReferenceCode(), userId,
+						repositoryId, folderId, fileEntry.getFileName(),
 						fileEntry.getMimeType(), fileEntryTitle,
 						fileEntry.getDescription(), null, inputStream,
-						fileEntry.getSize(), serviceContext);
+						fileEntry.getSize(), fileEntry.getExpirationDate(),
+						fileEntry.getReviewDate(), serviceContext);
 
 					if (fileEntry.isInTrash()) {
 						importedFileEntry =
@@ -522,7 +526,6 @@ public class FileEntryStagedModelDataHandler
 					boolean indexEnabled = serviceContext.isIndexingEnabled();
 
 					boolean deleteFileEntry = false;
-					boolean updateFileEntry = false;
 
 					if (!Objects.equals(
 							fileVersionUuid,
@@ -581,7 +584,9 @@ public class FileEntryStagedModelDataHandler
 									fileEntry.getMimeType(), fileEntryTitle,
 									fileEntry.getDescription(), null,
 									DLVersionNumberIncrease.MINOR, inputStream,
-									fileEntry.getSize(), serviceContext);
+									fileEntry.getSize(),
+									fileEntry.getExpirationDate(),
+									fileEntry.getReviewDate(), serviceContext);
 						}
 						else {
 							_dlAppLocalService.updateAsset(
@@ -645,10 +650,12 @@ public class FileEntryStagedModelDataHandler
 					fileEntry.getTitle(), fileEntry.getExtension());
 
 				importedFileEntry = _dlAppLocalService.addFileEntry(
-					userId, repositoryId, folderId, fileEntry.getFileName(),
-					fileEntry.getMimeType(), fileEntryTitle,
-					fileEntry.getDescription(), null, inputStream,
-					fileEntry.getSize(), serviceContext);
+					fileEntry.getExternalReferenceCode(), userId, repositoryId,
+					folderId, fileEntry.getFileName(), fileEntry.getMimeType(),
+					fileEntryTitle, fileEntry.getDescription(), null,
+					inputStream, fileEntry.getSize(),
+					fileEntry.getExpirationDate(), fileEntry.getReviewDate(),
+					serviceContext);
 			}
 
 			for (DLPluggableContentDataHandler<?>
@@ -738,6 +745,8 @@ public class FileEntryStagedModelDataHandler
 
 		structureFields.addAttribute("ddm-form-values-path", ddmFormValuesPath);
 
+		structureFields.addAttribute(
+			"structureKey", ddmStructure.getStructureKey());
 		structureFields.addAttribute("structureUuid", ddmStructure.getUuid());
 
 		com.liferay.dynamic.data.mapping.storage.DDMFormValues ddmFormValues =
@@ -811,7 +820,7 @@ public class FileEntryStagedModelDataHandler
 		return new String[] {AssetDisplayPageEntry.class.getName()};
 	}
 
-	protected void importMetaData(
+	protected boolean importMetaData(
 			PortletDataContext portletDataContext, Element fileEntryElement,
 			FileEntry fileEntry, ServiceContext serviceContext)
 		throws Exception {
@@ -835,11 +844,13 @@ public class FileEntryStagedModelDataHandler
 		if (existingDLFileEntryType == null) {
 			serviceContext.setAttribute("fileEntryTypeId", -1);
 
-			return;
+			return false;
 		}
 
 		serviceContext.setAttribute(
 			"fileEntryTypeId", existingDLFileEntryType.getFileEntryTypeId());
+
+		boolean updateFileEntry = false;
 
 		List<DDMStructure> ddmStructures =
 			existingDLFileEntryType.getDDMStructures();
@@ -847,11 +858,17 @@ public class FileEntryStagedModelDataHandler
 		for (DDMStructure ddmStructure : ddmStructures) {
 			Element structureFieldsElement =
 				(Element)fileEntryElement.selectSingleNode(
-					"structure-fields[@structureUuid='".concat(
-						ddmStructure.getUuid()
-					).concat(
-						"']"
-					));
+					StringBundler.concat(
+						"structure-fields[@structureUuid='",
+						ddmStructure.getUuid(), "']"));
+
+			if (structureFieldsElement == null) {
+				structureFieldsElement =
+					(Element)fileEntryElement.selectSingleNode(
+						StringBundler.concat(
+							"structure-fields[@structureKey='",
+							ddmStructure.getStructureKey(), "']"));
+			}
 
 			if (structureFieldsElement == null) {
 				continue;
@@ -864,7 +881,11 @@ public class FileEntryStagedModelDataHandler
 				DDMFormValues.class.getName() + StringPool.POUND +
 					ddmStructure.getStructureId(),
 				ddmFormValues);
+
+			updateFileEntry = true;
 		}
+
+		return updateFileEntry;
 	}
 
 	@Override
@@ -1081,8 +1102,8 @@ public class FileEntryStagedModelDataHandler
 		catch (PortalException | SystemException exception) {
 			throw exception;
 		}
-		catch (Throwable t) {
-			throw new PortalException(t);
+		catch (Throwable throwable) {
+			throw new PortalException(throwable);
 		}
 		finally {
 			ServiceContextThreadLocal.popServiceContext();

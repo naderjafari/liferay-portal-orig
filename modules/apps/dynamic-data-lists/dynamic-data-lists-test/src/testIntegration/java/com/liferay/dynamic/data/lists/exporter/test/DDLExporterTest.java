@@ -109,7 +109,6 @@ public class DDLExporterTest {
 	public void setUp() throws Exception {
 		_availableLocales = DDMFormTestUtil.createAvailableLocales(
 			LocaleUtil.US);
-		_defaultLocale = LocaleUtil.US;
 		_group = GroupTestUtil.addGroup();
 
 		_originalPermissionChecker =
@@ -657,10 +656,10 @@ public class DDLExporterTest {
 				_group.getGroupId(), TestPropsValues.getUserId());
 
 		FileEntry fileEntry = DLAppLocalServiceUtil.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "file.txt",
-			ContentTypes.TEXT_PLAIN, TestDataConstants.TEST_BYTE_ARRAY,
-			serviceContext);
+			ContentTypes.TEXT_PLAIN, TestDataConstants.TEST_BYTE_ARRAY, null,
+			null, serviceContext);
 
 		JSONObject jsonObject = JSONUtil.put(
 			"groupId", fileEntry.getGroupId()
@@ -823,7 +822,7 @@ public class DDLExporterTest {
 
 	private Set<Locale> _availableLocales;
 	private Map<DDMFormFieldType, String> _ddmFormFieldDataTypes;
-	private Locale _defaultLocale;
+	private final Locale _defaultLocale = LocaleUtil.US;
 	private Map<DDMFormFieldType, String> _fieldValues;
 
 	@DeleteAfterTestRun

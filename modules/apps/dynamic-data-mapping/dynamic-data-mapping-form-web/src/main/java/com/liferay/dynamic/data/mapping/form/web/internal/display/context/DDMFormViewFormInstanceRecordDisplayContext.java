@@ -25,7 +25,6 @@ import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstance;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecord;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstanceVersion;
-import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.model.DDMStructureVersion;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalService;
@@ -37,6 +36,7 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
@@ -77,14 +77,15 @@ public class DDMFormViewFormInstanceRecordDisplayContext {
 			httpServletRequest);
 	}
 
-	public String getDDMFormHTML(RenderRequest renderRequest)
-		throws PortalException {
+	public Map<String, Object> getDDMFormContext(RenderRequest renderRequest)
+		throws Exception {
 
-		return getDDMFormHTML(renderRequest, true);
+		return getDDMFormContext(renderRequest, true);
 	}
 
-	public String getDDMFormHTML(RenderRequest renderRequest, boolean readOnly)
-		throws PortalException {
+	public Map<String, Object> getDDMFormContext(
+			RenderRequest renderRequest, boolean readOnly)
+		throws Exception {
 
 		DDMFormInstanceRecord formInstanceRecord = getDDMFormInstanceRecord();
 
@@ -97,15 +98,19 @@ public class DDMFormViewFormInstanceRecordDisplayContext {
 		DDMStructureVersion structureVersion =
 			formInstanceVersion.getStructureVersion();
 
-		DDMFormRenderingContext formRenderingContext =
+		DDMFormRenderingContext ddmFormRenderingContext =
 			createDDMFormRenderingContext(
 				structureVersion.getDDMForm(), readOnly);
 
 		DDMFormValues formValues = getDDMFormValues(
 			renderRequest, formInstanceRecord, structureVersion);
 
-		formRenderingContext.setDDMFormValues(formValues);
-		formRenderingContext.setLocale(formValues.getDefaultLocale());
+		ddmFormRenderingContext.setContainerId(
+			"ddmForm".concat(StringUtil.randomString()));
+		ddmFormRenderingContext.setDDMFormValues(formValues);
+		ddmFormRenderingContext.setLocale(formValues.getDefaultLocale());
+
+		DDMForm ddmForm = structureVersion.getDDMForm();
 
 		DDMFormInstanceVersion latestApprovedFormInstanceVersion =
 			_ddmFormInstanceVersionLocalService.getLatestFormInstanceVersion(
@@ -116,13 +121,20 @@ public class DDMFormViewFormInstanceRecordDisplayContext {
 			latestApprovedFormInstanceVersion.getStructureVersion();
 
 		updateDDMFormFields(
-			structureVersion.getDDMForm(),
-			latestApprovedStructureVersion.getDDMForm());
+			ddmForm, latestApprovedStructureVersion.getDDMForm());
 
-		DDMFormLayout formLayout = structureVersion.getDDMFormLayout();
+		Map<String, DDMFormField> ddmFormFieldsMap =
+			ddmForm.getDDMFormFieldsMap(true);
 
-		return _ddmFormRenderer.render(
-			structureVersion.getDDMForm(), formLayout, formRenderingContext);
+		for (DDMFormField ddmFormField : ddmFormFieldsMap.values()) {
+			if (readOnly) {
+				ddmFormField.setProperty("requireConfirmation", false);
+			}
+		}
+
+		return _ddmFormRenderer.getDDMFormTemplateContext(
+			ddmForm, structureVersion.getDDMFormLayout(),
+			ddmFormRenderingContext);
 	}
 
 	protected DDMFormRenderingContext createDDMFormRenderingContext(

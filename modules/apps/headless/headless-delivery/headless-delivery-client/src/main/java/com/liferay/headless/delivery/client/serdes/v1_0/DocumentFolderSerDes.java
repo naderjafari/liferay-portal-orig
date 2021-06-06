@@ -73,6 +73,20 @@ public class DocumentFolderSerDes {
 			sb.append(_toJSON(documentFolder.getActions()));
 		}
 
+		if (documentFolder.getAssetLibraryKey() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"assetLibraryKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(documentFolder.getAssetLibraryKey()));
+
+			sb.append("\"");
+		}
+
 		if (documentFolder.getCreator() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -266,6 +280,15 @@ public class DocumentFolderSerDes {
 			map.put("actions", String.valueOf(documentFolder.getActions()));
 		}
 
+		if (documentFolder.getAssetLibraryKey() == null) {
+			map.put("assetLibraryKey", null);
+		}
+		else {
+			map.put(
+				"assetLibraryKey",
+				String.valueOf(documentFolder.getAssetLibraryKey()));
+		}
+
 		if (documentFolder.getCreator() == null) {
 			map.put("creator", null);
 		}
@@ -402,6 +425,12 @@ public class DocumentFolderSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "assetLibraryKey")) {
+				if (jsonParserFieldValue != null) {
+					documentFolder.setAssetLibraryKey(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "creator")) {
 				if (jsonParserFieldValue != null) {
 					documentFolder.setCreator(
@@ -488,10 +517,6 @@ public class DocumentFolderSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -520,7 +545,7 @@ public class DocumentFolderSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -556,7 +581,7 @@ public class DocumentFolderSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

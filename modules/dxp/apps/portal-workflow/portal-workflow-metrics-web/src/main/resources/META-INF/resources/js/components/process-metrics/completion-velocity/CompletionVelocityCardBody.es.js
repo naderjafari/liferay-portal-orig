@@ -9,15 +9,15 @@
  * distribution rights of the Software.
  */
 
+import ClayPanel from '@clayui/panel';
 import React from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
 import ContentView from '../../../shared/components/content-view/ContentView.es';
 import ReloadButton from '../../../shared/components/list/ReloadButton.es';
 import {formatNumber} from '../../../shared/util/numeral.es';
 import VelocityChart from './VelocityChart.es';
 
-const Body = (props) => {
+function Body(props) {
 	const statesProps = {
 		errorProps: {
 			actionButton: <ReloadButton />,
@@ -32,7 +32,7 @@ const Body = (props) => {
 	};
 
 	return (
-		<Panel.Body elementClasses="pt-0">
+		<ClayPanel.Body className="pt-0">
 			<ContentView {...statesProps}>
 				{props.data ? (
 					<>
@@ -44,11 +44,11 @@ const Body = (props) => {
 					<></>
 				)}
 			</ContentView>
-		</Panel.Body>
+		</ClayPanel.Body>
 	);
-};
+}
 
-const Info = ({data, velocityUnit}) => {
+function Info({data, velocityUnit}) {
 	const formattedValue = formatNumber(data.value, '0[.]00');
 
 	return (
@@ -57,8 +57,8 @@ const Info = ({data, velocityUnit}) => {
 			<span className="velocity-unit">{velocityUnit.name}</span>
 		</div>
 	);
-};
+}
 
 Body.Info = Info;
 
-export {Body};
+export default Body;

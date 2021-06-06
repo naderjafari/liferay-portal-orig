@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("DocumentBulkSelection")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DocumentBulkSelection")
-public class DocumentBulkSelection {
+public class DocumentBulkSelection implements Serializable {
 
 	public static DocumentBulkSelection toDTO(String json) {
 		return ObjectMapperUtil.readValue(DocumentBulkSelection.class, json);
@@ -177,6 +179,7 @@ public class DocumentBulkSelection {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.bulk.rest.dto.v1_0.DocumentBulkSelection",
 		name = "x-class-name"
 	)
@@ -212,7 +215,7 @@ public class DocumentBulkSelection {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -251,7 +254,7 @@ public class DocumentBulkSelection {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

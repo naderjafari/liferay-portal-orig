@@ -53,7 +53,7 @@
 <!--ACTIVITIES-->
 <tr>
 	<td>ACTIVITIES</td>
-	<td>//div[contains(@class,'panel-title') and contains(.,'Activities')]/a</td>
+	<td>//span[contains(@class,'panel-title') and contains(.,'Activities')]</td>
 	<td></td>
 </tr>
 <tr>

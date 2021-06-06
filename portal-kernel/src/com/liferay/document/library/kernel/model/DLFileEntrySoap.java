@@ -24,8 +24,10 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.documentlibrary.service.http.DLFileEntryServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class DLFileEntrySoap implements Serializable {
 
 	public static DLFileEntrySoap toSoapModel(DLFileEntry model) {
@@ -34,6 +36,7 @@ public class DLFileEntrySoap implements Serializable {
 		soapModel.setMvccVersion(model.getMvccVersion());
 		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setUuid(model.getUuid());
+		soapModel.setExternalReferenceCode(model.getExternalReferenceCode());
 		soapModel.setFileEntryId(model.getFileEntryId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
@@ -61,6 +64,8 @@ public class DLFileEntrySoap implements Serializable {
 		soapModel.setCustom1ImageId(model.getCustom1ImageId());
 		soapModel.setCustom2ImageId(model.getCustom2ImageId());
 		soapModel.setManualCheckInRequired(model.isManualCheckInRequired());
+		soapModel.setExpirationDate(model.getExpirationDate());
+		soapModel.setReviewDate(model.getReviewDate());
 		soapModel.setLastPublishDate(model.getLastPublishDate());
 
 		return soapModel;
@@ -137,6 +142,14 @@ public class DLFileEntrySoap implements Serializable {
 
 	public void setUuid(String uuid) {
 		_uuid = uuid;
+	}
+
+	public String getExternalReferenceCode() {
+		return _externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		_externalReferenceCode = externalReferenceCode;
 	}
 
 	public long getFileEntryId() {
@@ -359,6 +372,22 @@ public class DLFileEntrySoap implements Serializable {
 		_manualCheckInRequired = manualCheckInRequired;
 	}
 
+	public Date getExpirationDate() {
+		return _expirationDate;
+	}
+
+	public void setExpirationDate(Date expirationDate) {
+		_expirationDate = expirationDate;
+	}
+
+	public Date getReviewDate() {
+		return _reviewDate;
+	}
+
+	public void setReviewDate(Date reviewDate) {
+		_reviewDate = reviewDate;
+	}
+
 	public Date getLastPublishDate() {
 		return _lastPublishDate;
 	}
@@ -370,6 +399,7 @@ public class DLFileEntrySoap implements Serializable {
 	private long _mvccVersion;
 	private long _ctCollectionId;
 	private String _uuid;
+	private String _externalReferenceCode;
 	private long _fileEntryId;
 	private long _groupId;
 	private long _companyId;
@@ -397,6 +427,8 @@ public class DLFileEntrySoap implements Serializable {
 	private long _custom1ImageId;
 	private long _custom2ImageId;
 	private boolean _manualCheckInRequired;
+	private Date _expirationDate;
+	private Date _reviewDate;
 	private Date _lastPublishDate;
 
 }

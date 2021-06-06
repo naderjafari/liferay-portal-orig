@@ -12,18 +12,38 @@
  * details.
  */
 
+import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
+import useQuery from 'data-engine-js-components-web/js/hooks/useQuery.es';
+import {
+	addItem,
+	parseResponse,
+	updateItem,
+} from 'data-engine-js-components-web/js/utils/client.es';
+import {
+	errorToast,
+	successToast,
+} from 'data-engine-js-components-web/js/utils/toast.es';
+import {createResourceURL, fetch} from 'frontend-js-web';
 import React, {useContext, useEffect, useRef, useState} from 'react';
 
 import {AppContext} from '../../AppContext.es';
-import Button from '../../components/button/Button.es';
 import {useKeyDown} from '../../hooks/index.es';
 import isClickOutside from '../../utils/clickOutside.es';
-import {addItem, confirmDelete} from '../../utils/client.es';
+import {getValidName} from '../../utils/utils.es';
 import ListObjects from '../object/ListObjects.es';
 import CustomObjectPopover from './CustomObjectPopover.es';
 
+const queryFields = [
+	'dateCreated',
+	'dateModified',
+	'defaultLanguageId',
+	'id',
+	'name',
+].join(',');
+
 export default ({history}) => {
-	const {basePortletURL} = useContext(AppContext);
+	const {basePortletURL, baseResourceURL, namespace} = useContext(AppContext);
+	const [editMode, setEditMode] = useState(null);
 	const addButtonRef = useRef();
 	const defaultLanguageId = Liferay.ThemeDisplay.getDefaultLanguageId();
 	const emptyStateButtonRef = useRef();
@@ -31,6 +51,89 @@ export default ({history}) => {
 
 	const [alignElement, setAlignElement] = useState(addButtonRef.current);
 	const [isPopoverVisible, setPopoverVisible] = useState(false);
+	const [{showCustomObjectPopover}] = useQuery(history);
+
+	const confirmDelete = ({id: dataDefinitionId}) => {
+		return new Promise((resolve, reject) => {
+			const confirmed = confirm(
+				Liferay.Language.get('are-you-sure-you-want-to-delete-this')
+			);
+
+			if (confirmed) {
+				fetch(
+					createResourceURL(baseResourceURL, {
+						p_p_resource_id: '/app_builder/delete_data_definition',
+					}),
+					{
+						body: new URLSearchParams(
+							Liferay.Util.ns(namespace, {dataDefinitionId})
+						),
+						method: 'POST',
+					}
+				)
+					.then(parseResponse)
+					.then(() => resolve(true))
+					.then(() =>
+						successToast(
+							Liferay.Language.get(
+								'the-item-was-deleted-successfully'
+							)
+						)
+					)
+					.catch(({errorMessage}) => {
+						errorToast(errorMessage);
+						reject(true);
+					});
+			}
+			else {
+				resolve(false);
+			}
+		});
+	};
+
+	const onCancelRenameAction = () => {
+		return Promise.resolve(setEditMode(null));
+	};
+
+	const onRenameAction = ({originalItem}, value, refetch) => {
+		updateItem({
+			endpoint: `/o/data-engine/v2.0/data-definitions/${originalItem.id}`,
+			item: {
+				name: {
+					...originalItem.name,
+					[originalItem.defaultLanguageId]: getValidName(
+						Liferay.Language.get('untitled-custom-object'),
+						value
+					),
+				},
+			},
+			method: 'PATCH',
+		})
+			.then(refetch)
+			.then(onCancelRenameAction)
+			.then(() =>
+				successToast(
+					Liferay.Language.get('the-object-was-renamed-successfully')
+				)
+			)
+			.catch(({errorMessage}) => {
+				errorToast(errorMessage);
+			});
+	};
+
+	const renameAction = (item, refetch) => {
+		const {id} = item;
+
+		return new Promise((resolve) =>
+			resolve(
+				setEditMode({
+					id,
+					onCancel: onCancelRenameAction,
+					onSave: (value) => onRenameAction(item, value, refetch),
+				})
+			)
+		);
+	};
 
 	const onClickAddButton = ({currentTarget}) => {
 		setAlignElement(currentTarget);
@@ -47,27 +150,45 @@ export default ({history}) => {
 	const onSubmit = ({isAddFormView, name}) => {
 		const addURL = `/o/data-engine/v2.0/data-definitions/by-content-type/app-builder`;
 
-		addItem(addURL, {
+		return addItem(addURL, {
 			availableLanguageIds: [defaultLanguageId],
 			dataDefinitionFields: [],
 			defaultLanguageId,
 			name: {
-				[defaultLanguageId]: name,
+				[defaultLanguageId]: getValidName(
+					Liferay.Language.get('untitled-custom-object'),
+					name
+				),
 			},
-		}).then(({id}) => {
-			if (isAddFormView) {
-				Liferay.Util.navigate(
-					Liferay.Util.PortletURL.createRenderURL(basePortletURL, {
-						dataDefinitionId: id,
-						mvcRenderCommandName: '/edit_form_view',
-						newCustomObject: true,
-					})
-				);
-			}
-			else {
-				history.push(`/custom-object/${id}/form-views/`);
-			}
-		});
+		})
+			.then(({id}) => {
+				if (isAddFormView) {
+					Liferay.Util.navigate(
+						Liferay.Util.PortletURL.createRenderURL(
+							basePortletURL,
+							{
+								dataDefinitionId: id,
+								mvcRenderCommandName:
+									'/app_builder/edit_form_view',
+								newCustomObject: true,
+							}
+						)
+					);
+				}
+				else {
+					successToast(
+						Liferay.Language.get(
+							'the-object-was-created-successfully'
+						)
+					);
+					history.push(`/custom-object/${id}/form-views/`);
+				}
+			})
+			.catch((error) => {
+				errorToast(error.message);
+
+				return Promise.reject();
+			});
 	};
 
 	useEffect(() => {
@@ -89,6 +210,13 @@ export default ({history}) => {
 		return () => window.removeEventListener('click', handler);
 	}, [addButtonRef, emptyStateButtonRef, popoverRef]);
 
+	useEffect(() => {
+		if (addButtonRef.current && showCustomObjectPopover) {
+			setAlignElement(addButtonRef.current);
+			setPopoverVisible(true);
+		}
+	}, [addButtonRef, showCustomObjectPopover]);
+
 	useKeyDown(() => {
 		if (isPopoverVisible) {
 			setPopoverVisible(false);
@@ -102,33 +230,36 @@ export default ({history}) => {
 				listViewProps={{
 					actions: [
 						{
-							action: confirmDelete(
-								'/o/data-engine/v2.0/data-definitions/'
-							),
+							name: 'divider',
+						},
+						{
+							action: renameAction,
+							name: Liferay.Language.get('rename'),
+						},
+						{
+							action: confirmDelete,
 							name: Liferay.Language.get('delete'),
 						},
 					],
 					addButton: () => (
-						<div ref={addButtonRef}>
-							<Button
-								className="nav-btn nav-btn-monospaced"
-								onClick={onClickAddButton}
-								symbol="plus"
-								tooltip={Liferay.Language.get(
-									'new-custom-object'
-								)}
-							/>
-						</div>
+						<ClayButtonWithIcon
+							className="nav-btn nav-btn-monospaced"
+							onClick={onClickAddButton}
+							ref={addButtonRef}
+							symbol="plus"
+							title={Liferay.Language.get('new-custom-object')}
+						/>
 					),
+					editMode,
 					emptyState: {
 						button: () => (
-							<Button
+							<ClayButton
 								displayType="secondary"
 								onClick={onClickAddButton}
 								ref={emptyStateButtonRef}
 							>
 								{Liferay.Language.get('new-custom-object')}
-							</Button>
+							</ClayButton>
 						),
 						description: Liferay.Language.get(
 							'custom-objects-define-the-types-of-data-your-business-application-needs'
@@ -137,7 +268,7 @@ export default ({history}) => {
 							'there-are-no-custom-objects-yet'
 						),
 					},
-					endpoint: `/o/data-engine/v2.0/data-definitions/by-content-type/app-builder`,
+					endpoint: `/o/data-engine/v2.0/data-definitions/by-content-type/app-builder?fields=${queryFields}`,
 				}}
 				objectType="custom-object"
 			/>

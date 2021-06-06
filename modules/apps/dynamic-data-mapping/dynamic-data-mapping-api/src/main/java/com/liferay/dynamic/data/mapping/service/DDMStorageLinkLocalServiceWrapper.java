@@ -53,8 +53,9 @@ public class DDMStorageLinkLocalServiceWrapper
 
 	@Override
 	public DDMStorageLink addStorageLink(
-		long classNameId, long classPK, long structureVersionId,
-		com.liferay.portal.kernel.service.ServiceContext serviceContext) {
+			long classNameId, long classPK, long structureVersionId,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _ddmStorageLinkLocalService.addStorageLink(
 			classNameId, classPK, structureVersionId, serviceContext);
@@ -152,6 +153,13 @@ public class DDMStorageLinkLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _ddmStorageLinkLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _ddmStorageLinkLocalService.dynamicQuery();
 	}
@@ -240,6 +248,11 @@ public class DDMStorageLinkLocalServiceWrapper
 
 		return _ddmStorageLinkLocalService.dynamicQueryCount(
 			dynamicQuery, projection);
+	}
+
+	@Override
+	public DDMStorageLink fetchClassStorageLink(long classPK) {
+		return _ddmStorageLinkLocalService.fetchClassStorageLink(classPK);
 	}
 
 	@Override

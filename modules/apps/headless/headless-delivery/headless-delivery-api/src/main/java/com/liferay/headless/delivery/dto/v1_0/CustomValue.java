@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,16 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("CustomValue")
+@GraphQLName(description = "Represents a custom value.", value = "CustomValue")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "CustomValue")
-public class CustomValue {
+public class CustomValue implements Serializable {
 
 	public static CustomValue toDTO(String json) {
 		return ObjectMapperUtil.readValue(CustomValue.class, json);
 	}
 
-	@Schema(description = "The field's content for simple types.")
+	@Schema(description = "The field's content value for simple types.")
 	@Valid
 	public Object getData() {
 		return data;
@@ -74,11 +76,13 @@ public class CustomValue {
 		}
 	}
 
-	@GraphQLField(description = "The field's content for simple types.")
+	@GraphQLField(description = "The field's content value for simple types.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object data;
 
-	@Schema
+	@Schema(
+		description = "The localized field's content values for simple types."
+	)
 	@Valid
 	public Map<String, String> getData_i18n() {
 		return data_i18n;
@@ -104,7 +108,9 @@ public class CustomValue {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The localized field's content values for simple types."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, String> data_i18n;
 
@@ -198,6 +204,7 @@ public class CustomValue {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.CustomValue",
 		name = "x-class-name"
 	)
@@ -233,7 +240,7 @@ public class CustomValue {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -272,7 +279,7 @@ public class CustomValue {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

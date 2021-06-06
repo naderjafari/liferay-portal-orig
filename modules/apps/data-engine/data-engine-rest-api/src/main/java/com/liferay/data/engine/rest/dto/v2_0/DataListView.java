@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -49,7 +51,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("DataListView")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DataListView")
-public class DataListView {
+public class DataListView implements Serializable {
 
 	public static DataListView toDTO(String json) {
 		return ObjectMapperUtil.readValue(DataListView.class, json);
@@ -498,6 +500,7 @@ public class DataListView {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataListView",
 		name = "x-class-name"
 	)
@@ -533,7 +536,7 @@ public class DataListView {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -572,7 +575,7 @@ public class DataListView {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

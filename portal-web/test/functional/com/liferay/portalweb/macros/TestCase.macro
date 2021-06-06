@@ -1,7 +1,6 @@
 definition {
 
 	macro enableMetal {
-
 		SystemSettings.openSystemSettingsAdmin();
 
 		SystemSettings.gotoConfiguration(
@@ -78,8 +77,12 @@ definition {
 		var testNameSkipPortalInstance = PropsUtil.get("test.name.skip.portal.instance");
 		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-		if (("${testPortalInstance}" == "true") && (!(IsTestName(locator1 = "", value1 = "${testNameSkipPortalInstance}")))) {
-			SignIn.signInPortalInstanceSetUp();
+		if (!(IsTestName(locator1 = "", value1 = "${testNameSkipPortalInstance}"))) {
+			HeadlessPortalInstanceAPI.cleanAllPortalInstances(authenticationMethod = "${authenticationMethod}");
+
+			if ("${testPortalInstance}" == "true") {
+				SignIn.signInPortalInstanceSetUp();
+			}
 		}
 	}
 

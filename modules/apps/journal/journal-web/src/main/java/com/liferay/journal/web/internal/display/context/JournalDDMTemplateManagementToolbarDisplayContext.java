@@ -14,6 +14,7 @@
 
 package com.liferay.journal.web.internal.display.context;
 
+import com.liferay.dynamic.data.mapping.configuration.DDMWebConfiguration;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
@@ -23,22 +24,21 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuil
 import com.liferay.journal.constants.JournalPortletKeys;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.web.internal.security.permission.resource.DDMTemplatePermission;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.settings.Settings;
-import com.liferay.portal.kernel.settings.SettingsLocatorHelper;
-import com.liferay.portal.kernel.settings.SettingsLocatorHelperUtil;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.staging.StagingGroupHelper;
@@ -67,6 +67,10 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
 			journalDDMTemplateDisplayContext.getDDMTemplateSearch());
 
+		_ddmWebConfiguration =
+			(DDMWebConfiguration)httpServletRequest.getAttribute(
+				DDMWebConfiguration.class.getName());
+
 		_journalDDMTemplateDisplayContext = journalDDMTemplateDisplayContext;
 	}
 
@@ -76,7 +80,8 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.putData("action", "deleteDDMTemplates");
 				dropdownItem.setIcon("times-circle");
-				dropdownItem.setLabel(LanguageUtil.get(request, "delete"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "delete"));
 				dropdownItem.setQuickAction(true);
 			}
 		).build();
@@ -85,8 +90,9 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 	public String getAvailableActions(DDMTemplate ddmTemplate)
 		throws PortalException {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		if (DDMTemplatePermission.contains(
 				themeDisplay.getPermissionChecker(), ddmTemplate,
@@ -100,11 +106,11 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	@Override
@@ -118,8 +124,9 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 			return null;
 		}
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return new CreationMenu() {
 			{
@@ -130,7 +137,8 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 
 					sb.append(
 						LanguageUtil.get(
-							request, templateLanguageType + "[stands-for]"));
+							httpServletRequest,
+							templateLanguageType + "[stands-for]"));
 					sb.append(StringPool.SPACE);
 					sb.append(StringPool.OPEN_PARENTHESIS);
 					sb.append(StringPool.PERIOD);
@@ -147,16 +155,12 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 								"language", templateLanguageType);
 							dropdownItem.setLabel(
 								LanguageUtil.format(
-									request, "add-x", sb.toString(), false));
+									httpServletRequest, "add-x", sb.toString(),
+									false));
 						});
 				}
 			}
 		};
-	}
-
-	@Override
-	public String getDefaultEventHandler() {
-		return "journalDDMTemplatesManagementToolbarDefaultEventHandler";
 	}
 
 	@Override
@@ -173,8 +177,9 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 
 	@Override
 	public Boolean isSelectable() {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		User user = themeDisplay.getUser();
 
@@ -187,8 +192,9 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 			return false;
 		}
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		Group group = themeDisplay.getScopeGroup();
 
@@ -204,7 +210,7 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 		}
 
 		try {
-			if (_isTemplateCreationEnabled() &&
+			if (_ddmWebConfiguration.enableTemplateCreation() &&
 				DDMTemplatePermission.containsAddTemplatePermission(
 					themeDisplay.getPermissionChecker(),
 					themeDisplay.getScopeGroupId(),
@@ -215,6 +221,9 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return false;
@@ -223,6 +232,11 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 	@Override
 	protected String getDefaultDisplayStyle() {
 		return "icon";
+	}
+
+	@Override
+	protected String getDisplayStyle() {
+		return _journalDDMTemplateDisplayContext.getDisplayStyle();
 	}
 
 	@Override
@@ -252,20 +266,11 @@ public class JournalDDMTemplateManagementToolbarDisplayContext
 				allowedTemplateLanguageTypes, templateLanguageType));
 	}
 
-	private boolean _isTemplateCreationEnabled() {
-		Settings ddmWebConfigurationSettings =
-			_settingsLocatorHelper.getConfigurationBeanSettings(
-				"com.liferay.dynamic.data.mapping.web.internal.configuration." +
-					"DDMWebConfiguration");
+	private static final Log _log = LogFactoryUtil.getLog(
+		JournalDDMTemplateManagementToolbarDisplayContext.class);
 
-		return GetterUtil.getBoolean(
-			ddmWebConfigurationSettings.getValue(
-				"enableTemplateCreation", "true"));
-	}
-
+	private final DDMWebConfiguration _ddmWebConfiguration;
 	private final JournalDDMTemplateDisplayContext
 		_journalDDMTemplateDisplayContext;
-	private final SettingsLocatorHelper _settingsLocatorHelper =
-		SettingsLocatorHelperUtil.getSettingsLocatorHelper();
 
 }

@@ -14,7 +14,10 @@
 
 package com.liferay.wiki.web.internal.portlet.action;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -181,9 +184,6 @@ public class ActionUtil {
 			long nodeId, PortletRequest portletRequest)
 		throws PortalException {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		WikiWebComponentProvider wikiWebComponentProvider =
 			WikiWebComponentProvider.getWikiWebComponentProvider();
 
@@ -194,11 +194,15 @@ public class ActionUtil {
 			nodeId, wikiGroupServiceConfiguration.frontPageName(), 0);
 
 		if (page == null) {
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)portletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
+
 			ServiceContext serviceContext = ServiceContextFactory.getInstance(
 				WikiPage.class.getName(), portletRequest);
 
-			serviceContext.setAddGuestPermissions(true);
 			serviceContext.setAddGroupPermissions(true);
+			serviceContext.setAddGuestPermissions(true);
 
 			boolean workflowEnabled = WorkflowThreadLocal.isEnabled();
 
@@ -238,19 +242,25 @@ public class ActionUtil {
 		LiferayPortletResponse liferayPortletResponse =
 			PortalUtil.getLiferayPortletResponse(portletResponse);
 
-		PortletURL viewPageURL = liferayPortletResponse.createRenderURL();
-
-		viewPageURL.setParameter("mvcRenderCommandName", "wiki/view");
-
 		WikiNode sourceNode = sourcePage.getNode();
 
-		viewPageURL.setParameter("nodeName", sourceNode.getName());
+		PortletURL viewPageURL = PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setMVCRenderCommandName(
+			"wiki/view"
+		).setParameter(
+			"nodeName", sourceNode.getName()
+		).build();
 
-		PortletURL editPageURL = liferayPortletResponse.createRenderURL();
-
-		editPageURL.setParameter("mvcRenderCommandName", "wiki/edit_page");
-		editPageURL.setParameter("nodeId", String.valueOf(nodeId));
-		editPageURL.setParameter("title", title);
+		PortletURL editPageURL = PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setMVCRenderCommandName(
+			"wiki/edit_page"
+		).setParameter(
+			"nodeId", nodeId
+		).setParameter(
+			"title", title
+		).build();
 
 		String attachmentURLPrefix = WikiUtil.getAttachmentURLPrefix(
 			themeDisplay.getPathMain(), themeDisplay.getPlid(), nodeId, title);
@@ -288,6 +298,10 @@ public class ActionUtil {
 			}
 		}
 		catch (NoSuchNodeException noSuchNodeException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchNodeException, noSuchNodeException);
+			}
+
 			node = getFirstVisibleNode(portletRequest);
 		}
 
@@ -333,6 +347,9 @@ public class ActionUtil {
 			}
 		}
 		catch (NoSuchNodeException noSuchNodeException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchNodeException, noSuchNodeException);
+			}
 		}
 
 		if (node == null) {
@@ -423,5 +440,7 @@ public class ActionUtil {
 
 		return defaultForward;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(ActionUtil.class);
 
 }

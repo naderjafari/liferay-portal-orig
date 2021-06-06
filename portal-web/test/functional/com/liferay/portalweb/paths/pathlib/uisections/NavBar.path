@@ -39,6 +39,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ASSET_TEMPLATE</td>
+	<td>//button[contains(@class,'nav-link') and contains(text(),'Templates')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>CONTAINER</td>
 	<td>//div[@class='navbar ' or contains(@class,'navbar-default')]//div[contains(@class,'container')] | //div[contains(@class,'navbar-collapse')]/div[contains(@class,'container')]</td>
 	<td></td>
@@ -54,13 +59,23 @@
 	<td></td>
 </tr>
 <tr>
+	<td>GO_TO_HOME_PAGE_LINK</td>
+	<td>//div[contains(@class,'navbar')]//a[contains(@class,'logo')]//*[contains(@role,'heading')][normalize-space(text())='${key_siteName}']</td>
+	<td></td>
+</tr>
+<tr>
 	<td>HOME</td>
 	<td>//ol[contains(@class,'breadcrumb')]/li//a[contains(.,'Home')]</td>
 	<td></td>
 </tr>
 <tr>
+	<td>LOGO_LINK</td>
+	<td>//a[contains(@class,'navbar-brand')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>MY_SITES</td>
-	<td>//*[contains(@class,'nav-link') and contains(.,'My Sites')]</td>
+	<td>//*[contains(@class,'navbar')]//a[normalize-space()='My Sites']</td>
 	<td></td>
 </tr>
 <tr>
@@ -80,12 +95,17 @@
 </tr>
 <tr>
 	<td>RECENT</td>
-	<td>//button[contains(@class,'navbar-toggler')]/span[contains(.,'Recent')]</td>
+	<td>//*[contains(@class,'navbar')]//a[normalize-space()='Recent']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>SEARCH_TOGGLE_ADVANCED</td>
 	<td>//button[contains(@id,'searchtoggleAdvanced')]/span</td>
+	<td></td>
+</tr>
+<tr>
+	<td>TOGGLE_NAVIGATION</td>
+	<td>//div[contains(@class,'navbar')]//button[contains(@aria-label,'Toggle navigation')]</td>
 	<td></td>
 </tr>
 <tr>

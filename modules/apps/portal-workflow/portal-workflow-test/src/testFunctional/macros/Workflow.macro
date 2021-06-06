@@ -68,11 +68,15 @@ definition {
 	macro approveTaskByActions {
 		Workflow.viewTaskAssignedToMe(
 			ddlDataDefinitionName = "${ddlDataDefinitionName}",
+			multipleTasks = "${multipleTasks}",
+			taskPosition = "${taskPosition}",
 			workflowAssetTitle = "${workflowAssetTitle}",
 			workflowAssetType = "${workflowAssetType}",
 			workflowTask = "${workflowTask}");
 
 		Workflow.gotoTaskAssignedToMeActionsCmd(
+			multipleTasks = "${multipleTasks}",
+			taskPosition = "${taskPosition}",
 			workflowAssetTitle = "${workflowAssetTitle}",
 			workflowTask = "${workflowTask}");
 
@@ -103,6 +107,8 @@ definition {
 
 		Workflow.viewCompletedTask(
 			ddlDataDefinitionName = "${ddlDataDefinitionName}",
+			multipleTasks = "${multipleTasks}",
+			taskPosition = "${taskPosition}",
 			workflowAssetTitle = "${workflowAssetTitle}",
 			workflowAssetType = "${workflowAssetType}",
 			workflowTask = "${workflowTask}");
@@ -111,6 +117,12 @@ definition {
 
 		if (isSet(workflowActivityComment)) {
 			Workflow.gotoCompletedFilter();
+
+			if (isSet(workflowOrder)) {
+				Workflow.clickRevertSortDirection();
+
+				Pause(locator1 = "1000");
+			}
 
 			Workflow._viewActivities(
 				workflowActivityComment = "${workflowActivityComment}",
@@ -155,7 +167,6 @@ definition {
 		Navigator.gotoNavTab(navTab = "Assigned to My Roles");
 
 		while ("${iterator}" != "${numberOfBlogInstances}") {
-
 			if ("${userCount}" == "${numberOfUsers}") {
 				var userCount = "1";
 			}
@@ -244,6 +255,8 @@ definition {
 
 		Workflow.viewTaskAssignedToMe(
 			ddlDataDefinitionName = "${ddlDataDefinitionName}",
+			multipleTasks = "${multipleTasks}",
+			taskPosition = "${taskPosition}",
 			workflowAssetTitle = "${workflowAssetTitle}",
 			workflowAssetType = "${workflowAssetType}",
 			workflowTask = "${workflowTask}");
@@ -277,6 +290,10 @@ definition {
 			workflowAssetTitle = "${workflowAssetTitle}",
 			workflowAssetType = "${workflowAssetType}",
 			workflowTask = "${workflowTask}");
+	}
+
+	macro clickRevertSortDirection {
+		Click(locator1 = "MyWorkflowTasks#REVERSE_SORT_DIRECTION_BUTTON");
 	}
 
 	macro completeWorkflowBlogInstance {
@@ -336,7 +353,6 @@ definition {
 			value1 = "Edit");
 
 		if (IsNotVisible(locator1 = "WorkflowConfiguration#RESOURCE_TABLE_SELECT")) {
-
 			Refresh();
 
 			WaitForSPARefresh();
@@ -378,10 +394,6 @@ definition {
 		AssertElementPresent(locator1 = "Button#DONE");
 
 		Click(locator1 = "Button#DONE");
-
-		Alert.viewSuccessMessage();
-
-		WaitForLiferayEvent.initializeLiferayEventLog();
 	}
 
 	macro createWorkflowBlogInstance {
@@ -434,7 +446,6 @@ definition {
 	}
 
 	macro duplicateSingleApproverWorkflow {
-
 		ApplicationsMenu.gotoPortlet(
 			category = "Workflow",
 			panel = "Applications",
@@ -513,7 +524,14 @@ definition {
 		var key_workflowAssetTitle = "${workflowAssetTitle}";
 		var key_workflowTask = "${workflowTask}";
 
-		Click(locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ACTIONS");
+		if ("${multipleTasks}" == "true") {
+			var key_position = "${taskPosition}";
+
+			Click(locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_SPECIFIC_ACTIONS");
+		}
+		else {
+			Click(locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ACTIONS");
+		}
 	}
 
 	macro gotoTaskAssignedToMyRolesActionsCmd {
@@ -753,14 +771,12 @@ definition {
 	}
 
 	macro tearDownWorkflowDefinitions {
-
 		ApplicationsMenu.gotoPortlet(
 			category = "Workflow",
 			panel = "Applications",
 			portlet = "Process Builder");
 
 		while (IsElementPresent(locator1 = "WorkflowDefinition#DEFINITION_TABLE_EXTRA")) {
-
 			if (IsElementPresent(locator1 = "WorkflowDefinition#DEFINITION_TABLE_DEFINITION_EXTRA_ELLIPSIS")) {
 				Workflow.unpublishWorkflowDefinitionExtra();
 			}
@@ -802,6 +818,8 @@ definition {
 		var key_workflowTask = "${workflowTask}";
 
 		MenuItem.click(menuItem = "Update Due Date");
+
+		SelectFrame(locator1 = "MyWorkflowTasks#IFRAME_UPDATE_DUE_DATE");
 
 		var currentYear = DateUtil.getCurrentYear();
 		var futureYear = ${currentYear} + 1;
@@ -853,6 +871,8 @@ definition {
 
 		MenuItem.click(menuItem = "Update Due Date");
 
+		SelectFrame(locator1 = "MyWorkflowTasks#IFRAME_UPDATE_DUE_DATE");
+
 		var currentYear = DateUtil.getCurrentYear();
 		var futureYear = ${currentYear} + 1;
 
@@ -903,8 +923,6 @@ definition {
 			value1 = "${workflowDefinitionFile}");
 
 		Alert.viewSuccessMessageText(successMessage = "Definition imported successfully.");
-
-		Alert.closeMessage(messageType = "SUCCESS");
 
 		PortletEntry.publish();
 
@@ -1013,20 +1031,41 @@ definition {
 	macro viewCompletedTask {
 		Workflow.gotoCompletedFilter();
 
-		var key_workflowAssetTitle = "${workflowAssetTitle}";
+		if ("${workflowAssetType}" == "Translation") {
+			var key_workflowAssetTitle = "Translation";
+		}
+		else {
+			var key_workflowAssetTitle = "${workflowAssetTitle}";
+		}
+
 		var key_workflowTask = "${workflowTask}";
 
 		AssertTextEquals(
 			locator1 = "MyWorkflowTasks#ASSIGNED_TO_MY_ROLES_TABLE_TASK",
 			value1 = "${workflowTask}");
 
-		AssertTextEquals.assertPartialText(
-			locator1 = "MyWorkflowTasks#COMPLETED_TABLE_ASSET_TITLE",
-			value1 = "${workflowAssetTitle}");
+		if ("${workflowAssetType}" == "Translation") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "MyWorkflowTasks#COMPLETED_TABLE_ASSET_TITLE",
+				value1 = "Translation");
+		}
+		else {
+			AssertTextEquals.assertPartialText(
+				locator1 = "MyWorkflowTasks#COMPLETED_TABLE_ASSET_TITLE",
+				value1 = "${workflowAssetTitle}");
+		}
 
-		AssertTextEquals(
-			locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ASSET_TYPE",
-			value1 = "${workflowAssetType}");
+		if ("${multipleTasks}" == "true") {
+			AssertTextEquals(
+				key_position = "${taskPosition}",
+				locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ASSET_SPECIFIC_TYPE",
+				value1 = "${workflowAssetType}");
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ASSET_TYPE",
+				value1 = "${workflowAssetType}");
+		}
 
 		AssertElementPresent(locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_LAST_ACTIVITY_DATE");
 
@@ -1152,7 +1191,7 @@ definition {
 			value1 = "${workflowAssetTitle}");
 
 		AssertTextEquals.assertPartialText(
-			locator1 = "WorkflowSubmissionsTask#PREVIEW_CONTENT",
+			locator1 = "MyWorkflowTasksTask#PREVIEW_CONTENT",
 			value1 = "${workflowAssetContent}");
 
 		Portlet.viewTitle(portletName = "${workflowSubmissionTitle}");
@@ -1257,17 +1296,30 @@ definition {
 			Pause(locator1 = "1000");
 		}
 
-		AssertTextEquals(
-			locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_TASK",
-			value1 = "${workflowTask}");
+		if ("${multipleTasks}" == "true") {
+			var key_position = "${taskPosition}";
+
+			AssertTextEquals(
+				locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_SPECIFIC_TASK",
+				value1 = "${workflowTask}");
+
+			AssertTextEquals(
+				locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ASSET_SPECIFIC_TYPE",
+				value1 = "${workflowAssetType}");
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_TASK",
+				value1 = "${workflowTask}");
+
+			AssertTextEquals(
+				locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ASSET_TYPE",
+				value1 = "${workflowAssetType}");
+		}
 
 		AssertTextEquals.assertPartialText(
 			locator1 = "MyWorkflowTasks#TABLE_GENERIC_ASSET_TITLE",
 			value1 = "${workflowAssetTitle}");
-
-		AssertTextEquals(
-			locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_ASSET_TYPE",
-			value1 = "${workflowAssetType}");
 
 		AssertElementPresent(locator1 = "MyWorkflowTasks#ASSIGNED_TO_ME_TABLE_LAST_ACTIVITY_DATE");
 
@@ -1367,6 +1419,32 @@ definition {
 		AssertTextEquals(
 			locator1 = "Portlet#H2_HEADER",
 			value1 = "${workflowTask}: ${kfProcessName}");
+	}
+
+	macro viewWebContentWithWorkflowCP {
+		WebContentNavigator.gotoViewStatus(
+			webContentStatus = "PENDING",
+			webContentTitle = "${webContentTitle}");
+
+		AssertTextEquals(
+			key_status = "Pending",
+			locator1 = "AssetWorkflow#WORKFLOW_STATUS",
+			value1 = "Pending");
+
+		AssertTextEquals(
+			locator1 = "TextInput#TITLE",
+			value1 = "${webContentTitle}");
+	}
+
+	macro viewWebContentWithWorkflowStatus {
+		AssertTextEquals(
+			key_status = "${webContentStatus}",
+			locator1 = "WCEditWebContent#WORKFLOW_STATUS",
+			value1 = "${webContentStatus}");
+
+		AssertTextEquals(
+			locator1 = "TextInput#TITLE",
+			value1 = "${webContentTitle}");
 	}
 
 	macro webContentGoToAddCP {

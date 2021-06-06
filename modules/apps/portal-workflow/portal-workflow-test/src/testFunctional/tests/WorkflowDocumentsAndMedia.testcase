@@ -42,9 +42,7 @@ definition {
 
 	@priority = "5"
 	test ApproveInDMFolderCustomWorkflow {
-		property portal.release = "false";
 		property test.name.skip.portal.instance = "WorkflowDocumentsAndMedia#ApproveInDMFolderCustomWorkflow";
-		property testray.component.names = "Training";
 
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
@@ -103,7 +101,7 @@ definition {
 
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 
-		Organization.addMemberCP(
+		Organization.assignUser(
 			orgName = "Space Program Academy of Continuing Education",
 			userFirstName = "userfn",
 			userLastName = "userln",
@@ -265,7 +263,7 @@ definition {
 
 		DMDocumentType.add(
 			dmDocumentTypeDescription = "DM Document Type Description",
-			dmDocumentTypeFieldNames = "Text Box",
+			dmDocumentTypeFieldNames = "Text",
 			dmDocumentTypeName = "DM Document Type Name");
 
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
@@ -369,7 +367,7 @@ definition {
 	@priority = "5"
 	test SaveAsDraftAndViewCategories {
 		property custom.properties = "dl.file.entry.drafts.enabled=true";
-		property testray.component.names = "Training";
+		property portal.acceptance = "true";
 
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 

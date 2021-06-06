@@ -18,6 +18,8 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.concurrent.DefaultNoticeableFuture;
 import com.liferay.portal.kernel.io.Deserializer;
 import com.liferay.portal.kernel.io.Serializer;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
 import com.liferay.portal.kernel.nio.intraband.SystemDataType;
 import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
@@ -82,6 +84,10 @@ public class IntrabandRPCUtilTest {
 						datagram, serializer.toByteBuffer());
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
+
 					throw new RuntimeException();
 				}
 			}
@@ -100,9 +106,9 @@ public class IntrabandRPCUtilTest {
 			Assert.fail();
 		}
 		catch (ExecutionException executionException) {
-			Throwable t = executionException.getCause();
+			Throwable throwable = executionException.getCause();
 
-			Assert.assertEquals(exception.getMessage(), t.getMessage());
+			Assert.assertEquals(exception.getMessage(), throwable.getMessage());
 		}
 	}
 
@@ -228,6 +234,9 @@ public class IntrabandRPCUtilTest {
 		catch (CancellationException cancellationException) {
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		IntrabandRPCUtilTest.class);
 
 	private static class TestProcessCallable
 		implements ProcessCallable<String> {

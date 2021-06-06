@@ -70,7 +70,7 @@ public class CalendarAdminPortletDataHandler extends BasePortletDataHandler {
 
 	public static final String NAMESPACE = "calendar";
 
-	public static final String SCHEMA_VERSION = "1.0.0";
+	public static final String SCHEMA_VERSION = "4.0.0";
 
 	@Override
 	public String[] getClassNames() {
@@ -138,12 +138,6 @@ public class CalendarAdminPortletDataHandler extends BasePortletDataHandler {
 			PortletDataContext portletDataContext, String portletId,
 			PortletPreferences portletPreferences)
 		throws Exception {
-
-		if (portletDataContext.addPrimaryKey(
-				CalendarPortletDataHandler.class, "deleteData")) {
-
-			return portletPreferences;
-		}
 
 		calendarResourceLocalService.deleteCalendarResources(
 			portletDataContext.getScopeGroupId());

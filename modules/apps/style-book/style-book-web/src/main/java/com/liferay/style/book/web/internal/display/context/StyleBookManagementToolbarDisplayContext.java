@@ -19,6 +19,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -35,7 +36,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.ResourceURL;
 
@@ -56,16 +56,16 @@ public class StyleBookManagementToolbarDisplayContext
 		super(
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
 			searchContainer);
+
+		_themeDisplay = (ThemeDisplay)httpServletRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 	}
 
 	@Override
 	public List<DropdownItem> getActionDropdownItems() {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		if (!StyleBookPermission.contains(
-				themeDisplay.getPermissionChecker(),
-				themeDisplay.getScopeGroupId(),
+				_themeDisplay.getPermissionChecker(),
+				_themeDisplay.getScopeGroupId(),
 				StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES)) {
 
 			return Collections.emptyList();
@@ -76,7 +76,8 @@ public class StyleBookManagementToolbarDisplayContext
 				dropdownItem.putData(
 					"action", "deleteSelectedStyleBookEntries");
 				dropdownItem.setIcon("times-circle");
-				dropdownItem.setLabel(LanguageUtil.get(request, "delete"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "delete"));
 				dropdownItem.setQuickAction(true);
 			}
 		).add(
@@ -84,46 +85,31 @@ public class StyleBookManagementToolbarDisplayContext
 				dropdownItem.putData(
 					"action", "exportSelectedStyleBookEntries");
 				dropdownItem.setIcon("import-export");
-				dropdownItem.setLabel(LanguageUtil.get(request, "export"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "export"));
 				dropdownItem.setQuickAction(true);
 			}
 		).add(
 			dropdownItem -> {
 				dropdownItem.putData("action", "copySelectedStyleBookEntries");
 				dropdownItem.setIcon("paste");
-				dropdownItem.setLabel(LanguageUtil.get(request, "make-a-copy"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "make-a-copy"));
 				dropdownItem.setQuickAction(true);
 			}
 		).build();
 	}
 
-	@Override
-	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
-	}
-
-	public Map<String, Object> getComponentContext() {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
+	public Map<String, Object> getAdditionalProps() {
 		return HashMapBuilder.<String, Object>put(
 			"copyStyleBookEntryURL",
-			() -> {
-				PortletURL copyStyleBookEntryURL =
-					liferayPortletResponse.createActionURL();
-
-				copyStyleBookEntryURL.setParameter(
-					ActionRequest.ACTION_NAME,
-					"/style_book/copy_style_book_entry");
-				copyStyleBookEntryURL.setParameter(
-					"redirect", themeDisplay.getURLCurrent());
-
-				return copyStyleBookEntryURL.toString();
-			}
+			() -> PortletURLBuilder.createActionURL(
+				liferayPortletResponse
+			).setActionName(
+				"/style_book/copy_style_book_entry"
+			).setRedirect(
+				_themeDisplay.getURLCurrent()
+			).buildString()
 		).put(
 			"exportStyleBookEntriesURL",
 			() -> {
@@ -139,6 +125,15 @@ public class StyleBookManagementToolbarDisplayContext
 	}
 
 	@Override
+	public String getClearResultsURL() {
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
+	}
+
+	@Override
 	public String getComponentId() {
 		return "styleBookManagementToolbar";
 	}
@@ -149,25 +144,21 @@ public class StyleBookManagementToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.putData("action", "addStyleBookEntry");
 
-				PortletURL addStyleBookEntryURL =
-					liferayPortletResponse.createActionURL();
-
-				addStyleBookEntryURL.setParameter(
-					ActionRequest.ACTION_NAME, "/style_book/style_book_entry");
+				dropdownItem.putData(
+					"addStyleBookEntryURL",
+					PortletURLBuilder.createActionURL(
+						liferayPortletResponse
+					).setActionName(
+						"/style_book/add_style_book_entry"
+					).buildString());
 
 				dropdownItem.putData(
-					"addStyleBookEntryURL", addStyleBookEntryURL.toString());
-
-				dropdownItem.putData(
-					"title", LanguageUtil.get(request, "add-style-book"));
-				dropdownItem.setLabel(LanguageUtil.get(request, "add"));
+					"title",
+					LanguageUtil.get(httpServletRequest, "add-style-book"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "add"));
 			}
 		).build();
-	}
-
-	@Override
-	public String getDefaultEventHandler() {
-		return "STYLE_BOOK_MANAGEMENT_TOOLBAR_DEFAULT_EVENT_HANDLER";
 	}
 
 	@Override
@@ -179,12 +170,9 @@ public class StyleBookManagementToolbarDisplayContext
 
 	@Override
 	public Boolean isShowCreationMenu() {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		if (StyleBookPermission.contains(
-				themeDisplay.getPermissionChecker(),
-				themeDisplay.getScopeGroupId(),
+				_themeDisplay.getPermissionChecker(),
+				_themeDisplay.getScopeGroupId(),
 				StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES)) {
 
 			return true;
@@ -202,5 +190,7 @@ public class StyleBookManagementToolbarDisplayContext
 	protected String[] getOrderByKeys() {
 		return new String[] {"name", "create-date"};
 	}
+
+	private final ThemeDisplay _themeDisplay;
 
 }

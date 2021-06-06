@@ -17,7 +17,10 @@
 <%
 String p_u_i_d = ParamUtil.getString(request, "p_u_i_d");
 int step = ParamUtil.getInteger(request, "step", 1);
+
 String eventName = ParamUtil.getString(request, "eventName", liferayPortletResponse.getNamespace() + "selectSiteRole");
+
+SelectRoleManagementToolbarDisplayContext selectRoleManagementToolbarDisplayContext = new SelectRoleManagementToolbarDisplayContext(request, renderRequest, renderResponse, eventName);
 
 User selUser = PortalUtil.getSelectedUser(request);
 
@@ -33,15 +36,16 @@ if (step == 1) {
 		groups = selUser.getSiteGroups();
 	}
 	else {
-		LinkedHashMap<String, Object> groupParams = LinkedHashMapBuilder.<String, Object>put(
-			"inherit", Boolean.FALSE
-		).put(
-			"site", Boolean.TRUE
-		).put(
-			"usersGroups", selUser.getUserId()
-		).build();
-
-		groups = GroupLocalServiceUtil.search(user.getCompanyId(), keywords, groupParams, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+		groups = GroupLocalServiceUtil.search(
+			user.getCompanyId(), keywords,
+			LinkedHashMapBuilder.<String, Object>put(
+				"inherit", Boolean.FALSE
+			).put(
+				"site", Boolean.TRUE
+			).put(
+				"usersGroups", selUser.getUserId()
+			).build(),
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 	}
 
 	if (filterManageableGroups) {
@@ -51,15 +55,19 @@ if (step == 1) {
 	if (Validator.isNull(keywords) && (groups.size() == 1)) {
 		step = 2;
 
-		uniqueGroupId = groups.get(0).getGroupId();
+		selectRoleManagementToolbarDisplayContext.setStep(step);
+
+		Group group = groups.get(0);
+
+		uniqueGroupId = group.getGroupId();
 	}
 }
 
 if (step == 2) {
 	groupId = ParamUtil.getLong(request, "groupId", uniqueGroupId);
-}
 
-SelectRoleManagementToolbarDisplayContext selectRoleManagementToolbarDisplayContext = new SelectRoleManagementToolbarDisplayContext(request, renderRequest, renderResponse, eventName);
+	selectRoleManagementToolbarDisplayContext.setGroupId(groupId);
+}
 
 PortletURL portletURL = selectRoleManagementToolbarDisplayContext.getPortletURL();
 
@@ -127,10 +135,12 @@ SearchContainer<Role> roleSearchContainer = selectRoleManagementToolbarDisplayCo
 				/>
 			</liferay-ui:search-container>
 
-			<aui:script require="metal-dom/src/dom as dom">
+			<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule">
 				var form = document.<portlet:namespace />selectSiteRoleFm;
 
-				dom.delegate(form, 'click', '.group-selector-button', function (event) {
+				var delegate = delegateModule.default;
+
+				delegate(form, 'click', '.group-selector-button', (event) => {
 					Liferay.Util.postForm(form, {
 						data: {
 							groupId: event.delegateTarget.dataset.groupid,
@@ -219,7 +229,9 @@ SearchContainer<Role> roleSearchContainer = selectRoleManagementToolbarDisplayCo
 								}
 							}
 							else {
-								long[] defaultSiteRoleIds = StringUtil.split(group.getTypeSettingsProperties().getProperty("defaultSiteRoleIds"), 0L);
+								UnicodeProperties typeSettingsUnicodeProperties = group.getTypeSettingsProperties();
+
+								long[] defaultSiteRoleIds = StringUtil.split(typeSettingsUnicodeProperties.getProperty("defaultSiteRoleIds"), 0L);
 
 								long[] siteRolesIds = ParamUtil.getLongValues(request, "roleIds", defaultSiteRoleIds);
 
@@ -236,13 +248,6 @@ SearchContainer<Role> roleSearchContainer = selectRoleManagementToolbarDisplayCo
 					markupView="lexicon"
 				/>
 			</liferay-ui:search-container>
-
-			<aui:script use="aui-base">
-				Liferay.Util.selectEntityHandler(
-					'#<portlet:namespace />selectSiteRoleFm',
-					'<%= HtmlUtil.escapeJS(eventName) %>'
-				);
-			</aui:script>
 		</c:when>
 	</c:choose>
 </aui:form>

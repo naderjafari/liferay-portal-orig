@@ -88,22 +88,22 @@ public class JournalIndexerTest {
 
 		UserTestUtil.setUser(TestPropsValues.getUser());
 
-		PortalPreferences portalPreferenceces =
+		PortalPreferences portalPreferences =
 			PortletPreferencesFactoryUtil.getPortalPreferences(
 				TestPropsValues.getUserId(), true);
 
 		_originalPortalPreferencesXML = PortletPreferencesFactoryUtil.toXML(
-			portalPreferenceces);
+			portalPreferences);
 
-		portalPreferenceces.setValue(
+		portalPreferences.setValue(
 			"", "indexAllArticleVersionsEnabled", "true");
-		portalPreferenceces.setValue(
+		portalPreferences.setValue(
 			"", "expireAllArticleVersionsEnabled", "true");
 
 		PortalPreferencesLocalServiceUtil.updatePreferences(
 			TestPropsValues.getCompanyId(),
 			PortletKeys.PREFS_OWNER_TYPE_COMPANY,
-			PortletPreferencesFactoryUtil.toXML(portalPreferenceces));
+			PortletPreferencesFactoryUtil.toXML(portalPreferences));
 	}
 
 	@After
@@ -453,11 +453,6 @@ public class JournalIndexerTest {
 		assertSearchCount(1, _group.getGroupId(), searchContext2);
 	}
 
-	@Test
-	public void testUpdateStructuredContent() throws Exception {
-		updateContent();
-	}
-
 	protected void addArticle(boolean approve) throws Exception {
 		SearchContext searchContext = SearchContextTestUtil.getSearchContext(
 			_group.getGroupId());
@@ -790,45 +785,6 @@ public class JournalIndexerTest {
 			assertSearchCount(1, _group.getGroupId(), searchContext1);
 			assertSearchCount(0, _group.getGroupId(), searchContext2);
 		}
-	}
-
-	protected void updateContent() throws Exception {
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
-
-		SearchContext searchContext1 = SearchContextTestUtil.getSearchContext(
-			_group.getGroupId());
-
-		searchContext1.setKeywords("Architectural");
-
-		assertSearchCount(0, _group.getGroupId(), searchContext1);
-
-		SearchContext searchContext2 = SearchContextTestUtil.getSearchContext(
-			_group.getGroupId());
-
-		searchContext2.setKeywords("Liferay");
-
-		assertSearchCount(0, _group.getGroupId(), searchContext2);
-
-		JournalFolder folder = JournalTestUtil.addFolder(
-			_group.getGroupId(), RandomTestUtil.randomString());
-
-		String content = "Liferay Architectural Approach";
-
-		JournalArticle article = addJournalWithDDMStructure(
-			folder.getFolderId(), content, serviceContext);
-
-		assertSearchCount(1, _group.getGroupId(), searchContext1);
-
-		content = DDMStructureTestUtil.getSampleStructuredContent(
-			"name", "Architectural Approach");
-
-		JournalArticleLocalServiceUtil.updateContent(
-			_group.getGroupId(), article.getArticleId(), article.getVersion(),
-			content);
-
-		assertSearchCount(1, _group.getGroupId(), searchContext1);
-		assertSearchCount(0, _group.getGroupId(), searchContext2);
 	}
 
 	@DeleteAfterTestRun

@@ -29,8 +29,9 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 
 import java.io.InputStream;
@@ -50,8 +51,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.zip.ZipInputStream;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.spi.LoggingEvent;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -103,15 +102,14 @@ public class BatchEngineExportTaskExecutorTest
 	public void testExportBlogPostingsToCSVFileWithEmptyFieldNames()
 		throws Exception {
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					_CLASS_NAME_BATCH_ENGINE_EXPORT_TASK_EXECUTOR_IMPL,
-					Level.ERROR)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				_CLASS_NAME_BATCH_ENGINE_EXPORT_TASK_EXECUTOR_IMPL,
+				LoggerTestUtil.ERROR)) {
 
 			_testExportBlogPostingsToCSVFile(
 				Collections.emptyList(), line -> new Object[0], _parameters);
 
-			_assertEmptyFieldNames(captureAppender);
+			_assertEmptyFieldNames(logCapture);
 		}
 	}
 
@@ -245,10 +243,9 @@ public class BatchEngineExportTaskExecutorTest
 	public void testExportBlogPostingsToXLSFileWithEmptyFieldNames()
 		throws Exception {
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					_CLASS_NAME_BATCH_ENGINE_EXPORT_TASK_EXECUTOR_IMPL,
-					Level.ERROR)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				_CLASS_NAME_BATCH_ENGINE_EXPORT_TASK_EXECUTOR_IMPL,
+				LoggerTestUtil.ERROR)) {
 
 			_testExportBlogPostingsToXLSFile(
 				Collections.emptyList(), rowValues -> new Object[0],
@@ -285,16 +282,16 @@ public class BatchEngineExportTaskExecutorTest
 
 	}
 
-	private void _assertEmptyFieldNames(CaptureAppender captureAppender) {
-		List<LoggingEvent> loggingEvents = captureAppender.getLoggingEvents();
+	private void _assertEmptyFieldNames(LogCapture logCapture) {
+		List<LogEntry> logEntries = logCapture.getLogEntries();
 
-		Assert.assertEquals(loggingEvents.toString(), 1, loggingEvents.size());
+		Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-		LoggingEvent loggingEvent = loggingEvents.get(0);
+		LogEntry logEntry = logEntries.get(0);
 
-		Assert.assertEquals(Level.ERROR, loggingEvent.getLevel());
+		Assert.assertEquals(LoggerTestUtil.ERROR, logEntry.getPriority());
 
-		String message = (String)loggingEvent.getMessage();
+		String message = logEntry.getMessage();
 
 		Assert.assertTrue(
 			message.startsWith("Unable to update batch engine export task"));

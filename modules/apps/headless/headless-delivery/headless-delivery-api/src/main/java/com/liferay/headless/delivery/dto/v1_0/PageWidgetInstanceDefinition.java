@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,17 +44,85 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageWidgetInstanceDefinition")
+@GraphQLName(
+	description = "Represents a definition of a Page Widget instance.",
+	value = "PageWidgetInstanceDefinition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageWidgetInstanceDefinition")
-public class PageWidgetInstanceDefinition {
+public class PageWidgetInstanceDefinition implements Serializable {
 
 	public static PageWidgetInstanceDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(
 			PageWidgetInstanceDefinition.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The fragment style of the page widget instance.")
+	@Valid
+	public FragmentStyle getFragmentStyle() {
+		return fragmentStyle;
+	}
+
+	public void setFragmentStyle(FragmentStyle fragmentStyle) {
+		this.fragmentStyle = fragmentStyle;
+	}
+
+	@JsonIgnore
+	public void setFragmentStyle(
+		UnsafeSupplier<FragmentStyle, Exception> fragmentStyleUnsafeSupplier) {
+
+		try {
+			fragmentStyle = fragmentStyleUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The fragment style of the page widget instance."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentStyle fragmentStyle;
+
+	@Schema(
+		description = "A list of fragment viewports of the page widget instance."
+	)
+	@Valid
+	public FragmentViewport[] getFragmentViewports() {
+		return fragmentViewports;
+	}
+
+	public void setFragmentViewports(FragmentViewport[] fragmentViewports) {
+		this.fragmentViewports = fragmentViewports;
+	}
+
+	@JsonIgnore
+	public void setFragmentViewports(
+		UnsafeSupplier<FragmentViewport[], Exception>
+			fragmentViewportsUnsafeSupplier) {
+
+		try {
+			fragmentViewports = fragmentViewportsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "A list of fragment viewports of the page widget instance."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentViewport[] fragmentViewports;
+
+	@Schema(description = "The widget instance of the page widget instance.")
 	@Valid
 	public WidgetInstance getWidgetInstance() {
 		return widgetInstance;
@@ -78,7 +148,9 @@ public class PageWidgetInstanceDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The widget instance of the page widget instance."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected WidgetInstance widgetInstance;
 
@@ -111,6 +183,36 @@ public class PageWidgetInstanceDefinition {
 
 		sb.append("{");
 
+		if (fragmentStyle != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentStyle\": ");
+
+			sb.append(String.valueOf(fragmentStyle));
+		}
+
+		if (fragmentViewports != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentViewports\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < fragmentViewports.length; i++) {
+				sb.append(String.valueOf(fragmentViewports[i]));
+
+				if ((i + 1) < fragmentViewports.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (widgetInstance != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -127,6 +229,7 @@ public class PageWidgetInstanceDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageWidgetInstanceDefinition",
 		name = "x-class-name"
 	)
@@ -162,7 +265,7 @@ public class PageWidgetInstanceDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -201,7 +304,7 @@ public class PageWidgetInstanceDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

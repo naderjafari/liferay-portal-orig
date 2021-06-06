@@ -19,6 +19,7 @@ import com.liferay.dynamic.data.mapping.kernel.DDMFormField;
 import com.liferay.dynamic.data.mapping.kernel.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.kernel.DDMFormValues;
 import com.liferay.dynamic.data.mapping.kernel.UnlocalizedValue;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -109,11 +110,8 @@ public abstract class BaseRawMetadataProcessor implements RawMetadataProcessor {
 
 			String fieldClassName = fieldClass.getSimpleName();
 
-			String name = fieldClassName.concat(
-				StringPool.UNDERLINE
-			).concat(
-				field.getName()
-			);
+			String name = StringBundler.concat(
+				fieldClassName, StringPool.UNDERLINE, field.getName());
 
 			String value = getMetadataValue(metadata, field);
 
@@ -191,7 +189,8 @@ public abstract class BaseRawMetadataProcessor implements RawMetadataProcessor {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"The property " + field.getName() +
-						" will not be added to the metatada set");
+						" will not be added to the metatada set",
+					illegalAccessException);
 			}
 		}
 

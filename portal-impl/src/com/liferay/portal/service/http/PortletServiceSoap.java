@@ -57,8 +57,10 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see PortletServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class PortletServiceSoap {
 
 	public static String getWARPortlets() throws RemoteException {
@@ -67,6 +69,22 @@ public class PortletServiceSoap {
 				PortletServiceUtil.getWARPortlets();
 
 			return returnValue.toString();
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static boolean hasPortlet(long companyId, String portletId)
+		throws RemoteException {
+
+		try {
+			boolean returnValue = PortletServiceUtil.hasPortlet(
+				companyId, portletId);
+
+			return returnValue;
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);

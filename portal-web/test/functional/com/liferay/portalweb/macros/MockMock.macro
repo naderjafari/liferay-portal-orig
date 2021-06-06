@@ -113,7 +113,8 @@ definition {
 		else {
 			var bodyContent = selenium.getText("MockMock#MOCKMOCK_MESSAGE_BODY");
 			var bodyContent = StringUtil.extractLast("${bodyContent}", "${specificText}");
-			var bodySpecificText = StringUtil.extractFirst("${bodyContent}", "&");
+			var bodySpecificText = StringUtil.extractFirst("${bodyContent}", "${extractFirstText}");
+			var bodySpecificText = StringUtil.trim("${bodySpecificText}");
 		}
 
 		return "${bodySpecificText}";
@@ -136,7 +137,26 @@ definition {
 
 		var bodyContent = selenium.getText("MockMock#MOCKMOCK_MESSAGE_BODY");
 		var bodyContent = StringUtil.extractLast("${bodyContent}", " at ");
-		var bodyURL = StringUtil.extractFirst("${bodyContent}", ".");
+		var bodyURL = StringUtil.extractFirst("${bodyContent}", ".<br />");
+
+		Navigator.openSpecificURL(url = "${bodyURL}");
+	}
+
+	macro openCalendarBodyLink {
+		var key_asset = "${asset}";
+
+		MockMock._gotoMail();
+
+		MockMock._gotoMailMessage(asset = "${asset}");
+
+		MockMock._viewMailMessage(
+			content = "${content}",
+			subject = "${subject}");
+
+		var bodyContent = selenium.getText("MockMock#MOCKMOCK_MESSAGE_BODY");
+
+		var bodyContent = StringUtil.extractLast("${bodyContent}", "href=&quot;");
+		var bodyURL = StringUtil.extractFirst("${bodyContent}", "&quot;");
 
 		Navigator.openSpecificURL(url = "${bodyURL}");
 	}

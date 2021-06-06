@@ -368,6 +368,20 @@ public class OrganizationLocalServiceImpl
 			passwordPolicyId, Organization.class.getName(), organizationIds);
 	}
 
+	@Override
+	public void addUserOrganizationByEmailAddress(
+			String emailAddress, long organizationId)
+		throws PortalException {
+
+		Organization organization = organizationPersistence.findByPrimaryKey(
+			organizationId);
+
+		User user = userPersistence.findByC_EA(
+			organization.getCompanyId(), emailAddress);
+
+		addUserOrganization(user.getUserId(), organizationId);
+	}
+
 	/**
 	 * Deletes the organization's logo.
 	 *
@@ -485,6 +499,20 @@ public class OrganizationLocalServiceImpl
 		organizationPersistence.remove(organization);
 
 		return organization;
+	}
+
+	@Override
+	public void deleteUserOrganizationByEmailAddress(
+			String emailAddress, long organizationId)
+		throws PortalException {
+
+		Organization organization = organizationPersistence.findByPrimaryKey(
+			organizationId);
+
+		User user = userPersistence.findByC_EA(
+			organization.getCompanyId(), emailAddress);
+
+		deleteUserOrganization(user.getUserId(), organizationId);
 	}
 
 	/**
@@ -723,8 +751,8 @@ public class OrganizationLocalServiceImpl
 	 *         return
 	 * @param  end the upper bound of the range of organizations and users to
 	 *         return (not inclusive)
-	 * @param  orderByComparator the comparator to order the organizations and users
-	 *         (optionally <code>null</code>)
+	 * @param  orderByComparator the comparator to order the organizations and
+	 *         users (optionally <code>null</code>)
 	 * @return the organizations and users belonging to the parent organization
 	 */
 	@Override
@@ -1094,12 +1122,13 @@ public class OrganizationLocalServiceImpl
 		}
 
 		if (!ListUtil.isEmpty(organizationsTree)) {
-			LinkedHashMap<String, Object> params =
+			int count = userFinder.countByUser(
+				userId,
 				LinkedHashMapBuilder.<String, Object>put(
 					"usersOrgsTree", organizationsTree
-				).build();
+				).build());
 
-			if (userFinder.countByUser(userId, params) > 0) {
+			if (count > 0) {
 				return true;
 			}
 		}
@@ -1298,9 +1327,10 @@ public class OrganizationLocalServiceImpl
 	 * @param  start the lower bound of the range of organizations to return
 	 * @param  end the upper bound of the range of organizations to return (not
 	 *         inclusive)
-	 * @param  orderByComparator the comparator to order the organizations (optionally
-	 *         <code>null</code>)
-	 * @return the matching organizations ordered by comparator <code>orderByComparator</code>
+	 * @param  orderByComparator the comparator to order the organizations
+	 *         (optionally <code>null</code>)
+	 * @return the matching organizations ordered by comparator
+	 *         <code>orderByComparator</code>
 	 * @see    com.liferay.portal.kernel.service.persistence.OrganizationFinder
 	 */
 	@Override
@@ -1418,9 +1448,10 @@ public class OrganizationLocalServiceImpl
 	 * @param  start the lower bound of the range of organizations to return
 	 * @param  end the upper bound of the range of organizations to return (not
 	 *         inclusive)
-	 * @param  orderByComparator the comparator to order the organizations (optionally
-	 *         <code>null</code>)
-	 * @return the matching organizations ordered by comparator <code>orderByComparator</code>
+	 * @param  orderByComparator the comparator to order the organizations
+	 *         (optionally <code>null</code>)
+	 * @return the matching organizations ordered by comparator
+	 *         <code>orderByComparator</code>
 	 * @see    com.liferay.portal.kernel.service.persistence.OrganizationFinder
 	 */
 	@Override
@@ -2049,7 +2080,6 @@ public class OrganizationLocalServiceImpl
 
 		String city = null;
 		String country = null;
-		String emailAddress = null;
 		String firstName = null;
 		String fullName = null;
 		String lastName = null;
@@ -2065,7 +2095,6 @@ public class OrganizationLocalServiceImpl
 		if (Validator.isNotNull(keywords)) {
 			city = keywords;
 			country = keywords;
-			emailAddress = keywords;
 			firstName = keywords;
 			fullName = keywords;
 			lastName = keywords;
@@ -2094,7 +2123,6 @@ public class OrganizationLocalServiceImpl
 
 		Map<String, Serializable> attributes = searchContext.getAttributes();
 
-		attributes.put("emailAddress", emailAddress);
 		attributes.put("firstName", firstName);
 		attributes.put("fullName", fullName);
 		attributes.put("lastName", lastName);
@@ -2165,6 +2193,7 @@ public class OrganizationLocalServiceImpl
 
 		searchContext.setCompanyId(companyId);
 		searchContext.setEnd(end);
+		searchContext.setGroupIds(new long[] {-1L});
 
 		if (params != null) {
 			String keywords = (String)params.remove("keywords");
@@ -2331,11 +2360,11 @@ public class OrganizationLocalServiceImpl
 	protected void reindexUsers(Organization organization)
 		throws PortalException {
 
-		long companyId = organization.getCompanyId();
-
 		long[] userIds = getUserPrimaryKeys(organization.getOrganizationId());
 
 		if (ArrayUtil.isNotEmpty(userIds)) {
+			long companyId = organization.getCompanyId();
+
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
 					reindex(companyId, userIds);
@@ -2453,7 +2482,7 @@ public class OrganizationLocalServiceImpl
 	}
 
 	private static final String _TYPE_FIELD_NAME = Field.getSortableFieldName(
-		StringBundler.concat(Field.TYPE, StringPool.UNDERLINE, "String"));
+		Field.TYPE + "_String");
 
 	private static volatile OrganizationTypesSettings
 		_organizationTypesSettings =

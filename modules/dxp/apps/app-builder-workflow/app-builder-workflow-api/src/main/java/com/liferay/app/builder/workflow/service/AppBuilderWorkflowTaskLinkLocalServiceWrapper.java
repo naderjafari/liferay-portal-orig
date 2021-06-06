@@ -58,14 +58,15 @@ public class AppBuilderWorkflowTaskLinkLocalServiceWrapper
 	@Override
 	public com.liferay.app.builder.workflow.model.AppBuilderWorkflowTaskLink
 			addAppBuilderWorkflowTaskLink(
-				long companyId, long appBuilderAppId, long ddmStructureLayoutId,
+				long companyId, long appBuilderAppId,
+				long appBuilderAppVersionId, long ddmStructureLayoutId,
 				boolean readOnly, String workflowTaskName)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _appBuilderWorkflowTaskLinkLocalService.
 			addAppBuilderWorkflowTaskLink(
-				companyId, appBuilderAppId, ddmStructureLayoutId, readOnly,
-				workflowTaskName);
+				companyId, appBuilderAppId, appBuilderAppVersionId,
+				ddmStructureLayoutId, readOnly, workflowTaskName);
 	}
 
 	/**
@@ -140,6 +141,15 @@ public class AppBuilderWorkflowTaskLinkLocalServiceWrapper
 			deleteAppBuilderWorkflowTaskLinks(appBuilderAppId);
 	}
 
+	@Override
+	public void deleteAppBuilderWorkflowTaskLinks(
+		long appBuilderAppId, long appBuilderAppVersionId) {
+
+		_appBuilderWorkflowTaskLinkLocalService.
+			deleteAppBuilderWorkflowTaskLinks(
+				appBuilderAppId, appBuilderAppVersionId);
+	}
+
 	/**
 	 * @throws PortalException
 	 */
@@ -155,6 +165,13 @@ public class AppBuilderWorkflowTaskLinkLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _appBuilderWorkflowTaskLinkLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _appBuilderWorkflowTaskLinkLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -315,10 +332,23 @@ public class AppBuilderWorkflowTaskLinkLocalServiceWrapper
 	public java.util.List
 		<com.liferay.app.builder.workflow.model.AppBuilderWorkflowTaskLink>
 			getAppBuilderWorkflowTaskLinks(
-				long appBuilderAppId, String workflowTaskName) {
+				long appBuilderAppId, long appBuilderAppVersionId) {
 
 		return _appBuilderWorkflowTaskLinkLocalService.
-			getAppBuilderWorkflowTaskLinks(appBuilderAppId, workflowTaskName);
+			getAppBuilderWorkflowTaskLinks(
+				appBuilderAppId, appBuilderAppVersionId);
+	}
+
+	@Override
+	public java.util.List
+		<com.liferay.app.builder.workflow.model.AppBuilderWorkflowTaskLink>
+			getAppBuilderWorkflowTaskLinks(
+				long appBuilderAppId, long appBuilderAppVersionId,
+				String workflowTaskName) {
+
+		return _appBuilderWorkflowTaskLinkLocalService.
+			getAppBuilderWorkflowTaskLinks(
+				appBuilderAppId, appBuilderAppVersionId, workflowTaskName);
 	}
 
 	/**

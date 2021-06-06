@@ -14,7 +14,7 @@
 
 package com.liferay.content.dashboard.web.internal.item.type;
 
-import com.liferay.portal.json.JSONFactoryImpl;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -23,13 +23,15 @@ import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -39,12 +41,10 @@ import org.mockito.Mockito;
  */
 public class ContentDashboardItemTypeUtilTest {
 
-	@BeforeClass
-	public static void setUpClass() {
-		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
-
-		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
-	}
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testToContentDashboardItemTypeOptionalByClassNameAndClassPK()
@@ -63,9 +63,8 @@ public class ContentDashboardItemTypeUtilTest {
 
 		Optional<ContentDashboardItemType> contentDashboardItemTypeOptional =
 			ContentDashboardItemTypeUtil.toContentDashboardItemTypeOptional(
-				contentDashboardItemType.getClassName(),
-				contentDashboardItemType.getClassPK(),
-				contentDashboardItemTypeFactoryTracker);
+				contentDashboardItemTypeFactoryTracker,
+				contentDashboardItemType.getInfoItemReference());
 
 		Assert.assertEquals(
 			contentDashboardItemType, contentDashboardItemTypeOptional.get());
@@ -83,9 +82,8 @@ public class ContentDashboardItemTypeUtilTest {
 
 		Optional<ContentDashboardItemType> contentDashboardItemTypeOptional =
 			ContentDashboardItemTypeUtil.toContentDashboardItemTypeOptional(
-				contentDashboardItemType.getClassName(),
-				contentDashboardItemType.getClassPK(),
-				contentDashboardItemTypeFactoryTracker);
+				contentDashboardItemTypeFactoryTracker,
+				contentDashboardItemType.getInfoItemReference());
 
 		Assert.assertFalse(contentDashboardItemTypeOptional.isPresent());
 	}
@@ -97,18 +95,21 @@ public class ContentDashboardItemTypeUtilTest {
 		ContentDashboardItemType contentDashboardItemType =
 			_getContentDashboardItemType();
 
+		InfoItemReference infoItemReference =
+			contentDashboardItemType.getInfoItemReference();
+
 		Document document = Mockito.mock(Document.class);
 
 		Mockito.when(
 			document.get(Field.ENTRY_CLASS_NAME)
 		).thenReturn(
-			contentDashboardItemType.getClassName()
+			infoItemReference.getClassName()
 		);
 
 		Mockito.when(
 			document.get(Field.ENTRY_CLASS_PK)
 		).thenReturn(
-			String.valueOf(contentDashboardItemType.getClassPK())
+			String.valueOf(infoItemReference.getClassPK())
 		);
 
 		ContentDashboardItemTypeFactory contentDashboardItemTypeFactory =
@@ -201,18 +202,13 @@ public class ContentDashboardItemTypeUtilTest {
 		return new ContentDashboardItemType() {
 
 			@Override
-			public String getClassName() {
-				return className;
-			}
-
-			@Override
-			public long getClassPK() {
-				return classPK;
-			}
-
-			@Override
 			public String getFullLabel(Locale locale) {
 				return null;
+			}
+
+			@Override
+			public InfoItemReference getInfoItemReference() {
+				return new InfoItemReference(className, classPK);
 			}
 
 			@Override
@@ -233,9 +229,9 @@ public class ContentDashboardItemTypeUtilTest {
 			@Override
 			public String toJSONString(Locale locale) {
 				return JSONUtil.put(
-					"className", getClassName()
+					"className", className
 				).put(
-					"classPK", getClassPK()
+					"classPK", classPK
 				).toJSONString();
 			}
 
@@ -249,9 +245,12 @@ public class ContentDashboardItemTypeUtilTest {
 		ContentDashboardItemTypeFactory contentDashboardItemTypeFactory =
 			Mockito.mock(ContentDashboardItemTypeFactory.class);
 
+		InfoItemReference infoItemReference =
+			contentDashboardItemType.getInfoItemReference();
+
 		Mockito.when(
 			contentDashboardItemTypeFactory.create(
-				contentDashboardItemType.getClassPK())
+				infoItemReference.getClassPK())
 		).thenReturn(
 			contentDashboardItemType
 		);
@@ -268,10 +267,13 @@ public class ContentDashboardItemTypeUtilTest {
 			contentDashboardItemTypeFactoryTracker = Mockito.mock(
 				ContentDashboardItemTypeFactoryTracker.class);
 
+		InfoItemReference infoItemReference =
+			contentDashboardItemType.getInfoItemReference();
+
 		Mockito.when(
 			contentDashboardItemTypeFactoryTracker.
 				getContentDashboardItemTypeFactoryOptional(
-					contentDashboardItemType.getClassName())
+					infoItemReference.getClassName())
 		).thenReturn(
 			Optional.ofNullable(contentDashboardItemTypeFactory)
 		);

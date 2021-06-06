@@ -40,8 +40,8 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -55,8 +55,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -191,11 +189,10 @@ public class CTClosureFactoryImplTest {
 
 	@After
 	public void tearDown() throws Exception {
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"com.liferay.change.tracking.service.impl." +
-						"CTCollectionLocalServiceImpl",
-					Level.WARN)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.change.tracking.service.impl." +
+					"CTCollectionLocalServiceImpl",
+				LoggerTestUtil.WARN)) {
 
 			_ctCollectionLocalService.deleteCTCollection(
 				_ctCollection.getCtCollectionId());
@@ -705,19 +702,9 @@ public class CTClosureFactoryImplTest {
 			ParentTableReferenceInfoBuilder<GrandParentTable>
 				parentTableReferenceInfoBuilder) {
 
-			parentTableReferenceInfoBuilder.referenceInnerJoin(
-				fromStep -> {
-					GrandParentTable aliasGrandParentTable =
-						GrandParentTable.INSTANCE.as("aliasGrandParentTable");
-
-					return fromStep.from(
-						GrandParentTable.INSTANCE
-					).innerJoinON(
-						aliasGrandParentTable,
-						aliasGrandParentTable.parentGrandParentId.eq(
-							GrandParentTable.INSTANCE.grandParentId)
-					);
-				});
+			parentTableReferenceInfoBuilder.parentColumnReference(
+				GrandParentTable.INSTANCE.grandParentId,
+				GrandParentTable.INSTANCE.parentGrandParentId);
 		}
 
 		@Override

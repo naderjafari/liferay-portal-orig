@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentFieldHTML")
+@GraphQLName(
+	description = "Represents a fragment field with HTML.",
+	value = "FragmentFieldHTML"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentFieldHTML")
-public class FragmentFieldHTML {
+public class FragmentFieldHTML implements Serializable {
 
 	public static FragmentFieldHTML toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentFieldHTML.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "The fragment field's HTML. Can be inline or mapped to an external value."
+	)
 	@Valid
 	public Object getHtml() {
 		return html;
@@ -74,7 +81,9 @@ public class FragmentFieldHTML {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The fragment field's HTML. Can be inline or mapped to an external value."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object html;
 
@@ -121,6 +130,7 @@ public class FragmentFieldHTML {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentFieldHTML",
 		name = "x-class-name"
 	)
@@ -156,7 +166,7 @@ public class FragmentFieldHTML {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -195,7 +205,7 @@ public class FragmentFieldHTML {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

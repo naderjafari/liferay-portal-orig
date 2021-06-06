@@ -35,6 +35,11 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 	cssClass="container-view"
 >
 	<clay:row>
+
+		<%
+		AssetListEntry assetListEntry = assetListDisplayContext.getAssetListEntry();
+		%>
+
 		<clay:col
 			lg="3"
 		>
@@ -61,21 +66,23 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 										</strong>
 									</clay:content-col>
 
-									<clay:content-col>
-										<ul class="navbar-nav">
-											<li>
-												<c:if test="<%= availableSegmentsEntries.size() > 0 %>">
-													<liferay-ui:icon
-														icon="plus"
-														iconCssClass="btn btn-monospaced btn-outline-borderless btn-outline-secondary btn-sm"
-														id="addAssetListEntryVariationIcon"
-														markupView="lexicon"
-														url='<%= "javascript:" + liferayPortletResponse.getNamespace() + "openSelectSegmentsEntryDialog();" %>'
-													/>
-												</c:if>
-											</li>
-										</ul>
-									</clay:content-col>
+									<c:if test="<%= Validator.isNotNull(assetListEntry.getAssetEntryType()) %>">
+										<clay:content-col>
+											<ul class="navbar-nav">
+												<li>
+													<c:if test="<%= !availableSegmentsEntries.isEmpty() %>">
+														<liferay-ui:icon
+															icon="plus"
+															iconCssClass="btn btn-monospaced btn-outline-borderless btn-outline-secondary btn-sm"
+															id="addAssetListEntryVariationIcon"
+															markupView="lexicon"
+															url='<%= "javascript:" + liferayPortletResponse.getNamespace() + "openSelectSegmentsEntryDialog();" %>'
+														/>
+													</c:if>
+												</li>
+											</ul>
+										</clay:content-col>
+									</c:if>
 								</clay:content-row>
 
 								<ul class="nav nav-stacked">
@@ -85,16 +92,20 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 									%>
 
 										<li class="nav-item">
-
-											<%
-											PortletURL editAssetListEntryURL = renderResponse.createRenderURL();
-
-											editAssetListEntryURL.setParameter("mvcPath", "/edit_asset_list_entry.jsp");
-											editAssetListEntryURL.setParameter("assetListEntryId", String.valueOf(assetListEntrySegmentsEntryRel.getAssetListEntryId()));
-											editAssetListEntryURL.setParameter("segmentsEntryId", String.valueOf(assetListEntrySegmentsEntryRel.getSegmentsEntryId()));
-											%>
-
-											<a class="nav-link text-truncate <%= (editAssetListDisplayContext.getSegmentsEntryId() == assetListEntrySegmentsEntryRel.getSegmentsEntryId()) ? "active" : StringPool.BLANK %>" href="<%= editAssetListEntryURL.toString() %>">
+											<a
+												class="nav-link text-truncate <%= (editAssetListDisplayContext.getSegmentsEntryId() == assetListEntrySegmentsEntryRel.getSegmentsEntryId()) ? "active" : StringPool.BLANK %>"
+												href="<%=
+													PortletURLBuilder.createRenderURL(
+														renderResponse
+													).setMVCPath(
+														"/edit_asset_list_entry.jsp"
+													).setParameter(
+														"assetListEntryId", assetListEntrySegmentsEntryRel.getAssetListEntryId()
+													).setParameter(
+														"segmentsEntryId", assetListEntrySegmentsEntryRel.getSegmentsEntryId()
+													).buildString()
+												%>"
+											>
 												<%= HtmlUtil.escape(editAssetListDisplayContext.getSegmentsEntryName(assetListEntrySegmentsEntryRel.getSegmentsEntryId(), locale)) %>
 											</a>
 										</li>
@@ -111,7 +122,7 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 								</p>
 
 								<liferay-frontend:empty-result-message
-									actionDropdownItems="<%= (availableSegmentsEntries.size() > 0) ? editAssetListDisplayContext.getAssetListEntryVariationActionDropdownItems() : null %>"
+									actionDropdownItems="<%= ((availableSegmentsEntries.size() > 0) && Validator.isNotNull(assetListEntry.getAssetEntryType()) && !editAssetListDisplayContext.isLiveGroup()) ? editAssetListDisplayContext.getAssetListEntryVariationActionDropdownItems() : null %>"
 									animationType="<%= EmptyResultMessageKeys.AnimationType.NONE %>"
 									componentId='<%= liferayPortletResponse.getNamespace() + "emptyResultMessageComponent" %>'
 									description='<%= LanguageUtil.get(request, "no-personalized-variations-were-found") %>'
@@ -127,11 +138,6 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 		<clay:col
 			lg="9"
 		>
-
-			<%
-			AssetListEntry assetListEntry = assetListDisplayContext.getAssetListEntry();
-			%>
-
 			<c:choose>
 				<c:when test="<%= assetListEntry.getType() == AssetListEntryTypeConstants.TYPE_DYNAMIC %>">
 					<liferay-util:include page="/edit_asset_list_entry_dynamic.jsp" servletContext="<%= application %>" />
@@ -151,7 +157,7 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 	</portlet:actionURL>
 
 	function <portlet:namespace />openSelectSegmentsEntryDialog() {
-		Liferay.Util.openModal({
+		Liferay.Util.openSelectionModal({
 			id: '<portlet:namespace />selectEntity',
 			onSelect: function (selectedItem) {
 				Liferay.Util.postForm(document.<portlet:namespace />fm, {
@@ -166,5 +172,55 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 				'<liferay-ui:message arguments="personalized-variation" key="new-x" />',
 			url: '<%= editAssetListDisplayContext.getSelectSegmentsEntryURL() %>',
 		});
+	}
+
+	function <portlet:namespace />saveSelectBoxes() {
+		var form = document.<portlet:namespace />fm;
+
+		<%
+		List<AssetRendererFactory<?>> assetRendererFactories = ListUtil.sort(AssetRendererFactoryRegistryUtil.getAssetRendererFactories(company.getCompanyId()), new AssetRendererFactoryTypeNameComparator(locale));
+
+		for (AssetRendererFactory<?> assetRendererFactory : assetRendererFactories) {
+			ClassTypeReader classTypeReader = assetRendererFactory.getClassTypeReader();
+
+			List<ClassType> classTypes = classTypeReader.getAvailableClassTypes(editAssetListDisplayContext.getReferencedModelsGroupIds(), locale);
+
+			if (classTypes.isEmpty()) {
+				continue;
+			}
+
+			String className = assetListDisplayContext.getClassName(assetRendererFactory);
+		%>
+
+			Liferay.Util.setFormValues(form, {
+				classTypeIds<%= className %>: Liferay.Util.listSelect(
+					Liferay.Util.getFormElement(
+						form,
+						'<%= className %>currentClassTypeIds'
+					)
+				),
+			});
+
+		<%
+		}
+		%>
+
+		var currentClassNameIdsSelect = Liferay.Util.getFormElement(
+			form,
+			'currentClassNameIds'
+		);
+
+		if (currentClassNameIdsSelect) {
+			Liferay.Util.postForm(form, {
+				data: {
+					classNameIds: Liferay.Util.listSelect(
+						currentClassNameIdsSelect
+					),
+				},
+			});
+		}
+		else {
+			submitForm(form);
+		}
 	}
 </script>

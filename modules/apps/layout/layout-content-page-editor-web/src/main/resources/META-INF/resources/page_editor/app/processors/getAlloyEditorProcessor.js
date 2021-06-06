@@ -12,11 +12,13 @@
  * details.
  */
 
-import {ItemSelectorDialog, debounce} from 'frontend-js-web';
+import {debounce, openSelectionModal} from 'frontend-js-web';
 
 import {config} from '../config/index';
 
 const KEY_ENTER = 13;
+const KEY_SPACE = 32;
+const KEY_SHIFT_ENTER = (window.CKEDITOR?.SHIFT ?? 0) + KEY_ENTER;
 
 const defaultGetEditorWrapper = (element) => {
 	const wrapper = document.createElement('div');
@@ -30,6 +32,12 @@ const defaultGetEditorWrapper = (element) => {
 
 const defaultRender = (element, value) => {
 	element.innerHTML = value;
+};
+
+const keyupHandler = (event) => {
+	if (event.keyCode === KEY_SPACE) {
+		event.preventDefault();
+	}
 };
 
 /**
@@ -75,6 +83,8 @@ export default function getAlloyEditorProcessor(
 			editorWrapper.setAttribute('id', editorName);
 			editorWrapper.setAttribute('name', editorName);
 
+			element.addEventListener('keyup', keyupHandler);
+
 			_editor = AlloyEditor.editable(editorWrapper, {
 				...editorConfig,
 
@@ -83,21 +93,11 @@ export default function getAlloyEditorProcessor(
 					url,
 					changeLinkCallback
 				) => {
-					const itemSelectorDialog = new ItemSelectorDialog({
-						eventName: editor.title + 'selectItem',
-						singleSelect: true,
+					openSelectionModal({
+						onSelect: changeLinkCallback,
+						selectEventName: editor.title + 'selectItem',
 						title: Liferay.Language.get('select-item'),
 						url,
-					});
-
-					itemSelectorDialog.open();
-
-					itemSelectorDialog.on('selectedItemChange', (event) => {
-						const selectedItem = event.selectedItem;
-
-						if (selectedItem) {
-							changeLinkCallback(selectedItem);
-						}
 					});
 				},
 
@@ -124,9 +124,11 @@ export default function getAlloyEditorProcessor(
 			_eventHandlers = [
 				nativeEditor.on('key', (event) => {
 					if (
-						event.data.keyCode === KEY_ENTER &&
+						(event.data.keyCode === KEY_ENTER ||
+							event.data.keyCode === KEY_SHIFT_ENTER) &&
 						_element &&
-						_element.getAttribute('type') === 'text'
+						(_element.getAttribute('type') === 'text' ||
+							_element.dataset.lfrEditableType === 'text')
 					) {
 						event.cancel();
 					}
@@ -135,14 +137,24 @@ export default function getAlloyEditorProcessor(
 				nativeEditor.on('blur', () => {
 					if (_editor._mainUI.state.hidden) {
 						if (_callbacks.changeCallback) {
-							_callbacks.changeCallback(nativeEditor.getData());
+							_callbacks
+								.changeCallback(nativeEditor.getData())
+								.then(() => {
+									if (_callbacks.destroyCallback) {
+										_callbacks.destroyCallback();
+									}
+								})
+								.catch(() => {
+									if (_callbacks.destroyCallback) {
+										_callbacks.destroyCallback();
+									}
+								});
 						}
-
-						requestAnimationFrame(() => {
-							if (_callbacks.destroyCallback) {
-								_callbacks.destroyCallback();
-							}
-						});
+						else if (_callbacks.destroyCallback) {
+							requestAnimationFrame(() =>
+								_callbacks.destroyCallback()
+							);
+						}
 					}
 				}),
 
@@ -156,9 +168,7 @@ export default function getAlloyEditorProcessor(
 						nativeEditor.execCommand('selectAll');
 					}
 				}),
-			];
 
-			_eventHandlers.push(
 				nativeEditor.on(
 					'saveSnapshot',
 					debounce(() => {
@@ -166,8 +176,8 @@ export default function getAlloyEditorProcessor(
 							_callbacks.changeCallback(nativeEditor.getData());
 						}
 					}, 100)
-				)
-			);
+				),
+			];
 		},
 
 		/**
@@ -188,6 +198,10 @@ export default function getAlloyEditorProcessor(
 				_eventHandlers = null;
 				_element = null;
 				_callbacks = {};
+			}
+
+			if (element) {
+				element.removeEventListener('keyup', keyupHandler);
 			}
 		},
 

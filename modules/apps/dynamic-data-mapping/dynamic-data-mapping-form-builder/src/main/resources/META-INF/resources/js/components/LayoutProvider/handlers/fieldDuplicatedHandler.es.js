@@ -12,106 +12,10 @@
  * details.
  */
 
-import {
-	FormSupport,
-	PagesVisitor,
-	generateInstanceId,
-} from 'dynamic-data-mapping-form-renderer';
+import {FormSupport, PagesVisitor} from 'data-engine-js-components-web';
 
-import {sub} from '../../../util/strings.es';
-import {getFieldLocalizedValue} from '../util/fields.es';
-import {
-	getSettingsContextProperty,
-	updateField,
-	updateSettingsContextProperty,
-} from '../util/settingsContext.es';
-
-export const createDuplicatedField = (originalField, props, blacklist = []) => {
-	const {editingLanguageId, fieldNameGenerator} = props;
-	const label = getLabel(originalField, editingLanguageId);
-	const newFieldName = fieldNameGenerator(label, null, blacklist);
-
-	let duplicatedField = updateField(
-		props,
-		originalField,
-		'name',
-		newFieldName
-	);
-
-	duplicatedField.instanceId = generateInstanceId(8);
-
-	duplicatedField = updateField(props, duplicatedField, 'label', label);
-
-	if (duplicatedField.nestedFields?.length > 0) {
-		duplicatedField.nestedFields = duplicatedField.nestedFields.map(
-			(field) => {
-				const newDuplicatedNestedField = createDuplicatedField(
-					field,
-					props,
-					blacklist
-				);
-
-				blacklist.push(newDuplicatedNestedField.fieldName);
-
-				const visitor = new PagesVisitor([
-					{
-						rows: duplicatedField.rows ?? [],
-					},
-				]);
-
-				const layout = visitor.mapColumns((column) => {
-					return {
-						...column,
-						fields: column.fields.map((fieldName) => {
-							if (fieldName === field.fieldName) {
-								return newDuplicatedNestedField.fieldName;
-							}
-
-							return fieldName;
-						}),
-					};
-				});
-
-				duplicatedField.rows = layout[0].rows;
-
-				return newDuplicatedNestedField;
-			}
-		);
-
-		duplicatedField.settingsContext = updateSettingsContextProperty(
-			props.editingLanguageId,
-			duplicatedField.settingsContext,
-			'rows',
-			duplicatedField.rows
-		);
-	}
-
-	return updateField(
-		props,
-		duplicatedField,
-		'validation',
-		getValidation(duplicatedField)
-	);
-};
-
-export const getLabel = (originalField, editingLanguageId) => {
-	return sub(Liferay.Language.get('copy-of-x'), [
-		getFieldLocalizedValue(
-			originalField.settingsContext.pages,
-			'label',
-			editingLanguageId
-		),
-	]);
-};
-
-export const getValidation = (originalField) => {
-	const validation = getSettingsContextProperty(
-		originalField.settingsContext,
-		'validation'
-	);
-
-	return validation;
-};
+import {createDuplicatedField} from '../util/fields.es';
+import {updateField} from '../util/settingsContext.es';
 
 export const duplicateField = (
 	activePage,
@@ -142,7 +46,13 @@ export const duplicateField = (
 						nestedFields
 					);
 
-					let pages = [{rows: field.rows}];
+					let {rows} = field;
+
+					if (typeof rows === 'string') {
+						rows = JSON.parse(rows);
+					}
+
+					let pages = [{rows}];
 
 					const {rowIndex} = FormSupport.getFieldIndexes(
 						pages,

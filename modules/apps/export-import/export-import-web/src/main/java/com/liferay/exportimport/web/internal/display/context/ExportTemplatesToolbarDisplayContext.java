@@ -23,6 +23,7 @@ import com.liferay.exportimport.web.internal.search.ExportImportConfigurationSea
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.BaseManagementToolbarDisplayContext;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Company;
@@ -60,12 +61,11 @@ public class ExportTemplatesToolbarDisplayContext
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getRenderURL();
-
-		clearResultsURL.setParameter(
-			"mvcPath", "/export/export_templates/view.jsp");
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getRenderURL()
+		).setMVCPath(
+			"/export/export_templates/view_export_configurations.jsp"
+		).buildString();
 	}
 
 	@Override
@@ -73,16 +73,18 @@ public class ExportTemplatesToolbarDisplayContext
 		return CreationMenuBuilder.addPrimaryDropdownItem(
 			dropdownItem -> {
 				GroupDisplayContextHelper groupDisplayContextHelper =
-					new GroupDisplayContextHelper(request);
+					new GroupDisplayContextHelper(httpServletRequest);
 
 				dropdownItem.setHref(
 					getRenderURL(), "mvcRenderCommandName",
-					"editExportConfiguration", Constants.CMD, Constants.ADD,
-					"groupId", groupDisplayContextHelper.getGroupId(),
-					"liveGroupId", groupDisplayContextHelper.getLiveGroupId(),
-					"privateLayout", Boolean.FALSE.toString());
+					"/export_import/edit_export_configuration", Constants.CMD,
+					Constants.ADD, "groupId",
+					groupDisplayContextHelper.getGroupId(), "liveGroupId",
+					groupDisplayContextHelper.getLiveGroupId(), "privateLayout",
+					Boolean.FALSE.toString());
 
-				dropdownItem.setLabel(LanguageUtil.get(request, "new"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "new"));
 			}
 		).build();
 	}
@@ -94,12 +96,11 @@ public class ExportTemplatesToolbarDisplayContext
 
 	@Override
 	public String getSearchActionURL() {
-		PortletURL searchActionURL = getRenderURL();
-
-		searchActionURL.setParameter(
-			"mvcRenderCommandName", "viewExportConfigurations");
-
-		return searchActionURL.toString();
+		return PortletURLBuilder.create(
+			getRenderURL()
+		).setMVCRenderCommandName(
+			"/export_import/view_export_configurations"
+		).buildString();
 	}
 
 	public SearchContainer<ExportImportConfiguration> getSearchContainer() {

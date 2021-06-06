@@ -15,9 +15,9 @@
 import ClayButton from '@clayui/button';
 import {useResource} from '@clayui/data-provider';
 import ClayForm, {ClayInput} from '@clayui/form';
-import ClayMultiSelect from '@clayui/multi-select';
-import {usePrevious} from 'frontend-js-react-web';
-import {ItemSelectorDialog} from 'frontend-js-web';
+import ClayMultiSelect, {itemLabelFilter} from '@clayui/multi-select';
+import {usePrevious} from '@liferay/frontend-js-react-web';
+import {openSelectionModal} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useEffect} from 'react';
 
@@ -25,7 +25,6 @@ const noop = () => {};
 
 function AssetTagsSelector({
 	addCallback,
-	eventName,
 	groupIds = [],
 	id,
 	inputName,
@@ -128,27 +127,20 @@ function AssetTagsSelector({
 			selectedTagNames: selectedItems.map((item) => item.value).join(),
 		});
 
-		const itemSelectorDialog = new ItemSelectorDialog({
+		openSelectionModal({
 			buttonAddLabel: Liferay.Language.get('done'),
-			eventName,
-			title: Liferay.Language.get('tags'),
-			url,
-		});
+			multiple: true,
+			onSelect: (dialogSelectedItems) => {
+				if (!dialogSelectedItems?.length) {
+					return;
+				}
 
-		itemSelectorDialog.open();
-
-		itemSelectorDialog.on('selectedItemChange', (event) => {
-			const dialogSelectedItems = event.selectedItem;
-
-			if (dialogSelectedItems && dialogSelectedItems.items.length) {
-				const newValues = dialogSelectedItems.items
-					.split(',')
-					.map((value) => {
-						return {
-							label: value,
-							value,
-						};
-					});
+				const newValues = dialogSelectedItems.map((item) => {
+					return {
+						label: item.value,
+						value: item.value,
+					};
+				});
 
 				const addedItems = newValues.filter(
 					(newValue) =>
@@ -174,7 +166,9 @@ function AssetTagsSelector({
 				removedItems.forEach((item) =>
 					callGlobalCallback(removeCallback, item)
 				);
-			}
+			},
+			title: Liferay.Language.get('tags'),
+			url,
 		});
 	};
 
@@ -194,12 +188,15 @@ function AssetTagsSelector({
 							onItemsChange={handleItemsChange}
 							sourceItems={
 								resource
-									? resource.map((tag) => {
-											return {
-												label: tag.text,
-												value: tag.value,
-											};
-									  })
+									? itemLabelFilter(
+											resource.map((tag) => {
+												return {
+													label: tag.text,
+													value: tag.value,
+												};
+											}),
+											inputValue
+									  )
 									: []
 							}
 						/>
@@ -223,7 +220,6 @@ function AssetTagsSelector({
 
 AssetTagsSelector.propTypes = {
 	addCallback: PropTypes.string,
-	eventName: PropTypes.string,
 	groupIds: PropTypes.array,
 	id: PropTypes.string,
 	inputName: PropTypes.string,

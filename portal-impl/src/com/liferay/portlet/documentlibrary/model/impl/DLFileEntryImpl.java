@@ -245,6 +245,10 @@ public class DLFileEntryImpl extends DLFileEntryBaseImpl {
 			DLFileEntry.class.getName(), getFileEntryId());
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	@Override
 	public String getLuceneProperties() {
 		UnicodeProperties extraSettingsUnicodeProperties =
@@ -292,6 +296,10 @@ public class DLFileEntryImpl extends DLFileEntryBaseImpl {
 			return dlFileVersion.getStatus();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return WorkflowConstants.STATUS_APPROVED;
 		}
 	}

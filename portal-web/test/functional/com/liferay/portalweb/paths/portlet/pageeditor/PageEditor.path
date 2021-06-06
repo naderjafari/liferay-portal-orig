@@ -46,6 +46,56 @@
 	<td></td>
 </tr>
 <tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_BORDERED_LIST</td>
+	<td>//div[contains(@class,'page-editor__topper') and contains(.,'${key_fragmentName}')]//div[contains(@class,'page-editor__collection')]//ul[contains(@class,'list-group')]/li[contains(@class,'list-group-item')][${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_BULLETED_LIST</td>
+	<td>//div[contains(@class,'page-editor__topper') and contains(.,'${key_fragmentName}')]//div[contains(@class,'page-editor__collection')]//ul[not(contains(@class,'list-group'))]/li[${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_INLINE_LIST</td>
+	<td>//div[contains(@class,'page-editor__topper') and contains(.,'${key_fragmentName}')]//div[contains(@class,'page-editor__collection')]//ul[contains(@class,'list-inline')]/li[contains(@class,'flex-grow-1')][${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_NUMBERED_LIST</td>
+	<td>//div[contains(@class,'page-editor__topper') and contains(.,'${key_fragmentName}')]//div[contains(@class,'page-editor__collection')]//ol/li[${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_UNSTYLED_LIST</td>
+	<td>//div[contains(@class,'page-editor__topper') and contains(.,'${key_fragmentName}')]//div[contains(@class,'page-editor__collection')]//ul[contains(@class,'list-unstyled')]/li[${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_BORDERED_LIST_AT_VIEW_MODE</td>
+	<td>//div[contains(@class,'layout-content')]//ul[contains(@class,'list-group')]/li[contains(@class,'list-group-item')][${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_BULLETED_LIST_AT_VIEW_MODE</td>
+	<td>//div[contains(@class,'layout-content')]//ul[not(contains(@class,'list-group'))]/li[${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_INLINE_LIST_AT_VIEW_MODE</td>
+	<td>//div[contains(@class,'layout-content')]//ul[contains(@class,'list-inline')]/li[contains(@class,'flex-grow-1')][${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_NUMBERED_LIST_AT_VIEW_MODE</td>
+	<td>//div[contains(@class,'layout-content')]//ol/li[${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COLLECTION_ITEM_CONTENT_IN_UNSTYLED_LIST_AT_VIEW_MODE</td>
+	<td>//div[contains(@class,'layout-content')]//ul[contains(@class,'list-unstyled')]/li[${key_position}]${key_entryContent}</td>
+	<td></td>
+</tr>
+<tr>
 	<td>COLLECTION_ITEM_IMAGE</td>
 	<td>//div[contains(@class,'page-editor__topper') and contains(.,'${key_fragmentName}')]//div[contains(@class,'page-editor__collection')]/div[@class='row'][${key_rowPosition}]/div[contains(@class,'col')][${key_colPosition}]//*[contains(@style,'${key_entryImage}')]</td>
 	<td></td>
@@ -141,6 +191,17 @@
 	<td>//div[contains(@class,'page-editor__layout-viewport__resizer')][contains(@style,'${key_style}')]</td>
 	<td></td>
 </tr>
+<!--DISPLAY_PAGE_TEMPLATE-->
+<tr>
+	<td>ASSET_CONTENT</td>
+	<td>//div[contains(@data-analytics-asset-title,'${key_assetTitle}')]//*[contains(.,'${key_assetContent}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ENTRY_COVER_IMAGE</td>
+	<td>//div[contains(@class,'cover-image') and contains(@style,'${key_imageFileName}')]</td>
+	<td></td>
+</tr>
 <!--DROP_TARGET-->
 <tr>
 	<td>ANY_FRAGMENT_DROP_TARGET</td>
@@ -174,25 +235,10 @@
 </tr>
 <tr>
 	<td>OUTSIDE_OF_DROP_ZONE</td>
-	<td>//section[contains(@class,'container')]</td>
+	<td>//section[contains(@id,'content')]</td>
 	<td></td>
 </tr>
 <!--EDITABLE_FIELD_TOOLBAR-->
-<tr>
-	<td>EDITABLE_FIELD_TOOLBAR_EDIT_BUTTON</td>
-	<td>//button[@*='Edit']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>EDITABLE_FIELD_TOOLBAR_LINK_BUTTON</td>
-	<td>//button[@*='Link']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>EDITABLE_FIELD_TOOLBAR_MAP_BUTTON</td>
-	<td>//button[@*='Map']</td>
-	<td></td>
-</tr>
 <tr>
 	<td>EDITABLE_FIELD_TOOLBAR_MAPPED_BUTTON</td>
 	<td>//div[contains(@class,'form-group') and contains(.,'${key_mappedField}')]//button[@*='Map' and contains(@class,'active')]</td>
@@ -201,16 +247,6 @@
 <tr>
 	<td>EDITABLE_FIELD_TOOLBAR_MAP_BUTTON_SPECIFIC</td>
 	<td>//div[contains(@class,'form-group') and contains(.,'${key_mappedField}')]//button[@*='Map']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>EDITABLE_FIELD_TOOLBAR_MAP_ASSET_SELECT_POPUP_BUTTON</td>
-	<td>//label[contains(.,'Content')]/following-sibling::div//button</td>
-	<td></td>
-</tr>
-<tr>
-	<td>EDITABLE_FIELD_TOOLBAR_IMAGE_PROPERTIES_BUTTON</td>
-	<td>//button[@*='Image Properties']</td>
 	<td></td>
 </tr>
 <tr>
@@ -230,13 +266,63 @@
 	<td></td>
 </tr>
 <tr>
+	<td>EXPERIENCE_CREATE_SEGMENT</td>
+	<td>//button[contains(.,'New Segment')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>EXPERIENCE_DEFAULT_BUTTON_NAME</td>
 	<td>//div[contains(@class,'page-editor__toolbar-experience')]/button[contains(.,'Default')]</td>
 	<td></td>
 </tr>
 <tr>
+	<td>EXPERIENCE_DELETE_BUTTON</td>
+	<td>//div[contains(@class,'toolbar-experience')]//button[contains(@title,'Delete Experience')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_DUPLICATE_BUTTON</td>
+	<td>//div[contains(@class,'toolbar-experience')]//button[contains(@title,'Duplicate Experience')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_EDIT_BUTTON</td>
+	<td>//div[contains(@class,'toolbar-experience')]//button[contains(@title,'Edit Experience')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_LANGUAGE_CHECKBOX</td>
+	<td>//*[contains(@aria-label,'${key_language}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_LANGUAGE_SELECTOR</td>
+	<td>//ul[contains(@class,'navbar-nav') and contains(@class,'start')]//button[contains(@class,'dropdown-toggle') and contains(@class,'btn-monospaced')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_LANGUAGE_SELECTOR_LOCALE</td>
+	<td>//*[contains(@class,'dropdown-item')]//span[contains(text(), '${key_language}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_PRIORITIZE_BUTTON</td>
+	<td>//div[contains(@class,'toolbar-experience')]//button[contains(@title,'Prioritize Experience')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_SEGMENT_ANYONE</td>
+	<td>//select[@id='_com_liferay_layout_content_page_editor_web_internal_portlet_ContentPageEditorPortlet_segmentsExperienceSegment']</td>
+	<td></td>
+</tr>
+<tr>
 	<td>EXPERIENCE_SELECT_ITEM</td>
 	<td>//div[contains(@class,'toolbar-experience')]//ul//*[text()='${key_experienceName}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPERIENCE_SELECT_SEGMENT</td>
+	<td>//select[@id='_com_liferay_layout_content_page_editor_web_internal_portlet_ContentPageEditorPortlet_segmentsExperienceSegment']/option[.='${key_segmentName}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -249,41 +335,20 @@
 	<td>//input[contains(@id,'segmentsExperienceName')]</td>
 	<td></td>
 </tr>
-<!--FRAGMENT_BODY_TOOLBAR-->
 <tr>
-	<td>FRAGMENT_BODY_TOOLBAR_CONFIGURATION_BUTTON</td>
-	<td>//button[@*='${key_elementType} Configuration']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FRAGMENT_BODY_TOOLBAR_STYLE_BUTTON</td>
-	<td>//button[@*='${key_elementType} Styles']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FRAGMENT_BODY_FLOATING_TOOLBAR_PANEL</td>
-	<td>//div[contains(@class,'page-editor__floating-toolbar__panel')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FRAGMENT_BODY_FLOATING_TOOLBAR_PLUS_BUTTON</td>
-	<td>//div[contains(@class,'floating-toolbar')]//div[contains(@class,'form-group')]//button[*[name()='svg'][contains(@class,'plus')]]</td>
-	<td></td>
-</tr>
-<tr>
-	<td></td>
-	<td></td>
+	<td>EXPERIENCE_NEW_EXPERIENCE_MODAL_TITLE</td>
+	<td>//*[contains(@class,'modal-title') and contains(text(), 'New Experience')]</td>
 	<td></td>
 </tr>
 <!--FRAGMENT_SIDEBAR-->
 <tr>
-	<td>FRAGMENT_SIDEBAR</td>
-	<td>//div[contains(@class,'page-editor__sidebar__buttons')]</td>
+	<td>FRAGMENT_SIDEBAR_BACK</td>
+	<td>//button[*[name()='svg'][contains(@class,'lexicon-icon-angle-left')]]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>FRAGMENT_SIDEBAR_BACK</td>
-	<td>//button[*[name()='svg'][contains(@class,'lexicon-icon-angle-left')]]</td>
+	<td>FRAGMENT_SIDEBAR_BODY</td>
+	<td>//div[contains(@class,'page-editor__sidebar')][contains(@class,'theme-adapter-forms')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -313,7 +378,7 @@
 </tr>
 <tr>
 	<td>FRAGMENT_SIDEBAR_COMMENT_ENTRY_INPUT</td>
-	<td>//div[contains(@class,'alloy-editor-container') and contains(@id,'pageEditorCommentEditor')]/div[contains(@data-placeholder,'Type your comment here.')]/p[contains(.,'${fragmentComment}')]</td>
+	<td>//div[contains(@class,'alloy-editor-container') and contains(@id,'ContentPageEditorPortlet')]/div[contains(@data-placeholder,'Type your comment here.')]/p[contains(.,'${fragmentComment}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -321,10 +386,10 @@
 	<td>//strong[contains(@class,'text-dark') and contains(.,'${key_fragmentName}')]</td>
 	<td></td>
 </tr>
-<tr>
-	<td>FRAGMENT_SIDEBAR_COMMENT_LIST_SECONDARY_TEXT</td>
-	<td>//span[contains(@class,'text-secondary') and contains(.,'${key_commentCount}')]</td>
-	<td></td>
+<tr>	
+	<td>FRAGMENT_SIDEBAR_COMMENT_LIST_SECONDARY_TEXT</td>	
+	<td>//span[contains(@class,'text-secondary') and contains(.,'${key_commentCount}')]</td>	
+	<td></td>	
 </tr>
 <tr>
 	<td>FRAGMENT_SIDEBAR_COMMENT_LIST_TITLE</td>
@@ -408,7 +473,7 @@
 </tr>
 <tr>
 	<td>FRAGMENT_SIDEBAR_SECONDARY_TEXT</td>
-	<td>//div[contains(@class,'text-center')]/p</td>
+	<td>//*[contains(@class,'text-secondary')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -433,12 +498,22 @@
 </tr>
 <tr>
 	<td>FRAGMENT_SIDEBAR_TAB_BUTTON</td>
-	<td>//div[contains(@class,'page-editor__sidebar__buttons')]//*[contains(@title,'${key_tabName}')]</td>
+	<td>//div[contains(@class,'page-editor__sidebar__buttons')]//*[@*='${key_tabName}']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>FRAGMENT_SIDEBAR_TAB_BUTTON_ACTIVE</td>
 	<td>//button[contains(@title,'${key_tabName}')][contains(@aria-pressed,'true')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FRAGMENT_SIDEBAR_TYPE_LABEL</td>
+	<td>//p[contains(@class,'type-label')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FRAGMENT_SIDEBAR_SUB_TYPE_LABEL</td>
+	<td>xpath=(//p[contains(@class,'type-label')])[2]</td>
 	<td></td>
 </tr>
 <tr>
@@ -448,18 +523,33 @@
 </tr>
 <!--FRAGMENTS_AND_WIDGETS-->
 <tr>
+	<td>FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON</td>
+	<td>//div[contains(@class,'fragments-widgets-panel')]//button[contains(@class,'tooltip')][*[name()='svg'][contains(@class,'icon-${key_displayStyle}')]]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>FRAGMENTS_AND_WIDGETS_TAB_FRAGMENT</td>
-	<td>//button[normalize-space()='${key_collectionName}']/following-sibling::div/ul/li[contains(@class,'page-editor__fragments-widgets__tab-item')][normalize-space()='${key_fragmentName}']</td>
+	<td>//button[normalize-space()='${key_collectionName}']/following-sibling::div/ul/li[contains(@class,'page-editor__fragments-widgets__tab-list-item')][normalize-space()='${key_fragmentName}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FRAGMENTS_AND_WIDGETS_TAB_FRAGMENT_CARD_ITEM</td>
+	<td>//button[normalize-space()='${key_collectionName}']/following-sibling::div/ul/li[contains(@class,'page-editor__fragments-widgets__tab-card-item')][normalize-space()='${key_fragmentName}']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>FRAGMENTS_AND_WIDGETS_TAB_WIDGET</td>
-	<td>//li[contains(@class,'page-editor__fragments-widgets__tab-item')][normalize-space()='${key_portletName}']</td>
+	<td>//li[contains(@class,'page-editor__fragments-widgets__tab-list-item')][normalize-space()='${key_portletName}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FRAGMENTS_AND_WIDGETS_TAB_WIDGET_CARD_ITEM</td>
+	<td>//li[contains(@class,'page-editor__fragments-widgets__tab-card-item')][normalize-space()='${key_portletName}']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>FRAGMENTS_AND_WIDGETS_SEARCH_RESULTS</td>
-	<td>//li[contains(@class,'page-editor__fragments-widgets__tab-item')][normalize-space()='${key_fragmentName}']</td>
+	<td>//li[contains(@class,'page-editor__fragments-widgets__tab-list-item')][normalize-space()='${key_fragmentName}']</td>
 	<td></td>
 </tr>
 <!--FOOTER_FRAGMENT-->
@@ -477,32 +567,32 @@
 <!--LAYOUT ELEMENTS-->
 <tr>
 	<td>CONTAINER_CONTAINER</td>
-	<td>//div[contains(@class,'page-editor__topper') and contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')]</td>
 	<td></td>
 </tr>
 <tr>
   <td>CONTAINER_CONTAINER_EMPTY</td>
-  <td>//div[contains(@class,'page-editor__topper') and contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container empty')]</td>
+  <td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'empty')]</td>
   <td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONTAINER_NESTED_ELEMENT</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')]${key_elementHeader}</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')]${key_elementHeader}</td>
 	<td></td>
 </tr>
 <tr>
 	<td>GRID_COLUMN</td>
-	<td>//div[contains(@class,'page-editor__topper') and contains(.,'Grid')][${key_position}]//div[contains(@class,'page-editor__col')][${key_columnNumber}]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Grid')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]//div[contains(@class,'page-editor__col')][${key_columnNumber}]</td>
 	<td></td>
 </tr>
 <tr>
   <td>GRID_COLUMN_EMPTY</td>
-  <td>//div[contains(@class,'page-editor__topper') and contains(.,'Grid')][${key_position}]//div[contains(@class,'row empty')]</td>
+  <td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Grid')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]//div[contains(@class,'page-editor__row')][contains(@class,'empty')]</td>
   <td></td>
 </tr>
 <tr>
 	<td>GRID_COLUMN_NESTED_ELEMENT</td>
-	<td>//div[contains(@class,'page-editor__topper') and contains(.,'Grid')][${key_position}]//div[contains(@class,'page-editor__col')][${key_columnNumber}]${key_elementHeader}</td>
+	<td>xpath=(//div[contains(@class,'layout-content')]//div[contains(@class,'row')][not(contains(@class,'alert'))])[${key_position}]/div[contains(@class,'col')][${key_columnNumber}]${key_elementHeader}</td>
 	<td></td>
 </tr>
 <tr>
@@ -517,130 +607,134 @@
 </tr>
 <tr>
 	<td>LAYOUT_ELEMENTS_HEADER</td>
-	<td>//div[contains(@class,'page-editor__root page-editor__topper')]/div[contains(.,'${key_elementType}')][${key_position}]//li[contains(@class,'title')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'${key_elementType}')]//li[contains(@class,'title')])[${key_position}]</td>
 	<td></td>
 </tr>
 <!--LAYOUT_ELEMENTS_CONFIGURATION-->
 <tr>
 	<td>CONTAINER_CONFIGURATION_BACKGROUND_COLOR</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'bg-${key_paletteItem}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@style,'background-color: var(--${key_paletteItem})')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_BACKGROUND_IMAGE</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@style,'${key_imageName}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@style,'${key_imageName}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_BORDER_COLOR</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'border-${key_paletteItem}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@style,'border-color: var(--${key_paletteItem})')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_BORDER_RADIUS</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'rounded-${key_borderRadius}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@style,'border-radius: var(--${key_borderRadius})')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_BORDER_WIDTH</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@style,'border-width: ${key_borderWidth}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@style,'border-width: ${key_borderWidth}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CONTAINER_CONFIGURATION_BOX_SHADOW</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')])[${key_position}]/parent::div[contains(@style,'box-shadow: var(--${key_boxShadow})')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_CONTENT_DISPLAY</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'d-${key_contentDisplay}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'flex-${key_contentDisplay}')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>CONTAINER_CONFIGURATION_DROP_SHADOW</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'shadow-${key_dropShadow}')]</td>
+	<td>CONTAINER_CONFIGURATION_FIXED_WIDTH</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'max-xl')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>CONTAINER_CONFIGURATION_HORIZONTAL_ALIGN</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'justify-content-${key_horizontalAlign}')]</td>
+	<td>CONTAINER_CONFIGURATION_JUSTIFY_CONTENT</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'justify-content-${key_justifyContent}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CONTAINER_CONFIGURATION_HEIGHT</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@style,'height: ${key_height}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_MARGIN_BOTTOM</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'mb-${key_marginBottom}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'mb-${key_marginBottom}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_MARGIN_LEFT</td>
-	<td>//div[contains(@class,'page-editor__topper')][contains(@class,'ml-${key_marginLeft}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')])[${key_position}]/parent::div[contains(@class,'ml-${key_marginLeft}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_MARGIN_RIGHT</td>
-	<td>//div[contains(@class,'page-editor__topper')][contains(@class,'mr-${key_marginRight}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')])[${key_position}]/parent::div[contains(@class,'mr-${key_marginRight}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_MARGIN_TOP</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'mt-${key_marginTop}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'mt-${key_marginTop}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_OPACITY</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@style,'opacity: ${key_opacity}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@style,'opacity: ${key_opacity}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_PADDING_BOTTOM</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'pb-${key_paddingBottom}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'pb-${key_paddingBottom}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_PADDING_LEFT</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'pl-${key_paddingLeft}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'pl-${key_paddingLeft}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_PADDING_RIGHT</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'pr-${key_paddingRight}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'pr-${key_paddingRight}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CONTAINER_CONFIGURATION_PADDING_TOP</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'pt-${key_paddingTop}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'pt-${key_paddingTop}')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>CONTAINER_CONFIGURATION_VERTICAL_ALIGN</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Container')][${key_position}]//div[contains(@class,'page-editor__container')][contains(@class,'align-items-${key_verticalAlign}')]</td>
+	<td>CONTAINER_CONFIGURATION_ALIGN_ITEMS</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Container')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]/div[contains(@class,'page-editor__container')][contains(@class,'align-items-${key_alignItems}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>GRID_CONFIGURATION_COLUMNS_NO_GUTTER</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Grid')][${key_position}]//div[contains(@class,'page-editor__row') and contains(@class,'no-gutters')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Grid')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]//div[contains(@class,'page-editor__row') and contains(@class,'no-gutters')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>GRID_CONFIGURATION_INVERSE_ORDER</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Grid')][${key_position}]//div[contains(@class,'page-editor__row') and contains(@class,'flex-column-reverse')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Grid')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]//div[contains(@class,'page-editor__row') and contains(@class,'flex-column-reverse')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>GRID_CONFIGURATION_LAYOUT</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Grid')][${key_position}]//div[contains(@class,'col-xs-${key_layout}')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Grid')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]//div[contains(@class,'col-${key_layout}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>GRID_CONFIGURATION_VERTICAL_ALIGNMENT</td>
-	<td>//div[contains(@class,'page-editor__topper')]/div[contains(.,'Grid')][${key_position}]//div[contains(@class,'page-editor__row') and contains(@class,'${key_verticalAlignment}')]</td>
-	<td></td>
-</tr>
-<!--LANGUAGE_MENU-->
-<tr>
-	<td>DROPDOWN</td>
-	<td>//div[contains(@class,'management-bar')]//button[contains(@class,'dropdown-toggle')]</td>
+	<td>xpath=(//div[contains(@class,'page-editor__topper__bar') and contains(.,'Grid')]//following-sibling::div[contains(@class,'page-editor__topper__content')])[${key_position}]//div[contains(@class,'page-editor__row') and contains(@class,'${key_verticalAlignment}')]</td>
 	<td></td>
 </tr>
 <!--MANAGEMENT_BAR-->
 <tr>
 	<td>AUTOSAVE_MESSAGE</td>
-	<td>//div[contains(@class,'management-bar')]//span[contains(@class,'navbar-text')]</td>
+	<td>//div[contains(@class,'management-bar')]//span[contains(@class,'text-success')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -650,12 +744,74 @@
 </tr>
 <tr>
 	<td>MANAGEMENT_BAR</td>
-	<td>//div[contains(@class,'management-bar')]</td>
+	<td>//div[contains(@class,'management-bar')]//ul[contains(@class,'end')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PREVIEW</td>
+	<td>//div[contains(@class,'management-bar')]//button[@*='Preview']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>UNDO_HISTORY</td>
 	<td>//button[contains(@aria-label,'History')]</td>
+	<td></td>
+</tr>
+<!--PAGE_DESIGN_OPTIONS-->
+<tr>
+	<td>MORE_LINK</td>
+	<td>//*[contains(@class,'page-editor__sidebar__panel-header') and contains(.,'Page Design Options')]/a[normalize-space(text())='More']</td>
+	<td></td>
+</tr>
+<!--PAGE_STRUCTURE_ITEM_CONFIGURATION-->
+<tr>
+	<td>CONFIGURATION_PANEL_CONFIGURATION</td>
+	<td>//div[contains(@class,'item-configuration')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CONFIGURATION_PANEL_HANDLE</td>
+	<td>//div[contains(@class,'resize-handler')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CONFIGURATION_PANEL_RESIZE</td>
+	<td>//div[contains(@class,'section resized')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ACTIVE_NAV_ITEM_BUTTON</td>
+	<td>//div[contains(@class,'page-structure')]//button[contains(@class,'nav-link') and contains(@class,'active')][normalize-space()='${key_navItem}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>COMMON_STYLES_FIELDSET_LABEL</td>
+	<td>//div[contains(@class,'common-styles')]/div[contains(@class,'fieldset-label')][normalize-space()='${key_fieldSetLabel}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CUSTOM_STYLES_SELECT_FIELD</td>
+	<td>//div[contains(@class,'custom-styles')]//div[label[contains(.,'${key_fieldLabel}')]]/select</td>
+	<td></td>
+</tr>
+<tr>
+	<td>IMAGE_RESOLUTION_LABEL</td>
+	<td>//div[contains(@class,'text-secondary')][contains(.,'${key_resolutionLabel}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ITEM_SELECTOR_CONTENT_INPUT</td>
+	<td>//input[contains(@class,'item-selector__content-input')][contains(@value,'${key_contentName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ITEM_SELECTOR_DROPDOWN_TOGGLE</td>
+	<td>//label[normalize-space(text())='${key_fieldLabel}']/following-sibling::div//button[contains(@class,'dropdown-toggle')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>NAV_ITEM_BUTTON</td>
+	<td>//div[contains(@class,'page-structure')]//button[contains(@class,'nav-link')][normalize-space()='${key_navItem}']</td>
 	<td></td>
 </tr>
 <!--WIDGETS-->

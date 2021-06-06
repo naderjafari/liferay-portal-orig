@@ -15,7 +15,6 @@
 package com.liferay.exportimport.internal.lar;
 
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
-import com.liferay.exportimport.configuration.ExportImportServiceConfiguration;
 import com.liferay.exportimport.constants.ExportImportBackgroundTaskContextMapConstants;
 import com.liferay.exportimport.kernel.lar.DefaultConfigurationPortletDataHandler;
 import com.liferay.exportimport.kernel.lar.ExportImportHelper;
@@ -99,6 +98,7 @@ import com.liferay.portal.kernel.zip.ZipReaderFactoryUtil;
 import com.liferay.portal.kernel.zip.ZipWriter;
 import com.liferay.portal.kernel.zip.ZipWriterFactoryUtil;
 import com.liferay.portal.model.impl.LayoutImpl;
+import com.liferay.staging.configuration.StagingConfiguration;
 
 import java.io.File;
 import java.io.InputStream;
@@ -133,7 +133,7 @@ import org.xml.sax.XMLReader;
  * @author Máté Thurzó
  */
 @Component(
-	configurationPid = "com.liferay.exportimport.configuration.ExportImportServiceConfiguration",
+	configurationPid = "com.liferay.staging.configuration.StagingConfiguration",
 	immediate = true, service = ExportImportHelper.class
 )
 public class ExportImportHelperImpl implements ExportImportHelper {
@@ -606,13 +606,12 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 		}
 
 		if (ArrayUtil.contains(selectedPlids, 0)) {
-			JSONObject layoutJSONObject = JSONUtil.put(
-				"includeChildren", true
-			).put(
-				"plid", 0
-			);
-
-			jsonArray.put(layoutJSONObject);
+			jsonArray.put(
+				JSONUtil.put(
+					"includeChildren", true
+				).put(
+					"plid", 0
+				));
 		}
 
 		return jsonArray.toString();
@@ -801,8 +800,8 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Unable to process manifest for the process summary " +
-						"screen");
+					"Unable to process manifest for the process summary screen",
+					exception);
 			}
 		}
 		finally {
@@ -1014,8 +1013,8 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 	@Activate
 	@Modified
 	protected void activate(Map<String, Object> properties) {
-		_exportImportServiceConfiguration = ConfigurableUtil.createConfigurable(
-			ExportImportServiceConfiguration.class, properties);
+		_stagingConfiguration = ConfigurableUtil.createConfigurable(
+			StagingConfiguration.class, properties);
 	}
 
 	protected void addCreateDateProperty(
@@ -1244,9 +1243,9 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 		long companyId = CompanyThreadLocal.getCompanyId();
 
 		try {
-			_exportImportServiceConfiguration =
+			_stagingConfiguration =
 				_configurationProvider.getCompanyConfiguration(
-					ExportImportServiceConfiguration.class, companyId);
+					StagingConfiguration.class, companyId);
 		}
 		catch (ConfigurationException configurationException) {
 			if (_log.isWarnEnabled()) {
@@ -1255,10 +1254,8 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 		}
 
 		if (!ExportImportThreadLocal.isStagingInProcess() ||
-			(_exportImportServiceConfiguration.
-				stagingDeleteTempLarOnFailure() &&
-			 _exportImportServiceConfiguration.
-				 stagingDeleteTempLarOnSuccess())) {
+			(_stagingConfiguration.stagingDeleteTempLAROnFailure() &&
+			 _stagingConfiguration.stagingDeleteTempLAROnSuccess())) {
 
 			return ZipWriterFactoryUtil.getZipWriter();
 		}
@@ -1293,13 +1290,12 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			selectedLayoutIds, layout.getLayoutId());
 
 		if (checked) {
-			JSONObject layoutJSONObject = JSONUtil.put(
-				"includeChildren", includeChildren
-			).put(
-				"plid", layout.getPlid()
-			);
-
-			layoutsJSONArray.put(layoutJSONObject);
+			layoutsJSONArray.put(
+				JSONUtil.put(
+					"includeChildren", includeChildren
+				).put(
+					"plid", layout.getPlid()
+				));
 		}
 
 		if (checked && includeChildren) {
@@ -1504,7 +1500,6 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 	private ConfigurationProvider _configurationProvider;
 
 	private DLFileEntryLocalService _dlFileEntryLocalService;
-	private ExportImportServiceConfiguration _exportImportServiceConfiguration;
 	private GroupLocalService _groupLocalService;
 	private LayoutLocalService _layoutLocalService;
 	private LayoutRevisionLocalService _layoutRevisionLocalService;
@@ -1517,6 +1512,7 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 	private PortletDataHandlerProvider _portletDataHandlerProvider;
 
 	private PortletLocalService _portletLocalService;
+	private volatile StagingConfiguration _stagingConfiguration;
 	private SystemEventLocalService _systemEventLocalService;
 	private UserLocalService _userLocalService;
 
@@ -1553,6 +1549,10 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 						_group.getCompanyId(), portletId);
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
+
 					return;
 				}
 

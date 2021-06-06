@@ -58,6 +58,7 @@ page import="com.liferay.mobile.device.rules.web.internal.search.RuleGroupSearch
 page import="com.liferay.mobile.device.rules.web.internal.security.permission.resource.MDRPermission" %><%@
 page import="com.liferay.mobile.device.rules.web.internal.security.permission.resource.MDRRuleGroupInstancePermission" %><%@
 page import="com.liferay.mobile.device.rules.web.internal.security.permission.resource.MDRRuleGroupPermission" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.bean.BeanParamUtil" %><%@
 page import="com.liferay.portal.kernel.dao.orm.QueryUtil" %><%@
@@ -102,6 +103,7 @@ page import="com.liferay.portal.util.PropsValues" %>
 
 <%@ page import="java.util.Collection" %><%@
 page import="java.util.Collections" %><%@
+page import="java.util.Iterator" %><%@
 page import="java.util.LinkedHashMap" %><%@
 page import="java.util.List" %><%@
 page import="java.util.Map" %><%@

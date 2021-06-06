@@ -14,8 +14,6 @@
 
 package com.liferay.data.engine.rest.resource.v2_0.test;
 
-import static com.liferay.portal.kernel.json.JSONUtil.put;
-
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.data.engine.rest.client.dto.v2_0.DataDefinition;
 import com.liferay.data.engine.rest.client.dto.v2_0.DataDefinitionField;
@@ -43,18 +41,18 @@ public class DataDefinitionFieldLinkResourceTest
 	public void setUp() throws Exception {
 		super.setUp();
 
+		_dataDefinition =
+			DataDefinitionTestUtil.addDataDefinitionWithDataLayout(
+				testGroup.getGroupId());
+
 		DataDefinitionResource.Builder builder =
 			DataDefinitionResource.builder();
 
-		_dataDefinitionResource = builder.locale(
+		_dataDefinitionResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
-
-		_dataDefinition =
-			_dataDefinitionResource.postDataDefinitionByContentType(
-				"app-builder",
-				DataDefinition.toDTO(
-					DataDefinitionTestUtil.read("data-definition-basic.json")));
 	}
 
 	@Override
@@ -87,6 +85,7 @@ public class DataDefinitionFieldLinkResourceTest
 		return dataDefinitionFieldLink;
 	}
 
+	@Override
 	protected DataDefinitionFieldLink
 			testGetDataDefinitionDataDefinitionFieldLinkPage_addDataDefinitionFieldLink(
 				Long dataDefinitionId,

@@ -14,6 +14,7 @@
 
 package com.liferay.exportimport.web.internal.display.context;
 
+import com.liferay.exportimport.constants.ExportImportPortletKeys;
 import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalServiceUtil;
@@ -22,13 +23,17 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.portlet.PortalPreferences;
+import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.layoutsadmin.display.context.GroupDisplayContextHelper;
 
 import java.io.Serializable;
@@ -63,8 +68,7 @@ public class ExportImportToolbarDisplayContext {
 	public List<DropdownItem> getActionDropdownItems() {
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {
-				dropdownItem.setHref(
-					"javascript:" + _portletNamespace + "deleteEntries();");
+				dropdownItem.putData("action", "deleteEntries");
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "delete"));
 			}
@@ -84,7 +88,9 @@ public class ExportImportToolbarDisplayContext {
 				String label;
 				String mvcPath;
 
-				if (mvcRenderCommandName.equals("exportLayoutsView")) {
+				if (mvcRenderCommandName.equals(
+						"/export_import/view_export_layouts")) {
+
 					cmd = Constants.EXPORT;
 					label = "custom-export";
 					mvcPath = "/export/new_export/export_layouts.jsp";
@@ -106,7 +112,10 @@ public class ExportImportToolbarDisplayContext {
 							"liveGroupId",
 							String.valueOf(
 								groupDisplayContextHelper.getLiveGroupId()),
-							"privateLayout", Boolean.FALSE.toString(),
+							"privateLayout",
+							ParamUtil.getString(
+								_httpServletRequest, "privateLayout",
+								Boolean.FALSE.toString()),
 							"displayStyle",
 							ParamUtil.getString(
 								_httpServletRequest, "displayStyle",
@@ -191,22 +200,20 @@ public class ExportImportToolbarDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = getRenderURL();
-
-		sortingURL.setParameter(
-			"groupId",
-			String.valueOf(ParamUtil.getLong(_httpServletRequest, "groupId")));
-		sortingURL.setParameter(
-			"privateLayout",
-			String.valueOf(
-				ParamUtil.getBoolean(_httpServletRequest, "privateLayout")));
-		sortingURL.setParameter(
+		PortletURL sortingURL = PortletURLBuilder.create(
+			getRenderURL()
+		).setParameter(
 			"displayStyle",
 			ParamUtil.getString(
-				_httpServletRequest, "displayStyle", "descriptive"));
-		sortingURL.setParameter(
-			"orderByCol",
-			ParamUtil.getString(_httpServletRequest, "orderByCol"));
+				_httpServletRequest, "displayStyle", "descriptive")
+		).setParameter(
+			"groupId", ParamUtil.getLong(_httpServletRequest, "groupId")
+		).setParameter(
+			"orderByCol", ParamUtil.getString(_httpServletRequest, "orderByCol")
+		).setParameter(
+			"privateLayout",
+			ParamUtil.getBoolean(_httpServletRequest, "privateLayout")
+		).build();
 
 		String orderByType = ParamUtil.getString(
 			_httpServletRequest, "orderByType");
@@ -238,7 +245,28 @@ public class ExportImportToolbarDisplayContext {
 	}
 
 	protected String getDisplayStyle() {
-		return ParamUtil.getString(_httpServletRequest, "displayStyle", "list");
+		PortalPreferences portalPreferences =
+			PortletPreferencesFactoryUtil.getPortalPreferences(
+				_httpServletRequest);
+
+		String displayStyle = ParamUtil.getString(
+			_httpServletRequest, "displayStyle");
+
+		String displayPreferences = portalPreferences.getValue(
+			ExportImportPortletKeys.EXPORT_IMPORT, "display-style",
+			"descriptive");
+
+		if (Validator.isNull(displayStyle)) {
+			displayStyle = displayPreferences;
+		}
+
+		if (displayStyle != displayPreferences) {
+			portalPreferences.setValue(
+				ExportImportPortletKeys.EXPORT_IMPORT, "display-style",
+				displayStyle);
+		}
+
+		return displayStyle;
 	}
 
 	protected PortletURL getRenderURL() {

@@ -1,7 +1,6 @@
 @component-name = "portal-upgrades"
 definition {
 
-	property database.types = "db2,mariadb,mysql,oracle,postgresql,sybase";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Upgrades WEM";
@@ -9,7 +8,9 @@ definition {
 	setUp {
 		SignIn.signIn();
 
-		Smoke.viewWelcomePage();
+		var portalURL = PropsUtil.get("portal.url");
+
+		AssertLocation(value1 = "${portalURL}/web/guest?SM_USER=test@liferay.com");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Configuration",
@@ -34,6 +35,7 @@ definition {
 	@priority = "5"
 	test ViewMSBAndAddContentPageAfterUpgrade71102 {
 		property data.archive.type = "data-archive-msb";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql,sybase";
 		property portal.version = "7.1.10.2";
 
 		Upgrade.viewMSBUpgrade();

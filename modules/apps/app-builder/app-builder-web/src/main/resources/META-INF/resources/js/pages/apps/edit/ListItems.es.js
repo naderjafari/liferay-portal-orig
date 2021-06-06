@@ -15,40 +15,16 @@
 import {ClayRadio, ClayRadioGroup} from '@clayui/form';
 import ClayTable from '@clayui/table';
 import classNames from 'classnames';
-import React, {useContext} from 'react';
+import {withLoading} from 'data-engine-js-components-web/js/components/loading/Loading.es';
+import {withEmpty} from 'data-engine-js-components-web/js/components/table/EmptyState.es';
+import {getLocalizedValue} from 'data-engine-js-components-web/js/utils/lang.es';
+import React from 'react';
 
-import {withLoading} from '../../../components/loading/Loading.es';
-import {withEmpty} from '../../../components/table/EmptyState.es';
 import {fromNow} from '../../../utils/time.es';
-import EditAppContext, {
-	UPDATE_DATA_LAYOUT_ID,
-	UPDATE_DATA_LIST_VIEW_ID,
-} from './EditAppContext.es';
 
 const {Body, Cell, Head, Row} = ClayTable;
 
-const ListItems = ({itemType, items}) => {
-	const {
-		dispatch,
-		state: {
-			app: {dataLayoutId, dataListViewId},
-		},
-	} = useContext(EditAppContext);
-
-	const itemId = itemType === 'DATA_LAYOUT' ? dataLayoutId : dataListViewId;
-
-	const onItemIdChange = (id) => {
-		const type =
-			itemType === 'DATA_LAYOUT'
-				? UPDATE_DATA_LAYOUT_ID
-				: UPDATE_DATA_LIST_VIEW_ID;
-
-		dispatch({
-			id,
-			type,
-		});
-	};
-
+const ListItems = ({defaultLanguageId, itemId, items, onChange}) => {
 	return (
 		<table className="table table-autofit table-heading-nowrap table-hover table-nowrap table-responsive">
 			<Head>
@@ -57,7 +33,7 @@ const ListItems = ({itemType, items}) => {
 						{Liferay.Language.get('name')}
 					</Cell>
 					<Cell headingCell>
-						{Liferay.Language.get('create-date')}
+						{Liferay.Language.get('created-date')}
 					</Cell>
 					<Cell headingCell>
 						{Liferay.Language.get('modified-date')}
@@ -66,42 +42,32 @@ const ListItems = ({itemType, items}) => {
 				</Row>
 			</Head>
 			<Body>
-				{items.map(
-					(
-						{
-							dateCreated,
-							dateModified,
-							id,
-							name: {en_US: itemName},
-						},
-						index
-					) => {
-						return (
-							<Row
-								className={classNames('selectable-row', {
-									'selectable-active': id === itemId,
-								})}
-								key={index}
-								onClick={() => onItemIdChange(id)}
+				{items.map(({dateCreated, dateModified, id, name}, index) => (
+					<Row
+						className={classNames('selectable-row', {
+							'selectable-active': id === itemId,
+						})}
+						key={index}
+						onClick={() => onChange(items[index])}
+					>
+						<Cell align="left">
+							{getLocalizedValue(defaultLanguageId, name)}
+						</Cell>
+						<Cell>{dateCreated && fromNow(dateCreated)}</Cell>
+						<Cell>{dateModified && fromNow(dateModified)}</Cell>
+						<Cell align="right">
+							<ClayRadioGroup
+								inline
+								onSelectedValueChange={() =>
+									onChange(items[index])
+								}
+								selectedValue={itemId}
 							>
-								<Cell align="left">{itemName}</Cell>
-								<Cell>{fromNow(dateCreated)}</Cell>
-								<Cell>{fromNow(dateModified)}</Cell>
-								<Cell align={'right'}>
-									<ClayRadioGroup
-										inline
-										onSelectedValueChange={() =>
-											onItemIdChange(id)
-										}
-										selectedValue={itemId}
-									>
-										<ClayRadio value={id} />
-									</ClayRadioGroup>
-								</Cell>
-							</Row>
-						);
-					}
-				)}
+								<ClayRadio value={id} />
+							</ClayRadioGroup>
+						</Cell>
+					</Row>
+				))}
 			</Body>
 		</table>
 	);

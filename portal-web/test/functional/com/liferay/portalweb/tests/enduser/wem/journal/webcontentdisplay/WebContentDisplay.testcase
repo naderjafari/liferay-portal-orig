@@ -4,6 +4,7 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Web Content Display";
+
 	var pageName = "Web Content Display Page";
 	var portletName = "Web Content Display";
 
@@ -13,6 +14,8 @@ definition {
 		User.firstLoginPG();
 
 		JSONGroup.addGroup(groupName = "Test Site Name");
+
+		JSONGroup.addGroup(groupName = "Site Name");
 
 		JSONLayout.addPublicLayout(
 			groupName = "Test Site Name",
@@ -33,12 +36,14 @@ definition {
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
+
+			JSONGroup.deleteGroupByName(groupName = "Site Name");
 		}
 	}
 
 	@priority = "5"
 	test AddAudioViaWebContent {
-		property custom.properties = "editor.wysiwyg.portal-impl.portlet.ddm.text_html.ftl=ckeditor${line.separator}xuggler.enabled=true";
+		property custom.properties = "xuggler.enabled=true";
 		property dummy.socket.proxy.disabled = "true";
 		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "WebContentDisplay#AddAudioViaWebContent";
@@ -75,7 +80,7 @@ definition {
 
 		WebContentNavigator.gotoAddCP();
 
-		WebContent.addViaCKEditor(
+		WebContent.addCP(
 			webContentContent = "WC WebContent Content",
 			webContentTitle = "WC WebContent Title");
 
@@ -107,6 +112,8 @@ definition {
 		WebContent.addDraftPGViaWCD(
 			webContentContent = "WC WebContent Content",
 			webContentTitle = "WC WebContent Title");
+
+		VerifyElementPresent(locator1 = "Message#SUCCESS");
 
 		Navigator.gotoSitePage(
 			pageName = "Web Content Display Page",
@@ -179,7 +186,7 @@ definition {
 			webContentContent = "WC WebContent Content",
 			webContentTitle = "WC WebContent Title");
 
-		ItemSelector.gotoItemSelectorViaAlloyEditor();
+		ItemSelector.gotoItemSelectorViaCKEditor();
 
 		ItemSelector.uploadFile(
 			navTab = "Documents and Media",
@@ -238,37 +245,15 @@ definition {
 
 	@priority = "4"
 	test AddVideoViaWebContent {
-		property custom.properties = "editor.wysiwyg.portal-impl.portlet.ddm.text_html.ftl=ckeditor${line.separator}xuggler.enabled=true";
-		property dummy.socket.proxy.disabled = "true";
-		property test.name.skip.portal.instance = "WebContentDisplay#AddVideoViaWebContent";
-		property testray.component.names = "Web Content Administration";
+		property testray.component.names = "Web Content Administration,Web Content Display";
 
-		ServerAdministration.openServerAdmin();
+		task ("Add an external video shortcut") {
+			DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-site-name");
 
-		ServerAdministration.configureExternalServices(installXuggler = "true");
-
-		Portlet.shutdownServer();
-
-		Portlet.startServer(deleteLiferayHome = "false");
-
-		ServerAdministration.openServerAdmin();
-
-		ServerAdministration.configureExternalServices(enableXuggler = "true");
-
-		JSONDocument.addFileWithUploadedFile(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "Document_1.mp4",
-			groupName = "Test Site Name",
-			mimeType = "video/mp4",
-			sourceFileName = "Document_1.mp4");
-
-		DMDocument.openDocumentsAndMediaAdmin(siteURLKey = "test-site-name");
-
-		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_1.mp4");
-
-		DMNavigator.gotoURLDetail();
-
-		var dmDocumentURL = selenium.getElementValue("//input[contains(@id,'url')]");
+			VideoShortcut.addCP(
+				videoShortcutTitle = "Liferay Digital Experience Platform",
+				videoURL = "https://www.youtube.com/watch?v=HOdbzGCI5ME");
+		}
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
 
@@ -279,8 +264,8 @@ definition {
 			webContentTitle = "WC WebContent Title");
 
 		WebContent.uploadVideo(
-			dmDocumentURL = "${dmDocumentURL}",
-			navTab = "URL");
+			navTab = "Documents and Media",
+			videoShortcutTitle = "Liferay Digital Experience Platform");
 
 		PortletEntry.publish();
 
@@ -292,7 +277,9 @@ definition {
 
 		IFrame.closeFrame();
 
-		WebContent.viewVideoViaWCD();
+		WaitForElementPresent(locator1 = "YoutubePortlet#VIDEO_IFRAME");
+
+		WebContent.viewVideoViaWCD(videoShortcutTitle = "Liferay Digital Experience Platform");
 	}
 
 	@priority = "5"
@@ -411,6 +398,8 @@ definition {
 	@description = "This is a use case for LPS-70386."
 	@priority = "5"
 	test AddWebContentWithPortletURL {
+		property portal.acceptance = "true";
+
 		JSONLayout.addPublicLayout(
 			groupName = "Test Site Name",
 			layoutName = "Site Page Name");
@@ -423,7 +412,7 @@ definition {
 
 		var portalURL = PropsUtil.get("portal.url");
 
-		AlloyEditor.addSourceContent(content = '''<p><span><a href="${portalURL}/web/test-site-name/site-page-name/-/testportlet">text</a></span></p>''');
+		CKEditor.addSourceContent(content = '''<p><span><a href="${portalURL}/web/test-site-name/site-page-name/-/testportlet">text</a></span></p>''');
 
 		PortletEntry.publish();
 
@@ -454,8 +443,8 @@ definition {
 	test AddWithStructure {
 		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
 		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
-		property environment.acceptance = "true";
-		property portal.acceptance = "true";
+		property environment.acceptance = "false";
+		property portal.acceptance = "false";
 		property testray.component.names = "Web Content Display,Training";
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
@@ -464,19 +453,17 @@ definition {
 
 		WebContentStructures.addCP(structureName = "WC Structure Name");
 
-		DynamicDataMapping.addField(
-			field = "Text",
+		DataEngine.addField(
 			fieldFieldLabel = "Text",
 			fieldName = "Text");
 
-		DynamicDataMapping.addField(
-			field = "Text Box",
+		DataEngine.addField(
 			fieldFieldLabel = "Text Box",
-			fieldName = "TextBox");
+			fieldLocation = "2",
+			fieldName = "Text",
+			fieldType = "Multiple Lines");
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
-
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
 
 		NavItem.gotoTemplates();
 
@@ -489,18 +476,37 @@ definition {
 			pageName = "Web Content Display Page",
 			siteName = "Test Site Name");
 
+		var content = '''Hello World
+Welcome to Liferay Community Edition Portal 7.4.0 CE GA1''';
+
 		WebContent.addStructuredPGViaWCD(
-			structureFieldName = "Text",
+			fieldLabelList = "Text,Text Box",
 			structureName = "WC Structure Name",
-			templateName = "WC Template Name",
-			textBoxFieldName = "TextBox",
-			webContentText = "WC WebContent Text",
-			webContentTextBox = "WC WebContent TextBox",
+			text = "WC WebContent Text",
+			textBox = "${content}",
 			webContentTitle = "WC WebContent Title");
 
-		AssertElementPresent(locator1 = "//div[contains(@class,journal-content-article)]//h1[contains(@class,'text')][contains(.,'WC WebContent Text')]");
+		AssertTextEquals(
+			locator1 = "//div[contains(@class,journal-content-article)]//h1[contains(@class,'text')]",
+			value1 = "WC WebContent Text");
 
-		AssertElementPresent(locator1 = "//div[contains(@class,journal-content-article)]//h2[contains(@class,'text-box')][contains(.,'WC WebContent TextBox')]");
+		var actual = selenium.getHtmlNodeText("//div[contains(@class,journal-content-article)]//h2[contains(@class,'text-box')]");
+
+		TestUtils.assertEquals(
+			actual = "${actual}",
+			expected = "${content}");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+		WebContent.viewWithStructureCP(
+			webContentText = "WC WebContent Text",
+			webContentTitle = "WC WebContent Title");
+
+		WebContent.viewWithStructureCP(
+			fieldType = "Multiple Lines",
+			predefinedValue = "true",
+			webContentText = "${content}",
+			webContentTextFieldLabel = "Text Box");
 	}
 
 	@priority = "4"
@@ -582,6 +588,33 @@ definition {
 		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
 	}
 
+	@description = "This is a use case for LPS-118702. Display web content article from other site."
+	@priority = "5"
+	test DisplayWebContentFromOtherSite {
+		property portal.acceptance = "true";
+
+		task ("Add a web content article in Site Name") {
+			JSONWebcontent.addWebContent(
+				content = "Web Content Content",
+				groupName = "Site Name",
+				title = "Web Content Title");
+		}
+
+		task ("Select the web content article in Web Content Display in Test Site Name") {
+			Navigator.gotoSitePage(
+				pageName = "Web Content Display Page",
+				siteName = "Test Site Name");
+
+			WebContentDisplayPortlet.selectOtherSiteWebContent(
+				otherSiteName = "Site Name",
+				webContentTitle = "Web Content Title");
+		}
+
+		task ("Assert the web content article is shown in Web Content Display") {
+			WebContent.viewPGViaWCD(webContentContent = "Web Content Content");
+		}
+	}
+
 	@priority = "4"
 	test EditWebContent {
 		property testray.component.names = "Web Content Display";
@@ -645,7 +678,7 @@ definition {
 			webContentContent = "世界您好 Content",
 			webContentTitle = "世界您好 Title");
 
-		Button.clickPublish();
+		PortletEntry.publish();
 
 		Navigator.gotoSitePage(
 			pageName = "Web Content Display Page",
@@ -1044,6 +1077,104 @@ definition {
 			webContentTitle = "WC WebContent Title");
 	}
 
+	@description = "View messages in Web Content Display."
+	@priority = "4"
+	@uitest
+	test ViewMessagesInWebContentDisplay {
+		task ("Add a web content") {
+			JSONWebcontent.addWebContent(
+				content = "WC WebContent Content",
+				groupName = "Test Site Name",
+				title = "WC WebContent Title");
+		}
+
+		task ("View the default message shown in Web Content Display") {
+			Navigator.gotoSitePage(
+				pageName = "Web Content Display Page",
+				siteName = "Test Site Name");
+
+			WebContentDisplayPortlet.viewDefaultMessage();
+		}
+
+		task ("Select the web content in Web Content Display") {
+			WebContentDisplayPortlet.selectWebContent(webContentTitle = "WC WebContent Title");
+
+			IFrame.closeFrame();
+		}
+
+		task ("View the web content shown in Web Content Display") {
+			WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
+		}
+
+		task ("Remove the web content from Web Content Display") {
+			WebContentDisplayPortlet.removeWebContent();
+		}
+
+		task ("View the default message shown in Web Content Display") {
+			Navigator.gotoSitePage(
+				pageName = "Web Content Display Page",
+				siteName = "Test Site Name");
+
+			WebContentDisplayPortlet.viewDefaultMessage();
+		}
+
+		task ("Select the web content in Web Content Display") {
+			WebContentDisplayPortlet.selectWebContent(webContentTitle = "WC WebContent Title");
+
+			IFrame.closeFrame();
+		}
+
+		task ("Move the web content to Recycle Bin") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContent.moveToRecycleBinCP(
+				assetType = "Web Content Article",
+				webContentTitle = "WC WebContent Title");
+		}
+
+		task ("View the moved to Recycle Bin message shown in Web Content Display") {
+			Navigator.gotoSitePage(
+				pageName = "Web Content Display Page",
+				siteName = "Test Site Name");
+
+			WebContentDisplayPortlet.viewRecycleBinMessage(webContentTitle = "WC WebContent Title");
+		}
+
+		task ("Undo move to Recycle Bin in Web Content Display") {
+			WebContentDisplayPortlet.undoMoveToRecycleBin();
+		}
+
+		task ("View the web content shown in Web Content Display") {
+			WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
+		}
+
+		task ("Delete the web content") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContent.deleteCP(
+				siteURLKey = "test-site-name",
+				webContentTitle = "WC WebContent Title");
+		}
+
+		task ("View the no longer exists message in Web Content Display") {
+			Navigator.gotoSitePage(
+				pageName = "Web Content Display Page",
+				siteName = "Test Site Name");
+
+			WebContentDisplayPortlet.viewDeletedArticle();
+		}
+
+		task ("View the no longer exists message as Guest") {
+			User.logoutPG();
+
+			Navigator.gotoSitePage(
+				pageName = "Web Content Display Page",
+				siteName = "Test Site Name");
+
+			WebContent.viewNoContentAsGuestPGViaWCD(portletName = "Web Content Display");
+		}
+	}
+
 	@priority = "4"
 	test ViewPortletWCDShowAvailableLocales {
 		property testray.component.names = "Localization,Web Content Display";
@@ -1073,7 +1204,7 @@ definition {
 			webContentContent = "世界您好 Content",
 			webContentTitle = "世界您好 Title");
 
-		Button.clickPublish();
+		PortletEntry.publish();
 
 		Navigator.gotoSitePage(
 			pageName = "Web Content Display Page",
@@ -1106,78 +1237,6 @@ definition {
 			textIcon = "english-United States");
 
 		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
-	}
-
-	@priority = "4"
-	test ViewWebContentDisplayPortletMessages {
-		property testray.component.names = "Web Content Display";
-
-		JSONWebcontent.addWebContent(
-			content = "WC WebContent Content",
-			groupName = "Test Site Name",
-			title = "WC WebContent Title");
-
-		Navigator.gotoSitePage(
-			pageName = "Web Content Display Page",
-			siteName = "Test Site Name");
-
-		WebContentDisplayPortlet.viewDefaultMessage();
-
-		WebContentDisplayPortlet.selectWebContent(webContentTitle = "WC WebContent Title");
-
-		IFrame.closeFrame();
-
-		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
-
-		WebContentDisplayPortlet.removeWebContent();
-
-		Navigator.gotoSitePage(
-			pageName = "Web Content Display Page",
-			siteName = "Test Site Name");
-
-		WebContentDisplayPortlet.viewDefaultMessage();
-
-		WebContentDisplayPortlet.selectWebContent(webContentTitle = "WC WebContent Title");
-
-		IFrame.closeFrame();
-
-		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Web Content");
-
-		WebContent.moveToRecycleBinCP(
-			assetType = "Web Content Article",
-			webContentTitle = "WC WebContent Title");
-
-		Navigator.gotoSitePage(
-			pageName = "Web Content Display Page",
-			siteName = "Test Site Name");
-
-		WebContentDisplayPortlet.viewRecycleBinMessage(webContentTitle = "WC WebContent Title");
-
-		WebContentDisplayPortlet.undoMoveToRecycleBin();
-
-		Navigator.gotoSitePage(
-			pageName = "Web Content Display Page",
-			siteName = "Test Site Name");
-
-		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Web Content");
-
-		WebContent.deleteCP(
-			siteURLKey = "test-site-name",
-			webContentTitle = "WC WebContent Title");
-
-		Navigator.gotoSitePage(
-			pageName = "Web Content Display Page",
-			siteName = "Test Site Name");
-
-		WebContentDisplayPortlet.viewDeletedArticle();
 	}
 
 	@priority = "4"

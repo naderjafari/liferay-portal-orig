@@ -37,12 +37,11 @@ FormInstancePermissionCheckerHelper formInstancePermissionCheckerHelper = ddmFor
 			<c:when test="<%= ddmFormAdminDisplayContext.hasResults() %>">
 				<liferay-ui:search-container
 					id="<%= ddmFormAdminDisplayContext.getSearchContainerId() %>"
-					rowChecker="<%= new EmptyOnClickRowChecker(renderResponse) %>"
+					rowChecker="<%= new DDMFormInstanceRowChecker(renderResponse) %>"
 					searchContainer="<%= ddmFormAdminDisplayContext.getSearch() %>"
 				>
 					<liferay-ui:search-container-row
 						className="com.liferay.dynamic.data.mapping.model.DDMFormInstance"
-						cssClass="entry-display-style"
 						keyProperty="formInstanceId"
 						modelVar="formInstance"
 					>
@@ -77,12 +76,52 @@ FormInstancePermissionCheckerHelper formInstancePermissionCheckerHelper = ddmFor
 								/>
 							</c:when>
 							<c:otherwise>
-								<liferay-ui:search-container-column-text
-									cssClass="table-cell-expand table-title"
-									href="<%= rowURL %>"
-									name="name"
-									value="<%= HtmlUtil.escape(formInstance.getName(locale)) %>"
-								/>
+
+								<%
+								boolean hasValidDDMFormFields = ddmFormAdminDisplayContext.hasValidDDMFormFields(formInstance);
+								boolean hasValidStorageType = ddmFormAdminDisplayContext.hasValidStorageType(formInstance);
+								%>
+
+								<c:choose>
+									<c:when test="<%= hasValidDDMFormFields && hasValidStorageType %>">
+										<liferay-ui:search-container-column-text
+											cssClass="table-cell-expand table-title"
+											href="<%= rowURL %>"
+											name="name"
+											value="<%= HtmlUtil.escape(formInstance.getName(locale)) %>"
+										/>
+									</c:when>
+									<c:otherwise>
+										<liferay-ui:search-container-column-text
+											cssClass="table-cell-expand table-title"
+											name="name"
+										>
+
+											<%
+											String errorMessage = StringPool.BLANK;
+
+											if (!hasValidDDMFormFields) {
+												errorMessage = LanguageUtil.format(request, "this-form-was-created-using-a-custom-field-type-x-that-is-not-available-for-this-liferay-dxp-installation.-instal-x-to-make-it-available-for-editing", ddmFormAdminDisplayContext.getInvalidDDMFormFieldType(formInstance));
+											}
+											else if (!hasValidStorageType) {
+												errorMessage = LanguageUtil.format(request, "this-form-was-created-using-a-storage-type-x-that-is-not-available-for-this-liferay-dxp-installation.-install-x-to-make-it-available-for-editing", formInstance.getStorageType());
+											}
+											%>
+
+											<span class="error-icon">
+												<liferay-ui:icon
+													icon="exclamation-full"
+													markupView="lexicon"
+													message="<%= errorMessage %>"
+													toolTip="<%= true %>"
+												/>
+											</span>
+											<span class="invalid-form-instance">
+												<%= HtmlUtil.escape(formInstance.getName(locale)) %>
+											</span>
+										</liferay-ui:search-container-column-text>
+									</c:otherwise>
+								</c:choose>
 
 								<liferay-ui:search-container-column-text
 									cssClass="table-cell-expand"
@@ -122,8 +161,8 @@ FormInstancePermissionCheckerHelper formInstancePermissionCheckerHelper = ddmFor
 	</aui:form>
 </clay:container-fluid>
 
-<aui:script require='<%= "metal-dom/src/all/dom as dom, " + mainRequire + "/admin/js/components/ShareFormModal/ShareFormModal.es as ShareFormModal" %>'>
-	var spritemap = themeDisplay.getPathThemeImages() + '/lexicon/icons.svg';
+<aui:script require='<%= mainRequire + "/admin/js/components/share-form/openShareFormModal.es as Modal" %>'>
+	var spritemap = themeDisplay.getPathThemeImages() + '/clay/icons.svg';
 
 	var afterOpenShareFormModal = function (data) {
 		Liferay.namespace('DDM').FormSettings = {
@@ -131,28 +170,15 @@ FormInstancePermissionCheckerHelper formInstancePermissionCheckerHelper = ddmFor
 			spritemap: spritemap,
 		};
 
-		var shareFormModal = new ShareFormModal.default({
+		Modal.openShareFormModal({
 			autocompleteUserURL:
 				'<%= ddmFormAdminDisplayContext.getAutocompleteUserURL() %>',
-			events: {
-				shareFormModalClosed: function (event) {
-					event.preventDefault();
-					event.stopPropagation();
-
-					var overlayElement = document.querySelector('.modal-backdrop');
-					dom.exitDocument(overlayElement);
-
-					shareFormModal.dispose();
-				},
-			},
 			localizedName: data.localizedName,
 			portletNamespace: '<portlet:namespace />',
 			shareFormInstanceURL: data.shareFormInstanceURL,
 			spritemap: spritemap,
 			url: data.url,
 		});
-
-		shareFormModal.open();
 	};
 
 	Liferay.after(

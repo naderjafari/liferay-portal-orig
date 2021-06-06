@@ -26,7 +26,7 @@ definition {
 
 		if ("${sitePageType}" == "Embedded") {
 			Type(
-				locator1 = "SitePagesEditPage#PAGE_TYPE_EMBEDDED_URL_FIELD",
+				locator1 = "TextInput#URL",
 				value1 = "${pageTypeURL}");
 		}
 
@@ -103,6 +103,15 @@ definition {
 		MenuItem.click(menuItem = "Add Collection Page");
 
 		Navigator.gotoNavTab(navTab = "${tabName}");
+
+		if (isSet(menuItem)) {
+			AssetListsAdmin.addSelection(
+				collectionName = "${collectionName}",
+				menuItem = "${menuItem}",
+				selectedAsset = "${selectedAsset}");
+
+			Click(locator1 = "Icon#BACK");
+		}
 
 		LexiconCard.clickCardTitle(card = "${collectionName}");
 
@@ -195,6 +204,14 @@ definition {
 		}
 	}
 
+	macro gotoPageEllipsisItem {
+		Click.mouseOverClick(
+			key_pageName = "${pageName}",
+			locator1 = "PagesFinder#PAGE_ELLIPSIS_ICON");
+
+		MenuItem.clickNoError(menuItem = "${item}");
+	}
+
 	macro inputPageSearch {
 		Type(
 			locator1 = "PagesFinder#INPUT_FIELD",
@@ -215,6 +232,7 @@ definition {
 
 	macro navigateToPage {
 		Click(
+			key_pageName = "${pageName}",
 			locator1 = "PagesFinder#PAGE_NAME",
 			value1 = "${pageName}");
 
@@ -234,7 +252,9 @@ definition {
 	}
 
 	macro viewPageNameInPagesFinder {
-		AssertElementPresent(locator1 = "PagesFinder#PAGE_NAME");
+		AssertElementPresent(
+			key_pageName = "${pageName}",
+			locator1 = "PagesFinder#PAGE_NAME");
 	}
 
 }

@@ -16,6 +16,8 @@ package com.liferay.dynamic.data.mapping.form.field.type.internal.select;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldOptionsFactory;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
+import com.liferay.dynamic.data.mapping.form.field.type.internal.util.DDMFormFieldTypeUtil;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
@@ -27,14 +29,16 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.AggregateResourceBundle;
+import com.liferay.portal.kernel.util.CollatorUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
+import java.text.Collator;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,7 +51,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=select",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.SELECT,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		SelectDDMFormFieldTemplateContextContributor.class
@@ -61,61 +66,42 @@ public class SelectDDMFormFieldTemplateContextContributor
 		DDMFormField ddmFormField,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
-		Map<String, Object> parameters = HashMapBuilder.<String, Object>put(
+		return HashMapBuilder.<String, Object>put(
+			"alphabeticalOrder",
+			GetterUtil.getBoolean(ddmFormField.getProperty("alphabeticalOrder"))
+		).put(
 			"dataSourceType", ddmFormField.getDataSourceType()
 		).put(
 			"multiple", getMultiple(ddmFormField, ddmFormFieldRenderingContext)
-		).build();
-
-		DDMFormFieldOptions ddmFormFieldOptions =
-			ddmFormFieldOptionsFactory.create(
-				ddmFormField, ddmFormFieldRenderingContext);
-
-		parameters.put(
+		).put(
 			"options",
-			getOptions(
-				ddmFormFieldOptions, ddmFormFieldRenderingContext.getLocale(),
-				ddmFormFieldRenderingContext));
+			() -> {
+				DDMFormFieldOptions ddmFormFieldOptions =
+					ddmFormFieldOptionsFactory.create(
+						ddmFormField, ddmFormFieldRenderingContext);
 
-		Locale displayLocale = LocaleThreadLocal.getThemeDisplayLocale();
-
-		if (displayLocale == null) {
-			displayLocale = ddmFormFieldRenderingContext.getLocale();
-		}
-
-		ResourceBundle resourceBundle = getResourceBundle(displayLocale);
-
-		Map<String, String> stringsMap = new HashMap<>();
-
-		stringsMap.put(
-			"chooseAnOption",
-			LanguageUtil.get(resourceBundle, "choose-an-option"));
-		stringsMap.put(
-			"chooseOptions",
-			LanguageUtil.get(resourceBundle, "choose-options"));
-		stringsMap.put(
-			"dynamicallyLoadedData",
-			LanguageUtil.get(resourceBundle, "dynamically-loaded-data"));
-		stringsMap.put(
-			"emptyList", LanguageUtil.get(resourceBundle, "empty-list"));
-		stringsMap.put("search", LanguageUtil.get(resourceBundle, "search"));
-
-		parameters.put("strings", stringsMap);
-
-		List<String> predefinedValue = getValue(
-			getPredefinedValue(ddmFormField, ddmFormFieldRenderingContext));
-
-		if (predefinedValue != null) {
-			parameters.put("predefinedValue", predefinedValue);
-		}
-
-		parameters.put(
+				return getOptions(
+					ddmFormField, ddmFormFieldOptions,
+					ddmFormFieldRenderingContext.getLocale(),
+					ddmFormFieldRenderingContext);
+			}
+		).put(
+			"predefinedValue",
+			getValue(
+				DDMFormFieldTypeUtil.getPredefinedValue(
+					ddmFormField, ddmFormFieldRenderingContext))
+		).put(
+			"showEmptyOption",
+			GetterUtil.getBoolean(
+				ddmFormField.getProperty("showEmptyOption"), true)
+		).put(
+			"strings", getStrings(ddmFormFieldRenderingContext)
+		).put(
 			"value",
 			getValue(
 				GetterUtil.getString(
-					ddmFormFieldRenderingContext.getValue(), "[]")));
-
-		return parameters;
+					ddmFormFieldRenderingContext.getValue(), "[]"))
+		).build();
 	}
 
 	protected boolean getMultiple(
@@ -137,11 +123,12 @@ public class SelectDDMFormFieldTemplateContextContributor
 		return ddmFormField.isMultiple();
 	}
 
-	protected List<Object> getOptions(
-		DDMFormFieldOptions ddmFormFieldOptions, Locale locale,
+	protected List<Map<String, String>> getOptions(
+		DDMFormField ddmFormField, DDMFormFieldOptions ddmFormFieldOptions,
+		Locale locale,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
-		List<Object> options = new ArrayList<>();
+		List<Map<String, String>> options = new ArrayList<>();
 
 		for (String optionValue : ddmFormFieldOptions.getOptionsValues()) {
 			if (optionValue == null) {
@@ -151,31 +138,36 @@ public class SelectDDMFormFieldTemplateContextContributor
 			options.add(
 				HashMapBuilder.put(
 					"label",
-					() -> ddmFormFieldOptions.getOptionLabels(
-						optionValue
-					).getString(
-						locale
-					)
+					() -> {
+						LocalizedValue localizedValue =
+							ddmFormFieldOptions.getOptionLabels(optionValue);
+
+						return localizedValue.getString(locale);
+					}
+				).put(
+					"reference",
+					ddmFormFieldOptions.getOptionReference(optionValue)
 				).put(
 					"value", optionValue
 				).build());
 		}
 
-		return options;
-	}
+		boolean alphabeticalOrder = GetterUtil.getBoolean(
+			ddmFormField.getProperty("alphabeticalOrder"));
 
-	protected String getPredefinedValue(
-		DDMFormField ddmFormField,
-		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
+		if (alphabeticalOrder) {
+			Collator collator = CollatorUtil.getInstance(locale);
 
-		LocalizedValue predefinedValue = ddmFormField.getPredefinedValue();
+			options.sort(
+				(map1, map2) -> {
+					String label1 = map1.get("label");
+					String label2 = map2.get("label");
 
-		if (predefinedValue == null) {
-			return null;
+					return collator.compare(label1, label2);
+				});
 		}
 
-		return predefinedValue.getString(
-			ddmFormFieldRenderingContext.getLocale());
+		return options;
 	}
 
 	protected ResourceBundle getResourceBundle(Locale locale) {
@@ -188,6 +180,32 @@ public class SelectDDMFormFieldTemplateContextContributor
 
 		return new AggregateResourceBundle(
 			resourceBundle, portalResourceBundle);
+	}
+
+	protected Map<String, String> getStrings(
+		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
+
+		Locale displayLocale = LocaleThreadLocal.getThemeDisplayLocale();
+
+		if (displayLocale == null) {
+			displayLocale = ddmFormFieldRenderingContext.getLocale();
+		}
+
+		ResourceBundle resourceBundle = getResourceBundle(displayLocale);
+
+		return HashMapBuilder.put(
+			"chooseAnOption",
+			LanguageUtil.get(resourceBundle, "choose-an-option")
+		).put(
+			"chooseOptions", LanguageUtil.get(resourceBundle, "choose-options")
+		).put(
+			"dynamicallyLoadedData",
+			LanguageUtil.get(resourceBundle, "dynamically-loaded-data")
+		).put(
+			"emptyList", LanguageUtil.get(resourceBundle, "empty-list")
+		).put(
+			"search", LanguageUtil.get(resourceBundle, "search")
+		).build();
 	}
 
 	protected List<String> getValue(String valueString) {

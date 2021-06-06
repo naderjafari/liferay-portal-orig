@@ -13,10 +13,12 @@
  */
 
 import {act, cleanup, fireEvent, render} from '@testing-library/react';
-import {PageProvider} from 'dynamic-data-mapping-form-renderer';
+import {PageProvider} from 'data-engine-js-components-web';
 import React from 'react';
 
 import Numeric from '../../../src/main/resources/META-INF/resources/Numeric/Numeric.es';
+
+const globalLanguageDirection = Liferay.Language.direction;
 
 const spritemap = 'icons.svg';
 
@@ -43,11 +45,17 @@ describe('Field Numeric', () => {
 			}
 			originalWarn.call(console, ...args);
 		};
+
+		Liferay.Language.direction = {
+			en_US: 'rtl',
+		};
 	});
 
 	afterAll(() => {
 		// eslint-disable-next-line no-console
 		console.warn = originalWarn;
+
+		Liferay.Language.direction = globalLanguageDirection;
 	});
 
 	afterEach(cleanup);
@@ -271,5 +279,69 @@ describe('Field Numeric', () => {
 		const input = container.querySelector('input');
 
 		expect(input.value).toBe('4');
+	});
+
+	it('round up value when changing from decimal to integer when symbol of language is comma', () => {
+		const {container} = render(
+			<NumericWithProvider
+				{...defaultNumericConfig}
+				dataType="integer"
+				onChange={jest.fn()}
+				symbols={{decimalSymbol: ','}}
+				value="22,82"
+			/>
+		);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		expect(container.querySelector('input').value).toBe('23');
+	});
+
+	describe('Confirmation Field', () => {
+		it('renders the confirmation field with the same data type as the original field', () => {
+			render(
+				<NumericWithProvider
+					{...defaultNumericConfig}
+					confirmationValue="22.82"
+					dataType="double"
+					onChange={jest.fn()}
+					requireConfirmation={true}
+				/>
+			);
+
+			act(() => {
+				jest.runAllTimers();
+			});
+
+			const confirmationField = document.getElementById(
+				'numericFieldconfirmationField'
+			);
+
+			expect(confirmationField.value).toBe('22.82');
+		});
+
+		it('rounds the confirmation value if the data type is Integer', () => {
+			render(
+				<NumericWithProvider
+					{...defaultNumericConfig}
+					confirmationValue="22.82"
+					dataType="integer"
+					onChange={jest.fn()}
+					requireConfirmation={true}
+				/>
+			);
+
+			act(() => {
+				jest.runAllTimers();
+			});
+
+			const confirmationField = document.getElementById(
+				'numericFieldconfirmationField'
+			);
+
+			expect(confirmationField.value).toBe('23');
+		});
 	});
 });

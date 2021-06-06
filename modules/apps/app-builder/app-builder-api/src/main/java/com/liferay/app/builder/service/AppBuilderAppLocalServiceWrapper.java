@@ -179,6 +179,13 @@ public class AppBuilderAppLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _appBuilderAppLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _appBuilderAppLocalService.dynamicQuery();
 	}
@@ -405,6 +412,20 @@ public class AppBuilderAppLocalServiceWrapper
 	@Override
 	public java.util.List<com.liferay.app.builder.model.AppBuilderApp>
 		getAppBuilderApps(
+			long groupId, long companyId, long ddmStructureId, String scope,
+			int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.app.builder.model.AppBuilderApp>
+					orderByComparator) {
+
+		return _appBuilderAppLocalService.getAppBuilderApps(
+			groupId, companyId, ddmStructureId, scope, start, end,
+			orderByComparator);
+	}
+
+	@Override
+	public java.util.List<com.liferay.app.builder.model.AppBuilderApp>
+		getAppBuilderApps(
 			long groupId, String scope, int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<com.liferay.app.builder.model.AppBuilderApp>
@@ -472,6 +493,14 @@ public class AppBuilderAppLocalServiceWrapper
 
 		return _appBuilderAppLocalService.getAppBuilderAppsCount(
 			groupId, companyId, ddmStructureId);
+	}
+
+	@Override
+	public int getAppBuilderAppsCount(
+		long groupId, long companyId, long ddmStructureId, String scope) {
+
+		return _appBuilderAppLocalService.getAppBuilderAppsCount(
+			groupId, companyId, ddmStructureId, scope);
 	}
 
 	@Override

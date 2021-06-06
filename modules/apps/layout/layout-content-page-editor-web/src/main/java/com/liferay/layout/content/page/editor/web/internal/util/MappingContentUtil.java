@@ -16,6 +16,9 @@ package com.liferay.layout.content.page.editor.web.internal.util;
 
 import com.liferay.document.library.kernel.model.DLFileEntryConstants;
 import com.liferay.info.field.InfoField;
+import com.liferay.info.field.InfoFieldSet;
+import com.liferay.info.field.InfoFieldSetEntry;
+import com.liferay.info.field.type.InfoFieldType;
 import com.liferay.info.form.InfoForm;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemFormProvider;
@@ -25,12 +28,9 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.WebKeys;
 
+import java.util.Locale;
 import java.util.Objects;
-
-import javax.portlet.ResourceRequest;
 
 /**
  * @author Eudaldo Alonso
@@ -38,9 +38,9 @@ import javax.portlet.ResourceRequest;
 public class MappingContentUtil {
 
 	public static JSONArray getMappingFieldsJSONArray(
-			String formVariationKey,
+			String formVariationKey, long groupId,
 			InfoItemServiceTracker infoItemServiceTracker, String itemClassName,
-			ResourceRequest resourceRequest)
+			Locale locale)
 		throws Exception {
 
 		// LPS-111037
@@ -65,27 +65,63 @@ public class MappingContentUtil {
 			return JSONFactoryUtil.createJSONArray();
 		}
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		JSONArray defaultFieldSetFieldsJSONArray =
+			JSONFactoryUtil.createJSONArray();
 
-		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+		JSONArray fieldSetsJSONArray = JSONUtil.put(
+			JSONUtil.put("fields", defaultFieldSetFieldsJSONArray));
 
-		InfoForm infoForm = infoItemFormProvider.getInfoForm(formVariationKey);
+		InfoForm infoForm = infoItemFormProvider.getInfoForm(
+			formVariationKey, groupId);
 
-		for (InfoField infoField : infoForm.getAllInfoFields()) {
-			jsonArray.put(
-				JSONUtil.put(
-					"key", infoField.getName()
-				).put(
-					"label", infoField.getLabel(themeDisplay.getLocale())
-				).put(
-					"type",
-					infoField.getInfoFieldType(
-					).getName()
-				));
+		for (InfoFieldSetEntry infoFieldSetEntry :
+				infoForm.getInfoFieldSetEntries()) {
+
+			if (infoFieldSetEntry instanceof InfoField) {
+				InfoField infoField = (InfoField)infoFieldSetEntry;
+
+				InfoFieldType infoFieldType = infoField.getInfoFieldType();
+
+				defaultFieldSetFieldsJSONArray.put(
+					JSONUtil.put(
+						"key", infoField.getName()
+					).put(
+						"label", infoField.getLabel(locale)
+					).put(
+						"type", infoFieldType.getName()
+					));
+			}
+			else if (infoFieldSetEntry instanceof InfoFieldSet) {
+				JSONArray fieldSetFieldsJSONArray =
+					JSONFactoryUtil.createJSONArray();
+
+				InfoFieldSet infoFieldSet = (InfoFieldSet)infoFieldSetEntry;
+
+				for (InfoField infoField : infoFieldSet.getAllInfoFields()) {
+					InfoFieldType infoFieldType = infoField.getInfoFieldType();
+
+					fieldSetFieldsJSONArray.put(
+						JSONUtil.put(
+							"key", infoField.getName()
+						).put(
+							"label", infoField.getLabel(locale)
+						).put(
+							"type", infoFieldType.getName()
+						));
+				}
+
+				if (fieldSetFieldsJSONArray.length() > 0) {
+					fieldSetsJSONArray.put(
+						JSONUtil.put(
+							"fields", fieldSetFieldsJSONArray
+						).put(
+							"label", infoFieldSet.getLabel(locale)
+						));
+				}
+			}
 		}
 
-		return jsonArray;
+		return fieldSetsJSONArray;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

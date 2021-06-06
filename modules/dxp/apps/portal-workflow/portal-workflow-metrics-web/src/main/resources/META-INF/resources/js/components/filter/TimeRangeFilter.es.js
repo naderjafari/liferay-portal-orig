@@ -9,7 +9,7 @@
  * distribution rights of the Software.
  */
 
-import React, {useContext, useMemo} from 'react';
+import React, {useCallback, useContext, useMemo, useState} from 'react';
 
 import Filter from '../../shared/components/filter/Filter.es';
 import {useFilterName} from '../../shared/components/filter/hooks/useFilterName.es';
@@ -26,18 +26,17 @@ import {useRouter} from '../../shared/hooks/useRouter.es';
 import {useRouterParams} from '../../shared/hooks/useRouterParams.es';
 import {useSessionStorage} from '../../shared/hooks/useStorage.es';
 import {AppContext} from '../AppContext.es';
-import {CustomTimeRangeForm} from './CustomTimeRangeForm.es';
-import {useCustomFormState} from './hooks/useCustomFormState.es';
+import CustomTimeRangeForm from './CustomTimeRangeForm.es';
 import {getCustomTimeRange, parseDateItems} from './util/timeRangeUtil.es';
 
-const TimeRangeFilter = ({
+export default function TimeRangeFilter({
 	buttonClassName,
 	className,
 	disabled,
 	filterKey = filterConstants.timeRange.key,
 	options = {},
 	prefixKey = '',
-}) => {
+}) {
 	options = {
 		hideControl: true,
 		multiple: false,
@@ -49,7 +48,7 @@ const TimeRangeFilter = ({
 
 	const {isAmPm} = useContext(AppContext);
 	const {filters} = useRouterParams();
-	const {formVisible, onClickFilter, setFormVisible} = useCustomFormState();
+	const [formVisible, setFormVisible] = useState(false);
 
 	const [storedTimeRanges = {}] = useSessionStorage('timeRanges');
 
@@ -57,6 +56,24 @@ const TimeRangeFilter = ({
 
 	const dateEndKey = getCapitalizedFilterKey(prefixKey, 'dateEnd');
 	const dateStartKey = getCapitalizedFilterKey(prefixKey, 'dateStart');
+	const isCustomFilter = (filter) => filter.key === 'custom';
+
+	const onClickFilter = useCallback(
+		(handleClick) => (currentItem) => {
+			if (isCustomFilter(currentItem)) {
+				setFormVisible(true);
+			}
+			else {
+				handleClick(currentItem);
+			}
+
+			document.dispatchEvent(new Event('mousedown'));
+
+			return true;
+		},
+		[]
+	);
+
 	const prefixedFilterKey = getCapitalizedFilterKey(prefixKey, filterKey);
 	const routerProps = useRouter();
 
@@ -122,7 +139,6 @@ const TimeRangeFilter = ({
 	return (
 		<Filter
 			buttonClassName={buttonClassName}
-			data-testid="timeRangeFilter"
 			defaultItem={defaultItem}
 			disabled={disabled}
 			elementClasses={className}
@@ -145,6 +161,4 @@ const TimeRangeFilter = ({
 			)}
 		</Filter>
 	);
-};
-
-export default TimeRangeFilter;
+}

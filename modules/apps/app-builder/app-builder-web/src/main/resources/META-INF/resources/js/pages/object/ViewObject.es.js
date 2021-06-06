@@ -12,13 +12,12 @@
  * details.
  */
 
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Route, Switch} from 'react-router-dom';
 
 import ControlMenu from '../../components/control-menu/ControlMenu.es';
 import NavigationBar from '../../components/navigation-bar/NavigationBar.es';
-import {getItem} from '../../utils/client.es';
-import {getLocalizedValue} from '../../utils/lang.es';
+import useDataDefinition from '../../hooks/useDataDefinition.es';
 import ListApps from '../apps/ListApps.es';
 import EditApp from '../apps/edit/EditApp.es';
 import EditFormView from '../form-view/EditFormView.es';
@@ -31,21 +30,29 @@ const URL = {
 	'native-object': '/native-objects',
 };
 
+const queryFields = ['availableLanguageIds', 'name', 'defaultLanguageId'].join(
+	','
+);
+
 export default ({
 	match: {
 		params: {dataDefinitionId, objectType},
 		path,
 	},
 }) => {
-	const [title, setTitle] = useState('');
-
-	useEffect(() => {
-		getItem(
-			`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}`
-		).then(({defaultLanguageId, name}) =>
-			setTitle(getLocalizedValue(defaultLanguageId, name))
-		);
-	}, [dataDefinitionId]);
+	const {
+		availableLanguageIds,
+		defaultLanguageId,
+		title = '',
+	} = useDataDefinition({
+		dataDefinitionId,
+		defaultState: {
+			availableLanguageIds: [],
+			defaultLanguageId: '',
+			name: {},
+		},
+		queryFields,
+	});
 
 	return (
 		<Switch>
@@ -66,8 +73,14 @@ export default ({
 			/>
 
 			<Route
-				component={EditApp}
 				path={[`${path}/apps/deploy`, `${path}/apps/:appId(\\d+)`]}
+				render={(props) => (
+					<EditApp
+						{...props}
+						availableLanguageIds={availableLanguageIds}
+						defaultLanguageId={defaultLanguageId}
+					/>
+				)}
 			/>
 
 			<Route
@@ -95,16 +108,34 @@ export default ({
 
 						<Switch>
 							<Route
-								component={ListFormViews}
 								path={`${path}/form-views`}
+								render={(props) => (
+									<ListFormViews
+										{...props}
+										defaultLanguageId={defaultLanguageId}
+									/>
+								)}
 							/>
 
 							<Route
-								component={ListTableViews}
 								path={`${path}/table-views`}
+								render={(props) => (
+									<ListTableViews
+										{...props}
+										defaultLanguageId={defaultLanguageId}
+									/>
+								)}
 							/>
 
-							<Route component={ListApps} path={`${path}/apps`} />
+							<Route
+								path={`${path}/apps`}
+								render={(props) => (
+									<ListApps
+										{...props}
+										defaultLanguageId={defaultLanguageId}
+									/>
+								)}
+							/>
 						</Switch>
 					</>
 				)}

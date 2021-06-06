@@ -97,8 +97,6 @@ public class I18nServlet extends HttpServlet {
 		throws IOException, ServletException {
 
 		try {
-			String i18nLanguageId = httpServletRequest.getServletPath();
-
 			I18nData i18nData = getI18nData(httpServletRequest);
 
 			if ((i18nData == null) ||
@@ -111,6 +109,8 @@ public class I18nServlet extends HttpServlet {
 
 				return;
 			}
+
+			String i18nLanguageId = httpServletRequest.getServletPath();
 
 			if (i18nLanguageId.contains(StringPool.UNDERLINE)) {
 				sendRedirect(httpServletRequest, httpServletResponse, i18nData);
@@ -215,7 +215,11 @@ public class I18nServlet extends HttpServlet {
 			}
 		}
 
-		String redirect = HttpUtil.encodePath(path);
+		String redirect = path;
+
+		if (path.equals(HttpUtil.decodePath(path))) {
+			redirect = HttpUtil.encodePath(path);
+		}
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Redirect " + redirect);

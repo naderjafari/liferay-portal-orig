@@ -19,8 +19,8 @@ import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutTypeController;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.taglib.servlet.PipingServletResponse;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletResponse;
@@ -78,7 +78,8 @@ public class PanelLayoutTypeController extends BaseLayoutTypeControllerImpl {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #createServletResponse(HttpServletResponse, UnsyncStringWriter)}
+	 *             #createServletResponse(HttpServletResponse,
+	 *             UnsyncStringWriter)}
 	 */
 	@Deprecated
 	@Override

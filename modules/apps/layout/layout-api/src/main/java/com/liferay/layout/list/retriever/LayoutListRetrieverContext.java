@@ -26,8 +26,18 @@ import org.osgi.annotation.versioning.ProviderType;
 @ProviderType
 public interface LayoutListRetrieverContext {
 
+	public Optional<long[][]> getAssetCategoryIdsOptional();
+
+	public Optional<Object> getContextObjectOptional();
+
 	public Optional<Pagination> getPaginationOptional();
 
+	public Optional<long[]> getSegmentsEntryIdsOptional();
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public Optional<long[]> getSegmentsExperienceIdsOptional();
 
 }

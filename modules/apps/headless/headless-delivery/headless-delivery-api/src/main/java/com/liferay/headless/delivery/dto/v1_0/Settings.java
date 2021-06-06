@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Settings")
+@GraphQLName(
+	description = "Represents the settings of a page.", value = "Settings"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Settings")
-public class Settings {
+public class Settings implements Serializable {
 
 	public static Settings toDTO(String json) {
 		return ObjectMapperUtil.readValue(Settings.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The page's color scheme name.")
 	public String getColorSchemeName() {
 		return colorSchemeName;
 	}
@@ -75,11 +79,11 @@ public class Settings {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's color scheme name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String colorSchemeName;
 
-	@Schema
+	@Schema(description = "The page's CSS.")
 	public String getCss() {
 		return css;
 	}
@@ -101,11 +105,11 @@ public class Settings {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's CSS.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String css;
 
-	@Schema
+	@Schema(description = "The page's JavaScript.")
 	public String getJavascript() {
 		return javascript;
 	}
@@ -129,11 +133,11 @@ public class Settings {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's JavaScript.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String javascript;
 
-	@Schema
+	@Schema(description = "The page's master page.")
 	@Valid
 	public MasterPage getMasterPage() {
 		return masterPage;
@@ -158,11 +162,40 @@ public class Settings {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's master page.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected MasterPage masterPage;
 
-	@Schema
+	@Schema(description = "The StyleBook that is applied to the page.")
+	@Valid
+	public StyleBook getStyleBook() {
+		return styleBook;
+	}
+
+	public void setStyleBook(StyleBook styleBook) {
+		this.styleBook = styleBook;
+	}
+
+	@JsonIgnore
+	public void setStyleBook(
+		UnsafeSupplier<StyleBook, Exception> styleBookUnsafeSupplier) {
+
+		try {
+			styleBook = styleBookUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The StyleBook that is applied to the page.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected StyleBook styleBook;
+
+	@Schema(description = "The page's theme name.")
 	public String getThemeName() {
 		return themeName;
 	}
@@ -186,11 +219,11 @@ public class Settings {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's theme name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String themeName;
 
-	@Schema
+	@Schema(description = "The page's theme settings.")
 	@Valid
 	public Object getThemeSettings() {
 		return themeSettings;
@@ -215,7 +248,7 @@ public class Settings {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's theme settings.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object themeSettings;
 
@@ -298,6 +331,16 @@ public class Settings {
 			sb.append(String.valueOf(masterPage));
 		}
 
+		if (styleBook != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"styleBook\": ");
+
+			sb.append(String.valueOf(styleBook));
+		}
+
 		if (themeName != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -328,6 +371,7 @@ public class Settings {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Settings",
 		name = "x-class-name"
 	)
@@ -363,7 +407,7 @@ public class Settings {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -402,7 +446,7 @@ public class Settings {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

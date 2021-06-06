@@ -21,7 +21,9 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.layout.page.template.model.LayoutPageTemplateCollection;
 import com.liferay.layout.page.template.service.LayoutPageTemplateCollectionLocalService;
+import com.liferay.layout.page.template.service.LayoutPageTemplateCollectionLocalServiceUtil;
 import com.liferay.layout.page.template.service.persistence.LayoutPageTemplateCollectionPersistence;
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -43,17 +45,22 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -75,7 +82,7 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>LayoutPageTemplateCollectionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.layout.page.template.service.LayoutPageTemplateCollectionLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>LayoutPageTemplateCollectionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>LayoutPageTemplateCollectionLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -159,6 +166,13 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return layoutPageTemplateCollectionPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -415,6 +429,7 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -434,6 +449,7 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 				(LayoutPageTemplateCollection)persistedModel);
 	}
 
+	@Override
 	public BasePersistence<LayoutPageTemplateCollection> getBasePersistence() {
 		return layoutPageTemplateCollectionPersistence;
 	}
@@ -550,11 +566,17 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 			layoutPageTemplateCollection);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			LayoutPageTemplateCollectionLocalService.class,
-			IdentifiableOSGiService.class, PersistedModelLocalService.class
+			IdentifiableOSGiService.class, CTService.class,
+			PersistedModelLocalService.class
 		};
 	}
 
@@ -562,6 +584,8 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		layoutPageTemplateCollectionLocalService =
 			(LayoutPageTemplateCollectionLocalService)aopProxy;
+
+		_setLocalServiceUtilService(layoutPageTemplateCollectionLocalService);
 	}
 
 	/**
@@ -574,8 +598,24 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 		return LayoutPageTemplateCollectionLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<LayoutPageTemplateCollection> getCTPersistence() {
+		return layoutPageTemplateCollectionPersistence;
+	}
+
+	@Override
+	public Class<LayoutPageTemplateCollection> getModelClass() {
 		return LayoutPageTemplateCollection.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<LayoutPageTemplateCollection>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(
+			layoutPageTemplateCollectionPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -604,6 +644,24 @@ public abstract class LayoutPageTemplateCollectionLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		LayoutPageTemplateCollectionLocalService
+			layoutPageTemplateCollectionLocalService) {
+
+		try {
+			Field field =
+				LayoutPageTemplateCollectionLocalServiceUtil.class.
+					getDeclaredField("_service");
+
+			field.setAccessible(true);
+
+			field.set(null, layoutPageTemplateCollectionLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

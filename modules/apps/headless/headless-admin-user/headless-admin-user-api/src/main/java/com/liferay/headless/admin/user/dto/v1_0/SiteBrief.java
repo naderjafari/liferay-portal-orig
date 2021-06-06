@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("SiteBrief")
+@GraphQLName(
+	description = "Represents a site's basic information.", value = "SiteBrief"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "SiteBrief")
-public class SiteBrief {
+public class SiteBrief implements Serializable {
 
 	public static SiteBrief toDTO(String json) {
 		return ObjectMapperUtil.readValue(SiteBrief.class, json);
@@ -200,6 +204,7 @@ public class SiteBrief {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.SiteBrief",
 		name = "x-class-name"
 	)
@@ -235,7 +240,7 @@ public class SiteBrief {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -274,7 +279,7 @@ public class SiteBrief {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

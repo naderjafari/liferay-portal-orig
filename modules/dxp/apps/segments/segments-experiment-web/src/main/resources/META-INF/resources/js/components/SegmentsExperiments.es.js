@@ -24,6 +24,7 @@ import {archiveExperiment} from '../state/actions.es';
 import {DispatchContext, StateContext} from '../state/context.es';
 import {SegmentsExperienceType} from '../types.es';
 import {NO_EXPERIMENT_ILLUSTRATION_FILE_NAME} from '../util/contants.es';
+import {navigateToExperience} from '../util/navigation.es';
 import {
 	STATUS_COMPLETED,
 	STATUS_DRAFT,
@@ -59,14 +60,15 @@ function SegmentsExperiments({
 		selectedExperienceId,
 		variants,
 	} = useContext(StateContext);
-	const {APIService, assetsPath} = useContext(SegmentsExperimentsContext);
+	const {APIService, imagesPath} = useContext(SegmentsExperimentsContext);
 	const dispatch = useContext(DispatchContext);
 
 	const _selectedExperienceId = experiment
 		? experiment.segmentsExperienceId
 		: selectedExperienceId;
-	const noExperimentIllustration = `${assetsPath}${NO_EXPERIMENT_ILLUSTRATION_FILE_NAME}`;
+	const noExperimentIllustration = `${imagesPath}${NO_EXPERIMENT_ILLUSTRATION_FILE_NAME}`;
 	const winnerVariant = variants.find((variant) => variant.winner === true);
+	const goalTarget = experiment?.goal?.target?.substring(1);
 
 	return (
 		<>
@@ -191,21 +193,22 @@ function SegmentsExperiments({
 											),
 										}}
 									/>
-
-									<div className="mt-3">
-										<ClayButton
-											className="btn-success"
-											onClick={() =>
-												_handlePublishVariant(
-													winnerVariant.segmentsExperienceId
-												)
-											}
-										>
-											{Liferay.Language.get(
-												'publish-winner'
-											)}
-										</ClayButton>
-									</div>
+									<ClayAlert.Footer>
+										<ClayButton.Group>
+											<ClayButton
+												alert
+												onClick={() =>
+													_handlePublishVariant(
+														winnerVariant.segmentsExperienceId
+													)
+												}
+											>
+												{Liferay.Language.get(
+													'publish-winner'
+												)}
+											</ClayButton>
+										</ClayButton.Group>
+									</ClayAlert.Footer>
 								</ClayAlert>
 							)}
 
@@ -221,7 +224,7 @@ function SegmentsExperiments({
 									onSelectClickGoalTarget={(selector) => {
 										onTargetChange(selector);
 									}}
-									target={experiment.goal.target}
+									target={goalTarget}
 								/>
 							)}
 
@@ -324,6 +327,7 @@ function SegmentsExperiments({
 							status: segmentsExperiment.status,
 						})
 					);
+					navigateToExperience(experienceId);
 				})
 				.catch((_error) => {
 					openErrorToast();

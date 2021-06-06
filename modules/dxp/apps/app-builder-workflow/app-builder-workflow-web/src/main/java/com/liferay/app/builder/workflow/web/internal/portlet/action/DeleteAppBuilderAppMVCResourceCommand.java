@@ -15,9 +15,8 @@
 package com.liferay.app.builder.workflow.web.internal.portlet.action;
 
 import com.liferay.app.builder.constants.AppBuilderPortletKeys;
-import com.liferay.app.builder.rest.dto.v1_0.App;
 import com.liferay.app.builder.rest.resource.v1_0.AppResource;
-import com.liferay.app.builder.workflow.service.AppBuilderWorkflowTaskLinkLocalService;
+import com.liferay.app.builder.workflow.rest.resource.v1_0.AppWorkflowResource;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -36,38 +35,48 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	property = {
 		"javax.portlet.name=" + AppBuilderPortletKeys.APPS,
-		"mvc.command.name=/app_builder/delete_workflow_app"
+		"mvc.command.name=/app_builder_workflow/delete_app_builder_app"
 	},
 	service = MVCResourceCommand.class
 )
 public class DeleteAppBuilderAppMVCResourceCommand
-	extends BaseAppBuilderAppMVCResourceCommand {
+	extends BaseAppBuilderAppMVCResourceCommand<Void> {
 
 	@Override
-	protected Optional<App> doTransactionalCommand(
+	protected Optional<Void> doTransactionalCommand(
 			ResourceRequest resourceRequest)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		AppResource appResource = AppResource.builder(
-		).user(
+		AppResource.Builder appResourceBuilder = _appResourceFactory.create();
+
+		AppResource appResource = appResourceBuilder.user(
 			themeDisplay.getUser()
 		).build();
 
 		appResource.deleteApp(
 			ParamUtil.getLong(resourceRequest, "appBuilderAppId"));
 
-		_appBuilderWorkflowTaskLinkLocalService.
-			deleteAppBuilderWorkflowTaskLinks(
-				ParamUtil.getLong(resourceRequest, "appBuilderAppId"));
+		AppWorkflowResource.Builder appWorkflowResourceBuilder =
+			_appWorkflowResourceFactory.create();
+
+		AppWorkflowResource appWorkflowResource =
+			appWorkflowResourceBuilder.user(
+				themeDisplay.getUser()
+			).build();
+
+		appWorkflowResource.deleteAppWorkflow(
+			ParamUtil.getLong(resourceRequest, "appBuilderAppId"));
 
 		return Optional.empty();
 	}
 
 	@Reference
-	private AppBuilderWorkflowTaskLinkLocalService
-		_appBuilderWorkflowTaskLinkLocalService;
+	private AppResource.Factory _appResourceFactory;
+
+	@Reference
+	private AppWorkflowResource.Factory _appWorkflowResourceFactory;
 
 }

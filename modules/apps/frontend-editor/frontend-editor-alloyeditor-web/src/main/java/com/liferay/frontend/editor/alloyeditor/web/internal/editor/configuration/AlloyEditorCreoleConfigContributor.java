@@ -22,9 +22,11 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -77,14 +79,13 @@ public class AlloyEditorCreoleConfigContributor
 			}
 		}
 
-		JSONObject linkEditJSONObject = JSONUtil.put(
-			"appendProtocol", false
-		).put(
-			"showTargetSelector", false
-		);
-
 		JSONObject buttonCfgJSONObject = JSONUtil.put(
-			"linkEditBrowse", linkEditJSONObject);
+			"linkEditBrowse",
+			JSONUtil.put(
+				"appendProtocol", false
+			).put(
+				"showTargetSelector", false
+			));
 
 		jsonObject.put(
 			"buttonCfg", buttonCfgJSONObject
@@ -108,18 +109,14 @@ public class AlloyEditorCreoleConfigContributor
 
 		StringBundler sb = new StringBundler(4);
 
-		sb.append("ae_dragresize,ae_tableresize,bidi,div,flash,font,forms,");
+		sb.append("ae_dragresize,ae_tableresize,bidi,div,font,forms,");
 		sb.append("indentblock,justify,keystrokes,maximize,newpage,pagebreak,");
 		sb.append("preview,print,save,showblocks,smiley,stylescombo,");
 		sb.append("templates,video");
 
 		jsonObject.put(
 			"removePlugins",
-			removePlugins.concat(
-				","
-			).concat(
-				sb.toString()
-			)
+			StringBundler.concat(removePlugins, ",", sb.toString())
 		).put(
 			"toolbars", getToolbarsJSONObject(themeDisplay.getLocale())
 		);
@@ -130,13 +127,13 @@ public class AlloyEditorCreoleConfigContributor
 
 		JSONObject jsonObject = JSONUtil.put("name", styleFormatName);
 
-		JSONObject styleJSONObject = JSONUtil.put(
-			"element", element
-		).put(
-			"type", type
-		);
-
-		jsonObject.put("style", styleJSONObject);
+		jsonObject.put(
+			"style",
+			JSONUtil.put(
+				"element", element
+			).put(
+				"type", type
+			));
 
 		return jsonObject;
 	}
@@ -148,6 +145,10 @@ public class AlloyEditorCreoleConfigContributor
 			resourceBundle = _resourceBundleLoader.loadResourceBundle(locale);
 		}
 		catch (MissingResourceException missingResourceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(missingResourceException, missingResourceException);
+			}
+
 			resourceBundle = ResourceBundleUtil.EMPTY_RESOURCE_BUNDLE;
 		}
 
@@ -190,14 +191,16 @@ public class AlloyEditorCreoleConfigContributor
 		JSONObject cfgJSONObject = JSONUtil.put(
 			"tableAttributes", JSONFactoryUtil.createJSONObject());
 
-		JSONObject buttonJSONObject = JSONUtil.put(
-			"cfg", cfgJSONObject
-		).put(
-			"name", "table"
-		);
-
 		return JSONUtil.put(
-			"buttons", JSONUtil.putAll("image", buttonJSONObject, "hline")
+			"buttons",
+			JSONUtil.putAll(
+				"image",
+				JSONUtil.put(
+					"cfg", cfgJSONObject
+				).put(
+					"name", "table"
+				),
+				"hline")
 		).put(
 			"tabIndex", 2
 		);
@@ -240,20 +243,19 @@ public class AlloyEditorCreoleConfigContributor
 	}
 
 	protected JSONObject getToolbarsStylesSelectionsLinkJSONObject() {
-		JSONObject cfgJSONObject = JSONUtil.put(
-			"appendProtocol", false
-		).put(
-			"showTargetSelector", false
-		);
-
-		JSONObject linkEditJSONObject = JSONUtil.put(
-			"cfg", cfgJSONObject
-		).put(
-			"name", "linkEditBrowse"
-		);
-
 		return JSONUtil.put(
-			"buttons", JSONUtil.put(linkEditJSONObject)
+			"buttons",
+			JSONUtil.put(
+				JSONUtil.put(
+					"cfg",
+					JSONUtil.put(
+						"appendProtocol", false
+					).put(
+						"showTargetSelector", false
+					)
+				).put(
+					"name", "linkEditBrowse"
+				))
 		).put(
 			"name", "link"
 		).put(
@@ -295,6 +297,9 @@ public class AlloyEditorCreoleConfigContributor
 	}
 
 	private static final int _CKEDITOR_STYLE_BLOCK = 1;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AlloyEditorCreoleConfigContributor.class);
 
 	@Reference(
 		policy = ReferencePolicy.DYNAMIC,

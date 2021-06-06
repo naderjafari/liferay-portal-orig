@@ -32,7 +32,16 @@ long vocabularyId = ParamUtil.getLong(request, "vocabularyId");
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(redirect);
 
-renderResponse.setTitle((category == null) ? LanguageUtil.get(request, "add-new-category") : category.getTitle(locale));
+String title = LanguageUtil.get(request, "add-new-category");
+
+if (category != null) {
+	title = category.getTitle(locale);
+}
+else if (parentCategoryId > 0) {
+	title = LanguageUtil.get(request, "add-new-subcategory");
+}
+
+renderResponse.setTitle(title);
 %>
 
 <portlet:actionURL name="editCategory" var="editCategoryURL">
@@ -85,7 +94,7 @@ renderResponse.setTitle((category == null) ? LanguageUtil.get(request, "add-new-
 														<div class="input-group-item">
 															<c:if test="<%= parentCategory != null %>">
 																<clay:label
-																	closeable="<%= true %>"
+																	dismissible="<%= true %>"
 																	label="<%= parentCategory.getTitle(locale) %>"
 																/>
 
@@ -118,25 +127,25 @@ renderResponse.setTitle((category == null) ? LanguageUtil.get(request, "add-new-
 											"value", parentCategory.getCategoryId()
 										).build());
 								}
-
-								Map<String, Object> data = HashMapBuilder.<String, Object>put(
-									"categoryIds", Collections.singletonList(parentCategoryId)
-								).put(
-									"groupIds", Collections.singletonList(scopeGroupId)
-								).put(
-									"namespace", liferayPortletResponse.getNamespace()
-								).put(
-									"portletURL", assetCategoriesDisplayContext.getCategorySelectorURL()
-								).put(
-									"selectedCategories", selectedCategories
-								).put(
-									"vocabularyIds", Collections.singletonList(vocabularyId)
-								).build();
 								%>
 
 								<react:component
-									data="<%= data %>"
 									module="js/AssetCategoriesSelectorTag.es"
+									props='<%=
+										HashMapBuilder.<String, Object>put(
+											"categoryIds", Collections.singletonList(parentCategoryId)
+										).put(
+											"groupIds", Collections.singletonList(scopeGroupId)
+										).put(
+											"namespace", liferayPortletResponse.getNamespace()
+										).put(
+											"portletURL", assetCategoriesDisplayContext.getCategorySelectorURL()
+										).put(
+											"selectedCategories", selectedCategories
+										).put(
+											"vocabularyIds", Collections.singletonList(vocabularyId)
+										).build()
+									%>'
 								/>
 							</div>
 						</aui:field-wrapper>
@@ -145,6 +154,21 @@ renderResponse.setTitle((category == null) ? LanguageUtil.get(request, "add-new-
 						<aui:input name="parentCategoryId" type="hidden" value="<%= parentCategoryId %>" />
 					</c:otherwise>
 				</c:choose>
+			</liferay-frontend:fieldset>
+
+			<liferay-frontend:fieldset
+				collapsed="<%= true %>"
+				collapsible="<%= true %>"
+				label="display-page"
+			>
+				<liferay-asset:select-asset-display-page
+					classNameId="<%= PortalUtil.getClassNameId(AssetCategory.class) %>"
+					classPK="<%= (category != null) ? category.getCategoryId() : 0 %>"
+					classTypeId="<%= 0 %>"
+					groupId="<%= scopeGroupId %>"
+					parentClassPK="<%= parentCategoryId %>"
+					showViewInContextLink="<%= true %>"
+				/>
 			</liferay-frontend:fieldset>
 
 			<c:if test="<%= (category == null) && !assetCategoriesDisplayContext.isItemSelector() %>">
@@ -168,72 +192,21 @@ renderResponse.setTitle((category == null) ? LanguageUtil.get(request, "add-new-
 
 				<aui:button cssClass="btn-secondary" onClick='<%= liferayPortletResponse.getNamespace() + "saveAndAddNew();" %>' value="save-and-add-a-new-one" />
 
-				<aui:button cssClass="btn-link" href="<%= redirect %>" type="cancel" />
+				<aui:button cssClass="btn-secondary" href="<%= redirect %>" type="cancel" />
 			</liferay-frontend:edit-form-footer>
 		</c:when>
 		<c:otherwise>
-			<aui:script>
-				var dialog = Liferay.Util.getWindow(
-					'<%= assetCategoriesDisplayContext.getItemSelectorEventName() %>'
-				);
-				var footer = dialog.getToolbar('footer');
-
-				dialog.headerNode
-					.one('.modal-title')
-					.text(
-						dialog.get('initialTitle') + ' - <liferay-ui:message key="add-new" />'
-					);
-
-				var controlButtons = footer
-					.get('boundingBox')
-					.all('.add-category-toolbar-button');
-
-				if (controlButtons.size() > 0) {
-					controlButtons.show();
-				}
-				else {
-					var cancelButton = document.createElement('button');
-					cancelButton.setAttribute(
-						'class',
-						'add-category-toolbar-button btn btn-link'
-					);
-					cancelButton.setAttribute('type', 'button');
-					cancelButton.innerText = '<liferay-ui:message key="cancel" />';
-					cancelButton.addEventListener('click', function () {
-						footer.get('boundingBox').all('.add-category-toolbar-button').hide();
-						Liferay.Util.navigate('<%= HtmlUtil.escapeJS(redirect) %>');
-					});
-
-					footer.get('boundingBox').append(cancelButton);
-
-					var saveAndAddNewButton = document.createElement('button');
-					saveAndAddNewButton.setAttribute(
-						'class',
-						'add-category-toolbar-button btn btn-secondary'
-					);
-					saveAndAddNewButton.setAttribute('type', 'submit');
-					saveAndAddNewButton.innerText =
-						'<liferay-ui:message key="save-and-add-a-new-one" />';
-					saveAndAddNewButton.addEventListener('click', function () {
-						<portlet:namespace />saveAndAddNew();
-					});
-
-					footer.get('boundingBox').append(saveAndAddNewButton);
-
-					var submitButton = document.createElement('button');
-					submitButton.setAttribute(
-						'class',
-						'add-category-toolbar-button btn btn-primary'
-					);
-					submitButton.setAttribute('type', 'submit');
-					submitButton.innerText = '<liferay-ui:message key="save" />';
-					submitButton.addEventListener('click', function () {
-						submitForm(document.querySelector('#<portlet:namespace />fm'));
-					});
-
-					footer.get('boundingBox').append(submitButton);
-				}
-			</aui:script>
+			<liferay-frontend:component
+				context='<%=
+					HashMapBuilder.<String, Object>put(
+						"currentURL", currentURL
+					).put(
+						"redirect", redirect
+					).build()
+				%>'
+				module="js/ItemSelectorAddCategory"
+				servletContext="<%= application %>"
+			/>
 		</c:otherwise>
 	</c:choose>
 </liferay-frontend:edit-form>
@@ -241,7 +214,7 @@ renderResponse.setTitle((category == null) ? LanguageUtil.get(request, "add-new-
 <aui:script>
 	function <portlet:namespace />saveAndAddNew() {
 		document.querySelector('#<portlet:namespace />redirect').value =
-			'<%= currentURL %>';
+			'<%= assetCategoriesDisplayContext.getAddCategoryRedirect() %>';
 
 		submitForm(document.querySelector('#<portlet:namespace />fm'));
 	}

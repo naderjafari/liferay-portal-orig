@@ -74,7 +74,7 @@ import javax.ws.rs.core.UriInfo;
 @Generated("")
 @Path("/v1.0")
 public abstract class BaseExperimentResourceImpl
-	implements ExperimentResource, EntityModelResource,
+	implements EntityModelResource, ExperimentResource,
 			   VulcanBatchEngineTaskItemDelegate<Experiment> {
 
 	/**
@@ -82,8 +82,8 @@ public abstract class BaseExperimentResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/segments-asah/v1.0/experiments/{experimentId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@DELETE
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "experimentId")}
 	)
@@ -101,9 +101,9 @@ public abstract class BaseExperimentResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/segments-asah/v1.0/experiments/batch'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes("application/json")
 	@DELETE
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
 	)
@@ -137,8 +137,8 @@ public abstract class BaseExperimentResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/segments-asah/v1.0/experiments/{experimentId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "experimentId")}
 	)
@@ -255,6 +255,14 @@ public abstract class BaseExperimentResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

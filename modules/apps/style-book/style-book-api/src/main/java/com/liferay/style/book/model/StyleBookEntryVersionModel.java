@@ -16,7 +16,10 @@ package com.liferay.style.book.model;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
 import com.liferay.portal.kernel.model.BaseModel;
+import com.liferay.portal.kernel.model.GroupedModel;
+import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.ShardedModel;
+import com.liferay.portal.kernel.model.change.tracking.CTModel;
 import com.liferay.portal.kernel.model.version.VersionModel;
 
 import java.util.Date;
@@ -36,7 +39,8 @@ import org.osgi.annotation.versioning.ProviderType;
  */
 @ProviderType
 public interface StyleBookEntryVersionModel
-	extends BaseModel<StyleBookEntryVersion>, ShardedModel,
+	extends BaseModel<StyleBookEntryVersion>, CTModel<StyleBookEntryVersion>,
+			GroupedModel, MVCCModel, ShardedModel,
 			VersionModel<StyleBookEntry> {
 
 	/*
@@ -60,6 +64,38 @@ public interface StyleBookEntryVersionModel
 	 */
 	@Override
 	public void setPrimaryKey(long primaryKey);
+
+	/**
+	 * Returns the mvcc version of this style book entry version.
+	 *
+	 * @return the mvcc version of this style book entry version
+	 */
+	@Override
+	public long getMvccVersion();
+
+	/**
+	 * Sets the mvcc version of this style book entry version.
+	 *
+	 * @param mvccVersion the mvcc version of this style book entry version
+	 */
+	@Override
+	public void setMvccVersion(long mvccVersion);
+
+	/**
+	 * Returns the ct collection ID of this style book entry version.
+	 *
+	 * @return the ct collection ID of this style book entry version
+	 */
+	@Override
+	public long getCtCollectionId();
+
+	/**
+	 * Sets the ct collection ID of this style book entry version.
+	 *
+	 * @param ctCollectionId the ct collection ID of this style book entry version
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId);
 
 	/**
 	 * Returns the style book entry version ID of this style book entry version.
@@ -92,6 +128,21 @@ public interface StyleBookEntryVersionModel
 	public void setVersion(int version);
 
 	/**
+	 * Returns the uuid of this style book entry version.
+	 *
+	 * @return the uuid of this style book entry version
+	 */
+	@AutoEscape
+	public String getUuid();
+
+	/**
+	 * Sets the uuid of this style book entry version.
+	 *
+	 * @param uuid the uuid of this style book entry version
+	 */
+	public void setUuid(String uuid);
+
+	/**
 	 * Returns the style book entry ID of this style book entry version.
 	 *
 	 * @return the style book entry ID of this style book entry version
@@ -110,6 +161,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @return the group ID of this style book entry version
 	 */
+	@Override
 	public long getGroupId();
 
 	/**
@@ -117,6 +169,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @param groupId the group ID of this style book entry version
 	 */
+	@Override
 	public void setGroupId(long groupId);
 
 	/**
@@ -140,6 +193,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @return the user ID of this style book entry version
 	 */
+	@Override
 	public long getUserId();
 
 	/**
@@ -147,6 +201,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @param userId the user ID of this style book entry version
 	 */
+	@Override
 	public void setUserId(long userId);
 
 	/**
@@ -154,6 +209,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @return the user uuid of this style book entry version
 	 */
+	@Override
 	public String getUserUuid();
 
 	/**
@@ -161,6 +217,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @param userUuid the user uuid of this style book entry version
 	 */
+	@Override
 	public void setUserUuid(String userUuid);
 
 	/**
@@ -169,6 +226,7 @@ public interface StyleBookEntryVersionModel
 	 * @return the user name of this style book entry version
 	 */
 	@AutoEscape
+	@Override
 	public String getUserName();
 
 	/**
@@ -176,6 +234,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @param userName the user name of this style book entry version
 	 */
+	@Override
 	public void setUserName(String userName);
 
 	/**
@@ -183,6 +242,7 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @return the create date of this style book entry version
 	 */
+	@Override
 	public Date getCreateDate();
 
 	/**
@@ -190,7 +250,24 @@ public interface StyleBookEntryVersionModel
 	 *
 	 * @param createDate the create date of this style book entry version
 	 */
+	@Override
 	public void setCreateDate(Date createDate);
+
+	/**
+	 * Returns the modified date of this style book entry version.
+	 *
+	 * @return the modified date of this style book entry version
+	 */
+	@Override
+	public Date getModifiedDate();
+
+	/**
+	 * Sets the modified date of this style book entry version.
+	 *
+	 * @param modifiedDate the modified date of this style book entry version
+	 */
+	@Override
+	public void setModifiedDate(Date modifiedDate);
 
 	/**
 	 * Returns the default style book entry of this style book entry version.
@@ -212,6 +289,21 @@ public interface StyleBookEntryVersionModel
 	 * @param defaultStyleBookEntry the default style book entry of this style book entry version
 	 */
 	public void setDefaultStyleBookEntry(boolean defaultStyleBookEntry);
+
+	/**
+	 * Returns the frontend tokens values of this style book entry version.
+	 *
+	 * @return the frontend tokens values of this style book entry version
+	 */
+	@AutoEscape
+	public String getFrontendTokensValues();
+
+	/**
+	 * Sets the frontend tokens values of this style book entry version.
+	 *
+	 * @param frontendTokensValues the frontend tokens values of this style book entry version
+	 */
+	public void setFrontendTokensValues(String frontendTokensValues);
 
 	/**
 	 * Returns the name of this style book entry version.
@@ -256,20 +348,5 @@ public interface StyleBookEntryVersionModel
 	 * @param styleBookEntryKey the style book entry key of this style book entry version
 	 */
 	public void setStyleBookEntryKey(String styleBookEntryKey);
-
-	/**
-	 * Returns the tokens values of this style book entry version.
-	 *
-	 * @return the tokens values of this style book entry version
-	 */
-	@AutoEscape
-	public String getTokensValues();
-
-	/**
-	 * Sets the tokens values of this style book entry version.
-	 *
-	 * @param tokensValues the tokens values of this style book entry version
-	 */
-	public void setTokensValues(String tokensValues);
 
 }

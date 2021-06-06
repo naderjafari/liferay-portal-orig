@@ -18,6 +18,8 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.UserLockoutException;
 import com.liferay.portal.kernel.exception.UserPasswordException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.Ticket;
@@ -65,10 +67,6 @@ public class UpdatePasswordAction implements Action {
 			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
 		Ticket ticket = getTicket(httpServletRequest);
 
 		if ((ticket != null) &&
@@ -103,6 +101,10 @@ public class UpdatePasswordAction implements Action {
 
 			return actionMapping.getActionForward("portal.update_password");
 		}
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		try {
 			updatePassword(
@@ -168,6 +170,9 @@ public class UpdatePasswordAction implements Action {
 			TicketLocalServiceUtil.deleteTicket(ticket);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
@@ -296,5 +301,8 @@ public class UpdatePasswordAction implements Action {
 			httpServletRequest, httpServletResponse, login, password1, false,
 			null);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		UpdatePasswordAction.class);
 
 }

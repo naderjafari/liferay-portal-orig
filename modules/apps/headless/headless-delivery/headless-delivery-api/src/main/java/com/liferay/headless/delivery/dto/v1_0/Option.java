@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Option")
+@GraphQLName(
+	description = "The list of different possible values.", value = "Option"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Option")
-public class Option {
+public class Option implements Serializable {
 
 	public static Option toDTO(String json) {
 		return ObjectMapperUtil.readValue(Option.class, json);
@@ -79,7 +83,7 @@ public class Option {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String label;
 
-	@Schema
+	@Schema(description = "The localized option's labels.")
 	@Valid
 	public Map<String, String> getLabel_i18n() {
 		return label_i18n;
@@ -105,7 +109,7 @@ public class Option {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized option's labels.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, String> label_i18n;
 
@@ -208,6 +212,7 @@ public class Option {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Option",
 		name = "x-class-name"
 	)
@@ -243,7 +248,7 @@ public class Option {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -282,7 +287,7 @@ public class Option {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

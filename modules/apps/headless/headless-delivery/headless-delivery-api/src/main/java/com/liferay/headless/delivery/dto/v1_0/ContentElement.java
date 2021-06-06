@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("ContentElement")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentElement")
-public class ContentElement {
+public class ContentElement implements Serializable {
 
 	public static ContentElement toDTO(String json) {
 		return ObjectMapperUtil.readValue(ContentElement.class, json);
@@ -162,7 +164,7 @@ public class ContentElement {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String title;
 
-	@Schema
+	@Schema(description = "The localized content's titles.")
 	@Valid
 	public Map<String, String> getTitle_i18n() {
 		return title_i18n;
@@ -188,7 +190,7 @@ public class ContentElement {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized content's titles.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> title_i18n;
 
@@ -283,6 +285,7 @@ public class ContentElement {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentElement",
 		name = "x-class-name"
 	)
@@ -318,7 +321,7 @@ public class ContentElement {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -357,7 +360,7 @@ public class ContentElement {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

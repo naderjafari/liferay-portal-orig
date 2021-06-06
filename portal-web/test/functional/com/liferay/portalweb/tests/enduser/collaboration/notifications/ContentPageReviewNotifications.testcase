@@ -1,9 +1,9 @@
 @component-name = "portal-collaboration"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property testray.main.component.name = "Content Page Review";
 
 	setUp {
@@ -69,6 +69,7 @@ definition {
 
 	@description = "This case ensures that the user is notified when someone comments on their content page fragment."
 	@priority = "5"
+	@refactorneeded
 	test ViewComment {
 		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
 
@@ -89,8 +90,6 @@ definition {
 		ContentPages.clickPencil();
 
 		PageEditor.addComment(
-			content = "Lorem ipsum dolor sit amet",
-			fragmentClass = "header",
 			fragmentComment = "Comment by User 2",
 			fragmentName = "Title");
 
@@ -120,6 +119,7 @@ definition {
 
 	@description = "This test covers LPS-101493. It ensures that a user who replies to a comment will receive further reply notifications."
 	@priority = "4"
+	@refactorneeded
 	test ViewCommentFurtherReply {
 		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
 
@@ -130,8 +130,6 @@ definition {
 			fragmentName = "Title");
 
 		PageEditor.addComment(
-			content = "Lorem ipsum dolor sit amet",
-			fragmentClass = "header",
 			fragmentComment = "Comment By User 1",
 			fragmentName = "Title");
 
@@ -201,6 +199,7 @@ definition {
 
 	@description = "This case ensures that a user is notified when a reply is added to their comment."
 	@priority = "5"
+	@refactorneeded
 	test ViewCommentReply {
 		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
 
@@ -211,8 +210,6 @@ definition {
 			fragmentName = "Title");
 
 		PageEditor.addComment(
-			content = "Lorem ipsum dolor sit amet",
-			fragmentClass = "header",
 			fragmentComment = "Comment By User 1",
 			fragmentName = "Title");
 
@@ -261,6 +258,7 @@ definition {
 
 	@description = "This case ensures a user who is mentioned in a comment will receive notifications."
 	@priority = "4"
+	@refactorneeded
 	test ViewMentionFromComment {
 		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
 
@@ -275,8 +273,6 @@ definition {
 		ContentPages.clickPencil();
 
 		PageEditor.addComment(
-			content = "Lorem ipsum dolor sit amet",
-			fragmentClass = "header",
 			fragmentComment = "Comment by Test",
 			fragmentName = "Title",
 			mentionsUserFullName = "userfn userln",

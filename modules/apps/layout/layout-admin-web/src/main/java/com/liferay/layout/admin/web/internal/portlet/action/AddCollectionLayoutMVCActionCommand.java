@@ -27,10 +27,7 @@ import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
@@ -43,6 +40,7 @@ import com.liferay.portal.kernel.servlet.MultiSessionMessages;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -71,7 +69,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + LayoutAdminPortletKeys.GROUP_PAGES,
-		"mvc.command.name=/layout/add_collection_layout"
+		"mvc.command.name=/layout_admin/add_collection_layout"
 	},
 	service = MVCActionCommand.class
 )
@@ -86,7 +84,8 @@ public class AddCollectionLayoutMVCActionCommand
 		try {
 			Layout layout = _addCollectionLayout(actionRequest);
 
-			MultiSessionMessages.add(actionRequest, "layoutAdded", layout);
+			MultiSessionMessages.add(
+				actionRequest, "collectionLayoutAdded", layout);
 
 			JSONPortletResponseUtil.writeJSON(
 				actionRequest, actionResponse,
@@ -94,17 +93,13 @@ public class AddCollectionLayoutMVCActionCommand
 					"redirectURL",
 					getContentRedirectURL(actionRequest, layout)));
 		}
-		catch (PortalException portalException) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
-			}
-
+		catch (Exception exception) {
 			SessionErrors.add(actionRequest, "layoutNameInvalid");
 
 			hideDefaultErrorMessage(actionRequest);
 
-			_layoutExceptionRequestHandler.handlePortalException(
-				actionRequest, actionResponse, portalException);
+			_layoutExceptionRequestHandler.handleException(
+				actionRequest, actionResponse, exception);
 		}
 	}
 
@@ -152,8 +147,8 @@ public class AddCollectionLayoutMVCActionCommand
 			groupId, privateLayout, parentLayoutId, nameMap, new HashMap<>(),
 			new HashMap<>(), new HashMap<>(), new HashMap<>(),
 			LayoutConstants.TYPE_COLLECTION,
-			typeSettingsUnicodeProperties.toString(), false, masterLayoutPlid,
-			new HashMap<>(), serviceContext);
+			typeSettingsUnicodeProperties.toString(), false, new HashMap<>(),
+			masterLayoutPlid, serviceContext);
 
 		ActionUtil.updateLookAndFeel(
 			actionRequest, themeDisplay.getCompanyId(), liveGroupId,
@@ -175,7 +170,7 @@ public class AddCollectionLayoutMVCActionCommand
 		return layout;
 	}
 
-	private String _getCollectionLayoutDefinitionJSON(
+	private String _getCollectionPageElementJSON(
 		String className, String classPK) {
 
 		if (Validator.isNull(classPK)) {
@@ -195,17 +190,17 @@ public class AddCollectionLayoutMVCActionCommand
 		).put(
 			"CLASS_PK", classPK
 		).put(
-			"COLLECTION_NAME", assetListEntry.getTitle()
+			"COLLECTION_NAME", HtmlUtil.escape(assetListEntry.getTitle())
 		).build();
 
-		String collectionDefinition = StringUtil.read(
+		String collectionPageElementJSON = StringUtil.read(
 			AddCollectionLayoutMVCActionCommand.class,
-			"collection_definition.json");
+			"collection-page-element.json");
 
-		return StringUtil.replace(collectionDefinition, "${", "}", values);
+		return StringUtil.replace(collectionPageElementJSON, "${", "}", values);
 	}
 
-	private String _getCollectionProviderLayoutDefinition(String className) {
+	private String _getCollectionProviderPageElementJSON(String className) {
 		InfoListProvider<?> infoListProvider =
 			_infoListProviderTracker.getInfoListProvider(className);
 
@@ -220,52 +215,50 @@ public class AddCollectionLayoutMVCActionCommand
 			infoListProvider.getLabel(LocaleUtil.getDefault())
 		).build();
 
-		String collectionDefinition = StringUtil.read(
+		String collectionProviderPageElementJSON = StringUtil.read(
 			AddCollectionLayoutMVCActionCommand.class,
-			"collection_provider_definition.json");
+			"collection-provider-page-element.json");
 
-		return StringUtil.replace(collectionDefinition, "${", "}", values);
+		return StringUtil.replace(
+			collectionProviderPageElementJSON, "${", "}", values);
 	}
 
 	private void _updateLayoutPageTemplateData(
 			Layout layout, String collectionType, String collectionPK)
 		throws Exception {
 
-		LayoutPageTemplateStructure layoutPageTemplateStructure =
-			_layoutPageTemplateStructureLocalService.
-				fetchLayoutPageTemplateStructure(
-					layout.getGroupId(), layout.getPlid(), true);
-
-		LayoutStructure layoutStructure = LayoutStructure.of(
-			layoutPageTemplateStructure.getData(
-				SegmentsExperienceConstants.ID_DEFAULT));
-
-		String layoutDefinitionJSON = StringPool.BLANK;
+		String pageElementJSON = StringPool.BLANK;
 
 		if (Objects.equals(
 				collectionType,
 				InfoListItemSelectorReturnType.class.getName())) {
 
-			layoutDefinitionJSON = _getCollectionLayoutDefinitionJSON(
+			pageElementJSON = _getCollectionPageElementJSON(
 				collectionType, collectionPK);
 		}
 		else if (Objects.equals(
 					collectionType,
 					InfoListProviderItemSelectorReturnType.class.getName())) {
 
-			layoutDefinitionJSON = _getCollectionProviderLayoutDefinition(
+			pageElementJSON = _getCollectionProviderPageElementJSON(
 				collectionPK);
 		}
 
-		if (Validator.isNotNull(layoutDefinitionJSON)) {
+		if (Validator.isNotNull(pageElementJSON)) {
+			LayoutPageTemplateStructure layoutPageTemplateStructure =
+				_layoutPageTemplateStructureLocalService.
+					fetchLayoutPageTemplateStructure(
+						layout.getGroupId(), layout.getPlid(), true);
+
+			LayoutStructure layoutStructure = LayoutStructure.of(
+				layoutPageTemplateStructure.getData(
+					SegmentsExperienceConstants.ID_DEFAULT));
+
 			_layoutPageTemplatesImporter.importPageElement(
 				layout, layoutStructure, layoutStructure.getMainItemId(),
-				layoutDefinitionJSON, 0);
+				pageElementJSON, 0);
 		}
 	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		AddCollectionLayoutMVCActionCommand.class);
 
 	@Reference
 	private AssetListEntryLocalService _assetListEntryLocalService;

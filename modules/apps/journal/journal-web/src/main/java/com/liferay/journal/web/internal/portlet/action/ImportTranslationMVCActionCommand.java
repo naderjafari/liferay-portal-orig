@@ -15,14 +15,18 @@
 package com.liferay.journal.web.internal.portlet.action;
 
 import com.liferay.document.library.kernel.exception.FileSizeException;
-import com.liferay.info.item.InfoItemClassPKReference;
 import com.liferay.info.item.InfoItemFieldValues;
+import com.liferay.info.item.InfoItemReference;
+import com.liferay.info.item.InfoItemServiceTracker;
+import com.liferay.info.item.provider.InfoItemPermissionProvider;
+import com.liferay.info.item.updater.InfoItemFieldValuesUpdater;
 import com.liferay.journal.constants.JournalPortletKeys;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.service.JournalArticleService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.upload.LiferayFileItemException;
@@ -33,7 +37,6 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.translation.exception.XLIFFFileException;
 import com.liferay.translation.importer.TranslationInfoItemFieldValuesImporter;
-import com.liferay.translation.info.item.updater.InfoItemFieldValuesUpdater;
 
 import java.io.InputStream;
 
@@ -77,6 +80,8 @@ public class ImportTranslationMVCActionCommand extends BaseMVCActionCommand {
 
 			_checkContentType(uploadPortletRequest.getContentType("file"));
 
+			_checkPermission(article, themeDisplay);
+
 			try (InputStream inputStream = uploadPortletRequest.getFileAsStream(
 					"file")) {
 
@@ -84,7 +89,7 @@ public class ImportTranslationMVCActionCommand extends BaseMVCActionCommand {
 					_translationInfoItemFieldValuesImporter.
 						importInfoItemFieldValues(
 							themeDisplay.getScopeGroupId(),
-							new InfoItemClassPKReference(
+							new InfoItemReference(
 								JournalArticle.class.getName(),
 								article.getResourcePrimKey()),
 							inputStream);
@@ -124,32 +129,52 @@ public class ImportTranslationMVCActionCommand extends BaseMVCActionCommand {
 				WebKeys.UPLOAD_EXCEPTION);
 
 		if (uploadException != null) {
-			Throwable cause = uploadException.getCause();
+			Throwable throwable = uploadException.getCause();
 
 			if (uploadException.isExceededFileSizeLimit()) {
-				throw new FileSizeException(cause);
+				throw new FileSizeException(throwable);
 			}
 
 			if (uploadException.isExceededLiferayFileItemSizeLimit()) {
-				throw new LiferayFileItemException(cause);
+				throw new LiferayFileItemException(throwable);
 			}
 
 			if (uploadException.isExceededUploadRequestSizeLimit()) {
-				throw new UploadRequestSizeException(cause);
+				throw new UploadRequestSizeException(throwable);
 			}
 
-			throw new PortalException(cause);
+			throw new PortalException(throwable);
 		}
 	}
+
+	private void _checkPermission(
+			JournalArticle article, ThemeDisplay themeDisplay)
+		throws PortalException {
+
+		InfoItemPermissionProvider<Object> infoItemPermissionProvider =
+			_infoItemServiceTracker.getFirstInfoItemService(
+				InfoItemPermissionProvider.class,
+				JournalArticle.class.getName());
+
+		if (!infoItemPermissionProvider.hasPermission(
+				themeDisplay.getPermissionChecker(), article,
+				ActionKeys.UPDATE)) {
+
+			throw new PrincipalException.MustHavePermission(
+				themeDisplay.getPermissionChecker(),
+				JournalArticle.class.getName(), article.getResourcePrimKey(),
+				ActionKeys.UPDATE);
+		}
+	}
+
+	@Reference
+	private InfoItemServiceTracker _infoItemServiceTracker;
 
 	@Reference(
 		target = "(item.class.name=com.liferay.journal.model.JournalArticle)"
 	)
 	private InfoItemFieldValuesUpdater<JournalArticle>
 		_journalArticleInfoItemFieldValuesUpdater;
-
-	@Reference
-	private JournalArticleService _journalArticleService;
 
 	@Reference
 	private Portal _portal;

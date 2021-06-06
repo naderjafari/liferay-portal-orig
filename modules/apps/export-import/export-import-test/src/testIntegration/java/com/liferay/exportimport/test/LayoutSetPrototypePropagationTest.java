@@ -26,6 +26,8 @@ import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.LayoutParentLayoutIdException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
@@ -39,7 +41,6 @@ import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
@@ -133,7 +134,7 @@ public class LayoutSetPrototypePropagationTest
 	}
 
 	@Test
-	public void testLayoutDeleteAndReaddWithSameFriendlyURL() throws Exception {
+	public void testLayoutDeleteAndReadWithSameFriendlyURL() throws Exception {
 		setLinkEnabled(true);
 
 		Layout layout = LayoutTestUtil.addLayout(
@@ -256,6 +257,41 @@ public class LayoutSetPrototypePropagationTest
 		Assert.assertEquals(
 			mergeFailFriendlyURLLayouts.toString(),
 			initialMergeFailFriendlyURLLayouts.size() + 1,
+			mergeFailFriendlyURLLayouts.size());
+	}
+
+	@Test
+	public void testLayoutPropagationWithFriendlyURLConflictResolvedByDelete()
+		throws Exception {
+
+		LayoutSet layoutSet = group.getPublicLayoutSet();
+
+		List<Layout> initialMergeFailFriendlyURLLayouts =
+			SitesUtil.getMergeFailFriendlyURLLayouts(layoutSet);
+
+		setLinkEnabled(true);
+
+		Layout layout = LayoutTestUtil.addLayout(
+			group.getGroupId(), "test", false);
+
+		LayoutTestUtil.addLayout(
+			_layoutSetPrototypeGroup.getGroupId(), "test", true);
+
+		propagateChanges(group);
+
+		LayoutLocalServiceUtil.deleteLayout(layout);
+
+		propagateChanges(group);
+
+		layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
+			layoutSet.getLayoutSetId());
+
+		List<Layout> mergeFailFriendlyURLLayouts =
+			SitesUtil.getMergeFailFriendlyURLLayouts(layoutSet);
+
+		Assert.assertEquals(
+			mergeFailFriendlyURLLayouts.toString(),
+			initialMergeFailFriendlyURLLayouts.size(),
 			mergeFailFriendlyURLLayouts.size());
 	}
 
@@ -469,10 +505,8 @@ public class LayoutSetPrototypePropagationTest
 
 	@Test
 	public void testResetPrototypeWithoutPermissions() throws Exception {
-		PermissionChecker permissionChecker =
-			PermissionCheckerFactoryUtil.create(_user1);
-
-		PermissionThreadLocal.setPermissionChecker(permissionChecker);
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(_user1));
 
 		Group userGroup = GroupLocalServiceUtil.getUserGroup(
 			_user2.getCompanyId(), _user2.getUserId());
@@ -488,6 +522,9 @@ public class LayoutSetPrototypePropagationTest
 					"dashboard");
 		}
 		catch (PrincipalException principalException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(principalException, principalException);
+			}
 		}
 	}
 
@@ -503,10 +540,8 @@ public class LayoutSetPrototypePropagationTest
 			String.valueOf(_user1.getCompanyId()), role.getRoleId(),
 			ActionKeys.UPDATE);
 
-		PermissionChecker permissionChecker =
-			PermissionCheckerFactoryUtil.create(_user1);
-
-		PermissionThreadLocal.setPermissionChecker(permissionChecker);
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(_user1));
 
 		Group userGroup = GroupLocalServiceUtil.getUserGroup(
 			_user2.getCompanyId(), _user2.getUserId());
@@ -519,10 +554,8 @@ public class LayoutSetPrototypePropagationTest
 
 	@Test
 	public void testResetUserPrototypeWithoutPermissions() throws Exception {
-		PermissionChecker permissionChecker =
-			PermissionCheckerFactoryUtil.create(_user1);
-
-		PermissionThreadLocal.setPermissionChecker(permissionChecker);
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(_user1));
 
 		Group userGroup = GroupLocalServiceUtil.getUserGroup(
 			_user1.getCompanyId(), _user1.getUserId());
@@ -828,12 +861,21 @@ public class LayoutSetPrototypePropagationTest
 				layoutSetPrototypeLinkEnabled);
 		}
 		catch (LayoutParentLayoutIdException layoutParentLayoutIdException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					layoutParentLayoutIdException,
+					layoutParentLayoutIdException);
+			}
+
 			Assert.assertTrue(
 				"Unable to add a child page to a page associated to a " +
 					"template with link disabled",
 				layoutSetPrototypeLinkEnabled);
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		LayoutSetPrototypePropagationTest.class);
 
 	private int _initialLayoutCount;
 	private int _initialPrototypeLayoutCount;

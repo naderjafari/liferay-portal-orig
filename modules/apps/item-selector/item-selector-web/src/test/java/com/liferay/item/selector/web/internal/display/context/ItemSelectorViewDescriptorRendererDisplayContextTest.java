@@ -18,11 +18,14 @@ import com.liferay.item.selector.ItemSelectorReturnType;
 import com.liferay.item.selector.ItemSelectorViewDescriptor;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.test.util.PropsTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -31,6 +34,11 @@ import org.springframework.mock.web.MockHttpServletRequest;
  * @author Cristina González
  */
 public class ItemSelectorViewDescriptorRendererDisplayContextTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@BeforeClass
 	public static void setUpClass() {
@@ -63,7 +71,7 @@ public class ItemSelectorViewDescriptorRendererDisplayContextTest {
 						}
 
 					},
-					null);
+					null, null);
 
 		Assert.assertEquals(
 			"icon",
@@ -106,7 +114,7 @@ public class ItemSelectorViewDescriptorRendererDisplayContextTest {
 						}
 
 					},
-					null);
+					null, null);
 
 		Assert.assertEquals(
 			"descriptive",
@@ -144,7 +152,7 @@ public class ItemSelectorViewDescriptorRendererDisplayContextTest {
 						}
 
 					},
-					null);
+					null, null);
 
 		Assert.assertEquals(
 			"descriptive",

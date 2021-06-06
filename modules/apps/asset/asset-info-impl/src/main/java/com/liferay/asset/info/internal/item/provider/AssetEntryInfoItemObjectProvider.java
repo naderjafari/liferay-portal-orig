@@ -18,6 +18,8 @@ import com.liferay.asset.kernel.exception.NoSuchEntryException;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.info.exception.NoSuchInfoItemException;
+import com.liferay.info.item.ClassPKInfoItemIdentifier;
+import com.liferay.info.item.InfoItemIdentifier;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.portal.kernel.exception.PortalException;
 
@@ -32,17 +34,38 @@ public class AssetEntryInfoItemObjectProvider
 	implements InfoItemObjectProvider<AssetEntry> {
 
 	@Override
-	public AssetEntry getInfoItem(long classPK) throws NoSuchInfoItemException {
+	public AssetEntry getInfoItem(InfoItemIdentifier infoItemIdentifier)
+		throws NoSuchInfoItemException {
+
+		if (!(infoItemIdentifier instanceof ClassPKInfoItemIdentifier)) {
+			throw new NoSuchInfoItemException(
+				"Unsupported info item identifier type " + infoItemIdentifier);
+		}
+
+		ClassPKInfoItemIdentifier classPKInfoItemIdentifier =
+			(ClassPKInfoItemIdentifier)infoItemIdentifier;
+
 		try {
-			return _assetEntryLocalService.getEntry(classPK);
+			return _assetEntryLocalService.getEntry(
+				classPKInfoItemIdentifier.getClassPK());
 		}
 		catch (NoSuchEntryException noSuchEntryException) {
 			throw new NoSuchInfoItemException(
-				"Unable to get asset entry " + classPK, noSuchEntryException);
+				"Unable to get asset entry " +
+					classPKInfoItemIdentifier.getClassPK(),
+				noSuchEntryException);
 		}
 		catch (PortalException portalException) {
 			throw new RuntimeException(portalException);
 		}
+	}
+
+	@Override
+	public AssetEntry getInfoItem(long classPK) throws NoSuchInfoItemException {
+		InfoItemIdentifier infoItemIdentifier = new ClassPKInfoItemIdentifier(
+			classPK);
+
+		return getInfoItem(infoItemIdentifier);
 	}
 
 	@Reference

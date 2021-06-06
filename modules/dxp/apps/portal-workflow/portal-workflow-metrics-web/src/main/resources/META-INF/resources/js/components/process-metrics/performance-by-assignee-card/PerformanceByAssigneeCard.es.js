@@ -10,9 +10,10 @@
  */
 
 import ClayLayout from '@clayui/layout';
+import ClayPanel from '@clayui/panel';
 import React, {useMemo} from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
+import PanelHeaderWithOptions from '../../../shared/components/panel-header-with-options/PanelHeaderWithOptions.es';
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
 import {useFilter} from '../../../shared/hooks/useFilter.es';
 import {usePost} from '../../../shared/hooks/usePost.es';
@@ -21,13 +22,13 @@ import TimeRangeFilter from '../../filter/TimeRangeFilter.es';
 import {getTimeRangeParams} from '../../filter/util/timeRangeUtil.es';
 import {Body, Footer} from './PerformanceByAssigneeCardBody.es';
 
-const Header = ({disableFilters, prefixKey, processId}) => {
+function Header({disableFilters, prefixKey, processId}) {
 	return (
-		<Panel.HeaderWithOptions
+		<PanelHeaderWithOptions
+			className="dashboard-panel-header"
 			description={Liferay.Language.get(
 				'performance-by-assignee-description'
 			)}
-			elementClasses="dashboard-panel-header"
 			title={Liferay.Language.get('performance-by-assignee')}
 		>
 			<ClayLayout.ContentCol className="m-0 management-bar management-bar-light navbar">
@@ -46,18 +47,18 @@ const Header = ({disableFilters, prefixKey, processId}) => {
 					/>
 
 					<TimeRangeFilter
-						className={'pl-3'}
+						className="pl-3"
 						disabled={disableFilters}
 						options={{position: 'right'}}
 						prefixKey={prefixKey}
 					/>
 				</ul>
 			</ClayLayout.ContentCol>
-		</Panel.HeaderWithOptions>
+		</PanelHeaderWithOptions>
 	);
-};
+}
 
-const PerformanceByAssigneeCard = ({routeParams}) => {
+function PerformanceByAssigneeCard({routeParams}) {
 	const {processId} = routeParams;
 	const filterKeys = ['processStep', 'timeRange'];
 	const prefixKey = 'assignee';
@@ -105,7 +106,7 @@ const PerformanceByAssigneeCard = ({routeParams}) => {
 	}, [filtersError, postData, timeRange.dateEnd, timeRange.dateStart]);
 
 	return (
-		<Panel elementClasses="dashboard-card">
+		<ClayPanel className="dashboard-card mt-4">
 			<PromisesResolver promises={promises}>
 				<PerformanceByAssigneeCard.Header
 					disableFilters={filtersError}
@@ -125,9 +126,9 @@ const PerformanceByAssigneeCard = ({routeParams}) => {
 					{...routeParams}
 				/>
 			</PromisesResolver>
-		</Panel>
+		</ClayPanel>
 	);
-};
+}
 
 PerformanceByAssigneeCard.Body = Body;
 PerformanceByAssigneeCard.Footer = Footer;

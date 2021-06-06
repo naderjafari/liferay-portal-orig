@@ -62,7 +62,7 @@ const DisplayPageModalForm = React.forwardRef((props, ref) => {
 				name={Liferay.Language.get('name')}
 			>
 				<input
-					className={'form-control'}
+					className="form-control"
 					defaultValue={props.displayPageName}
 					id={`${props.namespace}name`}
 					name={`${props.namespace}name`}
@@ -151,7 +151,7 @@ DisplayPageModalForm.propTypes = {
 		})
 	),
 	namespace: PropTypes.string.isRequired,
-	onSubmit: PropTypes.func.isRequire,
+	onSubmit: PropTypes.func.isRequired,
 };
 
 export {DisplayPageModalForm};

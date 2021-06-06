@@ -16,6 +16,8 @@ package com.liferay.portal.osgi.web.servlet.jsp.compiler.internal;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
@@ -191,15 +193,11 @@ public class JspServlet extends HttpServlet {
 		_jspBundleClassloader = new JspBundleClassloader(
 			_allParticipatingBundles);
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(_WORK_DIR);
-		sb.append(_bundle.getSymbolicName());
-		sb.append(StringPool.DASH);
-		sb.append(_bundle.getVersion());
-
 		final Map<String, String> defaults = HashMapBuilder.put(
-			_INIT_PARAMETER_NAME_SCRATCH_DIR, sb.toString()
+			_INIT_PARAMETER_NAME_SCRATCH_DIR,
+			StringBundler.concat(
+				_WORK_DIR, _bundle.getSymbolicName(), StringPool.DASH,
+				_bundle.getVersion())
 		).put(
 			"compilerClassName",
 			"com.liferay.portal.osgi.web.servlet.jsp.compiler.internal." +
@@ -325,8 +323,8 @@ public class JspServlet extends HttpServlet {
 	}
 
 	@Override
-	public void log(String message, Throwable t) {
-		_jspServlet.log(message, t);
+	public void log(String message, Throwable throwable) {
+		_jspServlet.log(message, throwable);
 	}
 
 	@Override
@@ -457,6 +455,8 @@ public class JspServlet extends HttpServlet {
 
 	private static final String _WORK_DIR = StringBundler.concat(
 		PropsValues.LIFERAY_HOME, File.separator, "work", File.separator);
+
+	private static final Log _log = LogFactoryUtil.getLog(JspServlet.class);
 
 	private static final Properties _initParams = PropsUtil.getProperties(
 		"jsp.servlet.init.param.", true);
@@ -732,6 +732,9 @@ public class JspServlet extends HttpServlet {
 				return _jspBundle.getResource(path);
 			}
 			catch (MalformedURLException malformedURLException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(malformedURLException, malformedURLException);
+				}
 			}
 
 			return null;
@@ -749,6 +752,10 @@ public class JspServlet extends HttpServlet {
 				return url.openStream();
 			}
 			catch (IOException ioException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(ioException, ioException);
+				}
+
 				return null;
 			}
 		}

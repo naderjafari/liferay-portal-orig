@@ -19,6 +19,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -50,12 +51,14 @@ public class BaseManagementToolbarDisplayContext
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse) {
 
+		this.httpServletRequest = httpServletRequest;
 		this.liferayPortletRequest = liferayPortletRequest;
 		this.liferayPortletResponse = liferayPortletResponse;
-		request = httpServletRequest;
 
 		currentURLObj = PortletURLUtil.getCurrent(
 			liferayPortletRequest, liferayPortletResponse);
+
+		request = httpServletRequest;
 	}
 
 	/**
@@ -171,7 +174,7 @@ public class BaseManagementToolbarDisplayContext
 
 	protected String getDisplayStyle() {
 		return ParamUtil.getString(
-			request, "displayStyle", getDefaultDisplayStyle());
+			httpServletRequest, "displayStyle", getDefaultDisplayStyle());
 	}
 
 	protected String[] getDisplayViews() {
@@ -199,7 +202,8 @@ public class BaseManagementToolbarDisplayContext
 							dropdownItem.setHref(
 								entryURL, parameterName, entry.getValue());
 							dropdownItem.setLabel(
-								LanguageUtil.get(request, entry.getKey()));
+								LanguageUtil.get(
+									httpServletRequest, entry.getKey()));
 						});
 				}
 			}
@@ -213,7 +217,7 @@ public class BaseManagementToolbarDisplayContext
 	}
 
 	protected String getFilterNavigationDropdownItemsLabel() {
-		return LanguageUtil.get(request, "filter-by-navigation");
+		return LanguageUtil.get(httpServletRequest, "filter-by-navigation");
 	}
 
 	protected String getNavigation() {
@@ -248,7 +252,7 @@ public class BaseManagementToolbarDisplayContext
 	}
 
 	protected String getOrderByDropdownItemsLabel() {
-		return LanguageUtil.get(request, "order-by");
+		return LanguageUtil.get(httpServletRequest, "order-by");
 	}
 
 	protected Map<String, String> getOrderByEntriesMap() {
@@ -277,18 +281,25 @@ public class BaseManagementToolbarDisplayContext
 				_log.warn(portletException, portletException);
 			}
 
-			PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-			portletURL.setParameters(currentURLObj.getParameterMap());
-
-			return portletURL;
+			return PortletURLBuilder.createRenderURL(
+				liferayPortletResponse
+			).setParameters(
+				currentURLObj.getParameterMap()
+			).build();
 		}
 	}
 
 	protected final PortletURL currentURLObj;
+	protected final HttpServletRequest httpServletRequest;
 	protected final LiferayPortletRequest liferayPortletRequest;
 	protected final LiferayPortletResponse liferayPortletResponse;
-	protected final HttpServletRequest request;
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #httpServletRequest}
+	 */
+	@Deprecated
+	protected HttpServletRequest request;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		BaseManagementToolbarDisplayContext.class);

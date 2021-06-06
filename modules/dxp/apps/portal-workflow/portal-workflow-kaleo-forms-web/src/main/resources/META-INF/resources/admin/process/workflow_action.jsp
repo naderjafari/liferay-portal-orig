@@ -40,11 +40,13 @@ String backURL = (String)row.getParameter("backURL");
 		<portlet:param name="draftVersion" value="<%= String.valueOf(workflowDefinition.getVersion()) + StringPool.PERIOD + '0' %>" />
 	</liferay-portlet:renderURL>
 
-	<liferay-ui:icon
-		message="edit"
-		onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "editWorkflow('" + editURL + "');" %>'
-		url="javascript:;"
-	/>
+	<c:if test="<%= permissionChecker.isCompanyAdmin() %>">
+		<liferay-ui:icon
+			message="edit"
+			onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "editWorkflow('" + editURL + "');" %>'
+			url="javascript:;"
+		/>
+	</c:if>
 
 	<liferay-ui:icon
 		message="choose"
@@ -52,7 +54,7 @@ String backURL = (String)row.getParameter("backURL");
 		url="javascript:;"
 	/>
 
-	<portlet:actionURL name="deactivateWorkflowDefinition" var="deactivateWorkflowDefinition">
+	<portlet:actionURL name="/kaleo_forms_admin/deactivate_workflow_definition" var="deactivateWorkflowDefinition">
 		<portlet:param name="tabs1" value="published" />
 		<portlet:param name="redirect" value="<%= backURL %>" />
 		<portlet:param name="historyKey" value="workflow" />

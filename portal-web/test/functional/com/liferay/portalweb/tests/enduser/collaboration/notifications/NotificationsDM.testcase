@@ -1,10 +1,11 @@
 @component-name = "portal-collaboration"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property testray.main.component.name = "Notifications";
+
 	var pageName = "Documents and Media Page";
 	var portletName = "Documents and Media";
 
@@ -70,6 +71,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewNoWebsiteNotificationForNewDocumentInFolder {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -128,6 +130,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewNoWebsiteNotificationForUpdatedDocumentInFolder {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -189,6 +192,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewWebsiteNotificationForNewDocumentInFolder {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -246,6 +250,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewWebsiteNotificationForUpdatedDocumentInFolder {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 

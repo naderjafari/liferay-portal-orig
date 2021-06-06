@@ -162,6 +162,13 @@ public class CTCollectionLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _ctCollectionLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _ctCollectionLocalService.dynamicQuery();
 	}
@@ -318,6 +325,15 @@ public class CTCollectionLocalServiceWrapper
 	@Override
 	public int getCTCollectionsCount() {
 		return _ctCollectionLocalService.getCTCollectionsCount();
+	}
+
+	@Override
+	public java.util.List<com.liferay.change.tracking.model.CTEntry>
+		getDiscardCTEntries(
+			long ctCollectionId, long modelClassNameId, long modelClassPK) {
+
+		return _ctCollectionLocalService.getDiscardCTEntries(
+			ctCollectionId, modelClassNameId, modelClassPK);
 	}
 
 	@Override

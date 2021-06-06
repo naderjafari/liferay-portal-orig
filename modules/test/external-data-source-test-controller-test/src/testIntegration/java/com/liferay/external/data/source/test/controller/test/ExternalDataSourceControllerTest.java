@@ -110,10 +110,11 @@ public class ExternalDataSourceControllerTest {
 
 		URL resource = _serviceBundle.getResource("/META-INF/sql/tables.sql");
 
-		try (Connection con = JDBCDriver.getConnection(_JDBC_URL, properties);
-			InputStream is = resource.openStream()) {
+		try (Connection connection = JDBCDriver.getConnection(
+				_JDBC_URL, properties);
+			InputStream inputStream = resource.openStream()) {
 
-			db.runSQL(con, StringUtil.read(is));
+			db.runSQL(connection, StringUtil.read(inputStream));
 		}
 
 		_apiBundle.start();
@@ -131,8 +132,8 @@ public class ExternalDataSourceControllerTest {
 
 		DB portalDB = DBManagerUtil.getDB();
 
-		try (Connection con = DataAccess.getConnection()) {
-			portalDB.runSQL(con, "drop table TestEntity");
+		try (Connection connection = DataAccess.getConnection()) {
+			portalDB.runSQL(connection, "drop table TestEntity");
 		}
 	}
 
@@ -174,10 +175,10 @@ public class ExternalDataSourceControllerTest {
 		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 			new UnsyncByteArrayOutputStream();
 
-		try (InputStream is =
+		try (InputStream inputStream =
 				ExternalDataSourceControllerTest.class.getResourceAsStream(
 					path);
-			JarInputStream jarInputStream = new JarInputStream(is);
+			JarInputStream jarInputStream = new JarInputStream(inputStream);
 			JarOutputStream jarOutputStream = new JarOutputStream(
 				unsyncByteArrayOutputStream)) {
 
@@ -201,7 +202,7 @@ public class ExternalDataSourceControllerTest {
 				jarOutputStream.closeEntry();
 			}
 
-			try (InputStream extSpringInputSteam =
+			try (InputStream extSpringInputStream =
 					ExternalDataSourceControllerTest.class.getResourceAsStream(
 						getResourceSource())) {
 
@@ -209,7 +210,7 @@ public class ExternalDataSourceControllerTest {
 					new JarEntry(getResourceDestination()));
 
 				StreamUtil.transfer(
-					extSpringInputSteam, jarOutputStream, false);
+					extSpringInputStream, jarOutputStream, false);
 
 				jarOutputStream.closeEntry();
 			}
@@ -219,11 +220,11 @@ public class ExternalDataSourceControllerTest {
 	}
 
 	private Bundle _installBundle(String path) throws Exception {
-		try (InputStream is =
+		try (InputStream inputStream =
 				ExternalDataSourceControllerTest.class.getResourceAsStream(
 					path)) {
 
-			return _bundleContext.installBundle(path, is);
+			return _bundleContext.installBundle(path, inputStream);
 		}
 	}
 
@@ -261,26 +262,26 @@ public class ExternalDataSourceControllerTest {
 
 	private static class TestRunListener extends RunListener {
 
-		public void rethrow(Throwable t) throws Throwable {
-			if (t == null) {
+		public void rethrow(Throwable throwable) throws Throwable {
+			if (throwable == null) {
 				if (_failures.isEmpty()) {
 					return;
 				}
 
-				t = new AssertionError(
+				throwable = new AssertionError(
 					"Inner test bundle junit execution errors:");
 			}
 
 			for (Failure failure : _failures) {
-				t.addSuppressed(failure.getException());
+				throwable.addSuppressed(failure.getException());
 			}
 
 			try (UnsyncStringWriter unsyncStringWriter =
 					new UnsyncStringWriter();
-				UnsyncPrintWriter unsycPrintWriter = new UnsyncPrintWriter(
+				UnsyncPrintWriter unsyncPrintWriter = new UnsyncPrintWriter(
 					unsyncStringWriter)) {
 
-				t.printStackTrace(unsycPrintWriter);
+				throwable.printStackTrace(unsyncPrintWriter);
 
 				throw new ArquillianThrowable(unsyncStringWriter.toString());
 			}

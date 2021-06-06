@@ -15,11 +15,11 @@
 import ClayButton from '@clayui/button/lib/Button';
 import {Context as ClayModalContext} from '@clayui/modal';
 import ClayPanel from '@clayui/panel';
+import {getItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {getLocalizedValue} from 'data-engine-js-components-web/js/utils/lang.es';
 import {DataDefinitionUtils} from 'data-engine-taglib';
 import React, {useContext} from 'react';
 
-import {getItem} from '../../utils/client.es';
-import {getLocalizedValue} from '../../utils/lang.es';
 import FormViewContext from './FormViewContext.es';
 
 export default (callback) => {
@@ -29,13 +29,28 @@ export default (callback) => {
 	const [{onClose}, dispatchModal] = useContext(ClayModalContext);
 
 	return (event) => {
-		const {fieldType, label} = DataDefinitionUtils.getDataDefinitionField(
+		const {
+			customProperties: {ddmStructureId, nativeField},
+			fieldType,
+			label,
+		} = DataDefinitionUtils.getDataDefinitionField(
 			dataDefinition,
 			event.fieldName
 		);
-		const {label: fieldTypeLabel} = fieldTypes.find(({name}) => {
+
+		// A Native Field cannot be removed from Object.
+
+		if (nativeField) {
+			return;
+		}
+
+		let {label: fieldTypeLabel} = fieldTypes.find(({name}) => {
 			return name === fieldType;
 		});
+
+		if (fieldType === 'fieldset' && ddmStructureId) {
+			fieldTypeLabel = Liferay.Language.get('fieldset');
+		}
 
 		return getItem(
 			`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}/data-definition-field-links?fieldName=${event.fieldName}`

@@ -37,8 +37,9 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.osgi.web.servlet.jsp.compiler.test.servlet.PrecompileTestServlet;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.IOException;
@@ -63,9 +64,6 @@ import java.util.zip.ZipEntry;
 import javax.portlet.Portlet;
 
 import javax.servlet.http.HttpServletRequest;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.spi.LoggingEvent;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -192,16 +190,14 @@ public class JspPrecompileTest {
 			outputStream.write(classWriter.toByteArray());
 		}
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					_JSP_COMPILER_CLASS_NAME, Level.DEBUG)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				_CLASS_NAME_JSP_COMPILER, LoggerTestUtil.DEBUG)) {
 
 			_invokeJSP(_PRECOMPILE_JSP_FILE_NAME, "Precompiled");
 
 			Assert.assertFalse(
 				"JSP was compiled at runtime",
-				_containsCompilerLog(
-					captureAppender, _PRECOMPILE_JSP_FILE_NAME));
+				_containsCompilerLog(logCapture, _PRECOMPILE_JSP_FILE_NAME));
 		}
 		finally {
 			Files.delete(jspClassPath);
@@ -210,16 +206,15 @@ public class JspPrecompileTest {
 
 	@Test
 	public void testRuntimeCompiledJsp() throws Exception {
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					_JSP_COMPILER_CLASS_NAME, Level.DEBUG)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				_CLASS_NAME_JSP_COMPILER, LoggerTestUtil.DEBUG)) {
 
 			_invokeJSP(_RUNTIME_COMPILE_JSP_FILE_NAME, "Runtime Compiled");
 
 			Assert.assertTrue(
 				"No JSP was compiled at runtime",
 				_containsCompilerLog(
-					captureAppender, _RUNTIME_COMPILE_JSP_FILE_NAME));
+					logCapture, _RUNTIME_COMPILE_JSP_FILE_NAME));
 		}
 	}
 
@@ -347,7 +342,7 @@ public class JspPrecompileTest {
 	}
 
 	private boolean _containsCompilerLog(
-		CaptureAppender captureAppender, String jspName) {
+		LogCapture logCapture, String jspName) {
 
 		StringBundler sb = new StringBundler(3);
 
@@ -358,8 +353,8 @@ public class JspPrecompileTest {
 
 		String compilerLog = sb.toString();
 
-		for (LoggingEvent loggingEvent : captureAppender.getLoggingEvents()) {
-			String message = loggingEvent.getRenderedMessage();
+		for (LogEntry logEntry : logCapture.getLogEntries()) {
+			String message = logEntry.getMessage();
 
 			if (message.equals(compilerLog)) {
 				return true;
@@ -398,7 +393,7 @@ public class JspPrecompileTest {
 		}
 	}
 
-	private static final String _JSP_COMPILER_CLASS_NAME =
+	private static final String _CLASS_NAME_JSP_COMPILER =
 		"com.liferay.portal.osgi.web.servlet.jsp.compiler.internal.JspCompiler";
 
 	private static final String _JSP_PACKAGE_NAME = "org.apache.jsp.";

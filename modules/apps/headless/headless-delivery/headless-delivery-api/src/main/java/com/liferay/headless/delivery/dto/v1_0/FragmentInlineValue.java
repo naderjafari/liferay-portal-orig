@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentInlineValue")
+@GraphQLName(
+	description = "Represents a fragment inline value.",
+	value = "FragmentInlineValue"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentInlineValue")
-public class FragmentInlineValue {
+public class FragmentInlineValue implements Serializable {
 
 	public static FragmentInlineValue toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentInlineValue.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The fragment's inline value.")
 	public String getValue() {
 		return value;
 	}
@@ -75,11 +80,11 @@ public class FragmentInlineValue {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment's inline value.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String value;
 
-	@Schema
+	@Schema(description = "The localized fragment's inline values.")
 	@Valid
 	public Map<String, String> getValue_i18n() {
 		return value_i18n;
@@ -105,7 +110,7 @@ public class FragmentInlineValue {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized fragment's inline values.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, String> value_i18n;
 
@@ -166,6 +171,7 @@ public class FragmentInlineValue {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentInlineValue",
 		name = "x-class-name"
 	)
@@ -201,7 +207,7 @@ public class FragmentInlineValue {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -240,7 +246,7 @@ public class FragmentInlineValue {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -24,8 +24,6 @@
 <#assign
 	sampleUserModel = dataFactory.newSampleUserModel()
 
-	sampleUserId = sampleUserModel.userId
-
 	userGroupModel = dataFactory.newGroupModel(sampleUserModel)
 
 	layoutModel = dataFactory.newLayoutModel(userGroupModel.groupId, "home", "", "")
@@ -48,6 +46,4 @@
 
 <#list groupIds as groupId>
 	${dataFactory.toInsertSQL(dataFactory.newBlogsStatsUserModel(groupId))}
-
-	${dataFactory.toInsertSQL(dataFactory.newMBStatsUserModel(groupId))}
 </#list>

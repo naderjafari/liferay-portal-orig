@@ -23,7 +23,8 @@ import com.liferay.message.boards.exception.MailingListOutUserNameException;
 import com.liferay.message.boards.internal.messaging.MailingListRequest;
 import com.liferay.message.boards.model.MBMailingList;
 import com.liferay.message.boards.service.base.MBMailingListLocalServiceBaseImpl;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.json.jabsorb.serializer.LiferayJSONDeserializationWhitelist;
@@ -204,8 +205,8 @@ public class MBMailingListLocalServiceImpl
 		// Scheduler
 
 		if (active) {
-			try (SafeClosable safeClosable =
-					ProxyModeThreadLocal.setWithSafeClosable(true)) {
+			try (SafeCloseable safeCloseable =
+					ProxyModeThreadLocal.setWithSafeCloseable(true)) {
 
 				unscheduleMailingList(mailingList);
 
@@ -226,16 +227,22 @@ public class MBMailingListLocalServiceImpl
 	}
 
 	@Deactivate
-	protected void deactivate() throws Exception {
-		_unregister.close();
+	@Override
+	protected void deactivate() {
+		super.deactivate();
+
+		try {
+			_unregister.close();
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	protected String getSchedulerGroupName(MBMailingList mailingList) {
-		return DestinationNames.MESSAGE_BOARDS_MAILING_LIST.concat(
-			StringPool.SLASH
-		).concat(
-			String.valueOf(mailingList.getMailingListId())
-		);
+		return StringBundler.concat(
+			DestinationNames.MESSAGE_BOARDS_MAILING_LIST, StringPool.SLASH,
+			mailingList.getMailingListId());
 	}
 
 	protected void scheduleMailingList(MBMailingList mailingList)

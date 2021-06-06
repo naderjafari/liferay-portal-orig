@@ -22,6 +22,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -68,7 +69,8 @@ public class AssetCategoriesManagementToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.putData("action", "deleteSelectedCategories");
 				dropdownItem.setIcon("times-circle");
-				dropdownItem.setLabel(LanguageUtil.get(request, "delete"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "delete"));
 				dropdownItem.setQuickAction(true);
 			}
 		).build();
@@ -88,13 +90,15 @@ public class AssetCategoriesManagementToolbarDisplayContext
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("navigation", "all");
-		clearResultsURL.setParameter("categoryId", "0");
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).setNavigation(
+			"all"
+		).setParameter(
+			"categoryId", "0"
+		).buildString();
 	}
 
 	@Override
@@ -106,10 +110,11 @@ public class AssetCategoriesManagementToolbarDisplayContext
 	public CreationMenu getCreationMenu() {
 		return CreationMenuBuilder.addPrimaryDropdownItem(
 			dropdownItem -> {
-				PortletURL addCategoryURL =
-					liferayPortletResponse.createRenderURL();
-
-				addCategoryURL.setParameter("mvcPath", "/edit_category.jsp");
+				PortletURL addCategoryURL = PortletURLBuilder.createRenderURL(
+					liferayPortletResponse
+				).setMVCPath(
+					"/edit_category.jsp"
+				).build();
 
 				if (_assetCategoriesDisplayContext.getCategoryId() > 0) {
 					addCategoryURL.setParameter(
@@ -131,7 +136,8 @@ public class AssetCategoriesManagementToolbarDisplayContext
 					label = "add-subcategory";
 				}
 
-				dropdownItem.setLabel(LanguageUtil.get(request, label));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, label));
 			}
 		).build();
 	}
@@ -155,18 +161,22 @@ public class AssetCategoriesManagementToolbarDisplayContext
 
 		return LabelItemListBuilder.add(
 			labelItem -> {
-				PortletURL removeLabelURL = PortletURLUtil.clone(
-					currentURLObj, liferayPortletResponse);
-
-				removeLabelURL.setParameter("navigation", (String)null);
-				removeLabelURL.setParameter("categoryId", "0");
-
-				labelItem.putData("removeLabelURL", removeLabelURL.toString());
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						PortletURLUtil.clone(
+							currentURLObj, liferayPortletResponse)
+					).setNavigation(
+						(String)null
+					).setParameter(
+						"categoryId", "0"
+					).buildString());
 
 				labelItem.setCloseable(true);
 
-				ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-					WebKeys.THEME_DISPLAY);
+				ThemeDisplay themeDisplay =
+					(ThemeDisplay)httpServletRequest.getAttribute(
+						WebKeys.THEME_DISPLAY);
 
 				labelItem.setLabel(category.getTitle(themeDisplay.getLocale()));
 			}
@@ -179,18 +189,20 @@ public class AssetCategoriesManagementToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.setActive(_isNavigationAll());
 				dropdownItem.setHref(getPortletURL(), "navigation", "all");
-				dropdownItem.setLabel(LanguageUtil.get(request, "all"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "all"));
 			}
 		).add(
 			_assetCategoriesDisplayContext::isFlattenedNavigationAllowed,
 			dropdownItem -> {
-				dropdownItem.setActive(_isNavigationCategory());
 				dropdownItem.putData("action", "selectCategory");
 				dropdownItem.putData(
 					"categoriesSelectorURL", _getCategoriesSelectorURL());
 				dropdownItem.putData(
 					"viewCategoriesURL", _getViewCategoriesURL());
-				dropdownItem.setLabel(LanguageUtil.get(request, "category"));
+				dropdownItem.setActive(_isNavigationCategory());
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "category"));
 			}
 		).build();
 	}
@@ -213,6 +225,11 @@ public class AssetCategoriesManagementToolbarDisplayContext
 	}
 
 	@Override
+	protected String getDisplayStyle() {
+		return _assetCategoriesDisplayContext.getDisplayStyle();
+	}
+
+	@Override
 	protected String[] getDisplayViews() {
 		if (_assetCategoriesDisplayContext.isFlattenedNavigationAllowed()) {
 			return new String[0];
@@ -231,32 +248,32 @@ public class AssetCategoriesManagementToolbarDisplayContext
 	}
 
 	private String _getCategoriesSelectorURL() throws Exception {
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			request, AssetCategory.class.getName(),
-			PortletProvider.Action.BROWSE);
-
-		portletURL.setParameter(
-			"vocabularyIds",
-			String.valueOf(_assetCategoriesDisplayContext.getVocabularyId()));
-		portletURL.setParameter(
+		return PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				httpServletRequest, AssetCategory.class.getName(),
+				PortletProvider.Action.BROWSE)
+		).setParameter(
 			"eventName",
-			liferayPortletResponse.getNamespace() + "selectCategory");
-		portletURL.setParameter("singleSelect", Boolean.TRUE.toString());
-		portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-		return portletURL.toString();
+			liferayPortletResponse.getNamespace() + "selectCategory"
+		).setParameter(
+			"singleSelect", Boolean.TRUE.toString()
+		).setParameter(
+			"vocabularyIds", _assetCategoriesDisplayContext.getVocabularyId()
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
 	}
 
 	private String _getViewCategoriesURL() throws PortalException {
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view.jsp");
-		portletURL.setParameter("navigation", "category");
-		portletURL.setParameter(
-			"vocabularyId",
-			String.valueOf(_assetCategoriesDisplayContext.getVocabularyId()));
-
-		return portletURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setMVCPath(
+			"/view.jsp"
+		).setNavigation(
+			"category"
+		).setParameter(
+			"vocabularyId", _assetCategoriesDisplayContext.getVocabularyId()
+		).buildString();
 	}
 
 	private boolean _isNavigationAll() {

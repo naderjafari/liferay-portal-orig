@@ -23,6 +23,8 @@ import com.liferay.headless.admin.user.resource.v1_0.UserAccountResource;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
@@ -174,6 +176,42 @@ public class Mutation {
 			this::_populateResourceContext,
 			organizationResource -> organizationResource.putOrganizationBatch(
 				callbackURL, object));
+	}
+
+	@GraphQLField(
+		description = "Removes a user from an organization by their email address"
+	)
+	public boolean deleteUserAccountByEmailAddress(
+			@GraphQLName("organizationId") String organizationId,
+			@GraphQLName("emailAddress") String emailAddress)
+		throws Exception {
+
+		_applyVoidComponentServiceObjects(
+			_organizationResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			organizationResource ->
+				organizationResource.deleteUserAccountByEmailAddress(
+					organizationId, emailAddress));
+
+		return true;
+	}
+
+	@GraphQLField(
+		description = "Assigns a user to an organization by their email address"
+	)
+	public boolean createUserAccountByEmailAddress(
+			@GraphQLName("organizationId") String organizationId,
+			@GraphQLName("emailAddress") String emailAddress)
+		throws Exception {
+
+		_applyVoidComponentServiceObjects(
+			_organizationResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			organizationResource ->
+				organizationResource.postUserAccountByEmailAddress(
+					organizationId, emailAddress));
+
+		return true;
 	}
 
 	@GraphQLField(description = "Unassociates a role with a user account")
@@ -435,6 +473,8 @@ public class Mutation {
 			_httpServletResponse);
 		organizationResource.setContextUriInfo(_uriInfo);
 		organizationResource.setContextUser(_user);
+		organizationResource.setGroupLocalService(_groupLocalService);
+		organizationResource.setRoleLocalService(_roleLocalService);
 	}
 
 	private void _populateResourceContext(RoleResource roleResource)
@@ -446,6 +486,8 @@ public class Mutation {
 		roleResource.setContextHttpServletResponse(_httpServletResponse);
 		roleResource.setContextUriInfo(_uriInfo);
 		roleResource.setContextUser(_user);
+		roleResource.setGroupLocalService(_groupLocalService);
+		roleResource.setRoleLocalService(_roleLocalService);
 	}
 
 	private void _populateResourceContext(
@@ -459,6 +501,8 @@ public class Mutation {
 			_httpServletResponse);
 		subscriptionResource.setContextUriInfo(_uriInfo);
 		subscriptionResource.setContextUser(_user);
+		subscriptionResource.setGroupLocalService(_groupLocalService);
+		subscriptionResource.setRoleLocalService(_roleLocalService);
 	}
 
 	private void _populateResourceContext(
@@ -471,6 +515,8 @@ public class Mutation {
 		userAccountResource.setContextHttpServletResponse(_httpServletResponse);
 		userAccountResource.setContextUriInfo(_uriInfo);
 		userAccountResource.setContextUser(_user);
+		userAccountResource.setGroupLocalService(_groupLocalService);
+		userAccountResource.setRoleLocalService(_roleLocalService);
 	}
 
 	private static ComponentServiceObjects<OrganizationResource>
@@ -484,10 +530,12 @@ public class Mutation {
 
 	private AcceptLanguage _acceptLanguage;
 	private com.liferay.portal.kernel.model.Company _company;
-	private BiFunction<Object, String, Sort[]> _sortsBiFunction;
-	private com.liferay.portal.kernel.model.User _user;
+	private GroupLocalService _groupLocalService;
 	private HttpServletRequest _httpServletRequest;
 	private HttpServletResponse _httpServletResponse;
+	private RoleLocalService _roleLocalService;
+	private BiFunction<Object, String, Sort[]> _sortsBiFunction;
 	private UriInfo _uriInfo;
+	private com.liferay.portal.kernel.model.User _user;
 
 }

@@ -16,6 +16,7 @@ package com.liferay.content.dashboard.web.internal.instance.lifecycle;
 
 import com.liferay.asset.kernel.model.AssetCategoryConstants;
 import com.liferay.asset.kernel.model.AssetVocabulary;
+import com.liferay.asset.kernel.model.AssetVocabularyConstants;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.petra.string.StringPool;
@@ -25,13 +26,17 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.asset.util.AssetVocabularySettingsHelper;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -45,17 +50,27 @@ public class AddDefaultAssetVocabulariesPortalInstanceLifecycleListener
 
 	@Override
 	public void portalInstanceRegistered(Company company) throws Exception {
-		for (String assetVocabularyName : _ASSET_VOCABULARY_NAMES) {
-			_addAssetVocabulary(company, assetVocabularyName);
-		}
+		_addAssetVocabulary(
+			company, PropsValues.ASSET_VOCABULARY_DEFAULT,
+			AssetVocabularyConstants.VISIBILITY_TYPE_PUBLIC, null);
+		_addAssetVocabulary(
+			company, "audience",
+			AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL,
+			JournalArticle.class);
+		_addAssetVocabulary(
+			company, "stage", AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL,
+			JournalArticle.class);
 	}
 
-	private void _addAssetVocabulary(Company company, String name)
+	private void _addAssetVocabulary(
+			Company company, String name, int visibilityType,
+			Class<?> assetVocabularyTypeClass)
 		throws Exception {
 
 		AssetVocabulary assetVocabulary =
 			_assetVocabularyLocalService.fetchGroupVocabulary(
-				company.getGroupId(), name);
+				company.getGroupId(),
+				StringUtil.toLowerCase(GetterUtil.getString(name)));
 
 		if (assetVocabulary != null) {
 			return;
@@ -63,13 +78,27 @@ public class AddDefaultAssetVocabulariesPortalInstanceLifecycleListener
 
 		User defaultUser = company.getDefaultUser();
 
+		Map<Locale, String> titleMap = new HashMap<>();
+
+		for (Locale locale :
+				LanguageUtil.getCompanyAvailableLocales(
+					company.getCompanyId())) {
+
+			titleMap.put(
+				locale,
+				LanguageUtil.get(
+					ResourceBundleUtil.getBundle(locale, getClass()), name));
+		}
+
 		AssetVocabularySettingsHelper assetVocabularySettingsHelper =
 			new AssetVocabularySettingsHelper();
 
-		assetVocabularySettingsHelper.setClassNameIdsAndClassTypePKs(
-			new long[] {_portal.getClassNameId(JournalArticle.class)},
-			new long[] {AssetCategoryConstants.ALL_CLASS_TYPE_PK},
-			new boolean[] {false});
+		if (assetVocabularyTypeClass != null) {
+			assetVocabularySettingsHelper.setClassNameIdsAndClassTypePKs(
+				new long[] {_portal.getClassNameId(assetVocabularyTypeClass)},
+				new long[] {AssetCategoryConstants.ALL_CLASS_TYPE_PK},
+				new boolean[] {false});
+		}
 
 		ServiceContext serviceContext = new ServiceContext();
 
@@ -78,20 +107,10 @@ public class AddDefaultAssetVocabulariesPortalInstanceLifecycleListener
 
 		_assetVocabularyLocalService.addVocabulary(
 			defaultUser.getUserId(), company.getGroupId(), name,
-			StringPool.BLANK,
-			Collections.singletonMap(
-				LocaleUtil.getSiteDefault(),
-				LanguageUtil.get(
-					ResourceBundleUtil.getBundle(
-						LocaleUtil.getSiteDefault(), getClass()),
-					name)),
-			Collections.emptyMap(), assetVocabularySettingsHelper.toString(),
+			StringPool.BLANK, titleMap, Collections.emptyMap(),
+			assetVocabularySettingsHelper.toString(), visibilityType,
 			serviceContext);
 	}
-
-	private static final String[] _ASSET_VOCABULARY_NAMES = {
-		"audience", "stage", PropsValues.ASSET_VOCABULARY_DEFAULT
-	};
 
 	@Reference
 	private AssetVocabularyLocalService _assetVocabularyLocalService;

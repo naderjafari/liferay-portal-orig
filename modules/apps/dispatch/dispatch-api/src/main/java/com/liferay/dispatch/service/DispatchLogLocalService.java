@@ -14,6 +14,7 @@
 
 package com.liferay.dispatch.service;
 
+import com.liferay.dispatch.executor.DispatchTaskStatus;
 import com.liferay.dispatch.model.DispatchLog;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
@@ -34,6 +35,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.io.Serializable;
 
+import java.util.Date;
 import java.util.List;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -44,7 +46,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * credentials because this service can only be accessed from within the same
  * VM.
  *
- * @author Alessio Antonio Rendina
+ * @author Matija Petanjek
  * @see DispatchLogLocalServiceUtil
  * @generated
  */
@@ -59,7 +61,7 @@ public interface DispatchLogLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link DispatchLogLocalServiceUtil} to access the dispatch log local service. Add custom service methods to <code>com.liferay.dispatch.service.impl.DispatchLogLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.dispatch.service.impl.DispatchLogLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the dispatch log local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link DispatchLogLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -74,6 +76,12 @@ public interface DispatchLogLocalService
 	 */
 	@Indexable(type = IndexableType.REINDEX)
 	public DispatchLog addDispatchLog(DispatchLog dispatchLog);
+
+	public DispatchLog addDispatchLog(
+			long userId, long dispatchTriggerId, Date endDate, String error,
+			String output, Date startDate,
+			DispatchTaskStatus dispatchTaskStatus)
+		throws PortalException;
 
 	/**
 	 * Creates a new dispatch log with the primary key. Does not add the dispatch log to the database.
@@ -118,6 +126,8 @@ public interface DispatchLogLocalService
 	public DispatchLog deleteDispatchLog(long dispatchLogId)
 		throws PortalException;
 
+	public void deleteDispatchLogs(long dispatchTriggerId);
+
 	/**
 	 * @throws PortalException
 	 */
@@ -127,6 +137,9 @@ public interface DispatchLogLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -198,6 +211,13 @@ public interface DispatchLogLocalService
 	public DispatchLog fetchDispatchLog(long dispatchLogId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public DispatchLog fetchLatestDispatchLog(long dispatchTriggerId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public DispatchLog fetchLatestDispatchLog(
+		long dispatchTriggerId, DispatchTaskStatus dispatchTaskStatus);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
 
 	/**
@@ -225,6 +245,10 @@ public interface DispatchLogLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<DispatchLog> getDispatchLogs(int start, int end);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<DispatchLog> getDispatchLogs(
+		long dispatchTriggerId, int start, int end);
+
 	/**
 	 * Returns the number of dispatch logs.
 	 *
@@ -232,6 +256,9 @@ public interface DispatchLogLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getDispatchLogsCount();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getDispatchLogsCount(long dispatchTriggerId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery();
@@ -263,5 +290,10 @@ public interface DispatchLogLocalService
 	 */
 	@Indexable(type = IndexableType.REINDEX)
 	public DispatchLog updateDispatchLog(DispatchLog dispatchLog);
+
+	public DispatchLog updateDispatchLog(
+			long dispatchLogId, Date endDate, String error, String output,
+			DispatchTaskStatus dispatchTaskStatus)
+		throws PortalException;
 
 }

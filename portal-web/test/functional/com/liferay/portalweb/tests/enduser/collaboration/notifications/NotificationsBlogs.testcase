@@ -1,11 +1,12 @@
 @component-name = "portal-collaboration"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property testray.component.names = "Notification";
 	property testray.main.component.name = "Notifications";
+
 	var pageName = "Blogs Page";
 	var portletName = "Blogs";
 
@@ -67,6 +68,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DeleteNotifications {
 		Navigator.gotoPage(pageName = "Blogs Page");
 
@@ -118,6 +120,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test MarkAllNotificationsAsRead {
 		Navigator.gotoPage(pageName = "Blogs Page");
 
@@ -159,6 +162,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewMultipleNotifications {
 		Navigator.gotoPage(pageName = "Blogs Page");
 
@@ -245,6 +249,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewNoWebsiteNotificationForNewBlogsEntry {
 		NotificationsPortlet.gotoNotificationDelivery();
 
@@ -287,12 +292,13 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewNoWebsiteNotificationForUpdatedBlogsEntry {
 		Navigator.gotoPage(pageName = "Blogs Page");
 
 		Blogs.subscribePG();
 
-		Blogs.addEntry(
+		JSONBlog.addEntry(
 			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
 
@@ -331,12 +337,13 @@ definition {
 
 	@description = "This test covers LPS-103502. It ensures that notifications are displayed correctly after being mentioned."
 	@priority = "3"
+	@refactorneeded
 	test ViewWebsiteNotificationdForMention {
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		Blogs.addEntry(
+		JSONBlog.addEntry(
 			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
+
+		Navigator.gotoPage(pageName = "Blogs Page");
 
 		BlogsNavigator.gotoEntryPG(
 			entryContent = "Blogs Entry Content",
@@ -406,6 +413,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewWebsiteNotificationForNewBlogsEntry {
 		Navigator.gotoPage(pageName = "Blogs Page");
 
@@ -452,12 +460,13 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewWebsiteNotificationForNewCommentViaBlogs {
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		Blogs.addEntry(
+		JSONBlog.addEntry(
 			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
+
+		Navigator.gotoPage(pageName = "Blogs Page");
 
 		BlogsNavigator.gotoEntryPG(
 			entryContent = "Blogs Entry Content",

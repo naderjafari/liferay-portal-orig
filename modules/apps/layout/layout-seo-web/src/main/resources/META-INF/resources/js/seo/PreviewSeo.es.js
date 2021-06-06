@@ -12,8 +12,8 @@
  * details.
  */
 
-import {useIsMounted} from 'frontend-js-react-web';
-import {isObject} from 'metal';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
+import {isObject} from 'frontend-js-web';
 import {PropTypes} from 'prop-types';
 import React, {useCallback, useEffect, useState} from 'react';
 

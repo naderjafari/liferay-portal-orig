@@ -32,7 +32,10 @@ import com.liferay.portal.kernel.model.PortletURLListener;
 import com.liferay.portal.kernel.portlet.CustomUserAttributes;
 import com.liferay.portal.kernel.portlet.InvokerPortlet;
 import com.liferay.portal.kernel.portlet.PortletInstanceFactoryUtil;
+import com.liferay.portal.kernel.resource.bundle.ClassResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.DirectServletRegistryUtil;
 import com.liferay.portal.kernel.servlet.FileTimestampUtil;
@@ -42,12 +45,9 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.portlet.PortletContextBag;
 import com.liferay.portlet.PortletContextBagPool;
@@ -96,9 +96,9 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 		try {
 			doInvokeDeploy(hotDeployEvent);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			throwHotDeployException(
-				hotDeployEvent, "Error registering portlets for ", t);
+				hotDeployEvent, "Error registering portlets for ", throwable);
 		}
 	}
 
@@ -109,9 +109,9 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 		try {
 			doInvokeUndeploy(hotDeployEvent);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			throwHotDeployException(
-				hotDeployEvent, "Error unregistering portlets for ", t);
+				hotDeployEvent, "Error unregistering portlets for ", throwable);
 		}
 	}
 
@@ -125,7 +125,7 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 		Registry registry = RegistryUtil.getRegistry();
 
 		ResourceBundleLoader resourceBundleLoader =
-			ResourceBundleUtil.getResourceBundleLoader(
+			new ClassResourceBundleLoader(
 				portlet.getResourceBundle(), classLoader);
 
 		_resourceBundleLoaderServiceRegistrations.put(
@@ -245,35 +245,39 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 		PortletCategory newPortletCategory =
 			PortletLocalServiceUtil.getWARDisplay(servletContextName, xml);
 
-		long[] companyIds = PortalInstances.getCompanyIds();
+		CompanyLocalServiceUtil.forEachCompanyId(
+			companyId -> {
+				PortletCategory portletCategory =
+					(PortletCategory)WebAppPool.get(
+						companyId, WebKeys.PORTLET_CATEGORY);
 
-		for (long companyId : companyIds) {
-			PortletCategory portletCategory = (PortletCategory)WebAppPool.get(
-				companyId, WebKeys.PORTLET_CATEGORY);
+				if (portletCategory != null) {
+					portletCategory.merge(newPortletCategory);
+				}
+				else {
+					_log.error(
+						"Unable to register portlet for company " + companyId +
+							" because it does not exist");
+				}
+			});
 
-			if (portletCategory != null) {
-				portletCategory.merge(newPortletCategory);
-			}
-			else {
-				_log.error(
-					"Unable to register portlet for company " + companyId +
-						" because it does not exist");
-			}
-		}
+		String[] sources = _processPortletProperties(classLoader);
 
-		processPortletProperties(servletContextName, classLoader);
+		ResourceActionsUtil.populateModelResources(classLoader, sources);
 
 		for (Portlet portlet : portlets) {
-			ResourceActionsUtil.check(portlet.getPortletId());
+			ResourceActionsUtil.populatePortletResource(
+				portlet, classLoader, sources);
 
 			checkResourceBundles(classLoader, portlet);
 
-			for (long companyId : companyIds) {
-				Portlet curPortlet = PortletLocalServiceUtil.getPortletById(
-					companyId, portlet.getPortletId());
+			CompanyLocalServiceUtil.forEachCompanyId(
+				companyId -> {
+					Portlet curPortlet = PortletLocalServiceUtil.getPortletById(
+						companyId, portlet.getPortletId());
 
-				PortletLocalServiceUtil.checkPortlet(curPortlet);
-			}
+					PortletLocalServiceUtil.checkPortlet(curPortlet);
+				});
 		}
 
 		for (Portlet portlet : portlets) {
@@ -338,15 +342,14 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 		ServletContextPool.remove(servletContextName);
 
 		if (!portletIds.isEmpty()) {
-			long[] companyIds = PortalInstances.getCompanyIds();
+			CompanyLocalServiceUtil.forEachCompanyId(
+				companyId -> {
+					PortletCategory portletCategory =
+						(PortletCategory)WebAppPool.get(
+							companyId, WebKeys.PORTLET_CATEGORY);
 
-			for (long companyId : companyIds) {
-				PortletCategory portletCategory =
-					(PortletCategory)WebAppPool.get(
-						companyId, WebKeys.PORTLET_CATEGORY);
-
-				portletCategory.separate(portletIds);
-			}
+					portletCategory.separate(portletIds);
+				});
 		}
 
 		PortletContextBagPool.remove(servletContextName);
@@ -447,37 +450,15 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 		}
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected void processPortletProperties(
 			String servletContextName, ClassLoader classLoader)
 		throws Exception {
 
-		Configuration portletPropertiesConfiguration = null;
-
-		try {
-			portletPropertiesConfiguration =
-				ConfigurationFactoryUtil.getConfiguration(
-					classLoader, "portlet");
-		}
-		catch (Exception exception) {
-			if (_log.isDebugEnabled()) {
-				_log.debug("Unable to read portlet.properties");
-			}
-
-			return;
-		}
-
-		Properties portletProperties =
-			portletPropertiesConfiguration.getProperties();
-
-		if (portletProperties.isEmpty()) {
-			return;
-		}
-
-		ResourceActionsUtil.read(
-			servletContextName, classLoader,
-			StringUtil.split(
-				portletProperties.getProperty(
-					PropsKeys.RESOURCE_ACTIONS_CONFIGS)));
+		_processPortletProperties(classLoader);
 	}
 
 	protected void unbindDataSource(String servletContextName) {
@@ -501,6 +482,9 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 				context.unbind(_JNDI_JDBC_LIFERAY_POOL);
 			}
 			catch (NamingException namingException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(namingException, namingException);
+				}
 			}
 
 			try {
@@ -509,6 +493,9 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 				context.destroySubcontext(_JNDI_JDBC);
 			}
 			catch (NamingException namingException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(namingException, namingException);
+				}
 			}
 		}
 		catch (Exception exception) {
@@ -552,6 +539,31 @@ public class PortletHotDeployListener extends BaseHotDeployListener {
 		if (resourceBundleLoaderServiceRegistration != null) {
 			resourceBundleLoaderServiceRegistration.unregister();
 		}
+	}
+
+	private String[] _processPortletProperties(ClassLoader classLoader)
+		throws Exception {
+
+		Configuration portletPropertiesConfiguration = null;
+
+		try {
+			portletPropertiesConfiguration =
+				ConfigurationFactoryUtil.getConfiguration(
+					classLoader, "portlet");
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unable to read portlet.properties", exception);
+			}
+
+			return new String[0];
+		}
+
+		Properties portletProperties =
+			portletPropertiesConfiguration.getProperties();
+
+		return StringUtil.split(
+			portletProperties.getProperty(PropsKeys.RESOURCE_ACTIONS_CONFIGS));
 	}
 
 	private static final String _JNDI_JDBC = "java_liferay:jdbc";

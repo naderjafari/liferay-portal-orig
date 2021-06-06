@@ -132,6 +132,9 @@ public interface Group extends GroupModel, PersistedModel, TreeModel {
 	public String getScopeLabel(
 		com.liferay.portal.kernel.theme.ThemeDisplay themeDisplay);
 
+	public String getScopeSimpleName(
+		com.liferay.portal.kernel.theme.ThemeDisplay themeDisplay);
+
 	public Group getStagingGroup();
 
 	public String getTypeLabel();
@@ -160,6 +163,8 @@ public interface Group extends GroupModel, PersistedModel, TreeModel {
 	public boolean isCompanyStagingGroup();
 
 	public boolean isControlPanel();
+
+	public boolean isDepot();
 
 	public boolean isGuest();
 

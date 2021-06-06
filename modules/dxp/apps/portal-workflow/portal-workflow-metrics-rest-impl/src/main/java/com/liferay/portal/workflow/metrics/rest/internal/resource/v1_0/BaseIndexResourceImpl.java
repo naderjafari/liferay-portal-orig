@@ -67,7 +67,7 @@ import javax.ws.rs.core.UriInfo;
 @Generated("")
 @Path("/v1.0")
 public abstract class BaseIndexResourceImpl
-	implements IndexResource, EntityModelResource,
+	implements EntityModelResource, IndexResource,
 			   VulcanBatchEngineTaskItemDelegate<Index> {
 
 	/**
@@ -75,8 +75,8 @@ public abstract class BaseIndexResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/portal-workflow-metrics/v1.0/indexes'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Path("/indexes")
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "Index")})
@@ -87,10 +87,24 @@ public abstract class BaseIndexResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
+	 * curl -X 'PATCH' 'http://localhost:8080/o/portal-workflow-metrics/v1.0/indexes/refresh' -d $'{"key": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 */
+	@Consumes({"application/json", "application/xml"})
+	@Override
+	@PATCH
+	@Path("/indexes/refresh")
+	@Produces({"application/json", "application/xml"})
+	@Tags(value = {@Tag(name = "Index")})
+	public void patchIndexesRefresh(Index index) throws Exception {
+	}
+
+	/**
+	 * Invoke this method with the command line:
+	 *
 	 * curl -X 'PATCH' 'http://localhost:8080/o/portal-workflow-metrics/v1.0/indexes/reindex' -d $'{"key": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes({"application/json", "application/xml"})
+	@Override
 	@PATCH
 	@Path("/indexes/reindex")
 	@Produces({"application/json", "application/xml"})
@@ -196,6 +210,14 @@ public abstract class BaseIndexResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

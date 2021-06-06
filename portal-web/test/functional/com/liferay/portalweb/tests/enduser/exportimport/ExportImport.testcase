@@ -44,16 +44,18 @@ definition {
 
 		var dmDocumentURL = selenium.getAttribute("//input[contains(@id,'urlInput')]@value");
 		var editDocumentURL = StringUtil.extractFirst("${dmDocumentURL}", "jpg");
+		var entryExternalURL = StringUtil.replace("${editDocumentURL}", "http://", "");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
 
 		WebContentNavigator.gotoAddCP();
 
-		WebContent.addCP(
-			webContentContent = "${editDocumentURL}",
-			webContentTitle = "WC WebContent Title");
+		PortletEntry.inputTitle(title = "Web Content Title");
 
-		AlloyEditor.addEntryExternalURL(entryExternalURL = "${editDocumentURL}");
+		CKEditor.addEntryExternalURL(
+			displayText = "${editDocumentURL}",
+			entryExternalURL = "${entryExternalURL}",
+			fieldLabel = "content");
 
 		Button.clickPublish();
 
@@ -162,7 +164,6 @@ definition {
 	test EditImportedContentPageViaImportedSiteTemplate {
 		property osgi.module.configuration.file.names = "com.liferay.layout.configuration.LayoutExportImportConfiguration.config";
 		property osgi.module.configurations = "exportDraftLayout=true";
-		property portal.upstream = "quarantine";
 		property testray.component.names = "Training";
 
 		SiteTemplates.addCP(
@@ -218,9 +219,9 @@ definition {
 			larFileName = "site-template-content-page.lar",
 			portletName = "Site Templates");
 
-		Refresh();
-
 		SiteTemplates.viewCP(siteTemplateName = "Site Template Name");
+
+		Refresh();
 
 		LexiconEntry.gotoEntryMenuItem(
 			menuItem = "Manage",
@@ -250,11 +251,11 @@ definition {
 	@description = "This is a use case for LPS-82752."
 	@priority = "5"
 	test ExportContentThenPublish {
+		property portal.acceptance = "true";
+
 		JSONGroup.addGroup(groupName = "Site Name");
 
-		Staging.openStagingAdmin(siteURLKey = "site-name");
-
-		Staging.activateStagingCP(siteName = "Site Name");
+		JSONStaging.enableLocalStaging(groupName = "Site Name");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name-staging");
 
@@ -276,13 +277,15 @@ definition {
 	@description = "This is a use case for LPS-95589."
 	@priority = "4"
 	test ExportDMWithDeletedDocumentLink {
+		property test.name.skip.portal.instance = "ExportImport#ExportDMWithDeletedDocumentLink";
+
 		JSONGroup.addGroup(groupName = "Site Name");
 
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
 
 		DMDocument.addCP(
 			dmDocumentDescription = "DM Document Description",
-			dmDocumentFile = "Document_1.txt",
+			dmDocumentFile = "Document_1.jpg",
 			dmDocumentTitle = "DM Document Title");
 
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
@@ -291,7 +294,7 @@ definition {
 
 		DMDocumentType.add(
 			dmDocumentTypeDescription = "DM Document Type Description",
-			dmDocumentTypeFieldNames = "Documents and Media",
+			dmDocumentTypeFieldNames = "Image",
 			dmDocumentTypeName = "DM Document Type Name");
 
 		DMDocumentType.viewCP(dmDocumentTypeName = "DM Document Type Name");
@@ -302,7 +305,9 @@ definition {
 			dmDocumentDescription = "DM Document Description",
 			dmDocumentTitle = "DM Type Document Title",
 			dmDocumentTypeName = "DM Document Type Name",
-			documentsAndMediaField = "DM Document Title");
+			imageField = "DM Document Title",
+			imageFileName = "DM Document Title",
+			navTab = "Documents and Media");
 
 		JSONDocument.deleteFile(
 			dmDocumentTitle = "DM Document Title",
@@ -313,86 +318,6 @@ definition {
 		LAR.exportPortlet(larFileName = "DocumentsandMedia_portlet.lar");
 
 		AssertConsoleTextNotPresent(value1 = "NoSuchFileEntryException");
-	}
-
-	@description = "This is a use case for LPS-96391."
-	@priority = "5"
-	test ExportImportContentPageWithWCDOnFragment {
-		property test.name.skip.portal.instance = "ExportImport#ExportImportContentPageWithWCDOnFragment";
-
-		JSONGroup.addGroup(groupName = "Site Name");
-
-		JSONFragment.addFragmentCollection(
-			groupName = "Site Name",
-			name = "Collection Name");
-
-		FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "site-name");
-
-		FragmentsAdminNavigator.gotoCollection(collectionName = "Collection Name");
-
-		FragmentsAdmin.addFragment(fragmentName = "Fragment Name");
-
-		var fragmentHTML = '''<lfr-widget-web-content>''';
-
-		FragmentsEditor.autocompleteFragmentHTML(
-			autocompleteField = "lfr-widget-web-content",
-			fragmentHTML = "${fragmentHTML}");
-
-		PortletEntry.publish();
-
-		JSONWebcontent.addWebContent(
-			content = "WC WebContent Content",
-			groupName = "Site Name",
-			title = "WC WebContent Title");
-
-		SitePages.openPagesAdmin(siteURLKey = "site-name");
-
-		ContentPages.addPage(pageName = "Test Content Page Name");
-
-		PageEditor.addFragment(
-			collectionName = "Collection Name",
-			fragmentName = "Fragment Name");
-
-		WebContentDisplayPortlet.selectWebContent(
-			contentPage = "true",
-			webContentTitle = "WC WebContent Title");
-
-		PageEditor.clickPublish();
-
-		Navigator.openWithAppendToBaseURL(urlAppend = "web/site-name/test-content-page-name");
-
-		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
-
-		LAR.exportSiteCP(siteScopeName = "Site Name");
-
-		var key_larFileName = "${larFileName}";
-
-		var larFileName = LAR.getLarFileName();
-
-		LAR.downloadLar();
-
-		JSONGroup.addGroup(groupName = "New Site");
-
-		LAR.importSiteCP(
-			larFileName = "${larFileName}",
-			siteName = "New Site");
-
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
-
-		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title");
-
-		WebContent.editCP(
-			webContentContentEdit = "WC WebContent New Content",
-			webContentTitle = "WC WebContent Title",
-			webContentTitleEdit = "WC WebContent New Title");
-
-		Navigator.openWithAppendToBaseURL(urlAppend = "web/site-name/test-content-page-name");
-
-		WebContent.viewPGViaWCD(webContentContent = "WC WebContent New Content");
-
-		Navigator.openWithAppendToBaseURL(urlAppend = "web/new-site/test-content-page-name");
-
-		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Content");
 	}
 
 	@priority = "5"
@@ -580,8 +505,8 @@ definition {
 	@description = "This is a use case for LPS-91440."
 	@priority = "3"
 	test ExportImportGlobalPagesViaInstances {
-		property test.name.skip.portal.instance = "ExportImport#ExportImportGlobalPagesViaInstances";
 		property portal.release = "false";
+		property test.name.skip.portal.instance = "ExportImport#ExportImportGlobalPagesViaInstances";
 
 		LAR.openExportAdmin(siteScopeName = "Global");
 
@@ -630,6 +555,119 @@ definition {
 		AssertConsoleTextNotPresent(value1 = "com.liferay.exportimport.kernel.lar.PortletDataException");
 	}
 
+	@description = "This is a use case for LPS-128533."
+	@priority = "3"
+	test ExportImportJournalArticleWithLinkToPage {
+		property testray.component.names = "Web Content Administration";
+
+		JSONGroup.addGroup(groupName = "Site A");
+
+		for (var count : list "A,B,C") {
+			JSONLayout.addPublicLayout(
+				groupName = "Site A",
+				layoutName = "Page ${count}");
+		}
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-a");
+
+		NavItem.gotoStructures();
+
+		WebContentStructures.addCP(
+			structureDescription = "WC Structure Description",
+			structureName = "WC Structure Name");
+
+		DataEngine.addField(
+			fieldFieldLabel = "Link to Page",
+			fieldName = "Link to Page");
+
+		WebContentStructures.saveCP(structureName = "WC Structure Name");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-a");
+
+		NavItem.gotoTemplates();
+
+		WebContentTemplates.addCP(
+			structureName = "WC Structure Name",
+			templateDescription = "WC Template Description",
+			templateFieldNames = "Link to Page",
+			templateName = "WC Template Name");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-a");
+
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
+
+		WebContent.addWithStructureCP(
+			structureName = "WC Structure Name",
+			templateName = "WC Template Name",
+			webContentLinkToPage = "Page B",
+			webContentTitle = "Web Content Title A");
+
+		PortletEntry.publish();
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-a");
+
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
+
+		WebContent.addWithStructureCP(
+			structureName = "WC Structure Name",
+			templateName = "WC Template Name",
+			webContentLinkToPage = "Page C",
+			webContentTitle = "Web Content Title B");
+
+		PortletEntry.publish();
+
+		for (var count : list "A,B") {
+			JSONLayout.addWidgetToPublicLayout(
+				groupName = "Site A",
+				layoutName = "Page ${count}",
+				widgetName = "Web Content Display");
+
+			Navigator.gotoSitePage(
+				pageName = "Page ${count}",
+				siteName = "Site A");
+
+			WebContentDisplayPortlet.selectWebContent(webContentTitle = "Web Content Title ${count}");
+
+			WebContent.viewPGViaWCD(
+				linkName = "Link to Page",
+				linkToPage = "true");
+		}
+
+		LAR.exportSiteCP(siteScopeName = "Site A");
+
+		var key_larFileName = "${larFileName}";
+
+		var larFileName = LAR.getLarFileName();
+
+		LAR.downloadLar();
+
+		JSONGroup.addGroup(groupName = "Site B");
+
+		for (var count : list "A,B,C") {
+			JSONLayout.addPublicLayout(
+				groupName = "Site B",
+				layoutName = "Widget ${count}");
+		}
+
+		JSONGroup.deleteGroupByName(groupName = "Site A");
+
+		LAR.importSiteCP(
+			larFileName = "${larFileName}",
+			siteName = "Site B");
+
+		Navigator.gotoSitePage(
+			pageName = "Page A",
+			siteName = "Site B");
+
+		WebContentDisplayPortlet.viewLinkToPageFieldViaWCD(
+			linkedPageName = "Page B",
+			linkName = "Link to Page");
+
+		WebContentDisplayPortlet.viewLinkToPageFieldViaWCD(
+			linkedPageName = "Page C",
+			linkName = "Link to Page");
+	}
+
 	@description = "This is a use case for LPS-88378."
 	@priority = "3"
 	test ExportImportLayoutCircularReference {
@@ -657,10 +695,9 @@ definition {
 			structureDescription = "WC Structure Description",
 			structureName = "WC Structure Name");
 
-		DynamicDataMapping.addField(
-			field = "Link to Page",
+		DataEngine.addField(
 			fieldFieldLabel = "Link to Page",
-			fieldName = "LinkToPage");
+			fieldName = "Link to Page");
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
@@ -679,10 +716,9 @@ definition {
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
 		WebContent.addWithStructureCP(
-			linkedPageName = "Site Child Page",
-			linkFieldName = "LinkToPage",
 			structureName = "WC Structure Name",
 			templateName = "WC Template Name",
+			webContentLinkToPage = "Site Child Page",
 			webContentTitle = "WC WebContent Title 1");
 
 		PortletEntry.publish();
@@ -692,10 +728,9 @@ definition {
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
 		WebContent.addWithStructureCP(
-			linkedPageName = "Site Child Child Page",
-			linkFieldName = "LinkToPage",
 			structureName = "WC Structure Name",
 			templateName = "WC Template Name",
+			webContentLinkToPage = "Site Child Child Page",
 			webContentTitle = "WC WebContent Title 2");
 
 		PortletEntry.publish();
@@ -746,21 +781,21 @@ definition {
 
 		Navigator.gotoPage(pageName = "Test Page Name");
 
-		Portlet.addPG(portletName = "Hello World");
+		Portlet.addPG(portletName = "IFrame");
 
 		Portlet.gotoPortletOptions(
-			portletName = "Hello World",
+			portletName = "IFrame",
 			portletOption = "Look and Feel Configuration");
 
 		IFrame.selectConfigurationFrame();
 
-		Portlet.configureCustomTitleViaLookandfeelPG(portletName = "Hello World");
+		Portlet.configureCustomTitleViaLookandfeelPG(portletName = "IFrame");
 
 		PortletEntry.save();
 
 		IFrame.closeFrame();
 
-		LAR.exportPortlet(larFileName = "HelloWorld.lar");
+		LAR.exportPortlet(larFileName = "IFrame.lar");
 
 		JSONGroup.addGroup(groupName = "Test Site Name");
 
@@ -772,15 +807,15 @@ definition {
 			pageName = "Test Site Page",
 			siteName = "Test Site Name");
 
-		Portlet.addPG(portletName = "Hello World");
+		Portlet.addPG(portletName = "IFrame");
 
-		LAR.importPortlet(larFileName = "HelloWorld.lar");
+		LAR.importPortlet(larFileName = "IFrame.lar");
 
 		Navigator.gotoSitePage(
 			pageName = "Test Site Page",
 			siteName = "Test Site Name");
 
-		Portlet.viewTitle(portletName = "Hello World Custom");
+		Portlet.viewTitle(portletName = "IFrame Custom");
 	}
 
 	@priority = "3"
@@ -948,14 +983,14 @@ definition {
 
 	@description = "This is a use case for LPS-88331."
 	@priority = "3"
-	test ExportImportSiteWithNestedDocumentsAndMediaField {
+	test ExportImportSiteWithNestedUploadField {
 		JSONGroup.addGroup(groupName = "Site A");
 
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-a");
 
 		DMDocument.addCP(
 			dmDocumentDescription = "DM Document Description",
-			dmDocumentFile = "Document_1.txt",
+			dmDocumentFile = "Document_1.jpg",
 			dmDocumentTitle = "DM Document Title");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-a");
@@ -966,15 +1001,14 @@ definition {
 			structureDescription = "WC Structure Description",
 			structureName = "WC Structure Name");
 
-		DynamicDataMapping.addField(
-			field = "Text",
+		DataEngine.addField(
 			fieldFieldLabel = "Text",
 			fieldName = "Text");
 
-		DynamicDataMapping.addFieldNested(
-			field = "Documents and Media",
-			fieldFieldLabel = "Documents and Media",
-			fieldName = "DocumentsAndMedia");
+		DataEngine.addFieldNested(
+			fieldFieldLabel = "Image",
+			fieldName = "Image",
+			targetFieldLabel = "Text");
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
@@ -985,7 +1019,7 @@ definition {
 		WebContentTemplates.addCP(
 			structureName = "WC Structure Name",
 			templateDescription = "WC Template Description",
-			templateFieldNames = "Text,Documents and Media",
+			templateFieldNames = "Text,Image",
 			templateName = "WC Template Name");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-a");
@@ -993,10 +1027,11 @@ definition {
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
 		WebContent.addWithStructureCP(
-			fieldName = "DocumentsAndMedia",
+			imageFileName = "DM Document Title",
+			navTab = "Documents and Media",
 			structureName = "WC Structure Name",
 			templateName = "WC Template Name",
-			webContentDocumentsAndMedia = "DM Document Title",
+			webContentImage = "DM Document Title",
 			webContentText = "Web Content Text",
 			webContentTitle = "Web Content Title");
 
@@ -1022,10 +1057,8 @@ definition {
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-b");
 
-		WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
-
-		WebContent.viewCP(
-			webContentDocumentsAndMedia = "DM Document Title",
+		WebContent.viewWithStructureCP(
+			webContentImage = "DM Document Title",
 			webContentText = "Web Content Text",
 			webContentTitle = "Web Content Title");
 
@@ -1126,6 +1159,8 @@ definition {
 			siteName = "Site Name");
 
 		AssertConsoleTextNotPresent(value1 = "java.lang.StringIndexOutOfBoundsException");
+
+		AssertConsoleTextNotPresent(value1 = "java.lang.NullPointerException");
 	}
 
 	@priority = "4"
@@ -1238,9 +1273,8 @@ definition {
 
 	@description = "This is a use case for LPS-84204."
 	@priority = "4"
+	@uitest
 	test ExportImportWCDReferenceWhenNotStagedWebContent {
-		property test.name.skip.portal.instance = "ExportImport#ExportImportWCDReferenceWhenNotStagedWebContent";
-
 		JSONGroup.addGroup(groupName = "Site Name A");
 
 		Staging.openStagingAdmin(siteURLKey = "site-name-a");
@@ -1315,10 +1349,9 @@ definition {
 			structureDescription = "WC Structure Description",
 			structureName = "WC Structure Name");
 
-		DynamicDataMapping.addField(
-			field = "Web Content",
+		DataEngine.addField(
 			fieldFieldLabel = "Web Content",
-			fieldName = "WebContent");
+			fieldName = "Web Content");
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
@@ -1348,21 +1381,19 @@ definition {
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
 		WebContent.addWithStructureCP(
-			fieldName = "WebContent",
 			structureName = "WC Structure Name",
 			templateName = "WC Template Name",
-			webContentSelectWCFile = "WC WebContent Title 1",
-			webContentTitle = "WC WebContent Title 2");
+			webContentTitle = "WC WebContent Title 2",
+			webContentWebContent = "WC WebContent Title 1");
 
 		PortletEntry.publish();
 
 		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title 1");
 
 		WebContent.editCP(
-			fieldName = "WebContent",
-			webContentSelectWCFile = "WC WebContent Title 2",
 			webContentTitle = "WC WebContent Title 1",
-			webContentTitleEdit = "WC WebContent Title 1");
+			webContentTitleEdit = "WC WebContent Title 1",
+			webContentWebContent = "WC WebContent Title 2");
 
 		LAR.exportSiteCP(siteScopeName = "Site Name");
 
@@ -1386,6 +1417,8 @@ definition {
 	@description = "This is a use case for LPS-83326."
 	@priority = "5"
 	test ExportImportWebContentFolderWithWorkflow {
+		property portal.acceptance = "true";
+
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
 
 		WebContentFolder.addCP(
@@ -1427,17 +1460,16 @@ definition {
 			structureDescription = "Exported Structure Description",
 			structureName = "Exported Structure");
 
-		DynamicDataMapping.addField(
-			field = "Separator",
-			fieldFieldLabel = "SeparatorField",
+		DataEngine.addField(
+			fieldFieldLabel = "Separator",
 			fieldName = "Separator");
 
-		DynamicDataMapping.editFieldRepeatable(fieldFieldLabel = "SeparatorField");
-
-		DynamicDataMapping.addFieldNested(
-			field = "Text",
+		DataEngine.addFieldNested(
 			fieldFieldLabel = "Text",
-			fieldName = "Text");
+			fieldName = "Text",
+			targetFieldLabel = "Separator");
+
+		DataEngine.toggleFieldRepeatable(fieldsGroupLabel = "Fields Group");
 
 		WebContentStructures.saveCP(structureName = "Exported Structure");
 
@@ -1460,15 +1492,20 @@ definition {
 			webContentText = "Exported Template",
 			webContentTitle = "Exported Article");
 
-		SelectFrame(value1 = "relative=top");
-
-		DDLRecord.addRepeatableField(fieldName = "Separator");
+		Click(locator1 = "FormFields#FIELD_ADD_DUPLICATE");
 
 		takeScreenshot();
 
-		DDLRecord.populateFieldText(
-			ddlRecordFieldData = "Liferay",
-			fieldName = "Separator");
+		Type(
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#TEXT_INPUT",
+			value1 = "Liferay");
+
+		Type(
+			index = "2",
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#ANY_TEXT_INPUT",
+			value1 = "Liferay 1");
 
 		PortletEntry.publish();
 
@@ -1488,9 +1525,16 @@ definition {
 
 		WebContent.viewWithStructureCP(webContentTitle = "Exported Article");
 
-		WebContent.viewFieldRepeated(
-			ddlRecordFieldData = "Liferay",
-			fieldName = "Separator");
+		AssertTextEquals.assertValue(
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#TEXT_INPUT",
+			value1 = "Liferay");
+
+		AssertTextEquals.assertValue(
+			index = "2",
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#ANY_TEXT_INPUT",
+			value1 = "Liferay 1");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "imported-site");
 
@@ -1502,15 +1546,13 @@ definition {
 
 		LexiconEntry.gotoEntry(rowEntry = "Exported Structure");
 
-		DynamicDataMapping.viewField(
-			field = "Separator",
-			fieldFieldLabel = "SeparatorField",
-			fieldName = "Separator");
+		AssertVisible(
+			key_fieldFieldLabel = "Separator",
+			locator1 = "DDMField#SEPARATOR");
 
-		DynamicDataMapping.viewField(
-			field = "Text",
-			fieldFieldLabel = "Text",
-			fieldName = "Text");
+		AssertVisible(
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#TEXT_INPUT");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "imported-site");
 
@@ -1558,6 +1600,7 @@ definition {
 	@description = "This is a use case for LPS-88498."
 	@priority = "5"
 	test ExportViaGuest {
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "ExportImport#ExportViaGuest";
 
 		JSONUser.addUser(
@@ -1605,7 +1648,7 @@ definition {
 
 		DMDocument.addCP(
 			dmDocumentDescription = "DM Document Description",
-			dmDocumentFile = "Document_1.txt",
+			dmDocumentFile = "Document_1.jpg",
 			dmDocumentTitle = "DM Document Title");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
@@ -1616,12 +1659,7 @@ definition {
 			structureDescription = "WC Structure Description",
 			structureName = "WC Structure Name");
 
-		for (var structureFieldName : list "Documents and Media,Link to Page,Image") {
-			DynamicDataMapping.addField(
-				field = "${structureFieldName}",
-				fieldFieldLabel = "${structureFieldName}",
-				fieldName = StringUtil.replace("${structureFieldName}", " ", ""));
-		}
+		DataEngine.addFields(fieldNameList = "Link to Page,Image");
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
@@ -1632,7 +1670,7 @@ definition {
 		WebContentTemplates.addCP(
 			structureName = "WC Structure Name",
 			templateDescription = "WC Template Description",
-			templateFieldNames = "Documents and Media,Link to Page,Image",
+			templateFieldNames = "Link to Page,Image",
 			templateName = "WC Template Name");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
@@ -1640,13 +1678,12 @@ definition {
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
 		WebContent.addWithStructureCP(
-			fieldName = "DocumentsandMedia",
-			linkedPageName = "Test Page",
-			linkFieldName = "LinktoPage",
+			imageFileName = "DM Document Title",
+			navTab = "Documents and Media",
 			structureName = "WC Structure Name",
 			templateName = "WC Template Name",
-			webContentDocumentsAndMedia = "DM Document Title",
-			webContentImageUnderDocumentsAndMedia = "Document_1.jpg",
+			webContentImage = "DM Document Title",
+			webContentLinkToPage = "Test Page",
 			webContentTitle = "WC WebContent Title");
 
 		PortletEntry.publish();
@@ -1655,10 +1692,6 @@ definition {
 
 		JSONDocument.deleteFile(
 			dmDocumentTitle = "DM Document Title",
-			groupName = "Site Name");
-
-		JSONDocument.deleteFile(
-			dmDocumentTitle = "Document_1.jpg",
 			groupName = "Site Name");
 
 		JSONLayout.deletePublicLayout(
@@ -1693,118 +1726,11 @@ definition {
 			uploadFrom = "dependencies");
 	}
 
-	@description = "This is a use case for LPS-88571."
-	@priority = "3"
-	test ImportSiteWithMissingReferenceOfPreloadedEntry {
-		property portal.release = "false";
-		property test.name.skip.portal.instance = "ExportImport#ImportSiteWithMissingReferenceOfPreloadedEntry";
-
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "Global");
-
-		DMNavigator.gotoDocumentType();
-
-		LAR.exportPortlet(
-			larFileName = "Global.DM.portlet.lar",
-			siteScopeName = "Global");
-
-		JSONGroup.addGroup(groupName = "Site A");
-
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-a");
-
-		LAR.importPortlet(
-			larFileName = "Global.DM.portlet.lar",
-			siteName = "Site A");
-
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-a");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.viewCP(
-			dmDocumentTypeName = "Google Drive Shortcut",
-			dmDocumentTypeScope = "Global");
-
-		DMDocumentType.viewCP(
-			dmDocumentTypeName = "Google Drive Shortcut",
-			dmDocumentTypeScope = "Current Site");
-
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "Global");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.deletePG(dmDocumentTypeName = "Google Drive Shortcut");
-
-		Portlet.viewEmptyMessage(message = "There are no results.");
-
-		JSONGroup.addGroup(groupName = "Site B");
-
-		JSONLayout.addPublicLayout(
-			groupName = "Site B",
-			layoutName = "Asset Publisher Page");
-
-		JSONLayout.addWidgetToPublicLayout(
-			groupName = "Site B",
-			layoutName = "Asset Publisher Page",
-			widgetName = "Asset Publisher");
-
-		Navigator.gotoSitePage(
-			pageName = "Asset Publisher Page",
-			siteName = "Site B");
-
-		AssetPublisherPortlet.configureAddSiteScopes(otherSite = "Site A");
-
-		Navigator.gotoSitePage(
-			pageName = "Asset Publisher Page",
-			siteName = "Site B");
-
-		AssetPublisherPortlet.configureAssetTypePG(
-			selectedAsset = "Document",
-			selectMoreThanOneSubtype = "true");
-
-		LAR.exportSiteCP(siteScopeName = "Site B");
-
-		var key_larFileName = "${larFileName}";
-
-		var larFileName = LAR.getLarFileName();
-
-		LAR.downloadLar();
-
-		JSONGroup.deleteGroupByName(groupName = "Site A");
-
-		JSONGroup.deleteGroupByName(groupName = "Site B");
-
-		JSONGroup.addGroup(groupName = "Site C");
-
-		LAR.importSiteCP(
-			importValidationMissingItem = "Document Type",
-			larFileName = "${larFileName}",
-			siteName = "Site C");
-
-		ApplicationsMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "System Settings");
-
-		SystemSettings.gotoConfiguration(
-			configurationCategory = "Infrastructure",
-			configurationName = "Export/Import",
-			configurationScope = "Virtual Instance Scope");
-
-		SystemSettings.configureSystemSetting(
-			enableSetting = "false",
-			settingFieldName = "Validate Missing References");
-
-		LAR.importSiteCP(
-			larFileName = "${larFileName}",
-			siteName = "Site C");
-
-		Navigator.gotoSitePage(
-			pageName = "Asset Publisher Page",
-			siteName = "Site C");
-	}
-
 	@description = "This is a use case for LPS-97544 and LPS-90886."
 	@priority = "3"
 	test ImportStagedSiteWithCircularReference {
+		property portal.upstream = "true";
+
 		JSONGroup.addGroup(groupName = "Site Name");
 
 		JSONLayout.addPublicLayout(
@@ -1815,9 +1741,7 @@ definition {
 			groupName = "Site Name",
 			layoutName = "Page B");
 
-		Staging.openStagingAdmin(siteURLKey = "site-name");
-
-		Staging.activateStagingCP(siteName = "Site Name");
+		JSONStaging.enableLocalStaging(groupName = "Site Name");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name-staging");
 
@@ -1827,10 +1751,9 @@ definition {
 			structureDescription = "Structure Description A",
 			structureName = "Structure Name A");
 
-		DynamicDataMapping.addField(
-			field = "Link to Page",
+		DataEngine.addField(
 			fieldFieldLabel = "Link to Page",
-			fieldName = "LinkToPage");
+			fieldName = "Link to Page");
 
 		WebContentStructures.saveCP(structureName = "Structure Name A");
 
@@ -1852,10 +1775,9 @@ definition {
 			structureDescription = "Structure Description B",
 			structureName = "Structure Name B");
 
-		DynamicDataMapping.addField(
-			field = "Web Content",
+		DataEngine.addField(
 			fieldFieldLabel = "Web Content",
-			fieldName = "WebContent");
+			fieldName = "Web Content");
 
 		WebContentStructures.saveCP(structureName = "Structure Name B");
 
@@ -1863,32 +1785,20 @@ definition {
 
 		NavItem.gotoTemplates();
 
-		LexiconEntry.gotoAdd();
-
-		WebContentTemplates.inputTemplateAddScreenFields(
+		WebContentTemplates.addCP(
 			structureName = "Structure Name B",
 			templateDescription = "Template Description B",
 			templateFieldNames = "Web Content",
 			templateName = "Template Name B");
-
-		var templateScript = '''
-<#assign webContentData = jsonFactoryUtil.createJSONObject(WebContent.getData())/>
-${webContentData}
-''';
-
-		WebContentTemplates.inputScript(templateScript = "${templateScript}");
-
-		PortletEntry.save();
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name-staging");
 
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "Structure Name A");
 
 		WebContent.addWithStructureCP(
-			linkedPageName = "Page B",
-			linkFieldName = "LinkToPage",
 			structureName = "Structure Name A",
 			templateName = "Template Name A",
+			webContentLinkToPage = "Page B",
 			webContentTitle = "WC WebContent Title 1");
 
 		PortletEntry.publish();
@@ -1898,11 +1808,10 @@ ${webContentData}
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "Structure Name B");
 
 		WebContent.addWithStructureCP(
-			fieldName = "WebContent",
 			structureName = "Structure Name B",
 			templateName = "Template Name B",
-			webContentSelectWCFile = "WC WebContent Title 1",
-			webContentTitle = "WC WebContent Title 2");
+			webContentTitle = "WC WebContent Title 2",
+			webContentWebContent = "WC WebContent Title 1");
 
 		PortletEntry.publish();
 
@@ -1938,7 +1847,9 @@ ${webContentData}
 			pageName = "Page B",
 			siteName = "Site Name");
 
-		WebContent.viewPGViaWCD(webContentContent = "WC WebContent Title 1");
+		AssertTextEquals.assertPartialText(
+			locator1 = "WCD#WEB_CONTENT_TITLE",
+			value1 = "WC WebContent Title 2");
 
 		LAR.exportSiteCP(siteScopeName = "Site Name");
 
@@ -1995,9 +1906,7 @@ ${webContentData}
 
 		JSONGroup.addGroup(groupName = "Site Name B");
 
-		Staging.openStagingAdmin(siteURLKey = "site-name-b");
-
-		Staging.activateStagingCP(siteName = "Site Name B");
+		JSONStaging.enableLocalStaging(groupName = "Site Name B");
 
 		LAR.importSiteCP(
 			larFileName = "${larFileName}",
@@ -2022,8 +1931,12 @@ ${webContentData}
 
 		SystemSettings.gotoConfiguration(
 			configurationCategory = "Infrastructure",
-			configurationName = "Export/Import",
+			configurationName = "Export/Import, Staging",
 			configurationScope = "Virtual Instance Scope");
+
+		SystemSettings.configureSystemSetting(
+			enableSetting = "false",
+			settingFieldName = "Validate File Entries");
 
 		SystemSettings.configureSystemSetting(
 			enableSetting = "false",
@@ -2041,6 +1954,7 @@ ${webContentData}
 		DMDocument.expandInfo();
 
 		var dmDocumentURL = selenium.getAttribute("//input[contains(@id,'urlInput')]@value");
+		var entryExternalURL = StringUtil.replace("${dmDocumentURL}", "http://", "");
 
 		JSONDocument.deleteFile(
 			dmDocumentTitle = "DM Document Title",
@@ -2050,11 +1964,12 @@ ${webContentData}
 
 		WebContentNavigator.gotoAddCP();
 
-		WebContent.addCP(
-			webContentContent = "${dmDocumentURL}",
-			webContentTitle = "WC WebContent Title");
+		PortletEntry.inputTitle(title = "WC WebContent Title");
 
-		AlloyEditor.addEntryExternalURL(entryExternalURL = "${dmDocumentURL}");
+		CKEditor.addEntryExternalURL(
+			displayText = "${dmDocumentURL}",
+			entryExternalURL = "${entryExternalURL}",
+			fieldLabel = "content");
 
 		PortletEntry.publish();
 	}

@@ -1,0 +1,184 @@
+@component-name = "portal-categories"
+definition {
+
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Content Dashboard";
+
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+
+		JSONGroup.addGroup(groupName = "Test Site Name");
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
+		}
+	}
+
+	@description = "When the user clicks on Save and Add a new one, the category is saved"
+	@priority = "5"
+	@uitest
+	test AddCategoryViaSaveAndAddButton {
+		property portal.acceptance = "true";
+
+		task ("Add a global category via Save And Add button") {
+			Category.openCategoriesAdmin(siteURLKey = "global");
+
+			Category.addCategoryWithSaveAndAddButton(
+				categoryName = "Category Name",
+				vocabularyName = "Topic");
+		}
+
+		task ("View the global category is created successfully") {
+			Category.viewCP(
+				categoryName = "Category Name",
+				vocabularyName = "Topic");
+		}
+
+		task ("Delete the global category") {
+			JSONCategory.deleteCategory(
+				categoryName = "Category Name",
+				groupName = "Global",
+				vocabularyName = "Topic");
+		}
+	}
+
+	@description = "When the site administrator (not Global) accesses to the Categories administration application, the existing Global vocabularies appear as locked and it's not possible to edit them"
+	@priority = "5"
+	@uitest
+	test CannotEditGlobalCategoryInNormalSite {
+		property portal.acceptance = "true";
+
+		task ("Add a global category") {
+			JSONCategory.addCategory(
+				groupName = "Global",
+				title = "Category Name",
+				vocabularyName = "Topic");
+		}
+
+		task ("Cannot edit the global category in normal site") {
+			Category.openCategoriesAdmin(siteURLKey = "test-site-name");
+
+			Category.viewCP(
+				categoryName = "Category Name",
+				vocabularyName = "Topic");
+
+			AssertElementNotPresent(locator1 = "Categories#ADD_CATEGORY_BUTTON");
+
+			AssertVisible(
+				key_vocabularyName = "Topic",
+				locator1 = "Categories#LOCKED_VOCABULARY");
+		}
+
+		task ("Delete the global category") {
+			JSONCategory.deleteCategory(
+				categoryName = "Category Name",
+				groupName = "Global",
+				vocabularyName = "Topic");
+		}
+	}
+
+	@description = "When a change in Global Vocabularies is made, the Global vocabularies section in a site's Categories administration application updates accordingly"
+	@priority = "5"
+	test PropagateChangesOfGlobalCategoryToNormalSite {
+		property portal.acceptance = "true";
+
+		task ("Add a global category") {
+			JSONCategory.addCategory(
+				groupName = "Global",
+				title = "Category Name",
+				vocabularyName = "Topic");
+		}
+
+		task ("View the global category in normal site") {
+			Category.openCategoriesAdmin(siteURLKey = "test-site-name");
+
+			Category.viewCP(
+				categoryName = "Category Name",
+				vocabularyName = "Topic");
+		}
+
+		task ("Edit the global category") {
+			JSONCategory.updateCategoryName(
+				categoryName = "Category Name",
+				groupName = "Global",
+				title = "Category Name Edit",
+				vocabularyName = "Topic");
+		}
+
+		task ("View the edited global category in normal site") {
+			Category.openCategoriesAdmin(siteURLKey = "test-site-name");
+
+			Category.viewCP(
+				categoryName = "Category Name Edit",
+				vocabularyName = "Topic");
+		}
+
+		task ("Delete the global category") {
+			JSONCategory.deleteCategory(
+				categoryName = "Category Name Edit",
+				groupName = "Global",
+				vocabularyName = "Topic");
+		}
+	}
+
+	@description = "When the user opens the "Categorization" section and there's a vocabulary marked as internal, that vocabulary is shown in the Internal categories section"
+	@priority = "5"
+	test ViewInternalVocabularyInWebContentEditor {
+		property portal.acceptance = "true";
+
+		task ("Add a web content based on Basic Web Content") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddCP();
+		}
+
+		task ("View internal vocabularies in sidebar panel") {
+			Panel.expandPanel(panel = "Categorization");
+
+			AssertVisible(
+				key_text = "Internal Categories",
+				locator1 = "Sidebar#SUBTITLE");
+
+			for (var vocabularyName : list "Audience,Stage") {
+				AssertVisible(
+					key_vocabularyName = "${vocabularyName}",
+					locator1 = "AssetCategorization#CATEGORIES_FIELD");
+			}
+		}
+	}
+
+	@description = "When the user opens the "Categorization" section and there's a vocabulary not marked as internal, that vocabulary is shown in the Public categories section"
+	@priority = "5"
+	test ViewPublicVocabularyInWebContentEditor {
+		property portal.acceptance = "true";
+
+		task ("Add a web content based on Basic Web Content") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddCP();
+		}
+
+		task ("View internal vocabularies in sidebar panel") {
+			Panel.expandPanel(panel = "Categorization");
+
+			AssertVisible(
+				key_text = "Public Categories",
+				locator1 = "Sidebar#SUBTITLE");
+
+			AssertVisible(
+				key_vocabularyName = "Topic",
+				locator1 = "AssetCategorization#CATEGORIES_FIELD");
+		}
+	}
+
+}

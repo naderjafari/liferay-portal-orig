@@ -13,7 +13,7 @@
  */
 
 import ClayDatePicker from '@clayui/date-picker';
-import moment from 'moment';
+import moment from 'moment/min/moment-with-locales';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {createAutoCorrectedDatePipe} from 'text-mask-addons';
 import {createTextMaskInputElement} from 'text-mask-core';
@@ -21,42 +21,23 @@ import {createTextMaskInputElement} from 'text-mask-core';
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
 import {useSyncValue} from '../hooks/useSyncValue.es';
 
-const getInputMask = (dateFormat, dateDelimiter) => {
-	const inputMaskArray = [];
+const DIGIT_REGEX = /\d/i;
+const LETTER_REGEX = /[a-z]/i;
 
-	dateFormat.split('').forEach((item) => {
-		if (item === dateDelimiter) {
-			inputMaskArray.push(dateDelimiter);
-		}
-		else if (item === 'Y') {
-			inputMaskArray.push(/\d/);
-			inputMaskArray.push(/\d/);
-			inputMaskArray.push(/\d/);
-			inputMaskArray.push(/\d/);
-		}
-		else if (item === 'd' || item === 'm') {
-			inputMaskArray.push(/\d/);
-			inputMaskArray.push(/\d/);
-		}
-	});
-
-	return inputMaskArray;
-};
-
-const getDateMask = (dateFormat, dateDelimiter) => {
+const getDateMask = (dateDelimiter, dateFormat) => {
 	return dateFormat
 		.split(dateDelimiter)
 		.map((item) => {
 			let currentFormat;
 
-			if (item === '%Y') {
+			if (item === 'YYYY') {
 				currentFormat = 'yyyy';
 			}
-			else if (item === '%m') {
-				currentFormat = 'MM';
+			else if (item === 'DD') {
+				currentFormat = 'dd';
 			}
 			else {
-				currentFormat = 'dd';
+				currentFormat = 'MM';
 			}
 
 			return currentFormat;
@@ -78,21 +59,56 @@ const getDelimiter = (dateFormat) => {
 	return dateDelimiter;
 };
 
-const useDateFormat = () => {
-	return useMemo(() => {
-		const dateFormat = Liferay.AUI.getDateFormat();
-		const dateDelimiter = getDelimiter(dateFormat);
+const getLocaleDateFormat = (locale, format = 'L') => {
+	moment.locale(locale);
 
-		return {
-			dateMask: getDateMask(dateFormat, dateDelimiter),
-			inputMask: getInputMask(dateFormat, dateDelimiter),
-		};
-	}, []);
+	return moment.localeData().longDateFormat(format);
 };
 
-const transformToDate = (date) => {
+const getMaskByDateFormat = (format) => {
+	const mask = [];
+
+	for (let i = 0; i < format.length; i++) {
+		if (LETTER_REGEX.test(format[i])) {
+			mask.push(DIGIT_REGEX);
+		}
+		else {
+			mask.push(`${format[i]}`);
+		}
+	}
+
+	return mask;
+};
+
+const getDateFormat = (locale) => {
+	const dateFormat = getLocaleDateFormat(locale);
+	const inputMask = getMaskByDateFormat(dateFormat);
+	const dateDelimiter = getDelimiter(inputMask);
+
+	return {
+		dateMask: getDateMask(dateDelimiter, dateFormat),
+		inputMask,
+	};
+};
+
+const transformToDate = (
+	defaultLanguageId,
+	date,
+	locale,
+	formatInEditingLocale
+) => {
 	if (typeof date === 'string' && date.indexOf('_') === -1 && date !== '') {
-		return moment(date).toDate();
+		if (formatInEditingLocale) {
+			return moment(date, [
+				getLocaleDateFormat(locale),
+				'YYYY-MM-DD',
+			]).toDate();
+		}
+
+		return moment(date, [
+			getLocaleDateFormat(defaultLanguageId),
+			'YYYY-MM-DD',
+		]).toDate();
 	}
 
 	return date;
@@ -106,16 +122,25 @@ const getInitialMonth = (value) => {
 	return moment().toDate();
 };
 
-const getValueForHidden = (value) => {
-	if (moment(value).isValid()) {
-		return moment(value).format('YYYY-MM-DD');
+const getValueForHidden = (value, locale) => {
+	const momentLocale = moment().locale(locale);
+
+	const momentLocaleFormatted = momentLocale.localeData().longDateFormat('L');
+
+	const newMoment = moment(value, momentLocaleFormatted, true);
+
+	if (newMoment.isValid()) {
+		return newMoment.format('YYYY-MM-DD');
 	}
 
-	return null;
+	return '';
 };
 
 const DatePicker = ({
+	defaultLanguageId,
 	disabled,
+	formatInEditingLocale,
+	locale,
 	name,
 	onChange,
 	spritemap,
@@ -124,9 +149,20 @@ const DatePicker = ({
 	const inputRef = useRef(null);
 	const maskInstance = useRef(null);
 
-	const initialValueMemoized = useMemo(() => transformToDate(initialValue), [
-		initialValue,
-	]);
+	const [expanded, setExpand] = useState(false);
+
+	const [localizedValue, setLocalizedValue] = useState({});
+
+	const initialValueMemoized = useMemo(
+		() =>
+			transformToDate(
+				defaultLanguageId,
+				initialValue,
+				locale,
+				formatInEditingLocale
+			),
+		[defaultLanguageId, formatInEditingLocale, initialValue, locale]
+	);
 
 	const [value, setValue] = useSyncValue(initialValueMemoized);
 	const [years, setYears] = useState(() => {
@@ -138,7 +174,7 @@ const DatePicker = ({
 		};
 	});
 
-	const {dateMask, inputMask} = useDateFormat();
+	const {dateMask, inputMask} = getDateFormat(locale);
 
 	useEffect(() => {
 		if (inputRef.current && inputMask && dateMask) {
@@ -150,9 +186,36 @@ const DatePicker = ({
 				pipe: createAutoCorrectedDatePipe(dateMask.toLowerCase()),
 				showMask: true,
 			});
+
+			if (localizedValue[locale]) {
+				if (typeof localizedValue[locale] === 'string') {
+					inputRef.current.value = localizedValue[locale];
+				}
+				else {
+					inputRef.current.value = moment(
+						localizedValue[locale]
+					).format(dateMask.toUpperCase());
+				}
+			}
+			else if (initialValueMemoized) {
+				inputRef.current.value = moment(initialValueMemoized).format(
+					dateMask.toUpperCase()
+				);
+			}
+			else {
+				inputRef.current.value = '';
+			}
+
 			maskInstance.current.update(inputRef.current.value);
 		}
-	}, [inputMask, dateMask, inputRef]);
+	}, [
+		dateMask,
+		inputMask,
+		inputRef,
+		initialValueMemoized,
+		localizedValue,
+		locale,
+	]);
 
 	const handleNavigation = (date) => {
 		const currentYear = date.getFullYear();
@@ -166,21 +229,41 @@ const DatePicker = ({
 	return (
 		<>
 			<input
-				aria-label="date_picker_hidden"
+				aria-hidden="true"
+				id={name + '_fieldDetails'}
 				name={name}
 				type="hidden"
-				value={getValueForHidden(value)}
+				value={getValueForHidden(value, locale)}
 			/>
 			<ClayDatePicker
+				aria-labelledby={name + '_fieldDetails'}
 				dateFormat={dateMask}
 				disabled={disabled}
+				expanded={expanded}
 				initialMonth={getInitialMonth(value)}
+				onExpandedChange={(expand) => {
+					setExpand(expand);
+				}}
 				onInput={(event) => {
 					maskInstance.current.update(event.target.value);
+					setLocalizedValue({
+						...localizedValue,
+						[locale]: event.target.value,
+					});
 				}}
 				onNavigation={handleNavigation}
-				onValueChange={(value) => {
+				onValueChange={(value, eventType) => {
+					setLocalizedValue({
+						...localizedValue,
+						[locale]: value,
+					});
+
 					setValue(value);
+
+					if (eventType === 'click') {
+						setExpand(false);
+						inputRef.current.focus();
+					}
 
 					if (
 						!value ||
@@ -190,7 +273,11 @@ const DatePicker = ({
 					}
 
 					if (moment(value).isValid()) {
-						onChange(moment(value).format(dateMask));
+						onChange(
+							moment(value, getLocaleDateFormat(locale)).format(
+								'L'
+							)
+						);
 					}
 				}}
 				ref={inputRef}
@@ -203,6 +290,9 @@ const DatePicker = ({
 };
 
 const Main = ({
+	defaultLanguageId,
+	locale = themeDisplay.getDefaultLanguageId(),
+	localizedValue,
 	name,
 	onChange,
 	placeholder,
@@ -214,12 +304,18 @@ const Main = ({
 }) => (
 	<FieldBase
 		{...otherProps}
+		localizedValue={localizedValue}
 		name={name}
 		readOnly={readOnly}
 		spritemap={spritemap}
 	>
 		<DatePicker
+			defaultLanguageId={defaultLanguageId}
 			disabled={readOnly}
+			formatInEditingLocale={
+				localizedValue && localizedValue[locale] != undefined
+			}
+			locale={locale}
 			name={name}
 			onChange={(value) => onChange({}, value)}
 			placeholder={placeholder}

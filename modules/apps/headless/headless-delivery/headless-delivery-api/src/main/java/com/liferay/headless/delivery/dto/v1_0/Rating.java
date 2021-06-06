@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,16 +48,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Rating")
+@GraphQLName(
+	description = "Represents a rating/score received by any kind of asset. Properties follow the [Rating](https://schema.org/Rating) specification.",
+	value = "Rating"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Rating")
-public class Rating {
+public class Rating implements Serializable {
 
 	public static Rating toDTO(String json) {
 		return ObjectMapperUtil.readValue(Rating.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -81,7 +88,9 @@ public class Rating {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -412,6 +421,7 @@ public class Rating {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Rating",
 		name = "x-class-name"
 	)
@@ -447,7 +457,7 @@ public class Rating {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -486,7 +496,7 @@ public class Rating {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

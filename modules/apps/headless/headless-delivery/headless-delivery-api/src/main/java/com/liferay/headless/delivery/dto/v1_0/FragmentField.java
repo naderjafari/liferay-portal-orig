@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentField")
+@GraphQLName(
+	description = "Represents a fragment field.", value = "FragmentField"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentField")
-public class FragmentField {
+public class FragmentField implements Serializable {
 
 	public static FragmentField toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentField.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The fragment field's ID.")
 	public String getId() {
 		return id;
 	}
@@ -73,11 +77,11 @@ public class FragmentField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment field's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String id;
 
-	@Schema
+	@Schema(description = "The fragment field's value.")
 	@Valid
 	public Object getValue() {
 		return value;
@@ -102,7 +106,7 @@ public class FragmentField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment field's value.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object value;
 
@@ -163,6 +167,7 @@ public class FragmentField {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentField",
 		name = "x-class-name"
 	)
@@ -198,7 +203,7 @@ public class FragmentField {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -237,7 +242,7 @@ public class FragmentField {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

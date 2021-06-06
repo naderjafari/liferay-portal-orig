@@ -36,6 +36,7 @@ import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.TransformUtil;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -74,7 +75,7 @@ import javax.ws.rs.core.UriInfo;
 @Generated("")
 @Path("/v1.0")
 public abstract class BaseFormDocumentResourceImpl
-	implements FormDocumentResource, EntityModelResource,
+	implements EntityModelResource, FormDocumentResource,
 			   VulcanBatchEngineTaskItemDelegate<FormDocument> {
 
 	/**
@@ -82,8 +83,10 @@ public abstract class BaseFormDocumentResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/headless-form/v1.0/form-documents/{formDocumentId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@DELETE
+	@Deprecated
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "formDocumentId")}
 	)
@@ -101,9 +104,9 @@ public abstract class BaseFormDocumentResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/headless-form/v1.0/form-documents/batch'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes("application/json")
 	@DELETE
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
 	)
@@ -137,8 +140,10 @@ public abstract class BaseFormDocumentResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-form/v1.0/form-documents/{formDocumentId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
+	@Deprecated
 	@GET
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "formDocumentId")}
 	)
@@ -255,6 +260,14 @@ public abstract class BaseFormDocumentResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

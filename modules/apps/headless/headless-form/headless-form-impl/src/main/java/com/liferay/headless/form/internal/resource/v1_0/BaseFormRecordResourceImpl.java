@@ -36,6 +36,7 @@ import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.TransformUtil;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -77,7 +78,7 @@ import javax.ws.rs.core.UriInfo;
 @Generated("")
 @Path("/v1.0")
 public abstract class BaseFormRecordResourceImpl
-	implements FormRecordResource, EntityModelResource,
+	implements EntityModelResource, FormRecordResource,
 			   VulcanBatchEngineTaskItemDelegate<FormRecord> {
 
 	/**
@@ -85,8 +86,10 @@ public abstract class BaseFormRecordResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-form/v1.0/form-records/{formRecordId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
+	@Deprecated
 	@GET
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "formRecordId")}
 	)
@@ -106,14 +109,16 @@ public abstract class BaseFormRecordResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-form/v1.0/form-records/{formRecordId}' -d $'{"creator": ___, "draft": ___, "formFieldValues": ___, "formId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes({"application/json", "application/xml"})
-	@PUT
+	@Deprecated
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "formRecordId")}
 	)
 	@Path("/form-records/{formRecordId}")
 	@Produces({"application/json", "application/xml"})
+	@PUT
 	@Tags(value = {@Tag(name = "FormRecord")})
 	public FormRecord putFormRecord(
 			@NotNull @Parameter(hidden = true) @PathParam("formRecordId") Long
@@ -129,14 +134,14 @@ public abstract class BaseFormRecordResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-form/v1.0/form-records/batch'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes("application/json")
-	@PUT
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
 	)
 	@Path("/form-records/batch")
 	@Produces("application/json")
+	@PUT
 	@Tags(value = {@Tag(name = "FormRecord")})
 	public Response putFormRecordBatch(
 			@Parameter(hidden = true) @QueryParam("callbackURL") String
@@ -165,8 +170,10 @@ public abstract class BaseFormRecordResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-form/v1.0/forms/{formId}/form-records'  -u 'test@liferay.com:test'
 	 */
-	@Override
+	@Deprecated
 	@GET
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(
 		value = {
 			@Parameter(in = ParameterIn.PATH, name = "formId"),
@@ -190,11 +197,13 @@ public abstract class BaseFormRecordResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-form/v1.0/forms/{formId}/form-records' -d $'{"creator": ___, "draft": ___, "formFieldValues": ___, "formId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes({"application/json", "application/xml"})
-	@POST
+	@Deprecated
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "formId")})
 	@Path("/forms/{formId}/form-records")
+	@POST
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "FormRecord")})
 	public FormRecord postFormFormRecord(
@@ -210,9 +219,8 @@ public abstract class BaseFormRecordResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-form/v1.0/forms/{formId}/form-records/batch'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes("application/json")
-	@POST
+	@Override
 	@Parameters(
 		value = {
 			@Parameter(in = ParameterIn.PATH, name = "formId"),
@@ -220,6 +228,7 @@ public abstract class BaseFormRecordResourceImpl
 		}
 	)
 	@Path("/forms/{formId}/form-records/batch")
+	@POST
 	@Produces("application/json")
 	@Tags(value = {@Tag(name = "FormRecord")})
 	public Response postFormFormRecordBatch(
@@ -250,8 +259,10 @@ public abstract class BaseFormRecordResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-form/v1.0/forms/{formId}/form-records/by-latest-draft'  -u 'test@liferay.com:test'
 	 */
-	@Override
+	@Deprecated
 	@GET
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "formId")})
 	@Path("/forms/{formId}/form-records/by-latest-draft")
 	@Produces({"application/json", "application/xml"})
@@ -272,7 +283,7 @@ public abstract class BaseFormRecordResourceImpl
 
 		for (FormRecord formRecord : formRecords) {
 			postFormFormRecord(
-				Long.valueOf((String)parameters.get("formId")), formRecord);
+				Long.parseLong((String)parameters.get("formId")), formRecord);
 		}
 	}
 
@@ -305,7 +316,7 @@ public abstract class BaseFormRecordResourceImpl
 		throws Exception {
 
 		return getFormFormRecordsPage(
-			(Long)parameters.get("formId"), pagination);
+			Long.parseLong((String)parameters.get("formId")), pagination);
 	}
 
 	@Override
@@ -339,7 +350,7 @@ public abstract class BaseFormRecordResourceImpl
 		for (FormRecord formRecord : formRecords) {
 			putFormRecord(
 				formRecord.getId() != null ? formRecord.getId() :
-				(Long)parameters.get("formRecordId"),
+					Long.parseLong((String)parameters.get("formRecordId")),
 				formRecord);
 		}
 	}
@@ -374,6 +385,14 @@ public abstract class BaseFormRecordResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

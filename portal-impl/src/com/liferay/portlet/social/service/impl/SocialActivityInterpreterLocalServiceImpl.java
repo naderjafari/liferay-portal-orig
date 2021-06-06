@@ -93,7 +93,7 @@ public class SocialActivityInterpreterLocalServiceImpl
 				SocialActivityInterpreter.class, activityInterpreter,
 				properties);
 
-		_serviceRegistrations.put(activityInterpreter, serviceRegistration);
+		_serviceRegistrationMap.put(activityInterpreter, serviceRegistration);
 	}
 
 	@Override
@@ -122,7 +122,7 @@ public class SocialActivityInterpreterLocalServiceImpl
 		SocialActivityInterpreter activityInterpreter) {
 
 		ServiceRegistration<SocialActivityInterpreter> serviceRegistration =
-			_serviceRegistrations.remove(activityInterpreter);
+			_serviceRegistrationMap.remove(activityInterpreter);
 
 		if (serviceRegistration != null) {
 			serviceRegistration.unregister();
@@ -192,6 +192,9 @@ public class SocialActivityInterpreterLocalServiceImpl
 					activity.getMirrorActivityId());
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 
 			if (mirrorActivity != null) {
@@ -328,7 +331,7 @@ public class SocialActivityInterpreterLocalServiceImpl
 	private final Map<String, List<SocialActivityInterpreter>>
 		_activityInterpreters = new HashMap<>();
 	private final ServiceRegistrationMap<SocialActivityInterpreter>
-		_serviceRegistrations = new ServiceRegistrationMapImpl<>();
+		_serviceRegistrationMap = new ServiceRegistrationMapImpl<>();
 	private ServiceTracker<SocialActivityInterpreter, SocialActivityInterpreter>
 		_serviceTracker;
 

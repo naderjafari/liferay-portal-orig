@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.NavigationMenuItemSerDes;
 
+import java.io.Serializable;
+
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
@@ -28,7 +30,7 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class NavigationMenuItem implements Cloneable {
+public class NavigationMenuItem implements Cloneable, Serializable {
 
 	public static NavigationMenuItem toDTO(String json) {
 		return NavigationMenuItemSerDes.toDTO(json);
@@ -156,6 +158,28 @@ public class NavigationMenuItem implements Cloneable {
 
 	protected String link;
 
+	public Map<String, String> getLink_i18n() {
+		return link_i18n;
+	}
+
+	public void setLink_i18n(Map<String, String> link_i18n) {
+		this.link_i18n = link_i18n;
+	}
+
+	public void setLink_i18n(
+		UnsafeSupplier<Map<String, String>, Exception>
+			link_i18nUnsafeSupplier) {
+
+		try {
+			link_i18n = link_i18nUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Map<String, String> link_i18n;
+
 	public String getName() {
 		return name;
 	}
@@ -241,6 +265,27 @@ public class NavigationMenuItem implements Cloneable {
 	}
 
 	protected Long parentNavigationMenuId;
+
+	public String getSitePageURL() {
+		return sitePageURL;
+	}
+
+	public void setSitePageURL(String sitePageURL) {
+		this.sitePageURL = sitePageURL;
+	}
+
+	public void setSitePageURL(
+		UnsafeSupplier<String, Exception> sitePageURLUnsafeSupplier) {
+
+		try {
+			sitePageURL = sitePageURLUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String sitePageURL;
 
 	public String getType() {
 		return type;

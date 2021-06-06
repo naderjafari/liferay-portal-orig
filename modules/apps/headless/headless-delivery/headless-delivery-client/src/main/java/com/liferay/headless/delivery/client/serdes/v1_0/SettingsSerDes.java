@@ -105,6 +105,16 @@ public class SettingsSerDes {
 			sb.append(String.valueOf(settings.getMasterPage()));
 		}
 
+		if (settings.getStyleBook() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"styleBook\": ");
+
+			sb.append(String.valueOf(settings.getStyleBook()));
+		}
+
 		if (settings.getThemeName() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -181,6 +191,13 @@ public class SettingsSerDes {
 			map.put("masterPage", String.valueOf(settings.getMasterPage()));
 		}
 
+		if (settings.getStyleBook() == null) {
+			map.put("styleBook", null);
+		}
+		else {
+			map.put("styleBook", String.valueOf(settings.getStyleBook()));
+		}
+
 		if (settings.getThemeName() == null) {
 			map.put("themeName", null);
 		}
@@ -237,6 +254,12 @@ public class SettingsSerDes {
 						MasterPageSerDes.toDTO((String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "styleBook")) {
+				if (jsonParserFieldValue != null) {
+					settings.setStyleBook(
+						StyleBookSerDes.toDTO((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "themeName")) {
 				if (jsonParserFieldValue != null) {
 					settings.setThemeName((String)jsonParserFieldValue);
@@ -246,10 +269,6 @@ public class SettingsSerDes {
 				if (jsonParserFieldValue != null) {
 					settings.setThemeSettings((Object)jsonParserFieldValue);
 				}
-			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
 			}
 		}
 
@@ -279,7 +298,7 @@ public class SettingsSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -315,7 +334,7 @@ public class SettingsSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

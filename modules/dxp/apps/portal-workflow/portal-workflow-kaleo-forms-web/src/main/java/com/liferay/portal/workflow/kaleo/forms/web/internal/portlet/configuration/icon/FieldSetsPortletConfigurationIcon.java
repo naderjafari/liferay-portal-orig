@@ -15,6 +15,7 @@
 package com.liferay.portal.workflow.kaleo.forms.web.internal.portlet.configuration.icon;
 
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.User;
@@ -35,7 +36,6 @@ import java.util.ResourceBundle;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -73,24 +73,27 @@ public class FieldSetsPortletConfigurationIcon
 		Portlet portlet = _portletLocalService.getPortletById(
 			portletDisplay.getId());
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			portletRequest,
-			PortletProviderUtil.getPortletId(
-				DDMStructure.class.getName(), PortletProvider.Action.VIEW),
-			themeDisplay.getPlid(), PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcPath", "/view.jsp");
-		portletURL.setParameter("backURL", themeDisplay.getURLCurrent());
-		portletURL.setParameter(
-			"groupId", String.valueOf(themeDisplay.getScopeGroupId()));
-		portletURL.setParameter(
-			"refererPortletName", KaleoFormsPortletKeys.KALEO_FORMS_ADMIN);
-		portletURL.setParameter(
-			"refererWebDAVToken", WebDAVUtil.getStorageToken(portlet));
-		portletURL.setParameter("showAncestorScopes", Boolean.TRUE.toString());
-		portletURL.setParameter("showManageTemplates", Boolean.TRUE.toString());
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				portletRequest,
+				PortletProviderUtil.getPortletId(
+					DDMStructure.class.getName(), PortletProvider.Action.VIEW),
+				themeDisplay.getPlid(), PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/view.jsp"
+		).setBackURL(
+			themeDisplay.getURLCurrent()
+		).setParameter(
+			"groupId", themeDisplay.getScopeGroupId()
+		).setParameter(
+			"refererPortletName", KaleoFormsPortletKeys.KALEO_FORMS_ADMIN
+		).setParameter(
+			"refererWebDAVToken", WebDAVUtil.getStorageToken(portlet)
+		).setParameter(
+			"showAncestorScopes", Boolean.TRUE.toString()
+		).setParameter(
+			"showManageTemplates", Boolean.TRUE.toString()
+		).buildString();
 	}
 
 	@Override

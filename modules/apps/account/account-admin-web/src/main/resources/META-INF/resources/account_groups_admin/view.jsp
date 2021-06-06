@@ -18,12 +18,11 @@
 
 <%
 SearchContainer<AccountGroupDisplay> accountGroupDisplaySearchContainer = AccountGroupDisplaySearchContainerFactory.create(liferayPortletRequest, liferayPortletResponse);
-
-ViewAccountGroupsManagementToolbarDisplayContext viewAccountGroupsManagementToolbarDisplayContext = new ViewAccountGroupsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, accountGroupDisplaySearchContainer);
 %>
 
 <clay:management-toolbar
-	displayContext="<%= viewAccountGroupsManagementToolbarDisplayContext %>"
+	managementToolbarDisplayContext="<%= new ViewAccountGroupsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, accountGroupDisplaySearchContainer) %>"
+	propsTransformer="account_groups_admin/js/AccountGroupsManagementToolbarPropsTransformer"
 />
 
 <clay:container-fluid>
@@ -39,23 +38,31 @@ ViewAccountGroupsManagementToolbarDisplayContext viewAccountGroupsManagementTool
 				modelVar="accountGroupDisplay"
 			>
 				<portlet:renderURL var="rowURL">
-					<portlet:param name="mvcRenderCommandName" value="/account_groups_admin/edit_account_group" />
+					<portlet:param name="mvcRenderCommandName" value="/account_admin/edit_account_group" />
 					<portlet:param name="backURL" value="<%= currentURL %>" />
 					<portlet:param name="accountGroupId" value="<%= String.valueOf(accountGroupDisplay.getAccountGroupId()) %>" />
+					<portlet:param name="screenNavigationCategoryKey" value="<%= AccountScreenNavigationEntryConstants.CATEGORY_KEY_ACCOUNTS %>" />
 				</portlet:renderURL>
 
 				<liferay-ui:search-container-column-text
 					cssClass="table-cell-expand table-title"
 					href="<%= rowURL %>"
 					name="name"
-					property="name"
+					value="<%= HtmlUtil.escape(accountGroupDisplay.getName()) %>"
 				/>
 
 				<liferay-ui:search-container-column-text
 					cssClass="table-cell-expand"
 					href="<%= rowURL %>"
 					name="description"
-					property="description"
+					value="<%= HtmlUtil.escape(accountGroupDisplay.getDescription()) %>"
+				/>
+
+				<liferay-ui:search-container-column-text
+					cssClass="table-cell-expand"
+					href="<%= rowURL %>"
+					name="accounts"
+					value="<%= String.valueOf(accountGroupDisplay.getAccountEntriesCount()) %>"
 				/>
 
 				<liferay-ui:search-container-column-jsp
@@ -69,8 +76,3 @@ ViewAccountGroupsManagementToolbarDisplayContext viewAccountGroupsManagementTool
 		</liferay-ui:search-container>
 	</aui:form>
 </clay:container-fluid>
-
-<liferay-frontend:component
-	componentId="<%= viewAccountGroupsManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="account_groups_admin/js/AccountGroupsManagementToolbarDefaultEventHandler.es"
-/>

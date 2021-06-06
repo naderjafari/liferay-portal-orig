@@ -131,7 +131,7 @@ public class PluginsEnvironmentBuilder {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #addClasspathEntry(StringBundler, String)}
+	 *             #addClasspathEntry(StringBundler, String)}
 	 */
 	@Deprecated
 	protected void addClasspathEntry(
@@ -142,7 +142,7 @@ public class PluginsEnvironmentBuilder {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #addClasspathEntry(StringBundler, String, Map)}
+	 *             #addClasspathEntry(StringBundler, String, Map)}
 	 */
 	@Deprecated
 	protected void addClasspathEntry(
@@ -183,7 +183,7 @@ public class PluginsEnvironmentBuilder {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #addIvyCacheJar(StringBundler, String, String, String)}
+	 *             #addIvyCacheJar(StringBundler, String, String, String)}
 	 */
 	@Deprecated
 	protected void addIvyCacheJar(
@@ -328,7 +328,7 @@ public class PluginsEnvironmentBuilder {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #addIvyCacheJars(StringBundler, String, String)}
+	 *             #addIvyCacheJars(StringBundler, String, String)}
 	 */
 	@Deprecated
 	protected void addIvyCacheJars(
@@ -376,7 +376,9 @@ public class PluginsEnvironmentBuilder {
 		List<String> jars = new ArrayList<>();
 
 		jars.add("commons-logging.jar");
-		jars.add("log4j.jar");
+		jars.add("log4j-1.2-api.jar");
+		jars.add("log4j-api.jar");
+		jars.add("log4j-core.jar");
 		jars.add("util-bridges.jar");
 		jars.add("util-java.jar");
 		jars.add("util-taglib.jar");
@@ -642,7 +644,9 @@ public class PluginsEnvironmentBuilder {
 
 			portalJars.addAll(dependencyJars);
 			portalJars.add("commons-logging.jar");
-			portalJars.add("log4j.jar");
+			portalJars.add("log4j-1.2-api.jar");
+			portalJars.add("log4j-api.jar");
+			portalJars.add("log4j-core.jar");
 
 			portalJars = ListUtil.unique(portalJars);
 

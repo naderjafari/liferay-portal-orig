@@ -99,9 +99,7 @@ if (Validator.isNotNull(backURL)) {
 				</span>
 
 				<%
-				List<FileEntry> attachmentsFileEntries = curBackgroundTask.getAttachmentsFileEntries();
-
-				for (FileEntry fileEntry : attachmentsFileEntries) {
+				for (FileEntry fileEntry : curBackgroundTask.getAttachmentsFileEntries()) {
 				%>
 
 					<liferay-ui:icon
@@ -141,7 +139,7 @@ if (Validator.isNotNull(backURL)) {
 					}
 					%>
 
-					<div class="active progress progress-xs">
+					<div class="active progress">
 						<div class="progress-bar" style="width: <%= percentage %>%;">
 							<c:if test="<%= allProgressBarCountersTotal > 0 %>">
 								<%= percentage + StringPool.PERCENT %>
@@ -168,7 +166,7 @@ if (Validator.isNotNull(backURL)) {
 
 			<c:if test="<%= Validator.isNotNull(curBackgroundTask.getStatusMessage()) %>">
 				<h6 class="background-task-status-row">
-					<a class="details-link" href="javascript:;" onclick="<portlet:namespace />viewBackgroundTaskDetails(<%= curBackgroundTask.getBackgroundTaskId() %>)">
+					<a class="details-link" href="javascript:;" onclick="<portlet:namespace />viewBackgroundTaskDetails(<%= curBackgroundTask.getBackgroundTaskId() %>);">
 						<liferay-ui:message key="see-more-details" />
 					</a>
 				</h6>

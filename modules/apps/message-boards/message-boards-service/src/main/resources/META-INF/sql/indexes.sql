@@ -19,7 +19,6 @@ create index IX_52822F39 on MBCategory (uuid_[$COLUMN_LENGTH:75$], ctCollectionI
 create unique index IX_5DD5248D on MBCategory (uuid_[$COLUMN_LENGTH:75$], groupId, ctCollectionId);
 
 create unique index IX_F4BC4496 on MBDiscussion (classNameId, classPK, ctCollectionId);
-create index IX_D8237269 on MBDiscussion (classNameId, ctCollectionId);
 create unique index IX_393E413A on MBDiscussion (threadId, ctCollectionId);
 create index IX_4C2D9FB5 on MBDiscussion (uuid_[$COLUMN_LENGTH:75$], companyId, ctCollectionId);
 create index IX_383E288F on MBDiscussion (uuid_[$COLUMN_LENGTH:75$], ctCollectionId);
@@ -41,6 +40,7 @@ create index IX_AAAD4168 on MBMessage (groupId, categoryId, threadId, answer, ct
 create index IX_158DD1B6 on MBMessage (groupId, categoryId, threadId, ctCollectionId);
 create index IX_CC88AC9C on MBMessage (groupId, categoryId, threadId, status, ctCollectionId);
 create index IX_A3E7210 on MBMessage (groupId, ctCollectionId);
+create index IX_7BEA05A9 on MBMessage (groupId, externalReferenceCode[$COLUMN_LENGTH:75$], ctCollectionId);
 create index IX_F6A852F6 on MBMessage (groupId, status, ctCollectionId);
 create unique index IX_8813E901 on MBMessage (groupId, urlSubject[$COLUMN_LENGTH:255$], ctCollectionId);
 create index IX_C892444A on MBMessage (groupId, userId, ctCollectionId);
@@ -59,11 +59,6 @@ create index IX_3F043E90 on MBMessage (userId, ctCollectionId);
 create index IX_F6B01E4A on MBMessage (uuid_[$COLUMN_LENGTH:75$], companyId, ctCollectionId);
 create index IX_DAB8F51A on MBMessage (uuid_[$COLUMN_LENGTH:75$], ctCollectionId);
 create unique index IX_EAF86BCC on MBMessage (uuid_[$COLUMN_LENGTH:75$], groupId, ctCollectionId);
-
-create index IX_D82661ED on MBStatsUser (groupId, ctCollectionId);
-create unique index IX_A22F0727 on MBStatsUser (groupId, userId, ctCollectionId);
-create index IX_2F4600A3 on MBStatsUser (groupId, userId, messageCount, ctCollectionId);
-create index IX_24A05F13 on MBStatsUser (userId, ctCollectionId);
 
 create index IX_A1BB5EE8 on MBThread (categoryId, priority, ctCollectionId);
 create index IX_93724410 on MBThread (groupId, categoryId, ctCollectionId);

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,17 +44,20 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentFieldBackgroundImage")
+@GraphQLName(
+	description = "Represents a fragment field with a background image.",
+	value = "FragmentFieldBackgroundImage"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentFieldBackgroundImage")
-public class FragmentFieldBackgroundImage {
+public class FragmentFieldBackgroundImage implements Serializable {
 
 	public static FragmentFieldBackgroundImage toDTO(String json) {
 		return ObjectMapperUtil.readValue(
 			FragmentFieldBackgroundImage.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The fragment field's background image.")
 	@Valid
 	public FragmentImage getBackgroundFragmentImage() {
 		return backgroundFragmentImage;
@@ -81,11 +86,12 @@ public class FragmentFieldBackgroundImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment field's background image.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentImage backgroundFragmentImage;
 
 	@Schema(
+		deprecated = true,
 		description = "Deprecated as of Athanasius (7.3.x), replaced by backgroundFragmentImage"
 	)
 	@Valid
@@ -175,6 +181,7 @@ public class FragmentFieldBackgroundImage {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentFieldBackgroundImage",
 		name = "x-class-name"
 	)
@@ -210,7 +217,7 @@ public class FragmentFieldBackgroundImage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -249,7 +256,7 @@ public class FragmentFieldBackgroundImage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

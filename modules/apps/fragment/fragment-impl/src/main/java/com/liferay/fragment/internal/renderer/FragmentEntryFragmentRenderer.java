@@ -34,10 +34,10 @@ import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.servlet.taglib.util.OutputData;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.taglib.servlet.PipingServletResponse;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -161,7 +161,7 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 		String configuration, String namespace,
 		HttpServletRequest httpServletRequest) {
 
-		StringBundler sb = new StringBundler(16);
+		StringBundler sb = new StringBundler(18);
 
 		sb.append("<div id=\"");
 
@@ -219,11 +219,13 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 
 		if (Validator.isNotNull(js)) {
 			sb.append("<script>(function() {");
-			sb.append("var fragmentElement = document.querySelector('#");
-			sb.append(fragmentIdSB.toString());
-			sb.append("'); var configuration = ");
+			sb.append("var configuration = ");
 			sb.append(configuration);
-			sb.append(";");
+			sb.append("; var fragmentElement = document.querySelector('#");
+			sb.append(fragmentIdSB.toString());
+			sb.append("'); var fragmentNamespace = '");
+			sb.append(namespace);
+			sb.append("';");
 			sb.append(js);
 			sb.append(";}());</script>");
 		}
@@ -253,10 +255,11 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 
 		String content = StringPool.BLANK;
 
-		if (fragmentRendererContext.isUseCachedContent() &&
-			Objects.equals(
+		if (Objects.equals(
 				fragmentRendererContext.getMode(),
 				FragmentEntryLinkConstants.VIEW) &&
+			(fragmentRendererContext.getPreviewClassPK() <= 0) &&
+			fragmentRendererContext.isUseCachedContent() &&
 			_isCacheable(fragmentEntryLink)) {
 
 			content = _portalCache.get(cacheKeySB.toString());
@@ -291,6 +294,8 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 			fragmentRendererContext.getPreviewClassPK());
 		defaultFragmentEntryProcessorContext.setPreviewType(
 			fragmentRendererContext.getPreviewType());
+		defaultFragmentEntryProcessorContext.setPreviewVersion(
+			fragmentRendererContext.getPreviewVersion());
 		defaultFragmentEntryProcessorContext.setSegmentsExperienceIds(
 			fragmentRendererContext.getSegmentsExperienceIds());
 

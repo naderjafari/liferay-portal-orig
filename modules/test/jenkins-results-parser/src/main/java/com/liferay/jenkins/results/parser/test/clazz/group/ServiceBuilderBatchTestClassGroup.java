@@ -28,6 +28,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -69,13 +70,13 @@ public class ServiceBuilderBatchTestClassGroup
 			List<File> modulesProjectDirs) {
 
 			return new ServiceBuilderBatchTestClass(
-				new TestClassFile(
+				new File(
 					JenkinsResultsParserUtil.getCanonicalPath(moduleBaseDir)),
 				modulesDir, modulesProjectDirs);
 		}
 
 		protected ServiceBuilderBatchTestClass(
-			TestClassFile testClassFile, File modulesDir,
+			File testClassFile, File modulesDir,
 			List<File> modulesProjectDirs) {
 
 			super(testClassFile);
@@ -147,10 +148,9 @@ public class ServiceBuilderBatchTestClassGroup
 	}
 
 	protected ServiceBuilderBatchTestClassGroup(
-		String batchName, BuildProfile buildProfile,
-		PortalTestClassJob portalTestClassJob) {
+		String batchName, PortalTestClassJob portalTestClassJob) {
 
-		super(batchName, buildProfile, portalTestClassJob);
+		super(batchName, portalTestClassJob);
 	}
 
 	@Override
@@ -160,7 +160,8 @@ public class ServiceBuilderBatchTestClassGroup
 		int axisCount = getAxisCount();
 
 		if ((testClassCount == 0) && (axisCount == 1)) {
-			axisTestClassGroups.put(0, new AxisTestClassGroup(this, 0));
+			axisTestClassGroups.add(
+				0, TestClassGroupFactory.newAxisTestClassGroup(this));
 
 			return;
 		}
@@ -240,6 +241,8 @@ public class ServiceBuilderBatchTestClassGroup
 						moduleDir, portalModulesBaseDir, modulesProjectDirs));
 			}
 		}
+
+		Collections.sort(testClasses);
 	}
 
 	private BuildType _buildType;

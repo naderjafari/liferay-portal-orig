@@ -15,7 +15,9 @@
 import classNames from 'classnames';
 import React from 'react';
 
+import {getSearchRegex} from '../../utils/search.es';
 import CollapsablePanel from '../collapsable-panel/CollapsablePanel.es';
+import EmptyState from '../empty-state/EmptyState.es';
 import FieldType from './FieldType.es';
 
 const FieldTypeWrapper = ({expanded, fieldType, showArrows, ...otherProps}) => {
@@ -30,29 +32,37 @@ const FieldTypeWrapper = ({expanded, fieldType, showArrows, ...otherProps}) => {
 	return <FieldType {...otherProps} {...fieldType} icon={getIcon()} />;
 };
 
-export default ({
+const FieldTypeList = ({
+	dataDefinition,
 	deleteLabel,
+	emptyState,
 	fieldTypes,
 	keywords,
 	onClick,
 	onDelete,
 	onDoubleClick,
+	showEmptyState = true,
 }) => {
-	const regex = new RegExp(
-		keywords.replace(new RegExp(/[^\w+ ]/g), ''),
-		'ig'
-	);
-	const fieldTypeList = fieldTypes
-		.filter(({system}) => !system)
-		.filter(({description, label}) => {
+	const regex = getSearchRegex(keywords);
+
+	const filteredFieldTypes = fieldTypes.filter(
+		({description, label, system}) => {
+			if (system) {
+				return false;
+			}
 			if (!keywords) {
 				return true;
 			}
 
 			return regex.test(description) || regex.test(label);
-		});
+		}
+	);
 
-	return fieldTypeList.map((fieldType, index) => {
+	if (showEmptyState && !filteredFieldTypes.length) {
+		return <EmptyState emptyState={emptyState} keywords={keywords} small />;
+	}
+
+	return filteredFieldTypes.map((fieldType, index) => {
 		const {isFieldSet, nestedDataDefinitionFields = []} = fieldType;
 
 		const handleOnClick = (props) => {
@@ -66,6 +76,7 @@ export default ({
 		if (nestedDataDefinitionFields.length) {
 			const Header = ({expanded, setExpanded}) => (
 				<FieldTypeWrapper
+					dataDefinition={dataDefinition}
 					deleteLabel={deleteLabel}
 					expanded={expanded}
 					fieldType={{
@@ -85,19 +96,19 @@ export default ({
 			);
 
 			return (
-				<div className="field-type-list">
+				<div className="field-type-list" key={index}>
 					<CollapsablePanel
+						Header={Header}
 						className={classNames({
 							'field-type-fieldgroup': !isFieldSet,
 							'field-type-fieldset': isFieldSet,
 						})}
-						Header={Header}
-						key={index}
 					>
 						<div className="field-type-item position-relative">
 							{nestedDataDefinitionFields.map(
 								(nestedFieldType) => (
 									<FieldTypeWrapper
+										dataDefinition={dataDefinition}
 										draggable={false}
 										fieldType={{
 											...nestedFieldType,
@@ -115,6 +126,7 @@ export default ({
 
 		return (
 			<FieldTypeWrapper
+				dataDefinition={dataDefinition}
 				deleteLabel={deleteLabel}
 				fieldType={fieldType}
 				key={index}
@@ -125,3 +137,6 @@ export default ({
 		);
 	});
 };
+
+FieldTypeList.displayName = 'FieldTypeList';
+export default FieldTypeList;

@@ -84,16 +84,12 @@ public class WorkflowTaskPermissionChecker {
 					).build());
 
 		if (hasAssetViewPermission(workflowTask, permissionChecker) &&
-			((userNotificationEventsCount > 0) || workflowTask.isCompleted())) {
+			((userNotificationEventsCount > 0) ||
+			 (workflowTask.isCompleted() &&
+			  (workflowTask.getAssigneeUserId() ==
+				  permissionChecker.getUserId())))) {
 
 			return true;
-		}
-
-		if (!hasAssetViewPermission(workflowTask, permissionChecker) &&
-			!permissionChecker.isContentReviewer(
-				permissionChecker.getCompanyId(), groupId)) {
-
-			return false;
 		}
 
 		long[] roleIds = getRoleIds(groupId, permissionChecker);
@@ -108,6 +104,13 @@ public class WorkflowTaskPermissionChecker {
 
 				return true;
 			}
+		}
+
+		if (!hasAssetViewPermission(workflowTask, permissionChecker) &&
+			!permissionChecker.isContentReviewer(
+				permissionChecker.getCompanyId(), groupId)) {
+
+			return false;
 		}
 
 		return false;
@@ -198,6 +201,10 @@ public class WorkflowTaskPermissionChecker {
 		try {
 			AssetRenderer<?> assetRenderer = workflowHandler.getAssetRenderer(
 				classPK);
+
+			if (assetRenderer == null) {
+				return false;
+			}
 
 			return assetRenderer.hasViewPermission(permissionChecker);
 		}

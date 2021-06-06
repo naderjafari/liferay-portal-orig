@@ -10,7 +10,7 @@
 <tbody>
 <tr>
 	<td>TITLE_HEADER</td>
-	<td>//h3</td>
+	<td>//div[contains(@class,'message_boards')]//h3</td>
 	<td></td>
 </tr>
 <tr>
@@ -31,7 +31,7 @@
 </tr>
 <tr>
 	<td>THREAD_PUBLISH_BUTTON</td>
-	<td>//div[@class='card list-group-card panel']//button[span[contains(.,'Publish')]]</td>
+	<td>//div[@class='card panel']//button[span[contains(.,'Publish')]]</td>
 	<td></td>
 </tr>
 <tr>

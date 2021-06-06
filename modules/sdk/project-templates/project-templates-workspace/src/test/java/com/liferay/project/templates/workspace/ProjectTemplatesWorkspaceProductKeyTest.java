@@ -24,7 +24,6 @@ import java.io.File;
 import java.net.URI;
 
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.Properties;
 
 import org.junit.Assert;
@@ -49,7 +48,7 @@ public class ProjectTemplatesWorkspaceProductKeyTest
 	@Parameterized.Parameters(name = "Testcase-{index}: testing {0}")
 	public static Iterable<Object[]> data() {
 		return Arrays.asList(
-			new Object[][] {{"7.0.6"}, {"7.1.3"}, {"7.2.1"}, {"7.3.2"}});
+			new Object[][] {{"7.0.6"}, {"7.1.3"}, {"7.2.1"}, {"7.3.6"}});
 	}
 
 	@BeforeClass
@@ -74,41 +73,45 @@ public class ProjectTemplatesWorkspaceProductKeyTest
 
 	@Test
 	public void testBuildTemplateWorkspaceProductKey() throws Exception {
-		String name = "foo-portlet";
-
 		File workspaceProjectDir = buildWorkspace(
 			temporaryFolder, "gradle", "foows", _liferayVersion, mavenExecutor);
 
 		if (_liferayVersion.startsWith("7.0")) {
-			testContains(
-				workspaceProjectDir, "gradle.properties",
-				"liferay.workspace.product=portal-7.0");
+			writeGradlePropertiesInWorkspace(
+				workspaceProjectDir,
+				"liferay.workspace.product=portal-7.0-ga7");
 		}
 		else if (_liferayVersion.startsWith("7.1")) {
-			testContains(
-				workspaceProjectDir, "gradle.properties",
-				"liferay.workspace.product=portal-7.1");
+			writeGradlePropertiesInWorkspace(
+				workspaceProjectDir,
+				"liferay.workspace.product=portal-7.1-ga4");
 		}
 		else if (_liferayVersion.startsWith("7.2")) {
-			testContains(
-				workspaceProjectDir, "gradle.properties",
-				"liferay.workspace.product=portal-7.2");
+			writeGradlePropertiesInWorkspace(
+				workspaceProjectDir,
+				"liferay.workspace.product=portal-7.2-ga2");
+		}
+		else if (_liferayVersion.startsWith("7.3")) {
+			writeGradlePropertiesInWorkspace(
+				workspaceProjectDir,
+				"liferay.workspace.product=portal-7.3-ga6");
 		}
 		else {
-			testContains(
-				workspaceProjectDir, "gradle.properties",
-				"liferay.workspace.product=portal-7.3");
+			writeGradlePropertiesInWorkspace(
+				workspaceProjectDir, "liferay.workspace.product=portal-7.4");
 		}
 
 		if (isBuildProjects()) {
+			String name = "foo-portlet";
+
 			buildTemplateWithGradle(
-				new File(workspaceProjectDir, "modules"), "mvc-portlet", name);
+				new File(workspaceProjectDir, "modules"), "mvc-portlet", name,
+				"--liferay-version", _liferayVersion);
 
-			Optional<String> gradleResult = executeGradle(
-				workspaceProjectDir, true, _gradleDistribution,
-				":modules:" + name + GRADLE_TASK_PATH_BUILD);
-
-			String gradleOutput = gradleResult.toString();
+			String gradleOutput = String.valueOf(
+				executeGradle(
+					workspaceProjectDir, true, _gradleDistribution,
+					":modules:" + name + GRADLE_TASK_PATH_BUILD));
 
 			if (_liferayVersion.startsWith("7.0")) {
 				Assert.assertTrue(
@@ -121,6 +124,11 @@ public class ProjectTemplatesWorkspaceProductKeyTest
 						"release.portal.bom:" + _liferayVersion));
 			}
 			else if (_liferayVersion.startsWith("7.2")) {
+				Assert.assertTrue(
+					gradleOutput.contains(
+						"release.portal.bom:" + _liferayVersion));
+			}
+			else if (_liferayVersion.startsWith("7.3")) {
 				Assert.assertTrue(
 					gradleOutput.contains(
 						"release.portal.bom:" + _liferayVersion));

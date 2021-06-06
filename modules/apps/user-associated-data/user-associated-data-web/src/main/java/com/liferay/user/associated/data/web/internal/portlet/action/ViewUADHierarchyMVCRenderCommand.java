@@ -48,7 +48,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + UserAssociatedDataPortletKeys.USER_ASSOCIATED_DATA,
-		"mvc.command.name=/view_uad_hierarchy"
+		"mvc.command.name=/user_associated_data/view_uad_hierarchy"
 	},
 	service = MVCRenderCommand.class
 )
@@ -132,7 +132,7 @@ public class ViewUADHierarchyMVCRenderCommand implements MVCRenderCommand {
 				uadHierarchyDisplay.getUADDisplays()));
 		viewUADEntitiesDisplay.setScope(scope);
 		viewUADEntitiesDisplay.setSearchContainer(
-			_uadSearchContainerBuilder.getSearchContainer(
+			_uadSearchContainerBuilder.getHierarchyUADEntitySearchContainer(
 				_portal.getLiferayPortletResponse(renderResponse),
 				renderRequest, applicationKey,
 				PortletURLUtil.getCurrent(renderRequest, renderResponse),

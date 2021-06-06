@@ -21,8 +21,7 @@ import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.change.tracking.service.CTEntryLocalService;
 import com.liferay.change.tracking.spi.display.CTDisplayRenderer;
 import com.liferay.change.tracking.web.internal.display.CTDisplayRendererRegistry;
-import com.liferay.change.tracking.web.internal.display.CTEntryDiffDisplay;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -110,7 +109,7 @@ public class CTDocumentServlet extends HttpServlet {
 		long ctCollectionId = ctCollection.getCtCollectionId();
 
 		if (ctCollection.getStatus() == WorkflowConstants.STATUS_APPROVED) {
-			if (CTEntryDiffDisplay.TYPE_BEFORE.equals(type)) {
+			if (CTConstants.TYPE_BEFORE.equals(type)) {
 				ctCollectionId = CTConstants.CT_COLLECTION_ID_PRODUCTION;
 			}
 			else {
@@ -131,10 +130,11 @@ public class CTDocumentServlet extends HttpServlet {
 				"ctEntryId = " + ctEntry.getCtEntryId());
 		}
 
-		try (SafeClosable safeClosable1 = CTSQLModeThreadLocal.setCTSQLMode(
-				ctSQLMode);
-			SafeClosable safeClosable2 =
-				CTCollectionThreadLocal.setCTCollectionId(ctCollectionId)) {
+		try (SafeCloseable safeCloseable1 =
+				CTSQLModeThreadLocal.setCTSQLModeWithSafeCloseable(ctSQLMode);
+			SafeCloseable safeCloseable2 =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollectionId)) {
 
 			return ctDisplayRenderer.getDownloadInputStream(ctModel, key);
 		}

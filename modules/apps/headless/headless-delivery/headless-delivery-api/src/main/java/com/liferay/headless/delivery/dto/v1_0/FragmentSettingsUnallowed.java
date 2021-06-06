@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentSettingsUnallowed")
+@GraphQLName(
+	description = "Represents the settings of unallowed fragments in a page dropzone.",
+	value = "FragmentSettingsUnallowed"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentSettingsUnallowed")
-public class FragmentSettingsUnallowed {
+public class FragmentSettingsUnallowed implements Serializable {
 
 	public static FragmentSettingsUnallowed toDTO(String json) {
 		return ObjectMapperUtil.readValue(
@@ -136,6 +141,7 @@ public class FragmentSettingsUnallowed {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentSettingsUnallowed",
 		name = "x-class-name"
 	)
@@ -171,7 +177,7 @@ public class FragmentSettingsUnallowed {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -210,7 +216,7 @@ public class FragmentSettingsUnallowed {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

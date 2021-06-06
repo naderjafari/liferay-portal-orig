@@ -37,7 +37,6 @@ import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
-import com.liferay.portal.kernel.util.ServiceLoader;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.module.framework.ModuleFramework;
@@ -57,11 +56,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import java.net.URI;
 import java.net.URL;
-import java.net.URLClassLoader;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
@@ -90,6 +89,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Queue;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -256,11 +256,12 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 
 		Thread currentThread = Thread.currentThread();
 
-		List<FrameworkFactory> frameworkFactories = ServiceLoader.load(
-			new URLClassLoader(_getClassPathURLs(), null),
-			currentThread.getContextClassLoader(), FrameworkFactory.class);
+		ServiceLoader<FrameworkFactory> serviceLoader = ServiceLoader.load(
+			FrameworkFactory.class, currentThread.getContextClassLoader());
 
-		FrameworkFactory frameworkFactory = frameworkFactories.get(0);
+		Iterator<FrameworkFactory> iterator = serviceLoader.iterator();
+
+		FrameworkFactory frameworkFactory = iterator.next();
 
 		if (_log.isDebugEnabled()) {
 			Class<?> clazz = frameworkFactory.getClass();
@@ -405,8 +406,8 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
-				"Navigate to Control Panel > Configuration > Gogo Shell and " +
-					"enter \"lb\" to see all bundles");
+				"Navigate to Control Panel > System > Gogo Shell and enter " +
+					"\"lb\" to see all bundles");
 		}
 
 		if (_log.isDebugEnabled()) {
@@ -596,36 +597,6 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 
 			throw new PortalException(bundleException);
 		}
-	}
-
-	private static URL[] _getClassPathURLs() throws Exception {
-		File coreDir = new File(PropsValues.MODULE_FRAMEWORK_BASE_DIR, "core");
-
-		File[] files = coreDir.listFiles();
-
-		if (files == null) {
-			throw new IllegalStateException(
-				"Missing " + coreDir.getCanonicalPath());
-		}
-
-		URL[] urls = new URL[files.length];
-
-		for (int i = 0; i < urls.length; i++) {
-			URI uri = files[i].toURI();
-
-			urls[i] = uri.toURL();
-		}
-
-		return urls;
-	}
-
-	private static String _getLPKGLocation(File lpkgFile) {
-		URI uri = lpkgFile.toURI();
-
-		String uriString = uri.toString();
-
-		return StringUtil.replace(
-			uriString, CharPool.BACK_SLASH, CharPool.FORWARD_SLASH);
 	}
 
 	private Bundle _addBundle(
@@ -1061,6 +1032,13 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 		return fragmentHost;
 	}
 
+	private String _getLPKGLocation(File lpkgFile) {
+		String uriString = String.valueOf(lpkgFile.toURI());
+
+		return StringUtil.replace(
+			uriString, CharPool.BACK_SLASH, CharPool.FORWARD_SLASH);
+	}
+
 	private Dictionary<String, Object> _getProperties(
 		Object bean, String beanName) {
 
@@ -1253,35 +1231,53 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 	private void _installConfigs(ClassLoader classLoader) throws Exception {
 		BundleContext bundleContext = _framework.getBundleContext();
 
-		Class<?> configInstallerClass = classLoader.loadClass(
-			"com.liferay.portal.file.install.internal.ConfigInstaller");
-
-		Method method = configInstallerClass.getDeclaredMethod(
-			"transformURL", File.class);
+		Class<?> configurationFileInstallerClass = classLoader.loadClass(
+			"com.liferay.portal.file.install.internal.configuration." +
+				"ConfigurationFileInstaller");
 
 		Constructor<?> constructor =
-			configInstallerClass.getDeclaredConstructor(
-				BundleContext.class,
+			configurationFileInstallerClass.getDeclaredConstructor(
 				classLoader.loadClass("org.osgi.service.cm.ConfigurationAdmin"),
-				classLoader.loadClass(
-					"com.liferay.portal.file.install.internal." +
-						"FileInstallImplBundleActivator"));
+				String.class);
 
 		constructor.setAccessible(true);
 
-		Object configInstaller = constructor.newInstance(
-			bundleContext,
+		Method canTransformURLMethod =
+			configurationFileInstallerClass.getDeclaredMethod(
+				"canTransformURL", File.class);
+		Method transformURLMethod =
+			configurationFileInstallerClass.getDeclaredMethod(
+				"transformURL", File.class);
+
+		String encoding = bundleContext.getProperty(
+			"file.install.configEncoding");
+
+		if (encoding == null) {
+			encoding = StringPool.UTF8;
+		}
+
+		Object configurationFileInstaller = constructor.newInstance(
 			bundleContext.getService(
 				bundleContext.getServiceReference(
 					"org.osgi.service.cm.ConfigurationAdmin")),
-			null);
+			encoding);
 
 		File dir = new File(PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR);
 
 		dir = dir.getCanonicalFile();
 
 		for (File file : _listConfigs(dir)) {
-			method.invoke(configInstaller, file);
+			if ((boolean)canTransformURLMethod.invoke(
+					configurationFileInstaller, file)) {
+
+				try {
+					transformURLMethod.invoke(configurationFileInstaller, file);
+				}
+				catch (InvocationTargetException invocationTargetException) {
+					_log.error(
+						"Unable to install " + file, invocationTargetException);
+				}
+			}
 		}
 	}
 
@@ -1467,8 +1463,8 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 				throw frameworkEvent.getThrowable();
 			}
 		}
-		catch (Throwable t) {
-			ReflectionUtil.throwException(t);
+		catch (Throwable throwable) {
+			ReflectionUtil.throwException(throwable);
 		}
 	}
 
@@ -1495,6 +1491,10 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 					bean = configurableApplicationContext.getBean(beanName);
 				}
 				catch (BeanIsAbstractException beanIsAbstractException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(
+							beanIsAbstractException, beanIsAbstractException);
+					}
 				}
 				catch (Exception exception) {
 					_log.error(exception, exception);
@@ -1696,9 +1696,7 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 
 				file = file.getCanonicalFile();
 
-				URI uri = file.toURI();
-
-				String uriString = uri.toString();
+				String uriString = String.valueOf(file.toURI());
 
 				String location = uriString.concat("?protocol=jar&static=true");
 
@@ -1764,7 +1762,17 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 
 		Bundle fileInstallBundle = null;
 
-		for (Bundle bundle : bundles) {
+		Iterator<Bundle> bundleIterator = bundles.iterator();
+
+		while (bundleIterator.hasNext()) {
+			Bundle bundle = bundleIterator.next();
+
+			if (bundle.getState() == Bundle.UNINSTALLED) {
+				bundleIterator.remove();
+
+				continue;
+			}
+
 			if (!_isFragmentBundle(bundle)) {
 				if (Objects.equals(
 						bundle.getSymbolicName(),
@@ -2028,7 +2036,8 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 				if (_log.isDebugEnabled()) {
 					_log.debug(
 						"Service registration " + serviceRegistration +
-							" is already unregistered");
+							" is already unregistered",
+						illegalStateException);
 				}
 			}
 		}

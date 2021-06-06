@@ -28,8 +28,8 @@ SegmentsExperimentDisplayContext segmentsExperimentDisplayContext = (SegmentsExp
 			</div>
 
 			<react:component
-				data="<%= segmentsExperimentDisplayContext.getData() %>"
 				module="js/SegmentsExperimentApp.es"
+				props="<%= segmentsExperimentDisplayContext.getData() %>"
 			/>
 		</div>
 	</c:when>
@@ -37,7 +37,7 @@ SegmentsExperimentDisplayContext segmentsExperimentDisplayContext = (SegmentsExp
 		<div class="p-3 pt-5 text-center">
 			<liferay-ui:icon
 				alt="connect-to-liferay-analytics-cloud"
-				src='<%= PortalUtil.getPathContext(request) + "/assets/ac-icon.svg" %>'
+				src='<%= PortalUtil.getPathContext(request) + "/images/ac_icon.svg" %>'
 			/>
 
 			<c:choose>
@@ -69,7 +69,7 @@ SegmentsExperimentDisplayContext segmentsExperimentDisplayContext = (SegmentsExp
 						url="<%= SegmentsExperimentUtil.ANALYTICS_CLOUD_TRIAL_URL %>"
 					/>
 
-					<portlet:actionURL name="/segments_experiment/hide_panel" var="hideSegmentsExperimentPanelURL">
+					<portlet:actionURL name="/segments_experiment/hide_segments_experiment_panel" var="hideSegmentsExperimentPanelURL">
 						<portlet:param name="redirect" value="<%= themeDisplay.getLayoutFriendlyURL(layout) %>" />
 					</portlet:actionURL>
 

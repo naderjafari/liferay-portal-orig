@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.workflow.WorkflowDefinition;
 import com.liferay.portal.workflow.configuration.WorkflowDefinitionConfiguration;
 import com.liferay.portal.workflow.kaleo.KaleoWorkflowModelConverter;
@@ -68,7 +69,7 @@ public class DefaultWorkflowDeployer implements WorkflowDeployer {
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		checkPermissions();
+		checkPermissions(serviceContext);
 
 		KaleoDefinition kaleoDefinition = _addOrUpdateKaleoDefinition(
 			title, name, scope, definition, serviceContext);
@@ -160,7 +161,8 @@ public class DefaultWorkflowDeployer implements WorkflowDeployer {
 			kaleoNode.getKaleoNodeId(), serviceContext);
 
 		return _kaleoWorkflowModelConverter.toWorkflowDefinition(
-			kaleoDefinition);
+			_kaleoDefinitionLocalService.getKaleoDefinition(
+				kaleoDefinition.getKaleoDefinitionId()));
 	}
 
 	@Override
@@ -187,11 +189,16 @@ public class DefaultWorkflowDeployer implements WorkflowDeployer {
 			workflowDefinitionConfiguration.companyAdministratorCanPublish();
 	}
 
-	protected void checkPermissions() throws PrincipalException {
+	protected void checkPermissions(ServiceContext serviceContext)
+		throws PrincipalException {
+
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
 
-		if (permissionChecker == null) {
+		if ((permissionChecker == null) ||
+			!GetterUtil.getBoolean(
+				serviceContext.getAttribute("checkPermission"), true)) {
+
 			return;
 		}
 

@@ -23,20 +23,28 @@ import com.liferay.frontend.taglib.clay.data.set.constants.ClayDataSetConstants;
 public abstract class BaseTimelineClayDataSetDisplayView
 	implements ClayDataSetDisplayView {
 
+	@Override
 	public String getContentRenderer() {
-		return ClayDataSetConstants.CONTENT_RENDERER_TIMELINE;
+		return ClayDataSetConstants.TIMELINE;
 	}
 
 	public abstract String getDate();
 
 	public abstract String getDescription();
 
+	@Override
 	public String getLabel() {
-		return ClayDataSetConstants.CONTENT_RENDERER_TIMELINE;
+		return ClayDataSetConstants.TIMELINE;
 	}
 
+	@Override
+	public String getName() {
+		return ClayDataSetConstants.TIMELINE;
+	}
+
+	@Override
 	public String getThumbnail() {
-		return ClayDataSetConstants.CONTENT_RENDERER_TIMELINE;
+		return ClayDataSetConstants.TIMELINE;
 	}
 
 	public abstract String getTitle();

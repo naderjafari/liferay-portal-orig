@@ -1,13 +1,412 @@
 definition {
 
-	macro filterByTitle {
+	macro clearFilters {
+		Click(locator1 = "ContentDashboard#CLEAR_FILTERS_BUTTON");
+	}
+
+	macro clickOnFirstBar {
+		Click(locator1 = "ContentDashboard#AUDIT_GRAPH_FIRST_BAR");
+	}
+
+	macro deleteSecondCategoryFilter {
+		Click(locator1 = "ContentDashboard#DELETE_SECOND_FILTER_SELECTED");
+	}
+
+	macro editWebContent {
+		Click(locator1 = "ContentDashboard#WEB_CONTENT_MENU_DROPDOWN_BUTTON");
+
+		Click(locator1 = "ContentDashboard#EDIT_OPTION");
+
+		Pause(locator1 = "3000");
+
+		if (isSet(webContentTitle)) {
+			Click(locator1 = "TextInput#TITLE");
+
+			PortletEntry.inputTitle(title = "${webContentTitle}");
+		}
+
+		Button.clickPublish();
+	}
+
+	macro filterByAuthorCard {
 		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
 			AssertClickNoError(
 				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
 				value1 = "Filter and Order");
 		}
 
-		Click(locator1 = "ContentDashboard#FILTER_BY_TITLE_OPTION");
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_SELECT_DISPLAY_MODE_BUTTON");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_CARDS_DISPLAY_OPTION");
+
+		Click(locator1 = "ContentDashboard#SEARCH_FIELD");
+
+		Type(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "Test");
+
+		KeyPress(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "\ENTER");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_CARDS_ELEMENT");
+
+		SelectFrame(value1 = "relative=top");
+
+		AssertClickNoError(
+			locator1 = "Button#SELECT",
+			value1 = "Select");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro filterByAuthorList {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_SELECT_DISPLAY_MODE_BUTTON");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_LIST_DISPLAY_OPTION");
+
+		Click(locator1 = "ContentDashboard#SEARCH_FIELD");
+
+		Type(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "Test");
+
+		KeyPress(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "\ENTER");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_ELEMENT_CHECKBOX");
+
+		SelectFrame(value1 = "relative=top");
+
+		AssertClickNoError(
+			locator1 = "Button#SELECT",
+			value1 = "Select");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro filterByAuthorTable {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_SELECT_DISPLAY_MODE_BUTTON");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_TABLE_DISPLAY_OPTION");
+
+		Click(locator1 = "ContentDashboard#SEARCH_FIELD");
+
+		Type(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "Test");
+
+		KeyPress(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "\ENTER");
+
+		Click(locator1 = "ContentDashboard#AUTHOR_ELEMENT_CHECKBOX");
+
+		SelectFrame(value1 = "relative=top");
+
+		AssertClickNoError(
+			locator1 = "Button#SELECT",
+			value1 = "Select");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro filterByCategory {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#IFRAME");
+
+		Click(locator1 = "ContentDashboard#SEARCH_CATEGORY_FIELD");
+
+		Type(
+			locator1 = "ContentDashboard#SEARCH_CATEGORY_FIELD",
+			value1 = "${categoryName}");
+
+		Click(locator1 = "ContentDashboard#CATEGORY_NAME_ELEMENT");
+
+		SelectFrame(value1 = "relative=top");
+
+		AssertClickNoError(
+			locator1 = "Button#SELECT",
+			value1 = "Select");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro filterBySiteGlobal {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+		Click(locator1 = "ContentDashboard#MY_SITES_TAB");
+
+		Click(locator1 = "ContentDashboard#GLOBAL_SITE_CARD");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro filterByStatusAny {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
+	macro filterByStatusApproved {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
+	macro filterByStatusDraft {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
+	macro filterByStatusScheduled {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
+	macro filterBySubtype {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+		Click(locator1 = "ContentDashboard#SEARCH_SUBTYPE_FIELD");
+
+		Type(
+			locator1 = "ContentDashboard#SEARCH_SUBTYPE_FIELD",
+			value1 = "${subtypeName}");
+
+		KeyPress(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "\ENTER");
+
+		Click(locator1 = "ContentDashboard#SUBTYPE_ELEMENT_CHECKBOX");
+
+		SelectFrame(value1 = "relative=top");
+
+		AssertClickNoError(
+			locator1 = "Button#SELECT",
+			value1 = "Select");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro filterByTag {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		if (IsElementPresent(locator1 = "ContentDashboard#SEARCH_TAG_FIELD")) {
+			Click(locator1 = "ContentDashboard#SEARCH_TAG_FIELD");
+
+			Type(
+				locator1 = "ContentDashboard#SEARCH_TAG_FIELD",
+				value1 = "${tagName}");
+
+			KeyPress(
+				locator1 = "ContentDashboard#SEARCH_TAG_FIELD",
+				value1 = "\ENTER");
+
+			Click(locator1 = "ContentDashboard#CHECKBOX_TAGS");
+		}
+		else {
+			Click(locator1 = "ContentDashboard#CHECKBOX_TAGS");
+		}
+
+		SelectFrame(value1 = "relative=top");
+
+		AssertClickNoError(
+			locator1 = "Button#SELECT",
+			value1 = "Select");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro flipAxesButtonClick {
+		Click(locator1 = "ContentDashboard#FLIP_AXES_BUTTON");
+	}
+
+	macro moveToPage {
+		Click(locator1 = "ContentDashboard#PAGINATION_MOVE_TO_PAGE");
+	}
+
+	macro openInfoPanelByDropdownMenu {
+		Click(locator1 = "ContentDashboard#WEB_CONTENT_MENU_DROPDOWN_BUTTON");
+
+		Click(locator1 = "ContentDashboard#INFO_OPTION");
+	}
+
+	macro orderByModificationDate {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
+	macro orderByTitle {
+		if (IsElementPresent(locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN")) {
+			AssertClickNoError(
+				locator1 = "ContentDashboard#FILTER_AND_ORDER_DROPDOWN",
+				value1 = "Filter and Order");
+		}
+
+		var key_filterOption = "${filterOption}";
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
+	macro searchValue {
+		Click(locator1 = "ContentDashboard#SEARCH_FIELD");
+
+		Type(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "${webContentTitle}");
+
+		KeyPress(
+			locator1 = "ContentDashboard#SEARCH_FIELD",
+			value1 = "\ENTER");
+	}
+
+	macro stageFirstVocabularyConfiguration {
+		Click(locator1 = "ContentDashboard#AUDIT_GRAPH_CONFIGURATION_BUTTON");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		Click(locator1 = "ContentDashboard#AUDIT_GRAPH_CONFIGURATION_STAGE_VOCABULARY");
+
+		Click(locator1 = "ContentDashboard#AUDIT_GRAPH_CONFIGURATION_UP_ARROW_BUTTON");
+
+		AssertClick(
+			locator1 = "Button#SAVE",
+			value1 = "Save");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro swapVocabularies {
+		Click(locator1 = "ContentDashboard#SWAP_VOCABULARIES_BUTTON");
+	}
+
+	macro tearDown {
+		Category.openCategoriesAdmin(siteURLKey = "global");
+
+		Navigator.gotoNavNested(navNested = "Audience");
+
+		var key_categoryName = "Audience 1";
+
+		if (IsElementPresent(locator1 = "Categories#VOCABULARY_CATEGORY")) {
+			Category.deleteCategoriesCP(vocabularyName = "Audience");
+		}
+
+		Navigator.gotoNavNested(navNested = "Stage");
+
+		var key_categoryName = "Stage 1";
+
+		if (IsElementPresent(locator1 = "Categories#VOCABULARY_CATEGORY")) {
+			Category.deleteCategoriesCP(vocabularyName = "Stage");
+		}
+	}
+
+	macro uncheckCheckbox {
+		ClickNoError(locator1 = "ContentDashboard#AUDIT_GRAPH_CATEGORY_CHECKBOX");
 	}
 
 }

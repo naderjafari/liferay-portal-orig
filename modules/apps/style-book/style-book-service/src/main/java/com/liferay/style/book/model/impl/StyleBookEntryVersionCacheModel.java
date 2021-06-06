@@ -17,6 +17,7 @@ package com.liferay.style.book.model.impl;
 import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.style.book.model.StyleBookEntryVersion;
 
 import java.io.Externalizable;
@@ -33,7 +34,7 @@ import java.util.Date;
  * @generated
  */
 public class StyleBookEntryVersionCacheModel
-	implements CacheModel<StyleBookEntryVersion>, Externalizable {
+	implements CacheModel<StyleBookEntryVersion>, Externalizable, MVCCModel {
 
 	@Override
 	public boolean equals(Object object) {
@@ -48,8 +49,9 @@ public class StyleBookEntryVersionCacheModel
 		StyleBookEntryVersionCacheModel styleBookEntryVersionCacheModel =
 			(StyleBookEntryVersionCacheModel)object;
 
-		if (styleBookEntryVersionId ==
-				styleBookEntryVersionCacheModel.styleBookEntryVersionId) {
+		if ((styleBookEntryVersionId ==
+				styleBookEntryVersionCacheModel.styleBookEntryVersionId) &&
+			(mvccVersion == styleBookEntryVersionCacheModel.mvccVersion)) {
 
 			return true;
 		}
@@ -59,17 +61,35 @@ public class StyleBookEntryVersionCacheModel
 
 	@Override
 	public int hashCode() {
-		return HashUtil.hash(0, styleBookEntryVersionId);
+		int hashCode = HashUtil.hash(0, styleBookEntryVersionId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(27);
+		StringBundler sb = new StringBundler(35);
 
-		sb.append("{styleBookEntryVersionId=");
+		sb.append("{mvccVersion=");
+		sb.append(mvccVersion);
+		sb.append(", ctCollectionId=");
+		sb.append(ctCollectionId);
+		sb.append(", styleBookEntryVersionId=");
 		sb.append(styleBookEntryVersionId);
 		sb.append(", version=");
 		sb.append(version);
+		sb.append(", uuid=");
+		sb.append(uuid);
 		sb.append(", styleBookEntryId=");
 		sb.append(styleBookEntryId);
 		sb.append(", groupId=");
@@ -82,16 +102,18 @@ public class StyleBookEntryVersionCacheModel
 		sb.append(userName);
 		sb.append(", createDate=");
 		sb.append(createDate);
+		sb.append(", modifiedDate=");
+		sb.append(modifiedDate);
 		sb.append(", defaultStyleBookEntry=");
 		sb.append(defaultStyleBookEntry);
+		sb.append(", frontendTokensValues=");
+		sb.append(frontendTokensValues);
 		sb.append(", name=");
 		sb.append(name);
 		sb.append(", previewFileEntryId=");
 		sb.append(previewFileEntryId);
 		sb.append(", styleBookEntryKey=");
 		sb.append(styleBookEntryKey);
-		sb.append(", tokensValues=");
-		sb.append(tokensValues);
 		sb.append("}");
 
 		return sb.toString();
@@ -102,9 +124,19 @@ public class StyleBookEntryVersionCacheModel
 		StyleBookEntryVersionImpl styleBookEntryVersionImpl =
 			new StyleBookEntryVersionImpl();
 
+		styleBookEntryVersionImpl.setMvccVersion(mvccVersion);
+		styleBookEntryVersionImpl.setCtCollectionId(ctCollectionId);
 		styleBookEntryVersionImpl.setStyleBookEntryVersionId(
 			styleBookEntryVersionId);
 		styleBookEntryVersionImpl.setVersion(version);
+
+		if (uuid == null) {
+			styleBookEntryVersionImpl.setUuid("");
+		}
+		else {
+			styleBookEntryVersionImpl.setUuid(uuid);
+		}
+
 		styleBookEntryVersionImpl.setStyleBookEntryId(styleBookEntryId);
 		styleBookEntryVersionImpl.setGroupId(groupId);
 		styleBookEntryVersionImpl.setCompanyId(companyId);
@@ -124,8 +156,23 @@ public class StyleBookEntryVersionCacheModel
 			styleBookEntryVersionImpl.setCreateDate(new Date(createDate));
 		}
 
+		if (modifiedDate == Long.MIN_VALUE) {
+			styleBookEntryVersionImpl.setModifiedDate(null);
+		}
+		else {
+			styleBookEntryVersionImpl.setModifiedDate(new Date(modifiedDate));
+		}
+
 		styleBookEntryVersionImpl.setDefaultStyleBookEntry(
 			defaultStyleBookEntry);
+
+		if (frontendTokensValues == null) {
+			styleBookEntryVersionImpl.setFrontendTokensValues("");
+		}
+		else {
+			styleBookEntryVersionImpl.setFrontendTokensValues(
+				frontendTokensValues);
+		}
 
 		if (name == null) {
 			styleBookEntryVersionImpl.setName("");
@@ -143,13 +190,6 @@ public class StyleBookEntryVersionCacheModel
 			styleBookEntryVersionImpl.setStyleBookEntryKey(styleBookEntryKey);
 		}
 
-		if (tokensValues == null) {
-			styleBookEntryVersionImpl.setTokensValues("");
-		}
-		else {
-			styleBookEntryVersionImpl.setTokensValues(tokensValues);
-		}
-
 		styleBookEntryVersionImpl.resetOriginalValues();
 
 		return styleBookEntryVersionImpl;
@@ -159,9 +199,14 @@ public class StyleBookEntryVersionCacheModel
 	public void readExternal(ObjectInput objectInput)
 		throws ClassNotFoundException, IOException {
 
+		mvccVersion = objectInput.readLong();
+
+		ctCollectionId = objectInput.readLong();
+
 		styleBookEntryVersionId = objectInput.readLong();
 
 		version = objectInput.readInt();
+		uuid = objectInput.readUTF();
 
 		styleBookEntryId = objectInput.readLong();
 
@@ -172,20 +217,32 @@ public class StyleBookEntryVersionCacheModel
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
+		modifiedDate = objectInput.readLong();
 
 		defaultStyleBookEntry = objectInput.readBoolean();
+		frontendTokensValues = (String)objectInput.readObject();
 		name = objectInput.readUTF();
 
 		previewFileEntryId = objectInput.readLong();
 		styleBookEntryKey = objectInput.readUTF();
-		tokensValues = (String)objectInput.readObject();
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput objectOutput) throws IOException {
+		objectOutput.writeLong(mvccVersion);
+
+		objectOutput.writeLong(ctCollectionId);
+
 		objectOutput.writeLong(styleBookEntryVersionId);
 
 		objectOutput.writeInt(version);
+
+		if (uuid == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(uuid);
+		}
 
 		objectOutput.writeLong(styleBookEntryId);
 
@@ -203,8 +260,16 @@ public class StyleBookEntryVersionCacheModel
 		}
 
 		objectOutput.writeLong(createDate);
+		objectOutput.writeLong(modifiedDate);
 
 		objectOutput.writeBoolean(defaultStyleBookEntry);
+
+		if (frontendTokensValues == null) {
+			objectOutput.writeObject("");
+		}
+		else {
+			objectOutput.writeObject(frontendTokensValues);
+		}
 
 		if (name == null) {
 			objectOutput.writeUTF("");
@@ -221,27 +286,24 @@ public class StyleBookEntryVersionCacheModel
 		else {
 			objectOutput.writeUTF(styleBookEntryKey);
 		}
-
-		if (tokensValues == null) {
-			objectOutput.writeObject("");
-		}
-		else {
-			objectOutput.writeObject(tokensValues);
-		}
 	}
 
+	public long mvccVersion;
+	public long ctCollectionId;
 	public long styleBookEntryVersionId;
 	public int version;
+	public String uuid;
 	public long styleBookEntryId;
 	public long groupId;
 	public long companyId;
 	public long userId;
 	public String userName;
 	public long createDate;
+	public long modifiedDate;
 	public boolean defaultStyleBookEntry;
+	public String frontendTokensValues;
 	public String name;
 	public long previewFileEntryId;
 	public String styleBookEntryKey;
-	public String tokensValues;
 
 }

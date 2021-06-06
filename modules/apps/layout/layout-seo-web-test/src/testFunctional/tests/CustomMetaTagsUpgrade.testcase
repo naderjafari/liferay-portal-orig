@@ -8,7 +8,9 @@ definition {
 	setUp {
 		SignIn.signIn();
 
-		Smoke.viewWelcomePage();
+		var portalURL = PropsUtil.get("portal.url");
+
+		AssertLocation(value1 = "${portalURL}/web/guest/home");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Configuration",
@@ -19,6 +21,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test ViewCustomMetaTags730 {
 		property data.archive.type = "data-archive-custom-meta-tag";
 		property portal.version = "7.3.0";

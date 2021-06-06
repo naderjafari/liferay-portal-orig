@@ -28,9 +28,11 @@ boolean blogsPortletFound = ParamUtil.getBoolean(request, "blogsPortletFound", t
 </c:if>
 
 <%
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcRenderCommandName", "/blogs_aggregator/view");
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/blogs_aggregator/view"
+).build();
 
 SearchContainer<BlogsEntry> searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, 5, portletURL, null, null);
 
@@ -48,9 +50,7 @@ else {
 	entries = BlogsEntryServiceUtil.getGroupEntries(scopeGroupId, new Date(), WorkflowConstants.STATUS_APPROVED, max);
 }
 
-int total = entries.size();
-
-searchContainer.setTotal(total);
+searchContainer.setTotal(entries.size());
 
 List<BlogsEntry> results = ListUtil.subList(entries, searchContainer.getStart(), searchContainer.getEnd());
 

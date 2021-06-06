@@ -51,7 +51,9 @@ public class JSPWhitespaceCheck extends WhitespaceCheck {
 				") {\n", "\n\n"
 			});
 
-		return content;
+		Matcher matcher = _closingTagPattern.matcher(content);
+
+		return matcher.replaceAll("$1 $2");
 	}
 
 	@Override
@@ -206,7 +208,9 @@ public class JSPWhitespaceCheck extends WhitespaceCheck {
 					continue;
 				}
 
-				line = formatIncorrectSyntax(line, "\t ", "\t", false);
+				if (!javaSource) {
+					line = formatIncorrectSyntax(line, "\t ", "\t", false);
+				}
 
 				line = _formatWhitespace(line, javaSource);
 
@@ -248,6 +252,8 @@ public class JSPWhitespaceCheck extends WhitespaceCheck {
 		return content;
 	}
 
+	private static final Pattern _closingTagPattern = Pattern.compile(
+		"(<[\\w:]+)(/>)");
 	private static final Pattern _directiveLinePattern = Pattern.compile(
 		"<%@\n?.*%>");
 	private static final Pattern _javaSourceInsideJSPLinePattern =

@@ -13,7 +13,7 @@
  */
 
 import {act, cleanup, fireEvent, render} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import * as toast from 'data-engine-js-components-web/js/utils/toast.es';
 import {createMemoryHistory} from 'history';
 import React from 'react';
 import {DndProvider} from 'react-dnd';
@@ -21,8 +21,8 @@ import {HTML5Backend} from 'react-dnd-html5-backend';
 import {Route, Router} from 'react-router-dom';
 
 import EditTableView from '../../../../src/main/resources/META-INF/resources/js/pages/table-view/EditTableView.es';
-import * as toast from '../../../../src/main/resources/META-INF/resources/js/utils/toast.es';
-import AppContextProviderWrapper from '../../AppContextProviderWrapper.es';
+import AppContextProvider from '../../AppContextProviderWrapper.es';
+import {DATA_DEFINITION_RESPONSES} from '../../constants.es';
 
 const fieldTypes = [
 	{
@@ -84,87 +84,6 @@ const fieldTypeResponse = fieldTypes.map((fieldType, index) => ({
 	system: false,
 }));
 
-const dataDefinitionField = {
-	customProperties: {
-		autocomplete: false,
-		dataSourceType: 'manual',
-		dataType: 'string',
-		ddmDataProviderInstanceId: '[]',
-		ddmDataProviderInstanceOutput: '[]',
-		displayStyle: 'singleline',
-		fieldNamespace: '',
-		options: {
-			en_US: [
-				{
-					label: 'Option',
-					value: 'Option',
-				},
-			],
-		},
-		placeholder: {
-			en_US: '',
-		},
-		tooltip: {
-			en_US: '',
-		},
-		visibilityExpression: '',
-	},
-	defaultValue: {
-		en_US: '',
-	},
-	description: {
-		en_US: 'Enter your name',
-	},
-	fieldType: 'text',
-	indexType: 'keyword',
-	indexable: true,
-	label: {
-		en_US: 'Name',
-	},
-	localizable: true,
-	name: 'Text',
-	nestedDataDefinitionFields: [],
-	readOnly: false,
-	repeatable: false,
-	required: false,
-	showLabel: true,
-	tip: {
-		en_US: '',
-	},
-};
-
-const tableViewResponseOneItem = {
-	availableLanguageIds: ['en_US'],
-	dataDefinitionFields: [dataDefinitionField],
-	dataDefinitionKey: '36601',
-	dateCreated: '2020-04-24T13:50:04Z',
-	dateModified: '2020-04-24T13:50:13Z',
-	defaultLanguageId: 'en_US',
-	description: {},
-	id: 36602,
-	name: {
-		en_US: 'My Custom Object',
-	},
-	siteId: 20125,
-	storageType: 'json',
-	userId: 20127,
-};
-
-const tableViewResponseTwoItens = {
-	...tableViewResponseOneItem,
-	dataDefinitionFields: [
-		dataDefinitionField,
-		{
-			...dataDefinitionField,
-			fieldType: 'select',
-			label: {
-				en_US: 'Options',
-			},
-			name: 'SelectFromList',
-		},
-	],
-};
-
 const tableViewWithId = {
 	appliedFilters: {},
 	dataDefinitionId: 36716,
@@ -205,14 +124,16 @@ describe('EditTableView', () => {
 	it('renders', async () => {
 		fetch
 			.mockResponseOnce(JSON.stringify(fieldTypeResponse))
-			.mockResponseOnce(JSON.stringify(tableViewResponseOneItem));
+			.mockResponseOnce(
+				JSON.stringify(DATA_DEFINITION_RESPONSES.ONE_ITEM)
+			);
 
 		const {asFragment} = render(
 			<DndProvider backend={HTML5Backend}>
 				<EditTableView />
 			</DndProvider>,
 			{
-				wrapper: AppContextProviderWrapper,
+				wrapper: AppContextProvider,
 			}
 		);
 
@@ -226,7 +147,9 @@ describe('EditTableView', () => {
 	it('renders with two fields in the sidebar and saves successfully', async () => {
 		fetch
 			.mockResponseOnce(JSON.stringify(fieldTypeResponse))
-			.mockResponseOnce(JSON.stringify(tableViewResponseTwoItens))
+			.mockResponseOnce(
+				JSON.stringify(DATA_DEFINITION_RESPONSES.TWO_ITEMS)
+			)
 			.mockResponseOnce();
 
 		const {queryAllByText, queryByPlaceholderText, queryByText} = render(
@@ -234,7 +157,7 @@ describe('EditTableView', () => {
 				<EditTableView />
 			</DndProvider>,
 			{
-				wrapper: AppContextProviderWrapper,
+				wrapper: AppContextProvider,
 			}
 		);
 
@@ -255,8 +178,10 @@ describe('EditTableView', () => {
 			queryByText('drag-columns-from-the-sidebar-and-drop-here')
 		).toBeTruthy();
 
-		userEvent.dblClick(columnName);
-		userEvent.dblClick(columnOptions);
+		act(() => {
+			fireEvent.dblClick(columnName);
+			fireEvent.dblClick(columnOptions);
+		});
 
 		expect(
 			queryByText('drag-columns-from-the-sidebar-and-drop-here')
@@ -285,7 +210,9 @@ describe('EditTableView', () => {
 	it('renders with two fields in the sidebar and does not save successfully', async () => {
 		fetch
 			.mockResponseOnce(JSON.stringify(fieldTypeResponse))
-			.mockResponseOnce(JSON.stringify(tableViewResponseTwoItens))
+			.mockResponseOnce(
+				JSON.stringify(DATA_DEFINITION_RESPONSES.TWO_ITEMS)
+			)
 			.mockRejectOnce(() =>
 				Promise.reject(
 					JSON.stringify({
@@ -300,7 +227,7 @@ describe('EditTableView', () => {
 				<EditTableView />
 			</DndProvider>,
 			{
-				wrapper: AppContextProviderWrapper,
+				wrapper: AppContextProvider,
 			}
 		);
 
@@ -332,7 +259,9 @@ describe('EditTableView', () => {
 	it('renders with two fields in the sidebar and make actions', async () => {
 		fetch
 			.mockResponseOnce(JSON.stringify(fieldTypeResponse))
-			.mockResponseOnce(JSON.stringify(tableViewResponseTwoItens));
+			.mockResponseOnce(
+				JSON.stringify(DATA_DEFINITION_RESPONSES.TWO_ITEMS)
+			);
 
 		const {
 			container,
@@ -344,7 +273,7 @@ describe('EditTableView', () => {
 				<EditTableView />
 			</DndProvider>,
 			{
-				wrapper: AppContextProviderWrapper,
+				wrapper: AppContextProvider,
 			}
 		);
 
@@ -355,8 +284,10 @@ describe('EditTableView', () => {
 		const [columnName] = queryAllByText('Name');
 		const [columnOptions] = queryAllByText('Options');
 
-		userEvent.dblClick(columnName);
-		userEvent.dblClick(columnOptions);
+		act(() => {
+			fireEvent.dblClick(columnName);
+			fireEvent.dblClick(columnOptions);
+		});
 
 		const [search] = queryAllByPlaceholderText('search...');
 		expect(search.value).toBe('');
@@ -387,7 +318,9 @@ describe('EditTableView', () => {
 	it('renders with one field already inside the table and saves', async () => {
 		fetch
 			.mockResponseOnce(JSON.stringify(fieldTypeResponse))
-			.mockResponseOnce(JSON.stringify(tableViewResponseTwoItens))
+			.mockResponseOnce(
+				JSON.stringify(DATA_DEFINITION_RESPONSES.TWO_ITEMS)
+			)
 			.mockResponseOnce(JSON.stringify(tableViewWithId))
 			.mockResponseOnce(JSON.stringify({}));
 
@@ -400,13 +333,13 @@ describe('EditTableView', () => {
 						],
 					})}
 				>
-					<Route path={'dataTableViewId/:dataListViewId'}>
+					<Route path="dataTableViewId/:dataListViewId">
 						<EditTableView />
 					</Route>
 				</Router>
 			</DndProvider>,
 			{
-				wrapper: AppContextProviderWrapper,
+				wrapper: AppContextProvider,
 			}
 		);
 
@@ -435,14 +368,16 @@ describe('EditTableView', () => {
 	it('renders and toggle sidebar by clicking in the toggle button', async () => {
 		fetch
 			.mockResponseOnce(JSON.stringify(fieldTypeResponse))
-			.mockResponseOnce(JSON.stringify(tableViewResponseOneItem));
+			.mockResponseOnce(
+				JSON.stringify(DATA_DEFINITION_RESPONSES.ONE_ITEM)
+			);
 
 		render(
 			<DndProvider backend={HTML5Backend}>
 				<EditTableView />
 			</DndProvider>,
 			{
-				wrapper: AppContextProviderWrapper,
+				wrapper: AppContextProvider,
 			}
 		);
 
@@ -475,5 +410,45 @@ describe('EditTableView', () => {
 		expect(
 			document.querySelector('.app-builder-table-view__sidebar--closed')
 		).toBeFalsy();
+	});
+
+	it('renders with defaultLanguageId from the dataDefinition instead of Liferay Object', async () => {
+		fetch
+			.mockResponseOnce(JSON.stringify(fieldTypeResponse))
+			.mockResponseOnce(
+				JSON.stringify({
+					...DATA_DEFINITION_RESPONSES.ONE_ITEM,
+					availableLanguageIds: ['en_US', 'pt_BR'],
+					defaultLanguageId: 'pt_BR',
+				})
+			);
+
+		render(
+			<DndProvider backend={HTML5Backend}>
+				<EditTableView />
+			</DndProvider>,
+			{
+				wrapper: AppContextProvider,
+			}
+		);
+
+		await act(async () => {
+			jest.runAllTimers();
+		});
+
+		const localizableDropdown = document.querySelector(
+			'.localizable-dropdown'
+		);
+
+		expect(localizableDropdown.textContent).toEqual('pt-BR');
+
+		await act(async () => {
+			fireEvent.click(localizableDropdown);
+		});
+
+		expect(
+			document.querySelector('.localizable-item-default .autofit-section')
+				.textContent
+		).toEqual('pt-BR');
 	});
 });

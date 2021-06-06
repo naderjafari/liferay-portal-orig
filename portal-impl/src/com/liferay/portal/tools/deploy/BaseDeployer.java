@@ -443,16 +443,23 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 
 			if (ArrayUtil.isEmpty(log4jJars)) {
 				String portalJarPath =
-					PortalUtil.getPortalLibDir() + "log4j.jar";
+					PortalUtil.getPortalLibDir() + "log4j-api.jar";
 
 				FileUtil.copyFile(
-					portalJarPath, srcFile + "/WEB-INF/lib/log4j.jar", true);
+					portalJarPath, srcFile + "/WEB-INF/lib/log4j-api.jar",
+					true);
 
 				portalJarPath =
-					PortalUtil.getPortalLibDir() + "log4j-extras.jar";
+					PortalUtil.getPortalLibDir() + "log4j-1.2-api.jar";
 
 				FileUtil.copyFile(
-					portalJarPath, srcFile + "/WEB-INF/lib/log4j-extras.jar",
+					portalJarPath, srcFile + "/WEB-INF/lib/log4j-1.2-api.jar",
+					true);
+
+				portalJarPath = PortalUtil.getPortalLibDir() + "log4j-core.jar";
+
+				FileUtil.copyFile(
+					portalJarPath, srcFile + "/WEB-INF/lib/log4j-core.jar",
 					true);
 			}
 		}
@@ -468,7 +475,8 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 		}
 
 		if (PropsValues.AUTO_DEPLOY_COPY_LOG4J) {
-			copyDependencyXml("log4j.properties", srcFile + "/WEB-INF/classes");
+			copyDependencyXml(
+				"log4j2.properties", srcFile + "/WEB-INF/classes");
 		}
 
 		File servicePropertiesFile = new File(
@@ -703,7 +711,9 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 		if (appServerType.equals(ServerDetector.JBOSS_ID) ||
 			appServerType.equals(ServerDetector.WILDFLY_ID)) {
 
-			excludes += "**/WEB-INF/lib/log4j.jar,";
+			excludes = StringBundler.concat(
+				excludes, "**/WEB-INF/lib/log4j-1.2-api.jar,",
+				"**/WEB-INF/lib/log4j-api.jar,**/WEB-INF/lib/log4j-core.jar,");
 		}
 		else if (appServerType.equals(ServerDetector.TOMCAT_ID)) {
 			String[] libs = FileUtil.listFiles(tomcatLibDir);
@@ -733,6 +743,9 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 				excludes += "**/WEB-INF/lib/el-api.jar,";
 			}
 			catch (ClassNotFoundException classNotFoundException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(classNotFoundException, classNotFoundException);
+				}
 			}
 		}
 
@@ -1046,6 +1059,9 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 				PropsValues.HOT_UNDEPLOY_ON_REDEPLOY);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 
 			// This will only happen when running the deploy tool in Ant in the
 			// classical way where the WAR file is actually massaged and
@@ -1823,6 +1839,9 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 					inputStream.close();
 				}
 				catch (IOException ioException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(ioException, ioException);
+					}
 				}
 			}
 
@@ -1831,6 +1850,9 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 					zipFile.close();
 				}
 				catch (IOException ioException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(ioException, ioException);
+					}
 				}
 			}
 		}

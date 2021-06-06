@@ -14,9 +14,13 @@
 
 export default function ({layoutProviderProps: {ref}}) {
 	return {
-		dispose: () => {},
+		dispose: jest.fn(),
 		refs: {
-			layoutProvider: {ref},
+			layoutProvider: {
+				dispatch: jest.fn(() => 'wizard'),
+				getPaginationMode: jest.fn(() => 'wizard'),
+				ref,
+			},
 		},
 	};
 }

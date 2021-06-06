@@ -15,10 +15,12 @@
 package com.liferay.portal.dao.db;
 
 import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
@@ -68,7 +70,8 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public void addIndexes(
-			Connection con, String indexesSQL, Set<String> validIndexNames)
+			Connection connection, String indexesSQL,
+			Set<String> validIndexNames)
 		throws IOException {
 
 		if (_log.isInfoEnabled()) {
@@ -100,7 +103,7 @@ public abstract class BaseDB implements DB {
 				}
 
 				try {
-					runSQL(con, sql);
+					runSQL(connection, sql);
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
@@ -149,28 +152,29 @@ public abstract class BaseDB implements DB {
 	}
 
 	@Override
-	public List<Index> getIndexes(Connection con) throws SQLException {
+	public List<Index> getIndexes(Connection connection) throws SQLException {
 		Set<Index> indexes = new HashSet<>();
 
-		DatabaseMetaData databaseMetaData = con.getMetaData();
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		DBInspector dbInspector = new DBInspector(con);
+		DBInspector dbInspector = new DBInspector(connection);
 
 		String catalog = dbInspector.getCatalog();
 		String schema = dbInspector.getSchema();
 
-		try (ResultSet tableRS = databaseMetaData.getTables(
+		try (ResultSet tableResultSet = databaseMetaData.getTables(
 				catalog, schema, null, new String[] {"TABLE"})) {
 
-			while (tableRS.next()) {
+			while (tableResultSet.next()) {
 				String tableName = dbInspector.normalizeName(
-					tableRS.getString("TABLE_NAME"));
+					tableResultSet.getString("TABLE_NAME"));
 
-				try (ResultSet indexRS = databaseMetaData.getIndexInfo(
+				try (ResultSet indexResultSet = databaseMetaData.getIndexInfo(
 						catalog, schema, tableName, false, false)) {
 
-					while (indexRS.next()) {
-						String indexName = indexRS.getString("INDEX_NAME");
+					while (indexResultSet.next()) {
+						String indexName = indexResultSet.getString(
+							"INDEX_NAME");
 
 						if (indexName == null) {
 							continue;
@@ -185,7 +189,8 @@ public abstract class BaseDB implements DB {
 							continue;
 						}
 
-						boolean unique = !indexRS.getBoolean("NON_UNIQUE");
+						boolean unique = !indexResultSet.getBoolean(
+							"NON_UNIQUE");
 
 						indexes.add(new Index(indexName, tableName, unique));
 					}
@@ -296,18 +301,24 @@ public abstract class BaseDB implements DB {
 		return _SUPPORTS_UPDATE_WITH_INNER_JOIN;
 	}
 
-	@Override
-	public void runSQL(Connection con, String sql)
-		throws IOException, SQLException {
+	public void process(UnsafeConsumer<Long, Exception> unsafeConsumer)
+		throws Exception {
 
-		runSQL(con, new String[] {sql});
+		DBPartitionUtil.forEachCompanyId(unsafeConsumer);
 	}
 
 	@Override
-	public void runSQL(Connection con, String[] sqls)
+	public void runSQL(Connection connection, String sql)
 		throws IOException, SQLException {
 
-		try (Statement s = con.createStatement()) {
+		runSQL(connection, new String[] {sql});
+	}
+
+	@Override
+	public void runSQL(Connection connection, String[] sqls)
+		throws IOException, SQLException {
+
+		try (Statement s = connection.createStatement()) {
 			for (String sql : sqls) {
 				sql = buildSQL(sql);
 
@@ -367,8 +378,8 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public void runSQL(String[] sqls) throws IOException, SQLException {
-		try (Connection con = DataAccess.getConnection()) {
-			runSQL(con, sqls);
+		try (Connection connection = DataAccess.getConnection()) {
+			runSQL(connection, sqls);
 		}
 	}
 
@@ -594,16 +605,17 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public void updateIndexes(
-			Connection con, String tablesSQL, String indexesSQL,
+			Connection connection, String tablesSQL, String indexesSQL,
 			boolean dropIndexes)
 		throws IOException, SQLException {
 
-		List<Index> indexes = getIndexes(con);
+		List<Index> indexes = getIndexes(connection);
 
 		Set<String> validIndexNames = null;
 
 		if (dropIndexes) {
-			validIndexNames = dropIndexes(con, tablesSQL, indexesSQL, indexes);
+			validIndexNames = dropIndexes(
+				connection, tablesSQL, indexesSQL, indexes);
 		}
 		else {
 			validIndexNames = new HashSet<>();
@@ -617,7 +629,7 @@ public abstract class BaseDB implements DB {
 
 		indexesSQL = _applyMaxStringIndexLengthLimitation(indexesSQL);
 
-		addIndexes(con, indexesSQL, validIndexNames);
+		addIndexes(connection, indexesSQL, validIndexNames);
 	}
 
 	protected BaseDB(DBType dbType, int majorVersion, int minorVersion) {
@@ -677,7 +689,7 @@ public abstract class BaseDB implements DB {
 	}
 
 	protected Set<String> dropIndexes(
-			Connection con, String tablesSQL, String indexesSQL,
+			Connection connection, String tablesSQL, String indexesSQL,
 			List<Index> indexes)
 		throws IOException, SQLException {
 
@@ -755,7 +767,7 @@ public abstract class BaseDB implements DB {
 				_log.info(sql);
 			}
 
-			runSQL(con, sql);
+			runSQL(connection, sql);
 		}
 
 		return validIndexNames;

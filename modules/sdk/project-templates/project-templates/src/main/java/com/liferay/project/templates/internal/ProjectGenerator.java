@@ -56,6 +56,7 @@ public class ProjectGenerator {
 		String groupId = projectTemplatesArgs.getGroupId();
 		String liferayVersion = projectTemplatesArgs.getLiferayVersion();
 		String packageName = projectTemplatesArgs.getPackageName();
+		String product = projectTemplatesArgs.getProduct();
 
 		String template = projectTemplatesArgs.getTemplate();
 
@@ -125,10 +126,11 @@ public class ProjectGenerator {
 		}
 
 		if (buildType.equals("maven") && template.equals("form-field") &&
-			liferayVersion.startsWith("7.2")) {
+			!liferayVersion.startsWith("7.0") &&
+			!liferayVersion.startsWith("7.1")) {
 
 			throw new IllegalArgumentException(
-				"Form Field project is not supported 7.2 for Maven");
+				"Form Field project in Maven is only supported in 7.0 and 7.1");
 		}
 
 		Properties properties = new Properties();
@@ -141,6 +143,7 @@ public class ProjectGenerator {
 			String.valueOf(dependencyManagementEnabled));
 		_setProperty(properties, "liferayVersion", liferayVersion);
 		_setProperty(properties, "package", packageName);
+		_setProperty(properties, "product", product);
 		_setProperty(properties, "projectType", projectType);
 
 		archetypeGenerationRequest.setProperties(properties);
@@ -172,16 +175,6 @@ public class ProjectGenerator {
 		return archetypeGenerationResult;
 	}
 
-	private static boolean _isInVersionRange(
-		String versionString, String range) {
-
-		Version version = new Version(versionString);
-
-		VersionRange versionRange = new VersionRange(range);
-
-		return versionRange.includes(version);
-	}
-
 	private ProjectTemplateCustomizer _getProjectTemplateCustomizer(
 			String templateName)
 		throws Exception {
@@ -203,6 +196,14 @@ public class ProjectGenerator {
 		}
 
 		return null;
+	}
+
+	private boolean _isInVersionRange(String versionString, String range) {
+		Version version = new Version(versionString);
+
+		VersionRange versionRange = new VersionRange(range);
+
+		return versionRange.includes(version);
 	}
 
 	private void _setProperty(

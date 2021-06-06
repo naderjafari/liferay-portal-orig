@@ -28,23 +28,26 @@ JournalDDMStructuresManagementToolbarDisplayContext journalDDMStructuresManageme
 />
 
 <clay:management-toolbar
-	displayContext="<%= journalDDMStructuresManagementToolbarDisplayContext %>"
+	managementToolbarDisplayContext="<%= journalDDMStructuresManagementToolbarDisplayContext %>"
+	propsTransformer="js/DDMStructuresManagementToolbarPropsTransformer"
 />
 
-<portlet:actionURL name="/journal/delete_ddm_structure" var="deleteDDMStructureURL">
+<portlet:actionURL copyCurrentRenderParameters="<%= true %>" name="/journal/delete_data_definition" var="deleteDataDefinitionURL">
 	<portlet:param name="mvcPath" value="/view_ddm_structures.jsp" />
 </portlet:actionURL>
 
-<portlet:actionURL name="/journal/delete_data_definition" var="deleteDataDefinitionURL">
-	<portlet:param name="mvcPath" value="/view_ddm_structures.jsp" />
-</portlet:actionURL>
-
-<aui:form action="<%= journalDisplayContext.useDataEngineEditor() ? deleteDataDefinitionURL : deleteDDMStructureURL %>" cssClass="container-fluid-1280" method="post" name="fm">
+<aui:form action="<%= deleteDataDefinitionURL %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="fm">
 	<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
 
 	<liferay-ui:error exception="<%= RequiredStructureException.MustNotDeleteStructureReferencedByStructureLinks.class %>" message="the-structure-cannot-be-deleted-because-it-is-required-by-one-or-more-structure-links" />
 	<liferay-ui:error exception="<%= RequiredStructureException.MustNotDeleteStructureReferencedByTemplates.class %>" message="the-structure-cannot-be-deleted-because-it-is-required-by-one-or-more-templates" />
 	<liferay-ui:error exception="<%= RequiredStructureException.MustNotDeleteStructureThatHasChild.class %>" message="the-structure-cannot-be-deleted-because-it-has-one-or-more-substructures" />
+
+	<c:if test="<%= !journalDisplayContext.isNavigationMine() && !journalDisplayContext.isNavigationRecent() %>">
+		<liferay-site-navigation:breadcrumb
+			breadcrumbEntries="<%= new ArrayList<>() %>"
+		/>
+	</c:if>
 
 	<liferay-ui:search-container
 		id="ddmStructures"
@@ -64,34 +67,35 @@ JournalDDMStructuresManagementToolbarDisplayContext journalDDMStructuresManageme
 			String rowHREF = StringPool.BLANK;
 
 			if (DDMStructurePermission.contains(permissionChecker, ddmStructure, ActionKeys.UPDATE)) {
-				PortletURL rowURL = renderResponse.createRenderURL();
-
-				rowURL.setParameter("mvcPath", "/edit_ddm_structure.jsp");
-				rowURL.setParameter("redirect", currentURL);
-				rowURL.setParameter("ddmStructureId", String.valueOf(ddmStructure.getStructureId()));
-
-				rowHREF = rowURL.toString();
+				rowHREF = PortletURLBuilder.createRenderURL(
+					renderResponse
+				).setMVCPath(
+					"/edit_data_definition.jsp"
+				).setRedirect(
+					currentURL
+				).setParameter(
+					"ddmStructureId", ddmStructure.getStructureId()
+				).buildString();
 			}
 
-			Map<String, Object> rowData = HashMapBuilder.<String, Object>put(
-				"actions", journalDDMStructuresManagementToolbarDisplayContext.getAvailableActions(ddmStructure)
-			).build();
-
-			row.setData(rowData);
+			row.setData(
+				HashMapBuilder.<String, Object>put(
+					"actions", journalDDMStructuresManagementToolbarDisplayContext.getAvailableActions(ddmStructure)
+				).build());
 			%>
 
 			<liferay-ui:search-container-column-text
 				cssClass="table-cell-expand table-cell-minw-200 table-title"
 				href="<%= rowHREF %>"
 				name="name"
-				value="<%= HtmlUtil.escape(ddmStructure.getName(locale)) %>"
+				value="<%= HtmlUtil.escape(ddmStructure.getName(locale, true)) %>"
 			/>
 
 			<liferay-ui:search-container-column-text
 				cssClass="table-cell-expand table-cell-minw-200"
 				name="description"
 				truncate="<%= true %>"
-				value="<%= HtmlUtil.escape(ddmStructure.getDescription(locale)) %>"
+				value="<%= HtmlUtil.escape(ddmStructure.getDescription(locale, true)) %>"
 			/>
 
 			<%
@@ -121,8 +125,3 @@ JournalDDMStructuresManagementToolbarDisplayContext journalDDMStructuresManageme
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= journalDDMStructuresManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/DDMStructuresManagementToolbarDefaultEventHandler.es"
-/>

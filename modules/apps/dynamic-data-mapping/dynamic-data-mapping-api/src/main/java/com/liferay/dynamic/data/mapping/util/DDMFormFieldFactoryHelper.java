@@ -20,6 +20,7 @@ import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidation;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidationExpression;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -204,6 +205,9 @@ public class DDMFormFieldFactoryHelper {
 				ddmFormFieldOptions.addOptionLabel(
 					optionValues[i], _defaultLocale, optionLabel);
 			}
+
+			ddmFormFieldOptions.addOptionReference(
+				optionValues[i], optionValues[i]);
 		}
 
 		return ddmFormFieldOptions;
@@ -217,6 +221,10 @@ public class DDMFormFieldFactoryHelper {
 		String fieldType = getDDMFormFieldType();
 
 		if (Validator.isNotNull(predefinedValue)) {
+			if (StringUtil.startsWith(predefinedValue, StringPool.PERCENT)) {
+				return createLocalizedValue(predefinedValue);
+			}
+
 			localizedValue.addString(_defaultLocale, predefinedValue);
 		}
 		else if (fieldType.equals("checkbox")) {
@@ -304,10 +312,9 @@ public class DDMFormFieldFactoryHelper {
 		Map<String, Object> propertiesMap = new HashMap<>();
 
 		for (String property : _ddmFormField.properties()) {
-			String key = StringUtil.extractFirst(property, StringPool.EQUAL);
-			String value = StringUtil.extractLast(property, StringPool.EQUAL);
+			String[] propertyParts = property.split(StringPool.EQUAL, 2);
 
-			propertiesMap.put(key, value);
+			propertiesMap.put(propertyParts[0], propertyParts[1]);
 		}
 
 		return propertiesMap;
@@ -360,7 +367,9 @@ public class DDMFormFieldFactoryHelper {
 	}
 
 	protected boolean isLocalizableValue(String value) {
-		if (StringUtil.startsWith(value, StringPool.PERCENT)) {
+		if ((value != null) && !value.isEmpty() &&
+			(value.charAt(0) == CharPool.PERCENT)) {
+
 			return true;
 		}
 
@@ -376,9 +385,7 @@ public class DDMFormFieldFactoryHelper {
 	}
 
 	private com.liferay.dynamic.data.mapping.model.DDMForm _getNestedDDMForm() {
-		Class<?> returnType = _getReturnType();
-
-		return DDMFormFactory.create(returnType);
+		return DDMFormFactory.create(_getReturnType());
 	}
 
 	private Class<?> _getReturnType() {

@@ -145,9 +145,7 @@ public class FileUtil {
 						Path path, BasicFileAttributes basicFileAttributes)
 					throws IOException {
 
-					Path fileNamePath = path.getFileName();
-
-					String fileName = fileNamePath.toString();
+					String fileName = String.valueOf(path.getFileName());
 
 					Matcher matcher = pattern.matcher(fileName);
 
@@ -185,8 +183,8 @@ public class FileUtil {
 					try {
 						Files.copy(inputStream, destinationPath);
 					}
-					catch (Throwable th) {
-						throw new RuntimeException(th);
+					catch (Throwable throwable) {
+						throw new RuntimeException(throwable);
 					}
 				}
 				else {
@@ -221,9 +219,7 @@ public class FileUtil {
 			while (iterator.hasNext()) {
 				Path path = iterator.next();
 
-				Path fileNamePath = path.getFileName();
-
-				String fileName = fileNamePath.toString();
+				String fileName = String.valueOf(path.getFileName());
 
 				if (fileName.matches(regex)) {
 					return path;
@@ -235,9 +231,7 @@ public class FileUtil {
 	}
 
 	public static Path getJarPath() throws URISyntaxException {
-		URI jarUri = _getJarUri();
-
-		return Paths.get(jarUri);
+		return Paths.get(_getJarURI());
 	}
 
 	public static String getManifestProperty(File file, String name)
@@ -283,6 +277,18 @@ public class FileUtil {
 		return properties;
 	}
 
+	public static void replaceString(File file, String search, String replace)
+		throws IOException {
+
+		Path path = file.toPath();
+
+		String content = read(path);
+
+		String newContent = content.replace(search, replace);
+
+		Files.write(path, newContent.getBytes(StandardCharsets.UTF_8));
+	}
+
 	public static void setPosixFilePermissions(
 			Path path, Set<PosixFilePermission> posixFilePermissions)
 		throws IOException {
@@ -298,8 +304,6 @@ public class FileUtil {
 			String dirPathString)
 		throws Exception {
 
-		Map<String, InputStream> pathMap = new HashMap<>();
-
 		if ((dirPathString != null) && (File.separatorChar == '\\')) {
 			dirPathString = dirPathString.replace('\\', '/');
 		}
@@ -311,6 +315,8 @@ public class FileUtil {
 
 			throw new NoSuchElementException(errorMessage);
 		}
+
+		Map<String, InputStream> pathMap = new HashMap<>();
 
 		URI uri = url.toURI();
 
@@ -350,10 +356,8 @@ public class FileUtil {
 					Path folderNamePath = Paths.get(dirPathString);
 					Path relativeDirPath = path.relativize(dirPath);
 
-					Path pathToResolve = folderNamePath.resolve(
-						relativeDirPath);
-
-					String pathToResolveString = pathToResolve.toString();
+					String pathToResolveString = String.valueOf(
+						folderNamePath.resolve(relativeDirPath));
 
 					if (Files.isDirectory(dirPath)) {
 						pathMap.put(pathToResolveString + File.separator, null);
@@ -374,22 +378,20 @@ public class FileUtil {
 	}
 
 	private static FileSystem _getJarFileSystem() throws Exception {
-		URI jarUri = _getJarUri();
-
-		Path jarPath = Paths.get(jarUri);
+		Path jarPath = Paths.get(_getJarURI());
 
 		return FileSystems.newFileSystem(jarPath, null);
 	}
 
-	private static URI _getJarUri() throws URISyntaxException {
+	private static URI _getJarURI() throws URISyntaxException {
 		ProtectionDomain protectionDomain =
 			FileUtil.class.getProtectionDomain();
 
 		CodeSource codeSource = protectionDomain.getCodeSource();
 
-		URL jarUrl = codeSource.getLocation();
+		URL jarURL = codeSource.getLocation();
 
-		return jarUrl.toURI();
+		return jarURL.toURI();
 	}
 
 }

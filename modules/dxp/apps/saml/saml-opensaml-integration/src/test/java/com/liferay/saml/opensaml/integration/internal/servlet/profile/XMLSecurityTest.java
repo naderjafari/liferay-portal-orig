@@ -15,6 +15,7 @@
 package com.liferay.saml.opensaml.integration.internal.servlet.profile;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.saml.constants.SamlWebKeys;
 import com.liferay.saml.opensaml.integration.internal.BaseSamlTestCase;
 import com.liferay.saml.opensaml.integration.internal.util.OpenSamlUtil;
@@ -36,6 +37,8 @@ import java.util.zip.DeflaterOutputStream;
 import org.apache.xml.security.algorithms.JCEMapper;
 
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -54,6 +57,11 @@ import org.springframework.mock.web.MockHttpServletResponse;
  * @author Mika Koivisto
  */
 public class XMLSecurityTest extends BaseSamlTestCase {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	@Override
@@ -120,8 +128,8 @@ public class XMLSecurityTest extends BaseSamlTestCase {
 				lol += "&lol" + (i - 1) + ";";
 			}
 
-			authnRequestXML =
-				authnRequestXML + " <!ENTITY lol" + i + " \"" + lol + "\">\n";
+			authnRequestXML = StringBundler.concat(
+				authnRequestXML, " <!ENTITY lol", i, " \"", lol, "\">\n");
 		}
 
 		authnRequestXML += "]>" + samlMessageXML;
@@ -254,11 +262,8 @@ public class XMLSecurityTest extends BaseSamlTestCase {
 
 		mockHttpServletRequest.setParameter("Signature", signature);
 
-		MockHttpServletResponse mockHttpServletResponse =
-			new MockHttpServletResponse();
-
 		_webSsoProfileImpl.decodeAuthnRequest(
-			mockHttpServletRequest, mockHttpServletResponse);
+			mockHttpServletRequest, new MockHttpServletResponse());
 	}
 
 	protected String encodeRequest(String requestXML) throws Exception {
@@ -296,15 +301,10 @@ public class XMLSecurityTest extends BaseSamlTestCase {
 	protected AuthnRequest getAuthnRequest(String redirectURL)
 		throws Exception {
 
-		MockHttpServletRequest mockHttpServletRequest =
-			getMockHttpServletRequest(redirectURL);
-
-		MockHttpServletResponse mockHttpServletResponse =
-			new MockHttpServletResponse();
-
 		SamlSsoRequestContext samlSsoRequestContext =
 			_webSsoProfileImpl.decodeAuthnRequest(
-				mockHttpServletRequest, mockHttpServletResponse);
+				getMockHttpServletRequest(redirectURL),
+				new MockHttpServletResponse());
 
 		MessageContext<?> samlMessageContext =
 			samlSsoRequestContext.getSAMLMessageContext();
@@ -350,7 +350,7 @@ public class XMLSecurityTest extends BaseSamlTestCase {
 		return mockHttpServletResponse.getRedirectedUrl();
 	}
 
-	private static Base64.Encoder _getEncoder() {
+	private Base64.Encoder _getEncoder() {
 		Base64.Encoder encoder = Base64.getEncoder();
 
 		return encoder.withoutPadding();

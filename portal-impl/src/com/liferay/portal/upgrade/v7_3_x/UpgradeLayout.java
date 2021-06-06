@@ -14,11 +14,8 @@
 
 package com.liferay.portal.upgrade.v7_3_x;
 
-import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.upgrade.v7_3_x.util.LayoutTable;
-
-import java.sql.PreparedStatement;
 
 /**
  * @author Preston Crary
@@ -27,50 +24,55 @@ public class UpgradeLayout extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		if (hasColumn("Layout", "headId") || hasColumn("Layout", "head")) {
+		if (hasColumn(LayoutTable.TABLE_NAME, "headId") ||
+			hasColumn(LayoutTable.TABLE_NAME, "head")) {
+
 			alter(
 				LayoutTable.class, new AlterTableDropColumn("headId"),
 				new AlterTableDropColumn("head"));
 		}
 
-		if (!hasColumn("Layout", "masterLayoutPlid")) {
+		if (!hasColumnType(
+				LayoutTable.TABLE_NAME, "description", "TEXT null")) {
+
+			alter(
+				LayoutTable.class,
+				new UpgradeProcess.AlterColumnType("description", "TEXT null"));
+		}
+
+		if (!hasColumn(LayoutTable.TABLE_NAME, "masterLayoutPlid")) {
 			alter(
 				LayoutTable.class,
 				new AlterTableAddColumn("masterLayoutPlid", "LONG"));
+
+			runSQL("update Layout set masterLayoutPlid = 0");
 		}
 
-		if (!hasColumn("Layout", "status")) {
+		if (!hasColumn(LayoutTable.TABLE_NAME, "status")) {
 			alter(
 				LayoutTable.class,
 				new AlterTableAddColumn("status", "INTEGER"));
+
+			runSQL("update Layout set status = 0");
 		}
 
-		if (!hasColumn("Layout", "statusByUserId")) {
+		if (!hasColumn(LayoutTable.TABLE_NAME, "statusByUserId")) {
 			alter(
 				LayoutTable.class,
 				new AlterTableAddColumn("statusByUserId", "LONG"));
 		}
 
-		if (!hasColumn("Layout", "statusByUserName")) {
+		if (!hasColumn(LayoutTable.TABLE_NAME, "statusByUserName")) {
 			alter(
 				LayoutTable.class,
 				new AlterTableAddColumn(
 					"statusByUserName", "VARCHAR(75) null"));
 		}
 
-		if (!hasColumn("Layout", "statusDate")) {
+		if (!hasColumn(LayoutTable.TABLE_NAME, "statusDate")) {
 			alter(
 				LayoutTable.class,
 				new AlterTableAddColumn("statusDate", "DATE null"));
-		}
-
-		try (PreparedStatement ps = connection.prepareStatement(
-				SQLTransformer.transform(
-					"update Layout set masterLayoutPlid = 0, status = 0"))) {
-
-			if (ps.executeUpdate() == 0) {
-				return;
-			}
 		}
 
 		runSQL("DROP_TABLE_IF_EXISTS(LayoutVersion)");

@@ -17,31 +17,24 @@ import {Config} from 'metal-state';
 
 class AccountUserEmailDomainValidator extends PortletBase {
 	attached() {
-		Liferay.once(
-			this.ns('formReady'),
-			(event) => {
-				const form = Liferay.Form.get(event.formName);
+		const form = this.getForm_(this.ns('fm'));
 
-				const field = form.formValidator.getField(
-					this.ns('emailAddress')
-				);
+		if (form) {
+			this.decorateEmailAddressField_(form);
+		}
+		else {
+			Liferay.once(
+				this.ns('formReady'),
+				(event) => {
+					const form = this.getForm_(event.formName);
 
-				if (field) {
-					this.addFieldMessage_(field);
-
-					const emailDomainFieldRule = this.getEmailDomainFieldRule_();
-
-					this.addFormFieldRules_(form, [emailDomainFieldRule]);
-
-					this.setWarningValidationStyle_(
-						form,
-						field,
-						emailDomainFieldRule.validatorName
-					);
-				}
-			},
-			this
-		);
+					if (form) {
+						this.decorateEmailAddressField_(form);
+					}
+				},
+				this
+			);
+		}
 	}
 
 	addFieldMessage_(field) {
@@ -69,10 +62,32 @@ class AccountUserEmailDomainValidator extends PortletBase {
 		form.set('fieldRules', oldFieldRules.concat(fieldRules));
 	}
 
+	decorateEmailAddressField_(form) {
+		const field = form.formValidator.getField(this.ns('emailAddress'));
+
+		if (this.viewValidDomainsURL) {
+			this.addFieldMessage_(field);
+		}
+
+		const emailDomainFieldRule = this.getEmailDomainFieldRule_();
+
+		this.addFormFieldRules_(form, [emailDomainFieldRule]);
+
+		this.setWarningValidationStyle_(
+			form,
+			field,
+			emailDomainFieldRule.validatorName
+		);
+	}
+
 	getEmailDomainFieldRule_() {
 		const accountEntryNames = this.accountEntryNames;
-		const blockedDomains = this.blockedDomains.split(',');
-		const validDomains = this.validDomains.split(',');
+		const blockedDomains = this.blockedDomains
+			? this.blockedDomains.split(',')
+			: this.blockedDomains;
+		const validDomains = this.validDomains
+			? this.validDomains.split(',')
+			: this.validDomains;
 		const validatorName = 'emailDomain';
 
 		return {
@@ -81,7 +96,7 @@ class AccountUserEmailDomainValidator extends PortletBase {
 				var errorMessage;
 				var hasError = false;
 
-				if (blockedDomains.includes(emailDomain)) {
+				if (!!blockedDomains && blockedDomains.includes(emailDomain)) {
 					hasError = true;
 
 					errorMessage = Liferay.Util.sub(
@@ -89,7 +104,10 @@ class AccountUserEmailDomainValidator extends PortletBase {
 						emailDomain
 					);
 				}
-				else if (!validDomains.includes(emailDomain)) {
+				else if (
+					!!validDomains &&
+					!validDomains.includes(emailDomain)
+				) {
 					hasError = true;
 
 					errorMessage = Liferay.Util.sub(
@@ -123,6 +141,10 @@ class AccountUserEmailDomainValidator extends PortletBase {
 		};
 	}
 
+	getForm_(formName) {
+		return Liferay.Form?.get(formName);
+	}
+
 	onSubmitError_(event, form, field, validatorName) {
 		event.preventDefault();
 
@@ -142,6 +164,7 @@ class AccountUserEmailDomainValidator extends PortletBase {
 			dialog: {
 				height: 400,
 				modal: true,
+				resizable: false,
 				width: 600,
 			},
 			title: Liferay.Language.get('valid-domains'),

@@ -15,27 +15,33 @@
 import {fetch, objectToFormData, openToast} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 
-import PagePreview from './PagePreview';
+import LayoutPreview from './LayoutPreview';
 import Sidebar from './Sidebar';
 import {StyleBookContextProvider} from './StyleBookContext';
 import {config, initializeConfig} from './config';
 import {DRAFT_STATUS} from './constants/draftStatusConstants';
 import {useCloseProductMenu} from './useCloseProductMenu';
 
-const StyleBookEditor = ({tokensValues: initialTokensValues}) => {
+const StyleBookEditor = ({
+	frontendTokensValues: initialFrontendTokensValues,
+	initialPreviewLayout,
+}) => {
 	useCloseProductMenu();
 
-	const [tokensValues, setTokensValues] = useState(initialTokensValues);
+	const [frontendTokensValues, setFrontendTokensValues] = useState(
+		initialFrontendTokensValues
+	);
 	const [draftStatus, setDraftStatus] = useState(DRAFT_STATUS.notSaved);
+	const [previewLayout, setPreviewLayout] = useState(initialPreviewLayout);
 
 	useEffect(() => {
-		if (tokensValues === initialTokensValues) {
+		if (frontendTokensValues === initialFrontendTokensValues) {
 			return;
 		}
 
 		setDraftStatus(DRAFT_STATUS.saving);
 
-		saveDraft(tokensValues, config.styleBookEntryId)
+		saveDraft(frontendTokensValues, config.styleBookEntryId)
 			.then(() => {
 				setDraftStatus(DRAFT_STATUS.draftSaved);
 			})
@@ -48,22 +54,23 @@ const StyleBookEditor = ({tokensValues: initialTokensValues}) => {
 
 				openToast({
 					message: error.message,
-					title: Liferay.Language.get('error'),
 					type: 'danger',
 				});
 			});
-	}, [initialTokensValues, tokensValues]);
+	}, [initialFrontendTokensValues, frontendTokensValues]);
 
 	return (
 		<StyleBookContextProvider
 			value={{
 				draftStatus,
-				setTokensValues,
-				tokensValues,
+				frontendTokensValues,
+				previewLayout,
+				setFrontendTokensValues,
+				setPreviewLayout,
 			}}
 		>
 			<div className="style-book-editor">
-				<PagePreview />
+				<LayoutPreview />
 				<Sidebar />
 			</div>
 		</StyleBookContextProvider>
@@ -71,31 +78,42 @@ const StyleBookEditor = ({tokensValues: initialTokensValues}) => {
 };
 
 export default function ({
+	frontendTokenDefinition = [],
+	frontendTokensValues = {},
+	initialPreviewLayout,
+	layoutsTreeURL,
 	namespace,
-	previewURL,
 	publishURL,
 	redirectURL,
 	saveDraftURL,
 	styleBookEntryId,
-	tokenCategories = [],
-	tokensValues = {},
+	themeName,
 } = {}) {
 	initializeConfig({
+		frontendTokenDefinition,
+		initialPreviewLayout,
+		layoutsTreeURL,
 		namespace,
-		previewURL,
 		publishURL,
 		redirectURL,
 		saveDraftURL,
 		styleBookEntryId,
-		tokenCategories,
+		themeName,
 	});
 
-	return <StyleBookEditor tokensValues={tokensValues} />;
+	return (
+		<StyleBookEditor
+			frontendTokensValues={frontendTokensValues}
+			initialPreviewLayout={initialPreviewLayout}
+		/>
+	);
 }
 
-function saveDraft(tokensValues, styleBookEntryId) {
+function saveDraft(frontendTokensValues, styleBookEntryId) {
 	const body = objectToFormData({
-		[`${config.namespace}tokensValues`]: JSON.stringify(tokensValues),
+		[`${config.namespace}frontendTokensValues`]: JSON.stringify(
+			frontendTokensValues
+		),
 		[`${config.namespace}styleBookEntryId`]: styleBookEntryId,
 	});
 

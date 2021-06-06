@@ -26,8 +26,8 @@ import com.liferay.petra.sql.dsl.Table;
 public class TableReferenceInfoFactory {
 
 	public static <T extends Table<T>> TableReferenceInfo<T> create(
-		TableReferenceDefinition<T> tableReferenceDefinition,
-		Column<T, Long> primaryKeyColumn) {
+		long classNameId, Column<T, Long> primaryKeyColumn,
+		TableReferenceDefinition<T> tableReferenceDefinition) {
 
 		ParentTableReferenceInfoBuilderImpl<T>
 			parentTableReferenceInfoBuilderImpl =
@@ -45,10 +45,16 @@ public class TableReferenceInfoFactory {
 		tableReferenceDefinition.defineChildTableReferences(
 			childTableReferenceInfoBuilderImpl);
 
+		TableReferenceAppenderRegistry.appendTableReferences(
+			tableReferenceDefinition, primaryKeyColumn,
+			parentTableReferenceInfoBuilderImpl,
+			childTableReferenceInfoBuilderImpl);
+
 		return new TableReferenceInfo<>(
-			tableReferenceDefinition,
+			childTableReferenceInfoBuilderImpl.getTableJoinHoldersMap(),
+			classNameId,
 			parentTableReferenceInfoBuilderImpl.getTableJoinHoldersMap(),
-			childTableReferenceInfoBuilderImpl.getTableJoinHoldersMap());
+			tableReferenceDefinition);
 	}
 
 }

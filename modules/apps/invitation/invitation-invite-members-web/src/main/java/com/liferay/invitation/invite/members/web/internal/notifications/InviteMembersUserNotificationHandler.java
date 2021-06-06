@@ -17,10 +17,13 @@ package com.liferay.invitation.invite.members.web.internal.notifications;
 import com.liferay.invitation.invite.members.constants.InviteMembersPortletKeys;
 import com.liferay.invitation.invite.members.model.MemberRequest;
 import com.liferay.invitation.invite.members.service.MemberRequestLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.MembershipRequestConstants;
 import com.liferay.portal.kernel.model.User;
@@ -39,7 +42,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ResourceBundle;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.WindowState;
 
@@ -107,34 +109,20 @@ public class InviteMembersUserNotificationHandler
 		LiferayPortletResponse liferayPortletResponse =
 			serviceContext.getLiferayPortletResponse();
 
-		PortletURL confirmURL = liferayPortletResponse.createActionURL(
-			InviteMembersPortletKeys.INVITE_MEMBERS);
-
-		confirmURL.setParameter(
-			ActionRequest.ACTION_NAME, "updateMemberRequest");
-		confirmURL.setParameter(
-			"memberRequestId", String.valueOf(memberRequestId));
-		confirmURL.setParameter(
-			"status",
-			String.valueOf(MembershipRequestConstants.STATUS_APPROVED));
-		confirmURL.setParameter(
+		PortletURL confirmURL = PortletURLBuilder.createActionURL(
+			liferayPortletResponse, InviteMembersPortletKeys.INVITE_MEMBERS
+		).setActionName(
+			"updateMemberRequest"
+		).setParameter(
+			"memberRequestId", memberRequestId
+		).setParameter(
+			"status", MembershipRequestConstants.STATUS_APPROVED
+		).setParameter(
 			"userNotificationEventId",
-			String.valueOf(userNotificationEvent.getUserNotificationEventId()));
-		confirmURL.setWindowState(WindowState.NORMAL);
-
-		PortletURL ignoreURL = liferayPortletResponse.createActionURL(
-			InviteMembersPortletKeys.INVITE_MEMBERS);
-
-		ignoreURL.setParameter(
-			ActionRequest.ACTION_NAME, "updateMemberRequest");
-		ignoreURL.setParameter(
-			"memberRequestId", String.valueOf(memberRequestId));
-		ignoreURL.setParameter(
-			"status", String.valueOf(MembershipRequestConstants.STATUS_DENIED));
-		ignoreURL.setParameter(
-			"userNotificationEventId",
-			String.valueOf(userNotificationEvent.getUserNotificationEventId()));
-		ignoreURL.setWindowState(WindowState.NORMAL);
+			userNotificationEvent.getUserNotificationEventId()
+		).setWindowState(
+			WindowState.NORMAL
+		).build();
 
 		return StringUtil.replace(
 			getBodyTemplate(),
@@ -144,7 +132,23 @@ public class InviteMembersUserNotificationHandler
 			},
 			new String[] {
 				serviceContext.translate("confirm"), confirmURL.toString(),
-				serviceContext.translate("ignore"), ignoreURL.toString(), title
+				serviceContext.translate("ignore"),
+				PortletURLBuilder.createActionURL(
+					liferayPortletResponse,
+					InviteMembersPortletKeys.INVITE_MEMBERS
+				).setActionName(
+					"updateMemberRequest"
+				).setParameter(
+					"memberRequestId", memberRequestId
+				).setParameter(
+					"status", MembershipRequestConstants.STATUS_DENIED
+				).setParameter(
+					"userNotificationEventId",
+					userNotificationEvent.getUserNotificationEventId()
+				).setWindowState(
+					WindowState.NORMAL
+				).buildString(),
+				title
 			});
 	}
 
@@ -209,6 +213,10 @@ public class InviteMembersUserNotificationHandler
 				"</a>");
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}
@@ -236,6 +244,9 @@ public class InviteMembersUserNotificationHandler
 
 		_userNotificationEventLocalService = userNotificationEventLocalService;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		InviteMembersUserNotificationHandler.class);
 
 	private GroupLocalService _groupLocalService;
 	private MemberRequestLocalService _memberRequestLocalService;

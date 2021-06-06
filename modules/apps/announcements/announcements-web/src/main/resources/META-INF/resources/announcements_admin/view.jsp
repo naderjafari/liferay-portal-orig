@@ -31,10 +31,6 @@ if (distributionScopeArray.length == 2) {
 	classPK = GetterUtil.getLong(distributionScopeArray[1]);
 }
 
-if ((classNameId == 0) && (classPK == 0) && !PortalPermissionUtil.contains(permissionChecker, ActionKeys.ADD_GENERAL_ANNOUNCEMENTS)) {
-	throw new PrincipalException.MustHavePermission(permissionChecker, ActionKeys.ADD_GENERAL_ANNOUNCEMENTS);
-}
-
 SearchContainer<AnnouncementsEntry> announcementsEntriesSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, currentURLObj, null, "no-entries-were-found");
 
 announcementsEntriesSearchContainer.setRowChecker(new AnnouncementsEntryChecker(liferayPortletRequest, liferayPortletResponse));
@@ -53,30 +49,40 @@ AnnouncementsAdminViewManagementToolbarDisplayContext announcementsAdminViewMana
 					navigationItem -> {
 						navigationItem.setActive(navigation.equals("announcements"));
 						navigationItem.setHref(renderResponse.createRenderURL());
-						navigationItem.setLabel(LanguageUtil.get(request, "announcements"));
+						navigationItem.setLabel(LanguageUtil.get(httpServletRequest, "announcements"));
 					});
 				add(
 					navigationItem -> {
 						navigationItem.setActive(navigation.equals("alerts"));
 						navigationItem.setHref(renderResponse.createRenderURL(), "navigation", "alerts");
-						navigationItem.setLabel(LanguageUtil.get(request, "alerts"));
+						navigationItem.setLabel(LanguageUtil.get(httpServletRequest, "alerts"));
 					});
-
 			}
 		}
 	%>'
 />
 
+<portlet:actionURL name="/announcements/edit_entry" var="deleteEntriesURL" />
+
 <clay:management-toolbar
 	actionDropdownItems="<%= announcementsAdminViewManagementToolbarDisplayContext.getActionDropdownItems() %>"
+	additionalProps='<%=
+		HashMapBuilder.<String, Object>put(
+			"deleteEntriesURL", deleteEntriesURL.toString()
+		).put(
+			"inputId", Constants.CMD
+		).put(
+			"inputValue", Constants.DELETE
+		).build()
+	%>'
 	clearResultsURL="<%= announcementsAdminViewManagementToolbarDisplayContext.getClearResultsURL() %>"
-	componentId="announcementsAdminViewManagementToolbar"
 	creationMenu="<%= announcementsAdminViewManagementToolbarDisplayContext.getCreationMenu() %>"
 	disabled="<%= announcementsAdminViewManagementToolbarDisplayContext.isDisabled() %>"
 	filterDropdownItems="<%= announcementsAdminViewManagementToolbarDisplayContext.getFilterDropdownItems() %>"
 	filterLabelItems="<%= announcementsAdminViewManagementToolbarDisplayContext.getFilterLabelItems() %>"
 	itemsTotal="<%= announcementsAdminViewManagementToolbarDisplayContext.getTotal() %>"
-	searchContainerId="announcementsEntries"
+	propsTransformer="announcements_admin/js/AnnouncementsManagementToolbarPropsTransformer"
+	searchContainerId="<%= announcementsAdminViewManagementToolbarDisplayContext.getSearchContainerId() %>"
 	selectable="<%= true %>"
 	showSearch="<%= false %>"
 />
@@ -87,7 +93,7 @@ AnnouncementsAdminViewManagementToolbarDisplayContext announcementsAdminViewMana
 		<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
 
 		<liferay-ui:search-container
-			id="announcementsEntries"
+			id="<%= announcementsAdminViewManagementToolbarDisplayContext.getSearchContainerId() %>"
 			searchContainer="<%= announcementsEntriesSearchContainer %>"
 			total="<%= announcementsEntriesSearchContainer.getTotal() %>"
 		>
@@ -102,22 +108,25 @@ AnnouncementsAdminViewManagementToolbarDisplayContext announcementsAdminViewMana
 			>
 
 				<%
-				Map<String, Object> rowData = HashMapBuilder.<String, Object>put(
-					"actions", StringUtil.merge(announcementsAdminViewManagementToolbarDisplayContext.getAvailableActions(entry))
-				).build();
-
-				row.setData(rowData);
-
-				PortletURL rowURL = renderResponse.createRenderURL();
-
-				rowURL.setParameter("mvcRenderCommandName", "/announcements/view_entry");
-				rowURL.setParameter("redirect", currentURL);
-				rowURL.setParameter("entryId", String.valueOf(entry.getEntryId()));
+				row.setData(
+					HashMapBuilder.<String, Object>put(
+						"actions", StringUtil.merge(announcementsAdminViewManagementToolbarDisplayContext.getAvailableActions(entry))
+					).build());
 				%>
 
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
-					href="<%= rowURL %>"
+					cssClass="table-cell-expand"
+					href='<%=
+						PortletURLBuilder.createRenderURL(
+							renderResponse
+						).setMVCRenderCommandName(
+							"/announcements/view_entry"
+						).setRedirect(
+							currentURL
+						).setParameter(
+							"entryId", entry.getEntryId()
+						).build()
+					%>'
 					name="title"
 					value="<%= HtmlUtil.escape(entry.getTitle()) %>"
 				/>
@@ -154,48 +163,3 @@ AnnouncementsAdminViewManagementToolbarDisplayContext announcementsAdminViewMana
 		</liferay-ui:search-container>
 	</aui:form>
 </clay:container-fluid>
-
-<aui:script>
-	var deleteEntries = function () {
-		if (
-			confirm(
-				'<liferay-ui:message key="are-you-sure-you-want-to-delete-the-selected-entries" />'
-			)
-		) {
-			var form = document.getElementById('<portlet:namespace />fm');
-
-			if (form) {
-				form.setAttribute('method', 'post');
-
-				var cmd = form.querySelector(
-					'#<portlet:namespace /><%= Constants.CMD %>'
-				);
-
-				if (cmd) {
-					cmd.setAttribute('value', '<%= Constants.DELETE %>');
-				}
-
-				submitForm(
-					form,
-					'<portlet:actionURL name="/announcements/edit_entry" />'
-				);
-			}
-		}
-	};
-
-	var ACTIONS = {
-		deleteEntries: deleteEntries,
-	};
-
-	Liferay.componentReady('announcementsAdminViewManagementToolbar').then(
-		function (managementToolbar) {
-			managementToolbar.on('actionItemClicked', function (event) {
-				var itemData = event.data.item.data;
-
-				if (itemData && itemData.action && ACTIONS[itemData.action]) {
-					ACTIONS[itemData.action]();
-				}
-			});
-		}
-	);
-</aui:script>

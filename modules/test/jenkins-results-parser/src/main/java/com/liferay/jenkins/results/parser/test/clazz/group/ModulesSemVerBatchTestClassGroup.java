@@ -28,6 +28,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,13 +54,13 @@ public class ModulesSemVerBatchTestClassGroup
 			List<File> modulesProjectDirs) {
 
 			return new ModulesSemVerBatchTestClass(
-				new TestClassFile(
+				new File(
 					JenkinsResultsParserUtil.getCanonicalPath(moduleBaseDir)),
 				modulesDir, modulesProjectDirs);
 		}
 
 		protected ModulesSemVerBatchTestClass(
-			TestClassFile moduleBaseDir, File modulesDir,
+			File moduleBaseDir, File modulesDir,
 			List<File> modulesProjectDirs) {
 
 			super(moduleBaseDir);
@@ -129,10 +130,9 @@ public class ModulesSemVerBatchTestClassGroup
 	}
 
 	protected ModulesSemVerBatchTestClassGroup(
-		String batchName, BuildProfile buildProfile,
-		PortalTestClassJob portalTestClassJob) {
+		String batchName, PortalTestClassJob portalTestClassJob) {
 
-		super(batchName, buildProfile, portalTestClassJob);
+		super(batchName, portalTestClassJob);
 	}
 
 	@Override
@@ -170,12 +170,14 @@ public class ModulesSemVerBatchTestClassGroup
 			if (!modulesProjectDirs.isEmpty()) {
 				testClasses.add(
 					ModulesSemVerBatchTestClass.getInstance(
-						new TestClass.TestClassFile(
+						new File(
 							JenkinsResultsParserUtil.getCanonicalPath(
 								moduleDir)),
 						portalModulesBaseDir, modulesProjectDirs));
 			}
 		}
+
+		Collections.sort(testClasses);
 	}
 
 }

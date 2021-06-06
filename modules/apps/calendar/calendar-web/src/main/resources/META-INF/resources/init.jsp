@@ -34,6 +34,7 @@ taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %><%@
 taglib uri="http://liferay.com/tld/util" prefix="liferay-util" %>
 
 <%@ page import="com.liferay.asset.kernel.model.AssetEntry" %><%@
+page import="com.liferay.asset.kernel.model.AssetVocabularyConstants" %><%@
 page import="com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil" %><%@
 page import="com.liferay.calendar.configuration.CalendarServiceConfigurationValues" %><%@
 page import="com.liferay.calendar.constants.CalendarActionKeys" %><%@
@@ -77,6 +78,7 @@ page import="com.liferay.calendar.web.internal.util.CalendarResourceUtil" %><%@
 page import="com.liferay.calendar.web.internal.util.CalendarUtil" %><%@
 page import="com.liferay.calendar.web.internal.util.ColorUtil" %><%@
 page import="com.liferay.calendar.workflow.constants.CalendarBookingWorkflowConstants" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringBundler" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.bean.BeanParamUtil" %><%@
@@ -178,6 +180,7 @@ long rssTimeInterval = GetterUtil.getLong(portletPreferences.getValue("rssTimeIn
 CalendarBooking calendarBooking = (CalendarBooking)request.getAttribute(CalendarWebKeys.CALENDAR_BOOKING);
 
 CalendarResource groupCalendarResource = CalendarResourceUtil.getScopeGroupCalendarResource(liferayPortletRequest, scopeGroupId);
+
 CalendarResource userCalendarResource = null;
 
 if (showUserEvents || !themeDisplay.isSignedIn()) {

@@ -14,7 +14,12 @@
 
 package com.liferay.portal.search.elasticsearch7.internal.sidecar;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.OSDetector;
+
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -28,8 +33,6 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * @author Wade Cao
@@ -66,12 +69,11 @@ public class UncompressUtil {
 						Files.copy(tarArchiveInputStream, path);
 					}
 
-					Files.setPosixFilePermissions(
-						path, PosixFilePermissions.fromString("rwxrwxrwx"));
+					_setFilePermission(path);
 				}
 				else {
-					if (_logger.isWarnEnabled()) {
-						_logger.warn(
+					if (_log.isWarnEnabled()) {
+						_log.warn(
 							"Unable to read " + tarArchiveEntry.getName() +
 								" from tar archive entry");
 					}
@@ -101,15 +103,27 @@ public class UncompressUtil {
 					Files.copy(zipInputStream, path);
 				}
 
-				Files.setPosixFilePermissions(
-					path, PosixFilePermissions.fromString("rwxrwxrwx"));
+				_setFilePermission(path);
 			}
+		}
+	}
+
+	private static void _setFilePermission(Path path) throws IOException {
+		if (OSDetector.isWindows()) {
+			File file = path.toFile();
+
+			file.setExecutable(true);
+			file.setReadable(true);
+			file.setWritable(true);
+		}
+		else {
+			Files.setPosixFilePermissions(
+				path, PosixFilePermissions.fromString("rwxrwxrwx"));
 		}
 	}
 
 	private static final int _CHARS_BUFFER_SIZE = 8192;
 
-	private static final Logger _logger = LogManager.getLogger(
-		UncompressUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(UncompressUtil.class);
 
 }

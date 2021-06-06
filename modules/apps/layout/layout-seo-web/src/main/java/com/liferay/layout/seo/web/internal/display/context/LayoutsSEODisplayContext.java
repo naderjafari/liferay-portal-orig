@@ -25,11 +25,11 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureServiceUtil;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.storage.StorageEngine;
-import com.liferay.info.display.contributor.InfoDisplayContributor;
-import com.liferay.info.display.contributor.InfoDisplayContributorTracker;
 import com.liferay.info.exception.NoSuchFormVariationException;
 import com.liferay.info.form.InfoForm;
+import com.liferay.info.item.InfoItemClassDetails;
 import com.liferay.info.item.InfoItemServiceTracker;
+import com.liferay.info.item.provider.InfoItemDetailsProvider;
 import com.liferay.info.item.provider.InfoItemFormProvider;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.ItemSelectorCriterion;
@@ -86,7 +86,6 @@ public class LayoutsSEODisplayContext {
 
 	public LayoutsSEODisplayContext(
 		DLAppService dlAppService, DLURLHelper dlurlHelper,
-		InfoDisplayContributorTracker infoDisplayContributorTracker,
 		InfoItemServiceTracker infoItemServiceTracker,
 		ItemSelector itemSelector,
 		LayoutPageTemplateEntryLocalService layoutPageTemplateEntryLocalService,
@@ -99,7 +98,6 @@ public class LayoutsSEODisplayContext {
 
 		_dlAppService = dlAppService;
 		_dlurlHelper = dlurlHelper;
-		_infoDisplayContributorTracker = infoDisplayContributorTracker;
 		_infoItemServiceTracker = infoItemServiceTracker;
 		_itemSelector = itemSelector;
 		_layoutPageTemplateEntryLocalService =
@@ -201,37 +199,12 @@ public class LayoutsSEODisplayContext {
 		).build();
 	}
 
+	public PortletURL getEditCustomMetaTagsURL() {
+		return _getPortletURL("/layout/edit_custom_meta_tags");
+	}
+
 	public PortletURL getEditOpenGraphURL() {
-		LiferayPortletURL liferayPortletURL =
-			_liferayPortletResponse.createLiferayPortletURL(
-				_liferayPortletRequest.getPlid(),
-				_liferayPortletRequest.getPortletName(),
-				PortletRequest.ACTION_PHASE, MimeResponse.Copy.ALL);
-
-		liferayPortletURL.setParameter(
-			ActionRequest.ACTION_NAME, "/layout/edit_open_graph");
-
-		liferayPortletURL.setParameter(
-			"mvcRenderCommandName",
-			_liferayPortletRequest.getParameter("mvcRenderCommandName"));
-		liferayPortletURL.setParameter(
-			"tabs1", _liferayPortletRequest.getParameter("tabs1"));
-		liferayPortletURL.setParameter(
-			"screenNavigationCategoryKey",
-			_liferayPortletRequest.getParameter("screenNavigationCategoryKey"));
-		liferayPortletURL.setParameter(
-			"screenNavigationEntryKey",
-			_liferayPortletRequest.getParameter("screenNavigationEntryKey"));
-		liferayPortletURL.setParameter(
-			"selPlid", _liferayPortletRequest.getParameter("selPlid"));
-		liferayPortletURL.setParameter(
-			"privateLayout",
-			_liferayPortletRequest.getParameter("privateLayout"));
-		liferayPortletURL.setParameter(
-			"displayStyle",
-			_liferayPortletRequest.getParameter("displayStyle"));
-
-		return liferayPortletURL;
+		return _getPortletURL("/layout/edit_open_graph");
 	}
 
 	public long getGroupId() {
@@ -444,9 +417,9 @@ public class LayoutsSEODisplayContext {
 			return _privateLayout;
 		}
 
-		Layout selLayout = getSelLayout();
-
 		if (getSelLayout() != null) {
+			Layout selLayout = getSelLayout();
+
 			_privateLayout = selLayout.isPrivateLayout();
 
 			return _privateLayout;
@@ -525,6 +498,38 @@ public class LayoutsSEODisplayContext {
 			fetchLayoutPageTemplateEntryByPlid(_selPlid);
 	}
 
+	private PortletURL _getPortletURL(String actionName) {
+		LiferayPortletURL liferayPortletURL =
+			_liferayPortletResponse.createLiferayPortletURL(
+				_liferayPortletRequest.getPlid(),
+				_liferayPortletRequest.getPortletName(),
+				PortletRequest.ACTION_PHASE, MimeResponse.Copy.ALL);
+
+		liferayPortletURL.setParameter(ActionRequest.ACTION_NAME, actionName);
+
+		liferayPortletURL.setParameter(
+			"mvcRenderCommandName",
+			_liferayPortletRequest.getParameter("mvcRenderCommandName"));
+		liferayPortletURL.setParameter(
+			"tabs1", _liferayPortletRequest.getParameter("tabs1"));
+		liferayPortletURL.setParameter(
+			"screenNavigationCategoryKey",
+			_liferayPortletRequest.getParameter("screenNavigationCategoryKey"));
+		liferayPortletURL.setParameter(
+			"screenNavigationEntryKey",
+			_liferayPortletRequest.getParameter("screenNavigationEntryKey"));
+		liferayPortletURL.setParameter(
+			"selPlid", _liferayPortletRequest.getParameter("selPlid"));
+		liferayPortletURL.setParameter(
+			"privateLayout",
+			_liferayPortletRequest.getParameter("privateLayout"));
+		liferayPortletURL.setParameter(
+			"displayStyle",
+			_liferayPortletRequest.getParameter("displayStyle"));
+
+		return liferayPortletURL;
+	}
+
 	private Long _getSelPlid() {
 		if (_selPlid != null) {
 			return _selPlid;
@@ -557,14 +562,18 @@ public class LayoutsSEODisplayContext {
 	}
 
 	private String _getTypeLabel(String className) {
-		InfoDisplayContributor<?> infoDisplayContributor =
-			_infoDisplayContributorTracker.getInfoDisplayContributor(className);
+		InfoItemDetailsProvider infoItemDetailsProvider =
+			_infoItemServiceTracker.getFirstInfoItemService(
+				InfoItemDetailsProvider.class, className);
 
-		if (infoDisplayContributor == null) {
+		if (infoItemDetailsProvider == null) {
 			return StringPool.BLANK;
 		}
 
-		return infoDisplayContributor.getLabel(_themeDisplay.getLocale());
+		InfoItemClassDetails infoItemClassDetails =
+			infoItemDetailsProvider.getInfoItemClassDetails();
+
+		return infoItemClassDetails.getLabel(_themeDisplay.getLocale());
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -575,7 +584,6 @@ public class LayoutsSEODisplayContext {
 	private final DLURLHelper _dlurlHelper;
 	private final GroupDisplayContextHelper _groupDisplayContextHelper;
 	private final HttpServletRequest _httpServletRequest;
-	private final InfoDisplayContributorTracker _infoDisplayContributorTracker;
 	private final InfoItemServiceTracker _infoItemServiceTracker;
 	private final ItemSelector _itemSelector;
 	private Long _layoutId;

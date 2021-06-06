@@ -239,9 +239,7 @@ public class DefaultMessageBus implements ManagedServiceFactory, MessageBus {
 
 		message.setDestinationName(destinationName);
 
-		Long companyId = (Long)message.get("companyId");
-
-		if (companyId == null) {
+		if (message.get("companyId") == null) {
 			Long[] companyIds = (Long[])message.get("companyIds");
 
 			if (companyIds != null) {
@@ -531,9 +529,8 @@ public class DefaultMessageBus implements ManagedServiceFactory, MessageBus {
 
 			baseAsyncDestination.setMaximumQueueSize(
 				destinationWorkerConfiguration.maxQueueSize());
-			baseAsyncDestination.setWorkersCoreSize(
-				destinationWorkerConfiguration.workerCoreSize());
-			baseAsyncDestination.setWorkersMaxSize(
+			baseAsyncDestination.setWorkersSize(
+				destinationWorkerConfiguration.workerCoreSize(),
 				destinationWorkerConfiguration.workerMaxSize());
 		}
 	}

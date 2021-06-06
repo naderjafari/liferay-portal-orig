@@ -24,8 +24,11 @@ import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersisten
  *
  * @author Brian Wing Shun Chan
  * @see DDMContentLocalService
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ DDMFieldLocalServiceImpl}
  * @generated
  */
+@Deprecated
 public class DDMContentLocalServiceWrapper
 	implements DDMContentLocalService, ServiceWrapper<DDMContentLocalService> {
 
@@ -140,6 +143,13 @@ public class DDMContentLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _ddmContentLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _ddmContentLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override

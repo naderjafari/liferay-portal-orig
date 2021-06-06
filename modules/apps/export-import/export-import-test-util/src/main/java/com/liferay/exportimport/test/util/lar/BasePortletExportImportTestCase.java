@@ -36,6 +36,8 @@ import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.LocaleException;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.StagedModel;
@@ -364,12 +366,31 @@ public abstract class BasePortletExportImportTestCase
 	protected void exportImportPortlet(String portletId) throws Exception {
 		exportImportPortlet(
 			portletId, new LinkedHashMap<String, String[]>(),
-			new LinkedHashMap<String, String[]>());
+			new LinkedHashMap<String, String[]>(), true);
+	}
+
+	protected void exportImportPortlet(
+			String portletId, boolean portletStagingInProcess)
+		throws Exception {
+
+		exportImportPortlet(
+			portletId, new LinkedHashMap<String, String[]>(),
+			new LinkedHashMap<String, String[]>(), portletStagingInProcess);
 	}
 
 	protected void exportImportPortlet(
 			String portletId, Map<String, String[]> exportParameterMap,
 			Map<String, String[]> importParameterMap)
+		throws Exception {
+
+		exportImportPortlet(
+			portletId, exportParameterMap, importParameterMap, true);
+	}
+
+	protected void exportImportPortlet(
+			String portletId, Map<String, String[]> exportParameterMap,
+			Map<String, String[]> importParameterMap,
+			boolean portletStagingInProcess)
 		throws Exception {
 
 		User user = TestPropsValues.getUser();
@@ -390,7 +411,8 @@ public abstract class BasePortletExportImportTestCase
 						TYPE_PUBLISH_PORTLET_LOCAL,
 					settingsMap);
 
-		ExportImportThreadLocal.setPortletStagingInProcess(true);
+		ExportImportThreadLocal.setPortletStagingInProcess(
+			portletStagingInProcess);
 
 		ExportImportLifecycleManagerUtil.fireExportImportLifecycleEvent(
 			ExportImportLifecycleConstants.
@@ -464,6 +486,20 @@ public abstract class BasePortletExportImportTestCase
 		return LayoutTestUtil.getPortletPreferences(importedLayout, portletId);
 	}
 
+	protected PortletPreferences getImportedPortletPreferences(
+			Map<String, String[]> preferenceMap,
+			boolean portletStagingInProcess)
+		throws Exception {
+
+		String portletId = LayoutTestUtil.addPortletToLayout(
+			TestPropsValues.getUserId(), layout, getPortletId(), "column-1",
+			preferenceMap);
+
+		exportImportPortlet(portletId, portletStagingInProcess);
+
+		return LayoutTestUtil.getPortletPreferences(importedLayout, portletId);
+	}
+
 	protected boolean isVersioningEnabled() {
 		return false;
 	}
@@ -528,6 +564,10 @@ public abstract class BasePortletExportImportTestCase
 			Assert.assertFalse(expectFailure);
 		}
 		catch (LocaleException localeException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(localeException, localeException);
+			}
+
 			Assert.assertTrue(expectFailure);
 		}
 	}
@@ -681,5 +721,8 @@ public abstract class BasePortletExportImportTestCase
 
 	protected void validateVersions() throws Exception {
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		BasePortletExportImportTestCase.class);
 
 }

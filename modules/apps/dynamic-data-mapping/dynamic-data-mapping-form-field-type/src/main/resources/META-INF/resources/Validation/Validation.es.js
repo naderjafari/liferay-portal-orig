@@ -13,7 +13,9 @@
  */
 
 import ClayForm from '@clayui/form';
-import React, {useState} from 'react';
+import {usePrevious} from '@liferay/frontend-js-react-web';
+import {useFormState} from 'data-engine-js-components-web';
+import React, {useEffect, useState} from 'react';
 
 import Checkbox from '../Checkbox/Checkbox.es';
 import Numeric from '../Numeric/Numeric.es';
@@ -24,6 +26,7 @@ import {getSelectedValidation, transformData} from './transform.es';
 
 const Validation = ({
 	dataType,
+	defaultLanguageId,
 	editingLanguageId,
 	enableValidation: initialEnableValidation,
 	errorMessage: initialErrorMessage,
@@ -71,7 +74,7 @@ const Validation = ({
 				expression = {
 					name: newState.selectedValidation.name,
 					value: subWords(newState.selectedValidation.template, {
-						name: validation.fieldName,
+						name: validation?.fieldName,
 					}),
 				};
 			}
@@ -97,6 +100,28 @@ const Validation = ({
 
 	const transformSelectedValidation = getSelectedValidation(validations);
 
+	const prevEditingLanguageId = usePrevious(editingLanguageId);
+
+	useEffect(() => {
+		if (prevEditingLanguageId !== editingLanguageId) {
+			setState((prevState) => {
+				const {errorMessage = {}, parameter = {}} = value;
+
+				return {
+					...prevState,
+					errorMessage:
+						errorMessage[editingLanguageId] !== undefined
+							? errorMessage[editingLanguageId]
+							: errorMessage[defaultLanguageId],
+					parameter:
+						parameter[editingLanguageId] !== undefined
+							? parameter[editingLanguageId]
+							: parameter[defaultLanguageId],
+				};
+			});
+		}
+	}, [defaultLanguageId, editingLanguageId, prevEditingLanguageId, value]);
+
 	return (
 		<ClayForm.Group className="lfr-ddm-form-field-validation">
 			<Checkbox
@@ -116,7 +141,7 @@ const Validation = ({
 				<>
 					<Select
 						disableEmptyOption
-						label={Liferay.Language.get('if-input')}
+						label={Liferay.Language.get('accept-if-input')}
 						name="selectedValidation"
 						onChange={(event, value) =>
 							handleChange(
@@ -127,6 +152,7 @@ const Validation = ({
 						options={validations}
 						placeholder={Liferay.Language.get('choose-an-option')}
 						readOnly={readOnly || localizationMode}
+						showEmptyOption={false}
 						spritemap={spritemap}
 						value={[selectedValidation.name]}
 						visible={visible}
@@ -134,7 +160,7 @@ const Validation = ({
 					{selectedValidation.parameterMessage && (
 						<DynamicComponent
 							dataType={dataType}
-							label={Liferay.Language.get('the-value')}
+							label={Liferay.Language.get('value')}
 							name={`${name}_parameter`}
 							onChange={(event) =>
 								handleChange('parameter', event.target.value)
@@ -148,12 +174,12 @@ const Validation = ({
 						/>
 					)}
 					<Text
-						label={Liferay.Language.get('show-error-message')}
+						label={Liferay.Language.get('error-message')}
 						name={`${name}_errorMessage`}
 						onChange={(event) =>
 							handleChange('errorMessage', event.target.value)
 						}
-						placeholder={Liferay.Language.get('show-error-message')}
+						placeholder={Liferay.Language.get('error-message')}
 						readOnly={readOnly}
 						required={false}
 						spritemap={spritemap}
@@ -170,28 +196,31 @@ const Main = ({
 	dataType: initialDataType,
 	defaultLanguageId,
 	editingLanguageId,
+	ffCustomDDMValidationEnabled,
 	label,
 	name,
 	onChange,
 	readOnly,
 	spritemap,
 	validation,
-	validations: initialValidations,
 	value = {},
 	visible,
 }) => {
+	const {validations} = useFormState();
 	const data = transformData({
 		defaultLanguageId,
 		editingLanguageId,
+		ffCustomDDMValidationEnabled,
 		initialDataType,
-		initialValidations,
 		validation,
+		validations,
 		value,
 	});
 
 	return (
 		<Validation
 			{...data}
+			defaultLanguageId={defaultLanguageId}
 			editingLanguageId={editingLanguageId}
 			label={label}
 			name={name}

@@ -12,13 +12,15 @@ definition {
 
 		JSONGroup.addGroup(groupName = "Site Name");
 
-		SitePages.openPagesAdmin(siteURLKey = "Site Name");
+		JSONLayout.addPublicLayout(
+			groupName = "Site Name",
+			layoutName = "Staging Blogs Page");
 
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			portlet = "Pages");
-
-		SitePages.addPublicPage(pageName = "Staging Blogs Page");
+		JSONLayout.addWidgetToPublicLayout(
+			column = "1",
+			groupName = "Site Name",
+			layoutName = "Staging Blogs Page",
+			widgetName = "Blogs");
 	}
 
 	tearDown {
@@ -35,21 +37,16 @@ definition {
 
 	@description = "This is a use case for LPS-72461."
 	@priority = "5"
+	@refactorneeded
 	test StagingRemoteLiveBlogsPG {
+		property app.server.bundles.size = "1";
 		property custom.properties = "tunneling.servlet.shared.secret=1234567890123456${line.separator}auth.verifier.TunnelAuthVerifier.hosts.allowed=";
+		property databases.size = "1";
 		property test.name.skip.portal.instance = "Staging#StagingRemoteLiveBlogsPG";
 
-		Staging.remoteStagingSetUp(siteName = "Site Name");
-
-		Navigator.gotoSitePage(
-			pageName = "Staging Blogs Page",
-			siteName = "Site Name");
-
-		Portlet.addPG(portletName = "Blogs");
-
-		Staging.gotoPublishToLive();
-
-		Staging.publishToLive(remoteStaging = "true");
+		Staging.remoteStagingSetUpViaJson(
+			groupName = "Site Name",
+			remotePort = "9080");
 
 		Navigator.gotoSitePage(
 			pageName = "Staging Blogs Page",
@@ -59,13 +56,9 @@ definition {
 			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
 
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+		Navigator.gotoSitePage(
+			pageName = "Staging Blogs Page",
+			siteName = "Site Name");
 
 		Staging.gotoPublishToLive();
 
@@ -75,7 +68,15 @@ definition {
 
 		AssertConsoleTextNotPresent(value1 = "RuntimeException");
 
+		User.logoutPG();
+
+		User.firstLoginUI(
+			password = "test",
+			specificURL = "http://localhost:9080",
+			userEmailAddress = "test@liferay.com");
+
 		Navigator.gotoSitePage(
+			baseURL = "http://localhost:9080",
 			pageName = "Staging Blogs Page",
 			siteName = "Remote Site");
 
@@ -90,6 +91,7 @@ definition {
 
 	@description = "This is a use case for LPS-74206."
 	@priority = "5"
+	@refactorneeded
 	test StagingRemoteLiveBlogsWithWorkflow {
 		property custom.properties = "tunneling.servlet.shared.secret=1234567890123456${line.separator}auth.verifier.TunnelAuthVerifier.hosts.allowed=";
 		property test.name.skip.portal.instance = "RemoteStagingBlogs#StagingRemoteLiveBlogsWithWorkflow";
@@ -115,12 +117,6 @@ definition {
 		Workflow.configureWorkflow(
 			workflowDefinition = "Single Approver",
 			workflowResourceValue = "Blogs Entry");
-
-		Navigator.gotoSitePage(
-			pageName = "Staging Blogs Page",
-			siteName = "Site Name");
-
-		Portlet.addPG(portletName = "Blogs");
 
 		Navigator.gotoSitePage(
 			pageName = "Staging Blogs Page",
@@ -174,13 +170,10 @@ definition {
 
 		AssertConsoleTextNotPresent(value1 = "RuntimeException");
 
-		Navigator.gotoSitePage(
-			pageName = "Staging Blogs Page",
-			siteName = "Remote Site");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Staging Blogs Page",
+			siteURLKey = "remote-site");
 
 		BlogsEntry.viewEntryPG(
 			entryContent = "Blogs Entry Content",
@@ -189,6 +182,7 @@ definition {
 
 	@description = "This test covers LPS-83426 and LPS-92488. It views management bar details in the staging site and asserts that a replaced image displays in remote site."
 	@priority = "5"
+	@refactorneeded
 	test StagingRemoteLiveChangeBlogsEntryCoverImage {
 		property custom.properties = "tunneling.servlet.shared.secret=1234567890123456${line.separator}auth.verifier.TunnelAuthVerifier.hosts.allowed=";
 		property test.name.skip.portal.instance = "Staging#StagingRemoteLiveChangeBlogsEntryCoverImage";
@@ -201,12 +195,6 @@ definition {
 			sourceFileName = "Document_2.jpg");
 
 		Staging.remoteStagingSetUp(siteName = "Site Name");
-
-		Navigator.gotoSitePage(
-			pageName = "Staging Blogs Page",
-			siteName = "Site Name");
-
-		Portlet.addPG(portletName = "Blogs");
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
@@ -239,13 +227,10 @@ definition {
 
 		Staging.publishToLive(remoteStaging = "true");
 
-		Navigator.gotoSitePage(
-			pageName = "Staging Blogs Page",
-			siteName = "Remote Site");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Staging Blogs Page",
+			siteURLKey = "remote-site");
 
 		BlogsEntry.viewEntryPG(
 			entryContent = "Blogs Entry Content",
@@ -287,13 +272,10 @@ definition {
 
 		AssertConsoleTextNotPresent(value1 = "PortletDataException");
 
-		Navigator.gotoSitePage(
-			pageName = "Staging Blogs Page",
-			siteName = "Remote Site");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Staging Blogs Page",
+			siteURLKey = "remote-site");
 
 		BlogsEntry.viewEntryPG(
 			entryContent = "Blogs Entry Content",

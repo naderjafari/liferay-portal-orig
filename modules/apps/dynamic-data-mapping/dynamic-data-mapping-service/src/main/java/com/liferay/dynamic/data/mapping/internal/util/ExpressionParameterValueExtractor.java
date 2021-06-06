@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 public class ExpressionParameterValueExtractor {
 
 	/**
-	 * @param expression Ex: equals('Country', "US")
+	 * @param  expression Ex: equals('Country', "US")
 	 * @return a list with the given expression parameters Ex: ['Country', "US"]
 	 */
 	public static List<String> extractParameterValues(String expression) {
@@ -45,6 +45,6 @@ public class ExpressionParameterValueExtractor {
 	}
 
 	private static final String _FUNCTION_STRUCTURE_REGEX =
-		"([aA-zZ])*.([(])|,[ ]*|[)]";
+		"\\(+|[aA-zZ]+\\(|,\\s*|\\)+|(\\|\\||&&)|\".*?\"";
 
 }

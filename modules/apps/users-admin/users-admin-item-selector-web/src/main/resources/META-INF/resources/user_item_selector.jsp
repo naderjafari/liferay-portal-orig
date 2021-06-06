@@ -18,17 +18,19 @@
 
 <%
 UserItemSelectorViewDisplayContext userItemSelectorViewDisplayContext = (UserItemSelectorViewDisplayContext)request.getAttribute(UserItemSelectorViewConstants.USER_ITEM_SELECTOR_VIEW_DISPLAY_CONTEXT);
+
+String displayStyle = userItemSelectorViewDisplayContext.getDisplayStyle();
 %>
 
 <clay:management-toolbar
-	displayContext="<%= new UserItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, userItemSelectorViewDisplayContext) %>"
+	managementToolbarDisplayContext="<%= new UserItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, userItemSelectorViewDisplayContext) %>"
 />
 
 <clay:container-fluid
 	id='<%= liferayPortletResponse.getNamespace() + "userSelectorWrapper" %>'
 >
 	<liferay-ui:search-container
-		id="users"
+		id="<%= userItemSelectorViewDisplayContext.getSearchContainerId() %>"
 		searchContainer="<%= userItemSelectorViewDisplayContext.getSearchContainer() %>"
 	>
 		<liferay-ui:search-container-row
@@ -39,58 +41,64 @@ UserItemSelectorViewDisplayContext userItemSelectorViewDisplayContext = (UserIte
 		>
 
 			<%
-			String userFullName = user.getFullName();
-
-			Map<String, Object> data = HashMapBuilder.<String, Object>put(
-				"id", user.getUserId()
-			).put(
-				"name", userFullName
-			).build();
-
-			row.setData(data);
+			row.setData(
+				HashMapBuilder.<String, Object>put(
+					"id", user.getUserId()
+				).put(
+					"name", user.getFullName()
+				).build());
 			%>
 
-			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
-				name="name"
-				value="<%= HtmlUtil.escape(userFullName) %>"
-			/>
+			<c:choose>
+				<c:when test='<%= displayStyle.equals("descriptive") %>'>
+					<liferay-ui:search-container-column-text>
+						<liferay-ui:user-portrait
+							userId="<%= user.getUserId() %>"
+						/>
+					</liferay-ui:search-container-column-text>
 
-			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
-				name="screen-name"
-				property="screenName"
-			/>
+					<liferay-ui:search-container-column-text
+						colspan="<%= 2 %>"
+					>
+						<h5 class="table-title"><%= user.getFullName() %></h5>
+
+						<h6 class="text-default">
+							<span><%= user.getScreenName() %></span>
+						</h6>
+					</liferay-ui:search-container-column-text>
+				</c:when>
+				<c:when test='<%= displayStyle.equals("icon") %>'>
+
+					<%
+					row.setCssClass("card-page-item card-page-item-asset selectable");
+					%>
+
+					<liferay-ui:search-container-column-text>
+						<clay:user-card
+							userCard="<%= new SelectUserUserCard(user, renderRequest, searchContainer.getRowChecker()) %>"
+						/>
+					</liferay-ui:search-container-column-text>
+				</c:when>
+				<c:otherwise>
+					<liferay-ui:search-container-column-text
+						cssClass="table-cell-expand table-title"
+						name="name"
+						value="<%= HtmlUtil.escape(user.getFullName()) %>"
+					/>
+
+					<liferay-ui:search-container-column-text
+						cssClass="table-cell-expand"
+						name="screen-name"
+						property="screenName"
+					/>
+				</c:otherwise>
+			</c:choose>
 		</liferay-ui:search-container-row>
 
 		<liferay-ui:search-iterator
-			displayStyle="list"
+			displayStyle="<%= userItemSelectorViewDisplayContext.getDisplayStyle() %>"
 			markupView="lexicon"
 			searchContainer="<%= userItemSelectorViewDisplayContext.getSearchContainer() %>"
 		/>
 	</liferay-ui:search-container>
 </clay:container-fluid>
-
-<aui:script use="liferay-search-container">
-	var searchContainer = Liferay.SearchContainer.get('<portlet:namespace />users');
-
-	searchContainer.on('rowToggled', function (event) {
-		var allSelectedElements = event.elements.allSelectedElements;
-		var arr = [];
-
-		allSelectedElements.each(function () {
-			var row = this.ancestor('tr');
-
-			var data = row.getDOM().dataset;
-
-			arr.push({id: data.id, name: data.name});
-		});
-
-		Liferay.Util.getOpener().Liferay.fire(
-			'<%= HtmlUtil.escapeJS(userItemSelectorViewDisplayContext.getItemSelectedEventName()) %>',
-			{
-				data: arr,
-			}
-		);
-	});
-</aui:script>

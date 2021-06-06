@@ -35,6 +35,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>RECYCLE_BIN_WARNING_RENAME_RADIO</td>
+	<td>//input[contains(@id,'rename')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td></td>
 	<td></td>
 	<td></td>
@@ -47,7 +52,7 @@
 </tr>
 <tr>
 	<td>RECYCLE_BIN_FOLDER_WARNING_IFRAME</td>
-	<td>//iframe[contains(@id,'selectContainer_iframe_')]</td>
+	<td>//iframe[contains(@id,'TrashPortlet')][contains(@title,'Warning')]</td>
 	<td></td>
 </tr>
 </tbody>

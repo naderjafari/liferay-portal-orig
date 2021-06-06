@@ -1,12 +1,13 @@
 @component-name = "portal-document-management"
 definition {
 
-	property osgi.app.includes = "oauth, oauth-api, oauth-service, oauth-web, sync-encryptor, sync-oauth, sync-security, sync-service, sync-web";
+	property custom.properties = "default.layout.template.id=1_column";
+	property osgi.app.includes = "oauth,oauth-api,oauth-service,oauth-web,sync-encryptor,sync-oauth,sync-security,sync-service,sync-web";
 	property portal.release = "false";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column";
 	property test.run.environment = "EE";
 	property testray.main.component.name = "Sync";
+
 	var pageName = "Sync Page";
 	var portletName = "Documents and Media";
 
@@ -66,6 +67,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddDocument {
 		property portal.acceptance = "false";
 		property testray.component.names = "Training";

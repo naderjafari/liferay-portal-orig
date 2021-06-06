@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.model.impl.BaseModelImpl;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.DateUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.security.audit.storage.model.AuditEvent;
 import com.liferay.portal.security.audit.storage.model.AuditEventModel;
@@ -46,6 +47,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -120,8 +122,17 @@ public class AuditEventModelImpl
 
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
+	 */
+	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 1L;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *		#getColumnBitmask(String)}
+	 */
+	@Deprecated
 	public static final long CREATEDATE_COLUMN_BITMASK = 2L;
 
 	/**
@@ -143,7 +154,9 @@ public class AuditEventModelImpl
 	 *
 	 * @param soapModel the soap model instance to convert
 	 * @return the normal model instance
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
 	 */
+	@Deprecated
 	public static AuditEvent toModel(AuditEventSoap soapModel) {
 		if (soapModel == null) {
 			return null;
@@ -175,7 +188,9 @@ public class AuditEventModelImpl
 	 *
 	 * @param soapModels the soap model instances to convert
 	 * @return the normal model instances
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
 	 */
+	@Deprecated
 	public static List<AuditEvent> toModels(AuditEventSoap[] soapModels) {
 		if (soapModels == null) {
 			return null;
@@ -387,6 +402,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setAuditEventId(long auditEventId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_auditEventId = auditEventId;
 	}
 
@@ -398,19 +417,21 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setCompanyId(long companyId) {
-		_columnBitmask |= COMPANYID_COLUMN_BITMASK;
-
-		if (!_setOriginalCompanyId) {
-			_setOriginalCompanyId = true;
-
-			_originalCompanyId = _companyId;
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
 		}
 
 		_companyId = companyId;
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
 	public long getOriginalCompanyId() {
-		return _originalCompanyId;
+		return GetterUtil.getLong(
+			this.<Long>getColumnOriginalValue("companyId"));
 	}
 
 	@JSON
@@ -421,6 +442,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setUserId(long userId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_userId = userId;
 	}
 
@@ -453,6 +478,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setUserName(String userName) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_userName = userName;
 	}
 
@@ -464,7 +493,9 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setCreateDate(Date createDate) {
-		_columnBitmask = -1L;
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
 
 		_createDate = createDate;
 	}
@@ -482,6 +513,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setEventType(String eventType) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_eventType = eventType;
 	}
 
@@ -498,6 +533,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setClassName(String className) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_className = className;
 	}
 
@@ -514,6 +553,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setClassPK(String classPK) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_classPK = classPK;
 	}
 
@@ -530,6 +573,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setMessage(String message) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_message = message;
 	}
 
@@ -546,6 +593,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setClientHost(String clientHost) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_clientHost = clientHost;
 	}
 
@@ -562,6 +613,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setClientIP(String clientIP) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_clientIP = clientIP;
 	}
 
@@ -578,6 +633,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setServerName(String serverName) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_serverName = serverName;
 	}
 
@@ -589,6 +648,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setServerPort(int serverPort) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_serverPort = serverPort;
 	}
 
@@ -605,6 +668,10 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setSessionID(String sessionID) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_sessionID = sessionID;
 	}
 
@@ -621,10 +688,34 @@ public class AuditEventModelImpl
 
 	@Override
 	public void setAdditionalInfo(String additionalInfo) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_additionalInfo = additionalInfo;
 	}
 
 	public long getColumnBitmask() {
+		if (_columnBitmask > 0) {
+			return _columnBitmask;
+		}
+
+		if ((_columnOriginalValues == null) ||
+			(_columnOriginalValues == Collections.EMPTY_MAP)) {
+
+			return 0;
+		}
+
+		for (Map.Entry<String, Object> entry :
+				_columnOriginalValues.entrySet()) {
+
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
+				_columnBitmask |= _columnBitmasks.get(entry.getKey());
+			}
+		}
+
 		return _columnBitmask;
 	}
 
@@ -743,13 +834,9 @@ public class AuditEventModelImpl
 
 	@Override
 	public void resetOriginalValues() {
-		AuditEventModelImpl auditEventModelImpl = this;
+		_columnOriginalValues = Collections.emptyMap();
 
-		auditEventModelImpl._originalCompanyId = auditEventModelImpl._companyId;
-
-		auditEventModelImpl._setOriginalCompanyId = false;
-
-		auditEventModelImpl._columnBitmask = 0;
+		_columnBitmask = 0;
 	}
 
 	@Override
@@ -862,7 +949,7 @@ public class AuditEventModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			4 * attributeGetterFunctions.size() + 2);
+			(4 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -894,7 +981,7 @@ public class AuditEventModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			5 * attributeGetterFunctions.size() + 4);
+			(5 * attributeGetterFunctions.size()) + 4);
 
 		sb.append("<model><model-name>");
 		sb.append(getModelClassName());
@@ -928,8 +1015,6 @@ public class AuditEventModelImpl
 
 	private long _auditEventId;
 	private long _companyId;
-	private long _originalCompanyId;
-	private boolean _setOriginalCompanyId;
 	private long _userId;
 	private String _userName;
 	private Date _createDate;
@@ -943,6 +1028,95 @@ public class AuditEventModelImpl
 	private int _serverPort;
 	private String _sessionID;
 	private String _additionalInfo;
+
+	public <T> T getColumnValue(String columnName) {
+		Function<AuditEvent, Object> function = _attributeGetterFunctions.get(
+			columnName);
+
+		if (function == null) {
+			throw new IllegalArgumentException(
+				"No attribute getter function found for " + columnName);
+		}
+
+		return (T)function.apply((AuditEvent)this);
+	}
+
+	public <T> T getColumnOriginalValue(String columnName) {
+		if (_columnOriginalValues == null) {
+			return null;
+		}
+
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		return (T)_columnOriginalValues.get(columnName);
+	}
+
+	private void _setColumnOriginalValues() {
+		_columnOriginalValues = new HashMap<String, Object>();
+
+		_columnOriginalValues.put("auditEventId", _auditEventId);
+		_columnOriginalValues.put("companyId", _companyId);
+		_columnOriginalValues.put("userId", _userId);
+		_columnOriginalValues.put("userName", _userName);
+		_columnOriginalValues.put("createDate", _createDate);
+		_columnOriginalValues.put("eventType", _eventType);
+		_columnOriginalValues.put("className", _className);
+		_columnOriginalValues.put("classPK", _classPK);
+		_columnOriginalValues.put("message", _message);
+		_columnOriginalValues.put("clientHost", _clientHost);
+		_columnOriginalValues.put("clientIP", _clientIP);
+		_columnOriginalValues.put("serverName", _serverName);
+		_columnOriginalValues.put("serverPort", _serverPort);
+		_columnOriginalValues.put("sessionID", _sessionID);
+		_columnOriginalValues.put("additionalInfo", _additionalInfo);
+	}
+
+	private transient Map<String, Object> _columnOriginalValues;
+
+	public static long getColumnBitmask(String columnName) {
+		return _columnBitmasks.get(columnName);
+	}
+
+	private static final Map<String, Long> _columnBitmasks;
+
+	static {
+		Map<String, Long> columnBitmasks = new HashMap<>();
+
+		columnBitmasks.put("auditEventId", 1L);
+
+		columnBitmasks.put("companyId", 2L);
+
+		columnBitmasks.put("userId", 4L);
+
+		columnBitmasks.put("userName", 8L);
+
+		columnBitmasks.put("createDate", 16L);
+
+		columnBitmasks.put("eventType", 32L);
+
+		columnBitmasks.put("className", 64L);
+
+		columnBitmasks.put("classPK", 128L);
+
+		columnBitmasks.put("message", 256L);
+
+		columnBitmasks.put("clientHost", 512L);
+
+		columnBitmasks.put("clientIP", 1024L);
+
+		columnBitmasks.put("serverName", 2048L);
+
+		columnBitmasks.put("serverPort", 4096L);
+
+		columnBitmasks.put("sessionID", 8192L);
+
+		columnBitmasks.put("additionalInfo", 16384L);
+
+		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
+	}
+
 	private long _columnBitmask;
 	private AuditEvent _escapedModel;
 

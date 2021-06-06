@@ -19,6 +19,7 @@ import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidation;
 import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.model.DDMFormRule;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -104,7 +105,7 @@ public class DDMFormTemplateContextFactoryHelper {
 
 			Matcher matcher = pattern.matcher(expression);
 
-			if (matcher.matches()) {
+			if (matcher.find()) {
 				referencedFieldNames.add(ddmFormFieldName);
 			}
 		}
@@ -113,7 +114,10 @@ public class DDMFormTemplateContextFactoryHelper {
 	}
 
 	protected boolean isDDMFormFieldEvaluable(DDMFormField ddmFormField) {
-		if (ddmFormField.isRequired()) {
+		if (ddmFormField.isRequired() ||
+			GetterUtil.getBoolean(
+				ddmFormField.getProperty("requireConfirmation"))) {
+
 			return true;
 		}
 

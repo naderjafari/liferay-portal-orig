@@ -18,6 +18,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.UserNotificationEvent;
@@ -112,12 +113,11 @@ public class NotificationsManagementToolbarDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = _liferayPortletResponse.createRenderURL();
-
-		clearResultsURL.setParameter(
-			"actionRequired", String.valueOf(_isActionRequired()));
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setParameter(
+			"actionRequired", _isActionRequired()
+		).buildString();
 	}
 
 	public List<DropdownItem> getFilterDropdownItems() {
@@ -145,12 +145,14 @@ public class NotificationsManagementToolbarDisplayContext {
 		return LabelItemListBuilder.add(
 			() -> navigation.equals("read") || navigation.equals("unread"),
 			labelItem -> {
-				PortletURL removeLabelURL = PortletURLUtil.clone(
-					_currentURLObj, _liferayPortletResponse);
-
-				removeLabelURL.setParameter("navigation", (String)null);
-
-				labelItem.putData("removeLabelURL", removeLabelURL.toString());
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						PortletURLUtil.clone(
+							_currentURLObj, _liferayPortletResponse)
+					).setNavigation(
+						(String)null
+					).buildString());
 
 				labelItem.setCloseable(true);
 				labelItem.setLabel(
@@ -164,16 +166,16 @@ public class NotificationsManagementToolbarDisplayContext {
 	}
 
 	public PortletURL getSortingURL() throws PortletException {
-		PortletURL sortingURL = PortletURLUtil.clone(
-			_currentURLObj, _liferayPortletResponse);
-
-		sortingURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
-		sortingURL.setParameter("orderByCol", "date");
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(_currentURLObj, _liferayPortletResponse)
+		).setParameter(
+			SearchContainer.DEFAULT_CUR_PARAM, "0"
+		).setParameter(
+			"orderByCol", "date"
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL;
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).build();
 	}
 
 	private List<DropdownItem> _getFilterNavigationDropdownItems() {
@@ -181,34 +183,34 @@ public class NotificationsManagementToolbarDisplayContext {
 
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {
+				dropdownItem.setActive(navigation.equals("all"));
 				dropdownItem.setHref(
 					PortletURLUtil.clone(
 						_currentURLObj, _liferayPortletResponse),
 					SearchContainer.DEFAULT_CUR_PARAM, "0", "navigation",
 					"all");
-				dropdownItem.setActive(navigation.equals("all"));
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "all"));
 			}
 		).add(
 			dropdownItem -> {
+				dropdownItem.setActive(navigation.equals("unread"));
 				dropdownItem.setHref(
 					PortletURLUtil.clone(
 						_currentURLObj, _liferayPortletResponse),
 					SearchContainer.DEFAULT_CUR_PARAM, "0", "navigation",
 					"unread");
-				dropdownItem.setActive(navigation.equals("unread"));
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "unread"));
 			}
 		).add(
 			dropdownItem -> {
+				dropdownItem.setActive(navigation.equals("read"));
 				dropdownItem.setHref(
 					PortletURLUtil.clone(
 						_currentURLObj, _liferayPortletResponse),
 					SearchContainer.DEFAULT_CUR_PARAM, "0", "navigation",
 					"read");
-				dropdownItem.setActive(navigation.equals("read"));
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "read"));
 			}

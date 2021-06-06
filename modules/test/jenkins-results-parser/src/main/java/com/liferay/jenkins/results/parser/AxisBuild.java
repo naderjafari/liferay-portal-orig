@@ -41,7 +41,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -54,8 +53,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
-
-import org.json.JSONObject;
 
 /**
  * @author Peter Yoo
@@ -121,6 +118,11 @@ public class AxisBuild extends BaseBuild {
 		catch (MalformedURLException malformedURLException) {
 			return null;
 		}
+	}
+
+	public String getAxisName() {
+		return JenkinsResultsParserUtil.combine(
+			getJobVariant(), "/", getAxisNumber());
 	}
 
 	public String getAxisNumber() {
@@ -419,23 +421,19 @@ public class AxisBuild extends BaseBuild {
 
 	@Override
 	public List<TestResult> getTestResults(String testStatus) {
-		String status = getStatus();
-
-		if (!status.equals("completed")) {
-			return Collections.emptyList();
+		if (JenkinsResultsParserUtil.isNullOrEmpty(testStatus)) {
+			return getTestResults();
 		}
 
-		JSONObject testReportJSONObject = getTestReportJSONObject(true);
+		List<TestResult> testResults = new ArrayList<>();
 
-		if (testReportJSONObject == null) {
-			System.out.println(
-				"Unable to get test results for: " + getBuildURL());
-
-			return Collections.emptyList();
+		for (TestResult testResult : getTestResults()) {
+			if (testStatus.equals(testResult.getStatus())) {
+				testResults.add(testResult);
+			}
 		}
 
-		return getTestResults(
-			this, testReportJSONObject.getJSONArray("suites"), testStatus);
+		return testResults;
 	}
 
 	@Override
@@ -521,7 +519,7 @@ public class AxisBuild extends BaseBuild {
 			}
 		}
 		catch (DocumentException documentException) {
-			throw new RuntimeException(documentException);
+			warningMessages.add("Unable to parse Poshi warnings");
 		}
 
 		return warningMessages;
@@ -548,7 +546,12 @@ public class AxisBuild extends BaseBuild {
 	protected void extractBuildURLComponents(Matcher matcher) {
 		super.extractBuildURLComponents(matcher);
 
-		axisVariable = matcher.group("axisVariable");
+		try {
+			axisVariable = matcher.group("axisVariable");
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+			axisVariable = null;
+		}
 	}
 
 	@Override
@@ -623,8 +626,6 @@ public class AxisBuild extends BaseBuild {
 		"https://testray.liferay.com/reports/production/logs";
 
 	protected String axisVariable;
-
-	// Skip JavaParser
 
 	private static final FailureMessageGenerator[] _FAILURE_MESSAGE_GENERATORS =
 		{

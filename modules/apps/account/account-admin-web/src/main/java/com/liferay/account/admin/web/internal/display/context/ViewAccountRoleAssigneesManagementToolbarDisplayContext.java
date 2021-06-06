@@ -20,6 +20,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -32,7 +33,6 @@ import com.liferay.portal.kernel.util.ParamUtil;
 
 import java.util.List;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -62,26 +62,26 @@ public class ViewAccountRoleAssigneesManagementToolbarDisplayContext
 
 				dropdownItem.putData("action", "removeUsers");
 
-				PortletURL removeUsersURL =
-					liferayPortletResponse.createActionURL();
-
-				removeUsersURL.setParameter(
-					ActionRequest.ACTION_NAME,
-					"/account_admin/remove_account_role_users");
-				removeUsersURL.setParameter(
-					"redirect", currentURLObj.toString());
-				removeUsersURL.setParameter(
-					"accountEntryId",
-					ParamUtil.getString(request, "accountEntryId"));
-				removeUsersURL.setParameter(
-					"accountRoleId",
-					ParamUtil.getString(request, "accountRoleId"));
-
 				dropdownItem.putData(
-					"removeUsersURL", removeUsersURL.toString());
+					"removeUsersURL",
+					PortletURLBuilder.createActionURL(
+						liferayPortletResponse
+					).setActionName(
+						"/account_admin/remove_account_role_users"
+					).setRedirect(
+						currentURLObj.toString()
+					).setParameter(
+						"accountEntryId",
+						ParamUtil.getString(
+							httpServletRequest, "accountEntryId")
+					).setParameter(
+						"accountRoleId",
+						ParamUtil.getString(httpServletRequest, "accountRoleId")
+					).buildString());
 
 				dropdownItem.setIcon("times-circle");
-				dropdownItem.setLabel(LanguageUtil.get(request, "remove"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "remove"));
 				dropdownItem.setQuickAction(true);
 
 				return dropdownItem;
@@ -90,12 +90,13 @@ public class ViewAccountRoleAssigneesManagementToolbarDisplayContext
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("navigation", (String)null);
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).setNavigation(
+			(String)null
+		).buildString();
 	}
 
 	@Override
@@ -104,14 +105,9 @@ public class ViewAccountRoleAssigneesManagementToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.putData("action", "selectAccountUsers");
 				dropdownItem.setLabel(
-					LanguageUtil.get(request, "assign-users"));
+					LanguageUtil.get(httpServletRequest, "assign-users"));
 			}
 		).build();
-	}
-
-	@Override
-	public String getDefaultEventHandler() {
-		return "ACCOUNT_ROLE_USERS_MANAGEMENT_TOOLBAR_DEFAULT_EVENT_HANDLER";
 	}
 
 	@Override

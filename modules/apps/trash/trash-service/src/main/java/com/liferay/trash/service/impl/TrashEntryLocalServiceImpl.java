@@ -326,8 +326,8 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 * @param  start the lower bound of the range of trash entries to return
 	 * @param  end the upper bound of the range of trash entries to return (not
 	 *         inclusive)
-	 * @param  orderByComparator the comparator to order the trash entries (optionally
-	 *         <code>null</code>)
+	 * @param  orderByComparator the comparator to order the trash entries
+	 *         (optionally <code>null</code>)
 	 * @return the range of matching trash entries ordered by comparator
 	 *         <code>orderByComparator</code>
 	 */
@@ -433,8 +433,8 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 
 		searchContext.setCompanyId(companyId);
 		searchContext.setEnd(end);
-		searchContext.setKeywords(keywords);
 		searchContext.setGroupIds(new long[] {groupId});
+		searchContext.setKeywords(keywords);
 
 		if (sort != null) {
 			searchContext.setSorts(sort);
@@ -456,9 +456,7 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 
 		calendar.setTime(new Date());
 
-		int maxAge = TrashUtil.getMaxAge(group);
-
-		calendar.add(Calendar.MINUTE, -maxAge);
+		calendar.add(Calendar.MINUTE, -TrashUtil.getMaxAge(group));
 
 		return calendar.getTime();
 	}
@@ -519,7 +517,8 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 					_log.warn(
 						StringBundler.concat(
 							"Unable to find trash entry for ", entryClassName,
-							" with primary key ", classPK));
+							" with primary key ", classPK),
+						exception);
 				}
 			}
 		}

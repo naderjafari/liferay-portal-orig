@@ -85,9 +85,9 @@ AUI.add(
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -121,7 +121,7 @@ AUI.add(
 					toolbars: {
 						footer: [
 							{
-								cssClass: 'btn btn-primary',
+								cssClass: 'btn btn-primary mr-2',
 								discardDefaultButtonCssClasses: true,
 								label: Liferay.Language.get('delete'),
 								on: {
@@ -146,9 +146,9 @@ AUI.add(
 								cssClass: 'close',
 								discardDefaultButtonCssClasses: true,
 								labelHTML:
-									'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+									'<svg class="lexicon-icon" focusable="false"><use href="' +
 									Liferay.ThemeDisplay.getPathThemeImages() +
-									'/lexicon/icons.svg#times" /><title>' +
+									'/clay/icons.svg#times" /><title>' +
 									Liferay.Language.get('close') +
 									'</title></svg>',
 								on: {
@@ -195,7 +195,6 @@ AUI.add(
 			Liferay.Util.openToast({
 				container: document.querySelector('.lfr-alert-container'),
 				message,
-				messageType: 'html',
 			});
 		};
 

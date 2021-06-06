@@ -18,6 +18,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -32,6 +33,7 @@ import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -41,7 +43,6 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.SessionClicks;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -51,6 +52,7 @@ import com.liferay.portal.kernel.workflow.WorkflowDefinitionManagerUtil;
 import com.liferay.portal.kernel.workflow.WorkflowHandler;
 import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
 import com.liferay.portal.kernel.workflow.comparator.WorkflowComparatorFactoryUtil;
+import com.liferay.portal.workflow.constants.WorkflowDefinitionConstants;
 import com.liferay.portal.workflow.constants.WorkflowPortletKeys;
 import com.liferay.portal.workflow.constants.WorkflowWebKeys;
 import com.liferay.portal.workflow.web.internal.constants.WorkflowDefinitionLinkResourcesConstants;
@@ -61,6 +63,7 @@ import com.liferay.portal.workflow.web.internal.search.WorkflowDefinitionLinkSea
 import com.liferay.portal.workflow.web.internal.util.WorkflowDefinitionLinkPortletUtil;
 import com.liferay.portal.workflow.web.internal.util.filter.WorkflowDefinitionLinkSearchEntryLabelPredicate;
 import com.liferay.portal.workflow.web.internal.util.filter.WorkflowDefinitionLinkSearchEntryResourcePredicate;
+import com.liferay.portal.workflow.web.internal.util.filter.WorkflowDefinitionScopePredicate;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -125,11 +128,11 @@ public class WorkflowDefinitionLinkDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public String getDefaultWorkflowDefinitionLabel(String className)
@@ -244,12 +247,15 @@ public class WorkflowDefinitionLinkDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view.jsp");
-		portletURL.setParameter(
-			"tab", WorkflowWebKeys.WORKFLOW_TAB_DEFINITION_LINK);
-		portletURL.setParameter("tabs1", "default-configuration");
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCPath(
+			"/view.jsp"
+		).setTabs1(
+			"default-configuration"
+		).setParameter(
+			"tab", WorkflowWebKeys.WORKFLOW_TAB_DEFINITION_LINK
+		).build();
 
 		String delta = ParamUtil.getString(_httpServletRequest, "delta");
 
@@ -356,9 +362,7 @@ public class WorkflowDefinitionLinkDisplayContext {
 				searchTerms.getKeywords(), false);
 		}
 
-		int total = workflowDefinitionLinkSearchEntries.size();
-
-		searchContainer.setTotal(total);
+		searchContainer.setTotal(workflowDefinitionLinkSearchEntries.size());
 
 		Collections.sort(
 			workflowDefinitionLinkSearchEntries,
@@ -374,34 +378,39 @@ public class WorkflowDefinitionLinkDisplayContext {
 	}
 
 	public String getSearchURL() {
-		PortletURL portletURL = getPortletURL();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"groupId",
+			() -> {
+				ThemeDisplay themeDisplay =
+					_workflowDefinitionLinkRequestHelper.getThemeDisplay();
 
-		ThemeDisplay themeDisplay =
-			_workflowDefinitionLinkRequestHelper.getThemeDisplay();
-
-		portletURL.setParameter(
-			"groupId", String.valueOf(themeDisplay.getScopeGroupId()));
-
-		return portletURL.toString();
+				return themeDisplay.getScopeGroupId();
+			}
+		).buildString();
 	}
 
 	public String getSortingURL() throws PortletException {
-		LiferayPortletResponse liferayPortletResponse =
-			_workflowDefinitionLinkRequestHelper.getLiferayPortletResponse();
+		return PortletURLBuilder.createRenderURL(
+			_workflowDefinitionLinkRequestHelper.getLiferayPortletResponse()
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = ParamUtil.getString(
+					_httpServletRequest, "orderByType", "asc");
 
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
+				if (Objects.equals(orderByType, "asc")) {
+					return "desc";
+				}
 
-		portletURL.setParameter(
-			"tab", WorkflowWebKeys.WORKFLOW_TAB_DEFINITION_LINK);
-		portletURL.setParameter("orderByCol", getOrderByCol());
-
-		String orderByType = ParamUtil.getString(
-			_httpServletRequest, "orderByType", "asc");
-
-		portletURL.setParameter(
-			"orderByType", Objects.equals(orderByType, "asc") ? "desc" : "asc");
-
-		return portletURL.toString();
+				return "asc";
+			}
+		).setParameter(
+			"tab", WorkflowWebKeys.WORKFLOW_TAB_DEFINITION_LINK
+		).buildString();
 	}
 
 	public int getTotalItems() throws PortalException {
@@ -422,10 +431,20 @@ public class WorkflowDefinitionLinkDisplayContext {
 	public List<WorkflowDefinition> getWorkflowDefinitions()
 		throws PortalException {
 
-		return WorkflowDefinitionManagerUtil.getActiveWorkflowDefinitions(
-			_workflowDefinitionLinkRequestHelper.getCompanyId(),
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			WorkflowComparatorFactoryUtil.getDefinitionNameComparator(true));
+		if (_workflowDefinitions != null) {
+			return _workflowDefinitions;
+		}
+
+		_workflowDefinitions = ListUtil.filter(
+			WorkflowDefinitionManagerUtil.getActiveWorkflowDefinitions(
+				_workflowDefinitionLinkRequestHelper.getCompanyId(),
+				QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+				WorkflowComparatorFactoryUtil.getDefinitionNameComparator(
+					true)),
+			new WorkflowDefinitionScopePredicate(
+				WorkflowDefinitionConstants.SCOPE_ALL));
+
+		return _workflowDefinitions;
 	}
 
 	public String getWorkflowDefinitionValue(
@@ -688,5 +707,6 @@ public class WorkflowDefinitionLinkDisplayContext {
 		_workflowDefinitionLinkLocalService;
 	private final WorkflowDefinitionLinkRequestHelper
 		_workflowDefinitionLinkRequestHelper;
+	private List<WorkflowDefinition> _workflowDefinitions;
 
 }

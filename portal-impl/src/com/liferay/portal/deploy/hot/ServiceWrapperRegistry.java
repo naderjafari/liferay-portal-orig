@@ -69,11 +69,11 @@ public class ServiceWrapperRegistry {
 			try {
 				return _getServiceBag(serviceWrapper);
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				_log.error(
 					"Unable to get service bag for " +
 						serviceWrapper.getClass(),
-					t);
+					throwable);
 			}
 
 			return null;
@@ -123,6 +123,10 @@ public class ServiceWrapperRegistry {
 					serviceTypeClass.getName());
 			}
 			catch (BeanLocatorException beanLocatorException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(beanLocatorException, beanLocatorException);
+				}
+
 				serviceReference = registry.getServiceReference(
 					serviceTypeClass);
 

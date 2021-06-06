@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("DefaultValue")
+@GraphQLName(
+	description = "Deprecated as of Athanasius (7.3.x), replaced by defaultFragmentInlineValue",
+	value = "DefaultValue"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DefaultValue")
-public class DefaultValue {
+public class DefaultValue implements Serializable {
 
 	public static DefaultValue toDTO(String json) {
 		return ObjectMapperUtil.readValue(DefaultValue.class, json);
@@ -166,6 +171,7 @@ public class DefaultValue {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.DefaultValue",
 		name = "x-class-name"
 	)
@@ -201,7 +207,7 @@ public class DefaultValue {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -240,7 +246,7 @@ public class DefaultValue {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

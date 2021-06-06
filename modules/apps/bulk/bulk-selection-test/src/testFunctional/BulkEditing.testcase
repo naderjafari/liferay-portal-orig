@@ -47,7 +47,7 @@ definition {
 	test AddTagToSingleAsset {
 		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.jpeg,Document_2.docx");
 
-		var key_dmDocumentTitle = "Document_1.jpeg";
+		var key_dmDocumentTitle = "Document_1";
 
 		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
@@ -55,14 +55,14 @@ definition {
 
 		DMDocument.editTags(tagName = "newtag");
 
-		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_1.jpeg");
+		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_1");
 
 		DMDocument.viewTag(tagName = "newtag");
 
 		SearchPortlets.searchEmbedded(searchTerm = "newtag");
 
 		SearchResultPortlet.viewSearchResults(
-			searchAssetTitle = "Document_1.jpeg",
+			searchAssetTitle = "Document_1",
 			searchAssetType = "Document");
 	}
 
@@ -80,37 +80,37 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1.doc");
+		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1");
 
 		DMDocument.editCategoryTags(categoryNameList = "Books,Plants");
 
 		Uncheck(
-			key_dmDocumentTitle = "Document_1.doc",
+			key_dmDocumentTitle = "Document_1",
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
-		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_2.jpg");
+		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_2");
 
 		DMDocument.editCategoryTags(categoryNameList = "Books,Pets");
 
 		Uncheck(
-			key_dmDocumentTitle = "Document_2.jpg",
+			key_dmDocumentTitle = "Document_2",
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
-		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1.doc,Document_2.jpg");
+		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1,Document_2");
 
 		DMDocument.removeCategories(categoriesNameList = "Books");
 
-		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_1.doc");
+		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_1");
 
-		DMDocument.viewCategoriesPG(categoryNameList = "Plants");
+		DMDocument.viewCategoriesInfo(categoryNameList = "Plants");
 
 		DMDocument.viewNoCategoriesPG(categoryName = "Books");
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_2.jpg");
+		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_2");
 
-		DMDocument.viewCategoriesPG(categoryNameList = "Pets");
+		DMDocument.viewCategoriesInfo(categoryNameList = "Pets");
 
 		DMDocument.viewNoCategoriesPG(categoryName = "Books");
 	}
@@ -120,29 +120,30 @@ definition {
 	test EditAndAppendCategoryTags {
 		property portal.acceptance = "true";
 
+		JSONCategory.addVocabulary(
+			groupName = "Guest",
+			title = "Vocabulary Name");
+
+		JSONCategory.addCategory(
+			groupName = "Guest",
+			title = "Books",
+			vocabularyName = "Vocabulary Name");
+
 		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.doc,Document_2.jpg");
-
-		ProductMenu.gotoPortlet(
-			category = "Categorization",
-			portlet = "Categories");
-
-		Category.addCP(
-			categoryName = "Books",
-			vocabularyName = "Topic");
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1.doc,Document_2.jpg");
+		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1,Document_2");
 
 		DMDocument.editCategoryTags(
 			categoryNameList = "Books",
 			itemNumber = "2",
 			multipleDocuments = "true");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.jpg") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2") {
 			DMNavigator.gotoDocumentPG(dmDocumentTitle = "${key_dmDocumentTitle}");
 
-			DMDocument.viewCategoriesPG(categoryName = "Books");
+			DMDocument.viewCategoriesInfo(categoryName = "Books");
 
 			Navigator.gotoPage(pageName = "Documents and Media Page");
 		}
@@ -153,7 +154,7 @@ definition {
 	test EditAndAppendTags {
 		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.doc,Document_2.jpg,Document_3.xls,Document_4.txt");
 
-		for (var key_dmDocumentTitle : list "Document_2.jpg,Document_4.txt") {
+		for (var key_dmDocumentTitle : list "Document_2,Document_4") {
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 		}
 
@@ -164,7 +165,7 @@ definition {
 			multipleDocuments = "true",
 			tagName = "tagone");
 
-		for (var key_dmDocumentTitle : list "Document_2.jpg,Document_4.txt") {
+		for (var key_dmDocumentTitle : list "Document_2,Document_4") {
 			DMNavigator.gotoDocumentPG(dmDocumentTitle = "${key_dmDocumentTitle}");
 
 			DMDocument.viewTag(tagName = "tagone");
@@ -172,7 +173,7 @@ definition {
 			Navigator.gotoPage(pageName = "Documents and Media Page");
 		}
 
-		for (var key_dmDocumentTitle : list "Document_2.jpg,Document_4.txt") {
+		for (var key_dmDocumentTitle : list "Document_2,Document_4") {
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 		}
 
@@ -183,7 +184,7 @@ definition {
 			multipleDocuments = "true",
 			tagName = "tagtwo");
 
-		for (var key_dmDocumentTitle : list "Document_2.jpg,Document_4.txt") {
+		for (var key_dmDocumentTitle : list "Document_2,Document_4") {
 			DMNavigator.gotoDocumentPG(dmDocumentTitle = "${key_dmDocumentTitle}");
 
 			DMDocument.viewTag(tagNameList = "tagone,tagtwo");
@@ -195,11 +196,11 @@ definition {
 			SearchPortlets.searchEmbedded(searchTerm = "${key_searchTerm}");
 
 			SearchResultPortlet.viewSearchResults(
-				searchAssetTitle = "Document_2.jpg",
+				searchAssetTitle = "Document_2",
 				searchAssetType = "Document");
 
 			SearchResultPortlet.viewSearchResults(
-				searchAssetTitle = "Document_4.txt",
+				searchAssetTitle = "Document_4",
 				searchAssetType = "Document");
 		}
 	}
@@ -209,7 +210,7 @@ definition {
 	test EditAndReplaceTags {
 		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.doc,Document_2.jpg,Document_3.xls,Document_4.txt");
 
-		var key_dmDocumentTitle = "Document_1.doc";
+		var key_dmDocumentTitle = "Document_1";
 
 		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
@@ -219,7 +220,7 @@ definition {
 
 		Uncheck(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
-		var key_dmDocumentTitle = "Document_2.jpg";
+		var key_dmDocumentTitle = "Document_2";
 
 		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
@@ -229,7 +230,7 @@ definition {
 
 		Uncheck(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
-		var key_dmDocumentTitle = "Document_3.xls";
+		var key_dmDocumentTitle = "Document_3";
 
 		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
@@ -237,7 +238,7 @@ definition {
 
 		DMDocument.editTags(tagName = "three");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_3.xls") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_3") {
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 		}
 
@@ -249,7 +250,7 @@ definition {
 			multipleDocuments = "true",
 			tagName = "four");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_3.xls") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_3") {
 			DMNavigator.gotoDocumentPG(dmDocumentTitle = "${key_dmDocumentTitle}");
 
 			DMDocument.viewTag(tagNameList = "four");
@@ -260,11 +261,11 @@ definition {
 		SearchPortlets.searchEmbedded(searchTerm = "four");
 
 		SearchResultPortlet.viewSearchResults(
-			searchAssetTitle = "Document_1.doc",
+			searchAssetTitle = "Document_1",
 			searchAssetType = "Document");
 
 		SearchResultPortlet.viewSearchResults(
-			searchAssetTitle = "Document_3.xls",
+			searchAssetTitle = "Document_3",
 			searchAssetType = "Document");
 
 		for (var key_searchTerm : list "one,three") {
@@ -275,7 +276,7 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.jpg") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2") {
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 		}
 
@@ -287,7 +288,7 @@ definition {
 			multipleDocuments = "true",
 			tagName = "");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.jpg") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2") {
 			DMNavigator.gotoDocumentPG(dmDocumentTitle = "${key_dmDocumentTitle}");
 
 			DMDocument.viewNoTag();
@@ -305,7 +306,7 @@ definition {
 
 		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.doc,Document_2.doc");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.doc") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2") {
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 		}
 
@@ -319,13 +320,13 @@ definition {
 
 		DMNavigator.gotoFolder(dmFolderName = "Folder 1");
 
-		DMDocument.viewPG(dmDocumentTitle = "Document_1.doc");
+		DMDocument.viewPG(dmDocumentTitle = "Document_1");
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
 		DMNavigator.gotoFolder(dmFolderName = "Folder 1");
 
-		DMDocument.viewPG(dmDocumentTitle = "Document_2.doc");
+		DMDocument.viewPG(dmDocumentTitle = "Document_2");
 	}
 
 	@description = "This test covers LPS-94994. It ensures that users can edit category tags by using the bulk append action."
@@ -342,23 +343,23 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1.doc");
+		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1");
 
 		DMDocument.editCategoryTags(categoryNameList = "Books,Plants");
 
 		Uncheck(
-			key_dmDocumentTitle = "Document_1.doc",
+			key_dmDocumentTitle = "Document_1",
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
-		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_2.jpg");
+		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_2");
 
 		DMDocument.editCategoryTags(categoryNameList = "Books,Pets");
 
 		Uncheck(
-			key_dmDocumentTitle = "Document_2.jpg",
+			key_dmDocumentTitle = "Document_2",
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
-		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1.doc,Document_2.jpg");
+		DMNavigator.gotoAddCategoriesPG(dmDocumentTitleList = "Document_1,Document_2");
 
 		DMDocument.editCategoryTags(
 			categoryNameList = "Furniture",
@@ -368,10 +369,10 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.jpg") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2") {
 			DMNavigator.gotoDocumentPG(dmDocumentTitle = "${key_dmDocumentTitle}");
 
-			DMDocument.viewCategoriesPG(categoryNameList = "Books,Furniture");
+			DMDocument.viewCategoriesInfo(categoryNameList = "Books,Furniture");
 
 			Navigator.gotoPage(pageName = "Documents and Media Page");
 		}
@@ -382,7 +383,7 @@ definition {
 	test SaveTags {
 		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.doc,Document_2.jpg,Document_3.xls,Document_4.txt");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.jpg,Document_3.xls,Document_4.txt") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2,Document_3,Document_4") {
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 		}
 
@@ -410,7 +411,7 @@ definition {
 
 		Alert.viewSuccessMessageText(successMessage = "Changes saved.");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.jpg,Document_3.xls,Document_4.txt") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2,Document_3,Document_4") {
 			DMNavigator.gotoDocumentPG(dmDocumentTitle = "${key_dmDocumentTitle}");
 
 			DMDocument.viewTag(tagName = "tagone");

@@ -12,14 +12,16 @@
  * details.
  */
 
-import {PagesVisitor} from 'dynamic-data-mapping-form-renderer';
+import {PagesVisitor} from 'data-engine-js-components-web';
 import {JSXComponent} from 'metal-jsx';
 
 import LayoutProvider from '../../../../src/main/resources/META-INF/resources/js/components/LayoutProvider/LayoutProvider.es';
+import {DEFAULT_FIELD_NAME_REGEX} from '../../../../src/main/resources/META-INF/resources/js/util/regex.es';
 import mockFieldType from '../../__mock__/mockFieldType.es';
 import mockPages from '../../__mock__/mockPages.es';
 
 let component;
+let liferayLanguageSpy;
 
 const changeField = ({settingsContext}, fieldName, value) => {
 	const visitor = new PagesVisitor(settingsContext.pages);
@@ -33,6 +35,18 @@ const changeField = ({settingsContext}, fieldName, value) => {
 		}
 
 		return field;
+	});
+};
+
+const mockLiferayLanguage = () => {
+	liferayLanguageSpy = jest.spyOn(Liferay.Language, 'get');
+
+	liferayLanguageSpy.mockImplementation((key) => {
+		if (key === 'field') {
+			return 'Field';
+		}
+
+		return key;
 	});
 };
 
@@ -65,6 +79,10 @@ const rules = [
 	},
 ];
 
+const unmockLiferayLanguage = () => {
+	liferayLanguageSpy.mockRestore();
+};
+
 class Child extends JSXComponent {
 	render() {
 		return <div />;
@@ -75,7 +93,8 @@ class Parent extends JSXComponent {
 	render() {
 		return (
 			<LayoutProvider
-				defaultLanguageIdd="en_US"
+				availableLanguageIds={['en_US']}
+				defaultLanguageId="en_US"
 				editingLanguageId="en_US"
 				initialPages={[...mockPages]}
 				pages={[...mockPages]}
@@ -338,6 +357,8 @@ describe('LayoutProvider', () => {
 					},
 				};
 
+				mockLiferayLanguage();
+
 				const {dispatch} = child.context;
 
 				dispatch('fieldAdded', mockEvent);
@@ -347,10 +368,44 @@ describe('LayoutProvider', () => {
 				expect(
 					provider.state.pages[0].rows[0].columns[1].fields[0]
 						.fieldName
-				).toEqual('TextField');
+				).toEqual(expect.stringMatching(DEFAULT_FIELD_NAME_REGEX));
+
+				unmockLiferayLanguage();
 			});
 
 			it('listen the fieldAdded event and add the field in the row to the pages', () => {
+				component = new Parent();
+
+				const {child, provider} = component.refs;
+				const mockEvent = {
+					data: {
+						parentFieldName: undefined,
+					},
+					fieldType: mockFieldType,
+					indexes: {
+						columnIndex: 0,
+						pageIndex: 0,
+						rowIndex: 0,
+					},
+				};
+
+				mockLiferayLanguage();
+
+				const {dispatch} = child.context;
+
+				dispatch('fieldAdded', mockEvent);
+
+				jest.runAllTimers();
+
+				expect(
+					provider.state.pages[0].rows[0].columns[0].fields[0]
+						.fieldName
+				).toEqual(expect.stringMatching(DEFAULT_FIELD_NAME_REGEX));
+
+				unmockLiferayLanguage();
+			});
+
+			it('listen the fieldAdded event and check if field reference has the same value as field name', () => {
 				component = new Parent();
 
 				const {child, provider} = component.refs;
@@ -370,12 +425,10 @@ describe('LayoutProvider', () => {
 
 				dispatch('fieldAdded', mockEvent);
 
-				jest.runAllTimers();
+				const field =
+					provider.state.pages[0].rows[0].columns[0].fields[0];
 
-				expect(
-					provider.state.pages[0].rows[0].columns[0].fields[0]
-						.fieldName
-				).toEqual('TextField');
+				expect(field.fieldName).toEqual(field.fieldReference);
 			});
 
 			it('updates the focusedField with the location of the new field when adding to the pages', () => {
@@ -394,6 +447,8 @@ describe('LayoutProvider', () => {
 					},
 				};
 
+				mockLiferayLanguage();
+
 				const {dispatch} = child.context;
 
 				dispatch('fieldAdded', mockEvent);
@@ -401,13 +456,38 @@ describe('LayoutProvider', () => {
 				jest.runAllTimers();
 
 				expect(provider.state.focusedField.fieldName).toEqual(
-					'TextField'
+					expect.stringMatching(DEFAULT_FIELD_NAME_REGEX)
 				);
+
+				unmockLiferayLanguage();
 			});
 		});
 
 		describe('fieldDeleted', () => {
 			it('listens the fieldDeleted event and delete the field in the column to the pages', () => {
+				component = new Parent();
+
+				const {child, provider} = component.refs;
+
+				expect(
+					provider.state.pages[0].rows[1].columns[0].fields.length
+				).toEqual(2);
+
+				const mockEvent = {
+					activePage: 0,
+					fieldName: 'text2',
+				};
+
+				const {dispatch} = child.context;
+
+				dispatch('fieldDeleted', mockEvent);
+
+				expect(
+					provider.state.pages[0].rows[1].columns[0].fields.length
+				).toEqual(1);
+			});
+
+			it('does not delete field that belongs to rules', () => {
 				component = new Parent();
 
 				const {child, provider} = component.refs;
@@ -425,12 +505,53 @@ describe('LayoutProvider', () => {
 
 				dispatch('fieldDeleted', mockEvent);
 
+				expect(
+					provider.state.pages[0].rows[1].columns[0].fields.length
+				).toEqual(2);
+			});
+		});
+
+		describe('fieldEdited', () => {
+			it('listens the fieldEdited event and edit the field label keeping the same fieldName', () => {
+				component = new Parent();
+
+				const {child, provider} = component.refs;
+				let mockEvent = {
+					data: {
+						parentFieldName: undefined,
+					},
+					fieldType: mockFieldType,
+					indexes: {
+						columnIndex: 0,
+						pageIndex: 0,
+						rowIndex: 0,
+					},
+				};
+
+				const {dispatch} = child.context;
+
+				dispatch('fieldAdded', mockEvent);
+
+				jest.runAllTimers();
+
+				const expectedFieldName =
+					provider.state.pages[0].rows[0].columns[0].fields[0]
+						.fieldName;
+
+				mockEvent = {
+					fieldName: expectedFieldName,
+					propertyName: 'label',
+					propertyValue: 'newLabel',
+				};
+
+				dispatch('fieldEdited', mockEvent);
+
 				jest.runAllTimers();
 
 				expect(
-					provider.state.pages[0].rows[1].columns[0].fields.length
-				).toEqual(1);
-				expect(provider.state.pages).toMatchSnapshot();
+					provider.state.pages[0].rows[0].columns[0].fields[0]
+						.fieldName
+				).toEqual(expectedFieldName);
 			});
 		});
 
@@ -443,6 +564,8 @@ describe('LayoutProvider', () => {
 					activePage: 0,
 					fieldName: 'radio',
 				};
+
+				mockLiferayLanguage();
 
 				const {dispatch} = child.context;
 
@@ -462,15 +585,61 @@ describe('LayoutProvider', () => {
 							pageIndex
 						) => {
 							const {pages} = field.settingsContext;
+							let newPages = [];
 
 							if (pages.length) {
 								pages[0].rows[0].columns[0].fields[1].value =
 									'Liferay';
+
+								const validation =
+									pages[0].rows[0].columns[0].fields[4]
+										.validation;
+
+								if (validation && validation.fieldName) {
+
+									// Overrides the fieldName because it is generated when a field is duplicated,
+									// toMatchSnapshot has problems with deep arrays so we override it here to
+									// avoid this.
+
+									validation.fieldName = 'Any<String>';
+								}
+
+								const visitor = new PagesVisitor(pages);
+
+								newPages = visitor.mapFields((field) => {
+									const newField = {
+										...field,
+
+										// Overrides the fieldName because it is generated when a field is duplicated,
+										// toMatchSnapshot has problems with deep arrays so we override it here to
+										// avoid this.
+
+										instanceId: 'Any<String>',
+									};
+
+									const {
+										defaultLanguageId,
+										localizedValue,
+									} = newField;
+
+									if (
+										defaultLanguageId &&
+										newField.fieldName !== 'label'
+									) {
+										localizedValue[defaultLanguageId] =
+											'Any<String>';
+									}
+
+									return newField;
+								});
 							}
+
+							const name = `name${fieldIndex}${columnIndex}${rowIndex}${pageIndex}`;
 
 							return {
 								...field,
-								fieldName: `name${fieldIndex}${columnIndex}${rowIndex}${pageIndex}`,
+								fieldName: name,
+								fieldReference: name,
 
 								// Overrides the instanceId because it is generated when a field is duplicated,
 								// toMatchSnapshot has problems with deep arrays so we override it here to
@@ -478,10 +647,16 @@ describe('LayoutProvider', () => {
 
 								instanceId: 'Any<String>',
 								name: `name${fieldIndex}${columnIndex}${rowIndex}${pageIndex}`,
+								settingsContext: {
+									...field.settingsContext,
+									pages: newPages,
+								},
 							};
 						}
 					)
 				).toMatchSnapshot();
+
+				unmockLiferayLanguage();
 			});
 		});
 
@@ -538,6 +713,7 @@ describe('LayoutProvider', () => {
 
 				const changedFocusedField = {
 					...mockFieldType,
+					fieldName: 'text1',
 					settingsContext: {
 						...mockFieldType.settingsContext,
 						pages: changeField(mockFieldType, 'required', false),

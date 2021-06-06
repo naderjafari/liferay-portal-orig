@@ -24,8 +24,23 @@
 	<td></td>
 </tr>
 <tr>
+	<td>DISPLAY_PAGE_PREVIEW_ITEM_SELECTOR</td>
+	<td>//button[contains(@class,'display-page-preview-item-selector')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>HEADING</td>
 	<td>//*[@data-qa-id='headerTitle']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>MERGE</td>
+	<td>//*[@data-qa-id='controlMenu']//*[name()='svg'][contains(@class,'lexicon-icon-merge')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>NEW_COLLECTION_PAGE_ITEM_BUTTON</td>
+	<td>//*[@data-qa-id='controlMenu']//a[@*='${key_title}']//*[name()='svg'][contains(@class,'lexicon-icon-plus')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -51,6 +66,11 @@
 <tr>
 	<td>TOGGLE_CONTROLS</td>
 	<td>//*[@data-qa-id='showControls' and contains(.,'Toggle Controls')]//*[name()='svg'][contains(@class,'${key_status}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VIEW_COLLECTION_ITEMS_BUTTON</td>
+	<td>//*[@data-qa-id='controlMenu']//button[contains(@id,'viewCollectionItems')]</td>
 	<td></td>
 </tr>
 <tr>

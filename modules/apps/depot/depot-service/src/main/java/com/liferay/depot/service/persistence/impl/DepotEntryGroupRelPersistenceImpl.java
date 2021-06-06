@@ -23,6 +23,7 @@ import com.liferay.depot.service.persistence.DepotEntryGroupRelPersistence;
 import com.liferay.depot.service.persistence.impl.constants.DepotPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
+import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -33,21 +34,35 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.InvocationHandler;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -63,7 +78,9 @@ import org.osgi.service.component.annotations.Reference;
  * @author Brian Wing Shun Chan
  * @generated
  */
-@Component(service = DepotEntryGroupRelPersistence.class)
+@Component(
+	service = {DepotEntryGroupRelPersistence.class, BasePersistence.class}
+)
 public class DepotEntryGroupRelPersistenceImpl
 	extends BasePersistenceImpl<DepotEntryGroupRel>
 	implements DepotEntryGroupRelPersistence {
@@ -85,6 +102,1376 @@ public class DepotEntryGroupRelPersistenceImpl
 	private FinderPath _finderPathWithPaginationFindAll;
 	private FinderPath _finderPathWithoutPaginationFindAll;
 	private FinderPath _finderPathCountAll;
+	private FinderPath _finderPathWithPaginationFindByUuid;
+	private FinderPath _finderPathWithoutPaginationFindByUuid;
+	private FinderPath _finderPathCountByUuid;
+
+	/**
+	 * Returns all the depot entry group rels where uuid = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @return the matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid(String uuid) {
+		return findByUuid(uuid, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+	}
+
+	/**
+	 * Returns a range of all the depot entry group rels where uuid = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>DepotEntryGroupRelModelImpl</code>.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param start the lower bound of the range of depot entry group rels
+	 * @param end the upper bound of the range of depot entry group rels (not inclusive)
+	 * @return the range of matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid(
+		String uuid, int start, int end) {
+
+		return findByUuid(uuid, start, end, null);
+	}
+
+	/**
+	 * Returns an ordered range of all the depot entry group rels where uuid = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>DepotEntryGroupRelModelImpl</code>.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param start the lower bound of the range of depot entry group rels
+	 * @param end the upper bound of the range of depot entry group rels (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid(
+		String uuid, int start, int end,
+		OrderByComparator<DepotEntryGroupRel> orderByComparator) {
+
+		return findByUuid(uuid, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the depot entry group rels where uuid = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>DepotEntryGroupRelModelImpl</code>.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param start the lower bound of the range of depot entry group rels
+	 * @param end the upper bound of the range of depot entry group rels (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid(
+		String uuid, int start, int end,
+		OrderByComparator<DepotEntryGroupRel> orderByComparator,
+		boolean useFinderCache) {
+
+		uuid = Objects.toString(uuid, "");
+
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindByUuid;
+				finderArgs = new Object[] {uuid};
+			}
+		}
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindByUuid;
+			finderArgs = new Object[] {uuid, start, end, orderByComparator};
+		}
+
+		List<DepotEntryGroupRel> list = null;
+
+		if (useFinderCache) {
+			list = (List<DepotEntryGroupRel>)finderCache.getResult(
+				finderPath, finderArgs);
+
+			if ((list != null) && !list.isEmpty()) {
+				for (DepotEntryGroupRel depotEntryGroupRel : list) {
+					if (!uuid.equals(depotEntryGroupRel.getUuid())) {
+						list = null;
+
+						break;
+					}
+				}
+			}
+		}
+
+		if (list == null) {
+			StringBundler sb = null;
+
+			if (orderByComparator != null) {
+				sb = new StringBundler(
+					3 + (orderByComparator.getOrderByFields().length * 2));
+			}
+			else {
+				sb = new StringBundler(3);
+			}
+
+			sb.append(_SQL_SELECT_DEPOTENTRYGROUPREL_WHERE);
+
+			boolean bindUuid = false;
+
+			if (uuid.isEmpty()) {
+				sb.append(_FINDER_COLUMN_UUID_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				sb.append(_FINDER_COLUMN_UUID_UUID_2);
+			}
+
+			if (orderByComparator != null) {
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
+			}
+			else {
+				sb.append(DepotEntryGroupRelModelImpl.ORDER_BY_JPQL);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				if (bindUuid) {
+					queryPos.add(uuid);
+				}
+
+				list = (List<DepotEntryGroupRel>)QueryUtil.list(
+					query, getDialect(), start, end);
+
+				cacheResult(list);
+
+				if (useFinderCache) {
+					finderCache.putResult(finderPath, finderArgs, list);
+				}
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return list;
+	}
+
+	/**
+	 * Returns the first depot entry group rel in the ordered set where uuid = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching depot entry group rel
+	 * @throws NoSuchEntryGroupRelException if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel findByUuid_First(
+			String uuid,
+			OrderByComparator<DepotEntryGroupRel> orderByComparator)
+		throws NoSuchEntryGroupRelException {
+
+		DepotEntryGroupRel depotEntryGroupRel = fetchByUuid_First(
+			uuid, orderByComparator);
+
+		if (depotEntryGroupRel != null) {
+			return depotEntryGroupRel;
+		}
+
+		StringBundler sb = new StringBundler(4);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("uuid=");
+		sb.append(uuid);
+
+		sb.append("}");
+
+		throw new NoSuchEntryGroupRelException(sb.toString());
+	}
+
+	/**
+	 * Returns the first depot entry group rel in the ordered set where uuid = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching depot entry group rel, or <code>null</code> if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel fetchByUuid_First(
+		String uuid, OrderByComparator<DepotEntryGroupRel> orderByComparator) {
+
+		List<DepotEntryGroupRel> list = findByUuid(
+			uuid, 0, 1, orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the last depot entry group rel in the ordered set where uuid = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching depot entry group rel
+	 * @throws NoSuchEntryGroupRelException if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel findByUuid_Last(
+			String uuid,
+			OrderByComparator<DepotEntryGroupRel> orderByComparator)
+		throws NoSuchEntryGroupRelException {
+
+		DepotEntryGroupRel depotEntryGroupRel = fetchByUuid_Last(
+			uuid, orderByComparator);
+
+		if (depotEntryGroupRel != null) {
+			return depotEntryGroupRel;
+		}
+
+		StringBundler sb = new StringBundler(4);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("uuid=");
+		sb.append(uuid);
+
+		sb.append("}");
+
+		throw new NoSuchEntryGroupRelException(sb.toString());
+	}
+
+	/**
+	 * Returns the last depot entry group rel in the ordered set where uuid = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching depot entry group rel, or <code>null</code> if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel fetchByUuid_Last(
+		String uuid, OrderByComparator<DepotEntryGroupRel> orderByComparator) {
+
+		int count = countByUuid(uuid);
+
+		if (count == 0) {
+			return null;
+		}
+
+		List<DepotEntryGroupRel> list = findByUuid(
+			uuid, count - 1, count, orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the depot entry group rels before and after the current depot entry group rel in the ordered set where uuid = &#63;.
+	 *
+	 * @param depotEntryGroupRelId the primary key of the current depot entry group rel
+	 * @param uuid the uuid
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next depot entry group rel
+	 * @throws NoSuchEntryGroupRelException if a depot entry group rel with the primary key could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel[] findByUuid_PrevAndNext(
+			long depotEntryGroupRelId, String uuid,
+			OrderByComparator<DepotEntryGroupRel> orderByComparator)
+		throws NoSuchEntryGroupRelException {
+
+		uuid = Objects.toString(uuid, "");
+
+		DepotEntryGroupRel depotEntryGroupRel = findByPrimaryKey(
+			depotEntryGroupRelId);
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			DepotEntryGroupRel[] array = new DepotEntryGroupRelImpl[3];
+
+			array[0] = getByUuid_PrevAndNext(
+				session, depotEntryGroupRel, uuid, orderByComparator, true);
+
+			array[1] = depotEntryGroupRel;
+
+			array[2] = getByUuid_PrevAndNext(
+				session, depotEntryGroupRel, uuid, orderByComparator, false);
+
+			return array;
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+
+	protected DepotEntryGroupRel getByUuid_PrevAndNext(
+		Session session, DepotEntryGroupRel depotEntryGroupRel, String uuid,
+		OrderByComparator<DepotEntryGroupRel> orderByComparator,
+		boolean previous) {
+
+		StringBundler sb = null;
+
+		if (orderByComparator != null) {
+			sb = new StringBundler(
+				4 + (orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
+		}
+		else {
+			sb = new StringBundler(3);
+		}
+
+		sb.append(_SQL_SELECT_DEPOTENTRYGROUPREL_WHERE);
+
+		boolean bindUuid = false;
+
+		if (uuid.isEmpty()) {
+			sb.append(_FINDER_COLUMN_UUID_UUID_3);
+		}
+		else {
+			bindUuid = true;
+
+			sb.append(_FINDER_COLUMN_UUID_UUID_2);
+		}
+
+		if (orderByComparator != null) {
+			String[] orderByConditionFields =
+				orderByComparator.getOrderByConditionFields();
+
+			if (orderByConditionFields.length > 0) {
+				sb.append(WHERE_AND);
+			}
+
+			for (int i = 0; i < orderByConditionFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByConditionFields[i]);
+
+				if ((i + 1) < orderByConditionFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN_HAS_NEXT);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN);
+					}
+				}
+			}
+
+			sb.append(ORDER_BY_CLAUSE);
+
+			String[] orderByFields = orderByComparator.getOrderByFields();
+
+			for (int i = 0; i < orderByFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByFields[i]);
+
+				if ((i + 1) < orderByFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC_HAS_NEXT);
+					}
+					else {
+						sb.append(ORDER_BY_DESC_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC);
+					}
+					else {
+						sb.append(ORDER_BY_DESC);
+					}
+				}
+			}
+		}
+		else {
+			sb.append(DepotEntryGroupRelModelImpl.ORDER_BY_JPQL);
+		}
+
+		String sql = sb.toString();
+
+		Query query = session.createQuery(sql);
+
+		query.setFirstResult(0);
+		query.setMaxResults(2);
+
+		QueryPos queryPos = QueryPos.getInstance(query);
+
+		if (bindUuid) {
+			queryPos.add(uuid);
+		}
+
+		if (orderByComparator != null) {
+			for (Object orderByConditionValue :
+					orderByComparator.getOrderByConditionValues(
+						depotEntryGroupRel)) {
+
+				queryPos.add(orderByConditionValue);
+			}
+		}
+
+		List<DepotEntryGroupRel> list = query.list();
+
+		if (list.size() == 2) {
+			return list.get(1);
+		}
+		else {
+			return null;
+		}
+	}
+
+	/**
+	 * Removes all the depot entry group rels where uuid = &#63; from the database.
+	 *
+	 * @param uuid the uuid
+	 */
+	@Override
+	public void removeByUuid(String uuid) {
+		for (DepotEntryGroupRel depotEntryGroupRel :
+				findByUuid(uuid, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+
+			remove(depotEntryGroupRel);
+		}
+	}
+
+	/**
+	 * Returns the number of depot entry group rels where uuid = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @return the number of matching depot entry group rels
+	 */
+	@Override
+	public int countByUuid(String uuid) {
+		uuid = Objects.toString(uuid, "");
+
+		FinderPath finderPath = _finderPathCountByUuid;
+
+		Object[] finderArgs = new Object[] {uuid};
+
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+
+		if (count == null) {
+			StringBundler sb = new StringBundler(2);
+
+			sb.append(_SQL_COUNT_DEPOTENTRYGROUPREL_WHERE);
+
+			boolean bindUuid = false;
+
+			if (uuid.isEmpty()) {
+				sb.append(_FINDER_COLUMN_UUID_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				sb.append(_FINDER_COLUMN_UUID_UUID_2);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				if (bindUuid) {
+					queryPos.add(uuid);
+				}
+
+				count = (Long)query.uniqueResult();
+
+				finderCache.putResult(finderPath, finderArgs, count);
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return count.intValue();
+	}
+
+	private static final String _FINDER_COLUMN_UUID_UUID_2 =
+		"depotEntryGroupRel.uuid = ?";
+
+	private static final String _FINDER_COLUMN_UUID_UUID_3 =
+		"(depotEntryGroupRel.uuid IS NULL OR depotEntryGroupRel.uuid = '')";
+
+	private FinderPath _finderPathFetchByUUID_G;
+	private FinderPath _finderPathCountByUUID_G;
+
+	/**
+	 * Returns the depot entry group rel where uuid = &#63; and groupId = &#63; or throws a <code>NoSuchEntryGroupRelException</code> if it could not be found.
+	 *
+	 * @param uuid the uuid
+	 * @param groupId the group ID
+	 * @return the matching depot entry group rel
+	 * @throws NoSuchEntryGroupRelException if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel findByUUID_G(String uuid, long groupId)
+		throws NoSuchEntryGroupRelException {
+
+		DepotEntryGroupRel depotEntryGroupRel = fetchByUUID_G(uuid, groupId);
+
+		if (depotEntryGroupRel == null) {
+			StringBundler sb = new StringBundler(6);
+
+			sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+			sb.append("uuid=");
+			sb.append(uuid);
+
+			sb.append(", groupId=");
+			sb.append(groupId);
+
+			sb.append("}");
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(sb.toString());
+			}
+
+			throw new NoSuchEntryGroupRelException(sb.toString());
+		}
+
+		return depotEntryGroupRel;
+	}
+
+	/**
+	 * Returns the depot entry group rel where uuid = &#63; and groupId = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 *
+	 * @param uuid the uuid
+	 * @param groupId the group ID
+	 * @return the matching depot entry group rel, or <code>null</code> if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel fetchByUUID_G(String uuid, long groupId) {
+		return fetchByUUID_G(uuid, groupId, true);
+	}
+
+	/**
+	 * Returns the depot entry group rel where uuid = &#63; and groupId = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 *
+	 * @param uuid the uuid
+	 * @param groupId the group ID
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the matching depot entry group rel, or <code>null</code> if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel fetchByUUID_G(
+		String uuid, long groupId, boolean useFinderCache) {
+
+		uuid = Objects.toString(uuid, "");
+
+		Object[] finderArgs = null;
+
+		if (useFinderCache) {
+			finderArgs = new Object[] {uuid, groupId};
+		}
+
+		Object result = null;
+
+		if (useFinderCache) {
+			result = finderCache.getResult(
+				_finderPathFetchByUUID_G, finderArgs);
+		}
+
+		if (result instanceof DepotEntryGroupRel) {
+			DepotEntryGroupRel depotEntryGroupRel = (DepotEntryGroupRel)result;
+
+			if (!Objects.equals(uuid, depotEntryGroupRel.getUuid()) ||
+				(groupId != depotEntryGroupRel.getGroupId())) {
+
+				result = null;
+			}
+		}
+
+		if (result == null) {
+			StringBundler sb = new StringBundler(4);
+
+			sb.append(_SQL_SELECT_DEPOTENTRYGROUPREL_WHERE);
+
+			boolean bindUuid = false;
+
+			if (uuid.isEmpty()) {
+				sb.append(_FINDER_COLUMN_UUID_G_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				sb.append(_FINDER_COLUMN_UUID_G_UUID_2);
+			}
+
+			sb.append(_FINDER_COLUMN_UUID_G_GROUPID_2);
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				if (bindUuid) {
+					queryPos.add(uuid);
+				}
+
+				queryPos.add(groupId);
+
+				List<DepotEntryGroupRel> list = query.list();
+
+				if (list.isEmpty()) {
+					if (useFinderCache) {
+						finderCache.putResult(
+							_finderPathFetchByUUID_G, finderArgs, list);
+					}
+				}
+				else {
+					DepotEntryGroupRel depotEntryGroupRel = list.get(0);
+
+					result = depotEntryGroupRel;
+
+					cacheResult(depotEntryGroupRel);
+				}
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		if (result instanceof List<?>) {
+			return null;
+		}
+		else {
+			return (DepotEntryGroupRel)result;
+		}
+	}
+
+	/**
+	 * Removes the depot entry group rel where uuid = &#63; and groupId = &#63; from the database.
+	 *
+	 * @param uuid the uuid
+	 * @param groupId the group ID
+	 * @return the depot entry group rel that was removed
+	 */
+	@Override
+	public DepotEntryGroupRel removeByUUID_G(String uuid, long groupId)
+		throws NoSuchEntryGroupRelException {
+
+		DepotEntryGroupRel depotEntryGroupRel = findByUUID_G(uuid, groupId);
+
+		return remove(depotEntryGroupRel);
+	}
+
+	/**
+	 * Returns the number of depot entry group rels where uuid = &#63; and groupId = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param groupId the group ID
+	 * @return the number of matching depot entry group rels
+	 */
+	@Override
+	public int countByUUID_G(String uuid, long groupId) {
+		uuid = Objects.toString(uuid, "");
+
+		FinderPath finderPath = _finderPathCountByUUID_G;
+
+		Object[] finderArgs = new Object[] {uuid, groupId};
+
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+
+		if (count == null) {
+			StringBundler sb = new StringBundler(3);
+
+			sb.append(_SQL_COUNT_DEPOTENTRYGROUPREL_WHERE);
+
+			boolean bindUuid = false;
+
+			if (uuid.isEmpty()) {
+				sb.append(_FINDER_COLUMN_UUID_G_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				sb.append(_FINDER_COLUMN_UUID_G_UUID_2);
+			}
+
+			sb.append(_FINDER_COLUMN_UUID_G_GROUPID_2);
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				if (bindUuid) {
+					queryPos.add(uuid);
+				}
+
+				queryPos.add(groupId);
+
+				count = (Long)query.uniqueResult();
+
+				finderCache.putResult(finderPath, finderArgs, count);
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return count.intValue();
+	}
+
+	private static final String _FINDER_COLUMN_UUID_G_UUID_2 =
+		"depotEntryGroupRel.uuid = ? AND ";
+
+	private static final String _FINDER_COLUMN_UUID_G_UUID_3 =
+		"(depotEntryGroupRel.uuid IS NULL OR depotEntryGroupRel.uuid = '') AND ";
+
+	private static final String _FINDER_COLUMN_UUID_G_GROUPID_2 =
+		"depotEntryGroupRel.groupId = ?";
+
+	private FinderPath _finderPathWithPaginationFindByUuid_C;
+	private FinderPath _finderPathWithoutPaginationFindByUuid_C;
+	private FinderPath _finderPathCountByUuid_C;
+
+	/**
+	 * Returns all the depot entry group rels where uuid = &#63; and companyId = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @return the matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid_C(String uuid, long companyId) {
+		return findByUuid_C(
+			uuid, companyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+	}
+
+	/**
+	 * Returns a range of all the depot entry group rels where uuid = &#63; and companyId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>DepotEntryGroupRelModelImpl</code>.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param start the lower bound of the range of depot entry group rels
+	 * @param end the upper bound of the range of depot entry group rels (not inclusive)
+	 * @return the range of matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid_C(
+		String uuid, long companyId, int start, int end) {
+
+		return findByUuid_C(uuid, companyId, start, end, null);
+	}
+
+	/**
+	 * Returns an ordered range of all the depot entry group rels where uuid = &#63; and companyId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>DepotEntryGroupRelModelImpl</code>.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param start the lower bound of the range of depot entry group rels
+	 * @param end the upper bound of the range of depot entry group rels (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid_C(
+		String uuid, long companyId, int start, int end,
+		OrderByComparator<DepotEntryGroupRel> orderByComparator) {
+
+		return findByUuid_C(
+			uuid, companyId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the depot entry group rels where uuid = &#63; and companyId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>DepotEntryGroupRelModelImpl</code>.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param start the lower bound of the range of depot entry group rels
+	 * @param end the upper bound of the range of depot entry group rels (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching depot entry group rels
+	 */
+	@Override
+	public List<DepotEntryGroupRel> findByUuid_C(
+		String uuid, long companyId, int start, int end,
+		OrderByComparator<DepotEntryGroupRel> orderByComparator,
+		boolean useFinderCache) {
+
+		uuid = Objects.toString(uuid, "");
+
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindByUuid_C;
+				finderArgs = new Object[] {uuid, companyId};
+			}
+		}
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindByUuid_C;
+			finderArgs = new Object[] {
+				uuid, companyId, start, end, orderByComparator
+			};
+		}
+
+		List<DepotEntryGroupRel> list = null;
+
+		if (useFinderCache) {
+			list = (List<DepotEntryGroupRel>)finderCache.getResult(
+				finderPath, finderArgs);
+
+			if ((list != null) && !list.isEmpty()) {
+				for (DepotEntryGroupRel depotEntryGroupRel : list) {
+					if (!uuid.equals(depotEntryGroupRel.getUuid()) ||
+						(companyId != depotEntryGroupRel.getCompanyId())) {
+
+						list = null;
+
+						break;
+					}
+				}
+			}
+		}
+
+		if (list == null) {
+			StringBundler sb = null;
+
+			if (orderByComparator != null) {
+				sb = new StringBundler(
+					4 + (orderByComparator.getOrderByFields().length * 2));
+			}
+			else {
+				sb = new StringBundler(4);
+			}
+
+			sb.append(_SQL_SELECT_DEPOTENTRYGROUPREL_WHERE);
+
+			boolean bindUuid = false;
+
+			if (uuid.isEmpty()) {
+				sb.append(_FINDER_COLUMN_UUID_C_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				sb.append(_FINDER_COLUMN_UUID_C_UUID_2);
+			}
+
+			sb.append(_FINDER_COLUMN_UUID_C_COMPANYID_2);
+
+			if (orderByComparator != null) {
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
+			}
+			else {
+				sb.append(DepotEntryGroupRelModelImpl.ORDER_BY_JPQL);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				if (bindUuid) {
+					queryPos.add(uuid);
+				}
+
+				queryPos.add(companyId);
+
+				list = (List<DepotEntryGroupRel>)QueryUtil.list(
+					query, getDialect(), start, end);
+
+				cacheResult(list);
+
+				if (useFinderCache) {
+					finderCache.putResult(finderPath, finderArgs, list);
+				}
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return list;
+	}
+
+	/**
+	 * Returns the first depot entry group rel in the ordered set where uuid = &#63; and companyId = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching depot entry group rel
+	 * @throws NoSuchEntryGroupRelException if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel findByUuid_C_First(
+			String uuid, long companyId,
+			OrderByComparator<DepotEntryGroupRel> orderByComparator)
+		throws NoSuchEntryGroupRelException {
+
+		DepotEntryGroupRel depotEntryGroupRel = fetchByUuid_C_First(
+			uuid, companyId, orderByComparator);
+
+		if (depotEntryGroupRel != null) {
+			return depotEntryGroupRel;
+		}
+
+		StringBundler sb = new StringBundler(6);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("uuid=");
+		sb.append(uuid);
+
+		sb.append(", companyId=");
+		sb.append(companyId);
+
+		sb.append("}");
+
+		throw new NoSuchEntryGroupRelException(sb.toString());
+	}
+
+	/**
+	 * Returns the first depot entry group rel in the ordered set where uuid = &#63; and companyId = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching depot entry group rel, or <code>null</code> if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel fetchByUuid_C_First(
+		String uuid, long companyId,
+		OrderByComparator<DepotEntryGroupRel> orderByComparator) {
+
+		List<DepotEntryGroupRel> list = findByUuid_C(
+			uuid, companyId, 0, 1, orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the last depot entry group rel in the ordered set where uuid = &#63; and companyId = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching depot entry group rel
+	 * @throws NoSuchEntryGroupRelException if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel findByUuid_C_Last(
+			String uuid, long companyId,
+			OrderByComparator<DepotEntryGroupRel> orderByComparator)
+		throws NoSuchEntryGroupRelException {
+
+		DepotEntryGroupRel depotEntryGroupRel = fetchByUuid_C_Last(
+			uuid, companyId, orderByComparator);
+
+		if (depotEntryGroupRel != null) {
+			return depotEntryGroupRel;
+		}
+
+		StringBundler sb = new StringBundler(6);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("uuid=");
+		sb.append(uuid);
+
+		sb.append(", companyId=");
+		sb.append(companyId);
+
+		sb.append("}");
+
+		throw new NoSuchEntryGroupRelException(sb.toString());
+	}
+
+	/**
+	 * Returns the last depot entry group rel in the ordered set where uuid = &#63; and companyId = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching depot entry group rel, or <code>null</code> if a matching depot entry group rel could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel fetchByUuid_C_Last(
+		String uuid, long companyId,
+		OrderByComparator<DepotEntryGroupRel> orderByComparator) {
+
+		int count = countByUuid_C(uuid, companyId);
+
+		if (count == 0) {
+			return null;
+		}
+
+		List<DepotEntryGroupRel> list = findByUuid_C(
+			uuid, companyId, count - 1, count, orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the depot entry group rels before and after the current depot entry group rel in the ordered set where uuid = &#63; and companyId = &#63;.
+	 *
+	 * @param depotEntryGroupRelId the primary key of the current depot entry group rel
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next depot entry group rel
+	 * @throws NoSuchEntryGroupRelException if a depot entry group rel with the primary key could not be found
+	 */
+	@Override
+	public DepotEntryGroupRel[] findByUuid_C_PrevAndNext(
+			long depotEntryGroupRelId, String uuid, long companyId,
+			OrderByComparator<DepotEntryGroupRel> orderByComparator)
+		throws NoSuchEntryGroupRelException {
+
+		uuid = Objects.toString(uuid, "");
+
+		DepotEntryGroupRel depotEntryGroupRel = findByPrimaryKey(
+			depotEntryGroupRelId);
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			DepotEntryGroupRel[] array = new DepotEntryGroupRelImpl[3];
+
+			array[0] = getByUuid_C_PrevAndNext(
+				session, depotEntryGroupRel, uuid, companyId, orderByComparator,
+				true);
+
+			array[1] = depotEntryGroupRel;
+
+			array[2] = getByUuid_C_PrevAndNext(
+				session, depotEntryGroupRel, uuid, companyId, orderByComparator,
+				false);
+
+			return array;
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+
+	protected DepotEntryGroupRel getByUuid_C_PrevAndNext(
+		Session session, DepotEntryGroupRel depotEntryGroupRel, String uuid,
+		long companyId, OrderByComparator<DepotEntryGroupRel> orderByComparator,
+		boolean previous) {
+
+		StringBundler sb = null;
+
+		if (orderByComparator != null) {
+			sb = new StringBundler(
+				5 + (orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
+		}
+		else {
+			sb = new StringBundler(4);
+		}
+
+		sb.append(_SQL_SELECT_DEPOTENTRYGROUPREL_WHERE);
+
+		boolean bindUuid = false;
+
+		if (uuid.isEmpty()) {
+			sb.append(_FINDER_COLUMN_UUID_C_UUID_3);
+		}
+		else {
+			bindUuid = true;
+
+			sb.append(_FINDER_COLUMN_UUID_C_UUID_2);
+		}
+
+		sb.append(_FINDER_COLUMN_UUID_C_COMPANYID_2);
+
+		if (orderByComparator != null) {
+			String[] orderByConditionFields =
+				orderByComparator.getOrderByConditionFields();
+
+			if (orderByConditionFields.length > 0) {
+				sb.append(WHERE_AND);
+			}
+
+			for (int i = 0; i < orderByConditionFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByConditionFields[i]);
+
+				if ((i + 1) < orderByConditionFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN_HAS_NEXT);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN);
+					}
+				}
+			}
+
+			sb.append(ORDER_BY_CLAUSE);
+
+			String[] orderByFields = orderByComparator.getOrderByFields();
+
+			for (int i = 0; i < orderByFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByFields[i]);
+
+				if ((i + 1) < orderByFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC_HAS_NEXT);
+					}
+					else {
+						sb.append(ORDER_BY_DESC_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC);
+					}
+					else {
+						sb.append(ORDER_BY_DESC);
+					}
+				}
+			}
+		}
+		else {
+			sb.append(DepotEntryGroupRelModelImpl.ORDER_BY_JPQL);
+		}
+
+		String sql = sb.toString();
+
+		Query query = session.createQuery(sql);
+
+		query.setFirstResult(0);
+		query.setMaxResults(2);
+
+		QueryPos queryPos = QueryPos.getInstance(query);
+
+		if (bindUuid) {
+			queryPos.add(uuid);
+		}
+
+		queryPos.add(companyId);
+
+		if (orderByComparator != null) {
+			for (Object orderByConditionValue :
+					orderByComparator.getOrderByConditionValues(
+						depotEntryGroupRel)) {
+
+				queryPos.add(orderByConditionValue);
+			}
+		}
+
+		List<DepotEntryGroupRel> list = query.list();
+
+		if (list.size() == 2) {
+			return list.get(1);
+		}
+		else {
+			return null;
+		}
+	}
+
+	/**
+	 * Removes all the depot entry group rels where uuid = &#63; and companyId = &#63; from the database.
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 */
+	@Override
+	public void removeByUuid_C(String uuid, long companyId) {
+		for (DepotEntryGroupRel depotEntryGroupRel :
+				findByUuid_C(
+					uuid, companyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					null)) {
+
+			remove(depotEntryGroupRel);
+		}
+	}
+
+	/**
+	 * Returns the number of depot entry group rels where uuid = &#63; and companyId = &#63;.
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @return the number of matching depot entry group rels
+	 */
+	@Override
+	public int countByUuid_C(String uuid, long companyId) {
+		uuid = Objects.toString(uuid, "");
+
+		FinderPath finderPath = _finderPathCountByUuid_C;
+
+		Object[] finderArgs = new Object[] {uuid, companyId};
+
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+
+		if (count == null) {
+			StringBundler sb = new StringBundler(3);
+
+			sb.append(_SQL_COUNT_DEPOTENTRYGROUPREL_WHERE);
+
+			boolean bindUuid = false;
+
+			if (uuid.isEmpty()) {
+				sb.append(_FINDER_COLUMN_UUID_C_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				sb.append(_FINDER_COLUMN_UUID_C_UUID_2);
+			}
+
+			sb.append(_FINDER_COLUMN_UUID_C_COMPANYID_2);
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				if (bindUuid) {
+					queryPos.add(uuid);
+				}
+
+				queryPos.add(companyId);
+
+				count = (Long)query.uniqueResult();
+
+				finderCache.putResult(finderPath, finderArgs, count);
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return count.intValue();
+	}
+
+	private static final String _FINDER_COLUMN_UUID_C_UUID_2 =
+		"depotEntryGroupRel.uuid = ? AND ";
+
+	private static final String _FINDER_COLUMN_UUID_C_UUID_3 =
+		"(depotEntryGroupRel.uuid IS NULL OR depotEntryGroupRel.uuid = '') AND ";
+
+	private static final String _FINDER_COLUMN_UUID_C_COMPANYID_2 =
+		"depotEntryGroupRel.companyId = ?";
+
 	private FinderPath _finderPathWithPaginationFindByDepotEntryId;
 	private FinderPath _finderPathWithoutPaginationFindByDepotEntryId;
 	private FinderPath _finderPathCountByDepotEntryId;
@@ -184,7 +1571,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<DepotEntryGroupRel>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (DepotEntryGroupRel depotEntryGroupRel : list) {
@@ -552,7 +1939,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		Object[] finderArgs = new Object[] {depotEntryId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -690,7 +2077,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<DepotEntryGroupRel>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (DepotEntryGroupRel depotEntryGroupRel : list) {
@@ -1057,7 +2444,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		Object[] finderArgs = new Object[] {toGroupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -1205,7 +2592,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<DepotEntryGroupRel>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (DepotEntryGroupRel depotEntryGroupRel : list) {
@@ -1604,7 +2991,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		Object[] finderArgs = new Object[] {ddmStructuresAvailable, toGroupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1726,8 +3113,7 @@ public class DepotEntryGroupRelPersistenceImpl
 		Object result = null;
 
 		if (useFinderCache) {
-			result = finderCache.getResult(
-				_finderPathFetchByD_TGI, finderArgs, this);
+			result = finderCache.getResult(_finderPathFetchByD_TGI, finderArgs);
 		}
 
 		if (result instanceof DepotEntryGroupRel) {
@@ -1826,7 +3212,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		Object[] finderArgs = new Object[] {depotEntryId, toGroupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1978,7 +3364,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<DepotEntryGroupRel>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (DepotEntryGroupRel depotEntryGroupRel : list) {
@@ -2370,7 +3756,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		Object[] finderArgs = new Object[] {searchable, toGroupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -2418,6 +3804,12 @@ public class DepotEntryGroupRelPersistenceImpl
 		"depotEntryGroupRel.toGroupId = ?";
 
 	public DepotEntryGroupRelPersistenceImpl() {
+		Map<String, String> dbColumnNames = new HashMap<String, String>();
+
+		dbColumnNames.put("uuid", "uuid_");
+
+		setDBColumnNames(dbColumnNames);
+
 		setModelClass(DepotEntryGroupRel.class);
 
 		setModelImplClass(DepotEntryGroupRelImpl.class);
@@ -2438,14 +3830,19 @@ public class DepotEntryGroupRelPersistenceImpl
 			depotEntryGroupRel);
 
 		finderCache.putResult(
+			_finderPathFetchByUUID_G,
+			new Object[] {
+				depotEntryGroupRel.getUuid(), depotEntryGroupRel.getGroupId()
+			},
+			depotEntryGroupRel);
+
+		finderCache.putResult(
 			_finderPathFetchByD_TGI,
 			new Object[] {
 				depotEntryGroupRel.getDepotEntryId(),
 				depotEntryGroupRel.getToGroupId()
 			},
 			depotEntryGroupRel);
-
-		depotEntryGroupRel.resetOriginalValues();
 	}
 
 	/**
@@ -2462,9 +3859,6 @@ public class DepotEntryGroupRelPersistenceImpl
 
 				cacheResult(depotEntryGroupRel);
 			}
-			else {
-				depotEntryGroupRel.resetOriginalValues();
-			}
 		}
 	}
 
@@ -2479,9 +3873,7 @@ public class DepotEntryGroupRelPersistenceImpl
 	public void clearCache() {
 		entityCache.clearCache(DepotEntryGroupRelImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(DepotEntryGroupRelImpl.class);
 	}
 
 	/**
@@ -2494,35 +3886,20 @@ public class DepotEntryGroupRelPersistenceImpl
 	@Override
 	public void clearCache(DepotEntryGroupRel depotEntryGroupRel) {
 		entityCache.removeResult(
-			DepotEntryGroupRelImpl.class, depotEntryGroupRel.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache(
-			(DepotEntryGroupRelModelImpl)depotEntryGroupRel, true);
+			DepotEntryGroupRelImpl.class, depotEntryGroupRel);
 	}
 
 	@Override
 	public void clearCache(List<DepotEntryGroupRel> depotEntryGroupRels) {
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (DepotEntryGroupRel depotEntryGroupRel : depotEntryGroupRels) {
 			entityCache.removeResult(
-				DepotEntryGroupRelImpl.class,
-				depotEntryGroupRel.getPrimaryKey());
-
-			clearUniqueFindersCache(
-				(DepotEntryGroupRelModelImpl)depotEntryGroupRel, true);
+				DepotEntryGroupRelImpl.class, depotEntryGroupRel);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(DepotEntryGroupRelImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
 			entityCache.removeResult(DepotEntryGroupRelImpl.class, primaryKey);
@@ -2533,41 +3910,22 @@ public class DepotEntryGroupRelPersistenceImpl
 		DepotEntryGroupRelModelImpl depotEntryGroupRelModelImpl) {
 
 		Object[] args = new Object[] {
+			depotEntryGroupRelModelImpl.getUuid(),
+			depotEntryGroupRelModelImpl.getGroupId()
+		};
+
+		finderCache.putResult(_finderPathCountByUUID_G, args, Long.valueOf(1));
+		finderCache.putResult(
+			_finderPathFetchByUUID_G, args, depotEntryGroupRelModelImpl);
+
+		args = new Object[] {
 			depotEntryGroupRelModelImpl.getDepotEntryId(),
 			depotEntryGroupRelModelImpl.getToGroupId()
 		};
 
+		finderCache.putResult(_finderPathCountByD_TGI, args, Long.valueOf(1));
 		finderCache.putResult(
-			_finderPathCountByD_TGI, args, Long.valueOf(1), false);
-		finderCache.putResult(
-			_finderPathFetchByD_TGI, args, depotEntryGroupRelModelImpl, false);
-	}
-
-	protected void clearUniqueFindersCache(
-		DepotEntryGroupRelModelImpl depotEntryGroupRelModelImpl,
-		boolean clearCurrent) {
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				depotEntryGroupRelModelImpl.getDepotEntryId(),
-				depotEntryGroupRelModelImpl.getToGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByD_TGI, args);
-			finderCache.removeResult(_finderPathFetchByD_TGI, args);
-		}
-
-		if ((depotEntryGroupRelModelImpl.getColumnBitmask() &
-			 _finderPathFetchByD_TGI.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				depotEntryGroupRelModelImpl.getOriginalDepotEntryId(),
-				depotEntryGroupRelModelImpl.getOriginalToGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByD_TGI, args);
-			finderCache.removeResult(_finderPathFetchByD_TGI, args);
-		}
+			_finderPathFetchByD_TGI, args, depotEntryGroupRelModelImpl);
 	}
 
 	/**
@@ -2582,6 +3940,10 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		depotEntryGroupRel.setNew(true);
 		depotEntryGroupRel.setPrimaryKey(depotEntryGroupRelId);
+
+		String uuid = PortalUUIDUtil.generate();
+
+		depotEntryGroupRel.setUuid(uuid);
 
 		depotEntryGroupRel.setCompanyId(CompanyThreadLocal.getCompanyId());
 
@@ -2703,15 +4065,44 @@ public class DepotEntryGroupRelPersistenceImpl
 		DepotEntryGroupRelModelImpl depotEntryGroupRelModelImpl =
 			(DepotEntryGroupRelModelImpl)depotEntryGroupRel;
 
+		if (Validator.isNull(depotEntryGroupRel.getUuid())) {
+			String uuid = PortalUUIDUtil.generate();
+
+			depotEntryGroupRel.setUuid(uuid);
+		}
+
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		Date date = new Date();
+
+		if (isNew && (depotEntryGroupRel.getCreateDate() == null)) {
+			if (serviceContext == null) {
+				depotEntryGroupRel.setCreateDate(date);
+			}
+			else {
+				depotEntryGroupRel.setCreateDate(
+					serviceContext.getCreateDate(date));
+			}
+		}
+
+		if (!depotEntryGroupRelModelImpl.hasSetModifiedDate()) {
+			if (serviceContext == null) {
+				depotEntryGroupRel.setModifiedDate(date);
+			}
+			else {
+				depotEntryGroupRel.setModifiedDate(
+					serviceContext.getModifiedDate(date));
+			}
+		}
+
 		Session session = null;
 
 		try {
 			session = openSession();
 
-			if (depotEntryGroupRel.isNew()) {
+			if (isNew) {
 				session.save(depotEntryGroupRel);
-
-				depotEntryGroupRel.setNew(false);
 			}
 			else {
 				depotEntryGroupRel = (DepotEntryGroupRel)session.merge(
@@ -2725,142 +4116,15 @@ public class DepotEntryGroupRelPersistenceImpl
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		entityCache.putResult(
+			DepotEntryGroupRelImpl.class, depotEntryGroupRelModelImpl, false,
+			true);
+
+		cacheUniqueFindersCache(depotEntryGroupRelModelImpl);
 
 		if (isNew) {
-			Object[] args = new Object[] {
-				depotEntryGroupRelModelImpl.getDepotEntryId()
-			};
-
-			finderCache.removeResult(_finderPathCountByDepotEntryId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByDepotEntryId, args);
-
-			args = new Object[] {depotEntryGroupRelModelImpl.getToGroupId()};
-
-			finderCache.removeResult(_finderPathCountByToGroupId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByToGroupId, args);
-
-			args = new Object[] {
-				depotEntryGroupRelModelImpl.isDdmStructuresAvailable(),
-				depotEntryGroupRelModelImpl.getToGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByDDMSA_TGI, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByDDMSA_TGI, args);
-
-			args = new Object[] {
-				depotEntryGroupRelModelImpl.isSearchable(),
-				depotEntryGroupRelModelImpl.getToGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByS_TGI, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByS_TGI, args);
-
-			finderCache.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
+			depotEntryGroupRel.setNew(false);
 		}
-		else {
-			if ((depotEntryGroupRelModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByDepotEntryId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					depotEntryGroupRelModelImpl.getOriginalDepotEntryId()
-				};
-
-				finderCache.removeResult(_finderPathCountByDepotEntryId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByDepotEntryId, args);
-
-				args = new Object[] {
-					depotEntryGroupRelModelImpl.getDepotEntryId()
-				};
-
-				finderCache.removeResult(_finderPathCountByDepotEntryId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByDepotEntryId, args);
-			}
-
-			if ((depotEntryGroupRelModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByToGroupId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					depotEntryGroupRelModelImpl.getOriginalToGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByToGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByToGroupId, args);
-
-				args = new Object[] {
-					depotEntryGroupRelModelImpl.getToGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByToGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByToGroupId, args);
-			}
-
-			if ((depotEntryGroupRelModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByDDMSA_TGI.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					depotEntryGroupRelModelImpl.
-						getOriginalDdmStructuresAvailable(),
-					depotEntryGroupRelModelImpl.getOriginalToGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByDDMSA_TGI, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByDDMSA_TGI, args);
-
-				args = new Object[] {
-					depotEntryGroupRelModelImpl.isDdmStructuresAvailable(),
-					depotEntryGroupRelModelImpl.getToGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByDDMSA_TGI, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByDDMSA_TGI, args);
-			}
-
-			if ((depotEntryGroupRelModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByS_TGI.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					depotEntryGroupRelModelImpl.getOriginalSearchable(),
-					depotEntryGroupRelModelImpl.getOriginalToGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByS_TGI, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByS_TGI, args);
-
-				args = new Object[] {
-					depotEntryGroupRelModelImpl.isSearchable(),
-					depotEntryGroupRelModelImpl.getToGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByS_TGI, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByS_TGI, args);
-			}
-		}
-
-		entityCache.putResult(
-			DepotEntryGroupRelImpl.class, depotEntryGroupRel.getPrimaryKey(),
-			depotEntryGroupRel, false);
-
-		clearUniqueFindersCache(depotEntryGroupRelModelImpl, false);
-		cacheUniqueFindersCache(depotEntryGroupRelModelImpl);
 
 		depotEntryGroupRel.resetOriginalValues();
 
@@ -3002,7 +4266,7 @@ public class DepotEntryGroupRelPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<DepotEntryGroupRel>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -3072,7 +4336,7 @@ public class DepotEntryGroupRelPersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -3100,6 +4364,11 @@ public class DepotEntryGroupRelPersistenceImpl
 	}
 
 	@Override
+	public Set<String> getBadColumnNames() {
+		return _badColumnNames;
+	}
+
+	@Override
 	protected EntityCache getEntityCache() {
 		return entityCache;
 	}
@@ -3123,117 +4392,163 @@ public class DepotEntryGroupRelPersistenceImpl
 	 * Initializes the depot entry group rel persistence.
 	 */
 	@Activate
-	public void activate() {
+	public void activate(BundleContext bundleContext) {
+		_bundleContext = bundleContext;
+
+		_argumentsResolverServiceRegistration = _bundleContext.registerService(
+			ArgumentsResolver.class,
+			new DepotEntryGroupRelModelArgumentsResolver(),
+			new HashMapDictionary<>());
+
 		_finderPathWithPaginationFindAll = new FinderPath(
-			DepotEntryGroupRelImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			DepotEntryGroupRelImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+			new String[0], new String[0], false);
+
+		_finderPathWithPaginationFindByUuid = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid",
+			new String[] {
+				String.class.getName(), Integer.class.getName(),
+				Integer.class.getName(), OrderByComparator.class.getName()
+			},
+			new String[] {"uuid_"}, true);
+
+		_finderPathWithoutPaginationFindByUuid = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid",
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			true);
+
+		_finderPathCountByUuid = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid",
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			false);
+
+		_finderPathFetchByUUID_G = new FinderPath(
+			FINDER_CLASS_NAME_ENTITY, "fetchByUUID_G",
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "groupId"}, true);
+
+		_finderPathCountByUUID_G = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUUID_G",
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "groupId"}, false);
+
+		_finderPathWithPaginationFindByUuid_C = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid_C",
+			new String[] {
+				String.class.getName(), Long.class.getName(),
+				Integer.class.getName(), Integer.class.getName(),
+				OrderByComparator.class.getName()
+			},
+			new String[] {"uuid_", "companyId"}, true);
+
+		_finderPathWithoutPaginationFindByUuid_C = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid_C",
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "companyId"}, true);
+
+		_finderPathCountByUuid_C = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid_C",
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "companyId"}, false);
 
 		_finderPathWithPaginationFindByDepotEntryId = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByDepotEntryId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"depotEntryId"}, true);
 
 		_finderPathWithoutPaginationFindByDepotEntryId = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByDepotEntryId",
-			new String[] {Long.class.getName()},
-			DepotEntryGroupRelModelImpl.DEPOTENTRYID_COLUMN_BITMASK);
+			new String[] {Long.class.getName()}, new String[] {"depotEntryId"},
+			true);
 
 		_finderPathCountByDepotEntryId = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByDepotEntryId", new String[] {Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByDepotEntryId",
+			new String[] {Long.class.getName()}, new String[] {"depotEntryId"},
+			false);
 
 		_finderPathWithPaginationFindByToGroupId = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByToGroupId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"toGroupId"}, true);
 
 		_finderPathWithoutPaginationFindByToGroupId = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByToGroupId",
-			new String[] {Long.class.getName()},
-			DepotEntryGroupRelModelImpl.TOGROUPID_COLUMN_BITMASK);
+			new String[] {Long.class.getName()}, new String[] {"toGroupId"},
+			true);
 
 		_finderPathCountByToGroupId = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByToGroupId", new String[] {Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByToGroupId",
+			new String[] {Long.class.getName()}, new String[] {"toGroupId"},
+			false);
 
 		_finderPathWithPaginationFindByDDMSA_TGI = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByDDMSA_TGI",
 			new String[] {
 				Boolean.class.getName(), Long.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"ddmStructuresAvailable", "toGroupId"}, true);
 
 		_finderPathWithoutPaginationFindByDDMSA_TGI = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByDDMSA_TGI",
 			new String[] {Boolean.class.getName(), Long.class.getName()},
-			DepotEntryGroupRelModelImpl.DDMSTRUCTURESAVAILABLE_COLUMN_BITMASK |
-			DepotEntryGroupRelModelImpl.TOGROUPID_COLUMN_BITMASK);
+			new String[] {"ddmStructuresAvailable", "toGroupId"}, true);
 
 		_finderPathCountByDDMSA_TGI = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByDDMSA_TGI",
-			new String[] {Boolean.class.getName(), Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByDDMSA_TGI",
+			new String[] {Boolean.class.getName(), Long.class.getName()},
+			new String[] {"ddmStructuresAvailable", "toGroupId"}, false);
 
 		_finderPathFetchByD_TGI = new FinderPath(
-			DepotEntryGroupRelImpl.class, FINDER_CLASS_NAME_ENTITY,
-			"fetchByD_TGI",
+			FINDER_CLASS_NAME_ENTITY, "fetchByD_TGI",
 			new String[] {Long.class.getName(), Long.class.getName()},
-			DepotEntryGroupRelModelImpl.DEPOTENTRYID_COLUMN_BITMASK |
-			DepotEntryGroupRelModelImpl.TOGROUPID_COLUMN_BITMASK);
+			new String[] {"depotEntryId", "toGroupId"}, true);
 
 		_finderPathCountByD_TGI = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByD_TGI",
-			new String[] {Long.class.getName(), Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByD_TGI",
+			new String[] {Long.class.getName(), Long.class.getName()},
+			new String[] {"depotEntryId", "toGroupId"}, false);
 
 		_finderPathWithPaginationFindByS_TGI = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByS_TGI",
 			new String[] {
 				Boolean.class.getName(), Long.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"searchable", "toGroupId"}, true);
 
 		_finderPathWithoutPaginationFindByS_TGI = new FinderPath(
-			DepotEntryGroupRelImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByS_TGI",
 			new String[] {Boolean.class.getName(), Long.class.getName()},
-			DepotEntryGroupRelModelImpl.SEARCHABLE_COLUMN_BITMASK |
-			DepotEntryGroupRelModelImpl.TOGROUPID_COLUMN_BITMASK);
+			new String[] {"searchable", "toGroupId"}, true);
 
 		_finderPathCountByS_TGI = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByS_TGI",
-			new String[] {Boolean.class.getName(), Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByS_TGI",
+			new String[] {Boolean.class.getName(), Long.class.getName()},
+			new String[] {"searchable", "toGroupId"}, false);
 	}
 
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(DepotEntryGroupRelImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+
+		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -3261,6 +4576,8 @@ public class DepotEntryGroupRelPersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
+
+	private BundleContext _bundleContext;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -3291,13 +4608,105 @@ public class DepotEntryGroupRelPersistenceImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		DepotEntryGroupRelPersistenceImpl.class);
 
-	static {
-		try {
-			Class.forName(DepotPersistenceConstants.class.getName());
+	private static final Set<String> _badColumnNames = SetUtil.fromArray(
+		new String[] {"uuid"});
+
+	@Override
+	protected FinderCache getFinderCache() {
+		return finderCache;
+	}
+
+	private ServiceRegistration<ArgumentsResolver>
+		_argumentsResolverServiceRegistration;
+
+	private static class DepotEntryGroupRelModelArgumentsResolver
+		implements ArgumentsResolver {
+
+		@Override
+		public Object[] getArguments(
+			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
+			boolean original) {
+
+			String[] columnNames = finderPath.getColumnNames();
+
+			if ((columnNames == null) || (columnNames.length == 0)) {
+				if (baseModel.isNew()) {
+					return FINDER_ARGS_EMPTY;
+				}
+
+				return null;
+			}
+
+			DepotEntryGroupRelModelImpl depotEntryGroupRelModelImpl =
+				(DepotEntryGroupRelModelImpl)baseModel;
+
+			long columnBitmask = depotEntryGroupRelModelImpl.getColumnBitmask();
+
+			if (!checkColumn || (columnBitmask == 0)) {
+				return _getValue(
+					depotEntryGroupRelModelImpl, columnNames, original);
+			}
+
+			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
+				finderPath);
+
+			if (finderPathColumnBitmask == null) {
+				finderPathColumnBitmask = 0L;
+
+				for (String columnName : columnNames) {
+					finderPathColumnBitmask |=
+						depotEntryGroupRelModelImpl.getColumnBitmask(
+							columnName);
+				}
+
+				_finderPathColumnBitmasksCache.put(
+					finderPath, finderPathColumnBitmask);
+			}
+
+			if ((columnBitmask & finderPathColumnBitmask) != 0) {
+				return _getValue(
+					depotEntryGroupRelModelImpl, columnNames, original);
+			}
+
+			return null;
 		}
-		catch (ClassNotFoundException classNotFoundException) {
-			throw new ExceptionInInitializerError(classNotFoundException);
+
+		@Override
+		public String getClassName() {
+			return DepotEntryGroupRelImpl.class.getName();
 		}
+
+		@Override
+		public String getTableName() {
+			return DepotEntryGroupRelTable.INSTANCE.getTableName();
+		}
+
+		private static Object[] _getValue(
+			DepotEntryGroupRelModelImpl depotEntryGroupRelModelImpl,
+			String[] columnNames, boolean original) {
+
+			Object[] arguments = new Object[columnNames.length];
+
+			for (int i = 0; i < arguments.length; i++) {
+				String columnName = columnNames[i];
+
+				if (original) {
+					arguments[i] =
+						depotEntryGroupRelModelImpl.getColumnOriginalValue(
+							columnName);
+				}
+				else {
+					arguments[i] = depotEntryGroupRelModelImpl.getColumnValue(
+						columnName);
+				}
+			}
+
+			return arguments;
+		}
+
+		private static final Map<FinderPath, Long>
+			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
+
 	}
 
 }

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,10 +48,10 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("UserAccount")
+@GraphQLName(description = "Represents a user.", value = "UserAccount")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "UserAccount")
-public class UserAccount {
+public class UserAccount implements Serializable {
 
 	public static UserAccount toDTO(String json) {
 		return ObjectMapperUtil.readValue(UserAccount.class, json);
@@ -1095,6 +1097,7 @@ public class UserAccount {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.UserAccount",
 		name = "x-class-name"
 	)
@@ -1130,7 +1133,7 @@ public class UserAccount {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -1169,7 +1172,7 @@ public class UserAccount {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

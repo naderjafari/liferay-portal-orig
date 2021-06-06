@@ -96,6 +96,26 @@ public class DLFileEntryTypeLocalServiceWrapper
 			long userId, long groupId, long dataDefinitionId,
 			String fileEntryTypeKey,
 			java.util.Map<java.util.Locale, String> nameMap,
+			java.util.Map<java.util.Locale, String> descriptionMap, int scope,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _dlFileEntryTypeLocalService.addFileEntryType(
+			userId, groupId, dataDefinitionId, fileEntryTypeKey, nameMap,
+			descriptionMap, scope, serviceContext);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addFileEntryType(long, long, long, String, Map, Map, long,
+	 ServiceContext)}
+	 */
+	@Deprecated
+	@Override
+	public DLFileEntryType addFileEntryType(
+			long userId, long groupId, long dataDefinitionId,
+			String fileEntryTypeKey,
+			java.util.Map<java.util.Locale, String> nameMap,
 			java.util.Map<java.util.Locale, String> descriptionMap,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -107,7 +127,8 @@ public class DLFileEntryTypeLocalServiceWrapper
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #addFileEntryType(long, long, String, Map, Map, long, ServiceContext)}
+	 #addFileEntryType(long, long, String, Map, Map, long,
+	 ServiceContext)}
 	 */
 	@Deprecated
 	@Override
@@ -126,7 +147,8 @@ public class DLFileEntryTypeLocalServiceWrapper
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #addFileEntryType(long, long, String, Map, Map, long, ServiceContext)}
+	 #addFileEntryType(long, long, String, Map, Map, long,
+	 ServiceContext)}
 	 */
 	@Deprecated
 	@Override
@@ -292,6 +314,13 @@ public class DLFileEntryTypeLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _dlFileEntryTypeLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _dlFileEntryTypeLocalService.dynamicQuery();
 	}
@@ -380,6 +409,14 @@ public class DLFileEntryTypeLocalServiceWrapper
 
 		return _dlFileEntryTypeLocalService.dynamicQueryCount(
 			dynamicQuery, projection);
+	}
+
+	@Override
+	public DLFileEntryType fetchDataDefinitionFileEntryType(
+		long groupId, long dataDefinitionId) {
+
+		return _dlFileEntryTypeLocalService.fetchDataDefinitionFileEntryType(
+			groupId, dataDefinitionId);
 	}
 
 	@Override
@@ -604,6 +641,10 @@ public class DLFileEntryTypeLocalServiceWrapper
 			groupId, fileEntryTypeKey);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<DLFileEntryType> getFileEntryTypes(
 			long ddmStructureId)

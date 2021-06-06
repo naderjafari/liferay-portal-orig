@@ -4,6 +4,7 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Documents Management";
+
 	var pageName = "Media Gallery Page";
 	var portletName = "Media Gallery";
 
@@ -12,21 +13,15 @@ definition {
 
 		User.firstLoginPG();
 
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			portlet = "Pages");
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Media Gallery Page");
 
-		SitePages.addPublicPage(pageName = "Media Gallery Page");
-
-		SitePages.configurePage(
-			columnName = "1 Column",
-			pageName = "Media Gallery Page",
-			privacy = "Public Pages",
-			sitePageType = "Widget Page");
-
-		Navigator.gotoPage(pageName = "Media Gallery Page");
-
-		Portlet.addPG(portletName = "Media Gallery");
+		JSONLayout.addWidgetToPublicLayout(
+			column = "2",
+			groupName = "Guest",
+			layoutName = "Media Gallery Page",
+			widgetName = "Media Gallery");
 
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -47,6 +42,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFolder {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -58,6 +54,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFolderDocument {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -82,6 +79,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFolders {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -109,6 +107,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddSubfolderDocument {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -131,6 +130,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddSubfolders {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -168,6 +168,7 @@ definition {
 	}
 
 	@priority = "3"
+	@refactorneeded
 	test ADTDMMediaGallery {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -214,6 +215,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test DeleteFolderDocument {
 		property portal.acceptance = "true";
 
@@ -240,6 +242,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test EditFolder {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -261,6 +264,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test EditFolderDocument {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -285,6 +289,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test SearchFolderDocument {
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 
@@ -322,25 +327,36 @@ definition {
 		SearchResultPortlet.viewNoSearchResults(searchTerm = "asdf");
 	}
 
+	@description = "This test covers LPS-107521. It ensures that the SVG file can be viewed."
+	@priority = "4"
+	@refactorneeded
+	test ViewSVG {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentTitle = "Document_1.svg",
+			groupName = "Guest",
+			mimeType = "image/svg+xml",
+			sourceFileName = "Document_1.svg");
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMDocument.viewPGViaMG(mgDocumentTitle = "Document_1.svg");
+	}
+
 	@description = "This test covers LPS-89361. It ensures that video can be played via media gallery."
 	@priority = "4"
+	@refactorneeded
 	test ViewVideoViaMediaGallery {
-		property custom.properties = "xuggler.enabled=true";
 		property dummy.socket.proxy.disabled = "true";
 		property test.assert.warning.exceptions = "false";
 		property test.name.skip.portal.instance = "PGMediagallery#ViewVideoViaMediaGallery";
 
-		ServerAdministration.openServerAdmin();
+		DMNavigator.openToConfigInSystemSettings(portlet = "FFMPEG Video Converter");
 
-		ServerAdministration.configureExternalServices(installXuggler = "true");
+		FormFields.enableCheckbox(fieldName = "enabled");
 
-		Portlet.shutdownServer();
-
-		Portlet.startServer(deleteLiferayHome = "false");
-
-		ServerAdministration.openServerAdmin();
-
-		ServerAdministration.configureExternalServices(enableXuggler = "true");
+		SystemSettings.saveConfiguration();
 
 		Navigator.gotoPage(pageName = "Media Gallery Page");
 

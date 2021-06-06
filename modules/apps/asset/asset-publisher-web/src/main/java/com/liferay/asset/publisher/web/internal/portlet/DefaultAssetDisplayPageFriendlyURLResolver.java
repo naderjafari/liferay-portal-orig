@@ -14,6 +14,7 @@
 
 package com.liferay.asset.publisher.web.internal.portlet;
 
+import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.display.page.portlet.BaseAssetDisplayPageFriendlyURLResolver;
 import com.liferay.asset.display.page.util.AssetDisplayPageUtil;
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
@@ -26,12 +27,13 @@ import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.friendly.url.model.FriendlyURLEntryLocalization;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
-import com.liferay.info.display.contributor.InfoDisplayContributor;
-import com.liferay.info.display.contributor.InfoDisplayObjectProvider;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.journal.constants.JournalArticleConstants;
 import com.liferay.journal.exception.NoSuchArticleException;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
+import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
+import com.liferay.layout.display.page.LayoutDisplayPageProvider;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -49,6 +51,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
@@ -58,6 +61,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.permission.WorkflowPermissionUtil;
 
@@ -69,6 +73,7 @@ import java.util.Optional;
 import javax.portlet.WindowState;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -87,26 +92,42 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 			Map<String, Object> requestContext)
 		throws PortalException {
 
+		HttpServletRequest httpServletRequest =
+			(HttpServletRequest)requestContext.get("request");
+
 		JournalArticle journalArticle = _getJournalArticle(
 			groupId, friendlyURL);
 
-		InfoDisplayObjectProvider<?> infoDisplayObjectProvider =
-			_getInfoDisplayObjectProvider(journalArticle);
+		LayoutDisplayPageObjectProvider<?> layoutDisplayPageObjectProvider =
+			_getLayoutDisplayPageObjectProvider(journalArticle);
 
 		if (Validator.isNull(journalArticle.getLayoutUuid()) &&
-			(infoDisplayObjectProvider != null) &&
+			(layoutDisplayPageObjectProvider != null) &&
 			AssetDisplayPageUtil.hasAssetDisplayPage(
-				groupId, infoDisplayObjectProvider.getClassNameId(),
-				infoDisplayObjectProvider.getClassPK(),
-				infoDisplayObjectProvider.getClassTypeId())) {
+				groupId, layoutDisplayPageObjectProvider.getClassNameId(),
+				layoutDisplayPageObjectProvider.getClassPK(),
+				layoutDisplayPageObjectProvider.getClassTypeId())) {
+
+			ThemeDisplay themeDisplay = new ThemeDisplay();
+
+			themeDisplay.setScopeGroupId(groupId);
+			themeDisplay.setSiteGroupId(groupId);
+
+			String assetFriendlyURL =
+				_assetDisplayPageFriendlyURLProvider.getFriendlyURL(
+					_portal.getClassName(
+						layoutDisplayPageObjectProvider.getClassNameId()),
+					layoutDisplayPageObjectProvider.getClassPK(),
+					_portal.getLocale(httpServletRequest), themeDisplay);
+
+			if (Validator.isNotNull(assetFriendlyURL)) {
+				return assetFriendlyURL;
+			}
 
 			return super.getActualURL(
 				companyId, groupId, privateLayout, mainPath, friendlyURL,
 				params, requestContext);
 		}
-
-		HttpServletRequest httpServletRequest =
-			(HttpServletRequest)requestContext.get("request");
 
 		return _getBasicLayoutURL(
 			groupId, privateLayout, mainPath, friendlyURL, params,
@@ -125,15 +146,33 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 		JournalArticle journalArticle = _getJournalArticle(
 			groupId, friendlyURL);
 
-		InfoDisplayObjectProvider<?> infoDisplayObjectProvider =
-			_getInfoDisplayObjectProvider(journalArticle);
+		HttpServletRequest httpServletRequest =
+			(HttpServletRequest)requestContext.get("request");
+
+		HttpSession httpSession = httpServletRequest.getSession();
+
+		Locale locale = (Locale)httpSession.getAttribute(WebKeys.LOCALE);
+
+		if (locale != null) {
+			Map<Locale, String> friendlyURLMap =
+				journalArticle.getFriendlyURLMap();
+
+			String journalArticleFriendlyURL = friendlyURLMap.get(locale);
+
+			if (Validator.isNotNull(journalArticleFriendlyURL)) {
+				friendlyURL = getURLSeparator() + journalArticleFriendlyURL;
+			}
+		}
+
+		LayoutDisplayPageObjectProvider<?> layoutDisplayPageObjectProvider =
+			_getLayoutDisplayPageObjectProvider(journalArticle);
 
 		if (Validator.isNull(journalArticle.getLayoutUuid()) &&
-			(infoDisplayObjectProvider != null) &&
+			(layoutDisplayPageObjectProvider != null) &&
 			AssetDisplayPageUtil.hasAssetDisplayPage(
-				groupId, infoDisplayObjectProvider.getClassNameId(),
-				infoDisplayObjectProvider.getClassPK(),
-				infoDisplayObjectProvider.getClassTypeId())) {
+				groupId, layoutDisplayPageObjectProvider.getClassNameId(),
+				layoutDisplayPageObjectProvider.getClassPK(),
+				layoutDisplayPageObjectProvider.getClassTypeId())) {
 
 			return super.getLayoutFriendlyURLComposite(
 				companyId, groupId, privateLayout, friendlyURL, params,
@@ -287,14 +326,14 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 			_portal.addPageDescription(pageDescription, httpServletRequest);
 		}
 
-		InfoDisplayObjectProvider<?> infoDisplayObjectProvider =
-			_getInfoDisplayObjectProvider(journalArticle);
+		LayoutDisplayPageObjectProvider<?> layoutDisplayPageObjectProvider =
+			_getLayoutDisplayPageObjectProvider(journalArticle);
 
-		if (infoDisplayObjectProvider == null) {
+		if (layoutDisplayPageObjectProvider == null) {
 			return layoutActualURL;
 		}
 
-		String keywords = infoDisplayObjectProvider.getKeywords(locale);
+		String keywords = layoutDisplayPageObjectProvider.getKeywords(locale);
 
 		if (Validator.isNotNull(keywords)) {
 			_portal.addPageKeywords(keywords, httpServletRequest);
@@ -337,18 +376,6 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 		}
 
 		return GetterUtil.getLong(paths.get(paths.size() - 1));
-	}
-
-	private InfoDisplayObjectProvider<?> _getInfoDisplayObjectProvider(
-			JournalArticle journalArticle)
-		throws PortalException {
-
-		InfoDisplayContributor<?> infoDisplayContributor =
-			infoDisplayContributorTracker.getInfoDisplayContributor(
-				JournalArticle.class.getName());
-
-		return infoDisplayContributor.getInfoDisplayObjectProvider(
-			journalArticle.getResourcePrimKey());
 	}
 
 	private JournalArticle _getJournalArticle(long groupId, String friendlyURL)
@@ -445,6 +472,23 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 		return journalArticle;
 	}
 
+	private LayoutDisplayPageObjectProvider<?>
+			_getLayoutDisplayPageObjectProvider(JournalArticle journalArticle)
+		throws PortalException {
+
+		LayoutDisplayPageProvider<?> layoutDisplayPageProvider =
+			layoutDisplayPageProviderTracker.
+				getLayoutDisplayPageProviderByClassName(
+					JournalArticle.class.getName());
+
+		InfoItemReference infoItemReference = new InfoItemReference(
+			JournalArticle.class.getName(),
+			journalArticle.getResourcePrimKey());
+
+		return layoutDisplayPageProvider.getLayoutDisplayPageObjectProvider(
+			infoItemReference);
+	}
+
 	private String _getURLTitle(String friendlyURL) {
 		String fullURLTitle = _getFullURLTitle(friendlyURL);
 
@@ -477,6 +521,10 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 
 		return 0;
 	}
+
+	@Reference
+	private AssetDisplayPageFriendlyURLProvider
+		_assetDisplayPageFriendlyURLProvider;
 
 	@Reference
 	private AssetEntryLocalService _assetEntryLocalService;

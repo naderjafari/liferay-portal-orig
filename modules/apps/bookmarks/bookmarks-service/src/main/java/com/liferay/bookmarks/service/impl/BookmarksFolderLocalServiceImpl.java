@@ -174,7 +174,11 @@ public class BookmarksFolderLocalServiceImpl
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(folder.getFolderId());
+		expandoRowLocalService.deleteRows(
+			folder.getCompanyId(),
+			classNameLocalService.getClassNameId(
+				BookmarksFolder.class.getName()),
+			folder.getFolderId());
 
 		// Ratings
 

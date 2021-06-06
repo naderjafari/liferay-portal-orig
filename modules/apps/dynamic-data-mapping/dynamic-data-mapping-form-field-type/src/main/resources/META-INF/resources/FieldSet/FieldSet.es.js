@@ -14,7 +14,7 @@
 
 import './FieldSet.scss';
 
-import {Layout, getRepeatedIndex} from 'dynamic-data-mapping-form-renderer';
+import {Layout, getRepeatedIndex, usePage} from 'data-engine-js-components-web';
 import React, {useMemo} from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
@@ -38,19 +38,20 @@ const getRows = (rows, nestedFields) => {
 
 	return normalizedRows.map((row) => ({
 		...row,
-		columns: row.columns.map((column) => ({
-			...column,
-			fields: column.fields.map((fieldName) => {
-				return nestedFields.find(
-					(nestedField) => nestedField.fieldName === fieldName
-				);
-			}),
-		})),
+		columns: row.columns.map((column) => {
+			return {
+				...column,
+				fields: nestedFields.filter((nestedField) =>
+					column.fields.includes(nestedField.fieldName)
+				),
+			};
+		}),
 	}));
 };
 
 const FieldSet = ({
 	collapsible,
+	ddmStructureId,
 	label,
 	name,
 	nestedFields = [],
@@ -58,9 +59,37 @@ const FieldSet = ({
 	repeatable,
 	rows,
 	showLabel,
+	type,
 	...otherProps
 }) => {
+	let belongsToFieldSet = false;
+	let fieldInsidePage = null;
+
+	const isFieldsGroup = type === 'fieldset' && !ddmStructureId;
+	const {editable, page} = usePage();
 	const repeatedIndex = useMemo(() => getRepeatedIndex(name), [name]);
+
+	const findFieldInsidePage = (fields) =>
+		fields?.find((field) => {
+			if (!belongsToFieldSet) {
+				belongsToFieldSet = !!field.ddmStructureId;
+			}
+
+			return field.name === name
+				? field
+				: findFieldInsidePage(field.nestedFields);
+		});
+
+	if (isFieldsGroup) {
+		page.rows.forEach((row) => {
+			row.columns.forEach((column) => {
+				if (!fieldInsidePage) {
+					belongsToFieldSet = false;
+					fieldInsidePage = findFieldInsidePage(column.fields);
+				}
+			});
+		});
+	}
 
 	return (
 		<FieldBase
@@ -70,6 +99,8 @@ const FieldSet = ({
 			repeatable={collapsible ? false : repeatable}
 			required={false}
 			showLabel={false}
+			tip={null}
+			type={type}
 		>
 			<div className="ddm-field-types-fieldset__nested">
 				{showLabel && !collapsible && (
@@ -92,10 +123,24 @@ const FieldSet = ({
 						}
 						title={label}
 					>
-						<Layout rows={getRows(rows, nestedFields)} />
+						<Layout
+							editable={
+								editable
+									? isFieldsGroup && !belongsToFieldSet
+									: editable
+							}
+							rows={getRows(rows, nestedFields)}
+						/>
 					</Panel>
 				) : (
-					<Layout rows={getRows(rows, nestedFields)} />
+					<Layout
+						editable={
+							editable
+								? isFieldsGroup && !belongsToFieldSet
+								: editable
+						}
+						rows={getRows(rows, nestedFields)}
+					/>
 				)}
 			</div>
 		</FieldBase>

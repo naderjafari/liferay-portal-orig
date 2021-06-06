@@ -18,6 +18,8 @@ import aQute.bnd.annotation.metatype.Meta;
 
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Bryan Engler
  */
@@ -31,6 +33,7 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 	localization = "content/Language",
 	name = "elasticsearch-connection-configuration-name"
 )
+@ProviderType
 public interface ElasticsearchConnectionConfiguration {
 
 	@Meta.AD(
@@ -93,5 +96,28 @@ public interface ElasticsearchConnectionConfiguration {
 		required = false, type = Meta.Type.Password
 	)
 	public String truststorePassword();
+
+	@Meta.AD(
+		description = "proxy-host-help", name = "proxy-host", required = false
+	)
+	public String proxyHost();
+
+	@Meta.AD(
+		deflt = "0", description = "proxy-port-help", name = "proxy-port",
+		required = false
+	)
+	public int proxyPort();
+
+	@Meta.AD(
+		description = "proxy-username-help", name = "proxy-username",
+		required = false
+	)
+	public String proxyUserName();
+
+	@Meta.AD(
+		description = "proxy-password-help", name = "proxy-password",
+		required = false, type = Meta.Type.Password
+	)
+	public String proxyPassword();
 
 }

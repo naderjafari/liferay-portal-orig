@@ -25,7 +25,9 @@ FragmentManagementToolbarDisplayContext fragmentManagementToolbarDisplayContext 
 <liferay-ui:error exception="<%= RequiredFragmentEntryException.class %>" message="the-fragment-entry-cannot-be-deleted-because-it-is-required-by-one-or-more-page-templates" />
 
 <clay:management-toolbar
-	displayContext="<%= fragmentManagementToolbarDisplayContext %>"
+	additionalProps="<%= fragmentManagementToolbarDisplayContext.getComponentContext() %>"
+	managementToolbarDisplayContext="<%= fragmentManagementToolbarDisplayContext %>"
+	propsTransformer="js/ViewFragmentEntriesManagementToolbarPropsTransformer"
 />
 
 <aui:form name="fm">
@@ -38,13 +40,10 @@ FragmentManagementToolbarDisplayContext fragmentManagementToolbarDisplayContext 
 		>
 
 			<%
-			row.setCssClass("card-page-item-asset " + row.getCssClass());
-
 			row.setData(
 				HashMapBuilder.<String, Object>put(
 					"actions", fragmentDisplayContext.getAvailableActions(object)
-				).build()
-			);
+				).build());
 
 			FragmentEntryVerticalCardFactory fragmentEntryVerticalCardFactory = FragmentEntryVerticalCardFactory.getInstance();
 			%>
@@ -68,7 +67,6 @@ FragmentManagementToolbarDisplayContext fragmentManagementToolbarDisplayContext 
 		<liferay-ui:search-iterator
 			displayStyle="icon"
 			markupView="lexicon"
-			searchResultCssClass="card-page"
 		/>
 	</liferay-ui:search-container>
 </aui:form>
@@ -106,10 +104,4 @@ FragmentManagementToolbarDisplayContext fragmentManagementToolbarDisplayContext 
 <liferay-frontend:component
 	componentId="<%= FragmentWebKeys.FRAGMENT_ENTRY_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
 	module="js/FragmentEntryDropdownDefaultEventHandler.es"
-/>
-
-<liferay-frontend:component
-	componentId="<%= fragmentManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	context="<%= fragmentManagementToolbarDisplayContext.getComponentContext() %>"
-	module="js/ManagementToolbarDefaultEventHandler.es"
 />

@@ -79,7 +79,6 @@ public class DDMFormTemplateSynchonizerTest extends BaseDDMTestCase {
 		setUpJSONFactoryUtil();
 		setUpLanguageUtil();
 		setUpLocaleUtil();
-		setUpHtmlUtil();
 		setUpPortalUtil();
 		setUpPropsValues();
 		setUpSAXReaderUtil();
@@ -502,9 +501,8 @@ public class DDMFormTemplateSynchonizerTest extends BaseDDMTestCase {
 				ddmFormSerializerSerializeResponse =
 					ddmFormJSONSerializer.serialize(builder.build());
 
-			String script = ddmFormSerializerSerializeResponse.getContent();
-
-			ddmTemplate.setScript(script);
+			ddmTemplate.setScript(
+				ddmFormSerializerSerializeResponse.getContent());
 
 			if (Objects.equals(
 					ddmTemplate.getMode(),

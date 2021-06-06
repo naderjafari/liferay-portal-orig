@@ -23,7 +23,7 @@ ContentDashboardItemTypeItemSelectorViewDisplayContext contentDashboardItemTypeI
 %>
 
 <clay:management-toolbar
-	displayContext="<%= contentDashboardItemTypeItemSelectorViewManagementToolbarDisplayContext %>"
+	managementToolbarDisplayContext="<%= contentDashboardItemTypeItemSelectorViewManagementToolbarDisplayContext %>"
 />
 
 <clay:container-fluid>
@@ -37,19 +37,19 @@ ContentDashboardItemTypeItemSelectorViewDisplayContext contentDashboardItemTypeI
 		>
 
 			<%
-			Map<String, Object> data = HashMapBuilder.<String, Object>put(
-				"className", contentDashboardItemType.getClassName()
-			).put(
-				"classPK", contentDashboardItemType.getClassPK()
-			).put(
-				"title", contentDashboardItemType.getFullLabel(locale)
-			).build();
+			InfoItemReference infoItemReference = contentDashboardItemType.getInfoItemReference();
 
-			row.setData(data);
+			row.setPrimaryKey(
+				HtmlUtil.toInputSafe(
+					JSONUtil.put(
+						"className", infoItemReference.getClassName()
+					).put(
+						"classPK", infoItemReference.getClassPK()
+					).toJSONString()));
 			%>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="name"
 				value="<%= contentDashboardItemType.getFullLabel(locale) %>"
 			/>
@@ -60,33 +60,3 @@ ContentDashboardItemTypeItemSelectorViewDisplayContext contentDashboardItemTypeI
 		/>
 	</liferay-ui:search-container>
 </clay:container-fluid>
-
-<aui:script use="liferay-search-container">
-	var searchContainer = Liferay.SearchContainer.get(
-		'<portlet:namespace />contentDashboardItemTypes'
-	);
-
-	searchContainer.on('rowToggled', function (event) {
-		var allSelectedElements = event.elements.allSelectedElements;
-		var arr = [];
-
-		allSelectedElements.each(function () {
-			var row = this.ancestor('tr');
-
-			var data = row.getDOM().dataset;
-
-			arr.push({
-				classPK: data.classpk,
-				className: data.classname,
-				title: data.title,
-			});
-		});
-
-		Liferay.Util.getOpener().Liferay.fire(
-			'<%= HtmlUtil.escapeJS(contentDashboardItemTypeItemSelectorViewDisplayContext.getItemSelectedEventName()) %>',
-			{
-				data: arr,
-			}
-		);
-	});
-</aui:script>

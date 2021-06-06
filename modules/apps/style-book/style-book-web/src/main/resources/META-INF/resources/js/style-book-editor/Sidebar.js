@@ -12,11 +12,12 @@
  * details.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayDropDown, {Align} from '@clayui/drop-down';
 import React, {useState} from 'react';
 
-import TokenSet from './TokenSet';
+import FrontendTokenSet from './FrontendTokenSet';
 import Toolbar from './Toolbar';
 import {config} from './config';
 
@@ -24,20 +25,51 @@ export default function Sidebar() {
 	return (
 		<div className="style-book-editor__sidebar">
 			<Toolbar />
-			<SidebarContent />
+			<div className="style-book-editor__sidebar-content">
+				<ThemeInformation />
+
+				{config.frontendTokenDefinition.frontendTokenCategories ? (
+					<FrontendTokenCategories />
+				) : (
+					<ClayAlert className="m-3" displayType="info">
+						{Liferay.Language.get(
+							'this-theme-does-not-include-a-token-definition'
+						)}
+					</ClayAlert>
+				)}
+			</div>
 		</div>
 	);
 }
 
-function SidebarContent() {
-	const tokenCategories = config.tokenCategories;
+function ThemeInformation() {
+	return (
+		<div className="pb-3">
+			<p className="small text-secondary">
+				{Liferay.Language.get(
+					'this-token-definition-belongs-to-the-theme-set-for-public-pages'
+				)}
+			</p>
+			<p className="mb-0 small">
+				<span className="font-weight-semi-bold">
+					{`${Liferay.Language.get('theme')}: `}
+				</span>
+				{config.themeName}
+			</p>
+		</div>
+	);
+}
+
+function FrontendTokenCategories() {
+	const frontendTokenCategories =
+		config.frontendTokenDefinition.frontendTokenCategories;
 	const [active, setActive] = useState(false);
 	const [selectedCategory, setSelectedCategory] = useState(
-		tokenCategories[0]
+		frontendTokenCategories[0]
 	);
 
 	return (
-		<div className="style-book-editor__sidebar-content">
+		<>
 			{selectedCategory && (
 				<ClayDropDown
 					active={active}
@@ -50,29 +82,40 @@ function SidebarContent() {
 							small
 							type="button"
 						>
-							{selectedCategory.name}
+							{selectedCategory.label}
 						</ClayButton>
 					}
 				>
 					<ClayDropDown.ItemList>
-						{tokenCategories.map((tokenCategories, index) => (
-							<ClayDropDown.Item
-								key={index}
-								onClick={() => {
-									setSelectedCategory(tokenCategories);
-									setActive(false);
-								}}
-							>
-								{tokenCategories.name}
-							</ClayDropDown.Item>
-						))}
+						{frontendTokenCategories.map(
+							(frontendTokenCategory, index) => (
+								<ClayDropDown.Item
+									key={index}
+									onClick={() => {
+										setSelectedCategory(
+											frontendTokenCategory
+										);
+										setActive(false);
+									}}
+								>
+									{frontendTokenCategory.label}
+								</ClayDropDown.Item>
+							)
+						)}
 					</ClayDropDown.ItemList>
 				</ClayDropDown>
 			)}
 
-			{selectedCategory?.tokenSets.map(({name, tokens}) => (
-				<TokenSet key={name} name={name} tokens={tokens} />
-			))}
-		</div>
+			{selectedCategory?.frontendTokenSets.map(
+				({frontendTokens, label, name}) => (
+					<FrontendTokenSet
+						frontendTokens={frontendTokens}
+						key={name}
+						label={label}
+						name={name}
+					/>
+				)
+			)}
+		</>
 	);
 }

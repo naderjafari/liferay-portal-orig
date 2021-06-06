@@ -184,36 +184,32 @@ catch (NoSuchFolderException nsfe) {
 					);
 
 					if (<portlet:namespace />selectFolderButton) {
-						<portlet:namespace />selectFolderButton.addEventListener('click', function (
-							event
-						) {
-							Liferay.Util.selectEntity(
-								{
-									dialog: {
-										constrain: true,
-										destroyOnHide: true,
-										modal: true,
-										width: 830,
+						<portlet:namespace />selectFolderButton.addEventListener(
+							'click',
+							(event) => {
+								Liferay.Util.openSelectionModal({
+									onSelect: function (event) {
+										var folderData = {
+											idString: 'rootFolderId',
+											idValue: event.entityid,
+											nameString: 'rootFolderName',
+											nameValue: event.entityname,
+										};
+
+										Liferay.Util.selectFolder(
+											folderData,
+											'<portlet:namespace />'
+										);
 									},
-									id:
+									selectEventName:
 										'<%= HtmlUtil.escapeJS(PortalUtil.getPortletNamespace(portletResource)) %>selectFolder',
 									title:
 										'<liferay-ui:message arguments="folder" key="select-x" />',
-									uri:
+									url:
 										'<liferay-portlet:renderURL portletName="<%= portletResource %>" windowState="<%= LiferayWindowState.POP_UP.toString() %>"><portlet:param name="mvcRenderCommandName" value="/bookmarks/select_folder" /></liferay-portlet:renderURL>',
-								},
-								function (event) {
-									var folderData = {
-										idString: 'rootFolderId',
-										idValue: event.entityid,
-										nameString: 'rootFolderName',
-										nameValue: event.entityname,
-									};
-
-									Liferay.Util.selectFolder(folderData, '<portlet:namespace />');
-								}
-							);
-						});
+								});
+							}
+						);
 					}
 				</aui:script>
 			</liferay-ui:section>

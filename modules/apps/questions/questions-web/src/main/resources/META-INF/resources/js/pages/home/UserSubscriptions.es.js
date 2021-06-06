@@ -12,32 +12,33 @@
  * details.
  */
 
-import {useMutation, useQuery} from '@apollo/client';
 import {ClayButtonWithIcon} from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
 import ClayEmptyState from '@clayui/empty-state';
-import React, {useEffect, useState} from 'react';
+import {useMutation, useQuery} from 'graphql-hooks';
+import React, {useContext, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
+import {AppContext} from '../../AppContext.es';
 import Alert from '../../components/Alert.es';
-import DeleteThread from '../../components/DeleteThread.es';
+import DeleteQuestion from '../../components/DeleteQuestion.es';
+import Link from '../../components/Link.es';
 import QuestionRow from '../../components/QuestionRow.es';
 import {
-	client,
 	getSubscriptionsQuery,
 	unsubscribeMyUserAccountQuery,
 } from '../../utils/client.es';
 import {historyPushWithSlug} from '../../utils/utils.es';
-import NavigationBar from '../NavigationBar.es';
 
 export default withRouter(({history}) => {
-	const [entity, setEntity] = useState({});
 	const [info, setInfo] = useState({});
+	const [questionToDelete, setQuestionToDelete] = useState({});
 
-	const {data: threads, refetch: refetchThreads} = useQuery(
+	const context = useContext(AppContext);
+
+	const {data: threads, refetch: refetchThread} = useQuery(
 		getSubscriptionsQuery,
 		{
-			fetchPolicy: 'network-only',
 			variables: {
 				contentType: 'MessageBoardThread',
 			},
@@ -47,40 +48,17 @@ export default withRouter(({history}) => {
 	const {data: topics, refetch: refetchTopics} = useQuery(
 		getSubscriptionsQuery,
 		{
-			fetchPolicy: 'network-only',
 			variables: {
 				contentType: 'MessageBoardSection',
 			},
 		}
 	);
 
-	const [unsubscribe] = useMutation(unsubscribeMyUserAccountQuery, {
-		onCompleted() {
-			refetchThreads();
-			refetchTopics();
-			setInfo({
-				title: 'You have unsubscribed from this asset successfully.',
-			});
-		},
-	});
-
-	useEffect(() => {
-		if (entity.title) {
-			client.cache.evict(`MessageBoardSection:${entity.id}`);
-		}
-		else {
-			client.cache.evict(`MessageBoardThread:${entity.id}`);
-		}
-		client.cache.gc();
-	}, [entity]);
+	const [unsubscribe] = useMutation(unsubscribeMyUserAccountQuery);
 
 	const [showDeleteModalPanel, setShowDeleteModalPanel] = useState(false);
 
 	const historyPushParser = historyPushWithSlug(history.push);
-
-	const navigate = (data) => {
-		historyPushParser(`/questions/${data.graphQLNode.title}`);
-	};
 
 	const actions = (data) => {
 		const question = data.graphQLNode;
@@ -89,11 +67,17 @@ export default withRouter(({history}) => {
 			{
 				label: 'Unsubscribe',
 				onClick: () => {
-					setEntity({...data.graphQLNode});
 					unsubscribe({
 						variables: {
 							subscriptionId: data.id,
 						},
+					}).then(() => {
+						refetchThread();
+						refetchTopics();
+						setInfo({
+							title:
+								'You have unsubscribed from this asset successfully.',
+						});
 					});
 				},
 			},
@@ -103,6 +87,7 @@ export default withRouter(({history}) => {
 			actions.push({
 				label: 'Delete',
 				onClick: () => {
+					setQuestionToDelete(question);
 					setShowDeleteModalPanel(true);
 				},
 			});
@@ -113,7 +98,11 @@ export default withRouter(({history}) => {
 				label: 'Edit',
 				onClick: () => {
 					historyPushParser(
-						`/questions/${question.messageBoardSection.title}/${data.graphQLNode.friendlyUrlPath}/edit`
+						`/questions/${
+							context.useTopicNamesInURL
+								? question.messageBoardSection.title
+								: question.messageBoardSection.id
+						}/${data.graphQLNode.friendlyUrlPath}/edit`
 					);
 				},
 			});
@@ -124,7 +113,11 @@ export default withRouter(({history}) => {
 				label: 'Reply',
 				onClick: () => {
 					historyPushParser(
-						`/questions/${question.messageBoardSection.title}/${question.friendlyUrlPath}`
+						`/questions/${
+							context.useTopicNamesInURL
+								? question.messageBoardSection.title
+								: question.messageBoardSection.id
+						}/${question.friendlyUrlPath}`
 					);
 				},
 			});
@@ -134,107 +127,129 @@ export default withRouter(({history}) => {
 	};
 
 	return (
-		<>
-			<NavigationBar />
-			<section className="questions-section questions-section-list">
-				<div className="c-p-5 questions-container row">
-					<div className="col-xl-8 offset-xl-2">
-						<h2 className="sheet-subtitle">Topics</h2>
-						<Topics />
-						<h2 className="mt-5 sheet-subtitle">Questions</h2>
-						<Questions />
-					</div>
-				</div>
-				<Alert displayType={'success'} info={info} />
-			</section>
-		</>
-	);
-
-	function Topics() {
-		return (
-			<>
-				{topics &&
-					topics.myUserAccountSubscriptions.items &&
-					!topics.myUserAccountSubscriptions.items.length && (
-						<ClayEmptyState
-							title={Liferay.Language.get('there-are-no-results')}
-						/>
-					)}
-				<div className="row">
+		<section className="questions-section questions-section-list">
+			<div className="c-p-5 questions-container row">
+				<div className="col-xl-8 offset-xl-2">
+					<h2 className="sheet-subtitle">Topics</h2>
 					{topics &&
 						topics.myUserAccountSubscriptions.items &&
-						topics.myUserAccountSubscriptions.items.map((data) => (
-							<div
-								className="col-md-4 question-tags"
-								key={data.graphQLNode.id}
-							>
-								<div className="card card-interactive card-interactive-primary card-type-template template-card-horizontal">
-									<div className="card-body">
-										<div className="card-row">
-											<div
-												className="autofit-col autofit-col-expand"
-												onClick={() => navigate(data)}
-											>
-												<div className="autofit-section">
-													<div className="card-title">
-														<span className="text-truncate">
-															{
+						!topics.myUserAccountSubscriptions.items.length && (
+							<ClayEmptyState
+								title={Liferay.Language.get(
+									'there-are-no-results'
+								)}
+							/>
+						)}
+					<div className="row">
+						{topics &&
+							topics.myUserAccountSubscriptions.items &&
+							topics.myUserAccountSubscriptions.items.map(
+								(data) => (
+									<div
+										className="col-md-4 question-tags"
+										key={data.graphQLNode.id}
+									>
+										<div className="card card-interactive card-interactive-primary card-type-template template-card-horizontal">
+											<div className="card-body">
+												<div className="card-row">
+													<div className="autofit-col autofit-col-expand">
+														<Link
+															title={
 																data.graphQLNode
 																	.title
 															}
-														</span>
+															to={`/questions/${
+																context.useTopicNamesInURL
+																	? data
+																			.graphQLNode
+																			.title
+																	: data
+																			.graphQLNode
+																			.id
+															}`}
+														>
+															<div className="autofit-section">
+																<div className="card-title">
+																	<span className="text-truncate">
+																		{
+																			data
+																				.graphQLNode
+																				.title
+																		}
+																	</span>
+																</div>
+															</div>
+														</Link>
+													</div>
+													<div className="autofit-col">
+														<ClayDropDownWithItems
+															items={actions(
+																data
+															)}
+															trigger={
+																<ClayButtonWithIcon
+																	displayType="unstyled"
+																	small
+																	symbol="ellipsis-v"
+																/>
+															}
+														/>
 													</div>
 												</div>
 											</div>
-											<div className="autofit-col">
-												<ClayDropDownWithItems
-													items={actions(data)}
-													trigger={
-														<ClayButtonWithIcon
-															displayType="unstyled"
-															small
-															symbol="ellipsis-v"
-														/>
-													}
-												/>
-											</div>
 										</div>
 									</div>
-								</div>
-							</div>
-						))}
-				</div>
-			</>
-		);
-	}
-
-	function Questions() {
-		return (
-			<div>
-				{threads &&
-					threads.myUserAccountSubscriptions.items &&
-					!threads.myUserAccountSubscriptions.items.length && (
-						<ClayEmptyState
-							title={Liferay.Language.get('there-are-no-results')}
+								)
+							)}
+					</div>
+					<h2 className="mt-5 sheet-subtitle">Questions</h2>
+					<div>
+						{threads &&
+							threads.myUserAccountSubscriptions.items &&
+							!threads.myUserAccountSubscriptions.items
+								.length && (
+								<ClayEmptyState
+									title={Liferay.Language.get(
+										'there-are-no-results'
+									)}
+								/>
+							)}
+						{threads &&
+							threads.myUserAccountSubscriptions.items &&
+							threads.myUserAccountSubscriptions.items.map(
+								(data) => (
+									<div key={data.id}>
+										<QuestionRow
+											currentSection={
+												context.useTopicNamesInURL
+													? data.graphQLNode
+															.messageBoardSection &&
+													  data.graphQLNode
+															.messageBoardSection
+															.title
+													: (data.graphQLNode
+															.messageBoardSection &&
+															data.graphQLNode
+																.messageBoardSection
+																.id) ||
+													  context.rootTopicId
+											}
+											items={actions(data)}
+											question={data.graphQLNode}
+											showSectionLabel={true}
+										/>
+									</div>
+								)
+							)}
+						<DeleteQuestion
+							deleteModalVisibility={showDeleteModalPanel}
+							question={questionToDelete}
+							setDeleteModalVisibility={setShowDeleteModalPanel}
 						/>
-					)}
-				{threads &&
-					threads.myUserAccountSubscriptions.items &&
-					threads.myUserAccountSubscriptions.items.map((data) => (
-						<>
-							<QuestionRow
-								items={actions(data)}
-								key={data.id}
-								question={data.graphQLNode}
-								showSectionLabel={true}
-							/>
-							<DeleteThread
-								question={data.graphQLNode}
-								showDeleteModalPanel={showDeleteModalPanel}
-							/>
-						</>
-					))}
+					</div>
+				</div>
 			</div>
-		);
-	}
+			<Alert displayType="success" info={info} />
+		</section>
+	);
 });

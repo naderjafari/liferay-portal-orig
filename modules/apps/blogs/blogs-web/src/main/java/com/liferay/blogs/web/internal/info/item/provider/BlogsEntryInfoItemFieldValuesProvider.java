@@ -21,27 +21,22 @@ import com.liferay.blogs.web.internal.info.item.BlogsEntryInfoItemFields;
 import com.liferay.expando.info.item.provider.ExpandoInfoItemFieldSetProvider;
 import com.liferay.info.exception.NoSuchInfoItemException;
 import com.liferay.info.field.InfoFieldValue;
-import com.liferay.info.item.InfoItemClassPKReference;
+import com.liferay.info.item.ClassPKInfoItemIdentifier;
 import com.liferay.info.item.InfoItemFieldValues;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.field.reader.InfoItemFieldReaderFieldSetProvider;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.info.type.WebImage;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
-import com.liferay.portal.kernel.util.LocaleThreadLocal;
-
-import java.text.Format;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
@@ -73,8 +68,8 @@ public class BlogsEntryInfoItemFieldValuesProvider
 			).infoFieldValues(
 				_infoItemFieldReaderFieldSetProvider.getInfoFieldValues(
 					BlogsEntry.class.getName(), blogsEntry)
-			).infoItemClassPKReference(
-				new InfoItemClassPKReference(
+			).infoItemReference(
+				new InfoItemReference(
 					BlogsEntry.class.getName(), blogsEntry.getEntryId())
 			).build();
 		}
@@ -96,20 +91,30 @@ public class BlogsEntryInfoItemFieldValuesProvider
 				new InfoFieldValue<>(
 					BlogsEntryInfoItemFields.titleInfoField,
 					blogsEntry.getTitle()));
-
 			blogsEntryFieldValues.add(
 				new InfoFieldValue<>(
 					BlogsEntryInfoItemFields.subtitleInfoField,
 					blogsEntry.getSubtitle()));
-
 			blogsEntryFieldValues.add(
 				new InfoFieldValue<>(
 					BlogsEntryInfoItemFields.descriptionInfoField,
 					blogsEntry.getDescription()));
+			blogsEntryFieldValues.add(
+				new InfoFieldValue<>(
+					BlogsEntryInfoItemFields.createDateInfoField,
+					blogsEntry.getCreateDate()));
+			blogsEntryFieldValues.add(
+				new InfoFieldValue<>(
+					BlogsEntryInfoItemFields.modifiedDateInfoField,
+					blogsEntry.getModifiedDate()));
 
 			if (themeDisplay != null) {
 				WebImage smallWebImage = new WebImage(
-					blogsEntry.getSmallImageURL(themeDisplay));
+					blogsEntry.getSmallImageURL(themeDisplay),
+					new InfoItemReference(
+						FileEntry.class.getName(),
+						new ClassPKInfoItemIdentifier(
+							blogsEntry.getSmallImageFileEntryId())));
 
 				smallWebImage.setAlt(blogsEntry.getSmallImageAlt());
 
@@ -119,7 +124,11 @@ public class BlogsEntryInfoItemFieldValuesProvider
 						smallWebImage));
 
 				WebImage coverWebImage = new WebImage(
-					blogsEntry.getCoverImageURL(themeDisplay));
+					blogsEntry.getCoverImageURL(themeDisplay),
+					new InfoItemReference(
+						FileEntry.class.getName(),
+						new ClassPKInfoItemIdentifier(
+							blogsEntry.getCoverImageFileEntryId())));
 
 				coverWebImage.setAlt(blogsEntry.getCoverImageAlt());
 
@@ -158,13 +167,17 @@ public class BlogsEntryInfoItemFieldValuesProvider
 
 			blogsEntryFieldValues.add(
 				new InfoFieldValue<>(
+					BlogsEntryInfoItemFields.displayDateInfoField,
+					blogsEntry.getDisplayDate()));
+			blogsEntryFieldValues.add(
+				new InfoFieldValue<>(
 					BlogsEntryInfoItemFields.publishDateInfoField,
-					_getDateValue(blogsEntry.getDisplayDate())));
+					blogsEntry.getDisplayDate()));
 
 			if (themeDisplay != null) {
 				blogsEntryFieldValues.add(
 					new InfoFieldValue<>(
-						BlogsEntryInfoItemFields.displayPageUrlInfoField,
+						BlogsEntryInfoItemFields.displayPageURLInfoField,
 						_getDisplayPageURL(blogsEntry)));
 			}
 
@@ -178,19 +191,6 @@ public class BlogsEntryInfoItemFieldValuesProvider
 		catch (PortalException portalException) {
 			throw new RuntimeException(portalException);
 		}
-	}
-
-	private String _getDateValue(Date date) {
-		if (date == null) {
-			return StringPool.BLANK;
-		}
-
-		Locale locale = LocaleThreadLocal.getThemeDisplayLocale();
-
-		Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(
-			locale);
-
-		return dateFormatDateTime.format(date);
 	}
 
 	private String _getDisplayPageURL(BlogsEntry blogsEntry)

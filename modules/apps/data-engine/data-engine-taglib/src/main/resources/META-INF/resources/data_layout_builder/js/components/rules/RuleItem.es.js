@@ -14,13 +14,20 @@
 
 import ClayButton from '@clayui/button';
 import ClayLabel from '@clayui/label';
+import ClayPanel from '@clayui/panel';
 import classNames from 'classnames';
 import React, {useContext} from 'react';
 
 import AppContext from '../../AppContext.es';
 import {DELETE_DATA_LAYOUT_RULE} from '../../actions.es';
-import {getFieldLabel} from '../../utils/dataDefinition.es';
-import CollapsablePanel from '../collapsable-panel/CollapsablePanel.es';
+import {
+	forEachDataDefinitionField,
+	getDataDefinitionField,
+	getFieldLabel,
+	getOptionLabel,
+} from '../../utils/dataDefinition.es';
+import {getLocalizedValue} from '../../utils/lang.es';
+import DropDown from '../drop-down/DropDown.es';
 
 const ACTION_LABELS = {
 	autofill: Liferay.Language.get('autofill'),
@@ -52,13 +59,10 @@ const Text = ({capitalize = false, children = '', lowercase = false}) => (
 );
 
 export default function RuleItem({rule, toggleRulesEditorVisibility}) {
-	const {
-		actions,
-		conditions,
-		logicalOperator,
-		name: {[Liferay.ThemeDisplay.getDefaultLanguageId()]: name},
-	} = rule;
+	const {actions, conditions, logicalOperator, name: ruleName} = rule;
 	const [{dataDefinition}, dispatch] = useContext(AppContext);
+	const {defaultLanguageId} = dataDefinition;
+	const name = getLocalizedValue(defaultLanguageId, ruleName);
 
 	const dropDownActions = [
 		{
@@ -83,7 +87,7 @@ export default function RuleItem({rule, toggleRulesEditorVisibility}) {
 	];
 
 	const replaceExpressionLabels = (expression) => {
-		dataDefinition.dataDefinitionFields.forEach(({name}) => {
+		forEachDataDefinitionField(dataDefinition, ({name}) => {
 			expression = expression.replace(
 				new RegExp(`\\[${name}\\]`, 'g'),
 				getFieldLabel(dataDefinition, name)
@@ -94,73 +98,116 @@ export default function RuleItem({rule, toggleRulesEditorVisibility}) {
 	};
 
 	return (
-		<CollapsablePanel actions={dropDownActions} title={name}>
-			<ClayButton
-				displayType="unstyled"
-				onClick={() => toggleRulesEditorVisibility(rule)}
+		<div className="rule-list__panel">
+			<ClayPanel
+				className="collapsable-panel panel-unstyled"
+				collapsable
+				collapseClassNames="panel-body"
+				displayTitle={name}
+				displayType="secondary"
 			>
-				<Text capitalize>{Liferay.Language.get('if')}</Text>
+				<ClayButton
+					displayType="unstyled"
+					onClick={() => toggleRulesEditorVisibility(rule)}
+				>
+					<Text capitalize>{Liferay.Language.get('if')}</Text>
 
-				{conditions.map(({operands, operator}, index) => {
-					const [first, last] = operands;
+					{conditions.map(({operands, operator}, index) => {
+						const [first, last] = operands;
+						const lastValue = last?.value;
 
-					return (
+						const _getFieldLabel = () => {
+							const field = getDataDefinitionField(
+								dataDefinition,
+								lastValue
+							);
+
+							if (field) {
+								return getFieldLabel(dataDefinition, lastValue);
+							}
+
+							const parent = getDataDefinitionField(
+								dataDefinition,
+								first.value
+							);
+
+							if (parent) {
+								const optionLabel = getOptionLabel(
+									parent.customProperties?.options,
+									lastValue,
+									defaultLanguageId
+								);
+
+								return optionLabel || lastValue;
+							}
+
+							return lastValue;
+						};
+
+						return (
+							<>
+								<Text lowercase>
+									{Liferay.Language.get('field')}
+								</Text>
+
+								<ClayLabel displayType="success">
+									{getFieldLabel(dataDefinition, first.value)}
+								</ClayLabel>
+
+								<ClayLabel displayType="secondary">
+									{OPERATOR_LABELS[operator] || operator}
+								</ClayLabel>
+
+								{lastValue && (
+									<ClayLabel displayType="info">
+										{_getFieldLabel()}
+									</ClayLabel>
+								)}
+
+								{index + 1 !== conditions.length && (
+									<ClayLabel displayType="warning">
+										{logicalOperator}
+									</ClayLabel>
+								)}
+							</>
+						);
+					})}
+
+					{actions.map(({action, expression, target}, index) => (
 						<>
 							<Text lowercase>
-								{Liferay.Language.get('field')}
+								{ACTION_LABELS[action] || action}
 							</Text>
 
-							<ClayLabel displayType="success">
-								{getFieldLabel(dataDefinition, first.value)}
-							</ClayLabel>
+							{expression && (
+								<>
+									<ClayLabel displayType="secondary">
+										{replaceExpressionLabels(expression)}
+									</ClayLabel>
 
-							<ClayLabel displayType="secondary">
-								{OPERATOR_LABELS[operator] || operator}
-							</ClayLabel>
-
-							{last && last.value && (
-								<ClayLabel displayType="info">
-									{getFieldLabel(dataDefinition, last.value)}
-								</ClayLabel>
+									<Text lowercase>
+										{Liferay.Language.get('into')}
+									</Text>
+								</>
 							)}
 
-							{index + 1 !== conditions.length && (
+							<ClayLabel displayType="success">
+								{getFieldLabel(dataDefinition, target)}
+							</ClayLabel>
+
+							{index + 1 !== actions.length && (
 								<ClayLabel displayType="warning">
-									{logicalOperator}
+									{Liferay.Language.get('and')}
 								</ClayLabel>
 							)}
 						</>
-					);
-				})}
-
-				{actions.map(({action, expression, target}, index) => (
-					<>
-						<Text lowercase>{ACTION_LABELS[action] || action}</Text>
-
-						{expression && (
-							<>
-								<ClayLabel displayType="secondary">
-									{replaceExpressionLabels(expression)}
-								</ClayLabel>
-
-								<Text lowercase>
-									{Liferay.Language.get('into')}
-								</Text>
-							</>
-						)}
-
-						<ClayLabel displayType="success">
-							{getFieldLabel(dataDefinition, target)}
-						</ClayLabel>
-
-						{index + 1 !== actions.length && (
-							<ClayLabel displayType="warning">
-								{Liferay.Language.get('and')}
-							</ClayLabel>
-						)}
-					</>
-				))}
-			</ClayButton>
-		</CollapsablePanel>
+					))}
+				</ClayButton>
+			</ClayPanel>
+			<DropDown
+				actions={dropDownActions}
+				className="rule-list__options"
+			/>
+		</div>
 	);
 }

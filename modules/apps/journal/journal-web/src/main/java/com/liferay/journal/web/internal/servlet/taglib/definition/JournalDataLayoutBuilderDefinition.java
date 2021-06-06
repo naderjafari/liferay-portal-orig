@@ -45,7 +45,7 @@ public class JournalDataLayoutBuilderDefinition
 
 	@Override
 	public String[] getDisabledProperties() {
-		return new String[] {"predefinedValue"};
+		return new String[] {"predefinedValue", "requiredErrorMessage"};
 	}
 
 	@Override
@@ -56,8 +56,14 @@ public class JournalDataLayoutBuilderDefinition
 	@Override
 	public String[] getUnimplementedProperties() {
 		return new String[] {
-			"fieldNamespace", "readOnly", "validation", "visibilityExpression"
+			"allowGuestUsers", "fieldNamespace", "inputMask", "readOnly",
+			"requireConfirmation", "validation", "visibilityExpression"
 		};
+	}
+
+	@Override
+	public String[] getVisibleProperties() {
+		return new String[] {"localizable"};
 	}
 
 }

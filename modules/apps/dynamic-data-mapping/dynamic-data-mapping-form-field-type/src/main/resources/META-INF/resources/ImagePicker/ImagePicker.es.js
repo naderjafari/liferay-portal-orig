@@ -15,7 +15,6 @@
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayModal, {useModal} from '@clayui/modal';
-import {ItemSelectorDialog} from 'frontend-js-web';
 import React, {useState} from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
@@ -24,9 +23,11 @@ import {useSyncValue} from '../hooks/useSyncValue.es';
 const defaultValue = {description: '', title: '', url: ''};
 
 const ImagePicker = ({
+	editingLanguageId,
 	id,
 	inputValue,
 	itemSelectorURL,
+	message,
 	name,
 	onClearClick,
 	onDescriptionChange,
@@ -44,21 +45,20 @@ const ImagePicker = ({
 	const dispatchValue = ({clear, value}, callback = () => {}) =>
 		setImageValues((oldValues) => {
 			let mergedValues = {...oldValues, ...value};
-
 			mergedValues = clear ? {} : mergedValues;
+			mergedValues.alt = mergedValues.description || '';
 
 			callback(mergedValues);
 
 			return mergedValues;
 		});
 
-	const handleFieldChanged = (event) => {
-		const selectedItem = event.selectedItem;
+	const handleFieldChanged = (selectedItem) => {
+		if (selectedItem?.value) {
+			const selectedImage = new Image();
+			const selectedItemValue = JSON.parse(selectedItem.value);
 
-		if (selectedItem && selectedItem.value) {
-			const img = new Image();
-			const item = JSON.parse(selectedItem.value);
-			img.addEventListener('load', (event) => {
+			selectedImage.addEventListener('load', (event) => {
 				const {
 					target: {height, width},
 				} = event;
@@ -72,29 +72,29 @@ const ImagePicker = ({
 						url: '',
 						width,
 					},
-					...item,
+					...selectedItemValue,
 				};
 
 				dispatchValue({value: imageData}, (mergedValues) =>
 					onFieldChanged(mergedValues)
 				);
 			});
-			img.src = item.url;
+			selectedImage.src = selectedItemValue.url;
 		}
 	};
 
 	const handleItemSelectorTriggerClick = (event) => {
 		event.preventDefault();
 
-		const itemSelectorDialog = new ItemSelectorDialog({
-			eventName: `${portletNamespace}selectDocumentLibrary`,
-			singleSelect: true,
+		Liferay.Util.openSelectionModal({
+			onSelect: handleFieldChanged,
+			selectEventName: `${portletNamespace}selectDocumentLibrary`,
+			title: Liferay.Util.sub(
+				Liferay.Language.get('select-x'),
+				Liferay.Language.get('image')
+			),
 			url: itemSelectorURL,
 		});
-
-		itemSelectorDialog.on('selectedItemChange', handleFieldChanged);
-
-		itemSelectorDialog.open();
 	};
 
 	const placeholder = readOnly
@@ -105,7 +105,6 @@ const ImagePicker = ({
 		<>
 			<ClayForm.Group style={{marginBottom: '0.5rem'}}>
 				<input
-					id={id}
 					name={name}
 					type="hidden"
 					value={JSON.stringify(imageValues)}
@@ -113,12 +112,14 @@ const ImagePicker = ({
 				<ClayInput.Group>
 					<ClayInput.GroupItem className="d-none d-sm-block" prepend>
 						<ClayInput
-							className="bg-light"
+							className="field"
+							dir={Liferay.Language.direction[editingLanguageId]}
 							disabled={readOnly}
+							id={id}
+							lang={editingLanguageId}
 							onClick={handleItemSelectorTriggerClick}
-							readOnly
 							type="text"
-							value={imageValues.title}
+							value={imageValues.title || ''}
 						/>
 					</ClayInput.GroupItem>
 
@@ -160,6 +161,8 @@ const ImagePicker = ({
 						</ClayInput.GroupItem>
 					)}
 				</ClayInput.Group>
+
+				{message && <div className="form-feedback-item">{message}</div>}
 			</ClayForm.Group>
 
 			{imageValues.url && modalVisible ? (
@@ -202,7 +205,13 @@ const ImagePicker = ({
 
 						<ClayForm.Group>
 							<ClayInput
+								dir={
+									Liferay.Language.direction[
+										editingLanguageId
+									]
+								}
 								disabled={readOnly}
+								lang={editingLanguageId}
 								name={`${name}-description`}
 								onChange={({event, target: {value}}) =>
 									dispatchValue(
@@ -224,16 +233,37 @@ const ImagePicker = ({
 };
 
 const Main = ({
+	displayErrors,
+	editingLanguageId,
+	errorMessage,
 	id,
 	inputValue,
 	itemSelectorURL,
+	message,
 	name,
 	onChange,
 	portletNamespace,
 	readOnly,
+	valid,
 	value,
 	...otherProps
 }) => {
+	const getErrorMessages = (errorMessage, isSignedIn) => {
+		const errorMessages = [errorMessage];
+
+		if (!isSignedIn) {
+			errorMessages.push(
+				Liferay.Language.get(
+					'you-need-to-be-signed-in-to-edit-this-field'
+				)
+			);
+		}
+
+		return errorMessages.join(' ');
+	};
+
+	const isSignedIn = Liferay.ThemeDisplay.isSignedIn();
+
 	const transformValue = (sourceValue) => {
 		if (sourceValue) {
 			if (typeof sourceValue === 'string') {
@@ -248,8 +278,17 @@ const Main = ({
 	};
 
 	return (
-		<FieldBase {...otherProps} id={id} name={name} readOnly={readOnly}>
+		<FieldBase
+			{...otherProps}
+			displayErrors={isSignedIn ? displayErrors : true}
+			errorMessage={getErrorMessages(errorMessage, isSignedIn)}
+			id={id}
+			name={name}
+			readOnly={isSignedIn ? readOnly : true}
+			valid={isSignedIn ? valid : false}
+		>
 			<ImagePicker
+				editingLanguageId={editingLanguageId}
 				id={id}
 				inputValue={
 					transformValue(inputValue) ??
@@ -257,6 +296,7 @@ const Main = ({
 					defaultValue
 				}
 				itemSelectorURL={itemSelectorURL}
+				message={message}
 				name={name}
 				onClearClick={({event, ...data}) => onChange(event, data)}
 				onDescriptionChange={({event, ...data}) =>
@@ -264,7 +304,7 @@ const Main = ({
 				}
 				onFieldChanged={({event, ...data}) => onChange(event, data)}
 				portletNamespace={portletNamespace}
-				readOnly={readOnly}
+				readOnly={isSignedIn ? readOnly : true}
 			/>
 		</FieldBase>
 	);

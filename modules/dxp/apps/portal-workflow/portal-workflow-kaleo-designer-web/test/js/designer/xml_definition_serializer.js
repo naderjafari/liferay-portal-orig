@@ -15,10 +15,10 @@ const METADATA = {
 };
 
 const XML_NAMESPACE = {
-	xmlns: 'urn:liferay.com:liferay-workflow_7.1.0',
+	xmlns: 'urn:liferay.com:liferay-workflow_7.4.0',
 	'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
 	'xsi:schemaLocation':
-		'urn:liferay.com:liferay-workflow_7.1.0 http://www.liferay.com/dtd/liferay-workflow-definition_7_1_0.xsd',
+		'urn:liferay.com:liferay-workflow_7.4.0 http://www.liferay.com/dtd/liferay-workflow-definition_7_4_0.xsd',
 };
 
 describe('liferay-kaleo-designer-xml-definition-serializer', () => {
@@ -215,7 +215,7 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 								assignmentType: ['user'],
 								emailAddress: [null],
 								screenName: ['test'],
-								userId: [null],
+								userId: [''],
 							},
 						],
 					},
@@ -231,6 +231,68 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 		);
 
 		expect(definition).toContain('<screen-name>test</screen-name>');
+	});
+
+	it('serialize <email-address> element if given.', () => {
+		const jsonDefinition = {
+			nodes: [
+				{
+					name: 'task1',
+					notifications: {
+						name: ['notification1'],
+						recipients: [
+							{
+								assignmentType: ['user'],
+								emailAddress: ['test@liferay.com'],
+								screenName: [''],
+								userId: [''],
+							},
+						],
+					},
+					xmlType: 'task',
+				},
+			],
+		};
+
+		const definition = serializeDefinition(
+			XML_NAMESPACE,
+			METADATA,
+			jsonDefinition
+		);
+
+		expect(definition).toContain(
+			'<email-address>test@liferay.com</email-address>'
+		);
+	});
+
+	it('serialize <user-id> element if given.', () => {
+		const jsonDefinition = {
+			nodes: [
+				{
+					name: 'task1',
+					notifications: {
+						name: ['notification1'],
+						recipients: [
+							{
+								assignmentType: ['user'],
+								emailAddress: [''],
+								screenName: [null],
+								userId: ['0'],
+							},
+						],
+					},
+					xmlType: 'task',
+				},
+			],
+		};
+
+		const definition = serializeDefinition(
+			XML_NAMESPACE,
+			METADATA,
+			jsonDefinition
+		);
+
+		expect(definition).toContain('<user-id>0</user-id>');
 	});
 
 	it('serialize <email-address>, <screen-name> and <user-id> elements if given.', () => {
@@ -263,8 +325,6 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 		expect(definition).toContain(
 			'<email-address>test@liferay.com</email-address>'
 		);
-		expect(definition).toContain('<screen-name>test</screen-name>');
-		expect(definition).toContain('<user-id>0</user-id>');
 	});
 
 	it('serializes <user> element even if empty.', () => {

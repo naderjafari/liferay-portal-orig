@@ -61,7 +61,7 @@ import org.osgi.service.component.annotations.Reference;
 @Component(immediate = true, service = {})
 public class CalendarUtil {
 
-	public static JSONObject getCalendarRenderingRules(
+	public static JSONObject getCalendarRenderingRulesJSONObject(
 			ThemeDisplay themeDisplay, long[] calendarIds, int[] statuses,
 			long startTime, long endTime, String ruleName, TimeZone timeZone)
 		throws PortalException {
@@ -129,17 +129,17 @@ public class CalendarUtil {
 
 			Set<Integer> months = monthsMap.keySet();
 
-			JSONObject jsonObjectMonth = JSONFactoryUtil.createJSONObject();
+			JSONObject monthJSONObject = JSONFactoryUtil.createJSONObject();
 
-			jsonObject.put(String.valueOf(year), jsonObjectMonth);
+			jsonObject.put(String.valueOf(year), monthJSONObject);
 
 			for (Integer month : months) {
 				List<Integer> days = monthsMap.get(month);
 
-				JSONObject jsonObjectDay = JSONUtil.put(
+				JSONObject dayJSONObject = JSONUtil.put(
 					StringUtil.merge(days), ruleName);
 
-				jsonObjectMonth.put(String.valueOf(month), jsonObjectDay);
+				monthJSONObject.put(String.valueOf(month), dayJSONObject);
 			}
 		}
 

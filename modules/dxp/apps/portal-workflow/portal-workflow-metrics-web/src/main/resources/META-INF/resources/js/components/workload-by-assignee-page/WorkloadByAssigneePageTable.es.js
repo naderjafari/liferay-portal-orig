@@ -9,7 +9,7 @@
  * distribution rights of the Software.
  */
 
-import React, {useCallback, useContext, useMemo} from 'react';
+import React, {useContext} from 'react';
 
 import filterConstants from '../../shared/components/filter/util/filterConstants.es';
 import ListHeadItem from '../../shared/components/list/ListHeadItem.es';
@@ -19,32 +19,24 @@ import {AppContext} from '../AppContext.es';
 import {processStatusConstants} from '../filter/ProcessStatusFilter.es';
 import {slaStatusConstants} from '../filter/SLAStatusFilter.es';
 
-const Item = ({
+function Item({
 	assignee: {id, image, name},
 	onTimeTaskCount,
 	overdueTaskCount,
 	processId,
 	taskCount,
 	taskNames,
-}) => {
+}) {
 	const {defaultDelta} = useContext(AppContext);
 
-	const getFiltersQuery = useCallback(
-		(slaStatus) => ({
-			[filterConstants.assignee.key]: [id],
-			[filterConstants.processStatus.key]: [
-				processStatusConstants.pending,
-			],
-			[filterConstants.processStep.key]: taskNames,
-			[filterConstants.slaStatus.key]: [slaStatus],
-		}),
-		[id, taskNames]
-	);
+	const getFiltersQuery = (slaStatus) => ({
+		[filterConstants.assignee.key]: [id],
+		[filterConstants.processStatus.key]: [processStatusConstants.pending],
+		[filterConstants.processStep.key]: taskNames,
+		[filterConstants.slaStatus.key]: [slaStatus],
+	});
 
-	const instancesListPath = useMemo(
-		() => `/instance/${processId}/${defaultDelta}/1`,
-		[defaultDelta, processId]
-	);
+	const instancesListPath = `/instance/${processId}/${defaultDelta}/1/dateCreated:asc`;
 
 	return (
 		<tr>
@@ -56,14 +48,11 @@ const Item = ({
 					query={{filters: getFiltersQuery()}}
 					to={instancesListPath}
 				>
-					<span data-testid="assigneeName">{name}</span>
+					<span>{name}</span>
 				</ChildLink>
 			</td>
 
-			<td
-				className="table-cell-minw-75 text-right"
-				data-testid="overdueTaskCount"
-			>
+			<td className="table-cell-minw-75 text-right">
 				<ChildLink
 					className="workload-by-step-link"
 					query={{
@@ -75,10 +64,7 @@ const Item = ({
 				</ChildLink>
 			</td>
 
-			<td
-				className="table-cell-minw-75 text-right"
-				data-testid="onTimeTaskCount"
-			>
+			<td className="table-cell-minw-75 text-right">
 				<ChildLink
 					className="workload-by-step-link"
 					query={{
@@ -90,10 +76,7 @@ const Item = ({
 				</ChildLink>
 			</td>
 
-			<td
-				className="table-cell-minw-75 text-right"
-				data-testid="taskCount"
-			>
+			<td className="table-cell-minw-75 text-right">
 				<ChildLink
 					className="workload-by-step-link"
 					query={{filters: getFiltersQuery()}}
@@ -104,9 +87,9 @@ const Item = ({
 			</td>
 		</tr>
 	);
-};
+}
 
-const Table = ({items, processId, taskNames}) => {
+function Table({items, processId, taskNames}) {
 	return (
 		<div className="table-responsive workflow-process-dashboard">
 			<table className="table table-heading-nowrap table-hover table-list">
@@ -159,8 +142,8 @@ const Table = ({items, processId, taskNames}) => {
 			</table>
 		</div>
 	);
-};
+}
 
 Table.Item = Item;
 
-export {Table};
+export default Table;

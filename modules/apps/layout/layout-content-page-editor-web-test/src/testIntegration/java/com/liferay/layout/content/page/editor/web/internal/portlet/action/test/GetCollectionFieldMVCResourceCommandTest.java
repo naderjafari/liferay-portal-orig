@@ -140,11 +140,12 @@ public class GetCollectionFieldMVCResourceCommandTest {
 			new Class<?>[] {
 				HttpServletRequest.class, HttpServletResponse.class,
 				String.class, String.class, String.class, String.class,
-				Locale.class, long.class, int.class
+				String.class, int.class
 			},
 			new MockHttpServletRequest(), new MockHttpServletResponse(),
+			LocaleUtil.toLanguageId(LocaleUtil.US),
 			layoutObjectReferenceJSONObject.toString(), StringPool.BLANK,
-			StringPool.BLANK, StringPool.BLANK, LocaleUtil.US, 0, 1);
+			StringPool.BLANK, StringPool.BLANK, 1);
 
 		Assert.assertEquals(1, jsonObject.getInt("length"));
 
@@ -152,9 +153,10 @@ public class GetCollectionFieldMVCResourceCommandTest {
 
 		Assert.assertEquals(1, jsonArray.length());
 
-		JSONObject item = jsonArray.getJSONObject(0);
+		JSONObject itemJSONObject = jsonArray.getJSONObject(0);
 
-		Assert.assertEquals(blogsEntry.getTitle(), item.getString("title"));
+		Assert.assertEquals(
+			blogsEntry.getTitle(), itemJSONObject.getString("title"));
 	}
 
 	@Test
@@ -185,11 +187,12 @@ public class GetCollectionFieldMVCResourceCommandTest {
 			new Class<?>[] {
 				HttpServletRequest.class, HttpServletResponse.class,
 				String.class, String.class, String.class, String.class,
-				Locale.class, long.class, int.class
+				String.class, int.class
 			},
 			new MockHttpServletRequest(), new MockHttpServletResponse(),
+			LocaleUtil.toLanguageId(LocaleUtil.US),
 			layoutObjectReferenceJSONObject.toString(), StringPool.BLANK,
-			StringPool.BLANK, StringPool.BLANK, LocaleUtil.US, 0, 2);
+			StringPool.BLANK, StringPool.BLANK, 2);
 
 		Assert.assertEquals(2, jsonObject.getInt("length"));
 
@@ -197,13 +200,15 @@ public class GetCollectionFieldMVCResourceCommandTest {
 
 		Assert.assertEquals(2, jsonArray.length());
 
-		JSONObject item1 = jsonArray.getJSONObject(0);
+		JSONObject itemJSONObject1 = jsonArray.getJSONObject(0);
 
-		Assert.assertEquals(blogsEntry1.getTitle(), item1.getString("title"));
+		Assert.assertEquals(
+			blogsEntry1.getTitle(), itemJSONObject1.getString("title"));
 
-		JSONObject item2 = jsonArray.getJSONObject(1);
+		JSONObject itemJSONObject2 = jsonArray.getJSONObject(1);
 
-		Assert.assertEquals(blogsEntry2.getTitle(), item2.getString("title"));
+		Assert.assertEquals(
+			blogsEntry2.getTitle(), itemJSONObject2.getString("title"));
 	}
 
 	@Test
@@ -236,11 +241,12 @@ public class GetCollectionFieldMVCResourceCommandTest {
 			new Class<?>[] {
 				HttpServletRequest.class, HttpServletResponse.class,
 				String.class, String.class, String.class, String.class,
-				Locale.class, long.class, int.class
+				String.class, int.class
 			},
 			new MockHttpServletRequest(), new MockHttpServletResponse(),
+			LocaleUtil.toLanguageId(LocaleUtil.US),
 			layoutObjectReferenceJSONObject.toString(), StringPool.BLANK,
-			StringPool.BLANK, StringPool.BLANK, LocaleUtil.US, 0, 1);
+			StringPool.BLANK, StringPool.BLANK, 1);
 
 		Assert.assertEquals(2, jsonObject.getInt("length"));
 
@@ -248,9 +254,10 @@ public class GetCollectionFieldMVCResourceCommandTest {
 
 		Assert.assertEquals(1, jsonArray.length());
 
-		JSONObject item1 = jsonArray.getJSONObject(0);
+		JSONObject itemJSONObject = jsonArray.getJSONObject(0);
 
-		Assert.assertEquals(blogsEntry.getTitle(), item1.getString("title"));
+		Assert.assertEquals(
+			blogsEntry.getTitle(), itemJSONObject.getString("title"));
 	}
 
 	@Rule
@@ -290,7 +297,9 @@ public class GetCollectionFieldMVCResourceCommandTest {
 	private ServiceRegistration<InfoListProvider<?>>
 		_infoListProviderServiceRegistration;
 
-	@Inject(filter = "mvc.command.name=/content_layout/get_collection_field")
+	@Inject(
+		filter = "mvc.command.name=/layout_content_page_editor/get_collection_field"
+	)
 	private MVCResourceCommand _mvcResourceCommand;
 
 	private Locale _originalThemeDisplayDefaultLocale;

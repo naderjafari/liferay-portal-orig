@@ -89,18 +89,17 @@ public class GitWorkingDirectory {
 		_gitRemotes.put(gitRemoteName, newGitRemote);
 
 		if (write) {
-			String[] commands = {
-				JenkinsResultsParserUtil.combine(
-					"if [ \"$(git remote | grep ", gitRemoteName,
-					")\" != \"\" ] ; then git remote remove ", gitRemoteName,
-					" ; fi"),
-				JenkinsResultsParserUtil.combine(
-					"git remote add ", gitRemoteName, " ", remoteURL)
-			};
-
 			GitUtil.ExecutionResult executionResult = executeBashCommands(
 				GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY,
-				GitUtil.MILLIS_TIMEOUT, commands);
+				GitUtil.MILLIS_TIMEOUT,
+				new String[] {
+					JenkinsResultsParserUtil.combine(
+						"if [ \"$(git remote | grep ", gitRemoteName,
+						")\" != \"\" ] ; then git remote remove ",
+						gitRemoteName, " ; fi"),
+					JenkinsResultsParserUtil.combine(
+						"git remote add ", gitRemoteName, " ", remoteURL)
+				});
 
 			if (executionResult.getExitValue() != 0) {
 				throw new RuntimeException(
@@ -121,7 +120,8 @@ public class GitWorkingDirectory {
 		LocalGitBranch localGitBranch = createLocalGitBranch(
 			JenkinsResultsParserUtil.combine(
 				branchInformation.getUpstreamBranchName(), "-temp-",
-				String.valueOf(System.currentTimeMillis())),
+				String.valueOf(
+					JenkinsResultsParserUtil.getCurrentTimeMillis())),
 			true);
 
 		try {
@@ -147,6 +147,10 @@ public class GitWorkingDirectory {
 		}
 
 		checkoutLocalGitBranch(localGitBranch);
+
+		createLocalGitBranch(
+			branchInformation.getUpstreamBranchName(), true,
+			branchInformation.getUpstreamBranchSHA());
 
 		return localGitBranch;
 	}
@@ -402,7 +406,7 @@ public class GitWorkingDirectory {
 				localGitBranchName.equals(currentLocalGitBranch.getName())) {
 
 				tempLocalGitBranch = createLocalGitBranch(
-					"temp-" + System.currentTimeMillis());
+					"temp-" + JenkinsResultsParserUtil.getCurrentTimeMillis());
 
 				checkoutLocalGitBranch(tempLocalGitBranch);
 			}
@@ -684,12 +688,12 @@ public class GitWorkingDirectory {
 			}
 		}
 
-		long start = System.currentTimeMillis();
+		long start = JenkinsResultsParserUtil.getCurrentTimeMillis();
 
 		GitUtil.ExecutionResult executionResult = executeBashCommands(
 			retries, GitUtil.MILLIS_RETRY_DELAY, 1000 * 60 * 15, sb.toString());
 
-		long duration = System.currentTimeMillis() - start;
+		long duration = JenkinsResultsParserUtil.getCurrentTimeMillis() - start;
 
 		if (executionResult.getExitValue() != 0) {
 			System.out.println(executionResult.getStandardOut());
@@ -815,12 +819,12 @@ public class GitWorkingDirectory {
 		sb.append(remoteURL);
 		sb.append(" refs/heads/*:refs/remotes/origin/*");
 
-		long start = System.currentTimeMillis();
+		long start = JenkinsResultsParserUtil.getCurrentTimeMillis();
 
 		GitUtil.ExecutionResult executionResult = executeBashCommands(
 			3, GitUtil.MILLIS_RETRY_DELAY, 1000 * 60 * 30, sb.toString());
 
-		long duration = System.currentTimeMillis() - start;
+		long duration = JenkinsResultsParserUtil.getCurrentTimeMillis() - start;
 
 		if (executionResult.getExitValue() != 0) {
 			System.out.println(gitBranchesSHAReportStringBuilder.toString());
@@ -860,7 +864,7 @@ public class GitWorkingDirectory {
 			sb.append(branchName);
 		}
 
-		long start = System.currentTimeMillis();
+		long start = JenkinsResultsParserUtil.getCurrentTimeMillis();
 
 		GitUtil.ExecutionResult executionResult = executeBashCommands(
 			3, GitUtil.MILLIS_RETRY_DELAY, 1000 * 60 * 30, sb.toString());
@@ -874,7 +878,7 @@ public class GitWorkingDirectory {
 		}
 
 		String durationString = JenkinsResultsParserUtil.toDurationString(
-			System.currentTimeMillis() - start);
+			JenkinsResultsParserUtil.getCurrentTimeMillis() - start);
 
 		System.out.println("Fetch completed in " + durationString);
 
@@ -1177,10 +1181,10 @@ public class GitWorkingDirectory {
 
 			System.out.println(sb);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			System.out.println("Unable to parse git remotes\n" + standardOut);
 
-			throw t;
+			throw throwable;
 		}
 
 		return _gitRemotes;
@@ -1289,6 +1293,14 @@ public class GitWorkingDirectory {
 			getLocalGitBranchesShaMap();
 
 		for (String localGitBranchName : localGitBranchNames) {
+			if (!localGitBranchesShaMap.containsKey(localGitBranchName)) {
+				System.out.println(
+					"Unable to find SHA for local Git branch " +
+						localGitBranchName);
+
+				continue;
+			}
+
 			localGitBranches.add(
 				GitBranchFactory.newLocalGitBranch(
 					localGitRepository, localGitBranchName,
@@ -1417,8 +1429,9 @@ public class GitWorkingDirectory {
 		return getRebasedLocalGitBranch(
 			pullRequest.getLocalSenderBranchName(),
 			pullRequest.getSenderBranchName(), pullRequest.getSenderRemoteURL(),
-			pullRequest.getSenderSHA(), pullRequest.getUpstreamBranchName(),
-			pullRequest.getLiferayRemoteBranchSHA());
+			pullRequest.getSenderSHA(),
+			pullRequest.getUpstreamRemoteGitBranchName(),
+			pullRequest.getUpstreamBranchSHA());
 	}
 
 	public LocalGitBranch getRebasedLocalGitBranch(
@@ -1435,7 +1448,7 @@ public class GitWorkingDirectory {
 				currentBranchName.equals(rebasedLocalGitBranchName)) {
 
 				tempLocalGitBranch = createLocalGitBranch(
-					"temp-" + System.currentTimeMillis());
+					"temp-" + JenkinsResultsParserUtil.getCurrentTimeMillis());
 
 				checkoutLocalGitBranch(tempLocalGitBranch);
 			}
@@ -1708,21 +1721,27 @@ public class GitWorkingDirectory {
 		RemoteGitBranch upstreamRemoteGitBranch = getRemoteGitBranch(
 			upstreamBranchName, getGitRemote("upstream"));
 
+		if (upstreamRemoteGitBranch == null) {
+			upstreamRemoteGitBranch = getRemoteGitBranch(
+				upstreamBranchName, getGitRemote("origin"));
+		}
+
+		String upstreamBranchSHA = upstreamRemoteGitBranch.getSHA();
+
 		fetch(upstreamRemoteGitBranch);
 
 		String currentBranchName = getCurrentBranchName();
 
 		if (currentBranchName == null) {
-			List<String> localGitBranchNames = getLocalGitBranchNames();
-
-			List<LocalGitBranch> localGitBranches = getLocalGitBranches(
-				localGitBranchNames.get(0));
-
-			checkoutLocalGitBranch(localGitBranches.get(0));
+			checkoutLocalGitBranch(
+				createLocalGitBranch(
+					upstreamBranchName + "-temp-" +
+						JenkinsResultsParserUtil.getCurrentTimeMillis(),
+					true, upstreamBranchSHA));
 		}
 
 		return createLocalGitBranch(
-			upstreamBranchName, true, upstreamRemoteGitBranch.getSHA());
+			upstreamBranchName, true, upstreamBranchSHA);
 	}
 
 	public RemoteGitBranch getUpstreamRemoteGitBranch() {
@@ -1742,6 +1761,10 @@ public class GitWorkingDirectory {
 		}
 
 		return false;
+	}
+
+	public boolean isOnlyPoshiFilesModified() {
+		return isOnlyMatchingFilesModified(_poshiFileNamesMultiPattern);
 	}
 
 	public boolean isRemoteGitRepositoryAlive(String remoteURL) {
@@ -1874,6 +1897,35 @@ public class GitWorkingDirectory {
 			if (executionResult.getExitValue() != 0) {
 				return null;
 			}
+
+			JenkinsSlave jenkinsSlave = new JenkinsSlave();
+
+			if (jenkinsSlave != null) {
+				String standardOut = executionResult.getStandardOut();
+
+				if ((standardOut != null) &&
+					standardOut.contains("(forced update)")) {
+
+					StringBuilder messageStringBuilder = new StringBuilder();
+
+					messageStringBuilder.append(
+						"Git branch force-push detected.\n");
+
+					Build currentBuild = jenkinsSlave.getCurrentBuild();
+
+					messageStringBuilder.append("BuildURL: ");
+					messageStringBuilder.append(currentBuild.getBuildURL());
+					messageStringBuilder.append("\n");
+
+					messageStringBuilder.append("git push command: ");
+					messageStringBuilder.append(sb.toString());
+
+					NotificationUtil.sendEmail(
+						messageStringBuilder.toString(), "jenkins",
+						"Git branch force-push detected",
+						"qa-slave-verify-fail@liferay.com");
+				}
+			}
 		}
 		catch (RuntimeException runtimeException) {
 			runtimeException.printStackTrace();
@@ -1941,6 +1993,18 @@ public class GitWorkingDirectory {
 					"Unable to abort rebase\n",
 					executionResult.getStandardError()));
 		}
+	}
+
+	public boolean refContainsSHA(String ref, String sha) {
+		GitUtil.ExecutionResult executionResult = executeBashCommands(
+			GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY, 1000 * 60 * 2,
+			"git merge-base --is-ancestor " + sha + " " + ref);
+
+		if (executionResult.getExitValue() == 0) {
+			return true;
+		}
+
+		return false;
 	}
 
 	public boolean remoteGitBranchExists(
@@ -2148,8 +2212,8 @@ public class GitWorkingDirectory {
 		long epochTimestamp = (long)unixTimestamp * 1000;
 
 		return GitCommitFactory.newLocalGitCommit(
-			this, matcher.group("message"), matcher.group("sha"),
-			epochTimestamp);
+			matcher.group("email"), this, matcher.group("message"),
+			matcher.group("sha"), epochTimestamp);
 	}
 
 	protected File getRealGitDirectory(File gitFile) {
@@ -2185,6 +2249,16 @@ public class GitWorkingDirectory {
 
 		return JenkinsResultsParserUtil.getDirectoriesContainingFiles(
 			subdirectories, files);
+	}
+
+	protected boolean isOnlyMatchingFilesModified(MultiPattern multiPattern) {
+		for (File modifiedFile : getModifiedFilesList()) {
+			if (multiPattern.matches(modifiedFile.getName()) == null) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	protected String loadGitRepositoryName() {
@@ -2500,7 +2574,7 @@ public class GitWorkingDirectory {
 
 		List<LocalGitCommit> localGitCommits = new ArrayList<>(num);
 
-		String gitLog = _log(start, num, file, "%H %ct %s", sha);
+		String gitLog = _log(start, num, file, "%H %ct %ae %s", sha);
 
 		gitLog = gitLog.replaceAll("Finished executing Bash commands.", "");
 
@@ -2579,9 +2653,14 @@ public class GitWorkingDirectory {
 	private static final Pattern _gitDirectoryPathPattern = Pattern.compile(
 		"gitdir\\: (.*)\\s*");
 	private static final Pattern _gitLogEntityPattern = Pattern.compile(
-		"(?<sha>[0-9a-f]{40}) (?<commitTime>\\d+) (?<message>.*)");
+		"(?<sha>[0-9a-f]{40}) (?<commitTime>\\d+) (?<email>[^\\s]+) " +
+			"(?<message>.*)");
 	private static final Map<String, List<File>> _modifiedFilesMap =
 		new HashMap<>();
+	private static final MultiPattern _poshiFileNamesMultiPattern =
+		new MultiPattern(
+			".*\\.function", ".*\\.macro", ".*\\.path", ".*\\.prose",
+			".*\\.testcase");
 	private static final List<String> _privateOnlyGitRepositoryNames =
 		_getBuildPropertyAsList(
 			"git.working.directory.private.only.repository.names");

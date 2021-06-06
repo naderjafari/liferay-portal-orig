@@ -83,7 +83,7 @@ if (organization != null) {
 				<c:when test="<%= (organization == null) || ((publicLayoutSetPrototype == null) && (privateLayoutSetPrototype == null)) %>">
 					<p class="sheet-text"><liferay-ui:message key="by-clicking-this-toggle-you-could-create-a-public-and-or-private-site-for-your-organization" /></p>
 
-					<aui:input label="create-site" name="site" type="toggle-switch" value="<%= site %>" />
+					<aui:input inlineLabel="right" label="create-site" labelCssClass="simple-toggle-switch" name="site" type="toggle-switch" value="<%= site %>" />
 				</c:when>
 				<c:otherwise>
 					<aui:input label="create-site" name="site" type="hidden" value="<%= site %>" />
@@ -91,13 +91,6 @@ if (organization != null) {
 			</c:choose>
 
 			<c:if test="<%= site %>">
-
-				<%
-				PortletURL editOrganizationSiteURL = PortletProviderUtil.getPortletURL(request, organizationGroup, Group.class.getName(), PortletProvider.Action.EDIT);
-
-				editOrganizationSiteURL.setParameter("viewOrganizationsRedirect", currentURL);
-				%>
-
 				<aui:input inlineField="<%= true %>" name="siteId" type="resource" value="<%= String.valueOf(organizationGroup.getGroupId()) %>" />
 
 				<div class="form-group">
@@ -105,7 +98,13 @@ if (organization != null) {
 						iconCssClass="icon-cog"
 						label="<%= true %>"
 						message="manage-site"
-						url="<%= editOrganizationSiteURL.toString() %>"
+						url='<%=
+							PortletURLBuilder.create(
+								PortletProviderUtil.getPortletURL(request, organizationGroup, Group.class.getName(), PortletProvider.Action.EDIT)
+							).setParameter(
+								"viewOrganizationsRedirect", currentURL
+							).buildString()
+						%>'
 					/>
 				</div>
 			</c:if>

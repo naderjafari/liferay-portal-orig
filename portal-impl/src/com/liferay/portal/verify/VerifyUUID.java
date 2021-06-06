@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.upgrade.BaseUpgradeCallable;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.kernel.verify.model.VerifiableUUIDModel;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 /**
  * @author Brian Wing Shun Chan
@@ -61,17 +61,17 @@ public class VerifyUUID extends VerifyProcess {
 	protected void doVerify(VerifiableUUIDModel... verifiableUUIDModels)
 		throws Exception {
 
-		List<VerifyUUIDCallable> verifyUUIDCallables = new ArrayList<>(
-			verifiableUUIDModels.length);
+		List<VerifyUUIDUpgradeCallable> verifyUUIDUpgradeCallables =
+			new ArrayList<>(verifiableUUIDModels.length);
 
 		for (VerifiableUUIDModel verifiableUUIDModel : verifiableUUIDModels) {
-			VerifyUUIDCallable verifyUUIDCallable = new VerifyUUIDCallable(
-				verifiableUUIDModel);
+			VerifyUUIDUpgradeCallable verifyUUIDUpgradeCallable =
+				new VerifyUUIDUpgradeCallable(verifiableUUIDModel);
 
-			verifyUUIDCallables.add(verifyUUIDCallable);
+			verifyUUIDUpgradeCallables.add(verifyUUIDUpgradeCallable);
 		}
 
-		doVerify(verifyUUIDCallables);
+		doVerify(verifyUUIDUpgradeCallables);
 	}
 
 	protected void verifyUUID(VerifiableUUIDModel verifiableUUIDModel)
@@ -82,14 +82,15 @@ public class VerifyUUID extends VerifyProcess {
 		if (db.isSupportsNewUuidFunction()) {
 			try (LoggingTimer loggingTimer = new LoggingTimer(
 					verifiableUUIDModel.getTableName());
-				Connection con = DataAccess.getConnection();
-				PreparedStatement ps = con.prepareStatement(
-					StringBundler.concat(
-						"update ", verifiableUUIDModel.getTableName(),
-						" set uuid_ = ", db.getNewUuidFunctionName(),
-						" where uuid_ is null or uuid_ = ''"))) {
+				Connection connection = DataAccess.getConnection();
+				PreparedStatement preparedStatement =
+					connection.prepareStatement(
+						StringBundler.concat(
+							"update ", verifiableUUIDModel.getTableName(),
+							" set uuid_ = ", db.getNewUuidFunctionName(),
+							" where uuid_ is null or uuid_ = ''"))) {
 
-				ps.executeUpdate();
+				preparedStatement.executeUpdate();
 
 				return;
 			}
@@ -105,40 +106,43 @@ public class VerifyUUID extends VerifyProcess {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(
 				verifiableUUIDModel.getTableName());
-			Connection con = DataAccess.getConnection();
-			PreparedStatement ps1 = con.prepareStatement(
+			Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select ", verifiableUUIDModel.getPrimaryKeyColumnName(),
 					" from ", verifiableUUIDModel.getTableName(),
 					" where uuid_ is null or uuid_ = ''"));
-			ResultSet rs = ps1.executeQuery();
-			PreparedStatement ps2 = AutoBatchPreparedStatementUtil.autoBatch(
-				con.prepareStatement(sb.toString()))) {
+			ResultSet resultSet = preparedStatement1.executeQuery();
+			PreparedStatement preparedStatement2 =
+				AutoBatchPreparedStatementUtil.autoBatch(
+					connection.prepareStatement(sb.toString()))) {
 
-			while (rs.next()) {
-				long pk = rs.getLong(
+			while (resultSet.next()) {
+				long pk = resultSet.getLong(
 					verifiableUUIDModel.getPrimaryKeyColumnName());
 
-				ps2.setString(1, PortalUUIDUtil.generate());
-				ps2.setLong(2, pk);
+				preparedStatement2.setString(1, PortalUUIDUtil.generate());
+				preparedStatement2.setLong(2, pk);
 
-				ps2.addBatch();
+				preparedStatement2.addBatch();
 			}
 
-			ps2.executeBatch();
+			preparedStatement2.executeBatch();
 		}
 	}
 
-	private class VerifyUUIDCallable implements Callable<Void> {
+	private class VerifyUUIDUpgradeCallable extends BaseUpgradeCallable<Void> {
 
 		@Override
-		public Void call() throws Exception {
+		protected Void doCall() throws Exception {
 			verifyUUID(_verifiableUUIDModel);
 
 			return null;
 		}
 
-		private VerifyUUIDCallable(VerifiableUUIDModel verifiableUUIDModel) {
+		private VerifyUUIDUpgradeCallable(
+			VerifiableUUIDModel verifiableUUIDModel) {
+
 			_verifiableUUIDModel = verifiableUUIDModel;
 		}
 

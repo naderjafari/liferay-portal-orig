@@ -14,10 +14,16 @@
 
 package com.liferay.content.dashboard.web.internal.item;
 
-import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.kernel.model.AssetCategory;
+import com.liferay.asset.kernel.model.AssetTag;
+import com.liferay.content.dashboard.item.action.ContentDashboardItemAction;
+import com.liferay.content.dashboard.item.action.exception.ContentDashboardItemActionException;
+import com.liferay.content.dashboard.item.action.provider.ContentDashboardItemActionProvider;
+import com.liferay.content.dashboard.web.internal.item.action.ContentDashboardItemActionProviderTracker;
 import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemType;
-import com.liferay.info.display.url.provider.InfoEditURLProvider;
+import com.liferay.info.field.InfoFieldValue;
+import com.liferay.info.item.InfoItemReference;
+import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -25,12 +31,10 @@ import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.util.Collections;
@@ -38,6 +42,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,13 +57,13 @@ public class JournalArticleContentDashboardItem
 	implements ContentDashboardItem<JournalArticle> {
 
 	public JournalArticleContentDashboardItem(
-		List<AssetCategory> assetCategories,
-		AssetDisplayPageFriendlyURLProvider assetDisplayPageFriendlyURLProvider,
+		List<AssetCategory> assetCategories, List<AssetTag> assetTags,
+		ContentDashboardItemActionProviderTracker
+			contentDashboardItemActionProviderTracker,
 		ContentDashboardItemType contentDashboardItemType, Group group,
-		InfoEditURLProvider<JournalArticle> infoEditURLProvider,
+		InfoItemFieldValuesProvider<JournalArticle> infoItemFieldValuesProvider,
 		JournalArticle journalArticle, Language language,
-		JournalArticle latestApprovedJournalArticle,
-		ModelResourcePermission<JournalArticle> modelResourcePermission) {
+		JournalArticle latestApprovedJournalArticle, Portal portal) {
 
 		if (ListUtil.isEmpty(assetCategories)) {
 			_assetCategories = Collections.emptyList();
@@ -66,11 +72,18 @@ public class JournalArticleContentDashboardItem
 			_assetCategories = Collections.unmodifiableList(assetCategories);
 		}
 
-		_assetDisplayPageFriendlyURLProvider =
-			assetDisplayPageFriendlyURLProvider;
+		if (ListUtil.isEmpty(assetTags)) {
+			_assetTags = Collections.emptyList();
+		}
+		else {
+			_assetTags = Collections.unmodifiableList(assetTags);
+		}
+
+		_contentDashboardItemActionProviderTracker =
+			contentDashboardItemActionProviderTracker;
 		_contentDashboardItemType = contentDashboardItemType;
 		_group = group;
-		_infoEditURLProvider = infoEditURLProvider;
+		_infoItemFieldValuesProvider = infoItemFieldValuesProvider;
 		_journalArticle = journalArticle;
 		_language = language;
 
@@ -81,7 +94,7 @@ public class JournalArticleContentDashboardItem
 			_latestApprovedJournalArticle = null;
 		}
 
-		_modelResourcePermission = modelResourcePermission;
+		_portal = portal;
 	}
 
 	@Override
@@ -102,39 +115,177 @@ public class JournalArticleContentDashboardItem
 	}
 
 	@Override
+	public List<AssetTag> getAssetTags() {
+		return _assetTags;
+	}
+
+	@Override
+	public List<Locale> getAvailableLocales() {
+		return Stream.of(
+			_journalArticle.getAvailableLanguageIds()
+		).map(
+			LocaleUtil::fromLanguageId
+		).collect(
+			Collectors.toList()
+		);
+	}
+
+	@Override
+	public List<ContentDashboardItemAction> getContentDashboardItemActions(
+		HttpServletRequest httpServletRequest,
+		ContentDashboardItemAction.Type... types) {
+
+		List<ContentDashboardItemActionProvider>
+			contentDashboardItemActionProviders =
+				_contentDashboardItemActionProviderTracker.
+					getContentDashboardItemActionProviders(
+						JournalArticle.class.getName(), types);
+
+		Stream<ContentDashboardItemActionProvider> stream =
+			contentDashboardItemActionProviders.stream();
+
+		return stream.map(
+			contentDashboardItemActionProvider -> {
+				try {
+					return Optional.ofNullable(
+						contentDashboardItemActionProvider.
+							getContentDashboardItemAction(
+								_journalArticle, httpServletRequest));
+				}
+				catch (ContentDashboardItemActionException
+							contentDashboardItemActionException) {
+
+					_log.error(
+						contentDashboardItemActionException,
+						contentDashboardItemActionException);
+				}
+
+				return Optional.<ContentDashboardItemAction>empty();
+			}
+		).filter(
+			Optional::isPresent
+		).map(
+			Optional::get
+		).collect(
+			Collectors.toList()
+		);
+	}
+
+	@Override
 	public ContentDashboardItemType getContentDashboardItemType() {
 		return _contentDashboardItemType;
 	}
 
 	@Override
-	public String getEditURL(HttpServletRequest httpServletRequest) {
-		try {
-			return Optional.ofNullable(
-				_infoEditURLProvider.getURL(_journalArticle, httpServletRequest)
-			).orElse(
-				StringPool.BLANK
-			);
-		}
-		catch (Exception exception) {
-			_log.error(exception, exception);
-
-			return StringPool.BLANK;
-		}
+	public Date getCreateDate() {
+		return _journalArticle.getCreateDate();
 	}
 
 	@Override
-	public Date getExpirationDate() {
-		return _journalArticle.getExpirationDate();
+	public Map<String, Object> getData(Locale locale) {
+		return HashMapBuilder.<String, Object>put(
+			"display-date", _journalArticle.getDisplayDate()
+		).put(
+			"expiration-date", _journalArticle.getExpirationDate()
+		).put(
+			"review-date", _journalArticle.getReviewDate()
+		).build();
+	}
+
+	@Override
+	public ContentDashboardItemAction getDefaultContentDashboardItemAction(
+		HttpServletRequest httpServletRequest) {
+
+		long userId = _portal.getUserId(httpServletRequest);
+
+		Locale locale = _portal.getLocale(httpServletRequest);
+
+		Version version = _getLastVersion(locale);
+
+		if ((getUserId() == userId) &&
+			Objects.equals(
+				version.getLabel(),
+				_language.get(
+					locale,
+					WorkflowConstants.getStatusLabel(
+						WorkflowConstants.STATUS_DRAFT)))) {
+
+			Optional<ContentDashboardItemActionProvider>
+				contentDashboardItemActionProviderOptional =
+					_contentDashboardItemActionProviderTracker.
+						getContentDashboardItemActionProviderOptional(
+							JournalArticle.class.getName(),
+							ContentDashboardItemAction.Type.EDIT);
+
+			return contentDashboardItemActionProviderOptional.map(
+				contentDashboardItemActionProvider ->
+					_toContentDashboardItemAction(
+						contentDashboardItemActionProvider, httpServletRequest)
+			).orElse(
+				null
+			);
+		}
+
+		Optional<ContentDashboardItemActionProvider>
+			viewContentDashboardItemActionProviderOptional =
+				_contentDashboardItemActionProviderTracker.
+					getContentDashboardItemActionProviderOptional(
+						JournalArticle.class.getName(),
+						ContentDashboardItemAction.Type.VIEW);
+
+		return viewContentDashboardItemActionProviderOptional.map(
+			contentDashboardItemActionProvider -> _toContentDashboardItemAction(
+				contentDashboardItemActionProvider, httpServletRequest)
+		).orElseGet(
+			() -> {
+				Optional<ContentDashboardItemActionProvider>
+					editContentDashboardItemActionProviderOptional =
+						_contentDashboardItemActionProviderTracker.
+							getContentDashboardItemActionProviderOptional(
+								JournalArticle.class.getName(),
+								ContentDashboardItemAction.Type.EDIT);
+
+				return editContentDashboardItemActionProviderOptional.map(
+					contentDashboardItemActionProvider ->
+						_toContentDashboardItemAction(
+							contentDashboardItemActionProvider,
+							httpServletRequest)
+				).orElse(
+					null
+				);
+			}
+		);
+	}
+
+	@Override
+	public Locale getDefaultLocale() {
+		return LocaleUtil.fromLanguageId(
+			_journalArticle.getDefaultLanguageId());
+	}
+
+	@Override
+	public Object getDisplayFieldValue(String fieldName, Locale locale) {
+		InfoFieldValue<Object> infoItemFieldValue =
+			_infoItemFieldValuesProvider.getInfoItemFieldValue(
+				_journalArticle, fieldName);
+
+		if (infoItemFieldValue == null) {
+			return null;
+		}
+
+		return infoItemFieldValue.getValue(locale);
+	}
+
+	@Override
+	public InfoItemReference getInfoItemReference() {
+		return new InfoItemReference(
+			JournalArticle.class.getName(),
+			_journalArticle.getResourcePrimKey());
 	}
 
 	@Override
 	public Date getModifiedDate() {
 		return _journalArticle.getModifiedDate();
-	}
-
-	@Override
-	public Date getPublishDate() {
-		return _journalArticle.getDisplayDate();
 	}
 
 	@Override
@@ -164,11 +315,19 @@ public class JournalArticleContentDashboardItem
 
 	@Override
 	public long getUserId() {
+		if (_latestApprovedJournalArticle != null) {
+			return _latestApprovedJournalArticle.getUserId();
+		}
+
 		return _journalArticle.getUserId();
 	}
 
 	@Override
 	public String getUserName() {
+		if (_latestApprovedJournalArticle != null) {
+			return _latestApprovedJournalArticle.getUserName();
+		}
+
 		return _journalArticle.getUserName();
 	}
 
@@ -189,66 +348,51 @@ public class JournalArticleContentDashboardItem
 	}
 
 	@Override
-	public String getViewURL(HttpServletRequest httpServletRequest) {
-		try {
-			ThemeDisplay themeDisplay =
-				(ThemeDisplay)httpServletRequest.getAttribute(
-					WebKeys.THEME_DISPLAY);
-
-			ThemeDisplay clonedThemeDisplay =
-				(ThemeDisplay)themeDisplay.clone();
-
-			clonedThemeDisplay.setScopeGroupId(_journalArticle.getGroupId());
-
-			return Optional.ofNullable(
-				_assetDisplayPageFriendlyURLProvider.getFriendlyURL(
-					JournalArticle.class.getName(),
-					_journalArticle.getResourcePrimKey(), clonedThemeDisplay)
-			).orElse(
-				StringPool.BLANK
-			);
-		}
-		catch (CloneNotSupportedException cloneNotSupportedException) {
-			_log.error(cloneNotSupportedException, cloneNotSupportedException);
-
-			return StringPool.BLANK;
-		}
-		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
-
-			return StringPool.BLANK;
-		}
-	}
-
-	@Override
-	public boolean isEditURLEnabled(HttpServletRequest httpServletRequest) {
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
-		try {
-			return _modelResourcePermission.contains(
-				themeDisplay.getPermissionChecker(), _journalArticle,
-				ActionKeys.UPDATE);
-		}
-		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
-
-			return false;
-		}
-	}
-
-	@Override
-	public boolean isViewURLEnabled(HttpServletRequest httpServletRequest) {
+	public boolean isViewable(HttpServletRequest httpServletRequest) {
 		if (!_journalArticle.hasApprovedVersion()) {
 			return false;
 		}
 
-		if (Validator.isNull(getViewURL(httpServletRequest))) {
-			return false;
-		}
+		Optional<ContentDashboardItemActionProvider>
+			contentDashboardItemActionProviderOptional =
+				_contentDashboardItemActionProviderTracker.
+					getContentDashboardItemActionProviderOptional(
+						JournalArticle.class.getName(),
+						ContentDashboardItemAction.Type.VIEW);
 
-		return true;
+		return contentDashboardItemActionProviderOptional.map(
+			contentDashboardItemActionProvider ->
+				contentDashboardItemActionProvider.isShow(
+					_journalArticle, httpServletRequest)
+		).orElse(
+			false
+		);
+	}
+
+	private Version _getLastVersion(Locale locale) {
+		List<Version> versions = getVersions(locale);
+
+		return versions.get(versions.size() - 1);
+	}
+
+	private ContentDashboardItemAction _toContentDashboardItemAction(
+		ContentDashboardItemActionProvider contentDashboardItemActionProvider,
+		HttpServletRequest httpServletRequest) {
+
+		try {
+			return contentDashboardItemActionProvider.
+				getContentDashboardItemAction(
+					_journalArticle, httpServletRequest);
+		}
+		catch (ContentDashboardItemActionException
+					contentDashboardItemActionException) {
+
+			_log.error(
+				contentDashboardItemActionException,
+				contentDashboardItemActionException);
+
+			return null;
+		}
 	}
 
 	private Optional<Version> _toVersionOptional(
@@ -271,15 +415,16 @@ public class JournalArticleContentDashboardItem
 		JournalArticleContentDashboardItem.class);
 
 	private final List<AssetCategory> _assetCategories;
-	private final AssetDisplayPageFriendlyURLProvider
-		_assetDisplayPageFriendlyURLProvider;
+	private final List<AssetTag> _assetTags;
+	private final ContentDashboardItemActionProviderTracker
+		_contentDashboardItemActionProviderTracker;
 	private final ContentDashboardItemType _contentDashboardItemType;
 	private final Group _group;
-	private final InfoEditURLProvider<JournalArticle> _infoEditURLProvider;
+	private final InfoItemFieldValuesProvider<JournalArticle>
+		_infoItemFieldValuesProvider;
 	private final JournalArticle _journalArticle;
 	private final Language _language;
 	private final JournalArticle _latestApprovedJournalArticle;
-	private final ModelResourcePermission<JournalArticle>
-		_modelResourcePermission;
+	private final Portal _portal;
 
 }

@@ -24,6 +24,8 @@ import com.liferay.portal.kernel.dao.jdbc.aop.MasterDataSource;
 import com.liferay.portal.kernel.dao.orm.ORMException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.lock.LockListener;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
@@ -109,27 +111,6 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 		}
 
 		return lock;
-	}
-
-	@Override
-	public Lock getLockByUuidAndCompanyId(String uuid, long companyId)
-		throws PortalException {
-
-		List<Lock> locks = lockPersistence.findByUuid_C(uuid, companyId);
-
-		if (locks.isEmpty()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("{uuid=");
-			sb.append(uuid);
-			sb.append(", companyId=");
-			sb.append(companyId);
-			sb.append("}");
-
-			throw new NoSuchLockException(sb.toString());
-		}
-
-		return locks.get(0);
 	}
 
 	@Override
@@ -313,20 +294,24 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 
 					});
 			}
-			catch (Throwable t) {
-				Throwable cause = t;
+			catch (Throwable throwable) {
+				Throwable causeThrowable = throwable;
 
-				if (t instanceof ORMException) {
-					cause = t.getCause();
+				if (throwable instanceof ORMException) {
+					causeThrowable = throwable.getCause();
 				}
 
-				if (cause instanceof ConstraintViolationException ||
-					cause instanceof LockAcquisitionException) {
+				if (causeThrowable instanceof ConstraintViolationException ||
+					causeThrowable instanceof LockAcquisitionException) {
+
+					if (_log.isInfoEnabled()) {
+						_log.info("Unable to acquire lock, retrying");
+					}
 
 					continue;
 				}
 
-				ReflectionUtil.throwException(t);
+				ReflectionUtil.throwException(throwable);
 			}
 		}
 	}
@@ -334,8 +319,6 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 	@Override
 	public Lock refresh(String uuid, long companyId, long expirationTime)
 		throws PortalException {
-
-		Date now = new Date();
 
 		List<Lock> locks = lockPersistence.findByUuid_C(uuid, companyId);
 
@@ -362,6 +345,8 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 		}
 
 		try {
+			Date now = new Date();
+
 			lock.setCreateDate(now);
 
 			if (expirationTime == 0) {
@@ -426,26 +411,33 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 
 				return;
 			}
-			catch (Throwable t) {
-				Throwable cause = t;
+			catch (Throwable throwable) {
+				Throwable causeThrowable = throwable;
 
-				if (t instanceof ORMException) {
-					cause = t.getCause();
+				if (throwable instanceof ORMException) {
+					causeThrowable = throwable.getCause();
 				}
 
-				if (cause instanceof ConstraintViolationException ||
-					cause instanceof LockAcquisitionException) {
+				if (causeThrowable instanceof ConstraintViolationException ||
+					causeThrowable instanceof LockAcquisitionException) {
+
+					if (_log.isInfoEnabled()) {
+						_log.info("Unable to remove lock, retrying");
+					}
 
 					continue;
 				}
 
-				ReflectionUtil.throwException(t);
+				ReflectionUtil.throwException(throwable);
 			}
 		}
 	}
 
 	@Deactivate
+	@Override
 	protected void deactivate() {
+		super.deactivate();
+
 		if (_serviceTrackerMap != null) {
 			_serviceTrackerMap.close();
 		}
@@ -490,6 +482,9 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 
 		return _serviceTrackerMap.getService(className);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		LockLocalServiceImpl.class);
 
 	private ServiceTrackerMap<String, LockListener> _serviceTrackerMap;
 	private final TransactionConfig _transactionConfig =

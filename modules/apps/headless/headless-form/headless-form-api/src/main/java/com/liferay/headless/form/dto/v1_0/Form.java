@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,10 +48,10 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Form")
+@GraphQLName(description = "https://www.schema.org/Form", value = "Form")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Form")
-public class Form {
+public class Form implements Serializable {
 
 	public static Form toDTO(String json) {
 		return ObjectMapperUtil.readValue(Form.class, json);
@@ -760,6 +762,7 @@ public class Form {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.form.dto.v1_0.Form",
 		name = "x-class-name"
 	)
@@ -795,7 +798,7 @@ public class Form {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -834,7 +837,7 @@ public class Form {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

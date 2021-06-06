@@ -3,20 +3,23 @@ components:
         Account:
             # @review
             description:
-                An account represents an external account, for example a
-                customer business.
+                An account represents an external account, for example a customer business.
             properties:
                 description:
                     type: string
                 domains:
                     # @review
                     description:
-                        The account's email domains. Users assigned to this
-                        account generally will have email addresses under one
-                        of these domains.
+                        The account's email domains. Users assigned to this account generally will have email addresses
+                        under one of these domains.
                     items:
                         type: string
                     type: array
+                externalReferenceCode:
+                    # @review
+                    description:
+                        The optional external key of this account.
+                    type: string
                 id:
                     format: int64
                     readOnly: true
@@ -70,6 +73,11 @@ components:
             properties:
                 emailAddress:
                     format: email
+                    type: string
+                externalReferenceCode:
+                    # @review
+                    description:
+                        The optional external key of this account user.
                     type: string
                 firstName:
                     type: string
@@ -167,6 +175,379 @@ paths:
                     description:
                         "Account successfully created"
             tags: ["Account"]
+    "/accounts/by-external-reference-code/{accountExternalReferenceCode}/account-roles/{accountRoleId}/account-users/{accountUserExternalReferenceCode}":
+        delete:
+            # @review
+            description:
+                Unassigns account users to the account role
+            operationId: deleteAccountRoleUserAssociationByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: accountExternalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+                - in: path
+                  name: accountRoleId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: path
+                  name: accountUserExternalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["AccountRole"]
+        post:
+            # @review
+            description:
+                Assigns account users to the account role
+            operationId: postAccountRoleUserAssociationByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: accountExternalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+                - in: path
+                  name: accountRoleId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: path
+                  name: accountUserExternalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["AccountRole"]
+    "/accounts/by-external-reference-code/{externalReferenceCode}":
+        delete:
+            # @review
+            description:
+                Deletes an account.
+            operationId: deleteAccountByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["Account"]
+        get:
+            description:
+                ""
+            operationId: getAccountByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Account"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Account"
+                    description:
+                        ""
+            tags: ["Account"]
+        patch:
+            # @review
+            description:
+                Updates the account with information sent in the request body. Only the provided fields are updated.
+            operationId: patchAccountByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Account"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/Account"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Account"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Account"
+                    # @review
+                    description:
+                        "Account successfully updated"
+            tags: ["Account"]
+        put:
+            # @review
+            description:
+                Replaces the account with information sent in the request body. Any missing fields are deleted unless
+                they are required.
+            operationId: putAccountByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Account"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/Account"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Account"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Account"
+                    # @review
+                    description:
+                        "Account successfully replaced"
+            tags: ["Account"]
+    "/accounts/by-external-reference-code/{externalReferenceCode}/account-roles":
+        get:
+            # @review
+            description:
+                Gets the account's roles
+            operationId: getAccountRolesByExternalReferenceCodePage
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+                - in: query
+                  name: keywords
+                  schema:
+                      type: string
+                - in: query
+                  name: page
+                  schema:
+                      type: integer
+                - in: query
+                  name: pageSize
+                  schema:
+                      type: integer
+                - in: query
+                  name: sort
+                  schema:
+                      type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/AccountRole"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/AccountRole"
+                                type: array
+                    # @review
+                    description:
+                        ""
+            tags: ["AccountRole"]
+        post:
+            # @review
+            description:
+                Adds a role for the account
+            operationId: postAccountRoleByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/AccountRole"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/AccountRole"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/AccountRole"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/AccountRole"
+                    # @review
+                    description:
+                        ""
+            tags: ["AccountRole"]
+    "/accounts/by-external-reference-code/{externalReferenceCode}/account-users":
+        get:
+            # @review
+            description:
+                Gets the users assigned to an account
+            operationId: getAccountUsersByExternalReferenceCodePage
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+                - in: query
+                  name: filter
+                  schema:
+                      type: string
+                - in: query
+                  name: page
+                  schema:
+                      type: integer
+                - in: query
+                  name: pageSize
+                  schema:
+                      type: integer
+                - in: query
+                  name: search
+                  schema:
+                      type: string
+                - in: query
+                  name: sort
+                  schema:
+                      type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/AccountUser"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/AccountUser"
+                                type: array
+                    description:
+                        ""
+            tags: ["AccountUser"]
+        post:
+            # @review
+            description:
+                Creates a user and assigns them to the account
+            operationId: postAccountUserByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/AccountUser"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/AccountUser"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/AccountUser"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/AccountUser"
+                    description:
+                        ""
+            tags: ["AccountUser"]
+    "/accounts/by-external-reference-code/{externalReferenceCode}/account-users/by-email-address/{emailAddress}":
+        delete:
+            # @review
+            description:
+                Removes a user from an account by external reference code by their email address
+            operationId: deleteAccountUserByExternalReferenceCodeByEmailAddress
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+                - in: path
+                  name: emailAddress
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["AccountUser"]
+        post:
+            # @review
+            description:
+                Assigns a user to an account by external reference code by their email address
+            operationId: postAccountUserByExternalReferenceCodeByEmailAddress
+            parameters:
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+                - in: path
+                  name: emailAddress
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["AccountUser"]
     "/accounts/{accountId}":
         delete:
             # @review
@@ -214,8 +595,7 @@ paths:
         patch:
             # @review
             description:
-                Updates the account with information sent in the request body. Only the provided fields
-                are updated.
+                Updates the account with information sent in the request body. Only the provided fields are updated.
             operationId: patchAccount
             parameters:
                 - in: path
@@ -244,11 +624,12 @@ paths:
                     # @review
                     description:
                         "Account successfully updated"
+            tags: ["Account"]
         put:
             # @review
             description:
-                Replaces the account with information sent in the request body. Any missing fields are deleted
-                unless they are required.
+                Replaces the account with information sent in the request body. Any missing fields are deleted unless
+                they are required.
             operationId: putAccount
             parameters:
                 - in: path
@@ -500,6 +881,55 @@ paths:
                         application/xml:
                             schema:
                                 $ref: "#/components/schemas/AccountUser"
+                    description:
+                        ""
+            tags: ["AccountUser"]
+    "/accounts/{accountId}/account-users/by-email-address/{emailAddress}":
+        delete:
+            description:
+                Removes a user from an account by their email address
+            operationId: deleteAccountUserByEmailAddress
+            parameters:
+                - in: path
+                  name: accountId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: path
+                  name: emailAddress
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["AccountUser"]
+        post:
+            description:
+                Assigns a user to an account by their email address
+            operationId: postAccountUserByEmailAddress
+            parameters:
+                - in: path
+                  name: accountId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: path
+                  name: emailAddress
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
                     description:
                         ""
             tags: ["AccountUser"]

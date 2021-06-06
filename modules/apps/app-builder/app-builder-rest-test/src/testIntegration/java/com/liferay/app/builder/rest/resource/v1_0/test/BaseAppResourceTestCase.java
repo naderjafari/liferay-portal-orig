@@ -48,8 +48,6 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
@@ -78,7 +76,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -118,7 +115,9 @@ public abstract class BaseAppResourceTestCase {
 
 		AppResource.Builder builder = AppResource.builder();
 
-		appResource = builder.locale(
+		appResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -190,6 +189,8 @@ public abstract class BaseAppResourceTestCase {
 
 		app.setDataDefinitionName(regex);
 		app.setScope(regex);
+		app.setVersion(regex);
+		app.setWorkflowDefinitionName(regex);
 
 		String json = AppSerDes.toJSON(app);
 
@@ -199,6 +200,8 @@ public abstract class BaseAppResourceTestCase {
 
 		Assert.assertEquals(regex, app.getDataDefinitionName());
 		Assert.assertEquals(regex, app.getScope());
+		Assert.assertEquals(regex, app.getVersion());
+		Assert.assertEquals(regex, app.getWorkflowDefinitionName());
 	}
 
 	@Test
@@ -443,25 +446,19 @@ public abstract class BaseAppResourceTestCase {
 						})),
 				"JSONObject/data", "Object/deleteApp"));
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"app",
+					new HashMap<String, Object>() {
+						{
+							put("appId", app.getId());
+						}
+					},
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-			JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"app",
-						new HashMap<String, Object>() {
-							{
-								put("appId", app.getId());
-							}
-						},
-						new GraphQLField("id"))),
-				"JSONArray/errors");
-
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		Assert.assertTrue(errorsJSONArray.length() > 0);
 	}
 
 	@Test
@@ -566,7 +563,7 @@ public abstract class BaseAppResourceTestCase {
 		Long irrelevantDataDefinitionId =
 			testGetDataDefinitionAppsPage_getIrrelevantDataDefinitionId();
 
-		if ((irrelevantDataDefinitionId != null)) {
+		if (irrelevantDataDefinitionId != null) {
 			App irrelevantApp = testGetDataDefinitionAppsPage_addApp(
 				irrelevantDataDefinitionId, randomIrrelevantApp());
 
@@ -803,7 +800,7 @@ public abstract class BaseAppResourceTestCase {
 		Long siteId = testGetSiteAppsPage_getSiteId();
 		Long irrelevantSiteId = testGetSiteAppsPage_getIrrelevantSiteId();
 
-		if ((irrelevantSiteId != null)) {
+		if (irrelevantSiteId != null) {
 			App irrelevantApp = testGetSiteAppsPage_addApp(
 				irrelevantSiteId, randomIrrelevantApp());
 
@@ -1043,7 +1040,7 @@ public abstract class BaseAppResourceTestCase {
 		}
 	}
 
-	protected void assertValid(App app) {
+	protected void assertValid(App app) throws Exception {
 		boolean valid = true;
 
 		if (app.getDateCreated() == null) {
@@ -1149,6 +1146,34 @@ public abstract class BaseAppResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("version", additionalAssertFieldName)) {
+				if (app.getVersion() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"workflowDefinitionName", additionalAssertFieldName)) {
+
+				if (app.getWorkflowDefinitionName() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"workflowDefinitionVersion", additionalAssertFieldName)) {
+
+				if (app.getWorkflowDefinitionVersion() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			throw new IllegalArgumentException(
 				"Invalid additional assert field name " +
 					additionalAssertFieldName);
@@ -1184,7 +1209,7 @@ public abstract class BaseAppResourceTestCase {
 		graphQLFields.add(new GraphQLField("siteId"));
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.app.builder.rest.dto.v1_0.App.class)) {
 
 			if (!ArrayUtil.contains(
@@ -1218,7 +1243,7 @@ public abstract class BaseAppResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -1371,6 +1396,40 @@ public abstract class BaseAppResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("version", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(app1.getVersion(), app2.getVersion())) {
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"workflowDefinitionName", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						app1.getWorkflowDefinitionName(),
+						app2.getWorkflowDefinitionName())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"workflowDefinitionVersion", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						app1.getWorkflowDefinitionVersion(),
+						app2.getWorkflowDefinitionVersion())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			throw new IllegalArgumentException(
 				"Invalid additional assert field name " +
 					additionalAssertFieldName);
@@ -1398,9 +1457,22 @@ public abstract class BaseAppResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -1581,6 +1653,27 @@ public abstract class BaseAppResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("version")) {
+			sb.append("'");
+			sb.append(String.valueOf(app.getVersion()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("workflowDefinitionName")) {
+			sb.append("'");
+			sb.append(String.valueOf(app.getWorkflowDefinitionName()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("workflowDefinitionVersion")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		throw new IllegalArgumentException(
 			"Invalid entity field " + entityFieldName);
 	}
@@ -1638,6 +1731,10 @@ public abstract class BaseAppResourceTestCase {
 				scope = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				siteId = testGroup.getGroupId();
 				userId = RandomTestUtil.randomLong();
+				version = StringUtil.toLowerCase(RandomTestUtil.randomString());
+				workflowDefinitionName = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				workflowDefinitionVersion = RandomTestUtil.randomInt();
 			}
 		};
 	}
@@ -1698,12 +1795,12 @@ public abstract class BaseAppResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1713,10 +1810,10 @@ public abstract class BaseAppResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

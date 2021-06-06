@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageCollectionDefinition")
+@GraphQLName(
+	description = "Represents a definition of a Page Collection.",
+	value = "PageCollectionDefinition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageCollectionDefinition")
-public class PageCollectionDefinition {
+public class PageCollectionDefinition implements Serializable {
 
 	public static PageCollectionDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(PageCollectionDefinition.class, json);
@@ -81,7 +86,70 @@ public class PageCollectionDefinition {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected CollectionConfig collectionConfig;
 
-	@Schema
+	@Schema(description = "The fragment style of the page collection.")
+	@Valid
+	public FragmentStyle getFragmentStyle() {
+		return fragmentStyle;
+	}
+
+	public void setFragmentStyle(FragmentStyle fragmentStyle) {
+		this.fragmentStyle = fragmentStyle;
+	}
+
+	@JsonIgnore
+	public void setFragmentStyle(
+		UnsafeSupplier<FragmentStyle, Exception> fragmentStyleUnsafeSupplier) {
+
+		try {
+			fragmentStyle = fragmentStyleUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The fragment style of the page collection.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentStyle fragmentStyle;
+
+	@Schema(description = "The fragment viewports of the page collection.")
+	@Valid
+	public FragmentViewport[] getFragmentViewports() {
+		return fragmentViewports;
+	}
+
+	public void setFragmentViewports(FragmentViewport[] fragmentViewports) {
+		this.fragmentViewports = fragmentViewports;
+	}
+
+	@JsonIgnore
+	public void setFragmentViewports(
+		UnsafeSupplier<FragmentViewport[], Exception>
+			fragmentViewportsUnsafeSupplier) {
+
+		try {
+			fragmentViewports = fragmentViewportsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The fragment viewports of the page collection."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentViewport[] fragmentViewports;
+
+	@Schema(
+		description = "The style of a list of items in the page collection."
+	)
 	public String getListItemStyle() {
 		return listItemStyle;
 	}
@@ -105,11 +173,13 @@ public class PageCollectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The style of a list of items in the page collection."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String listItemStyle;
 
-	@Schema
+	@Schema(description = "The style of a list in the page collection.")
 	public String getListStyle() {
 		return listStyle;
 	}
@@ -133,11 +203,11 @@ public class PageCollectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The style of a list in the page collection.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String listStyle;
 
-	@Schema
+	@Schema(description = "The number of columns in the page collection.")
 	public Integer getNumberOfColumns() {
 		return numberOfColumns;
 	}
@@ -161,11 +231,11 @@ public class PageCollectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The number of columns in the page collection.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Integer numberOfColumns;
 
-	@Schema
+	@Schema(description = "The number of items in the page collection.")
 	public Integer getNumberOfItems() {
 		return numberOfItems;
 	}
@@ -189,11 +259,11 @@ public class PageCollectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The number of items in the page collection.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Integer numberOfItems;
 
-	@Schema
+	@Schema(description = "The page collection's template key.")
 	public String getTemplateKey() {
 		return templateKey;
 	}
@@ -217,7 +287,7 @@ public class PageCollectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page collection's template key.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String templateKey;
 
@@ -257,6 +327,36 @@ public class PageCollectionDefinition {
 			sb.append("\"collectionConfig\": ");
 
 			sb.append(String.valueOf(collectionConfig));
+		}
+
+		if (fragmentStyle != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentStyle\": ");
+
+			sb.append(String.valueOf(fragmentStyle));
+		}
+
+		if (fragmentViewports != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentViewports\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < fragmentViewports.length; i++) {
+				sb.append(String.valueOf(fragmentViewports[i]));
+
+				if ((i + 1) < fragmentViewports.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
 		}
 
 		if (listItemStyle != null) {
@@ -327,6 +427,7 @@ public class PageCollectionDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageCollectionDefinition",
 		name = "x-class-name"
 	)
@@ -362,7 +463,7 @@ public class PageCollectionDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -401,7 +502,7 @@ public class PageCollectionDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

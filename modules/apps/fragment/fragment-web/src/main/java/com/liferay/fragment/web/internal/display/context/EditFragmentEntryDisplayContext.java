@@ -24,6 +24,7 @@ import com.liferay.fragment.service.FragmentCollectionLocalServiceUtil;
 import com.liferay.fragment.service.FragmentCollectionServiceUtil;
 import com.liferay.fragment.service.FragmentEntryLocalServiceUtil;
 import com.liferay.fragment.web.internal.constants.FragmentWebKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
@@ -52,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.RenderResponse;
@@ -212,9 +212,11 @@ public class EditFragmentEntryDisplayContext {
 			return redirect;
 		}
 
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "/fragment/view");
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/fragment/view"
+		).build();
 
 		if (getFragmentCollectionId() > 0) {
 			portletURL.setParameter(
@@ -265,24 +267,21 @@ public class EditFragmentEntryDisplayContext {
 	private String _getFragmentEntryRenderURL(String mvcRenderCommandName)
 		throws Exception {
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			_httpServletRequest, FragmentPortletKeys.FRAGMENT,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcRenderCommandName", mvcRenderCommandName);
-
 		FragmentEntry fragmentEntry = getFragmentEntry();
 
-		portletURL.setParameter(
-			"fragmentEntryId",
-			String.valueOf(fragmentEntry.getFragmentEntryId()));
-		portletURL.setParameter(
-			"fragmentEntryKey",
-			String.valueOf(fragmentEntry.getFragmentEntryKey()));
-
-		portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				_httpServletRequest, FragmentPortletKeys.FRAGMENT,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			mvcRenderCommandName
+		).setParameter(
+			"fragmentEntryId", fragmentEntry.getFragmentEntryId()
+		).setParameter(
+			"fragmentEntryKey", fragmentEntry.getFragmentEntryKey()
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
 	}
 
 	private String _getHtmlContent() {
@@ -342,6 +341,18 @@ public class EditFragmentEntryDisplayContext {
 
 		freeMarkerVariables.add("configuration");
 
+		FragmentCollection fragmentCollection =
+			FragmentCollectionServiceUtil.fetchFragmentCollection(
+				getFragmentCollectionId());
+
+		List<String> resources = new ArrayList<>();
+
+		if (fragmentCollection != null) {
+			for (FileEntry fileEntry : fragmentCollection.getResources()) {
+				resources.add(fileEntry.getFileName());
+			}
+		}
+
 		return HashMapBuilder.<String, Object>put(
 			"allowedStatus",
 			HashMapBuilder.<String, Object>put(
@@ -389,6 +400,15 @@ public class EditFragmentEntryDisplayContext {
 						"start", "${"
 					).build());
 
+				htmlEditorCustomEntities.add(
+					HashMapBuilder.<String, Object>put(
+						"content", resources
+					).put(
+						"end", "]"
+					).put(
+						"start", "[resources:"
+					).build());
+
 				return htmlEditorCustomEntities;
 			}
 		).put(
@@ -416,27 +436,9 @@ public class EditFragmentEntryDisplayContext {
 		).put(
 			"readOnly", _isReadOnlyFragmentEntry()
 		).put(
-			"resources",
-			() -> {
-				FragmentCollection fragmentCollection =
-					FragmentCollectionServiceUtil.fetchFragmentCollection(
-						getFragmentCollectionId());
-
-				if (fragmentCollection == null) {
-					return Collections.<String>emptyList();
-				}
-
-				List<String> resources = new ArrayList<>();
-
-				for (FileEntry fileEntry : fragmentCollection.getResources()) {
-					resources.add(fileEntry.getFileName());
-				}
-
-				return resources;
-			}
+			"resources", resources
 		).put(
-			"spritemap",
-			_themeDisplay.getPathThemeImages() + "/lexicon/icons.svg"
+			"spritemap", _themeDisplay.getPathThemeImages() + "/clay/icons.svg"
 		).put(
 			"status",
 			() -> {
@@ -450,16 +452,11 @@ public class EditFragmentEntryDisplayContext {
 				"current", _themeDisplay.getURLCurrent()
 			).put(
 				"edit",
-				() -> {
-					PortletURL editActionURL =
-						_renderResponse.createActionURL();
-
-					editActionURL.setParameter(
-						ActionRequest.ACTION_NAME,
-						"/fragment/edit_fragment_entry");
-
-					return editActionURL.toString();
-				}
+				() -> PortletURLBuilder.createActionURL(
+					_renderResponse
+				).setActionName(
+					"/fragment/edit_fragment_entry"
+				).buildString()
 			).put(
 				"preview",
 				_getFragmentEntryRenderURL("/fragment/preview_fragment_entry")
@@ -475,16 +472,15 @@ public class EditFragmentEntryDisplayContext {
 	}
 
 	private String _getPublishFragmentEntryActionURL() {
-		PortletURL publishFragmentEntryURL = PortletURLFactoryUtil.create(
-			_httpServletRequest, FragmentPortletKeys.FRAGMENT,
-			PortletRequest.ACTION_PHASE);
-
-		publishFragmentEntryURL.setParameter(
-			ActionRequest.ACTION_NAME, "/fragment/publish_fragment_entry");
-		publishFragmentEntryURL.setParameter(
-			"fragmentEntryId", String.valueOf(getFragmentEntryId()));
-
-		return publishFragmentEntryURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				_httpServletRequest, FragmentPortletKeys.FRAGMENT,
+				PortletRequest.ACTION_PHASE)
+		).setActionName(
+			"/fragment/publish_fragment_entry"
+		).setParameter(
+			"fragmentEntryId", getFragmentEntryId()
+		).buildString();
 	}
 
 	private boolean _isReadOnlyFragmentEntry() {

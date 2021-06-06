@@ -18,12 +18,14 @@ import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetTagLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetTagServiceUtil;
+import com.liferay.asset.tags.constants.AssetTagsAdminPortletKeys;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
@@ -81,22 +83,24 @@ public class AssetTagsDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_httpServletRequest, "displayStyle", "list");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest, AssetTagsAdminPortletKeys.ASSET_TAGS_ADMIN,
+			"list");
 
 		return _displayStyle;
 	}
 
 	public long getFullTagsCount(AssetTag tag) {
-		int[] statuses = {
-			WorkflowConstants.STATUS_APPROVED, WorkflowConstants.STATUS_PENDING,
-			WorkflowConstants.STATUS_SCHEDULED
-		};
-
 		Hits hits = AssetEntryLocalServiceUtil.search(
 			tag.getCompanyId(), new long[] {_themeDisplay.getScopeGroupId()},
 			_themeDisplay.getUserId(), null, 0, null, null, null, null,
-			tag.getName(), true, statuses, false, 0, 1);
+			tag.getName(), true,
+			new int[] {
+				WorkflowConstants.STATUS_APPROVED,
+				WorkflowConstants.STATUS_PENDING,
+				WorkflowConstants.STATUS_SCHEDULED
+			},
+			false, 0, 1);
 
 		return hits.getLength();
 	}

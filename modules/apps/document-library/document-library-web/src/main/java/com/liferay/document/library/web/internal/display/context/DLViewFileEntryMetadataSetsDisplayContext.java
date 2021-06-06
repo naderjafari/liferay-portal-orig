@@ -16,7 +16,6 @@ package com.liferay.document.library.web.internal.display.context;
 
 import com.liferay.document.library.constants.DLPortletKeys;
 import com.liferay.document.library.kernel.model.DLFileEntryMetadata;
-import com.liferay.document.library.web.internal.configuration.FFDocumentLibraryDDMEditorConfigurationUtil;
 import com.liferay.document.library.web.internal.display.context.util.DLRequestHelper;
 import com.liferay.document.library.web.internal.search.StructureSearch;
 import com.liferay.document.library.web.internal.search.StructureSearchTerms;
@@ -26,9 +25,9 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLinkLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMStructureService;
 import com.liferay.dynamic.data.mapping.util.DDMUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -39,7 +38,6 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
@@ -92,23 +90,24 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 	public PortletURL getDeleteDDMStructurePortletURL(
 		DDMStructure ddmStructure) {
 
-		if (FFDocumentLibraryDDMEditorConfigurationUtil.useDataEngineEditor()) {
-			return _getDeleteDataDefinitionPortletURL(ddmStructure);
-		}
-
-		return _getDeleteDDMStructurePortletURL(ddmStructure);
+		return _getDeleteDataDefinitionPortletURL(ddmStructure);
 	}
 
 	public PortletURL getEditDDMStructurePortletURL(DDMStructure ddmStructure) {
 		RenderURL renderURL = _liferayPortletResponse.createRenderURL();
 
 		renderURL.setParameter(
-			"mvcRenderCommandName", "/document_library/ddm/edit_ddm_structure");
+			"mvcRenderCommandName", "/document_library/edit_ddm_structure");
+
 		renderURL.setParameter(
 			"redirect",
-			String.valueOf(
+			PortletURLBuilder.create(
 				PortletURLUtil.getCurrent(
-					_liferayPortletRequest, _liferayPortletResponse)));
+					_liferayPortletRequest, _liferayPortletResponse)
+			).setNavigation(
+				"file_entry_metadata_sets"
+			).buildString());
+
 		renderURL.setParameter(
 			"ddmStructureId", String.valueOf(ddmStructure.getStructureId()));
 
@@ -175,16 +174,10 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 		structureSearch.setOrderByType(orderByType);
 
 		if (structureSearch.isSearch()) {
-			structureSearch.setEmptyResultsMessage(
-				LanguageUtil.format(
-					_dlRequestHelper.getRequest(), "no-x-were-found",
-					getScopedStructureLabel(), false));
+			structureSearch.setEmptyResultsMessage("no-results-were-found");
 		}
 		else {
-			structureSearch.setEmptyResultsMessage(
-				LanguageUtil.format(
-					_dlRequestHelper.getRequest(), "there-are-no-x",
-					getScopedStructureLabel(), false));
+			structureSearch.setEmptyResultsMessage("there-are-no-results");
 		}
 
 		setDDMStructureSearchResults(structureSearch);
@@ -234,10 +227,11 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 			portletURL.setParameter("mvcPath", mvcPath);
 		}
 
-		String tabs1 = ParamUtil.getString(_liferayPortletRequest, "tabs1");
+		String navigation = ParamUtil.getString(
+			_liferayPortletRequest, "navigation");
 
-		if (Validator.isNotNull(tabs1)) {
-			portletURL.setParameter("tabs1", tabs1);
+		if (Validator.isNotNull(navigation)) {
+			portletURL.setParameter("navigation", navigation);
 		}
 
 		long templateId = ParamUtil.getLong(
@@ -310,13 +304,6 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 		return resourceClassNameId;
 	}
 
-	protected String getScopedStructureLabel() {
-		return LanguageUtil.get(
-			ResourceBundleUtil.getBundle(
-				_dlRequestHelper.getLocale(), getClass()),
-			"documents-and-media");
-	}
-
 	protected long getSearchRestrictionClassNameId() {
 		return ParamUtil.getLong(
 			_dlRequestHelper.getRequest(), "searchRestrictionClassNameId");
@@ -337,14 +324,6 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 		StructureSearchTerms searchTerms =
 			(StructureSearchTerms)structureSearch.getSearchTerms();
 
-		long[] groupIds = {
-			_portal.getScopeGroupId(
-				_dlRequestHelper.getRequest(), DLPortletKeys.DOCUMENT_LIBRARY,
-				true)
-		};
-
-		groupIds = _portal.getCurrentAndAncestorSiteGroupIds(groupIds);
-
 		List<DDMStructure> results = null;
 
 		if (searchTerms.isSearchRestriction()) {
@@ -354,6 +333,14 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 				structureSearch.getEnd());
 		}
 		else {
+			long[] groupIds = {
+				_portal.getScopeGroupId(
+					_dlRequestHelper.getRequest(),
+					DLPortletKeys.DOCUMENT_LIBRARY, true)
+			};
+
+			groupIds = _portal.getCurrentAndAncestorSiteGroupIds(groupIds);
+
 			results = _ddmStructureService.getStructures(
 				_dlRequestHelper.getCompanyId(), groupIds,
 				getStructureClassNameId(), searchTerms.getKeywords(),
@@ -371,14 +358,6 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 		StructureSearchTerms searchTerms =
 			(StructureSearchTerms)structureSearch.getSearchTerms();
 
-		long[] groupIds = {
-			_portal.getScopeGroupId(
-				_dlRequestHelper.getRequest(), DLPortletKeys.DOCUMENT_LIBRARY,
-				true)
-		};
-
-		groupIds = _portal.getCurrentAndAncestorSiteGroupIds(groupIds);
-
 		int total = 0;
 
 		if (searchTerms.isSearchRestriction()) {
@@ -387,6 +366,14 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 				getSearchRestrictionClassPK());
 		}
 		else {
+			long[] groupIds = {
+				_portal.getScopeGroupId(
+					_dlRequestHelper.getRequest(),
+					DLPortletKeys.DOCUMENT_LIBRARY, true)
+			};
+
+			groupIds = _portal.getCurrentAndAncestorSiteGroupIds(groupIds);
+
 			total = _ddmStructureService.getStructuresCount(
 				_dlRequestHelper.getCompanyId(), groupIds,
 				getStructureClassNameId(), searchTerms.getKeywords(),
@@ -403,36 +390,38 @@ public class DLViewFileEntryMetadataSetsDisplayContext {
 
 		actionURL.setParameter(
 			ActionRequest.ACTION_NAME,
-			"/document_library/ddm/delete_data_definition");
-		actionURL.setParameter(
-			"mvcRenderCommandName", "/document_library/view");
+			"/document_library/delete_data_definition");
 		actionURL.setParameter("navigation", "file_entry_metadata_sets");
+		actionURL.setParameter("redirect", String.valueOf(_getRedirect()));
 		actionURL.setParameter(
 			"dataDefinitionId", String.valueOf(ddmStructure.getStructureId()));
+		actionURL.setParameter("keywords", _getKeywords());
 
 		return actionURL;
 	}
 
-	private PortletURL _getDeleteDDMStructurePortletURL(
-		DDMStructure ddmStructure) {
+	private String _getKeywords() {
+		if (_keywords != null) {
+			return _keywords;
+		}
 
-		ActionURL actionURL = _liferayPortletResponse.createActionURL();
+		_keywords = ParamUtil.getString(_liferayPortletRequest, "keywords");
 
-		actionURL.setParameter(
-			ActionRequest.ACTION_NAME,
-			"/document_library/ddm/delete_ddm_structure");
-		actionURL.setParameter(
-			"mvcRenderCommandName", "/document_library/view");
-		actionURL.setParameter("navigation", "file_entry_metadata_sets");
-		actionURL.setParameter(
-			"ddmStructureId", String.valueOf(ddmStructure.getStructureId()));
+		return _keywords;
+	}
 
-		return actionURL;
+	private String _getRedirect() {
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		return themeDisplay.getURLCurrent();
 	}
 
 	private final DDMStructureLinkLocalService _ddmStructureLinkLocalService;
 	private final DDMStructureService _ddmStructureService;
 	private final DLRequestHelper _dlRequestHelper;
+	private String _keywords;
 	private final LiferayPortletRequest _liferayPortletRequest;
 	private final LiferayPortletResponse _liferayPortletResponse;
 	private final Portal _portal;

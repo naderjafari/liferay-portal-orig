@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("DataRule")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DataRule")
-public class DataRule {
+public class DataRule implements Serializable {
 
 	public static DataRule toDTO(String json) {
 		return ObjectMapperUtil.readValue(DataRule.class, json);
@@ -263,6 +265,7 @@ public class DataRule {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataRule",
 		name = "x-class-name"
 	)
@@ -298,7 +301,7 @@ public class DataRule {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -337,7 +340,7 @@ public class DataRule {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

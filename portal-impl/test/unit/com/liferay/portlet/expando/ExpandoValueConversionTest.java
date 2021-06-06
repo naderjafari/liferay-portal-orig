@@ -16,9 +16,12 @@ package com.liferay.portlet.expando;
 
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portlet.expando.service.impl.ExpandoValueLocalServiceImpl;
 
 import java.math.BigDecimal;
+
+import java.time.format.DateTimeParseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +31,8 @@ import java.util.Date;
 import jodd.typeconverter.TypeConversionException;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -35,6 +40,11 @@ import org.junit.Test;
  * @author Amadea Fejes
  */
 public class ExpandoValueConversionTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testBoolean1() {
@@ -154,7 +164,7 @@ public class ExpandoValueConversionTest {
 		Assert.assertEquals(time, convertedDate.getTime());
 	}
 
-	@Test(expected = NumberFormatException.class)
+	@Test(expected = DateTimeParseException.class)
 	public void testDate2() {
 		_converter.convertType(ExpandoColumnConstants.DATE, "other");
 	}
@@ -216,19 +226,19 @@ public class ExpandoValueConversionTest {
 		Assert.assertEquals(time2, convertedDates[1].getTime());
 	}
 
-	@Test(expected = NumberFormatException.class)
+	@Test(expected = DateTimeParseException.class)
 	public void testDateArray5() {
 		_converter.convertType(
 			ExpandoColumnConstants.DATE_ARRAY, "1376510136750, other");
 	}
 
-	@Test(expected = NumberFormatException.class)
+	@Test(expected = DateTimeParseException.class)
 	public void testDateArray6() {
 		_converter.convertType(
 			ExpandoColumnConstants.DATE_ARRAY, "[1376510136750, other]");
 	}
 
-	@Test(expected = NumberFormatException.class)
+	@Test(expected = DateTimeParseException.class)
 	public void testDateArray7() {
 		_converter.convertType(ExpandoColumnConstants.DATE_ARRAY, "other");
 	}
@@ -260,9 +270,9 @@ public class ExpandoValueConversionTest {
 
 	@Test(expected = ClassCastException.class)
 	public void testDateArray10() {
-		int[] times = {1376510136, 1376510136};
-
-		_converter.convertType(ExpandoColumnConstants.DATE_ARRAY, times);
+		_converter.convertType(
+			ExpandoColumnConstants.DATE_ARRAY,
+			new int[] {1376510136, 1376510136});
 	}
 
 	@Test

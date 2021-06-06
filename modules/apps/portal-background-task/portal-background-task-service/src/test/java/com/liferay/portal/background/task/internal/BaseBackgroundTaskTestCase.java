@@ -98,11 +98,7 @@ public abstract class BaseBackgroundTaskTestCase {
 			userLocalService);
 
 		_companyId = 1234L;
-		_clusterInvokeEnabled = true;
-		_defaultLocale = LocaleUtil.US;
 		_groupId = 1234L;
-		_siteDefaultLocale = LocaleUtil.CANADA;
-		_themeDisplayLocale = LocaleUtil.FRANCE;
 
 		_principalName = String.valueOf(1234L);
 	}
@@ -116,7 +112,7 @@ public abstract class BaseBackgroundTaskTestCase {
 		Assert.assertEquals(
 			Long.valueOf(_companyId), CompanyThreadLocal.getCompanyId());
 		Assert.assertEquals(
-			_clusterInvokeEnabled, ClusterInvokeThreadLocal.isEnabled());
+			_CLUSTER_INVOKE_ENABLED, ClusterInvokeThreadLocal.isEnabled());
 		Assert.assertEquals(
 			_defaultLocale, LocaleThreadLocal.getDefaultLocale());
 		Assert.assertEquals(
@@ -137,7 +133,7 @@ public abstract class BaseBackgroundTaskTestCase {
 			threadLocalValues.toString(), 7, threadLocalValues.size());
 		Assert.assertEquals(_companyId, threadLocalValues.get("companyId"));
 		Assert.assertEquals(
-			_clusterInvokeEnabled, threadLocalValues.get("clusterInvoke"));
+			_CLUSTER_INVOKE_ENABLED, threadLocalValues.get("clusterInvoke"));
 		Assert.assertEquals(
 			_defaultLocale, threadLocalValues.get("defaultLocale"));
 		Assert.assertEquals(_groupId, threadLocalValues.get("groupId"));
@@ -162,7 +158,7 @@ public abstract class BaseBackgroundTaskTestCase {
 
 	protected HashMap<String, Serializable> initializeThreadLocalValues() {
 		return HashMapBuilder.<String, Serializable>put(
-			"clusterInvoke", _clusterInvokeEnabled
+			"clusterInvoke", _CLUSTER_INVOKE_ENABLED
 		).put(
 			"companyId", _companyId
 		).put(
@@ -187,12 +183,13 @@ public abstract class BaseBackgroundTaskTestCase {
 	protected BackgroundTaskThreadLocalManagerImpl
 		backgroundTaskThreadLocalManagerImpl;
 
-	private boolean _clusterInvokeEnabled;
+	private static final boolean _CLUSTER_INVOKE_ENABLED = true;
+
 	private long _companyId;
-	private Locale _defaultLocale;
+	private final Locale _defaultLocale = LocaleUtil.US;
 	private long _groupId;
 	private String _principalName;
-	private Locale _siteDefaultLocale;
-	private Locale _themeDisplayLocale;
+	private final Locale _siteDefaultLocale = LocaleUtil.CANADA;
+	private final Locale _themeDisplayLocale = LocaleUtil.FRANCE;
 
 }

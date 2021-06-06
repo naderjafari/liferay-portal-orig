@@ -61,7 +61,7 @@ public interface JournalArticleService extends BaseService {
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link JournalArticleServiceUtil} to access the journal article remote service. Add custom service methods to <code>com.liferay.journal.service.impl.JournalArticleServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.journal.service.impl.JournalArticleServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the journal article remote service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link JournalArticleServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -636,7 +636,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -725,7 +726,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -764,7 +766,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -798,7 +801,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -828,7 +832,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -862,7 +867,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -1499,7 +1505,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -1508,7 +1515,7 @@ public interface JournalArticleService extends BaseService {
 		long companyId, long groupId, List<Long> folderIds, long classNameId,
 		String keywords, Double version, String ddmStructureKey,
 		String ddmTemplateKey, Date displayDateGT, Date displayDateLT,
-		int status, Date reviewDate, int start, int end,
+		Date reviewDate, int status, int start, int end,
 		OrderByComparator<JournalArticle> orderByComparator);
 
 	/**
@@ -1569,7 +1576,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -1578,7 +1586,7 @@ public interface JournalArticleService extends BaseService {
 		long companyId, long groupId, List<Long> folderIds, long classNameId,
 		String articleId, Double version, String title, String description,
 		String content, String ddmStructureKey, String ddmTemplateKey,
-		Date displayDateGT, Date displayDateLT, int status, Date reviewDate,
+		Date displayDateGT, Date displayDateLT, Date reviewDate, int status,
 		boolean andOperator, int start, int end,
 		OrderByComparator<JournalArticle> orderByComparator);
 
@@ -1642,7 +1650,8 @@ public interface JournalArticleService extends BaseService {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -1651,7 +1660,7 @@ public interface JournalArticleService extends BaseService {
 		long companyId, long groupId, List<Long> folderIds, long classNameId,
 		String articleId, Double version, String title, String description,
 		String content, String[] ddmStructureKeys, String[] ddmTemplateKeys,
-		Date displayDateGT, Date displayDateLT, int status, Date reviewDate,
+		Date displayDateGT, Date displayDateLT, Date reviewDate, int status,
 		boolean andOperator, int start, int end,
 		OrderByComparator<JournalArticle> orderByComparator);
 
@@ -1700,7 +1709,7 @@ public interface JournalArticleService extends BaseService {
 		long companyId, long groupId, List<Long> folderIds, long classNameId,
 		String keywords, Double version, String ddmStructureKey,
 		String ddmTemplateKey, Date displayDateGT, Date displayDateLT,
-		int status, Date reviewDate);
+		Date reviewDate, int status);
 
 	/**
 	 * Returns the number of web content articles matching the parameters,
@@ -1753,7 +1762,7 @@ public interface JournalArticleService extends BaseService {
 		long companyId, long groupId, List<Long> folderIds, long classNameId,
 		String articleId, Double version, String title, String description,
 		String content, String ddmStructureKey, String ddmTemplateKey,
-		Date displayDateGT, Date displayDateLT, int status, Date reviewDate,
+		Date displayDateGT, Date displayDateLT, Date reviewDate, int status,
 		boolean andOperator);
 
 	/**
@@ -1809,7 +1818,7 @@ public interface JournalArticleService extends BaseService {
 		long companyId, long groupId, List<Long> folderIds, long classNameId,
 		String articleId, Double version, String title, String description,
 		String content, String[] ddmStructureKeys, String[] ddmTemplateKeys,
-		Date displayDateGT, Date displayDateLT, int status, Date reviewDate,
+		Date displayDateGT, Date displayDateLT, Date reviewDate, int status,
 		boolean andOperator);
 
 	public void subscribe(long groupId, long articleId) throws PortalException;
@@ -2144,23 +2153,6 @@ public interface JournalArticleService extends BaseService {
 			long groupId, String articleId, double version, Locale locale,
 			String title, String description, String content,
 			Map<String, byte[]> images, ServiceContext serviceContext)
-		throws PortalException;
-
-	/**
-	 * Updates the web content article matching the group, article ID, and
-	 * version, replacing its content.
-	 *
-	 * @param groupId the primary key of the web content article's group
-	 * @param articleId the primary key of the web content article
-	 * @param version the web content article's version
-	 * @param content the HTML content wrapped in XML. For more information,
-	 see the content example in the {@link #updateArticle(long, long,
-	 String, double, String, ServiceContext)} description.
-	 * @return the updated web content article
-	 * @throws PortalException if a portal exception occurred
-	 */
-	public JournalArticle updateContent(
-			long groupId, String articleId, double version, String content)
 		throws PortalException;
 
 	/**

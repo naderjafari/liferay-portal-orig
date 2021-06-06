@@ -57,6 +57,13 @@ AUI.add(
 					value: 0.95,
 				},
 
+				toolbarCssClass: {
+					value: {
+						footer: 'ml-auto',
+						header: 'order-1',
+					},
+				},
+
 				toolbars: {
 					valueFn() {
 						var instance = this;
@@ -67,9 +74,9 @@ AUI.add(
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -352,10 +359,10 @@ AUI.add(
 				}
 
 				if (!Lang.isValue(config.title)) {
-					config.title = '&nbsp;';
+					config.title = '';
 				}
 
-				modal.titleNode.html(config.title);
+				modal.titleNode.html(Lang.String.escapeHTML(config.title));
 
 				modal.fillHeight(modal.bodyNode);
 

@@ -16,7 +16,7 @@ package com.liferay.portal.workflow.kaleo.forms.web.internal.upgrade.v1_0_2;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.LayoutTypePortletConstants;
-import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
+import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -31,7 +31,7 @@ import java.util.Set;
 /**
  * @author Inácio Nery
  */
-public class UpgradePortletId extends BaseUpgradePortletId {
+public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 
 	protected void deletePortletReferences(String portletId) throws Exception {
 		runSQL("delete from Portlet where portletId = '" + portletId + "'");
@@ -113,13 +113,14 @@ public class UpgradePortletId extends BaseUpgradePortletId {
 			"select plid, typeSettings from Layout where " +
 				getTypeSettingsCriteria(oldRootPortletId);
 
-		try (PreparedStatement ps = connection.prepareStatement(sql);
-			ResultSet rs = ps.executeQuery()) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				sql);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-			while (rs.next()) {
-				long plid = rs.getLong("plid");
+			while (resultSet.next()) {
+				long plid = resultSet.getLong("plid");
 
-				String typeSettings = rs.getString("typeSettings");
+				String typeSettings = resultSet.getString("typeSettings");
 
 				String newTypeSettings = getNewTypeSettings(
 					typeSettings, oldRootPortletId);

@@ -160,6 +160,13 @@ public class DDMTemplateLinkLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _ddmTemplateLinkLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _ddmTemplateLinkLocalService.dynamicQuery();
 	}
@@ -349,6 +356,10 @@ public class DDMTemplateLinkLocalServiceWrapper
 			classNameId, classPK);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<DDMTemplateLink> getTemplateLinks(long classNameId) {
 		return _ddmTemplateLinkLocalService.getTemplateLinks(classNameId);

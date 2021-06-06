@@ -459,23 +459,6 @@ public class JournalArticleLocalServiceWrapper
 
 	/**
 	 * Checks the web content article matching the group, article ID, and
-	 * version, replacing escaped newline and return characters with non-escaped
-	 * newline and return characters.
-	 *
-	 * @param groupId the primary key of the web content article's group
-	 * @param articleId the primary key of the web content article
-	 * @param version the web content article's version
-	 * @throws PortalException if a portal exception occurred
-	 */
-	@Override
-	public void checkNewLine(long groupId, String articleId, double version)
-		throws com.liferay.portal.kernel.exception.PortalException {
-
-		_journalArticleLocalService.checkNewLine(groupId, articleId, version);
-	}
-
-	/**
-	 * Checks the web content article matching the group, article ID, and
 	 * version for an associated structure. If no structure is associated,
 	 * return; otherwise check that the article and structure match.
 	 *
@@ -763,6 +746,13 @@ public class JournalArticleLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _journalArticleLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _journalArticleLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -1588,7 +1578,8 @@ public class JournalArticleLocalServiceWrapper
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2499,7 +2490,8 @@ public class JournalArticleLocalServiceWrapper
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2579,7 +2571,8 @@ public class JournalArticleLocalServiceWrapper
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2957,7 +2950,8 @@ public class JournalArticleLocalServiceWrapper
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2966,15 +2960,15 @@ public class JournalArticleLocalServiceWrapper
 		long companyId, long groupId, java.util.List<Long> folderIds,
 		long classNameId, String keywords, Double version,
 		String ddmStructureKey, String ddmTemplateKey,
-		java.util.Date displayDateGT, java.util.Date displayDateLT, int status,
-		java.util.Date reviewDate, int start, int end,
+		java.util.Date displayDateGT, java.util.Date displayDateLT,
+		java.util.Date reviewDate, int status, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<JournalArticle>
 			orderByComparator) {
 
 		return _journalArticleLocalService.search(
 			companyId, groupId, folderIds, classNameId, keywords, version,
 			ddmStructureKey, ddmTemplateKey, displayDateGT, displayDateLT,
-			status, reviewDate, start, end, orderByComparator);
+			reviewDate, status, start, end, orderByComparator);
 	}
 
 	/**
@@ -3038,7 +3032,8 @@ public class JournalArticleLocalServiceWrapper
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -3048,7 +3043,7 @@ public class JournalArticleLocalServiceWrapper
 		long classNameId, String articleId, Double version, String title,
 		String description, String content, String ddmStructureKey,
 		String ddmTemplateKey, java.util.Date displayDateGT,
-		java.util.Date displayDateLT, int status, java.util.Date reviewDate,
+		java.util.Date displayDateLT, java.util.Date reviewDate, int status,
 		boolean andOperator, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<JournalArticle>
 			orderByComparator) {
@@ -3056,7 +3051,7 @@ public class JournalArticleLocalServiceWrapper
 		return _journalArticleLocalService.search(
 			companyId, groupId, folderIds, classNameId, articleId, version,
 			title, description, content, ddmStructureKey, ddmTemplateKey,
-			displayDateGT, displayDateLT, status, reviewDate, andOperator,
+			displayDateGT, displayDateLT, reviewDate, status, andOperator,
 			start, end, orderByComparator);
 	}
 
@@ -3120,7 +3115,8 @@ public class JournalArticleLocalServiceWrapper
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -3130,7 +3126,7 @@ public class JournalArticleLocalServiceWrapper
 		long classNameId, String articleId, Double version, String title,
 		String description, String content, String[] ddmStructureKeys,
 		String[] ddmTemplateKeys, java.util.Date displayDateGT,
-		java.util.Date displayDateLT, int status, java.util.Date reviewDate,
+		java.util.Date displayDateLT, java.util.Date reviewDate, int status,
 		boolean andOperator, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<JournalArticle>
 			orderByComparator) {
@@ -3138,7 +3134,7 @@ public class JournalArticleLocalServiceWrapper
 		return _journalArticleLocalService.search(
 			companyId, groupId, folderIds, classNameId, articleId, version,
 			title, description, content, ddmStructureKeys, ddmTemplateKeys,
-			displayDateGT, displayDateLT, status, reviewDate, andOperator,
+			displayDateGT, displayDateLT, reviewDate, status, andOperator,
 			start, end, orderByComparator);
 	}
 
@@ -3393,13 +3389,13 @@ public class JournalArticleLocalServiceWrapper
 		long companyId, long groupId, java.util.List<Long> folderIds,
 		long classNameId, String keywords, Double version,
 		String ddmStructureKey, String ddmTemplateKey,
-		java.util.Date displayDateGT, java.util.Date displayDateLT, int status,
-		java.util.Date reviewDate) {
+		java.util.Date displayDateGT, java.util.Date displayDateLT,
+		java.util.Date reviewDate, int status) {
 
 		return _journalArticleLocalService.searchCount(
 			companyId, groupId, folderIds, classNameId, keywords, version,
 			ddmStructureKey, ddmTemplateKey, displayDateGT, displayDateLT,
-			status, reviewDate);
+			reviewDate, status);
 	}
 
 	/**
@@ -3454,13 +3450,13 @@ public class JournalArticleLocalServiceWrapper
 		long classNameId, String articleId, Double version, String title,
 		String description, String content, String ddmStructureKey,
 		String ddmTemplateKey, java.util.Date displayDateGT,
-		java.util.Date displayDateLT, int status, java.util.Date reviewDate,
+		java.util.Date displayDateLT, java.util.Date reviewDate, int status,
 		boolean andOperator) {
 
 		return _journalArticleLocalService.searchCount(
 			companyId, groupId, folderIds, classNameId, articleId, version,
 			title, description, content, ddmStructureKey, ddmTemplateKey,
-			displayDateGT, displayDateLT, status, reviewDate, andOperator);
+			displayDateGT, displayDateLT, reviewDate, status, andOperator);
 	}
 
 	/**
@@ -3517,13 +3513,13 @@ public class JournalArticleLocalServiceWrapper
 		long classNameId, String articleId, Double version, String title,
 		String description, String content, String[] ddmStructureKeys,
 		String[] ddmTemplateKeys, java.util.Date displayDateGT,
-		java.util.Date displayDateLT, int status, java.util.Date reviewDate,
+		java.util.Date displayDateLT, java.util.Date reviewDate, int status,
 		boolean andOperator) {
 
 		return _journalArticleLocalService.searchCount(
 			companyId, groupId, folderIds, classNameId, articleId, version,
 			title, description, content, ddmStructureKeys, ddmTemplateKeys,
-			displayDateGT, displayDateLT, status, reviewDate, andOperator);
+			displayDateGT, displayDateLT, reviewDate, status, andOperator);
 	}
 
 	/**
@@ -4207,31 +4203,6 @@ public class JournalArticleLocalServiceWrapper
 		_journalArticleLocalService.updateAsset(
 			userId, article, assetCategoryIds, assetTagNames, assetLinkEntryIds,
 			priority);
-	}
-
-	/**
-	 * Updates the web content article matching the group, article ID, and
-	 * version, replacing its content.
-	 *
-	 * @param groupId the primary key of the web content article's group
-	 * @param articleId the primary key of the web content article
-	 * @param version the web content article's version
-	 * @param content the HTML content wrapped in XML. For more information,
-	 see the content example in the {@link #addArticle(long, long,
-	 long, long, long, String, boolean, double, Map, Map, String,
-	 String, String, String, int, int, int, int, int, int, int, int,
-	 int, int, boolean, int, int, int, int, int, boolean, boolean,
-	 boolean, String, File, Map, String, ServiceContext)} description.
-	 * @return the updated web content article
-	 * @throws PortalException if a portal exception occurred
-	 */
-	@Override
-	public JournalArticle updateContent(
-			long groupId, String articleId, double version, String content)
-		throws com.liferay.portal.kernel.exception.PortalException {
-
-		return _journalArticleLocalService.updateContent(
-			groupId, articleId, version, content);
 	}
 
 	/**

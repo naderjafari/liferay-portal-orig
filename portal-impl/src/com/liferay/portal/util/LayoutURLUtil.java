@@ -16,6 +16,8 @@ package com.liferay.portal.util;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -27,7 +29,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
  * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
 @Deprecated
@@ -50,6 +52,10 @@ public class LayoutURLUtil {
 			return PortalUtil.getLayoutURL(layout, themeDisplay, false);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}
@@ -77,5 +83,7 @@ public class LayoutURLUtil {
 
 		return layoutURL;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(LayoutURLUtil.class);
 
 }

@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -49,20 +51,25 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("KnowledgeBaseArticle")
+@GraphQLName(
+	description = "Represents a Knowledge Base article (`KBArticle`), the main entity in the Knowledge Base API.",
+	value = "KnowledgeBaseArticle"
+)
 @JsonFilter("Liferay.Vulcan")
 @Schema(
-	requiredProperties = {"articleBody", "title"},
-	description = "Represents a Knowledge Base article (`KBArticle`), the main entity in the Knowledge Base API."
+	description = "Represents a Knowledge Base article (`KBArticle`), the main entity in the Knowledge Base API.",
+	requiredProperties = {"articleBody", "title"}
 )
 @XmlRootElement(name = "KnowledgeBaseArticle")
-public class KnowledgeBaseArticle {
+public class KnowledgeBaseArticle implements Serializable {
 
 	public static KnowledgeBaseArticle toDTO(String json) {
 		return ObjectMapperUtil.readValue(KnowledgeBaseArticle.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -88,7 +95,9 @@ public class KnowledgeBaseArticle {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -180,7 +189,9 @@ public class KnowledgeBaseArticle {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(
+		description = "A list of the custom fields associated with the article."
+	)
 	@Valid
 	public CustomField[] getCustomFields() {
 		return customFields;
@@ -205,7 +216,9 @@ public class KnowledgeBaseArticle {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of the custom fields associated with the article."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected CustomField[] customFields;
 
@@ -540,7 +553,7 @@ public class KnowledgeBaseArticle {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	protected Long parentKnowledgeBaseFolderId;
 
-	@Schema
+	@Schema(description = "A list of related contents to this article.")
 	@Valid
 	public RelatedContent[] getRelatedContents() {
 		return relatedContents;
@@ -566,7 +579,7 @@ public class KnowledgeBaseArticle {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A list of related contents to this article.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected RelatedContent[] relatedContents;
 
@@ -600,7 +613,9 @@ public class KnowledgeBaseArticle {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long siteId;
 
-	@Schema
+	@Schema(
+		description = "A flag that indicates whether the user making the requests is subscribed to this article."
+	)
 	public Boolean getSubscribed() {
 		return subscribed;
 	}
@@ -624,7 +639,9 @@ public class KnowledgeBaseArticle {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A flag that indicates whether the user making the requests is subscribed to this article."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Boolean subscribed;
 
@@ -661,7 +678,7 @@ public class KnowledgeBaseArticle {
 	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
 	@Schema(
-		description = "A write-only field that adds taxonomy categories to this article."
+		description = "A write-only field that adds `TaxonomyCategory` instances to the article."
 	)
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;
@@ -687,7 +704,7 @@ public class KnowledgeBaseArticle {
 	}
 
 	@GraphQLField(
-		description = "A write-only field that adds taxonomy categories to this article."
+		description = "A write-only field that adds `TaxonomyCategory` instances to the article."
 	)
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	protected Long[] taxonomyCategoryIds;
@@ -1116,6 +1133,7 @@ public class KnowledgeBaseArticle {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.KnowledgeBaseArticle",
 		name = "x-class-name"
 	)
@@ -1185,7 +1203,7 @@ public class KnowledgeBaseArticle {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -1224,7 +1242,7 @@ public class KnowledgeBaseArticle {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

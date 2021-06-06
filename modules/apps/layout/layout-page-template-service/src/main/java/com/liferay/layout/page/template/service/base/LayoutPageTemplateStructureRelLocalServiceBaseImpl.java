@@ -21,7 +21,9 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructureRel;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureRelLocalService;
+import com.liferay.layout.page.template.service.LayoutPageTemplateStructureRelLocalServiceUtil;
 import com.liferay.layout.page.template.service.persistence.LayoutPageTemplateStructureRelPersistence;
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -43,17 +45,22 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -75,7 +82,7 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>LayoutPageTemplateStructureRelLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.layout.page.template.service.LayoutPageTemplateStructureRelLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>LayoutPageTemplateStructureRelLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>LayoutPageTemplateStructureRelLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -157,6 +164,13 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return layoutPageTemplateStructureRelPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -410,6 +424,7 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -429,6 +444,7 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 				(LayoutPageTemplateStructureRel)persistedModel);
 	}
 
+	@Override
 	public BasePersistence<LayoutPageTemplateStructureRel>
 		getBasePersistence() {
 
@@ -548,11 +564,17 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 			layoutPageTemplateStructureRel);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			LayoutPageTemplateStructureRelLocalService.class,
-			IdentifiableOSGiService.class, PersistedModelLocalService.class
+			IdentifiableOSGiService.class, CTService.class,
+			PersistedModelLocalService.class
 		};
 	}
 
@@ -560,6 +582,8 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		layoutPageTemplateStructureRelLocalService =
 			(LayoutPageTemplateStructureRelLocalService)aopProxy;
+
+		_setLocalServiceUtilService(layoutPageTemplateStructureRelLocalService);
 	}
 
 	/**
@@ -572,8 +596,24 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 		return LayoutPageTemplateStructureRelLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<LayoutPageTemplateStructureRel> getCTPersistence() {
+		return layoutPageTemplateStructureRelPersistence;
+	}
+
+	@Override
+	public Class<LayoutPageTemplateStructureRel> getModelClass() {
 		return LayoutPageTemplateStructureRel.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<LayoutPageTemplateStructureRel>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(
+			layoutPageTemplateStructureRelPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -602,6 +642,24 @@ public abstract class LayoutPageTemplateStructureRelLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		LayoutPageTemplateStructureRelLocalService
+			layoutPageTemplateStructureRelLocalService) {
+
+		try {
+			Field field =
+				LayoutPageTemplateStructureRelLocalServiceUtil.class.
+					getDeclaredField("_service");
+
+			field.setAccessible(true);
+
+			field.set(null, layoutPageTemplateStructureRelLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

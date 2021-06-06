@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,8 +63,41 @@ public class FreeMarkerTool {
 		return _freeMarkerTool;
 	}
 
+	public boolean containsAggregationFunction(
+		List<JavaMethodSignature> javaMethodSignatures) {
+
+		for (JavaMethodSignature javaMethodSignature : javaMethodSignatures) {
+			for (JavaMethodParameter javaMethodParameter :
+					javaMethodSignature.getJavaMethodParameters()) {
+
+				if (StringUtil.equals(
+						javaMethodParameter.getParameterType(),
+						"com.liferay.portal.vulcan.aggregation.Aggregation")) {
+
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	public boolean containsJavaMethodSignature(
+		List<JavaMethodSignature> javaMethodSignatures, String text) {
+
+		Stream<JavaMethodSignature> stream = javaMethodSignatures.stream();
+
+		return stream.map(
+			JavaMethodSignature::getMethodName
+		).anyMatch(
+			javaMethodSignatureMethodName ->
+				javaMethodSignatureMethodName.contains(text)
+		);
+	}
+
 	public Map<String, Schema> getAllSchemas(
-		OpenAPIYAML openAPIYAML, Map<String, Schema> schemas) {
+		Map<String, Schema> allExternalSchemas, OpenAPIYAML openAPIYAML,
+		Map<String, Schema> schemas) {
 
 		Map<String, PathItem> pathItems = openAPIYAML.getPathItems();
 
@@ -82,7 +116,14 @@ public class FreeMarkerTool {
 
 				for (String tag : tags) {
 					if (!schemas.containsKey(tag)) {
-						schemas.put(tag, new Schema());
+						if ((allExternalSchemas != null) &&
+							allExternalSchemas.containsKey(tag)) {
+
+							schemas.put(tag, allExternalSchemas.get(tag));
+						}
+						else {
+							schemas.put(tag, new Schema());
+						}
 					}
 				}
 			}
@@ -129,14 +170,18 @@ public class FreeMarkerTool {
 			"String sortString");
 		parameter = StringUtil.replace(
 			parameter,
+			"com.liferay.portal.vulcan.aggregation.Aggregation aggregation",
+			"List<String> aggregations");
+		parameter = StringUtil.replace(
+			parameter,
 			"com.liferay.portal.vulcan.multipart.MultipartBody multipartBody",
 			StringBundler.concat(
 				schemaName, " ", schemaVarName,
 				", Map<String, File> multipartFiles"));
 		parameter = StringUtil.removeSubstring(
-			parameter, "com.liferay.portal.vulcan.permission.");
-		parameter = StringUtil.removeSubstring(
 			parameter, "com.liferay.portal.vulcan.pagination.");
+		parameter = StringUtil.removeSubstring(
+			parameter, "com.liferay.portal.vulcan.permission.");
 
 		return parameter;
 	}
@@ -211,6 +256,12 @@ public class FreeMarkerTool {
 		String arguments = OpenAPIParserUtil.getArguments(javaMethodParameters);
 
 		arguments = StringUtil.replace(
+			arguments, "aggregation",
+			"_aggregationBiFunction.apply(" + schemaVarName +
+				"Resource, aggregations)");
+		arguments = StringUtil.replace(
+			arguments, "assetLibraryId", "Long.valueOf(assetLibraryId)");
+		arguments = StringUtil.replace(
 			arguments, "filter",
 			"_filterBiFunction.apply(" + schemaVarName +
 				"Resource, filterString)");
@@ -227,8 +278,8 @@ public class FreeMarkerTool {
 	}
 
 	public List<JavaMethodSignature> getGraphQLJavaMethodSignatures(
-		ConfigYAML configYAML, final String graphQLType,
-		OpenAPIYAML openAPIYAML) {
+			ConfigYAML configYAML, String graphQLType, OpenAPIYAML openAPIYAML)
+		throws Exception {
 
 		return GraphQLOpenAPIParser.getJavaMethodSignatures(
 			configYAML, openAPIYAML,
@@ -269,12 +320,11 @@ public class FreeMarkerTool {
 		List<JavaMethodSignature> javaMethodSignatures,
 		OpenAPIYAML openAPIYAML) {
 
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler(5);
 
-		sb.append("Invoke this method with the command line:\n*\n* ");
-		sb.append("curl -H 'Content-Type: text/plain; charset=utf-8' ");
-		sb.append("-X 'POST' 'http://localhost:8080/o/graphql' ");
-		sb.append("-d $'");
+		sb.append("Invoke this method with the command line:\n*\n* curl -H ");
+		sb.append("'Content-Type: text/plain; charset=utf-8' -X 'POST' ");
+		sb.append("'http://localhost:8080/o/graphql' -d $'");
 		sb.append(
 			_getGraphQLBody(
 				javaMethodSignature, javaMethodSignatures, openAPIYAML));
@@ -295,16 +345,22 @@ public class FreeMarkerTool {
 			javaMethodParameters, operation, annotation);
 
 		parameters = StringUtil.replace(
-			parameters, "com.liferay.portal.kernel.search.filter.Filter filter",
-			"String filterString");
-
-		parameters = StringUtil.replace(
-			parameters, "com.liferay.portal.kernel.search.Sort[] sorts",
-			"String sortsString");
-
+			parameters,
+			"@GraphQLName(\"assetLibraryId\") java.lang.Long assetLibraryId",
+			"@GraphQLName(\"assetLibraryId\") @NotEmpty String assetLibraryId");
 		parameters = StringUtil.replace(
 			parameters, "@GraphQLName(\"siteId\") java.lang.Long siteId",
 			"@GraphQLName(\"siteKey\") @NotEmpty String siteKey");
+		parameters = StringUtil.replace(
+			parameters, "com.liferay.portal.kernel.search.filter.Filter filter",
+			"String filterString");
+		parameters = StringUtil.replace(
+			parameters, "com.liferay.portal.kernel.search.Sort[] sorts",
+			"String sortsString");
+		parameters = StringUtil.replace(
+			parameters,
+			"com.liferay.portal.vulcan.aggregation.Aggregation aggregation",
+			"List<String> aggregations");
 
 		return parameters;
 	}
@@ -326,17 +382,12 @@ public class FreeMarkerTool {
 	}
 
 	public List<JavaMethodSignature> getGraphQLRelationJavaMethodSignatures(
-		ConfigYAML configYAML, final String graphQLType,
-		OpenAPIYAML openAPIYAML) {
+			ConfigYAML configYAML, String graphQLType, OpenAPIYAML openAPIYAML)
+		throws Exception {
 
 		List<JavaMethodSignature> javaMethodSignatures =
-			getGraphQLJavaMethodSignatures(
+			_getSortedJavaMethodSignatures(
 				configYAML, graphQLType, openAPIYAML);
-
-		javaMethodSignatures.sort(
-			Comparator.comparingInt(
-				javaMethodSignature -> StringUtil.count(
-					javaMethodSignature.getPath(), "/")));
 
 		Map<String, Schema> schemas = getSchemas(openAPIYAML);
 
@@ -448,6 +499,74 @@ public class FreeMarkerTool {
 		);
 	}
 
+	public List<JavaMethodSignature>
+			getParentGraphQLRelationJavaMethodSignatures(
+				ConfigYAML configYAML, String graphQLType,
+				OpenAPIYAML openAPIYAML)
+		throws Exception {
+
+		Map<String, Schema> schemas = getSchemas(openAPIYAML);
+
+		List<JavaMethodSignature> javaMethodSignatures =
+			_getSortedJavaMethodSignatures(
+				configYAML, graphQLType, openAPIYAML);
+
+		List<JavaMethodSignature> parentJavaMethodSignatures =
+			new ArrayList<>();
+
+		for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
+			Schema schema = entry.getValue();
+
+			Map<String, Schema> propertySchemas = schema.getPropertySchemas();
+
+			if (propertySchemas == null) {
+				continue;
+			}
+
+			Set<String> propertyNames = propertySchemas.keySet();
+
+			for (String propertyName : propertyNames) {
+				if (!propertyName.startsWith("parent") ||
+					propertyNames.contains(
+						StringUtil.removeSubstring(propertyName, "Id"))) {
+
+					continue;
+				}
+
+				propertyName = StringUtil.lowerCaseFirstLetter(
+					StringUtil.removeSubstring(propertyName, "parent"));
+
+				for (JavaMethodSignature javaMethodSignature :
+						javaMethodSignatures) {
+
+					List<JavaMethodParameter> javaMethodParameters =
+						javaMethodSignature.getJavaMethodParameters();
+
+					if (javaMethodParameters.isEmpty()) {
+						continue;
+					}
+
+					JavaMethodParameter javaMethodParameter =
+						javaMethodParameters.get(0);
+
+					if (!propertyName.equals(
+							javaMethodParameter.getParameterName())) {
+
+						continue;
+					}
+
+					parentJavaMethodSignatures.add(
+						_getJavaMethodSignature(
+							javaMethodSignature, entry.getKey()));
+
+					break;
+				}
+			}
+		}
+
+		return parentJavaMethodSignatures;
+	}
+
 	public JavaMethodSignature getPostSchemaJavaMethodSignature(
 		List<JavaMethodSignature> javaMethodSignatures, String parameterName,
 		String schemaName) {
@@ -459,7 +578,7 @@ public class FreeMarkerTool {
 				continue;
 			}
 
-			StringBuilder sb = new StringBuilder();
+			StringBundler sb = new StringBundler(3);
 
 			sb.append(getHTTPMethod(operation));
 
@@ -550,10 +669,9 @@ public class FreeMarkerTool {
 		ConfigYAML configYAML, JavaMethodSignature javaMethodSignature,
 		OpenAPIYAML openAPIYAML) {
 
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler(10);
 
-		sb.append("Invoke this method with the command line:\n*\n* ");
-		sb.append("curl -X '");
+		sb.append("Invoke this method with the command line:\n*\n* curl -X '");
 		sb.append(
 			StringUtil.toUpperCase(
 				OpenAPIParserUtil.getHTTPMethod(
@@ -585,7 +703,7 @@ public class FreeMarkerTool {
 			return new HashMap<>();
 		}
 
-		return components.getSchemas();
+		return new TreeMap<>(components.getSchemas());
 	}
 
 	public String getSchemaVarName(String schemaName) {
@@ -610,6 +728,21 @@ public class FreeMarkerTool {
 			javaMethodSignatureMethodName ->
 				javaMethodSignatureMethodName.equals(methodName)
 		);
+	}
+
+	public boolean hasParameter(
+		JavaMethodSignature javaMethodSignature, String parameterName) {
+
+		List<JavaMethodParameter> javaMethodParameters =
+			javaMethodSignature.getJavaMethodParameters();
+
+		for (JavaMethodParameter javaMethodParameter : javaMethodParameters) {
+			if (parameterName.equals(javaMethodParameter.getParameterName())) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public boolean hasPathParameter(JavaMethodSignature javaMethodSignature) {
@@ -742,7 +875,7 @@ public class FreeMarkerTool {
 		List<JavaMethodSignature> javaMethodSignatures,
 		OpenAPIYAML openAPIYAML) {
 
-		StringBuilder sb = new StringBuilder("{\"query\": \"query {");
+		StringBundler sb = new StringBundler("{\"query\": \"query {");
 
 		sb.append(
 			getGraphQLPropertyName(javaMethodSignature, javaMethodSignatures));
@@ -784,10 +917,7 @@ public class FreeMarkerTool {
 		String returnType = javaMethodSignature.getReturnType();
 
 		if (returnType.startsWith("java.util.Collection<")) {
-			sb.append("items {__}, ");
-			sb.append("page, ");
-			sb.append("pageSize, ");
-			sb.append("totalCount");
+			sb.append("items {__}, page, pageSize, totalCount");
 		}
 		else {
 			Map<String, Schema> schemas = getSchemas(openAPIYAML);
@@ -940,7 +1070,7 @@ public class FreeMarkerTool {
 	private String _getRESTBody(
 		JavaMethodSignature javaMethodSignature, OpenAPIYAML openAPIYAML) {
 
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler();
 
 		Set<String> properties = new TreeSet<>();
 
@@ -998,6 +1128,22 @@ public class FreeMarkerTool {
 		return sb.toString();
 	}
 
+	private List<JavaMethodSignature> _getSortedJavaMethodSignatures(
+			ConfigYAML configYAML, String graphQLType, OpenAPIYAML openAPIYAML)
+		throws Exception {
+
+		List<JavaMethodSignature> javaMethodSignatures =
+			getGraphQLJavaMethodSignatures(
+				configYAML, graphQLType, openAPIYAML);
+
+		javaMethodSignatures.sort(
+			Comparator.comparingInt(
+				javaMethodSignature -> StringUtil.count(
+					javaMethodSignature.getPath(), "/")));
+
+		return javaMethodSignatures;
+	}
+
 	private boolean _isGraphQLPropertyRelation(
 		JavaMethodSignature javaMethodSignature, String parameterName,
 		String propertyName, String schemaName) {
@@ -1017,6 +1163,6 @@ public class FreeMarkerTool {
 		return false;
 	}
 
-	private static FreeMarkerTool _freeMarkerTool = new FreeMarkerTool();
+	private static final FreeMarkerTool _freeMarkerTool = new FreeMarkerTool();
 
 }

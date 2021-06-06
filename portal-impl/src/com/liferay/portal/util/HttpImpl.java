@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.InetAddressUtil;
+import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
@@ -284,7 +285,9 @@ public class HttpImpl implements Http {
 			return URLCodec.decodeURL(url, StringPool.UTF8);
 		}
 		catch (IllegalArgumentException illegalArgumentException) {
-			_log.error(illegalArgumentException.getMessage());
+			if (_log.isWarnEnabled()) {
+				_log.warn(illegalArgumentException.getMessage());
+			}
 		}
 
 		return StringPool.BLANK;
@@ -317,6 +320,9 @@ public class HttpImpl implements Http {
 				Thread.sleep(500);
 			}
 			catch (InterruptedException interruptedException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(interruptedException, interruptedException);
+				}
 			}
 
 			retry++;
@@ -350,12 +356,12 @@ public class HttpImpl implements Http {
 		}
 
 		path = StringUtil.replace(
-			path, new char[] {CharPool.SLASH, CharPool.TILDE},
-			new String[] {_TEMP_SLASH, _TEMP_TILDE});
+			path, new char[] {CharPool.PLUS, CharPool.SLASH, CharPool.TILDE},
+			new String[] {_TEMP_PLUS, _TEMP_SLASH, _TEMP_TILDE});
 		path = URLCodec.encodeURL(path, true);
 		path = StringUtil.replace(
-			path, new String[] {_TEMP_SLASH, _TEMP_TILDE},
-			new String[] {StringPool.SLASH, StringPool.TILDE});
+			path, new String[] {_TEMP_PLUS, _TEMP_SLASH, _TEMP_TILDE},
+			new String[] {StringPool.PLUS, StringPool.SLASH, StringPool.TILDE});
 
 		return path;
 	}
@@ -494,6 +500,10 @@ public class HttpImpl implements Http {
 			return address.getHostAddress();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return url;
 		}
 	}
@@ -605,6 +615,17 @@ public class HttpImpl implements Http {
 	}
 
 	@Override
+	public String getQueryString(HttpServletRequest httpServletRequest) {
+		if (isForwarded(httpServletRequest)) {
+			return GetterUtil.getString(
+				httpServletRequest.getAttribute(
+					JavaConstants.JAVAX_SERVLET_FORWARD_QUERY_STRING));
+		}
+
+		return httpServletRequest.getQueryString();
+	}
+
+	@Override
 	public String getQueryString(String url) {
 		if (Validator.isNull(url)) {
 			return url;
@@ -616,7 +637,7 @@ public class HttpImpl implements Http {
 			return StringPool.BLANK;
 		}
 
-		String queryString = uri.getQuery();
+		String queryString = uri.getRawQuery();
 
 		if (queryString == null) {
 			return StringPool.BLANK;
@@ -636,6 +657,10 @@ public class HttpImpl implements Http {
 			return _getURI(uriString);
 		}
 		catch (URISyntaxException uriSyntaxException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(uriSyntaxException, uriSyntaxException);
+			}
+
 			return null;
 		}
 	}
@@ -661,6 +686,18 @@ public class HttpImpl implements Http {
 	@Override
 	public boolean hasProxyConfig() {
 		if (Validator.isNotNull(_PROXY_HOST) && (_PROXY_PORT > 0)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean isForwarded(HttpServletRequest httpServletRequest) {
+		String forwardedRequestURI = (String)httpServletRequest.getAttribute(
+			JavaConstants.JAVAX_SERVLET_FORWARD_REQUEST_URI);
+
+		if (forwardedRequestURI != null) {
 			return true;
 		}
 
@@ -921,6 +958,10 @@ public class HttpImpl implements Http {
 			return urlObj.toString();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return url;
 		}
 	}
@@ -1867,7 +1908,7 @@ public class HttpImpl implements Http {
 				}
 				catch (IOException ioException) {
 					if (_log.isWarnEnabled()) {
-						_log.warn("Unable to close response", exception);
+						_log.warn("Unable to close response", ioException);
 					}
 				}
 			}
@@ -2022,6 +2063,8 @@ public class HttpImpl implements Http {
 
 	private static final String _PROXY_USERNAME = GetterUtil.getString(
 		PropsUtil.get(HttpImpl.class.getName() + ".proxy.username"));
+
+	private static final String _TEMP_PLUS = "_LIFERAY_TEMP_PLUS_";
 
 	private static final String _TEMP_SLASH = "_LIFERAY_TEMP_SLASH_";
 

@@ -48,7 +48,7 @@ public class FrontPageAssetEntryValidatorExclusionRule
 	@Override
 	public boolean isValidationExcluded(
 		long groupId, String className, long classPK, long classTypePK,
-		long[] categoryIds, String[] tagNames) {
+		long[] assetCategoryIds, String[] assetTagNames) {
 
 		WikiPage wikiPage = _wikiPageLocalService.fetchWikiPage(classPK);
 
@@ -90,7 +90,8 @@ public class FrontPageAssetEntryValidatorExclusionRule
 	private static final Log _log = LogFactoryUtil.getLog(
 		FrontPageAssetEntryValidatorExclusionRule.class);
 
-	private WikiGroupServiceConfiguration _wikiGroupServiceConfiguration;
+	private volatile WikiGroupServiceConfiguration
+		_wikiGroupServiceConfiguration;
 
 	@Reference(unbind = "-")
 	private WikiPageLocalService _wikiPageLocalService;

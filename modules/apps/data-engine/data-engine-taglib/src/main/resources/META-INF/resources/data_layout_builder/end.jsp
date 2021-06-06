@@ -18,40 +18,6 @@
 
 <portlet:renderURL var="basePortletURL" />
 
-<%
-Map<String, Object> data = HashMapBuilder.<String, Object>put(
-	"availableLanguageIds", availableLanguageIds
-).put(
-	"config", configJSONObject
-).put(
-	"contentType", contentType
-).put(
-	"context", dataLayoutJSONObject
-).put(
-	"dataDefinitionId", dataDefinitionId
-).put(
-	"dataLayoutBuilderElementId", liferayPortletResponse.getNamespace() + "-data-layout-builder"
-).put(
-	"dataLayoutBuilderId", componentId
-).put(
-	"dataLayoutId", dataLayoutId
-).put(
-	"fieldSetContentType", fieldSetContentType
-).put(
-	"fieldTypes", fieldTypesJSONArray
-).put(
-	"fieldTypesModules", fieldTypesModules
-).put(
-	"groupId", groupId
-).put(
-	"localizable", localizable
-).put(
-	"sidebarPanels", sidebarPanels
-).put(
-	"spritemap", themeDisplay.getPathThemeImages() + "/lexicon/icons.svg"
-).build();
-%>
-
 <div class="data-engine-form-builder-messages">
 	<liferay-ui:error exception="<%= DataDefinitionValidationException.class %>" message="please-enter-a-valid-form-definition" />
 
@@ -72,7 +38,7 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 		DataDefinitionValidationException.MustSetOptionsForField msoff = (DataDefinitionValidationException.MustSetOptionsForField)errorException;
 		%>
 
-		<liferay-ui:message arguments="<%= HtmlUtil.escape(msoff.getFieldName()) %>" key="at-least-one-option-should-be-set-for-field-x" translateArguments="<%= false %>" />
+		<liferay-ui:message arguments="<%= HtmlUtil.escape(msoff.getFieldLabel()) %>" key="at-least-one-option-should-be-set-for-field-x" translateArguments="<%= false %>" />
 	</liferay-ui:error>
 
 	<liferay-ui:error exception="<%= DataDefinitionValidationException.MustSetValidCharactersForFieldName.class %>">
@@ -98,9 +64,46 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 	</liferay-ui:error>
 </div>
 
-<div id="<%= componentId + "container" %>">
+<div id="<%= componentId %>container">
 	<react:component
-		data="<%= data %>"
-		module="data_layout_builder/js/App.es"
+		module="<%= module %>"
+		props='<%=
+			HashMapBuilder.<String, Object>put(
+				"availableLanguageIds", availableLanguageIds
+			).put(
+				"config", configJSONObject
+			).put(
+				"contentType", contentType
+			).put(
+				"contentTypeConfig", contentTypeConfigJSONObject
+			).put(
+				"context", dataLayoutJSONObject
+			).put(
+				"dataDefinitionId", dataDefinitionId
+			).put(
+				"dataLayoutBuilderElementId", liferayPortletResponse.getNamespace() + "-data-layout-builder"
+			).put(
+				"dataLayoutBuilderId", componentId
+			).put(
+				"dataLayoutId", dataLayoutId
+			).put(
+				"defaultLanguageId", defaultLanguageId
+			).put(
+				"fieldSetContentType", fieldSetContentType
+			).put(
+				"fieldTypes", fieldTypesJSONArray
+			).put(
+				"fieldTypesModules", fieldTypesModules
+			).put(
+				"groupId", groupId
+			).put(
+				"localizable", localizable
+			).put(
+				"sidebarPanels", sidebarPanels
+			).put(
+				"spritemap", themeDisplay.getPathThemeImages() + "/clay/icons.svg"
+			).build()
+		%>'
+		servletContext="<%= moduleServletContext %>"
 	/>
 </div>

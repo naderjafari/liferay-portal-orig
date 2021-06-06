@@ -15,6 +15,7 @@
 import {cancelDebounce, debounce} from 'frontend-js-web';
 import {useRef} from 'react';
 
+import {client} from './client.es';
 import lang from './lang.es';
 
 export function dateToInternationalHuman(
@@ -52,6 +53,10 @@ export function dateToBriefInternationalHuman(
 	});
 
 	return intl.format(date);
+}
+
+export function deleteCache() {
+	client.cache.clear();
 }
 
 export function timeDifference(previous, current = new Date()) {
@@ -122,6 +127,10 @@ export function stringToSlug(text) {
 }
 
 export function slugToText(slug) {
+	if (!slug) {
+		return slug;
+	}
+
 	const hyphens = /-+/g;
 
 	return slug.replace(hyphens, ' ').toLowerCase();
@@ -148,21 +157,41 @@ export function stripHTML(text) {
 	);
 }
 
-export function getFullPath() {
-	return window.location.href.substring(0, window.location.href.indexOf('#'));
+export function getFullPath(path) {
+	const href = window.location.href;
+	const indexOf = href.indexOf('#');
+
+	if (indexOf !== -1) {
+		return href.substring(0, indexOf);
+	}
+
+	return href.substring(0, href.indexOf(path));
 }
 
-export function getBasePath() {
-	return window.location.href.substring(
-		window.location.origin.length,
-		window.location.href.indexOf('#')
-	);
+export function getBasePath(path) {
+	const origin = window.location.origin.length;
+
+	const href = window.location.href;
+	const indexOf = href.indexOf('#');
+
+	if (indexOf !== -1) {
+		return href.substring(origin, indexOf);
+	}
+
+	return href.substring(origin, href.indexOf(path));
 }
 
 export function getContextLink(url) {
+	let link = window.location.href;
+
+	if (link.indexOf('#') !== -1) {
+		link = `${getFullPath()}?redirectTo=/%23/questions/${url}/`;
+	}
+	else {
+		link = `${getFullPath('questions')}questions/${url}/`;
+	}
+
 	return {
-		headers: {
-			Link: `${getFullPath()}?redirectTo=/%23/questions/${url}/`,
-		},
+		headers: {Link: encodeURI(link)},
 	};
 }

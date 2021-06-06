@@ -261,6 +261,16 @@ public class MessageBoardThreadSerDes {
 			sb.append("]");
 		}
 
+		if (messageBoardThread.getLocked() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"locked\": ");
+
+			sb.append(messageBoardThread.getLocked());
+		}
+
 		if (messageBoardThread.getMessageBoardSectionId() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -342,6 +352,20 @@ public class MessageBoardThreadSerDes {
 			sb.append("\"siteId\": ");
 
 			sb.append(messageBoardThread.getSiteId());
+		}
+
+		if (messageBoardThread.getStatus() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"status\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(messageBoardThread.getStatus()));
+
+			sb.append("\"");
 		}
 
 		if (messageBoardThread.getSubscribed() != null) {
@@ -587,6 +611,13 @@ public class MessageBoardThreadSerDes {
 				"keywords", String.valueOf(messageBoardThread.getKeywords()));
 		}
 
+		if (messageBoardThread.getLocked() == null) {
+			map.put("locked", null);
+		}
+		else {
+			map.put("locked", String.valueOf(messageBoardThread.getLocked()));
+		}
+
 		if (messageBoardThread.getMessageBoardSectionId() == null) {
 			map.put("messageBoardSectionId", null);
 		}
@@ -646,6 +677,13 @@ public class MessageBoardThreadSerDes {
 		}
 		else {
 			map.put("siteId", String.valueOf(messageBoardThread.getSiteId()));
+		}
+
+		if (messageBoardThread.getStatus() == null) {
+			map.put("status", null);
+		}
+		else {
+			map.put("status", String.valueOf(messageBoardThread.getStatus()));
 		}
 
 		if (messageBoardThread.getSubscribed() == null) {
@@ -815,6 +853,11 @@ public class MessageBoardThreadSerDes {
 						toStrings((Object[])jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "locked")) {
+				if (jsonParserFieldValue != null) {
+					messageBoardThread.setLocked((Boolean)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(
 						jsonParserFieldName, "messageBoardSectionId")) {
 
@@ -869,6 +912,11 @@ public class MessageBoardThreadSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "status")) {
+				if (jsonParserFieldValue != null) {
+					messageBoardThread.setStatus((String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "subscribed")) {
 				if (jsonParserFieldValue != null) {
 					messageBoardThread.setSubscribed(
@@ -917,10 +965,6 @@ public class MessageBoardThreadSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -949,7 +993,7 @@ public class MessageBoardThreadSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -985,7 +1029,7 @@ public class MessageBoardThreadSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

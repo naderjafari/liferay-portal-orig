@@ -14,13 +14,12 @@
 
 package com.liferay.portal.workflow.metrics.internal.search.index;
 
-import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.search.document.Document;
 import com.liferay.portal.search.document.DocumentBuilder;
 import com.liferay.portal.search.query.BooleanQuery;
+import com.liferay.portal.workflow.metrics.internal.sla.WorkflowMetricsInstanceSLAStatus;
 import com.liferay.portal.workflow.metrics.search.index.InstanceWorkflowMetricsIndexer;
 import com.liferay.portal.workflow.metrics.search.index.TaskWorkflowMetricsIndexer;
 
@@ -64,9 +63,7 @@ public class InstanceWorkflowMetricsIndexerImpl
 			documentBuilder.setDate(
 				"completionDate", getDate(completionDate)
 			).setValue(
-				Field.getSortableFieldName(
-					StringBundler.concat(
-						"completionDate", StringPool.UNDERLINE, "Number")),
+				Field.getSortableFieldName("completionDate_Number"),
 				completionDate.getTime()
 			);
 		}
@@ -74,9 +71,7 @@ public class InstanceWorkflowMetricsIndexerImpl
 		documentBuilder.setDate(
 			"createDate", getDate(createDate)
 		).setValue(
-			Field.getSortableFieldName(
-				StringBundler.concat(
-					"createDate", StringPool.UNDERLINE, "Number")),
+			Field.getSortableFieldName("createDate_Number"),
 			createDate.getTime()
 		).setValue(
 			"deleted", Boolean.FALSE
@@ -100,6 +95,8 @@ public class InstanceWorkflowMetricsIndexerImpl
 		).setString(
 			"userName", userName
 		).setString(
+			"slaStatus", WorkflowMetricsInstanceSLAStatus.UNTRACKED.getValue()
+		).setString(
 			"version", processVersion
 		);
 
@@ -108,7 +105,7 @@ public class InstanceWorkflowMetricsIndexerImpl
 
 		Document document = documentBuilder.build();
 
-		workflowMetricsPortalExecutor.execute(() -> addDocument(document));
+		workflowMetricsPortalExecutor.execute(() -> updateDocument(document));
 
 		return document;
 	}
@@ -127,9 +124,7 @@ public class InstanceWorkflowMetricsIndexerImpl
 		).setDate(
 			"completionDate", getDate(completionDate)
 		).setValue(
-			Field.getSortableFieldName(
-				StringBundler.concat(
-					"completionDate", StringPool.UNDERLINE, "Number")),
+			Field.getSortableFieldName("completionDate_Number"),
 			completionDate.getTime()
 		).setLong(
 			"duration", duration

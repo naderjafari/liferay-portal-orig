@@ -22,12 +22,17 @@ definition {
 			PortalInstances.tearDownCP();
 		}
 		else {
+			JSONDepot.deleteDepot(depotName = "Test Depot Name");
+
+			Site.tearDownCP();
+
 			User.logoutPG();
 		}
 	}
 
 	@description = "This ensures that the expired entries can be removed automatically in the recycle bin."
 	@priority = "5"
+	@refactorneeded
 	test CheckExpiredEntries {
 		property custom.properties = "trash.entry.check.interval=1${line.separator}trash.entries.max.age=1";
 
@@ -36,7 +41,7 @@ definition {
 			dmDocumentTitle = "DM Document Title",
 			groupName = "Test Depot Name");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMDocument.deleteCP(dmDocumentTitle = "DM Document Title");
 
@@ -46,7 +51,7 @@ definition {
 			site = "false",
 			title = "WC WebContent Title");
 
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
 		Check(
 			key_webContentTitle = "WC WebContent Title",
@@ -81,6 +86,7 @@ definition {
 
 	@description = "This ensures that the document can be deleted after the recycle bin is disabled."
 	@priority = "5"
+	@refactorneeded
 	test DeleteDocumentAfterDisabling {
 		JSONDocument.addFile(
 			dmDocumentDescription = "DM Document Description",
@@ -95,7 +101,7 @@ definition {
 
 		Depot.configureRecycleBin(recycleBin = "Disabled");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
@@ -108,14 +114,11 @@ definition {
 
 	@description = "This ensures that the web content can be deleted after the recycle bin is disabled."
 	@priority = "5"
+	@refactorneeded
 	test DeleteWCAfterDisabling {
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotAdmin();
 
-		ProductMenuHelper.openProductMenu();
-
-		AssertVisible(
-			key_category = "Recycle Bin",
-			locator1 = "ProductMenu#CATEGORY_COLLAPSED");
+		DepotNavigator.gotoDepot(depotName = "Test Depot Name");
 
 		JSONWebcontent.addWebContent(
 			content = "WC WebContent Content",
@@ -133,7 +136,7 @@ definition {
 
 		Depot.configureRecycleBin(recycleBin = "Disabled");
 
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
 		AssertElementNotPresent(
 			key_category = "Recycle Bin",
@@ -144,14 +147,15 @@ definition {
 
 	@description = "This ensures that the documents can be restored from recycle bin."
 	@priority = "5"
+	@refactorneeded
 	test RestoreDocuments {
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMDocument.addMultipleCP(dmDocumentFileList = "Document_1.doc,Document_2.jpg");
 
 		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
-		for (var key_dmDocumentTitle : list "Document_1.doc,Document_2.jpg") {
+		for (var key_dmDocumentTitle : list "Document_1,Document_2") {
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 		}
 
@@ -164,7 +168,7 @@ definition {
 			portlet = "Recycle Bin");
 
 		RecycleBin.restoreCP(
-			assetName = "Document_1.doc",
+			assetName = "Document_1",
 			assetRestoreLocation = "Home",
 			assetType = "Document",
 			multipleAssets = "true");
@@ -172,23 +176,24 @@ definition {
 		Refresh();
 
 		RecycleBin.restoreCP(
-			assetName = "Document_2.jpg",
+			assetName = "Document_2",
 			assetRestoreLocation = "Home",
 			assetType = "Document");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
-		for (var dmDocumentTitle : list "Document_1.doc,Document_2.jpg") {
+		for (var dmDocumentTitle : list "Document_1,Document_2") {
 			DMNavigator.gotoDocumentCP(dmDocumentTitle = "${dmDocumentTitle}");
 
 			DMDocument.viewCP(dmDocumentTitle = "${dmDocumentTitle}");
 
-			DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+			DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 		}
 	}
 
 	@description = "This ensures that the web content can be restored from recycle bin."
 	@priority = "5"
+	@refactorneeded
 	test RestoreWebContent {
 		property portal.acceptance = "true";
 
@@ -198,7 +203,7 @@ definition {
 			site = "false",
 			title = "WC WebContent Title");
 
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
 		WebContent.moveToRecycleBinCP(
 			assetType = "Web Content Article",
@@ -215,7 +220,7 @@ definition {
 			assetRestoreLocation = "Home",
 			assetType = "Web Content Article");
 
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
 		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title");
 

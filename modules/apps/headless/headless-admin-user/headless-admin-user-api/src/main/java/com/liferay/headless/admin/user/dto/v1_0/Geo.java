@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Geo")
+@GraphQLName(
+	description = "A point determined by latitude and longitude.", value = "Geo"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Geo")
-public class Geo {
+public class Geo implements Serializable {
 
 	public static Geo toDTO(String json) {
 		return ObjectMapperUtil.readValue(Geo.class, json);
@@ -158,6 +162,7 @@ public class Geo {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.Geo",
 		name = "x-class-name"
 	)
@@ -193,7 +198,7 @@ public class Geo {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -232,7 +237,7 @@ public class Geo {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -17,12 +17,12 @@ package com.liferay.document.library.internal.change.tracking.spi.reference;
 import com.liferay.change.tracking.spi.reference.TableReferenceDefinition;
 import com.liferay.change.tracking.spi.reference.builder.ChildTableReferenceInfoBuilder;
 import com.liferay.change.tracking.spi.reference.builder.ParentTableReferenceInfoBuilder;
+import com.liferay.document.library.kernel.model.DLFileEntryMetadata;
 import com.liferay.document.library.kernel.model.DLFileEntryMetadataTable;
-import com.liferay.document.library.kernel.model.DLFileEntryTable;
 import com.liferay.document.library.kernel.model.DLFileVersionTable;
 import com.liferay.document.library.kernel.service.persistence.DLFileEntryMetadataPersistence;
-import com.liferay.dynamic.data.mapping.model.DDMContent;
 import com.liferay.dynamic.data.mapping.model.DDMStorageLinkTable;
+import com.liferay.dynamic.data.mapping.model.DDMStructureLinkTable;
 import com.liferay.dynamic.data.mapping.model.DDMStructureTable;
 import com.liferay.portal.kernel.model.CompanyTable;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
@@ -43,8 +43,12 @@ public class DLFileEntryMetadataTableReferenceDefinition
 			childTableReferenceInfoBuilder) {
 
 		childTableReferenceInfoBuilder.classNameReference(
+			DLFileEntryMetadataTable.INSTANCE.fileEntryMetadataId,
+			DDMStructureLinkTable.INSTANCE.classPK, DLFileEntryMetadata.class
+		).singleColumnReference(
 			DLFileEntryMetadataTable.INSTANCE.DDMStorageId,
-			DDMStorageLinkTable.INSTANCE.classPK, DDMContent.class);
+			DDMStorageLinkTable.INSTANCE.classPK
+		);
 	}
 
 	@Override
@@ -58,9 +62,6 @@ public class DLFileEntryMetadataTableReferenceDefinition
 		).singleColumnReference(
 			DLFileEntryMetadataTable.INSTANCE.DDMStructureId,
 			DDMStructureTable.INSTANCE.structureId
-		).singleColumnReference(
-			DLFileEntryMetadataTable.INSTANCE.fileEntryId,
-			DLFileEntryTable.INSTANCE.fileEntryId
 		).singleColumnReference(
 			DLFileEntryMetadataTable.INSTANCE.fileVersionId,
 			DLFileVersionTable.INSTANCE.fileVersionId

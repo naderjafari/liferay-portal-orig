@@ -159,6 +159,22 @@ public class AccountEntryOrganizationRelLocalServiceWrapper
 			deleteAccountEntryOrganizationRels(accountEntryId, organizationIds);
 	}
 
+	@Override
+	public void deleteAccountEntryOrganizationRelsByAccountEntryId(
+		long accountEntryId) {
+
+		_accountEntryOrganizationRelLocalService.
+			deleteAccountEntryOrganizationRelsByAccountEntryId(accountEntryId);
+	}
+
+	@Override
+	public void deleteAccountEntryOrganizationRelsByOrganizationId(
+		long organizationId) {
+
+		_accountEntryOrganizationRelLocalService.
+			deleteAccountEntryOrganizationRelsByOrganizationId(organizationId);
+	}
+
 	/**
 	 * @throws PortalException
 	 */
@@ -174,6 +190,13 @@ public class AccountEntryOrganizationRelLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _accountEntryOrganizationRelLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _accountEntryOrganizationRelLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -277,6 +300,15 @@ public class AccountEntryOrganizationRelLocalServiceWrapper
 			fetchAccountEntryOrganizationRel(accountEntryOrganizationRelId);
 	}
 
+	@Override
+	public com.liferay.account.model.AccountEntryOrganizationRel
+		fetchAccountEntryOrganizationRel(
+			long accountEntryId, long organizationId) {
+
+		return _accountEntryOrganizationRelLocalService.
+			fetchAccountEntryOrganizationRel(accountEntryId, organizationId);
+	}
+
 	/**
 	 * Returns the account entry organization rel with the primary key.
 	 *
@@ -291,6 +323,16 @@ public class AccountEntryOrganizationRelLocalServiceWrapper
 
 		return _accountEntryOrganizationRelLocalService.
 			getAccountEntryOrganizationRel(accountEntryOrganizationRelId);
+	}
+
+	@Override
+	public com.liferay.account.model.AccountEntryOrganizationRel
+			getAccountEntryOrganizationRel(
+				long accountEntryId, long organizationId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _accountEntryOrganizationRelLocalService.
+			getAccountEntryOrganizationRel(accountEntryId, organizationId);
 	}
 
 	/**
@@ -322,10 +364,38 @@ public class AccountEntryOrganizationRelLocalServiceWrapper
 
 	@Override
 	public java.util.List<com.liferay.account.model.AccountEntryOrganizationRel>
+		getAccountEntryOrganizationRels(
+			long accountEntryId, int start, int end) {
+
+		return _accountEntryOrganizationRelLocalService.
+			getAccountEntryOrganizationRels(accountEntryId, start, end);
+	}
+
+	@Override
+	public java.util.List<com.liferay.account.model.AccountEntryOrganizationRel>
 		getAccountEntryOrganizationRelsByOrganizationId(long organizationId) {
 
 		return _accountEntryOrganizationRelLocalService.
 			getAccountEntryOrganizationRelsByOrganizationId(organizationId);
+	}
+
+	@Override
+	public java.util.List<com.liferay.account.model.AccountEntryOrganizationRel>
+		getAccountEntryOrganizationRelsByOrganizationId(
+			long organizationId, int start, int end) {
+
+		return _accountEntryOrganizationRelLocalService.
+			getAccountEntryOrganizationRelsByOrganizationId(
+				organizationId, start, end);
+	}
+
+	@Override
+	public int getAccountEntryOrganizationRelsByOrganizationIdCount(
+		long organizationId) {
+
+		return _accountEntryOrganizationRelLocalService.
+			getAccountEntryOrganizationRelsByOrganizationIdCount(
+				organizationId);
 	}
 
 	/**

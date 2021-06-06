@@ -16,11 +16,18 @@ import ClayButton from '@clayui/button';
 import moment from 'moment';
 import React, {useContext} from 'react';
 
+import {removeEmptyValues} from '../../utils/data.es';
 import Color from '../color/Color.es';
 import {SidebarContext} from '../sidebar/SidebarContext.es';
 
 export default ({data, field, summary, totalEntries, type}) => {
 	const {portletNamespace, toggleSidebar} = useContext(SidebarContext);
+
+	const formatDate = (field) => {
+		const locale = themeDisplay.getLanguageId().split('_', 1).join('');
+
+		return moment(field).locale(locale).format('L');
+	};
 
 	const checkType = (field, type) => {
 		switch (type) {
@@ -33,11 +40,7 @@ export default ({data, field, summary, totalEntries, type}) => {
 		}
 	};
 
-	const formatDate = (field) => {
-		const locale = themeDisplay.getLanguageId().split('_', 1).join('');
-
-		return moment(field).locale(locale).format('L');
-	};
+	data = removeEmptyValues(data);
 
 	return (
 		<div className="field-list">
@@ -48,7 +51,7 @@ export default ({data, field, summary, totalEntries, type}) => {
 					))}
 
 				{data.length == 5 && totalEntries > 5 ? (
-					<li id={`${portletNamespace}-see-more`} key={'see-more'}>
+					<li id={`${portletNamespace}-see-more`} key="see-more">
 						<ClayButton
 							displayType="link"
 							onClick={() =>

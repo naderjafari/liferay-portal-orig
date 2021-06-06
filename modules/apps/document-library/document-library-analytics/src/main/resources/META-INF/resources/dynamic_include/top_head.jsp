@@ -42,7 +42,7 @@
 					anchor.search
 						.substr(1)
 						.split('&')
-						.forEach(function (item) {
+						.forEach((item) => {
 							var tmp = item.split('=');
 
 							if (tmp[0] === parameterName) {
@@ -64,14 +64,11 @@
 		}
 	}
 
-	document.addEventListener('DOMContentLoaded', function () {
-		document.body.addEventListener('click', handleDownloadClick);
+	Liferay.once('destroyPortlet', () => {
+		document.body.removeEventListener('click', handleDownloadClick);
 	});
 
-	var onDestroyPortlet = function () {
-		document.body.removeEventListener('click', handleDownloadClick);
-		Liferay.detach('destroyPortlet', onDestroyPortlet);
-	};
-
-	Liferay.on('destroyPortlet', onDestroyPortlet);
+	Liferay.once('portletReady', () => {
+		document.body.addEventListener('click', handleDownloadClick);
+	});
 </aui:script>

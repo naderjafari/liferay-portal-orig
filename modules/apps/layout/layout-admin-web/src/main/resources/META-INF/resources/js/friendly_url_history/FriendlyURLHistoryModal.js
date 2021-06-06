@@ -15,7 +15,7 @@
 import ClayList from '@clayui/list';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClayModal from '@clayui/modal';
-import {useIsMounted} from 'frontend-js-react-web';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import {fetch, objectToFormData, openToast} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useState} from 'react';
@@ -31,7 +31,6 @@ function logError(error) {
 const showToastError = () => {
 	openToast({
 		message: Liferay.Language.get('an-unexpected-error-occurred'),
-		title: Liferay.Language.get('error'),
 		type: 'danger',
 	});
 };

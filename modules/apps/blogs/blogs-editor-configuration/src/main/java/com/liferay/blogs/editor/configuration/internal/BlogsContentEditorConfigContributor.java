@@ -22,14 +22,17 @@ import com.liferay.item.selector.criteria.FileEntryItemSelectorReturnType;
 import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
 import com.liferay.item.selector.criteria.image.criterion.ImageItemSelectorCriterion;
 import com.liferay.item.selector.criteria.url.criterion.URLItemSelectorCriterion;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.editor.configuration.BaseEditorConfigContributor;
 import com.liferay.portal.kernel.editor.configuration.EditorConfigContributor;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
+import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Map;
 
@@ -63,9 +66,10 @@ public class BlogsContentEditorConfigContributor
 
 		sb.append("a[*](*); ");
 		sb.append(_getAllowedContentText());
-		sb.append(" div[*](*); iframe[*](*); img[*](*){*}; ");
+		sb.append(
+			" div[*](*); figcaption; figure; iframe[*](*); img[*](*){*}; ");
 		sb.append(_getAllowedContentLists());
-		sb.append(" p {text-align}; ");
+		sb.append(" p[*](*){text-align}; ");
 		sb.append(_getAllowedContentTable());
 		sb.append(" video[*](*);");
 
@@ -82,6 +86,19 @@ public class BlogsContentEditorConfigContributor
 			namespace + name + "selectItem");
 
 		_populateTwitterButton(jsonObject);
+
+		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
+
+		if (Validator.isNotNull(portletDisplay.getId())) {
+			jsonObject.put(
+				"uploadUrl",
+				PortletURLBuilder.create(
+					requestBackedPortletURLFactory.createActionURL(
+						portletDisplay.getId())
+				).setActionName(
+					"/blogs/upload_temp_image"
+				).buildString());
+		}
 	}
 
 	private String _getAllowedContentLists() {
@@ -94,8 +111,8 @@ public class BlogsContentEditorConfigContributor
 	}
 
 	private String _getAllowedContentText() {
-		return "b blockquote code em h1 h2 h3 h4 h5 h6 hr i pre s strike " +
-			"strong u;";
+		return "b blockquote cite code em h1 h2 h3 h4 h5 h6 hr i pre s " +
+			"strike strong u;";
 	}
 
 	private void _populateFileBrowserURL(

@@ -16,12 +16,10 @@ package com.liferay.saml.opensaml.integration.internal;
 
 import com.liferay.petra.lang.ClassLoaderPool;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.bean.BeanLocator;
-import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
-import com.liferay.portal.kernel.bean.PortletBeanLocatorUtil;
 import com.liferay.portal.kernel.configuration.Configuration;
 import com.liferay.portal.kernel.configuration.ConfigurationFactory;
 import com.liferay.portal.kernel.configuration.ConfigurationFactoryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.portlet.PortletClassLoaderUtil;
@@ -32,21 +30,20 @@ import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.saml.constants.SamlProviderConfigurationKeys;
-import com.liferay.saml.opensaml.integration.SamlBinding;
 import com.liferay.saml.opensaml.integration.internal.binding.HttpPostBinding;
 import com.liferay.saml.opensaml.integration.internal.binding.HttpRedirectBinding;
 import com.liferay.saml.opensaml.integration.internal.binding.HttpSoap11Binding;
+import com.liferay.saml.opensaml.integration.internal.binding.SamlBinding;
 import com.liferay.saml.opensaml.integration.internal.bootstrap.OpenSamlBootstrap;
 import com.liferay.saml.opensaml.integration.internal.credential.FileSystemKeyStoreManagerImpl;
 import com.liferay.saml.opensaml.integration.internal.credential.KeyStoreCredentialResolver;
@@ -55,6 +52,10 @@ import com.liferay.saml.opensaml.integration.internal.metadata.MetadataGenerator
 import com.liferay.saml.opensaml.integration.internal.metadata.MetadataManagerImpl;
 import com.liferay.saml.opensaml.integration.internal.servlet.profile.IdentifierGenerationStrategyFactory;
 import com.liferay.saml.opensaml.integration.internal.velocity.VelocityEngineFactory;
+import com.liferay.saml.persistence.model.SamlPeerBinding;
+import com.liferay.saml.persistence.model.impl.SamlPeerBindingImpl;
+import com.liferay.saml.persistence.service.SamlPeerBindingLocalService;
+import com.liferay.saml.persistence.service.SamlPeerBindingLocalServiceUtil;
 import com.liferay.saml.runtime.configuration.SamlProviderConfiguration;
 import com.liferay.saml.runtime.configuration.SamlProviderConfigurationHelper;
 import com.liferay.saml.runtime.metadata.LocalEntityManager;
@@ -62,14 +63,14 @@ import com.liferay.saml.util.PortletPropsKeys;
 
 import java.io.UnsupportedEncodingException;
 
-import java.lang.reflect.Field;
-
 import java.net.URLDecoder;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -126,6 +127,8 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 		setupMetadata();
 
 		setupSamlBindings();
+
+		setupSamlPeerBindingsLocalService();
 	}
 
 	@After
@@ -133,22 +136,11 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 		identifiers.clear();
 
 		for (Class<?> serviceUtilClass : serviceUtilClasses) {
-			clearService(serviceUtilClass);
+			ReflectionTestUtil.setFieldValue(
+				serviceUtilClass, "_service", null);
 		}
 
 		ClassLoaderPool.unregister("saml-portlet");
-	}
-
-	protected void clearService(Class<?> serviceUtilClass) {
-		try {
-			Field field = serviceUtilClass.getDeclaredField("_service");
-
-			field.setAccessible(true);
-
-			field.set(serviceUtilClass, null);
-		}
-		catch (Exception exception) {
-		}
 	}
 
 	protected Credential getCredential(String entityId) throws Exception {
@@ -277,34 +269,26 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 	protected <T> T getMockPortalService(
 		Class<?> serviceUtilClass, Class<T> serviceClass) {
 
-		return getMockService(
-			serviceUtilClass, serviceClass, portalBeanLocator);
+		return getMockService(serviceUtilClass, serviceClass);
 	}
 
 	protected <T> T getMockPortletService(
 		Class<?> serviceUtilClass, Class<T> serviceClass) {
 
-		return getMockService(
-			serviceUtilClass, serviceClass, portletBeanLocator);
+		return getMockService(serviceUtilClass, serviceClass);
 	}
 
 	protected <T> T getMockService(
-		Class<?> serviceUtilClass, Class<T> serviceClass,
-		BeanLocator beanLocator) {
-
-		clearService(serviceUtilClass);
+		Class<?> serviceUtilClass, Class<T> serviceClass) {
 
 		serviceUtilClasses.add(serviceUtilClass);
 
-		T service = mock(serviceClass);
+		T serviceMock = mock(serviceClass);
 
-		when(
-			beanLocator.locate(serviceClass.getName())
-		).thenReturn(
-			service
-		);
+		ReflectionTestUtil.setFieldValue(
+			serviceUtilClass, "_service", serviceMock);
 
-		return service;
+		return serviceMock;
 	}
 
 	protected void prepareIdentityProvider(String entityId) {
@@ -325,6 +309,26 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 		).thenReturn(
 			true
 		);
+	}
+
+	protected long prepareSamlPeerBinding(
+		String peerEntityId, String samlNameIdFormat,
+		String samlNameIdNameQualifier, String samlNameIdValue) {
+
+		SamlPeerBinding samlPeerBinding = new SamlPeerBindingImpl();
+
+		samlPeerBinding.setSamlPeerBindingId(_samlPeerBindings.size() + 1);
+		samlPeerBinding.setCompanyId(COMPANY_ID);
+		samlPeerBinding.setDeleted(false);
+		samlPeerBinding.setSamlNameIdFormat(samlNameIdFormat);
+		samlPeerBinding.setSamlNameIdNameQualifier(samlNameIdNameQualifier);
+		samlPeerBinding.setSamlNameIdValue(samlNameIdValue);
+		samlPeerBinding.setSamlPeerEntityId(peerEntityId);
+
+		_samlPeerBindings.put(
+			samlPeerBinding.getSamlPeerBindingId(), samlPeerBinding);
+
+		return samlPeerBinding.getSamlPeerBindingId();
 	}
 
 	protected void prepareServiceProvider(String entityId) {
@@ -579,15 +583,6 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 				new String[] {"8080", "8443"})
 		);
 
-		portalBeanLocator = mock(BeanLocator.class);
-
-		PortalBeanLocatorUtil.setBeanLocator(portalBeanLocator);
-
-		portletBeanLocator = mock(BeanLocator.class);
-
-		PortletBeanLocatorUtil.setBeanLocator(
-			"saml-portlet", portletBeanLocator);
-
 		groupLocalService = getMockPortalService(
 			GroupLocalServiceUtil.class, GroupLocalService.class);
 
@@ -615,15 +610,12 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 	}
 
 	protected void setupProps() {
-		props = mock(Props.class);
-
-		PropsUtil.setProps(props);
-
-		when(
-			props.get(PropsKeys.LIFERAY_HOME)
-		).thenReturn(
-			System.getProperty("java.io.tmpdir")
-		);
+		PropsTestUtil.setProps(
+			HashMapBuilder.<String, Object>put(
+				PropsKeys.LIFERAY_HOME, System.getProperty("java.io.tmpdir")
+			).put(
+				"configuration.override.", new Properties()
+			).build());
 	}
 
 	protected void setupSamlBindings() {
@@ -640,6 +632,18 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 		samlBindings.add(new HttpPostBinding(parserPool, velocityEngine));
 		samlBindings.add(new HttpRedirectBinding(parserPool));
 		samlBindings.add(new HttpSoap11Binding(parserPool, httpClient));
+	}
+
+	protected void setupSamlPeerBindingsLocalService() throws PortalException {
+		samlPeerBindingLocalService = getMockPortletService(
+			SamlPeerBindingLocalServiceUtil.class,
+			SamlPeerBindingLocalService.class);
+
+		when(
+			samlPeerBindingLocalService.getSamlPeerBinding(Mockito.anyLong())
+		).thenAnswer(
+			answer -> _samlPeerBindings.get((long)answer.getArguments()[0])
+		);
 	}
 
 	protected static final String ACS_URL =
@@ -686,11 +690,9 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 	protected MetadataManagerImpl metadataManagerImpl;
 	protected ParserPool parserPool;
 	protected Portal portal;
-	protected BeanLocator portalBeanLocator;
-	protected BeanLocator portletBeanLocator;
-	protected Props props;
 	protected List<SamlBinding> samlBindings;
 	protected IdentifierGenerationStrategy samlIdentifierGenerator;
+	protected SamlPeerBindingLocalService samlPeerBindingLocalService;
 	protected SamlProviderConfiguration samlProviderConfiguration;
 	protected SamlProviderConfigurationHelper samlProviderConfigurationHelper;
 	protected List<Class<?>> serviceUtilClasses = new ArrayList<>();
@@ -788,5 +790,8 @@ public abstract class BaseSamlTestCase extends PowerMockito {
 		private boolean _idpNeedsSignature = true;
 
 	}
+
+	private final Map<Long, SamlPeerBinding> _samlPeerBindings =
+		new HashMap<>();
 
 }

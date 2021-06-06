@@ -18,12 +18,15 @@ import com.liferay.asset.categories.configuration.AssetCategoriesCompanyConfigur
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetCategoryConstants;
 import com.liferay.asset.kernel.model.AssetVocabulary;
+import com.liferay.asset.kernel.model.AssetVocabularyConstants;
 import com.liferay.asset.kernel.service.AssetCategoryServiceUtil;
 import com.liferay.asset.kernel.service.AssetVocabularyServiceUtil;
 import com.liferay.asset.taglib.internal.servlet.ServletContextUtil;
 import com.liferay.asset.taglib.internal.util.AssetCategoryUtil;
 import com.liferay.asset.taglib.internal.util.AssetVocabularyUtil;
+import com.liferay.depot.util.SiteConnectedGroupGroupProviderUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
@@ -38,6 +41,7 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portlet.asset.util.comparator.AssetVocabularyGroupLocalizedTitleComparator;
 import com.liferay.taglib.aui.AUIUtil;
 import com.liferay.taglib.util.IncludeTag;
 
@@ -80,6 +84,10 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 
 	public String getId() {
 		return _id;
+	}
+
+	public int[] getVisibilityTypes() {
+		return _visibilityTypes;
 	}
 
 	public boolean isIgnoreRequestValue() {
@@ -134,7 +142,7 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 	public void setPageContext(PageContext pageContext) {
 		super.setPageContext(pageContext);
 
-		servletContext = ServletContextUtil.getServletContext();
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
 	public void setShowOnlyRequiredVocabularies(
@@ -149,6 +157,10 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 
 	public void setSingleSelect(boolean singleSelect) {
 		_singleSelect = singleSelect;
+	}
+
+	public void setVisibilityTypes(int[] visibilityTypes) {
+		_visibilityTypes = visibilityTypes;
 	}
 
 	@Override
@@ -167,11 +179,15 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 		_showOnlyRequiredVocabularies = false;
 		_showRequiredLabel = true;
 		_singleSelect = false;
+		_visibilityTypes = _VISIBILITY_TYPES;
 	}
 
 	protected List<String[]> getCategoryIdsTitles() {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		List<String[]> categoryIdsTitles = new ArrayList<>();
 
@@ -183,7 +199,8 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 
 		if (Validator.isNull(_className)) {
 			if (!_ignoreRequestValue) {
-				String categoryIdsParam = request.getParameter(_hiddenInput);
+				String categoryIdsParam = httpServletRequest.getParameter(
+					_hiddenInput);
 
 				if (categoryIdsParam != null) {
 					categoryIds = categoryIdsParam;
@@ -214,12 +231,14 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 				}
 
 				if (!_ignoreRequestValue) {
-					String categoryIdsParam = request.getParameter(
-						_hiddenInput + StringPool.UNDERLINE +
-							vocabulary.getVocabularyId());
+					String[] categoryIdsParam =
+						httpServletRequest.getParameterValues(
+							_hiddenInput + StringPool.UNDERLINE +
+								vocabulary.getVocabularyId());
 
-					if (Validator.isNotNull(categoryIdsParam)) {
-						categoryIds = categoryIdsParam;
+					if (categoryIdsParam != null) {
+						categoryIds = StringUtil.merge(
+							categoryIdsParam, StringPool.COMMA);
 					}
 				}
 
@@ -232,6 +251,9 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return categoryIdsTitles;
@@ -245,18 +267,26 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 	}
 
 	protected long[] getGroupIds() {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		try {
 			if (ArrayUtil.isEmpty(_groupIds)) {
-				return PortalUtil.getCurrentAndAncestorSiteGroupIds(
-					themeDisplay.getScopeGroupId());
+				return SiteConnectedGroupGroupProviderUtil.
+					getCurrentAndAncestorSiteAndDepotGroupIds(
+						themeDisplay.getScopeGroupId());
 			}
 
-			return PortalUtil.getCurrentAndAncestorSiteGroupIds(_groupIds);
+			return SiteConnectedGroupGroupProviderUtil.
+				getCurrentAndAncestorSiteAndDepotGroupIds(_groupIds);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return new long[0];
@@ -269,8 +299,10 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 
 	protected PortletURL getPortletURL() {
 		try {
+			HttpServletRequest httpServletRequest = getRequest();
+
 			PortletURL portletURL = PortletProviderUtil.getPortletURL(
-				request, AssetCategory.class.getName(),
+				httpServletRequest, AssetCategory.class.getName(),
 				PortletProvider.Action.BROWSE);
 
 			if (portletURL == null) {
@@ -288,14 +320,20 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 			return portletURL;
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
 	}
 
 	protected List<Map<String, Object>> getVocabularies() throws Exception {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		List<Map<String, Object>> vocabulariesList = new ArrayList<>();
 
@@ -306,7 +344,19 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 		for (int i = 0; i < vocabularies.size(); i++) {
 			AssetVocabulary vocabulary = vocabularies.get(i);
 
-			String selectedCategoryIds = categoryIdsTitles.get(i)[0];
+			if (!ArrayUtil.contains(
+					getVisibilityTypes(), vocabulary.getVisibilityType())) {
+
+				continue;
+			}
+
+			int index = i;
+
+			if (Validator.isNull(_className)) {
+				index = 0;
+			}
+
+			String selectedCategoryIds = categoryIdsTitles.get(index)[0];
 
 			Map<String, Object> vocabularyMap =
 				HashMapBuilder.<String, Object>put(
@@ -323,6 +373,8 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 					vocabulary.getUnambiguousTitle(
 						vocabularies, themeDisplay.getScopeGroupId(),
 						themeDisplay.getLocale())
+				).put(
+					"visibilityType", vocabulary.getVisibilityType()
 				).build();
 
 			if (Validator.isNotNull(selectedCategoryIds)) {
@@ -330,7 +382,8 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 
 				String[] categoryIds = selectedCategoryIds.split(",");
 
-				String selectedCategoryIdTitles = categoryIdsTitles.get(i)[1];
+				String selectedCategoryIdTitles =
+					categoryIdsTitles.get(index)[1];
 
 				String[] categoryTitles = selectedCategoryIdTitles.split(
 					AssetCategoryUtil.CATEGORY_SEPARATOR);
@@ -376,14 +429,15 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 								WebKeys.THEME_DISPLAY);
 
 						AssetCategoriesCompanyConfiguration
-							accountEntryEmailDomainsConfiguration =
+							assetCategoriesCompanyConfiguration =
 								ConfigurationProviderUtil.
 									getCompanyConfiguration(
 										AssetCategoriesCompanyConfiguration.
 											class,
 										themeDisplay.getCompanyId());
 
-						return accountEntryEmailDomainsConfiguration.linkURL();
+						return assetCategoriesCompanyConfiguration.
+							linkToDocumentationURL();
 					}
 				).put(
 					"portletURL", getPortletURL().toString()
@@ -402,7 +456,7 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 		}
 
 		String randomKey = PortalUtil.generateRandomKey(
-			request, "taglib_ui_asset_categories_selector_page");
+			getRequest(), "taglib_ui_asset_categories_selector_page");
 
 		return randomKey + StringPool.UNDERLINE;
 	}
@@ -416,13 +470,17 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 			return _namespace;
 		}
 
-		PortletRequest portletRequest = (PortletRequest)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_REQUEST);
-		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_RESPONSE);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		PortletRequest portletRequest =
+			(PortletRequest)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_REQUEST);
+		PortletResponse portletResponse =
+			(PortletResponse)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 		if ((portletRequest == null) || (portletResponse == null)) {
-			_namespace = AUIUtil.getNamespace(request);
+			_namespace = AUIUtil.getNamespace(httpServletRequest);
 
 			return _namespace;
 		}
@@ -433,8 +491,21 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 	}
 
 	private List<AssetVocabulary> _getVocabularies() {
-		List<AssetVocabulary> vocabularies =
-			AssetVocabularyServiceUtil.getGroupVocabularies(getGroupIds());
+		List<AssetVocabulary> vocabularies = new ArrayList<>();
+
+		vocabularies.addAll(
+			AssetVocabularyServiceUtil.getGroupVocabularies(getGroupIds()));
+
+		HttpServletRequest httpServletRequest = getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		vocabularies.sort(
+			new AssetVocabularyGroupLocalizedTitleComparator(
+				themeDisplay.getScopeGroupId(), themeDisplay.getLocale(),
+				true));
 
 		if (Validator.isNotNull(_className)) {
 			vocabularies = AssetVocabularyUtil.filterVocabularies(
@@ -457,6 +528,10 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 
 	private static final String _PAGE = "/asset_categories_selector/page.jsp";
 
+	private static final int[] _VISIBILITY_TYPES = {
+		AssetVocabularyConstants.VISIBILITY_TYPE_PUBLIC
+	};
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		AssetCategoriesSelectorTag.class);
 
@@ -472,5 +547,6 @@ public class AssetCategoriesSelectorTag extends IncludeTag {
 	private boolean _showOnlyRequiredVocabularies;
 	private boolean _showRequiredLabel = true;
 	private boolean _singleSelect;
+	private int[] _visibilityTypes = _VISIBILITY_TYPES;
 
 }

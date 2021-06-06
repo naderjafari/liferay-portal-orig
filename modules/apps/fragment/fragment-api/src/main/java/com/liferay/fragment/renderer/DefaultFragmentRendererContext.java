@@ -72,10 +72,16 @@ public class DefaultFragmentRendererContext implements FragmentRendererContext {
 	}
 
 	@Override
+	public String getPreviewVersion() {
+		return _previewVersion;
+	}
+
+	@Override
 	public long[] getSegmentsExperienceIds() {
 		return _segmentsExperienceIds;
 	}
 
+	@Override
 	public boolean isUseCachedContent() {
 		return _useCachedContent;
 	}
@@ -108,6 +114,10 @@ public class DefaultFragmentRendererContext implements FragmentRendererContext {
 		_previewType = previewType;
 	}
 
+	public void setPreviewVersion(String previewVersion) {
+		_previewVersion = previewVersion;
+	}
+
 	public void setSegmentsExperienceIds(long[] segmentsExperienceIds) {
 		_segmentsExperienceIds = segmentsExperienceIds;
 	}
@@ -124,6 +134,7 @@ public class DefaultFragmentRendererContext implements FragmentRendererContext {
 	private long _previewClassNameId;
 	private long _previewClassPK;
 	private int _previewType;
+	private String _previewVersion;
 	private long[] _segmentsExperienceIds = new long[0];
 	private boolean _useCachedContent = true;
 

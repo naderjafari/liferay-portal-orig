@@ -108,7 +108,9 @@ public abstract class BaseStatusResourceTestCase {
 
 		StatusResource.Builder builder = StatusResource.builder();
 
-		statusResource = builder.locale(
+		statusResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -251,7 +253,7 @@ public abstract class BaseStatusResourceTestCase {
 		}
 	}
 
-	protected void assertValid(Status status) {
+	protected void assertValid(Status status) throws Exception {
 		boolean valid = true;
 
 		for (String additionalAssertFieldName :
@@ -372,7 +374,7 @@ public abstract class BaseStatusResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.segments.asah.rest.dto.v1_0.Status.class)) {
 
 			if (!ArrayUtil.contains(
@@ -406,7 +408,7 @@ public abstract class BaseStatusResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -476,9 +478,11 @@ public abstract class BaseStatusResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
 	}
 
 	protected boolean equals(Experiment experiment1, Experiment experiment2) {
@@ -579,6 +583,17 @@ public abstract class BaseStatusResourceTestCase {
 		}
 
 		return true;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -767,12 +782,12 @@ public abstract class BaseStatusResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -782,10 +797,10 @@ public abstract class BaseStatusResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

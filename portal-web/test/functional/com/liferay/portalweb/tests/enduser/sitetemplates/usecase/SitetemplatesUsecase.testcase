@@ -5,6 +5,7 @@ definition {
 	property portal.upstream = "true";
 	property testray.component.names = "Site Templates";
 	property testray.main.component.name = "Site Templates";
+
 	var siteTemplateName = "Site Template Name";
 
 	setUp {
@@ -145,10 +146,13 @@ definition {
 			portlet = "Site Templates");
 
 		SiteTemplates.deletePage(
+			hasChildren = "true",
 			pageName = "Site Page Name",
 			siteTemplateName = "Site Template Name");
 
 		Navigator.openSiteURL(siteName = "Site Name");
+
+		Refresh();
 
 		Page.viewNoPG(pageName = "Site Page Name");
 
@@ -213,7 +217,7 @@ definition {
 			portlet = "Site Templates");
 
 		LAR.importPortlet(
-			failureExpected = "true",
+			importSchemaVersionMismatching = "true",
 			larFileName = "class-site-template-7.0.lar",
 			uploadFrom = "dependencies");
 	}
@@ -236,7 +240,7 @@ definition {
 
 		Portlet.addPG(
 			defaultURL = "false",
-			portletName = "Hello World");
+			portletName = "IFrame");
 
 		SiteTemplates.addSitePageViaSiteTemplateCP(
 			pageName = "Page2 Name",
@@ -255,7 +259,7 @@ definition {
 			pageName = "Page1 Name",
 			siteName = "Site Name");
 
-		PermissionsInline.gotoConfigurationPG(portletName = "Hello World");
+		PermissionsInline.gotoConfigurationPG(portletName = "IFrame");
 
 		Role.removePermissionPG(
 			permissionDefinitionKey = "CONTENT_PERMISSIONS_VIEW_CHECKBOX",
@@ -278,13 +282,13 @@ definition {
 
 		Portlet.addPG(
 			defaultURL = "false",
-			portletName = "Hello World");
+			portletName = "IFrame");
 
 		Navigator.gotoSitePage(
 			pageName = "Page1 Name",
 			siteName = "Site Name");
 
-		PermissionsInline.gotoConfigurationPG(portletName = "Hello World");
+		PermissionsInline.gotoConfigurationPG(portletName = "IFrame");
 
 		Role.viewPermissionPG(
 			permissionDefinitionKey = "CONTENT_PERMISSIONS_VIEW_CHECKBOX",
@@ -294,6 +298,8 @@ definition {
 
 	@priority = "3"
 	test SiteAdminCannotDeletePagesThatWereCreatedBySiteTemplates {
+		SiteTemplates.addCP(siteTemplateName = "Site Template Name");
+
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
@@ -301,7 +307,7 @@ definition {
 
 		UserGroup.addCP(
 			selectSiteTemplate = "true",
-			siteTemplateName = "Community Site",
+			siteTemplateName = "Site Template Name",
 			userGroupName = "UG UserGroup Name");
 
 		ApplicationsMenu.gotoPortlet(
@@ -311,17 +317,13 @@ definition {
 
 		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Manage Pages");
 
-		for (var page : list "Home,Wiki") {
-			ProductMenu.gotoPortlet(
-				category = "Site Builder",
-				portlet = "Pages");
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-			Page.viewNoDeletePagesAssociatedWithSiteTemplate(
-				page = "${page}",
-				pageName = "Public Pages");
-
-			Refresh();
-		}
+		Page.viewNoDeletePagesAssociatedWithSiteTemplate(
+			page = "Home",
+			pageName = "Public Pages");
 	}
 
 	@priority = "4"
@@ -329,15 +331,6 @@ definition {
 		property portal.acceptance = "true";
 
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
-
-		ApplicationsMenu.gotoPortlet(
-			category = "Sites",
-			panel = "Control Panel",
-			portlet = "Sites");
-
-		LexiconEntry.gotoHeaderMenuItem(menuItem = "Manage Sites Templates");
-
-		SiteTemplates.viewDefaultCP(siteTemplateNameList = "Intranet Site,Community Site");
 
 		SiteTemplates.addCP(siteTemplateName = "Site Template Name");
 
@@ -432,6 +425,8 @@ definition {
 
 		Portlet.addPG(portletName = "Documents and Media");
 
+		SiteTemplates.enableActionsOnDMInSiteTemplate();
+
 		SiteTemplatesNavigator.gotoSiteTemplatesPage(
 			pageName = "Test Page Name",
 			siteName = "${siteName}",
@@ -441,13 +436,6 @@ definition {
 			dmDocumentDescription = "DM Document Description",
 			dmDocumentFile = "Document_1.png",
 			dmDocumentTitle = "Document_1.png");
-
-		if (IsElementNotPresent(locator1 = "Portlet#PORTLET_CONTENT")) {
-			SiteTemplatesNavigator.gotoSiteTemplatesPage(
-				pageName = "Test Page Name",
-				siteName = "${siteName}",
-				siteTemplateName = "Site Template Name");
-		}
 
 		JSONUser.addUser(
 			userEmailAddress = "userea@liferay.com",
@@ -518,6 +506,7 @@ definition {
 			siteTemplateName = "Template Site");
 
 		var page2URL = Navigator.getCurrentURL();
+		var entryExternalURL = StringUtil.replace("${page2URL}", "http://", "");
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
@@ -525,15 +514,16 @@ definition {
 
 		WebContentNavigator.gotoAddCP();
 
-		WebContent.addCP(
-			webContentContent = "${page2URL}",
-			webContentTitle = "Web Content Title");
+		PortletEntry.inputTitle(title = "Web Content Title");
 
-		AlloyEditor.addEntryExternalURL(entryExternalURL = "${page2URL}");
+		CKEditor.addEntryExternalURL(
+			displayText = "${page2URL}",
+			entryExternalURL = "${entryExternalURL}",
+			fieldLabel = "content");
 
 		PortletEntry.publish();
 
-		Close.closeAndSelectWindow(locator1 = "Site Templates - Control Panel - ${siteName}");
+		Close.closeAndSelectWindow(locator1 = "Site Templates - ${siteName}");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Sites",
@@ -707,8 +697,6 @@ definition {
 		SiteTemplatesNavigator.openSiteTemplatesAdmin();
 
 		LAR.importPortlet(larFileName = "site-template-name.lar");
-
-		Refresh();
 
 		SiteTemplates.viewCP(siteTemplateName = "Site Template Name");
 

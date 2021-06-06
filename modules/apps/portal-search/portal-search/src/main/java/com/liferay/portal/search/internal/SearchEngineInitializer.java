@@ -17,7 +17,7 @@ package com.liferay.portal.search.internal;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
 import com.liferay.petra.executor.PortalExecutorManager;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskThreadLocal;
 import com.liferay.portal.kernel.log.Log;
@@ -27,8 +27,6 @@ import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.SearchEngineHelperUtil;
 import com.liferay.portal.kernel.util.Time;
-import com.liferay.portal.search.ccr.CrossClusterReplicationHelper;
-import com.liferay.portal.search.index.IndexNameBuilder;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.ArrayList;
@@ -50,14 +48,10 @@ public class SearchEngineInitializer implements Runnable {
 
 	public SearchEngineInitializer(
 		BundleContext bundleContext, long companyId,
-		CrossClusterReplicationHelper crossClusterReplicationHelper,
-		IndexNameBuilder indexNameBuilder,
 		PortalExecutorManager portalExecutorManager) {
 
 		_bundleContext = bundleContext;
 		_companyId = companyId;
-		_crossClusterReplicationHelper = crossClusterReplicationHelper;
-		_indexNameBuilder = indexNameBuilder;
 		_portalExecutorManager = portalExecutorManager;
 	}
 
@@ -91,7 +85,7 @@ public class SearchEngineInitializer implements Runnable {
 		}
 
 		if (_log.isInfoEnabled()) {
-			_log.info("Reindexing Lucene started");
+			_log.info("Reindexing started");
 		}
 
 		if (delay < 0) {
@@ -104,6 +98,9 @@ public class SearchEngineInitializer implements Runnable {
 			}
 		}
 		catch (InterruptedException interruptedException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(interruptedException, interruptedException);
+			}
 		}
 
 		ExecutorService executorService =
@@ -115,19 +112,9 @@ public class SearchEngineInitializer implements Runnable {
 		stopWatch.start();
 
 		try {
-			if (_crossClusterReplicationHelper != null) {
-				_crossClusterReplicationHelper.unfollow(
-					_indexNameBuilder.getIndexName(_companyId));
-			}
-
 			SearchEngineHelperUtil.removeCompany(_companyId);
 
 			SearchEngineHelperUtil.initialize(_companyId);
-
-			if (_crossClusterReplicationHelper != null) {
-				_crossClusterReplicationHelper.follow(
-					_indexNameBuilder.getIndexName(_companyId));
-			}
 
 			long backgroundTaskId =
 				BackgroundTaskThreadLocal.getBackgroundTaskId();
@@ -150,9 +137,9 @@ public class SearchEngineInitializer implements Runnable {
 
 						@Override
 						public Void call() throws Exception {
-							try (SafeClosable safeClosable =
+							try (SafeCloseable safeCloseable =
 									BackgroundTaskThreadLocal.
-										setBackgroundTaskIdWithSafeClosable(
+										setBackgroundTaskIdWithSafeCloseable(
 											backgroundTaskId)) {
 
 								reindex(indexer);
@@ -176,7 +163,7 @@ public class SearchEngineInitializer implements Runnable {
 
 			if (_log.isInfoEnabled()) {
 				_log.info(
-					"Reindexing Lucene completed in " +
+					"Reindexing completed in " +
 						(stopWatch.getTime() / Time.SECOND) + " seconds");
 			}
 		}
@@ -184,7 +171,7 @@ public class SearchEngineInitializer implements Runnable {
 			_log.error("Error encountered while reindexing", exception);
 
 			if (_log.isInfoEnabled()) {
-				_log.info("Reindexing Lucene failed");
+				_log.info("Reindexing failed");
 			}
 		}
 
@@ -220,10 +207,8 @@ public class SearchEngineInitializer implements Runnable {
 
 	private final BundleContext _bundleContext;
 	private final long _companyId;
-	private final CrossClusterReplicationHelper _crossClusterReplicationHelper;
 	private boolean _finished;
 	private ServiceTrackerList<Indexer<?>, Indexer<?>> _indexers;
-	private final IndexNameBuilder _indexNameBuilder;
 	private final PortalExecutorManager _portalExecutorManager;
 	private final Set<String> _usedSearchEngineIds = new HashSet<>();
 

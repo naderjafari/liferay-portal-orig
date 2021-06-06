@@ -108,7 +108,9 @@ public abstract class BaseTaxonomyVocabularyResourceTestCase {
 		TaxonomyVocabularyResource.Builder builder =
 			TaxonomyVocabularyResource.builder();
 
-		taxonomyVocabularyResource = builder.locale(
+		taxonomyVocabularyResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -256,7 +258,9 @@ public abstract class BaseTaxonomyVocabularyResourceTestCase {
 		}
 	}
 
-	protected void assertValid(TaxonomyVocabulary taxonomyVocabulary) {
+	protected void assertValid(TaxonomyVocabulary taxonomyVocabulary)
+		throws Exception {
+
 		boolean valid = true;
 
 		for (String additionalAssertFieldName :
@@ -340,7 +344,7 @@ public abstract class BaseTaxonomyVocabularyResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.bulk.rest.dto.v1_0.TaxonomyVocabulary.class)) {
 
 			if (!ArrayUtil.contains(
@@ -374,7 +378,7 @@ public abstract class BaseTaxonomyVocabularyResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -485,9 +489,22 @@ public abstract class BaseTaxonomyVocabularyResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -680,12 +697,12 @@ public abstract class BaseTaxonomyVocabularyResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -695,10 +712,10 @@ public abstract class BaseTaxonomyVocabularyResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

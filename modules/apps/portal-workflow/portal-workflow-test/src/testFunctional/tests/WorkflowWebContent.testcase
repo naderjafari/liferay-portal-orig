@@ -4,6 +4,7 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Workflow";
+
 	var workflowAssetType = "Web Content Article";
 
 	setUp {
@@ -65,18 +66,13 @@ definition {
 
 	@priority = "5"
 	test EditWebContentInReviewProcess {
-		property portal.acceptance = "true";
-
-		property testray.component.names = "Training";
-
 		Navigator.gotoNavItem(navItem = "Structures");
 
 		WebContentStructures.addCP(
 			structureDescription = "WC Structure Description",
 			structureName = "WC Structure Name");
 
-		DynamicDataMapping.addField(
-			field = "Image",
+		DataEngine.addField(
 			fieldFieldLabel = "Image",
 			fieldName = "Image");
 
@@ -153,10 +149,7 @@ definition {
 
 		WebContent.viewApprovedStatus(webContentTitle = "WC WebContent Title Edit");
 
-		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title Edit");
-
-		WebContent.viewCPWithoutContentField(
-			field = "Image",
+		WebContent.viewWithStructureCP(
 			webContentImage = "Document_2.jpeg",
 			webContentTitle = "WC WebContent Title Edit");
 

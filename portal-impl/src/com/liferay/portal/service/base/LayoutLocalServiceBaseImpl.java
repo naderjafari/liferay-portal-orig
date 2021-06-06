@@ -55,6 +55,7 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
@@ -68,6 +69,7 @@ import com.liferay.portal.kernel.service.persistence.LayoutPrototypePersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutSetPersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutSetPrototypePersistence;
 import com.liferay.portal.kernel.service.persistence.PluginSettingPersistence;
+import com.liferay.portal.kernel.service.persistence.PortalPreferenceValuePersistence;
 import com.liferay.portal.kernel.service.persistence.PortalPreferencesPersistence;
 import com.liferay.portal.kernel.service.persistence.PortletPreferencesFinder;
 import com.liferay.portal.kernel.service.persistence.PortletPreferencesPersistence;
@@ -86,6 +88,8 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.ratings.kernel.service.persistence.RatingsStatsPersistence;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -109,7 +113,7 @@ public abstract class LayoutLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>LayoutLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.LayoutLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>LayoutLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>LayoutLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -179,6 +183,13 @@ public abstract class LayoutLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return layoutPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -494,6 +505,7 @@ public abstract class LayoutLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -510,6 +522,7 @@ public abstract class LayoutLocalServiceBaseImpl
 		return layoutLocalService.deleteLayout((Layout)persistedModel);
 	}
 
+	@Override
 	public BasePersistence<Layout> getBasePersistence() {
 		return layoutPersistence;
 	}
@@ -1269,6 +1282,53 @@ public abstract class LayoutLocalServiceBaseImpl
 	}
 
 	/**
+	 * Returns the portal preference value local service.
+	 *
+	 * @return the portal preference value local service
+	 */
+	public com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+		getPortalPreferenceValueLocalService() {
+
+		return portalPreferenceValueLocalService;
+	}
+
+	/**
+	 * Sets the portal preference value local service.
+	 *
+	 * @param portalPreferenceValueLocalService the portal preference value local service
+	 */
+	public void setPortalPreferenceValueLocalService(
+		com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+			portalPreferenceValueLocalService) {
+
+		this.portalPreferenceValueLocalService =
+			portalPreferenceValueLocalService;
+	}
+
+	/**
+	 * Returns the portal preference value persistence.
+	 *
+	 * @return the portal preference value persistence
+	 */
+	public PortalPreferenceValuePersistence
+		getPortalPreferenceValuePersistence() {
+
+		return portalPreferenceValuePersistence;
+	}
+
+	/**
+	 * Sets the portal preference value persistence.
+	 *
+	 * @param portalPreferenceValuePersistence the portal preference value persistence
+	 */
+	public void setPortalPreferenceValuePersistence(
+		PortalPreferenceValuePersistence portalPreferenceValuePersistence) {
+
+		this.portalPreferenceValuePersistence =
+			portalPreferenceValuePersistence;
+	}
+
+	/**
 	 * Returns the portal preferences local service.
 	 *
 	 * @return the portal preferences local service
@@ -1629,11 +1689,15 @@ public abstract class LayoutLocalServiceBaseImpl
 	public void afterPropertiesSet() {
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.portal.kernel.model.Layout", layoutLocalService);
+
+		_setLocalServiceUtilService(layoutLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.portal.kernel.model.Layout");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -1689,6 +1753,22 @@ public abstract class LayoutLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		LayoutLocalService layoutLocalService) {
+
+		try {
+			Field field = LayoutLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, layoutLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 
@@ -1825,6 +1905,16 @@ public abstract class LayoutLocalServiceBaseImpl
 
 	@BeanReference(type = PluginSettingPersistence.class)
 	protected PluginSettingPersistence pluginSettingPersistence;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.PortalPreferenceValueLocalService.class
+	)
+	protected
+		com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+			portalPreferenceValueLocalService;
+
+	@BeanReference(type = PortalPreferenceValuePersistence.class)
+	protected PortalPreferenceValuePersistence portalPreferenceValuePersistence;
 
 	@BeanReference(
 		type = com.liferay.portal.kernel.service.PortalPreferencesLocalService.class

@@ -20,6 +20,7 @@ import com.liferay.asset.kernel.model.AssetCategoryConstants;
 import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetCategoryServiceUtil;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -42,13 +43,15 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.asset.service.permission.AssetCategoryPermission;
+import com.liferay.portlet.asset.util.comparator.AssetVocabularyGroupLocalizedTitleComparator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -91,22 +94,24 @@ public class AssetCategoriesSelectorDisplayContext {
 			return null;
 		}
 
-		PortletURL addCategoryURL = PortletURLFactoryUtil.create(
-			_renderRequest,
-			AssetCategoriesAdminPortletKeys.ASSET_CATEGORIES_ADMIN,
-			PortletRequest.RENDER_PHASE);
-
-		addCategoryURL.setParameter("mvcPath", "/edit_category.jsp");
-		addCategoryURL.setParameter("redirect", themeDisplay.getURLCurrent());
-		addCategoryURL.setParameter(
-			"groupId", String.valueOf(assetVocabulary.getGroupId()));
-		addCategoryURL.setParameter(
-			"vocabularyId", String.valueOf(vocabularyIds[0]));
-		addCategoryURL.setParameter("itemSelectorEventName", getEventName());
-
-		addCategoryURL.setWindowState(LiferayWindowState.POP_UP);
-
-		return addCategoryURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				_renderRequest,
+				AssetCategoriesAdminPortletKeys.ASSET_CATEGORIES_ADMIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/edit_category.jsp"
+		).setRedirect(
+			themeDisplay.getURLCurrent()
+		).setParameter(
+			"groupId", assetVocabulary.getGroupId()
+		).setParameter(
+			"itemSelectorEventName", getEventName()
+		).setParameter(
+			"vocabularyId", vocabularyIds[0]
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
 	}
 
 	public JSONArray getCategoriesJSONArray() throws Exception {
@@ -138,6 +143,8 @@ public class AssetCategoriesSelectorDisplayContext {
 			"disabled", true
 		).put(
 			"expanded", true
+		).put(
+			"vocabulary", true
 		);
 
 		return JSONUtil.put(jsonObject);
@@ -148,6 +155,8 @@ public class AssetCategoriesSelectorDisplayContext {
 			"addCategoryURL", getAddCategoryURL()
 		).put(
 			"itemSelectorSaveEvent", HtmlUtil.escapeJS(getEventName())
+		).put(
+			"moveCategory", isMoveCategory()
 		).put(
 			"multiSelection", !isSingleSelect()
 		).put(
@@ -187,8 +196,41 @@ public class AssetCategoriesSelectorDisplayContext {
 			return _vocabularyIds;
 		}
 
-		_vocabularyIds = StringUtil.split(
+		long[] vocabularyIds = StringUtil.split(
 			ParamUtil.getString(_httpServletRequest, "vocabularyIds"), 0L);
+
+		List<AssetVocabulary> assetVocabularies = new ArrayList<>();
+
+		for (long vocabularyId : vocabularyIds) {
+			AssetVocabulary assetVocabulary =
+				AssetVocabularyLocalServiceUtil.fetchAssetVocabulary(
+					vocabularyId);
+
+			if (assetVocabulary != null) {
+				assetVocabularies.add(assetVocabulary);
+			}
+		}
+
+		if (assetVocabularies.isEmpty()) {
+			_vocabularyIds = new long[0];
+
+			return _vocabularyIds;
+		}
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)_renderRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		assetVocabularies.sort(
+			new AssetVocabularyGroupLocalizedTitleComparator(
+				themeDisplay.getScopeGroupId(), themeDisplay.getLocale(),
+				true));
+
+		Stream<AssetVocabulary> assetVocabulariesStream =
+			assetVocabularies.stream();
+
+		_vocabularyIds = assetVocabulariesStream.mapToLong(
+			assetVocabulary -> assetVocabulary.getVocabularyId()
+		).toArray();
 
 		return _vocabularyIds;
 	}
@@ -235,6 +277,17 @@ public class AssetCategoriesSelectorDisplayContext {
 		return _allowedSelectVocabularies;
 	}
 
+	public boolean isMoveCategory() {
+		if (_moveCategory != null) {
+			return _moveCategory;
+		}
+
+		_moveCategory = ParamUtil.getBoolean(
+			_httpServletRequest, "moveCategory");
+
+		return _moveCategory;
+	}
+
 	public boolean isSingleSelect() {
 		if (_singleSelect != null) {
 			return _singleSelect;
@@ -264,11 +317,11 @@ public class AssetCategoriesSelectorDisplayContext {
 		for (AssetCategory category : categories) {
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-			JSONArray children = _getCategoriesJSONArray(
+			JSONArray childrenJSONArray = _getCategoriesJSONArray(
 				vocabularyId, category.getCategoryId());
 
-			if (children.length() > 0) {
-				jsonObject.put("children", children);
+			if (childrenJSONArray.length() > 0) {
+				jsonObject.put("children", childrenJSONArray);
 			}
 
 			jsonObject.put(
@@ -299,21 +352,20 @@ public class AssetCategoriesSelectorDisplayContext {
 		boolean allowedSelectVocabularies = isAllowedSelectVocabularies();
 
 		for (long vocabularyId : getVocabularyIds()) {
-			JSONObject jsonObject = JSONUtil.put(
-				"children", _getCategoriesJSONArray(vocabularyId, 0)
-			).put(
-				"disabled", !allowedSelectVocabularies
-			).put(
-				"icon", "vocabulary"
-			).put(
-				"id", vocabularyId
-			).put(
-				"name", getVocabularyTitle(vocabularyId)
-			).put(
-				"vocabulary", true
-			);
-
-			jsonArray.put(jsonObject);
+			jsonArray.put(
+				JSONUtil.put(
+					"children", _getCategoriesJSONArray(vocabularyId, 0)
+				).put(
+					"disabled", !allowedSelectVocabularies
+				).put(
+					"icon", "vocabulary"
+				).put(
+					"id", vocabularyId
+				).put(
+					"name", getVocabularyTitle(vocabularyId)
+				).put(
+					"vocabulary", true
+				));
 		}
 
 		return jsonArray;
@@ -322,6 +374,7 @@ public class AssetCategoriesSelectorDisplayContext {
 	private Boolean _allowedSelectVocabularies;
 	private String _eventName;
 	private final HttpServletRequest _httpServletRequest;
+	private Boolean _moveCategory;
 	private final RenderRequest _renderRequest;
 	private final RenderResponse _renderResponse;
 	private List<String> _selectedCategoryIds;

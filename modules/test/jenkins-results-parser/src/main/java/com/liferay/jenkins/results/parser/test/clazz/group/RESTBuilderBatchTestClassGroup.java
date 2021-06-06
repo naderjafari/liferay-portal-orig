@@ -28,6 +28,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -66,13 +67,13 @@ public class RESTBuilderBatchTestClassGroup extends ModulesBatchTestClassGroup {
 			List<File> modulesProjectDirs) {
 
 			return new RESTBuilderBatchTestClass(
-				new TestClassFile(
+				new File(
 					JenkinsResultsParserUtil.getCanonicalPath(moduleBaseDir)),
 				modulesDir, modulesProjectDirs);
 		}
 
 		protected RESTBuilderBatchTestClass(
-			TestClassFile testClassFile, File modulesDir,
+			File testClassFile, File modulesDir,
 			List<File> modulesProjectDirs) {
 
 			super(testClassFile);
@@ -129,10 +130,9 @@ public class RESTBuilderBatchTestClassGroup extends ModulesBatchTestClassGroup {
 	}
 
 	protected RESTBuilderBatchTestClassGroup(
-		String batchName, BuildProfile buildProfile,
-		PortalTestClassJob portalTestClassJob) {
+		String batchName, PortalTestClassJob portalTestClassJob) {
 
-		super(batchName, buildProfile, portalTestClassJob);
+		super(batchName, portalTestClassJob);
 	}
 
 	@Override
@@ -142,7 +142,8 @@ public class RESTBuilderBatchTestClassGroup extends ModulesBatchTestClassGroup {
 		int axisCount = getAxisCount();
 
 		if ((testClassCount == 0) && (axisCount == 1)) {
-			axisTestClassGroups.put(0, new AxisTestClassGroup(this, 0));
+			axisTestClassGroups.add(
+				0, TestClassGroupFactory.newAxisTestClassGroup(this));
 
 			return;
 		}
@@ -197,6 +198,8 @@ public class RESTBuilderBatchTestClassGroup extends ModulesBatchTestClassGroup {
 						moduleDir, portalModulesBaseDir, modulesProjectDirs));
 			}
 		}
+
+		Collections.sort(testClasses);
 	}
 
 	private BuildType _buildType;

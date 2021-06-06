@@ -20,32 +20,62 @@ import com.liferay.fragment.processor.PortletRegistry;
 import com.liferay.fragment.service.FragmentEntryLinkLocalServiceUtil;
 import com.liferay.layout.content.page.editor.web.internal.util.layout.structure.LayoutStructureUtil;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalServiceUtil;
-import com.liferay.layout.util.structure.FragmentLayoutStructureItem;
+import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.comment.CommentManager;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.PortletPreferences;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
+import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
+import com.liferay.portal.kernel.service.PortletPreferenceValueLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
+import com.liferay.segments.constants.SegmentsEntryConstants;
+import com.liferay.segments.constants.SegmentsExperienceConstants;
+import com.liferay.segments.constants.SegmentsExperimentConstants;
+import com.liferay.segments.model.SegmentsExperience;
+import com.liferay.segments.model.SegmentsExperiment;
+import com.liferay.segments.service.SegmentsExperienceServiceUtil;
+import com.liferay.segments.service.SegmentsExperimentLocalServiceUtil;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Eduardo García
@@ -65,6 +95,175 @@ public class SegmentsExperienceUtil {
 			plid, commentManager, groupId, portletRegistry,
 			sourceSegmentsExperienceId, targetSegmentsExperienceId,
 			serviceContextFunction, userId);
+	}
+
+	public static Map<String, Object> getAvailableSegmentsExperiences(
+			HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		Map<String, Object> availableSegmentsExperiences = new HashMap<>();
+
+		Layout draftLayout = themeDisplay.getLayout();
+
+		Layout layout = LayoutLocalServiceUtil.getLayout(
+			draftLayout.getClassPK());
+
+		String layoutFullURL = PortalUtil.getLayoutFullURL(
+			layout, themeDisplay);
+
+		List<SegmentsExperience> segmentsExperiences =
+			SegmentsExperienceServiceUtil.getSegmentsExperiences(
+				themeDisplay.getScopeGroupId(),
+				PortalUtil.getClassNameId(Layout.class.getName()),
+				themeDisplay.getPlid(), true);
+
+		boolean addedDefault = false;
+
+		for (SegmentsExperience segmentsExperience : segmentsExperiences) {
+			UnicodeProperties typeSettingsUnicodeProperties =
+				segmentsExperience.getTypeSettingsUnicodeProperties();
+
+			if ((segmentsExperience.getPriority() <
+					SegmentsExperienceConstants.PRIORITY_DEFAULT) &&
+				!addedDefault) {
+
+				availableSegmentsExperiences.put(
+					String.valueOf(SegmentsExperienceConstants.ID_DEFAULT),
+					_getDefaultExperience(themeDisplay, layoutFullURL));
+
+				addedDefault = true;
+			}
+
+			Set<String> languageIds = SetUtil.fromArray(
+				StringUtil.split(
+					typeSettingsUnicodeProperties.getProperty(
+						PropsKeys.LOCALES, StringPool.BLANK)));
+
+			languageIds.add(
+				LocaleUtil.toLanguageId(LocaleUtil.getSiteDefault()));
+
+			availableSegmentsExperiences.put(
+				String.valueOf(segmentsExperience.getSegmentsExperienceId()),
+				HashMapBuilder.<String, Object>put(
+					"hasLockedSegmentsExperiment",
+					segmentsExperience.hasSegmentsExperiment()
+				).put(
+					"languageIds", languageIds.toArray()
+				).put(
+					"name", segmentsExperience.getName(themeDisplay.getLocale())
+				).put(
+					"priority", segmentsExperience.getPriority()
+				).put(
+					"segmentsEntryId",
+					String.valueOf(segmentsExperience.getSegmentsEntryId())
+				).put(
+					"segmentsExperienceId",
+					String.valueOf(segmentsExperience.getSegmentsExperienceId())
+				).put(
+					"segmentsExperimentStatus",
+					getSegmentsExperimentStatus(
+						themeDisplay,
+						segmentsExperience.getSegmentsExperienceId())
+				).put(
+					"segmentsExperimentURL",
+					_getSegmentsExperimentURL(
+						themeDisplay, layoutFullURL,
+						segmentsExperience.getSegmentsExperienceId())
+				).build());
+		}
+
+		if (!addedDefault) {
+			availableSegmentsExperiences.put(
+				String.valueOf(SegmentsExperienceConstants.ID_DEFAULT),
+				_getDefaultExperience(themeDisplay, layoutFullURL));
+		}
+
+		return availableSegmentsExperiences;
+	}
+
+	public static JSONObject getSegmentsExperienceJSONObject(
+		SegmentsExperience segmentsExperience) {
+
+		UnicodeProperties typeSettingsUnicodeProperties =
+			segmentsExperience.getTypeSettingsUnicodeProperties();
+
+		String[] languageIds = StringUtil.split(
+			typeSettingsUnicodeProperties.getProperty(
+				PropsKeys.LOCALES, StringPool.BLANK));
+
+		if (ArrayUtil.isEmpty(languageIds)) {
+			languageIds = LocaleUtil.toLanguageIds(
+				LanguageUtil.getAvailableLocales(
+					segmentsExperience.getGroupId()));
+		}
+
+		return JSONUtil.put(
+			"active", segmentsExperience.isActive()
+		).put(
+			"languageIds", languageIds
+		).put(
+			"name", segmentsExperience.getNameCurrentValue()
+		).put(
+			"priority", segmentsExperience.getPriority()
+		).put(
+			"segmentsEntryId", segmentsExperience.getSegmentsEntryId()
+		).put(
+			"segmentsExperienceId", segmentsExperience.getSegmentsExperienceId()
+		);
+	}
+
+	public static Map<String, Object> getSegmentsExperimentStatus(
+			ThemeDisplay themeDisplay, long segmentsExperienceId)
+		throws Exception {
+
+		Optional<SegmentsExperiment> segmentsExperimentOptional =
+			_getSegmentsExperimentOptional(themeDisplay, segmentsExperienceId);
+
+		if (!segmentsExperimentOptional.isPresent()) {
+			return null;
+		}
+
+		SegmentsExperiment segmentsExperiment =
+			segmentsExperimentOptional.get();
+
+		SegmentsExperimentConstants.Status status =
+			SegmentsExperimentConstants.Status.valueOf(
+				segmentsExperiment.getStatus());
+
+		return HashMapBuilder.<String, Object>put(
+			"label",
+			LanguageUtil.get(
+				ResourceBundleUtil.getBundle(
+					themeDisplay.getLocale(), SegmentsExperienceUtil.class),
+				status.getLabel())
+		).put(
+			"value", status.getValue()
+		).build();
+	}
+
+	public static boolean hasDefaultSegmentsExperienceLockedSegmentsExperiment(
+			ThemeDisplay themeDisplay)
+		throws Exception {
+
+		Optional<SegmentsExperiment> segmentsExperimentOptional =
+			_getSegmentsExperimentOptional(
+				themeDisplay, SegmentsExperienceConstants.ID_DEFAULT);
+
+		if (!segmentsExperimentOptional.isPresent()) {
+			return false;
+		}
+
+		SegmentsExperiment segmentsExperiment =
+			segmentsExperimentOptional.get();
+
+		List<Integer> lockedStatusValuesList = ListUtil.fromArray(
+			SegmentsExperimentConstants.Status.getLockedStatusValues());
+
+		return lockedStatusValuesList.contains(segmentsExperiment.getStatus());
 	}
 
 	private static void _copyLayoutData(
@@ -103,6 +302,36 @@ public class SegmentsExperienceUtil {
 				fragmentEntryLink.getNamespace(),
 				newFragmentEntryLink.getNamespace(), plid, portletId);
 		}
+	}
+
+	private static HashMap<String, Object> _getDefaultExperience(
+			ThemeDisplay themeDisplay, String layoutFullURL)
+		throws Exception {
+
+		return HashMapBuilder.<String, Object>put(
+			"hasLockedSegmentsExperiment",
+			hasDefaultSegmentsExperienceLockedSegmentsExperiment(themeDisplay)
+		).put(
+			"name",
+			SegmentsExperienceConstants.getDefaultSegmentsExperienceName(
+				themeDisplay.getLocale())
+		).put(
+			"priority", SegmentsExperienceConstants.PRIORITY_DEFAULT
+		).put(
+			"segmentsEntryId", String.valueOf(SegmentsEntryConstants.ID_DEFAULT)
+		).put(
+			"segmentsExperienceId",
+			String.valueOf(SegmentsExperienceConstants.ID_DEFAULT)
+		).put(
+			"segmentsExperimentStatus",
+			getSegmentsExperimentStatus(
+				themeDisplay, SegmentsExperienceConstants.ID_DEFAULT)
+		).put(
+			"segmentsExperimentURL",
+			_getSegmentsExperimentURL(
+				themeDisplay, layoutFullURL,
+				SegmentsExperienceConstants.ID_DEFAULT)
+		).build();
 	}
 
 	private static String _getNewEditableValues(
@@ -177,21 +406,54 @@ public class SegmentsExperienceUtil {
 				portletPreferences.getOwnerId(),
 				portletPreferences.getOwnerType(), plid, newPortletId);
 
+		javax.portlet.PortletPreferences jxPortletPreferences =
+			PortletPreferenceValueLocalServiceUtil.getPreferences(
+				portletPreferences);
+
 		if (existingPortletPreferences == null) {
 			return Optional.of(
 				PortletPreferencesLocalServiceUtil.addPortletPreferences(
 					portletPreferences.getCompanyId(),
 					portletPreferences.getOwnerId(),
 					portletPreferences.getOwnerType(), plid, newPortletId,
-					portlet, portletPreferences.getPreferences()));
+					portlet,
+					PortletPreferencesFactoryUtil.toXML(jxPortletPreferences)));
 		}
 
-		existingPortletPreferences.setPreferences(
-			portletPreferences.getPreferences());
-
 		return Optional.of(
-			PortletPreferencesLocalServiceUtil.updatePortletPreferences(
-				existingPortletPreferences));
+			PortletPreferencesLocalServiceUtil.updatePreferences(
+				existingPortletPreferences.getOwnerId(),
+				existingPortletPreferences.getOwnerType(),
+				existingPortletPreferences.getPlid(),
+				existingPortletPreferences.getPortletId(),
+				jxPortletPreferences));
+	}
+
+	private static Optional<SegmentsExperiment> _getSegmentsExperimentOptional(
+			ThemeDisplay themeDisplay, long segmentsExperienceId)
+		throws Exception {
+
+		Layout draftLayout = themeDisplay.getLayout();
+
+		Layout layout = LayoutLocalServiceUtil.getLayout(
+			draftLayout.getClassPK());
+
+		return Optional.ofNullable(
+			SegmentsExperimentLocalServiceUtil.fetchSegmentsExperiment(
+				segmentsExperienceId, PortalUtil.getClassNameId(Layout.class),
+				layout.getPlid(),
+				SegmentsExperimentConstants.Status.getExclusiveStatusValues()));
+	}
+
+	private static String _getSegmentsExperimentURL(
+		ThemeDisplay themeDisplay, String layoutFullURL,
+		long segmentsExperienceId) {
+
+		HttpUtil.addParameter(
+			layoutFullURL, "p_l_back_url", themeDisplay.getURLCurrent());
+
+		return HttpUtil.addParameter(
+			layoutFullURL, "segmentsExperienceId", segmentsExperienceId);
 	}
 
 	private static JSONObject _updateLayoutDataJSONObject(
@@ -217,15 +479,18 @@ public class SegmentsExperienceUtil {
 		for (LayoutStructureItem layoutStructureItem :
 				layoutStructure.getLayoutStructureItems()) {
 
-			if (!(layoutStructureItem instanceof FragmentLayoutStructureItem)) {
+			if (!(layoutStructureItem instanceof
+					FragmentStyledLayoutStructureItem)) {
+
 				continue;
 			}
 
-			FragmentLayoutStructureItem fragmentLayoutStructureItem =
-				(FragmentLayoutStructureItem)layoutStructureItem;
+			FragmentStyledLayoutStructureItem
+				fragmentStyledLayoutStructureItem =
+					(FragmentStyledLayoutStructureItem)layoutStructureItem;
 
 			FragmentEntryLink fragmentEntryLink = fragmentEntryLinkMap.get(
-				fragmentLayoutStructureItem.getFragmentEntryLinkId());
+				fragmentStyledLayoutStructureItem.getFragmentEntryLinkId());
 
 			if (fragmentEntryLink == null) {
 				continue;
@@ -239,7 +504,8 @@ public class SegmentsExperienceUtil {
 				CounterLocalServiceUtil.increment());
 			newFragmentEntryLink.setCreateDate(new Date());
 			newFragmentEntryLink.setModifiedDate(new Date());
-			newFragmentEntryLink.setOriginalFragmentEntryLinkId(0);
+			newFragmentEntryLink.setOriginalFragmentEntryLinkId(
+				fragmentEntryLink.getFragmentEntryLinkId());
 			newFragmentEntryLink.setSegmentsExperienceId(
 				targetSegmentsExperienceId);
 
@@ -258,7 +524,7 @@ public class SegmentsExperienceUtil {
 				FragmentEntryLinkLocalServiceUtil.addFragmentEntryLink(
 					newFragmentEntryLink);
 
-			fragmentLayoutStructureItem.setFragmentEntryLinkId(
+			fragmentStyledLayoutStructureItem.setFragmentEntryLinkId(
 				newFragmentEntryLink.getFragmentEntryLinkId());
 
 			commentManager.copyDiscussion(

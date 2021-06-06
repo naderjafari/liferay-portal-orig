@@ -33,7 +33,6 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.StagedModel;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
@@ -558,6 +557,9 @@ public class DLReferencesExportImportContentProcessor
 						content = StringUtil.replace(
 							content, exportedReference, originalReference);
 					}
+					else {
+						throw portalException;
+					}
 
 					continue;
 				}
@@ -658,16 +660,17 @@ public class DLReferencesExportImportContentProcessor
 
 					hostNames.add(portalURL);
 
-					List<Company> companies =
-						_companyLocalService.getCompanies();
+					_companyLocalService.forEachCompany(
+						company -> {
+							String virtualHostname =
+								company.getVirtualHostname();
 
-					for (Company company : companies) {
-						String virtualHostname = company.getVirtualHostname();
-
-						hostNames.add(Http.HTTP_WITH_SLASH + virtualHostname);
-						hostNames.add(Http.HTTPS_WITH_SLASH + virtualHostname);
-						hostNames.add(virtualHostname);
-					}
+							hostNames.add(
+								Http.HTTP_WITH_SLASH + virtualHostname);
+							hostNames.add(
+								Http.HTTPS_WITH_SLASH + virtualHostname);
+							hostNames.add(virtualHostname);
+						});
 
 					for (String hostName : hostNames) {
 						int curBeginPos = beginPos - hostName.length();
@@ -733,19 +736,21 @@ public class DLReferencesExportImportContentProcessor
 
 	private static final String[] _DL_REFERENCE_LEGACY_STOP_STRINGS = {
 		StringPool.APOSTROPHE, StringPool.APOSTROPHE_ENCODED,
-		StringPool.CLOSE_BRACKET, StringPool.CLOSE_CURLY_BRACE,
-		StringPool.CLOSE_PARENTHESIS, StringPool.GREATER_THAN,
-		StringPool.LESS_THAN, StringPool.PIPE, StringPool.QUOTE,
-		StringPool.QUOTE_ENCODED, StringPool.SPACE
+		StringPool.BACK_SLASH + StringPool.APOSTROPHE,
+		StringPool.BACK_SLASH + StringPool.QUOTE, StringPool.CLOSE_BRACKET,
+		StringPool.CLOSE_CURLY_BRACE, StringPool.CLOSE_PARENTHESIS,
+		StringPool.GREATER_THAN, StringPool.LESS_THAN, StringPool.PIPE,
+		StringPool.QUOTE, StringPool.QUOTE_ENCODED, StringPool.SPACE
 	};
 
 	private static final String[] _DL_REFERENCE_STOP_STRINGS = {
 		StringPool.APOSTROPHE, StringPool.APOSTROPHE_ENCODED,
-		StringPool.CLOSE_BRACKET, StringPool.CLOSE_CURLY_BRACE,
-		StringPool.CLOSE_PARENTHESIS, StringPool.GREATER_THAN,
-		StringPool.LESS_THAN, StringPool.NEW_LINE, StringPool.PIPE,
-		StringPool.QUESTION, StringPool.QUOTE, StringPool.QUOTE_ENCODED,
-		StringPool.SPACE
+		StringPool.BACK_SLASH + StringPool.APOSTROPHE,
+		StringPool.BACK_SLASH + StringPool.QUOTE, StringPool.CLOSE_BRACKET,
+		StringPool.CLOSE_CURLY_BRACE, StringPool.CLOSE_PARENTHESIS,
+		StringPool.GREATER_THAN, StringPool.LESS_THAN, StringPool.NEW_LINE,
+		StringPool.PIPE, StringPool.QUESTION, StringPool.QUOTE,
+		StringPool.QUOTE_ENCODED, StringPool.SPACE
 	};
 
 	private static final int _OFFSET_HREF_ATTRIBUTE = 6;

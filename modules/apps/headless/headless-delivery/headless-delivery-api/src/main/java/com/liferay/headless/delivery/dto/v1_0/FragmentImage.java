@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentImage")
+@GraphQLName(
+	description = "Represents a fragment image.", value = "FragmentImage"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentImage")
-public class FragmentImage {
+public class FragmentImage implements Serializable {
 
 	public static FragmentImage toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentImage.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The fragment image's description.")
 	@Valid
 	public Object getDescription() {
 		return description;
@@ -76,11 +80,46 @@ public class FragmentImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment image's description.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object description;
 
-	@Schema
+	@Schema(description = "A reference to a fragment image class primary key.")
+	@Valid
+	public FragmentImageClassPKReference getFragmentImageClassPKReference() {
+		return fragmentImageClassPKReference;
+	}
+
+	public void setFragmentImageClassPKReference(
+		FragmentImageClassPKReference fragmentImageClassPKReference) {
+
+		this.fragmentImageClassPKReference = fragmentImageClassPKReference;
+	}
+
+	@JsonIgnore
+	public void setFragmentImageClassPKReference(
+		UnsafeSupplier<FragmentImageClassPKReference, Exception>
+			fragmentImageClassPKReferenceUnsafeSupplier) {
+
+		try {
+			fragmentImageClassPKReference =
+				fragmentImageClassPKReferenceUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "A reference to a fragment image class primary key."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentImageClassPKReference fragmentImageClassPKReference;
+
+	@Schema(description = "The fragment image's title.")
 	@Valid
 	public Object getTitle() {
 		return title;
@@ -105,11 +144,13 @@ public class FragmentImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment image's title.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object title;
 
-	@Schema
+	@Schema(
+		description = "The fragment image's url. Can be inline or mapped to an external value."
+	)
 	@Valid
 	public Object getUrl() {
 		return url;
@@ -132,7 +173,9 @@ public class FragmentImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The fragment image's url. Can be inline or mapped to an external value."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object url;
 
@@ -173,6 +216,16 @@ public class FragmentImage {
 			sb.append(String.valueOf(description));
 		}
 
+		if (fragmentImageClassPKReference != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentImageClassPKReference\": ");
+
+			sb.append(String.valueOf(fragmentImageClassPKReference));
+		}
+
 		if (title != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -199,6 +252,7 @@ public class FragmentImage {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentImage",
 		name = "x-class-name"
 	)
@@ -234,7 +288,7 @@ public class FragmentImage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -273,7 +327,7 @@ public class FragmentImage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

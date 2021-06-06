@@ -3,20 +3,36 @@
 exports[`Field Text has a helptext 1`] = `
 <div>
   <div
+    aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
+    tabindex="0"
   >
     <input
-      aria-label="text"
+      aria-labelledby="textField_fieldDetails"
       class="form-control ddm-field-text"
+      id="textField_fieldDetails"
       name="textField"
       type="text"
       value=""
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
     <span
+      aria-hidden="true"
       class="form-text"
     >
       Type something
+    </span>
+    <span
+      class="sr-only"
+      id="textField_fieldDetails"
+    >
+      Type something
+      <br />
     </span>
   </div>
 </div>
@@ -28,18 +44,27 @@ exports[`Field Text has a label 1`] = `
     class="form-group hide"
     data-field-name="textField"
   >
-    <p
+    <label
+      aria-describedby="textField_fieldDetails"
       class="ddm-label"
+      tabindex="0"
     >
       label
-    </p>
+    </label>
     <input
-      aria-label="text"
+      aria-labelledby="textField_fieldDetails"
       class="form-control ddm-field-text"
+      id="textField_fieldDetails"
       name="textField"
       type="text"
       value=""
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;
@@ -47,17 +72,26 @@ exports[`Field Text has a label 1`] = `
 exports[`Field Text has a placeholder 1`] = `
 <div>
   <div
+    aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
+    tabindex="0"
   >
     <input
-      aria-label="text"
+      aria-labelledby="textField_fieldDetails"
       class="form-control ddm-field-text"
+      id="textField_fieldDetails"
       name="textField"
       placeholder="Placeholder"
       type="text"
       value=""
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;
@@ -65,16 +99,25 @@ exports[`Field Text has a placeholder 1`] = `
 exports[`Field Text has a value 1`] = `
 <div>
   <div
+    aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
+    tabindex="0"
   >
     <input
-      aria-label="text"
+      aria-labelledby="textField_fieldDetails"
       class="form-control ddm-field-text"
+      id="textField_fieldDetails"
       name="textField"
       type="text"
       value="value"
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;
@@ -82,17 +125,25 @@ exports[`Field Text has a value 1`] = `
 exports[`Field Text has an id 1`] = `
 <div>
   <div
+    aria-labelledby="Id_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
+    tabindex="0"
   >
     <input
-      aria-label="text"
+      aria-labelledby="Id_fieldDetails"
       class="form-control ddm-field-text"
-      id="Id"
+      id="Id_fieldDetails"
       name="textField"
       type="text"
       value=""
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;
@@ -100,16 +151,25 @@ exports[`Field Text has an id 1`] = `
 exports[`Field Text is not readOnly 1`] = `
 <div>
   <div
+    aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
+    tabindex="0"
   >
     <input
-      aria-label="text"
+      aria-labelledby="textField_fieldDetails"
       class="form-control ddm-field-text"
+      id="textField_fieldDetails"
       name="textField"
       type="text"
       value=""
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;
@@ -117,16 +177,52 @@ exports[`Field Text is not readOnly 1`] = `
 exports[`Field Text is not required 1`] = `
 <div>
   <div
+    aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
+    tabindex="0"
   >
     <input
-      aria-label="text"
+      aria-labelledby="textField_fieldDetails"
       class="form-control ddm-field-text"
+      id="textField_fieldDetails"
       name="textField"
       type="text"
       value=""
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
+  </div>
+</div>
+`;
+
+exports[`Field Text is readOnly 1`] = `
+<div>
+  <div
+    aria-labelledby="textField_fieldDetails"
+    class="form-group hide"
+    data-field-name="textField"
+    tabindex="0"
+  >
+    <input
+      aria-labelledby="textField_fieldDetails"
+      class="form-control ddm-field-text"
+      disabled=""
+      id="textField_fieldDetails"
+      name="textField"
+      type="text"
+      value=""
+    />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;
@@ -137,18 +233,27 @@ exports[`Field Text renders Label if showLabel is true 1`] = `
     class="form-group hide"
     data-field-name="textField"
   >
-    <p
+    <label
+      aria-describedby="textField_fieldDetails"
       class="ddm-label"
+      tabindex="0"
     >
       text
-    </p>
+    </label>
     <input
-      aria-label="text"
+      aria-labelledby="textField_fieldDetails"
       class="form-control ddm-field-text"
+      id="textField_fieldDetails"
       name="textField"
       type="text"
       value=""
     />
+    <input
+      name="textField_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;

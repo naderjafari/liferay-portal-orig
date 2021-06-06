@@ -1,11 +1,7 @@
 definition {
 
 	macro changeDisplayStyle {
-		var browserType = PropsUtil.get("browser.type");
-
-		if ("${browserType}" == "chrome") {
-			MetalComponent.waitForManagementBar();
-		}
+		WaitForPageLoad();
 
 		Click(locator1 = "Icon#CURRENT_DISPLAY_STYLE");
 
@@ -52,18 +48,9 @@ definition {
 	}
 
 	macro gotoAdd {
-		var browserType = PropsUtil.get("browser.type");
+		WaitForPageLoad();
 
-		if ("${browserType}" == "chrome") {
-			MetalComponent.waitForManagementBar();
-		}
-
-		if ("${browserType}" == "internetexplorer") {
-			Click(locator1 = "Button#PLUS_IE");
-		}
-		else {
-			Click(locator1 = "Button#PLUS");
-		}
+		Click(locator1 = "Button#PLUS");
 	}
 
 	macro gotoAddDropdownMenuItem {
@@ -79,24 +66,13 @@ definition {
 	}
 
 	macro gotoAddReport {
-		var browserType = PropsUtil.get("browser.type");
-
-		if ("${browserType}" == "chrome") {
-			MetalComponent.waitForReportsManagementBar();
-		}
+		WaitForPageLoad();
 
 		Click(locator1 = "Button#PLUS");
 	}
 
 	macro gotoEllipsisMenuItem {
-		var browserType = PropsUtil.get("browser.type");
-
-		if ("${browserType}" == "internetexplorer") {
-			Click.waitForMenuToggleJSClick(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS_IE");
-		}
-		else {
-			Click.waitForMenuToggleJSClick(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
-		}
+		Click.waitForMenuToggleJSClick(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
 
 		WaitForLiferayEvent.initializeLiferayEventLog();
 
@@ -112,8 +88,8 @@ definition {
 	macro gotoEntry {
 		if (IsElementPresent(locator1 = "Icon#DISPLAY_STYLE_ACTIVE", key_displayStyle = "cards")) {
 			AssertClick(
-				key_cardText = "${rowEntry}",
-				locator1 = "Card#SPECIFIC_LARGE_TEXT",
+				key_card = "${rowEntry}",
+				locator1 = "Card#CARD_TITLE_LINK",
 				value1 = "${rowEntry}");
 		}
 		else {
@@ -159,14 +135,7 @@ definition {
 	}
 
 	macro gotoHeaderMenuItem {
-		var browserType = PropsUtil.get("browser.type");
-
-		if ("${browserType}" == "internetexplorer") {
-			Click.clickNoMouseOver(locator1 = "Icon#HEADER_VERTICAL_ELLIPSIS_IE");
-		}
-		else {
-			Click(locator1 = "Icon#HEADER_VERTICAL_ELLIPSIS");
-		}
+		Click(locator1 = "Icon#HEADER_VERTICAL_ELLIPSIS");
 
 		MenuItem.click(menuItem = "${menuItem}");
 	}
@@ -180,13 +149,7 @@ definition {
 	macro openEntryMenu {
 		var browserType = PropsUtil.get("browser.type");
 
-		if ("${browserType}" == "internetexplorer") {
-			Click.waitForMenuToggleJSClick(
-				key_rowEntry = "${rowEntry}",
-				locator1 = "Icon#ROW_VERTICAL_ELLIPSIS_IE");
-		}
-
-		else if ("${browserType}" == "safari") {
+		if ("${browserType}" == "safari") {
 			Click.waitForMenuToggleJSClick(
 				key_rowEntry = "${rowEntry}",
 				locator1 = "Icon#ROW_VERTICAL_ELLIPSIS_SAFARI");
@@ -209,6 +172,37 @@ definition {
 		AssertElementPresent(
 			key_displayStyle = "${displayStyle}",
 			locator1 = "Icon#CURRENT_DISPLAY_STYLE_ACTIVE");
+	}
+
+	macro viewEntryContent {
+		AssertElementPresent(
+			key_rowAny = "${rowAny}",
+			key_rowEntry = "${rowEntry}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_ANY");
+	}
+
+	macro viewEntryMenu {
+		var browserType = PropsUtil.get("browser.type");
+
+		if ("${browserType}" == "safari") {
+			AssertElementPresent(
+				key_rowEntry = "${rowEntry}",
+				locator1 = "Icon#ROW_VERTICAL_ELLIPSIS_SAFARI");
+		}
+
+		else {
+			AssertElementPresent(
+				key_rowEntry = "${rowEntry}",
+				locator1 = "Icon#ROW_VERTICAL_ELLIPSIS");
+		}
+	}
+
+	macro viewEntryMenuItem {
+		LexiconEntry.openEntryMenu(rowEntry = "${rowEntry}");
+
+		AssertElementPresent(
+			key_menuItem = "${menuItem}",
+			locator1 = "MenuItem#ANY_MENU_ITEM");
 	}
 
 	macro viewEntryName {

@@ -1,5 +1,7 @@
 package ${configYAML.apiPackagePath}.client.resource.${escapedVersion};
 
+import ${configYAML.apiPackagePath}.client.aggregation.Aggregation;
+
 <#list globalEnumSchemas?keys as globalEnumSchemaName>
 	import ${configYAML.apiPackagePath}.client.constant.${escapedVersion}.${globalEnumSchemaName};
 </#list>
@@ -19,6 +21,10 @@ import ${configYAML.apiPackagePath}.client.pagination.Pagination;
 import ${configYAML.apiPackagePath}.client.permission.Permission;
 import ${configYAML.apiPackagePath}.client.problem.Problem;
 
+<#list allExternalSchemas?keys as schemaName>
+	import ${configYAML.apiPackagePath}.client.serdes.${escapedVersion}.${schemaName}SerDes;
+</#list>
+
 <#list allSchemas?keys as schemaName>
 	import ${configYAML.apiPackagePath}.client.serdes.${escapedVersion}.${schemaName}SerDes;
 </#list>
@@ -29,6 +35,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -54,7 +61,7 @@ public interface ${schemaName}Resource {
 			parameters = freeMarkerTool.getClientParameters(javaMethodSignature.javaMethodParameters, schemaName, schemaVarName)
 		/>
 
-		public ${javaMethodSignature.returnType?replace(".constant.", ".client.constant.")?replace(".dto.", ".client.dto.")?replace("com.liferay.portal.vulcan.pagination.", "")?replace("com.liferay.portal.vulcan.permission.", "")?replace("javax.ws.rs.core.Response", "void")} ${javaMethodSignature.methodName}(${parameters}) throws Exception;
+		public ${javaMethodSignature.returnType?replace(".constant.", ".client.constant.")?replace(".dto.", ".client.dto.")?replace("com.liferay.portal.vulcan.aggregation.", "")?replace("com.liferay.portal.vulcan.pagination.", "")?replace("com.liferay.portal.vulcan.permission.", "")?replace("javax.ws.rs.core.Response", "void")} ${javaMethodSignature.methodName}(${parameters}) throws Exception;
 
 		public HttpInvoker.HttpResponse ${javaMethodSignature.methodName}HttpResponse(${parameters}) throws Exception;
 	</#list>
@@ -98,14 +105,30 @@ public interface ${schemaName}Resource {
 			return this;
 		}
 
+		public Builder parameters(String... parameters) {
+			if ((parameters.length % 2) != 0) {
+				throw new IllegalArgumentException(
+					"Parameters length is not an even number");
+			}
+
+			for (int i = 0; i < parameters.length; i += 2) {
+				String parameterName = String.valueOf(parameters[i]);
+				String parameterValue = String.valueOf(parameters[i + 1]);
+
+				_parameters.put(parameterName, parameterValue);
+			}
+
+			return this;
+		}
+
 		private Builder() {
 		}
 
 		private Map<String, String> _headers = new LinkedHashMap<>();
 		private String _host = "localhost";
 		private Locale _locale;
-		private String _login = "test@liferay.com";
-		private String _password = "test";
+		private String _login = "";
+		private String _password = "";
 		private Map<String, String> _parameters = new LinkedHashMap<>();
 		private int _port = 8080;
 		private String _scheme = "http";
@@ -116,19 +139,27 @@ public interface ${schemaName}Resource {
 
 		<#list freeMarkerTool.getResourceTestCaseJavaMethodSignatures(configYAML, openAPIYAML, schemaName) as javaMethodSignature>
 			<#assign
-				arguments = freeMarkerTool.getResourceTestCaseArguments(javaMethodSignature.javaMethodParameters)?replace("filter", "filterString")?replace("sorts", "sortString")?replace("multipartBody", "${schemaVarName}, multipartFiles")
+				arguments = freeMarkerTool.getResourceTestCaseArguments(javaMethodSignature.javaMethodParameters)?replace("aggregation", "aggregations")?replace("filter", "filterString")?replace("sorts", "sortString")?replace("multipartBody", "${schemaVarName}, multipartFiles")
 				parameters = freeMarkerTool.getClientParameters(javaMethodSignature.javaMethodParameters, schemaName, schemaVarName)
 			/>
 
-			public ${javaMethodSignature.returnType?replace(".constant.", ".client.constant.")?replace(".dto.", ".client.dto.")?replace("com.liferay.portal.vulcan.pagination.", "")?replace("com.liferay.portal.vulcan.permission.", "")?replace("javax.ws.rs.core.Response", "void")} ${javaMethodSignature.methodName}(${parameters}) throws Exception {
+			public ${javaMethodSignature.returnType?replace(".constant.", ".client.constant.")?replace(".dto.", ".client.dto.")?replace("com.liferay.portal.vulcan.aggregation.", "")?replace("com.liferay.portal.vulcan.pagination.", "")?replace("com.liferay.portal.vulcan.permission.", "")?replace("javax.ws.rs.core.Response", "void")} ${javaMethodSignature.methodName}(${parameters}) throws Exception {
 				HttpInvoker.HttpResponse httpResponse = ${javaMethodSignature.methodName}HttpResponse(${arguments});
 
 				String content = httpResponse.getContent();
 
-				_logger.fine("HTTP response content: " + content);
+				if (httpResponse.getStatusCode() / 100 != 2) {
+					_logger.log(Level.WARNING, "Unable to process HTTP response content: " + content);
+					_logger.log(Level.WARNING, "HTTP response message: " + httpResponse.getMessage());
+					_logger.log(Level.WARNING, "HTTP response status code: " + httpResponse.getStatusCode());
 
-				_logger.fine("HTTP response message: " + httpResponse.getMessage());
-				_logger.fine("HTTP response status code: " + httpResponse.getStatusCode());
+					throw new Problem.ProblemException(Problem.toDTO(content));
+				}
+				else {
+					_logger.fine("HTTP response content: " + content);
+					_logger.fine("HTTP response message: " + httpResponse.getMessage());
+					_logger.fine("HTTP response status code: " + httpResponse.getStatusCode());
+				}
 
 				<#if !javaMethodSignature.returnType?contains("javax.ws.rs.core.Response")>
 					try {
@@ -223,7 +254,11 @@ public interface ${schemaName}Resource {
 				</#list>
 
 				<#list javaMethodSignature.javaMethodParameters as javaMethodParameter>
-					<#if stringUtil.equals(javaMethodParameter.parameterName, "filter")>
+					<#if stringUtil.equals(javaMethodParameter.parameterName, "aggregations")>
+						if (aggregations != null) {
+							httpInvoker.parameter("aggregationTerms", String.join(",", aggregations));
+						}
+					<#elseif stringUtil.equals(javaMethodParameter.parameterName, "filter")>
 						if (filterString != null) {
 							httpInvoker.parameter("filter", filterString);
 						}
@@ -257,13 +292,11 @@ public interface ${schemaName}Resource {
 					</#if>
 				</#list>
 
-				httpInvoker.path(_builder._scheme + "://" + _builder._host + ":" + _builder._port + "/o${configYAML.application.baseURI}/${openAPIYAML.info.version}${javaMethodSignature.path}"
+				httpInvoker.path(_builder._scheme + "://" + _builder._host + ":" + _builder._port + "/o${configYAML.application.baseURI}/${openAPIYAML.info.version}${javaMethodSignature.path}");
 
 				<#list javaMethodSignature.pathJavaMethodParameters as javaMethodParameter>
-					, ${javaMethodParameter.parameterName}
+					httpInvoker.path("${javaMethodParameter.parameterName}", ${javaMethodParameter.parameterName});
 				</#list>
-
-				);
 
 				httpInvoker.userNameAndPassword(_builder._login + ":" + _builder._password);
 

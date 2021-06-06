@@ -17,14 +17,16 @@
 <%@ include file="/page_template/init.jsp" %>
 
 <%
-EditDisplayPageMenuDisplayContext editDisplayPageMenuDisplayContext = new EditDisplayPageMenuDisplayContext(request);
+EditDisplayPageMenuDisplayContext editDisplayPageMenuDisplayContext = (EditDisplayPageMenuDisplayContext)request.getAttribute(DisplayPageLayoutTypeControllerWebKeys.EDIT_DISPLAY_PAGE_MENU_DISPLAY_CONTEXT);
 %>
 
-<clay:dropdown-menu
-	borderless="<%= true %>"
-	displayType="secondary"
-	dropdownItems="<%= editDisplayPageMenuDisplayContext.getDropdownItems() %>"
-	icon="pencil"
-	monospaced="<%= true %>"
-	small="<%= true %>"
-/>
+<li class="control-menu-nav-item">
+	<clay:dropdown-menu
+		borderless="<%= true %>"
+		displayType="unstyled"
+		dropdownItems="<%= editDisplayPageMenuDisplayContext.getDropdownItems() %>"
+		icon="pencil"
+		monospaced="<%= true %>"
+		small="<%= true %>"
+	/>
+</li>

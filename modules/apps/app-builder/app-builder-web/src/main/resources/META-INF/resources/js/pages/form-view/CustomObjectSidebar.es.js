@@ -35,10 +35,17 @@ import React, {
 import {useKeyDown} from '../../hooks/index.es';
 import isClickOutside from '../../utils/clickOutside.es';
 import CustomObjectFieldsList from './CustomObjectFieldsList.es';
+import DataLayoutBuilderContext from './DataLayoutBuilderInstanceContext.es';
 import FormViewContext from './FormViewContext.es';
 
 const DropDown = () => {
-	const [{fieldTypes}, dispatch] = useContext(FormViewContext);
+	const [
+		{
+			config: {allowNestedFields},
+			fieldTypes,
+		},
+		dispatch,
+	] = useContext(FormViewContext);
 	const [active, setActive] = useState(false);
 
 	const onClickFieldType = (fieldTypeName) => {
@@ -59,9 +66,19 @@ const DropDown = () => {
 		}
 	}, [active]);
 
-	const filteredFieldTypes = fieldTypes.filter(({scope}) =>
-		scope.includes('app-builder')
-	);
+	const filteredFieldTypes = fieldTypes.filter(({name, scope}) => {
+		if (!scope.includes('app-builder')) {
+			return false;
+		}
+
+		// Remove fields group field from left sidebar
+
+		if (name === 'fieldset' && !allowNestedFields) {
+			return false;
+		}
+
+		return true;
+	});
 
 	filteredFieldTypes.sort(({displayOrder: a}, {displayOrder: b}) => a - b);
 
@@ -70,6 +87,7 @@ const DropDown = () => {
 			active={active}
 			alignmentPosition={Align.BottomRight}
 			className="custom-object-dropdown"
+			hasLeftSymbols
 			onActiveChange={(newVal) => setActive(newVal)}
 			trigger={
 				<ClayButtonWithIcon displayType="unstyled" symbol="plus" />
@@ -89,6 +107,20 @@ const DropDown = () => {
 		</ClayDropDown>
 	);
 };
+
+const EmptyState = () => (
+	<div className="custom-object-sidebar-empty">
+		<ClayIcon symbol="custom-field" />
+
+		<h3>{Liferay.Language.get('there-are-no-fields-yet')}</h3>
+
+		<p>
+			{Liferay.Language.get(
+				'any-field-added-to-the-object-or-to-a-form-view-appears-here'
+			)}
+		</p>
+	</div>
+);
 
 const Header = ({onCloseSearch, onSearch, searchText}) => {
 	const [searchMode, setSearchMode] = useState(false);
@@ -117,7 +149,7 @@ const Header = ({onCloseSearch, onSearch, searchText}) => {
 
 	const [{dataDefinition}] = useContext(FormViewContext);
 	const {
-		name: {en_US: dataDefinitionName = ''},
+		name: {[dataDefinition.defaultLanguageId]: dataDefinitionName = ''},
 	} = dataDefinition;
 
 	return (
@@ -178,15 +210,16 @@ const Header = ({onCloseSearch, onSearch, searchText}) => {
 	);
 };
 
-export default () => {
+const CustomObjectSidebar = () => {
 	const [
 		{
-			dataDefinition: {dataDefinitionFields},
+			dataDefinition: {dataDefinitionFields, id},
 			focusedCustomObjectField,
 		},
 		dispatch,
 	] = useContext(FormViewContext);
 	const [searchText, setSearchText] = useState('');
+	const [dataLayoutBuilder] = useContext(DataLayoutBuilderContext);
 	const sidebarRef = useRef();
 
 	useKeyDown(() => {
@@ -204,8 +237,12 @@ export default () => {
 			if (
 				isClickOutside(
 					target,
-					'.data-layout-builder-sidebar',
+					'.app-builder-upper-toolbar',
+					'button.close',
+					'.display-settings',
 					'.dropdown-menu',
+					'.modal.show',
+					'.nav-underline',
 					'#ddm-actionable-fields-container'
 				)
 			) {
@@ -214,13 +251,17 @@ export default () => {
 					type:
 						DataLayoutBuilderActions.UPDATE_FOCUSED_CUSTOM_OBJECT_FIELD,
 				});
+
+				dataLayoutBuilder.formBuilderWithLayoutProvider.refs.layoutProvider?.dispatch?.(
+					'sidebarFieldBlurred'
+				);
 			}
 		};
 
 		window.addEventListener('click', eventHandler);
 
 		return () => window.removeEventListener('click', eventHandler);
-	}, [dispatch]);
+	}, [dataLayoutBuilder, dispatch]);
 
 	const empty = dataDefinitionFields.length === 0;
 
@@ -234,22 +275,8 @@ export default () => {
 				/>
 
 				<Sidebar.Body className={classNames({empty})}>
-					{empty ? (
-						<div className="custom-object-sidebar-empty">
-							<ClayIcon symbol="custom-field" />
-
-							<h3>
-								{Liferay.Language.get(
-									'there-are-no-fields-yet'
-								)}
-							</h3>
-
-							<p>
-								{Liferay.Language.get(
-									'any-field-added-to-the-object-or-to-a-form-view-appears-here'
-								)}
-							</p>
-						</div>
+					{!!id && empty ? (
+						<EmptyState />
 					) : (
 						<CustomObjectFieldsList keywords={searchText} />
 					)}
@@ -258,3 +285,5 @@ export default () => {
 		</Sidebar>
 	);
 };
+CustomObjectSidebar.displayName = 'CustomObjectSidebar';
+export default CustomObjectSidebar;

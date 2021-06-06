@@ -203,8 +203,6 @@ public class DefaultDLViewFileVersionDisplayContext
 
 		_uiItemsBuilder.addDownloadToolbarItem(toolbarItems);
 
-		_uiItemsBuilder.addOpenInMsOfficeToolbarItem(toolbarItems);
-
 		_uiItemsBuilder.addEditToolbarItem(toolbarItems);
 
 		_uiItemsBuilder.addCheckoutToolbarItem(toolbarItems);
@@ -329,6 +327,7 @@ public class DefaultDLViewFileVersionDisplayContext
 		VersioningStrategy versioningStrategy, DLURLHelper dlURLHelper) {
 
 		try {
+			_httpServletRequest = httpServletRequest;
 			_fileVersion = fileVersion;
 			_dlMimeTypeDisplayContext = dlMimeTypeDisplayContext;
 			_resourceBundle = resourceBundle;
@@ -386,15 +385,19 @@ public class DefaultDLViewFileVersionDisplayContext
 
 			_uiItemsBuilder.addViewOriginalFileMenuItem(menuItems);
 
-			_uiItemsBuilder.addOpenInMsOfficeMenuItem(menuItems);
-
 			_uiItemsBuilder.addEditMenuItem(menuItems);
+
+			_uiItemsBuilder.addEditImageItem(menuItems);
 
 			_uiItemsBuilder.addCheckoutMenuItem(menuItems);
 
 			_uiItemsBuilder.addCancelCheckoutMenuItem(menuItems);
 
 			_uiItemsBuilder.addCheckinMenuItem(menuItems);
+
+			if (false) {
+				_uiItemsBuilder.addCollectDigitalSignatureMenuItem(menuItems);
+			}
 
 			_uiItemsBuilder.addMoveMenuItem(menuItems);
 
@@ -489,6 +492,7 @@ public class DefaultDLViewFileVersionDisplayContext
 	private final FileVersion _fileVersion;
 	private final FileVersionDisplayContextHelper
 		_fileVersionDisplayContextHelper;
+	private HttpServletRequest _httpServletRequest;
 	private final ResourceBundle _resourceBundle;
 	private final StorageEngine _storageEngine;
 	private final UIItemsBuilder _uiItemsBuilder;

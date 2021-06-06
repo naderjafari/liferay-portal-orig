@@ -29,9 +29,6 @@ page import="com.liferay.portal.search.web.internal.sort.configuration.SortPortl
 page import="com.liferay.portal.search.web.internal.sort.display.context.SortDisplayContext" %><%@
 page import="com.liferay.portal.search.web.internal.sort.display.context.SortTermDisplayContext" %>
 
-<%@ page import="java.util.List" %><%@
-page import="java.util.Map" %>
-
 <liferay-theme:defineObjects />
 
 <%
@@ -42,12 +39,6 @@ if (sortDisplayContext.isRenderNothing()) {
 }
 
 SortPortletInstanceConfiguration sortPortletInstanceConfiguration = sortDisplayContext.getSortPortletInstanceConfiguration();
-
-Map<String, Object> contextObjects = HashMapBuilder.<String, Object>put(
-	"sortDisplayContext", sortDisplayContext
-).build();
-
-List<SortTermDisplayContext> sortTermDisplayContexts = sortDisplayContext.getSortTermDisplayContexts();
 %>
 
 <c:choose>
@@ -64,13 +55,20 @@ List<SortTermDisplayContext> sortTermDisplayContexts = sortDisplayContext.getSor
 
 			<liferay-ddm:template-renderer
 				className="<%= SortDisplayContext.class.getName() %>"
-				contextObjects="<%= contextObjects %>"
+				contextObjects='<%=
+					HashMapBuilder.<String, Object>put(
+						"sortDisplayContext", sortDisplayContext
+					).build()
+				%>'
 				displayStyle="<%= sortPortletInstanceConfiguration.displayStyle() %>"
 				displayStyleGroupId="<%= sortDisplayContext.getDisplayStyleGroupId() %>"
-				entries="<%= sortTermDisplayContexts %>"
+				entries="<%= sortDisplayContext.getSortTermDisplayContexts() %>"
 			>
 				<aui:fieldset>
 					<aui:select class="sort-term" label="sort-by" name="sortSelection">
+						<c:if test="<%= !sortDisplayContext.isAnySelected() %>">
+							<aui:option disabled="<%= true %>" label="sort-default-order" selected="<%= true %>" />
+						</c:if>
 
 						<%
 						for (SortTermDisplayContext sortTermDisplayContext : sortDisplayContext.getSortTermDisplayContexts()) {
@@ -90,8 +88,8 @@ List<SortTermDisplayContext> sortTermDisplayContexts = sortDisplayContext.getSor
 </c:choose>
 
 <aui:script use="liferay-search-sort-util">
-	AUI().ready('aui-base', 'node', 'event', function (A) {
-		A.one('#<portlet:namespace />sortSelection').on('change', function () {
+	AUI().ready('aui-base', 'node', 'event', (A) => {
+		A.one('#<portlet:namespace />sortSelection').on('change', () => {
 			var selections = [];
 
 			var sortSelect = A.one('#<portlet:namespace />sortSelection').get(

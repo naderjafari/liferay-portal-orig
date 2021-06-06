@@ -14,17 +14,26 @@
 
 package com.liferay.sharepoint.soap.repository.connector;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.net.URL;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
  * @author Iván Zaera
  */
 public class SharepointConnectionInfoTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testConstructorFailsWithInvalidSitePaths() {
@@ -69,8 +78,9 @@ public class SharepointConnectionInfoTest {
 		URL serviceURL = sharepointConnectionInfo.getServiceURL();
 
 		Assert.assertEquals(
-			_SERVER_PROTOCOL + "://" + _SERVER_ADDRESS + StringPool.COLON +
-				_SERVER_PORT + sitePath + StringPool.SLASH,
+			StringBundler.concat(
+				_SERVER_PROTOCOL, "://", _SERVER_ADDRESS, StringPool.COLON,
+				_SERVER_PORT, sitePath, StringPool.SLASH),
 			serviceURL.toString());
 	}
 

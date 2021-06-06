@@ -47,13 +47,17 @@ definition {
 
 		WebContent.addCP(webContentTitle = "Basic S.P.A.C.E. Banner");
 
-		AlloyEditor.addSourceContent(content = '''
+		CKEditor.addSourceContent(content = '''
 <h2 class="text-center">Space Program Academy of Continuing Education</h2>
 
 <p class="text-center">Dare to Dream out of this world</p>
 ''');
 
 		Button.clickPublish();
+
+		WaitForElementNotPresent(
+			key_text = "Publish",
+			locator1 = "Button#ANY");
 
 		Navigator.gotoSitePage(
 			pageName = "Test Page Name",
@@ -69,12 +73,11 @@ definition {
 
 		WebContent.addCP(webContentTitle = "Basic S.P.A.C.E. Banner (Japanese Translation)");
 
-		Type.typeCKEditorWaitForCKEditor(
-			key_fieldLabel = "Summary",
-			locator1 = "CKEditor#BODY_FIELD_WEB_CONTENT_ARTICLE",
-			value1 = "A Japanese translation of the basic front page banner");
+		CKEditor.addContentInWebContent(
+			content = "A Japanese translation of the basic front page banner",
+			fieldLabel = "Description");
 
-		AlloyEditor.addSourceContent(content = '''
+		CKEditor.addSourceContent(content = '''
 <h2 class="text-center">Space Program 大学生涯教育</h2>
 
 <p class="text-center">地球から、宇宙の果てへ</p>
@@ -200,6 +203,8 @@ definition {
 
 		WebContentStructures.addName(structureName = "WC Structure Name");
 
+		Navigator.gotoSidebarTab(tabName = "Properties");
+
 		PortletEntry.inputDescriptionTextInput(description = "WC Structure Description");
 
 		WebContentStructures.addLocalization(
@@ -208,8 +213,7 @@ definition {
 			localization1Name = "nom de la structure de wc",
 			localization2Name = "wc 结构名称");
 
-		DynamicDataMapping.addField(
-			field = "Text",
+		DataEngine.addField(
 			fieldFieldLabel = "Text",
 			fieldName = "Text");
 
@@ -252,11 +256,9 @@ definition {
 
 		PortletEntry.changeLocale(locale = "fr-FR");
 
-		WebContent.addCP(webContentTitle = "WC WebContent Titre");
-
-		FormFields.editText(
-			fieldName = "Text",
-			fieldValue = "WC contenu WebContent");
+		WebContent.addWithStructureCP(
+			webContentText = "WC contenu WebContent",
+			webContentTitle = "WC WebContent Titre");
 
 		PortletEntry.publish();
 
@@ -284,9 +286,14 @@ definition {
 
 		PortletEntry.changeLocale(locale = "fr-FR");
 
-		WebContent.viewCP(
-			webContentText = "WC contenu WebContent",
-			webContentTitle = "WC WebContent Titre");
+		AssertTextEquals(
+			locator1 = "TextInput#TITLE",
+			value1 = "WC WebContent Titre");
+
+		AssertTextEquals.assertValue(
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#TEXT_INPUT",
+			value1 = "WC contenu WebContent");
 
 		WebContent.viewStructureAndTemplateLocalization(
 			panel = "Modèle par défaut",

@@ -1,10 +1,11 @@
 @component-name = "portal-calendar"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}company.default.time.zone=America/Los_Angeles";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}company.default.time.zone=America/Los_Angeles";
 	property testray.main.component.name = "Calendar";
+
 	var pageName = "Calendar Page";
 	var portletName = "Calendar";
 
@@ -65,7 +66,7 @@ definition {
 
 	@priority = "5"
 	test DeleteRegular {
-		property portal.upstream = "quarantine";
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "Calendar#DeleteEventRegular";
 
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
@@ -113,6 +114,7 @@ definition {
 
 	@priority = "5"
 	test DeleteRepeatingAllFollowing {
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "Calendar#DeleteEventRepeatingAllFollowing";
 
 		CalendarNavigator.gotoAddEvent();
@@ -244,6 +246,8 @@ definition {
 
 		Navigator.gotoPage(pageName = "Calendar Page");
 
+		Calendar.hideCurrentSiteCalendar();
+
 		CalendarEvent.edit(
 			calendarName = "Test Test",
 			eventTitle = "Calendar Event All Day Title",
@@ -258,8 +262,6 @@ definition {
 	@description = "This is a use case for LPS-59097."
 	@priority = "4"
 	test EditAndViewRSVP {
-		property portal.upstream = "quarantine";
-
 		CalendarNavigator.gotoAddEvent();
 
 		CalendarEvent.addRegular(
@@ -421,8 +423,6 @@ definition {
 	@description = "This is a use case for LPS-50026."
 	@priority = "4"
 	test EditRegularWithUserInvite {
-		property portal.upstream = "quarantine";
-
 		CalendarNavigator.gotoAddEvent();
 
 		CalendarEvent.add(
@@ -528,7 +528,7 @@ definition {
 	}
 
 	@description = "This is a use case for LPS-50017"
-	@priority = "2"
+	@priority = "3"
 	test EditRepeatingAllFollowing {
 		CalendarNavigator.gotoAddEvent();
 
@@ -749,6 +749,57 @@ definition {
 		User.logoutAndLoginPG(
 			userLoginEmailAddress = "test@liferay.com",
 			userLoginFullName = "Test Test");
+	}
+
+	@description = "This is a use case for LPS-75292."
+	@priority = "5"
+	test ViewCalendarEventDetailViaMailLink {
+		property test.name.skip.portal.instance = "CalendarManageEvent#ViewCalendarEventDetailViaMailLink";
+		property test.smtp.server.enabled = "true";
+
+		JSONGroup.addGroup(groupName = "Site Name");
+
+		SitePages.openPagesAdmin(siteURLKey = "site-name");
+
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
+
+		SitePages.addPublicPage(
+			pageName = "Calendar Page",
+			sitePageType = "Widget Page");
+
+		JSONUser.addUser(
+			userEmailAddress = "userea@liferay.com",
+			userFirstName = "userfn",
+			userLastName = "userln",
+			userScreenName = "usersn");
+
+		Navigator.gotoSitePage(
+			pageName = "Calendar Page",
+			siteName = "Site Name");
+
+		Portlet.addPG(
+			pageName = "Calendar Page",
+			portletName = "Calendar");
+
+		CalendarNavigator.gotoAddEvent();
+
+		CalendarEvent.addRegularInCustomSite(
+			eventTitle = "Calendar Event Title",
+			optionSet = "true",
+			optionSetValue = "inviteResource",
+			pageName = "Calendar Page",
+			siteName = "Site Name",
+			specificOptionSetValue = "userfn userln",
+			user = "userfn userln");
+
+		MockMock.openCalendarBodyLink(
+			asset = '''Calendar: Event Notification for "Calendar Event Title"''',
+			content = "You have been invited to event",
+			subject = '''Calendar: Event Notification for "Calendar Event Title"''');
+
+		CalendarEvent.viewDetailsViaMailLink(eventTitle = "Calendar Event Title");
 	}
 
 	@description = "This is a use case for LPS-51222."

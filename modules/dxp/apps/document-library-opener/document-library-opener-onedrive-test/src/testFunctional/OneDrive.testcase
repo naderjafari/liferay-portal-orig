@@ -4,8 +4,9 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property test.run.environment = "EE";
+	property testray.component.names = "OneDrive";
 	property testray.main.component.name = "Online Editing";
-	property testray.component.name = "OneDrive";
+
 	var pageName = "Documents and Media Page";
 	var portletName = "Documents and Media";
 
@@ -117,10 +118,168 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		AssertTextEquals(
+		AssertTextEquals.assertPartialText(
 			key_dmDocumentTitle = "Add Excel Sheet Title",
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
 			value1 = "Add Excel Sheet Title");
+
+		DMNavigator.gotoEditDocumentPG(dmDocumentTitle = "Add Excel Sheet Title");
+
+		AssertTextEquals(
+			key_fieldLabel = "Title",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Add Excel Sheet Title");
+
+		AssertTextEquals(
+			key_fieldLabel = "File Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Add Excel Sheet Title.xlsx");
+	}
+
+	@description = "This test ensures that the title and the file name will be renamed when the created One Drive doc title duplicates the existing document File Name."
+	@priority = "4"
+	test AddOneDriveEntryWithDuplicateFileName {
+		property test.name.skip.portal.instance = "OneDrive#AddOneDriveEntryWithDuplicateFileName";
+
+		for (var documentTitle : list "OneDrive Entry Title,OneDrive Entry Title Edit,OneDrive Entry Title (1)") {
+			OneDrive.deleteDocument(dmDocumentTitle = "${documentTitle}");
+		}
+
+		Navigator.openURL();
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoAddDocumentTypePG(dmDocumentTypeName = "Excel");
+
+		OneDrive.AddDocument(
+			dmDocumentTitle = "OneDrive Entry Title",
+			dmDocumentTypeName = "Excel");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.checkinPG(dmDocumentTitle = "OneDrive Entry Title");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.editPG(
+			dmDocumentTitle = "OneDrive Entry Title",
+			dmDocumentTitleEdit = "OneDrive Entry Title Edit");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		AssertTextEquals.assertPartialText(
+			key_dmDocumentTitle = "OneDrive Entry Title Edit",
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "OneDrive Entry Title Edit");
+
+		DMNavigator.gotoEditDocumentPG(dmDocumentTitle = "OneDrive Entry Title Edit");
+
+		AssertTextEquals(
+			key_fieldLabel = "Title",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title Edit");
+
+		AssertTextEquals(
+			key_fieldLabel = "File Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title.xlsx");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoAddDocumentTypePG(dmDocumentTypeName = "Excel");
+
+		OneDrive.AddDocument(
+			dmDocumentTitle = "OneDrive Entry Title",
+			dmDocumentTypeName = "Excel");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.checkinPG(dmDocumentTitle = "OneDrive Entry Title (1)");
+
+		DMNavigator.gotoEditDocumentPG(dmDocumentTitle = "OneDrive Entry Title (1)");
+
+		AssertTextEquals(
+			key_fieldLabel = "Title",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title (1)");
+
+		AssertTextEquals(
+			key_fieldLabel = "File Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title (1).xlsx");
+	}
+
+	@description = "This test ensures that the title and the file name will be renamed when the created One Drive doc title duplicates the existing document title."
+	@priority = "4"
+	test AddOneDriveEntryWithDuplicateTitle {
+		property test.name.skip.portal.instance = "OneDrive#AddOneDriveEntryWithDuplicateTitle";
+
+		for (var documentTitle : list "OneDrive Entry Title,OneDrive Entry Title Edit,OneDrive Entry Title Edit (1)") {
+			OneDrive.deleteDocument(dmDocumentTitle = "${documentTitle}");
+		}
+
+		Navigator.openURL();
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoAddDocumentTypePG(dmDocumentTypeName = "Word");
+
+		OneDrive.AddDocument(
+			dmDocumentTitle = "OneDrive Entry Title",
+			dmDocumentTypeName = "Word");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.checkinPG(dmDocumentTitle = "OneDrive Entry Title");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.editPG(
+			dmDocumentTitle = "OneDrive Entry Title",
+			dmDocumentTitleEdit = "OneDrive Entry Title Edit");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		AssertTextEquals.assertPartialText(
+			key_dmDocumentTitle = "OneDrive Entry Title Edit",
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "OneDrive Entry Title Edit");
+
+		DMNavigator.gotoEditDocumentPG(dmDocumentTitle = "OneDrive Entry Title Edit");
+
+		AssertTextEquals(
+			key_fieldLabel = "Title",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title Edit");
+
+		AssertTextEquals(
+			key_fieldLabel = "File Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title.docx");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoAddDocumentTypePG(dmDocumentTypeName = "Word");
+
+		OneDrive.AddDocument(
+			dmDocumentTitle = "OneDrive Entry Title Edit",
+			dmDocumentTypeName = "Word");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.checkinPG(dmDocumentTitle = "OneDrive Entry Title Edit (1)");
+
+		DMNavigator.gotoEditDocumentPG(dmDocumentTitle = "OneDrive Entry Title Edit (1)");
+
+		AssertTextEquals(
+			key_fieldLabel = "Title",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title Edit (1)");
+
+		AssertTextEquals(
+			key_fieldLabel = "File Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "OneDrive Entry Title Edit (1).docx");
 	}
 
 	@description = "This test ensures that a Powerpoint presentation can be added via the OneDrive editor."
@@ -152,10 +311,22 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		AssertTextEquals(
+		AssertTextEquals.assertPartialText(
 			key_dmDocumentTitle = "Add PowerPoint Presentation Title",
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
 			value1 = "Add PowerPoint Presentation Title");
+
+		DMNavigator.gotoEditDocumentPG(dmDocumentTitle = "Add PowerPoint Presentation Title");
+
+		AssertTextEquals(
+			key_fieldLabel = "Title",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Add PowerPoint Presentation Title");
+
+		AssertTextEquals(
+			key_fieldLabel = "File Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Add PowerPoint Presentation Title.pptx");
 	}
 
 	@description = "This test ensures that a Word document can be added via the OneDrive editor. "
@@ -187,18 +358,29 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		AssertTextEquals(
+		AssertTextEquals.assertPartialText(
 			key_dmDocumentTitle = "Add Word Doc Title",
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
 			value1 = "Add Word Doc Title");
+
+		DMNavigator.gotoEditDocumentPG(dmDocumentTitle = "Add Word Doc Title");
+
+		AssertTextEquals(
+			key_fieldLabel = "Title",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Add Word Doc Title");
+
+		AssertTextEquals(
+			key_fieldLabel = "File Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Add Word Doc Title.docx");
 	}
 
 	@description = "This test covers LPS-102478. It ensures that an Office 365 document automatically checks in after the lock is expired."
 	@priority = "4"
 	test AutoCheckinDocumentAfterLockExpiration {
-		property test.name.skip.portal.instance = "OneDrive#AutoCheckinDocumentAfterLockExpiration";
-
 		property custom.properties = "lock.expiration.time.com.liferay.document.library.kernel.model.DLFileEntry=80000";
+		property test.name.skip.portal.instance = "OneDrive#AutoCheckinDocumentAfterLockExpiration";
 
 		OneDrive.deleteDocument(dmDocumentTitle = "Auto Checkin Word Doc Title");
 
@@ -491,9 +673,7 @@ definition {
 
 		OneDrive.gotoEdit(dmDocumentTitle = "Document_3.docx");
 
-		OneDrive.editTitle(
-			dmDocumentTitle = "Word Doc Title Edited",
-			dmDocumentTypeName = "Word");
+		OneDrive.editTitle(dmDocumentTitle = "Word Doc Title Edited");
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -511,6 +691,37 @@ definition {
 			dmDocumentDescription = "DM Document Description",
 			dmDocumentTitle = "Word Doc Title Edited",
 			dmDocumentVersionNumber = "2.0");
+	}
+
+	@description = "This test ensures that the One Drive file can be added with Japanese."
+	@priority = "5"
+	test TitleAndFileNameCanBeDisplayedCorrectlyWithJapanese {
+		property test.name.skip.portal.instance = "OneDrive#TitleAndFileNameCanBeDisplayedCorrectlyWithJapanese";
+
+		OneDrive.deleteDocument(dmDocumentTitle = "これは日本語のファイルです");
+
+		Navigator.openURL();
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoAddDocumentTypePG(dmDocumentTypeName = "Word");
+
+		OneDrive.AddDocument(
+			dmDocumentTitle = "これは日本語のファイルです",
+			dmDocumentTypeName = "Word");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.checkinPG(dmDocumentTitle = "これは日本語のファイルです");
+
+		DMNavigator.openToEditEntryInSite(
+			dmDocumentTitle = "これは日本語のファイルです",
+			groupName = "Guest",
+			siteURLKey = "guest");
+
+		DMDocument.viewEntryInEdit(
+			dmDocumentFileName = "これは日本語のファイルです.docx",
+			dmDocumentTitle = "これは日本語のファイルです");
 	}
 
 }

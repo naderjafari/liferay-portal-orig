@@ -1,20 +1,13 @@
 definition {
 
 	macro gotoAddCollection {
-		var browserType = PropsUtil.get("browser.type");
-
-		if ("${browserType}" == "internetexplorer") {
-			Click(locator1 = "NavNested#NAV_NESTED_PLUS_IE");
+		if (IsElementPresent(locator1 = "NavNested#NAV_NESTED_PLUS")) {
+			Click(locator1 = "NavNested#NAV_NESTED_PLUS");
 		}
 		else {
-			if (IsElementPresent(locator1 = "NavNested#NAV_NESTED_PLUS")) {
-				Click(locator1 = "NavNested#NAV_NESTED_PLUS");
-			}
-			else {
-				Button.click(button = "New");
+			Button.click(button = "New");
 
-				MenuItem.click(menuItem = "Collection");
-			}
+			MenuItem.click(menuItem = "Collection");
 		}
 	}
 
@@ -25,13 +18,23 @@ definition {
 	}
 
 	macro gotoEntry {
-		LexiconCard.clickCardTitle(card = "${entry}");
+		LexiconCard.clickCardTitleLink(card = "${entry}");
 	}
 
 	macro gotoEntryEllipsisItem {
 		LexiconCard.clickEllipsisItem(
 			card = "${entry}",
 			item = "${item}");
+	}
+
+	macro gotoExportCollection {
+		Click.waitForMenuToggleJSClick(locator1 = "NavNested#NAV_NESTED_ELLIPSIS");
+
+		DropdownMenuItem.click(menuItem = "Export");
+
+		Pause(locator1 = "3000");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
 	}
 
 	macro gotoImportCollection {
@@ -42,7 +45,7 @@ definition {
 			Button.click(button = "New");
 		}
 
-		Button.click(button = "Import");
+		DropdownMenuItem.click(menuItem = "Import");
 
 		Pause(locator1 = "3000");
 

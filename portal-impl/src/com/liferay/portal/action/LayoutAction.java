@@ -14,9 +14,12 @@
 
 package com.liferay.portal.action;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.audit.AuditMessage;
 import com.liferay.portal.kernel.audit.AuditRouterUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
@@ -58,7 +61,6 @@ import java.util.Map;
 
 import javax.portlet.PortletMode;
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 import javax.portlet.ResourceRequest;
 import javax.portlet.WindowState;
 
@@ -112,18 +114,19 @@ public class LayoutAction implements Action {
 				}
 
 				if (Validator.isNull(authLoginURL)) {
-					PortletURL loginURL = PortletURLFactoryUtil.create(
-						httpServletRequest, PortletKeys.LOGIN,
-						PortletRequest.RENDER_PHASE);
-
-					loginURL.setParameter(
-						"saveLastPath", Boolean.FALSE.toString());
-					loginURL.setParameter(
-						"mvcRenderCommandName", "/login/login");
-					loginURL.setPortletMode(PortletMode.VIEW);
-					loginURL.setWindowState(WindowState.MAXIMIZED);
-
-					authLoginURL = loginURL.toString();
+					authLoginURL = PortletURLBuilder.create(
+						PortletURLFactoryUtil.create(
+							httpServletRequest, PortletKeys.LOGIN,
+							PortletRequest.RENDER_PHASE)
+					).setMVCRenderCommandName(
+						"/login/login"
+					).setParameter(
+						"saveLastPath", Boolean.FALSE.toString()
+					).setPortletMode(
+						PortletMode.VIEW
+					).setWindowState(
+						WindowState.MAXIMIZED
+					).buildString();
 				}
 
 				authLoginURL = HttpUtil.setParameter(
@@ -167,8 +170,11 @@ public class LayoutAction implements Action {
 				plid = layout.getPlid();
 			}
 
-			return processLayout(
-				actionMapping, httpServletRequest, httpServletResponse, plid);
+			if (!layout.isTypeLinkToLayout()) {
+				return processLayout(
+					actionMapping, httpServletRequest, httpServletResponse,
+					plid);
+			}
 		}
 
 		try {
@@ -303,12 +309,27 @@ public class LayoutAction implements Action {
 						AUDIT_MESSAGE_COM_LIFERAY_PORTAL_MODEL_LAYOUT_VIEW &&
 					AuditRouterUtil.isDeployed()) {
 
+					User realUser = themeDisplay.getRealUser();
 					User user = themeDisplay.getUser();
 
+					JSONObject additionalInfoJSONObject = null;
+
+					if (Validator.isNotNull(themeDisplay.getDoAsUserId()) &&
+						(realUser.getUserId() != user.getUserId())) {
+
+						additionalInfoJSONObject = JSONUtil.put(
+							"userId", user.getUserId()
+						).put(
+							"userName", user.getFullName()
+						);
+					}
+
 					AuditMessage auditMessage = new AuditMessage(
-						ActionKeys.VIEW, user.getCompanyId(), user.getUserId(),
-						user.getFullName(), Layout.class.getName(),
-						String.valueOf(layout.getPlid()));
+						ActionKeys.VIEW, realUser.getCompanyId(),
+						realUser.getUserId(), realUser.getFullName(),
+						Layout.class.getName(),
+						String.valueOf(layout.getPlid()), null,
+						additionalInfoJSONObject);
 
 					AuditRouterUtil.route(auditMessage);
 				}

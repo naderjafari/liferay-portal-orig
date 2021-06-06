@@ -59,6 +59,22 @@ public class LayoutSetPrototypeLocalServiceWrapper
 				java.util.Map<java.util.Locale, java.lang.String>
 					descriptionMap,
 				boolean active, boolean layoutsUpdateable,
+				boolean readyForPropagation, ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutSetPrototypeLocalService.addLayoutSetPrototype(
+			userId, companyId, nameMap, descriptionMap, active,
+			layoutsUpdateable, readyForPropagation, serviceContext);
+	}
+
+	@Override
+	public com.liferay.portal.kernel.model.LayoutSetPrototype
+			addLayoutSetPrototype(
+				long userId, long companyId,
+				java.util.Map<java.util.Locale, java.lang.String> nameMap,
+				java.util.Map<java.util.Locale, java.lang.String>
+					descriptionMap,
+				boolean active, boolean layoutsUpdateable,
 				ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
@@ -165,6 +181,13 @@ public class LayoutSetPrototypeLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _layoutSetPrototypeLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _layoutSetPrototypeLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -434,6 +457,22 @@ public class LayoutSetPrototypeLocalServiceWrapper
 
 		return _layoutSetPrototypeLocalService.updateLayoutSetPrototype(
 			layoutSetPrototype);
+	}
+
+	@Override
+	public com.liferay.portal.kernel.model.LayoutSetPrototype
+			updateLayoutSetPrototype(
+				long layoutSetPrototypeId,
+				java.util.Map<java.util.Locale, java.lang.String> nameMap,
+				java.util.Map<java.util.Locale, java.lang.String>
+					descriptionMap,
+				boolean active, boolean layoutsUpdateable,
+				boolean readyForPropagation, ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutSetPrototypeLocalService.updateLayoutSetPrototype(
+			layoutSetPrototypeId, nameMap, descriptionMap, active,
+			layoutsUpdateable, readyForPropagation, serviceContext);
 	}
 
 	@Override

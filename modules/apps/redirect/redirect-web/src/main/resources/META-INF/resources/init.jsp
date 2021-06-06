@@ -57,13 +57,14 @@ page import="com.liferay.redirect.web.internal.display.context.RedirectDisplayCo
 page import="com.liferay.redirect.web.internal.display.context.RedirectManagementToolbarDisplayContext" %><%@
 page import="com.liferay.redirect.web.internal.display.context.RedirectNotFoundEntriesDisplayContext" %><%@
 page import="com.liferay.redirect.web.internal.display.context.RedirectNotFoundEntriesManagementToolbarDisplayContext" %><%@
-page import="com.liferay.redirect.web.internal.util.RedirectUtil" %>
+page import="com.liferay.redirect.web.internal.util.RedirectUtil" %><%@
+page import="com.liferay.staging.StagingGroupHelper" %><%@
+page import="com.liferay.staging.StagingGroupHelperUtil" %>
 
 <%@ page import="java.text.DateFormat" %>
 
 <%@ page import="java.util.Collections" %><%@
-page import="java.util.List" %><%@
-page import="java.util.Map" %>
+page import="java.util.List" %>
 
 <liferay-frontend:defineObjects />
 

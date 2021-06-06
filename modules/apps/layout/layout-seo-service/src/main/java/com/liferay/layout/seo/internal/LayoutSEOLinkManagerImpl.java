@@ -14,28 +14,41 @@
 
 package com.liferay.layout.seo.internal;
 
+import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.layout.seo.canonical.url.LayoutSEOCanonicalURLProvider;
+import com.liferay.layout.seo.internal.util.FriendlyURLMapperProvider;
 import com.liferay.layout.seo.kernel.LayoutSEOLink;
 import com.liferay.layout.seo.kernel.LayoutSEOLinkManager;
 import com.liferay.layout.seo.open.graph.OpenGraphConfiguration;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.servlet.SessionErrors;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Html;
 import com.liferay.portal.kernel.util.ListMergeable;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.util.PropsValues;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -70,7 +83,7 @@ public class LayoutSEOLinkManagerImpl implements LayoutSEOLinkManager {
 			subtitleListMergeable, locale);
 		String siteAndCompanyName = _getPageTitleSuffix(layout, companyName);
 
-		return _html.escape(_merge(layoutTitle, siteAndCompanyName));
+		return _merge(layoutTitle, siteAndCompanyName);
 	}
 
 	@Override
@@ -86,7 +99,16 @@ public class LayoutSEOLinkManagerImpl implements LayoutSEOLinkManager {
 			getCanonicalLayoutSEOLink(
 				layout, locale, canonicalURL, alternateURLs));
 
-		alternateURLs.forEach(
+		ThemeDisplay themeDisplay = _getThemeDisplay();
+
+		FriendlyURLMapperProvider.FriendlyURLMapper friendlyURLMapper =
+			_friendlyURLMapperProvider.getFriendlyURLMapper(
+				themeDisplay.getRequest());
+
+		Map<Locale, String> mappedFriendlyURLs =
+			friendlyURLMapper.getMappedFriendlyURLs(alternateURLs);
+
+		mappedFriendlyURLs.forEach(
 			(urlLocale, url) -> layoutSEOLinks.add(
 				new LayoutSEOLinkImpl(
 					_html.escapeAttribute(url),
@@ -138,6 +160,28 @@ public class LayoutSEOLinkManagerImpl implements LayoutSEOLinkManager {
 		return _openGraphConfiguration.isOpenGraphEnabled(layout.getGroup());
 	}
 
+	@Activate
+	protected void activate() {
+		_friendlyURLMapperProvider = new FriendlyURLMapperProvider(
+			_assetDisplayPageFriendlyURLProvider, _classNameLocalService);
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_friendlyURLMapperProvider = null;
+	}
+
+	private HttpServletRequest _getHttpServletRequest() {
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		if (serviceContext != null) {
+			return serviceContext.getRequest();
+		}
+
+		return null;
+	}
+
 	private String _getPageTitle(
 			Layout layout, String portletId, String tilesTitle,
 			ListMergeable<String> titleListMergeable,
@@ -169,13 +213,24 @@ public class LayoutSEOLinkManagerImpl implements LayoutSEOLinkManager {
 
 		Group group = layout.getGroup();
 
-		if (group.isLayoutPrototype() ||
+		if (group.isControlPanel() || group.isLayoutPrototype() ||
 			StringUtil.equals(companyName, group.getDescriptiveName())) {
 
 			return companyName;
 		}
 
 		return _merge(group.getDescriptiveName(), companyName);
+	}
+
+	private ThemeDisplay _getThemeDisplay() {
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		if (serviceContext != null) {
+			return serviceContext.getThemeDisplay();
+		}
+
+		return null;
 	}
 
 	private String _getTitle(
@@ -189,6 +244,20 @@ public class LayoutSEOLinkManagerImpl implements LayoutSEOLinkManager {
 			return group.getDescriptiveName(locale);
 		}
 
+		HttpServletRequest httpServletRequest = _getHttpServletRequest();
+
+		if (Validator.isNull(PropsValues.LAYOUT_FRIENDLY_URL_PAGE_NOT_FOUND) &&
+			(httpServletRequest != null) &&
+			SessionErrors.contains(
+				httpServletRequest, NoSuchLayoutException.class)) {
+
+			if (titleListMergeable == null) {
+				titleListMergeable = new ListMergeable<>();
+			}
+
+			titleListMergeable.add(_language.get(locale, "status"));
+		}
+
 		if (titleListMergeable != null) {
 			return titleListMergeable.mergeToString(StringPool.SPACE);
 		}
@@ -199,6 +268,15 @@ public class LayoutSEOLinkManagerImpl implements LayoutSEOLinkManager {
 	private String _merge(String... strings) {
 		return StringUtil.merge(strings, " - ");
 	}
+
+	@Reference
+	private AssetDisplayPageFriendlyURLProvider
+		_assetDisplayPageFriendlyURLProvider;
+
+	@Reference
+	private ClassNameLocalService _classNameLocalService;
+
+	private FriendlyURLMapperProvider _friendlyURLMapperProvider;
 
 	@Reference
 	private Html _html;

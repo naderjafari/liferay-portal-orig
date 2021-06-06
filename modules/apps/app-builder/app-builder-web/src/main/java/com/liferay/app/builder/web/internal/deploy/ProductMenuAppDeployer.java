@@ -26,15 +26,17 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -71,26 +73,25 @@ public class ProductMenuAppDeployer extends BaseAppDeployer {
 		String siteMenuLabel = portletName.concat("site");
 
 		if (scopeJSONArray.length() == 2) {
-			serviceRegistrationsMap.computeIfAbsent(
+			_serviceRegistrations.computeIfAbsent(
 				appId,
-				key -> ArrayUtil.append(
+				key -> new ServiceRegistration<?>[] {
+					_deployPanelApp(
+						appBuilderApp.getCompanyId(),
+						PanelCategoryKeys.APPLICATIONS_MENU_APPLICATIONS,
+						applicationsMenuLabel,
+						JSONUtil.toLongArray(
+							jsonObject.getJSONArray("siteIds"))),
+					_deployPanelApp(
+						appBuilderApp.getCompanyId(),
+						PanelCategoryKeys.SITE_ADMINISTRATION_CONTENT,
+						siteMenuLabel,
+						JSONUtil.toLongArray(
+							jsonObject.getJSONArray("siteIds"))),
 					_deployPortlet(
 						appBuilderApp, appName, applicationsMenuLabel),
-					_deployPortlet(appBuilderApp, appName, siteMenuLabel),
-					new ServiceRegistration<?>[] {
-						_deployPanelApp(
-							appBuilderApp.getCompanyId(),
-							PanelCategoryKeys.APPLICATIONS_MENU_APPLICATIONS,
-							applicationsMenuLabel,
-							JSONUtil.toLongArray(
-								jsonObject.getJSONArray("siteIds"))),
-						_deployPanelApp(
-							appBuilderApp.getCompanyId(),
-							PanelCategoryKeys.SITE_ADMINISTRATION_CONTENT,
-							siteMenuLabel,
-							JSONUtil.toLongArray(
-								jsonObject.getJSONArray("siteIds")))
-					}));
+					_deployPortlet(appBuilderApp, appName, siteMenuLabel)
+				});
 		}
 		else {
 			String scope = scopeJSONArray.getString(0);
@@ -105,17 +106,31 @@ public class ProductMenuAppDeployer extends BaseAppDeployer {
 				menuLabel = siteMenuLabel;
 			}
 
-			serviceRegistrationsMap.computeIfAbsent(
+			_serviceRegistrations.computeIfAbsent(
 				appId,
-				mapKey -> ArrayUtil.append(
-					_deployPortlet(appBuilderApp, appName, menuLabel),
+				mapKey -> new ServiceRegistration<?>[] {
 					_deployPanelApp(
 						appBuilderApp.getCompanyId(), scope, menuLabel,
 						JSONUtil.toLongArray(
-							jsonObject.getJSONArray("siteIds")))));
+							jsonObject.getJSONArray("siteIds"))),
+					_deployPortlet(appBuilderApp, appName, menuLabel)
+				});
 		}
 
 		appBuilderAppLocalService.updateAppBuilderApp(appBuilderApp);
+	}
+
+	@Override
+	public void undeploy(long appId) throws Exception {
+		undeploy(appBuilderAppLocalService, appId, _serviceRegistrations);
+	}
+
+	@Deactivate
+	@Override
+	protected void deactivate() {
+		super.deactivate();
+
+		_serviceRegistrations.clear();
 	}
 
 	private ServiceRegistration<?> _deployPanelApp(
@@ -125,22 +140,18 @@ public class ProductMenuAppDeployer extends BaseAppDeployer {
 		return deployPanelApp(
 			new ProductMenuPanelApp(
 				companyId, panelCategoryKey, portletName, siteIds),
-			new HashMapDictionary<String, Object>() {
-				{
-					put("panel.app.order:Integer", 100);
-					put("panel.category.key", panelCategoryKey);
-				}
-			});
+			HashMapDictionaryBuilder.<String, Object>put(
+				"panel.app.order:Integer", 100
+			).put(
+				"panel.category.key", panelCategoryKey
+			).build());
 	}
 
-	private ServiceRegistration<?>[] _deployPortlet(
+	private ServiceRegistration<?> _deployPortlet(
 		AppBuilderApp appBuilderApp, String appName, String portletName) {
 
 		return deployPortlet(
-			new AppPortlet(
-				appBuilderApp, appBuilderAppPortletTabServiceTrackerMap,
-				"productMenu", appName,
-				appPortletMVCResourceCommandServiceTrackerMap, portletName),
+			new AppPortlet(appBuilderApp, "productMenu", appName, portletName),
 			Collections.emptyMap());
 	}
 
@@ -154,5 +165,8 @@ public class ProductMenuAppDeployer extends BaseAppDeployer {
 
 	@Reference
 	private JSONFactory _jsonFactory;
+
+	private final Map<Long, ServiceRegistration<?>[]> _serviceRegistrations =
+		new ConcurrentHashMap<>();
 
 }

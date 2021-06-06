@@ -50,7 +50,7 @@ public class XLIFF20TranslationInfoItemFieldValuesExporterTest {
 
 	@ClassRule
 	@Rule
-	public static final LiferayIntegrationTestRule testRule =
+	public static final LiferayIntegrationTestRule liferayIntegrationTestRule =
 		new LiferayIntegrationTestRule();
 
 	@Before
@@ -75,7 +75,7 @@ public class XLIFF20TranslationInfoItemFieldValuesExporterTest {
 			StringUtil.replace(
 				TranslationTestUtil.readFileToString(
 					"test-journal-article.xlf"),
-				"$ARTICLE_ID",
+				"[$JOURNAL_ARTICLE_ID$]",
 				String.valueOf(journalArticle.getResourcePrimKey())),
 			StreamUtil.toString(
 				_xliffTranslationInfoItemFieldValuesExporter.

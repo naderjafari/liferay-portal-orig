@@ -21,7 +21,7 @@ import {formatDuration} from '../../../shared/util/duration.es';
 import moment from '../../../shared/util/moment.es';
 import {SLAListPageContext} from './SLAListPage.es';
 
-const Item = ({
+export default function Item({
 	dateModified,
 	description,
 	duration,
@@ -29,7 +29,7 @@ const Item = ({
 	name,
 	processId,
 	status,
-}) => {
+}) {
 	const {
 		history,
 		location: {search},
@@ -67,7 +67,7 @@ const Item = ({
 
 	return (
 		<ClayTable.Row>
-			<ClayTable.Cell data-testid="slaName">
+			<ClayTable.Cell>
 				<div className="table-list-title">
 					{blocked && (
 						<ClayIcon
@@ -81,22 +81,15 @@ const Item = ({
 				</div>
 			</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="slaDescription">
-				{description}
-			</ClayTable.Cell>
+			<ClayTable.Cell>{description}</ClayTable.Cell>
 
-			<ClayTable.Cell
-				className={blockedStatusClass}
-				data-testid="slaStatus"
-			>
+			<ClayTable.Cell className={blockedStatusClass}>
 				{statusText}
 			</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="slaDuration">
-				{durationString}
-			</ClayTable.Cell>
+			<ClayTable.Cell>{durationString}</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="slaDateModified">
+			<ClayTable.Cell>
 				{moment
 					.utc(dateModified)
 					.format(Liferay.Language.get('mmm-dd'))}
@@ -109,6 +102,4 @@ const Item = ({
 			</ClayTable.Cell>
 		</ClayTable.Row>
 	);
-};
-
-export {Item};
+}

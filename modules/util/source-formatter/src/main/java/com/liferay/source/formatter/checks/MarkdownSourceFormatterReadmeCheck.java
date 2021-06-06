@@ -17,10 +17,11 @@ package com.liferay.source.formatter.checks;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
 import com.liferay.source.formatter.parser.JavaClass;
 import com.liferay.source.formatter.parser.JavaClassParser;
@@ -137,7 +138,7 @@ public class MarkdownSourceFormatterReadmeCheck extends BaseFileCheck {
 		throws DocumentException, IOException {
 
 		String checkstyleConfigurationContent = getContent(
-			configurationFileLocation, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+			configurationFileLocation, getMaxDirLevel());
 
 		Document document = SourceUtil.readXML(checkstyleConfigurationContent);
 
@@ -151,7 +152,7 @@ public class MarkdownSourceFormatterReadmeCheck extends BaseFileCheck {
 		throws DocumentException, IOException {
 
 		String sourceChecksConfigurationContent = getContent(
-			configurationFileLocation, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+			configurationFileLocation, getMaxDirLevel());
 
 		Document document = SourceUtil.readXML(
 			sourceChecksConfigurationContent);
@@ -530,6 +531,10 @@ public class MarkdownSourceFormatterReadmeCheck extends BaseFileCheck {
 				sourceFile.getName(), FileUtil.read(sourceFile));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 
@@ -593,6 +598,9 @@ public class MarkdownSourceFormatterReadmeCheck extends BaseFileCheck {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		_sourceProcessorFileExtensionsMap.put(
@@ -726,6 +734,9 @@ public class MarkdownSourceFormatterReadmeCheck extends BaseFileCheck {
 
 	private static final String _SOURCE_CHECKS_SOURCE_LOCATION =
 		"src/main/java/com/liferay/source/formatter/checks/";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		MarkdownSourceFormatterReadmeCheck.class);
 
 	private final Map<String, List<String>> _sourceProcessorFileExtensionsMap =
 		new HashMap<>();

@@ -119,7 +119,8 @@ public class ExpandoValueServiceImpl extends ExpandoValueServiceBaseImpl {
 		ExpandoColumn column = expandoColumnLocalService.getColumn(
 			companyId, className, tableName, columnName);
 
-		if (ExpandoColumnPermissionUtil.contains(
+		if ((column != null) &&
+			ExpandoColumnPermissionUtil.contains(
 				getPermissionChecker(), column, ActionKeys.VIEW)) {
 
 			return expandoValueLocalService.getData(
@@ -138,16 +139,16 @@ public class ExpandoValueServiceImpl extends ExpandoValueServiceBaseImpl {
 		ExpandoColumn column = expandoColumnLocalService.getColumn(
 			companyId, className, tableName, columnName);
 
-		if (!ExpandoColumnPermissionUtil.contains(
+		if ((column == null) ||
+			!ExpandoColumnPermissionUtil.contains(
 				getPermissionChecker(), column, ActionKeys.VIEW)) {
 
 			return null;
 		}
 
-		Serializable dataSerializable = expandoValueLocalService.getData(
-			companyId, className, tableName, columnName, classPK);
-
-		String data = dataSerializable.toString();
+		String data = String.valueOf(
+			expandoValueLocalService.getData(
+				companyId, className, tableName, columnName, classPK));
 
 		if (Validator.isNull(data)) {
 			return null;

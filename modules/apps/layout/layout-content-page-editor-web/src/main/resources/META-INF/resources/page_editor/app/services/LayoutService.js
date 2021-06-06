@@ -15,6 +15,12 @@
 import {config} from '../config/index';
 import serviceFetch from './serviceFetch';
 
+const layoutServiceFetch = (url, options, onNetworkStatus) => {
+	return serviceFetch(url, options, onNetworkStatus, {
+		requestGenerateDraft: true,
+	});
+};
+
 export default {
 
 	/**
@@ -49,6 +55,44 @@ export default {
 	},
 
 	/**
+	 * Change the master layout associated to the page
+	 * @param {object} options
+	 * @param {object} options.masterLayoutPlid id of the master page
+	 * @param {function} options.onNetworkStatus
+	 * @return {Promise<object>}
+	 */
+	changeMasterLayout({masterLayoutPlid, onNetworkStatus}) {
+		return layoutServiceFetch(
+			config.changeMasterLayoutURL,
+			{
+				body: {
+					masterLayoutPlid,
+				},
+			},
+			onNetworkStatus
+		);
+	},
+
+	/**
+	 * Change the style book entry associated to the page
+	 * @param {object} options
+	 * @param {object} options.styleBookEntryId id of the style book entry
+	 * @param {function} options.onNetworkStatus
+	 * @return {Promise<object>}
+	 */
+	changeStyleBookEntry({onNetworkStatus, styleBookEntryId}) {
+		return layoutServiceFetch(
+			config.changeStyleBookEntryURL,
+			{
+				body: {
+					styleBookEntryId,
+				},
+			},
+			onNetworkStatus
+		);
+	},
+
+	/**
 	 * Remove an item inside layoutData
 	 * @param {object} options
 	 * @param {object} options.itemId id of the item to be removed
@@ -66,6 +110,20 @@ export default {
 				},
 			},
 			onNetworkStatus
+		);
+	},
+
+	/**
+	 * @param {object} layout
+	 * @returns {Promise<{error: Error, friendlyURL: string}>}
+	 */
+	getLayoutFriendlyURL(layout) {
+		return layoutServiceFetch(
+			config.getLayoutFriendlyURL,
+			{
+				body: layout,
+			},
+			() => {}
 		);
 	},
 
@@ -226,10 +284,4 @@ export default {
 			onNetworkStatus
 		);
 	},
-};
-
-const layoutServiceFetch = (url, options, onNetworkStatus) => {
-	return serviceFetch(url, options, onNetworkStatus, {
-		requestGenerateDraft: true,
-	});
 };

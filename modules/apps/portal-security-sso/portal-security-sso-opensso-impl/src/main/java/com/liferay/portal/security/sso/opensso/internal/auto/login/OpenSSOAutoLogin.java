@@ -96,8 +96,6 @@ public class OpenSSOAutoLogin extends BaseAutoLogin {
 		String password1 = null;
 		String password2 = null;
 		boolean autoScreenName = false;
-		long facebookId = 0;
-		String openId = StringPool.BLANK;
 		String middleName = StringPool.BLANK;
 		long prefixId = 0;
 		long suffixId = 0;
@@ -111,14 +109,13 @@ public class OpenSSOAutoLogin extends BaseAutoLogin {
 		long[] roleIds = null;
 		long[] userGroupIds = null;
 		boolean sendEmail = false;
-		ServiceContext serviceContext = new ServiceContext();
 
 		return _userLocalService.addUser(
 			creatorUserId, companyId, autoPassword, password1, password2,
-			autoScreenName, screenName, emailAddress, facebookId, openId,
-			locale, firstName, middleName, lastName, prefixId, suffixId, male,
-			birthdayMonth, birthdayDay, birthdayYear, jobTitle, groupIds,
-			organizationIds, roleIds, userGroupIds, sendEmail, serviceContext);
+			autoScreenName, screenName, emailAddress, locale, firstName,
+			middleName, lastName, prefixId, suffixId, male, birthdayMonth,
+			birthdayDay, birthdayYear, jobTitle, groupIds, organizationIds,
+			roleIds, userGroupIds, sendEmail, new ServiceContext());
 	}
 
 	protected void checkAddUser(long companyId, String emailAddress)

@@ -12,12 +12,11 @@
  * details.
  */
 
-import {FormSupport, PagesVisitor} from 'dynamic-data-mapping-form-renderer';
+import {FormSupport, PagesVisitor} from 'data-engine-js-components-web';
 
 import {FIELD_TYPE_FIELDSET} from '../../../util/constants.es';
-import {getParentField} from '../../../util/fieldSupport.es';
+import {addField, getParentField} from '../../../util/fieldSupport.es';
 import {updateField} from '../util/settingsContext.es';
-import {addField} from './fieldAddedHandler.es';
 import handleFieldDeleted from './fieldDeletedHandler.es';
 import handleSectionAdded from './sectionAddedHandler.es';
 
@@ -38,11 +37,20 @@ export default (props, state, event) => {
 	let mergedState = {
 		...handleFieldDeleted(props, state, {
 			activePage: sourceFieldPage,
+			editRule: false,
 			fieldName: sourceFieldName,
 			removeEmptyRows: false,
 		}),
 	};
 	let parentField = getParentField(state.pages, sourceFieldName);
+
+	if (
+		parentField &&
+		targetFieldName &&
+		parentField.fieldName === targetFieldName
+	) {
+		return state;
+	}
 
 	if (
 		parentField &&
@@ -68,6 +76,7 @@ export default (props, state, event) => {
 			mergedState = {
 				...handleFieldDeleted(props, state, {
 					activePage: sourceFieldPage,
+					editRule: false,
 					fieldName: parentFieldName,
 					removeEmptyRows: false,
 				}),
@@ -78,6 +87,7 @@ export default (props, state, event) => {
 	if (targetFieldName) {
 		const deletedState = handleFieldDeleted(props, state, {
 			activePage: sourceFieldPage,
+			editRule: false,
 			fieldName: sourceFieldName,
 		});
 
@@ -100,7 +110,8 @@ export default (props, state, event) => {
 		};
 	}
 
-	const addedState = addField(props, {
+	const addedState = addField({
+		...props,
 		indexes: targetIndexes,
 		newField: sourceField,
 		pages: mergedState.pages,
@@ -110,7 +121,7 @@ export default (props, state, event) => {
 	const visitor = new PagesVisitor(addedState.pages);
 
 	const pages = visitor.mapFields((field) => {
-		if (field.rows) {
+		if (field.type != 'grid' && field.rows) {
 			return updateField(
 				props,
 				field,

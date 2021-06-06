@@ -34,18 +34,16 @@ import com.liferay.dynamic.data.mapping.util.DDMFormFactory;
 import com.liferay.portal.configuration.test.util.ConfigurationTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.junit.AfterClass;
@@ -73,22 +71,18 @@ public class DDMFormFieldTypeSettingsEvaluatorTest {
 	public static void setUpClass() throws Exception {
 		ConfigurationTestUtil.saveConfiguration(
 			DDMDataProviderConfiguration.class.getName(),
-			new HashMapDictionary() {
-				{
-					put("accessLocalNetwork", true);
-				}
-			});
+			HashMapDictionaryBuilder.<String, Object>put(
+				"accessLocalNetwork", true
+			).build());
 	}
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
 		ConfigurationTestUtil.saveConfiguration(
 			DDMDataProviderConfiguration.class.getName(),
-			new HashMapDictionary() {
-				{
-					put("accessLocalNetwork", false);
-				}
-			});
+			HashMapDictionaryBuilder.<String, Object>put(
+				"accessLocalNetwork", false
+			).build());
 	}
 
 	@Test
@@ -144,9 +138,7 @@ public class DDMFormFieldTypeSettingsEvaluatorTest {
 			ddmFormFieldType.getDDMFormFieldTypeSettings());
 
 		DDMFormValues ddmFormValues =
-			DDMFormValuesTestUtil.createDDMFormValuesWithDefaultFieldValues(
-				ddmForm, SetUtil.fromArray(new Locale[] {LocaleUtil.US}),
-				LocaleUtil.US);
+			DDMFormValuesTestUtil.createDDMFormValuesWithDefaultValues(ddmForm);
 
 		Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesMap =
 			ddmFormValues.getDDMFormFieldValuesMap();
@@ -242,9 +234,7 @@ public class DDMFormFieldTypeSettingsEvaluatorTest {
 			ddmFormFieldType.getDDMFormFieldTypeSettings());
 
 		DDMFormValues ddmFormValues =
-			DDMFormValuesTestUtil.createDDMFormValuesWithDefaultFieldValues(
-				ddmForm, SetUtil.fromArray(new Locale[] {LocaleUtil.US}),
-				LocaleUtil.US);
+			DDMFormValuesTestUtil.createDDMFormValuesWithDefaultValues(ddmForm);
 
 		Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesMap =
 			ddmFormValues.getDDMFormFieldValuesMap();

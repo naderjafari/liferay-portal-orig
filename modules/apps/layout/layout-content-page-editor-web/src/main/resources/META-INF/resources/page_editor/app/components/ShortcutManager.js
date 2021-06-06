@@ -12,11 +12,13 @@
  * details.
  */
 
-import {closest} from 'metal-dom';
 import React, {useEffect, useRef, useState} from 'react';
 
+import {CONTAINER_DISPLAY_OPTIONS} from '../config/constants/containerDisplayOptions';
 import {
 	ARROW_DOWN_KEYCODE,
+	ARROW_LEFT_KEYCODE,
+	ARROW_RIGHT_KEYCODE,
 	ARROW_UP_KEYCODE,
 	BACKSPACE_KEYCODE,
 	D_KEYCODE,
@@ -24,7 +26,9 @@ import {
 	Z_KEYCODE,
 } from '../config/constants/keycodes';
 import {MOVE_ITEM_DIRECTIONS} from '../config/constants/moveItemDirections';
-import {useDispatch, useSelector} from '../store/index';
+import {useActiveItemId, useSelectItem} from '../contexts/ControlsContext';
+import {useDispatch, useSelector} from '../contexts/StoreContext';
+import selectCanUpdatePageStructure from '../selectors/selectCanUpdatePageStructure';
 import deleteItem from '../thunks/deleteItem';
 import duplicateItem from '../thunks/duplicateItem';
 import moveItem from '../thunks/moveItem';
@@ -33,32 +37,22 @@ import undoThunk from '../thunks/undo';
 import canBeDuplicated from '../utils/canBeDuplicated';
 import canBeRemoved from '../utils/canBeRemoved';
 import canBeSaved from '../utils/canBeSaved';
-import {useActiveItemId, useSelectItem} from './Controls';
-import SaveFragmentCompositionModal from './floating-toolbar/SaveFragmentCompositionModal';
+import SaveFragmentCompositionModal from './SaveFragmentCompositionModal';
 
 const ctrlOrMeta = (event) =>
 	(event.ctrlKey && !event.metaKey) || (!event.ctrlKey && event.metaKey);
 
-const isCommentsAlloyEditor = (element) => {
-	return (
-		element.classList.contains('alloy-editor') &&
-		element.parentElement.classList.contains('alloy-editor-container') &&
-		closest(element, '.page-editor__sidebar')
-	);
-};
+const isEditableField = (element) =>
+	!!element.closest('.page-editor__editable');
 
-const isEditableCKEditor = (element) => {
-	return (
-		element.classList.contains('cke_editable') &&
-		closest(element, '.page-editor__editable')
-	);
-};
+const isEditingEditableField = () =>
+	!!document.activeElement.getAttribute('contenteditable');
 
-const isTextElement = (element) => {
+const isInteractiveElement = (element) => {
 	return (
-		(element.tagName === 'INPUT' &&
-			(element.type === 'text' || element.type === 'search')) ||
-		element.tagName === 'TEXTAREA'
+		['INPUT', 'OPTION', 'SELECT', 'TEXTAREA'].includes(element.tagName) ||
+		!!element.closest('.cke_editable') ||
+		!!element.closest('.alloy-editor-container')
 	);
 };
 
@@ -71,9 +65,12 @@ export default function ShortcutManager() {
 	const dispatch = useDispatch();
 	const selectItem = useSelectItem();
 
+	const canUpdatePageStructure = useSelector(selectCanUpdatePageStructure);
+
 	const [openSaveModal, setOpenSaveModal] = useState(false);
 
 	const state = useSelector((state) => state);
+
 	const {
 		fragmentEntryLinks,
 		layoutData,
@@ -81,134 +78,81 @@ export default function ShortcutManager() {
 		widgets,
 	} = state;
 
-	const duplicate = (event) => {
-		event.preventDefault();
+	const activeItem = layoutData.items[activeItemId];
 
-		const item = layoutData.items[activeItemId];
-
-		if (
-			item &&
-			canBeDuplicated(fragmentEntryLinks, item, layoutData, widgets) &&
-			document.activeElement === document.body
-		) {
-			dispatch(
-				duplicateItem({
-					itemId: activeItemId,
-					segmentsExperienceId,
-					selectItem,
-				})
-			);
-		}
+	const duplicate = () => {
+		dispatch(
+			duplicateItem({
+				itemId: activeItemId,
+				segmentsExperienceId,
+				selectItem,
+			})
+		);
 	};
 
-	const remove = (event) => {
-		if (
-			!isEditableCKEditor(event.target) &&
-			!isTextElement(event.target) &&
-			!isCommentsAlloyEditor(event.target)
-		) {
-			event.preventDefault();
-		}
-
-		const item = layoutData.items[activeItemId];
-
-		if (
-			item &&
-			canBeRemoved(item, layoutData) &&
-			document.activeElement === document.body
-		) {
-			dispatch(
-				deleteItem({
-					itemId: item.itemId,
-					selectItem,
-					store: state,
-				})
-			);
-		}
+	const remove = () => {
+		dispatch(
+			deleteItem({
+				itemId: activeItemId,
+				selectItem,
+				store: state,
+			})
+		);
 	};
 
-	const save = (event) => {
-		event.preventDefault();
-
-		const item = layoutData.items[activeItemId];
-
-		if (
-			item &&
-			canBeSaved(item, layoutData) &&
-			document.activeElement === document.body
-		) {
-			setOpenSaveModal(true);
-		}
+	const save = () => {
+		setOpenSaveModal(true);
 	};
 
 	const undo = (event) => {
-		if (
-			!isTextElement(event.target) &&
-			!isCommentsAlloyEditor(event.target) &&
-			!isWithinIframe()
-		) {
-			event.preventDefault();
-
-			if (event.shiftKey) {
-				dispatch(redoThunk({store: state}));
-			}
-			else {
-				dispatch(undoThunk({store: state}));
-			}
+		if (event.shiftKey) {
+			dispatch(redoThunk({store: state}));
+		}
+		else {
+			dispatch(undoThunk({store: state}));
 		}
 	};
 
 	const move = (event) => {
-		const item = layoutData.items[activeItemId];
+		const {itemId, parentId} = activeItem;
+
+		const parentItem = layoutData.items[parentId];
+
+		const numChildren = parentItem.children.length;
+
+		const currentPosition = parentItem.children.indexOf(itemId);
+
+		const direction =
+			event.keyCode === ARROW_UP_KEYCODE ||
+			event.keyCode === ARROW_LEFT_KEYCODE
+				? MOVE_ITEM_DIRECTIONS.UP
+				: MOVE_ITEM_DIRECTIONS.DOWN;
 
 		if (
-			item &&
-			!isTextElement(event.target) &&
-			!isEditableCKEditor(event.target) &&
-			!isCommentsAlloyEditor(event.target)
+			(direction === MOVE_ITEM_DIRECTIONS.UP && currentPosition === 0) ||
+			(direction === MOVE_ITEM_DIRECTIONS.DOWN &&
+				currentPosition === numChildren - 1)
 		) {
-			event.preventDefault();
-
-			const {itemId, parentId} = item;
-
-			const parentItem = layoutData.items[parentId];
-
-			const numChildren = parentItem.children.length;
-
-			const currentPosition = parentItem.children.indexOf(itemId);
-
-			const direction =
-				event.keyCode === ARROW_UP_KEYCODE
-					? MOVE_ITEM_DIRECTIONS.UP
-					: MOVE_ITEM_DIRECTIONS.DOWN;
-
-			if (
-				(direction === MOVE_ITEM_DIRECTIONS.UP &&
-					currentPosition === 0) ||
-				(direction === MOVE_ITEM_DIRECTIONS.DOWN &&
-					currentPosition === numChildren - 1)
-			) {
-				return;
-			}
-
-			let position;
-
-			if (direction === MOVE_ITEM_DIRECTIONS.UP) {
-				position = currentPosition - 1;
-			}
-			else if (direction === MOVE_ITEM_DIRECTIONS.DOWN) {
-				position = currentPosition + 1;
-			}
-
-			dispatch(
-				moveItem({
-					itemId,
-					parentItemId: parentId,
-					position,
-					segmentsExperienceId,
-				})
-			);
+			return;
 		}
+
+		let position;
+
+		if (direction === MOVE_ITEM_DIRECTIONS.UP) {
+			position = currentPosition - 1;
+		}
+		else if (direction === MOVE_ITEM_DIRECTIONS.DOWN) {
+			position = currentPosition + 1;
+		}
+
+		dispatch(
+			moveItem({
+				itemId,
+				parentItemId: parentId,
+				position,
+				segmentsExperienceId,
+			})
+		);
 	};
 
 	const keymapRef = useRef(null);
@@ -216,26 +160,76 @@ export default function ShortcutManager() {
 	keymapRef.current = {
 		duplicate: {
 			action: duplicate,
+			canBeExecuted: () =>
+				canUpdatePageStructure &&
+				!!layoutData.items[activeItemId] &&
+				canBeDuplicated(
+					fragmentEntryLinks,
+					layoutData.items[activeItemId],
+					layoutData,
+					widgets
+				),
 			isKeyCombination: (event) =>
 				ctrlOrMeta(event) && event.keyCode === D_KEYCODE,
 		},
 		move: {
 			action: move,
-			isKeyCombination: (event) =>
-				event.keyCode === ARROW_UP_KEYCODE ||
-				event.keyCode === ARROW_DOWN_KEYCODE,
+			canBeExecuted: (event) =>
+				canUpdatePageStructure &&
+				!!layoutData.items[activeItemId] &&
+				!isEditableField(event.target) &&
+				!isInteractiveElement(event.target),
+			isKeyCombination: (event) => {
+				if (!activeItem) {
+					return false;
+				}
+
+				const {parentId} = activeItem;
+
+				const parentItem = layoutData.items[parentId];
+
+				if (
+					parentItem.config.contentDisplay ===
+					CONTAINER_DISPLAY_OPTIONS.flexRow
+				) {
+					return (
+						event.keyCode === ARROW_RIGHT_KEYCODE ||
+						event.keyCode === ARROW_LEFT_KEYCODE
+					);
+				}
+
+				return (
+					event.keyCode === ARROW_UP_KEYCODE ||
+					event.keyCode === ARROW_DOWN_KEYCODE
+				);
+			},
 		},
 		remove: {
 			action: remove,
+			canBeExecuted: (event) =>
+				canUpdatePageStructure &&
+				!!layoutData.items[activeItemId] &&
+				canBeRemoved(layoutData.items[activeItemId], layoutData) &&
+				!isEditableField(event.target) &&
+				!isInteractiveElement(event.target),
 			isKeyCombination: (event) => event.keyCode === BACKSPACE_KEYCODE,
 		},
 		save: {
 			action: save,
+			canBeExecuted: () =>
+				canUpdatePageStructure &&
+				!!layoutData.items[activeItemId] &&
+				canBeSaved(layoutData.items[activeItemId], layoutData),
 			isKeyCombination: (event) =>
 				ctrlOrMeta(event) && event.keyCode === S_KEYCODE,
 		},
 		undo: {
 			action: undo,
+			canBeExecuted: (event) =>
+				(isEditableField(event.target) ||
+					!isInteractiveElement(event.target)) &&
+				!isWithinIframe() &&
+				!isEditingEditableField(),
 			isKeyCombination: (event) =>
 				ctrlOrMeta(event) &&
 				event.keyCode === Z_KEYCODE &&
@@ -245,11 +239,16 @@ export default function ShortcutManager() {
 
 	useEffect(() => {
 		const onKeyDown = (event) => {
-			const shortcut = Object.values(keymapRef.current).find((shortcut) =>
-				shortcut.isKeyCombination(event)
+			const shortcut = Object.values(keymapRef.current).find(
+				(shortcut) =>
+					shortcut.isKeyCombination(event) &&
+					shortcut.canBeExecuted(event)
 			);
 
 			if (shortcut) {
+				event.stopPropagation();
+				event.preventDefault();
+
 				shortcut.action(event);
 			}
 		};
@@ -262,9 +261,12 @@ export default function ShortcutManager() {
 	}, []);
 
 	return (
-		<SaveFragmentCompositionModal
-			onCloseModal={() => setOpenSaveModal(false)}
-			open={openSaveModal}
-		/>
+		<>
+			{openSaveModal && (
+				<SaveFragmentCompositionModal
+					onCloseModal={() => setOpenSaveModal(false)}
+				/>
+			)}
+		</>
 	);
 }

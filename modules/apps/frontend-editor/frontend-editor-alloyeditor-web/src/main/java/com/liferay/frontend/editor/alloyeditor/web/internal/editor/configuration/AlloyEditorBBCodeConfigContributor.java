@@ -22,11 +22,13 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.parsers.bbcode.BBCodeTranslatorUtil;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -84,17 +86,13 @@ public class AlloyEditorBBCodeConfigContributor
 
 		StringBundler sb = new StringBundler(3);
 
-		sb.append("bidi,div,flash,font,forms,indentblock,keystrokes,maximize,");
+		sb.append("bidi,div,font,forms,indentblock,keystrokes,maximize,");
 		sb.append("newpage,pagebreak,preview,print,save,showblocks,smiley,");
 		sb.append("stylescombo,templates,video");
 
 		jsonObject.put(
 			"removePlugins",
-			removePlugins.concat(
-				","
-			).concat(
-				sb.toString()
-			)
+			StringBundler.concat(removePlugins, ",", sb.toString())
 		).put(
 			"smiley_images",
 			toJSONArray(BBCodeTranslatorUtil.getEmoticonFiles())
@@ -135,6 +133,10 @@ public class AlloyEditorBBCodeConfigContributor
 			resourceBundle = _resourceBundleLoader.loadResourceBundle(locale);
 		}
 		catch (MissingResourceException missingResourceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(missingResourceException, missingResourceException);
+			}
+
 			resourceBundle = ResourceBundleUtil.EMPTY_RESOURCE_BUNDLE;
 		}
 
@@ -239,6 +241,9 @@ public class AlloyEditorBBCodeConfigContributor
 	private static final int _CKEDITOR_STYLE_BLOCK = 1;
 
 	private static final int _CKEDITOR_STYLE_INLINE = 2;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AlloyEditorBBCodeConfigContributor.class);
 
 	@Reference(
 		policy = ReferencePolicy.DYNAMIC,

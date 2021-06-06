@@ -15,7 +15,7 @@
 package com.liferay.flags.taglib.servlet.taglib.react;
 
 import com.liferay.flags.taglib.internal.servlet.ServletContextUtil;
-import com.liferay.flags.taglib.servlet.taglib.util.FlagsTagUtil;
+import com.liferay.flags.taglib.internal.servlet.taglib.util.FlagsTagUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -155,7 +155,7 @@ public class FlagsTag extends IncludeTag {
 				"liferay-flags:flags:data", _getData(message));
 
 			httpServletRequest.setAttribute(
-				"liferay-flags:flags:elementClasses", _getElementClasses());
+				"liferay-flags:flags:elementClasses", _elementClasses);
 			httpServletRequest.setAttribute(
 				"liferay-flags:flags:message", message);
 			httpServletRequest.setAttribute(
@@ -249,10 +249,6 @@ public class FlagsTag extends IncludeTag {
 		}
 
 		return dataJSONObject;
-	}
-
-	private String _getElementClasses() {
-		return _elementClasses;
 	}
 
 	private String _getMessage() {

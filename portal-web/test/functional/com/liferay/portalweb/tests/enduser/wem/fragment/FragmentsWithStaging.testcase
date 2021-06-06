@@ -43,6 +43,8 @@ definition {
 	@description = "Fragments are published automatically on any publishing process."
 	@priority = "5"
 	test AssertFragmentsAlwaysPublished {
+		property portal.acceptance = "true";
+
 		task ("Add a fragment collection to the staging site via JSON") {
 			JSONFragment.addFragmentCollection(
 				groupKey = "Test Site Name-staging",
@@ -138,9 +140,7 @@ definition {
 
 		FragmentsEditor.typeHtmlEditor(content = '''<div class="fragment_1">Fragment Name</div>''');
 
-		AssertTextEquals(
-			locator1 = "FragmentEditor#AUTOSAVE_MESSAGE",
-			value1 = "Changes Saved");
+		FragmentsEditor.waitForAutoSave();
 
 		Navigator.gotoBack();
 

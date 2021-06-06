@@ -20,7 +20,6 @@ import com.liferay.portal.kernel.exception.NoSuchRepositoryEntryException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.portal.kernel.repository.model.FileEntry;
-import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.servlet.SessionErrors;
@@ -58,15 +57,15 @@ public abstract class GetFileEntryMVCRenderCommand implements MVCRenderCommand {
 			renderRequest.setAttribute(
 				WebKeys.DOCUMENT_LIBRARY_FILE_ENTRY, fileEntry);
 
-			FileVersion fileVersion = ActionUtil.getFileVersion(
-				renderRequest, fileEntry);
-
 			String version = ParamUtil.getString(renderRequest, "version");
 
 			if (Validator.isNotNull(version)) {
 				renderRequest.setAttribute(
-					WebKeys.DOCUMENT_LIBRARY_FILE_VERSION, fileVersion);
+					WebKeys.DOCUMENT_LIBRARY_FILE_VERSION,
+					ActionUtil.getFileVersion(renderRequest, fileEntry));
 			}
+
+			setAttributes(renderRequest, renderResponse);
 
 			return getPath();
 		}
@@ -88,5 +87,10 @@ public abstract class GetFileEntryMVCRenderCommand implements MVCRenderCommand {
 	}
 
 	protected abstract String getPath();
+
+	protected void setAttributes(
+			RenderRequest renderRequest, RenderResponse renderResponse)
+		throws PortalException {
+	}
 
 }

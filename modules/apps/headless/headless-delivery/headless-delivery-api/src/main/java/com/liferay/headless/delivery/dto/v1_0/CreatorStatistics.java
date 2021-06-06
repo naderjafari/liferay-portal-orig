@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -44,16 +46,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("CreatorStatistics")
+@GraphQLName(
+	description = "Detailed info of the creator.", value = "CreatorStatistics"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "CreatorStatistics")
-public class CreatorStatistics {
+public class CreatorStatistics implements Serializable {
 
 	public static CreatorStatistics toDTO(String json) {
 		return ObjectMapperUtil.readValue(CreatorStatistics.class, json);
 	}
 
-	@Schema(description = "Join date of the author")
+	@Schema(description = "Join date of the author.")
 	public Date getJoinDate() {
 		return joinDate;
 	}
@@ -77,11 +81,11 @@ public class CreatorStatistics {
 		}
 	}
 
-	@GraphQLField(description = "Join date of the author")
+	@GraphQLField(description = "Join date of the author.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date joinDate;
 
-	@Schema(description = "Last post created by the author")
+	@Schema(description = "Last post created by the author.")
 	public Date getLastPostDate() {
 		return lastPostDate;
 	}
@@ -105,7 +109,7 @@ public class CreatorStatistics {
 		}
 	}
 
-	@GraphQLField(description = "Last post created by the author")
+	@GraphQLField(description = "Last post created by the author.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date lastPostDate;
 
@@ -251,6 +255,7 @@ public class CreatorStatistics {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.CreatorStatistics",
 		name = "x-class-name"
 	)
@@ -286,7 +291,7 @@ public class CreatorStatistics {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -325,7 +330,7 @@ public class CreatorStatistics {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

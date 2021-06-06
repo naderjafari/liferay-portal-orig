@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.dao.orm;
 
 import com.liferay.portal.kernel.cache.PortalCache;
+import com.liferay.portal.kernel.model.BaseModel;
 
 import java.io.Serializable;
 
@@ -37,7 +38,7 @@ public interface EntityCache {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * 				#getResult(Class, Serializable)}
+	 *             #getResult(Class, Serializable)}
 	 */
 	@Deprecated
 	public Serializable getResult(
@@ -57,7 +58,7 @@ public interface EntityCache {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * 				#putResult(Class, Serializable, Serializable)}
+	 *             #putResult(Class, Serializable, Serializable)}
 	 */
 	@Deprecated
 	public void putResult(
@@ -66,7 +67,7 @@ public interface EntityCache {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * 				#putResult(Class, Serializable, Serializable, boolean)}
+	 *             #putResult(Class, Serializable, Serializable, boolean)}
 	 */
 	@Deprecated
 	public void putResult(
@@ -74,8 +75,17 @@ public interface EntityCache {
 		Serializable result, boolean quiet);
 
 	public void putResult(
+		Class<?> clazz, BaseModel<?> baseModel, boolean quiet,
+		boolean updateFinderCache);
+
+	public void putResult(
 		Class<?> clazz, Serializable primaryKey, Serializable result);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #putResult(Class, BaseModel, boolean, boolean)}
+	 */
+	@Deprecated
 	public void putResult(
 		Class<?> clazz, Serializable primaryKey, Serializable result,
 		boolean quiet);
@@ -84,11 +94,13 @@ public interface EntityCache {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * 				#removeResult(Class, Serializable)}
+	 *             #removeResult(Class, Serializable)}
 	 */
 	@Deprecated
 	public void removeResult(
 		boolean entityCacheEnabled, Class<?> clazz, Serializable primaryKey);
+
+	public void removeResult(Class<?> clazz, BaseModel<?> baseModel);
 
 	public void removeResult(Class<?> clazz, Serializable primaryKey);
 

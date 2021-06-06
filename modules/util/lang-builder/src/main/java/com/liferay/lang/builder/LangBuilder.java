@@ -177,6 +177,7 @@ public class LangBuilder {
 		_createProperties(content, "ko"); // Korean
 		_createProperties(content, "lo"); // Lao
 		_createProperties(content, "lt"); // Lithuanian
+		_createProperties(content, "ms"); // Malay
 		_createProperties(content, "nb"); // Norwegian Bokmål
 		_createProperties(content, "fa"); // Persian
 		_createProperties(content, "pl"); // Polish
@@ -195,20 +196,6 @@ public class LangBuilder {
 		_createProperties(content, "tr"); // Turkish
 		_createProperties(content, "uk"); // Ukrainian
 		_createProperties(content, "vi"); // Vietnamese
-	}
-
-	private static String _getSpecialPropertyValue(String key) {
-		if (key.equals(LanguageConstants.KEY_DIR)) {
-			return LanguageConstants.VALUE_LTR;
-		}
-		else if (key.equals(LanguageConstants.KEY_LINE_BEGIN)) {
-			return LanguageConstants.VALUE_LEFT;
-		}
-		else if (key.equals(LanguageConstants.KEY_LINE_END)) {
-			return LanguageConstants.VALUE_RIGHT;
-		}
-
-		return StringPool.BLANK;
 	}
 
 	private static void _processCurrentBranch(
@@ -359,10 +346,13 @@ public class LangBuilder {
 					}
 				}
 
+				boolean automaticCopy = false;
+
 				if ((translatedText != null) &&
 					translatedText.endsWith(
 						LanguageBuilderUtil.AUTOMATIC_COPY)) {
 
+					automaticCopy = true;
 					translatedText = "";
 				}
 
@@ -394,6 +384,9 @@ public class LangBuilder {
 							translatedText =
 								value + LanguageBuilderUtil.AUTOMATIC_COPY;
 						}
+					}
+					else if (!automaticCopy && key.endsWith("-delimiter")) {
+						translatedText = "";
 					}
 					else if (languageId.equals("el") &&
 							 (key.equals("enabled") || key.equals("on") ||
@@ -440,7 +433,9 @@ public class LangBuilder {
 					}
 				}
 
-				if (Validator.isNotNull(translatedText)) {
+				if (Validator.isNotNull(translatedText) ||
+					key.endsWith("-delimiter")) {
+
 					translatedText = _fixTranslation(translatedText);
 
 					sb.append(key);
@@ -554,6 +549,20 @@ public class LangBuilder {
 		}
 
 		return languageId;
+	}
+
+	private String _getSpecialPropertyValue(String key) {
+		if (key.equals(LanguageConstants.KEY_DIR)) {
+			return LanguageConstants.VALUE_LTR;
+		}
+		else if (key.equals(LanguageConstants.KEY_LINE_BEGIN)) {
+			return LanguageConstants.VALUE_LEFT;
+		}
+		else if (key.equals(LanguageConstants.KEY_LINE_END)) {
+			return LanguageConstants.VALUE_RIGHT;
+		}
+
+		return StringPool.BLANK;
 	}
 
 	private void _initKeysWithUpdatedValues() throws Exception {
@@ -715,15 +724,15 @@ public class LangBuilder {
 			return null;
 		}
 
-		Language fromLanguage = Language.fromString(
-			_getMicrosoftLanguageId(fromLanguageId));
-
 		Language toLanguage = Language.fromString(
 			_getMicrosoftLanguageId(toLanguageId));
 
 		if (toLanguage == null) {
 			return null;
 		}
+
+		Language fromLanguage = Language.fromString(
+			_getMicrosoftLanguageId(fromLanguageId));
 
 		String toText = null;
 

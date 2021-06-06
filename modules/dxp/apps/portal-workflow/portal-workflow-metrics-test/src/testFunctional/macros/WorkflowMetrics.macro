@@ -7,7 +7,6 @@ definition {
 			Click(locator1 = "WorkflowMetricsSLA#DELETE_SLA_BUTTON");
 
 			Click(locator1 = "WorkflowMetricsSLA#SLA_REMOVE_CONFIRMATION_BUTTON");
-
 		}
 	}
 
@@ -18,7 +17,6 @@ definition {
 
 		for (var assigneeName : list "${assigneeName}") {
 			while (IsElementNotPresent(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_FILTER_BY_ASSIGNEE_VALUE") && (maxIterations = "10")) {
-
 				Refresh();
 
 				WaitForSPARefresh();
@@ -29,7 +27,6 @@ definition {
 			}
 
 			if (IsElementNotPresent(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_FILTER_BY_ASSIGNEE_VALUE")) {
-
 				echo("timeout exceeded");
 			}
 
@@ -40,7 +37,6 @@ definition {
 	}
 
 	macro assertAllItemsValues {
-
 		var key_assigneeName = "${assigneeName}";
 		var key_taskName = "${taskName}";
 
@@ -48,7 +44,6 @@ definition {
 			var key_instanceInfo = "${isInstancePresent}";
 
 			while (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_ALL_ITEMS_TABLE_NAME") && (maxIterations = "10")) {
-
 				Refresh();
 
 				WaitForSPARefresh();
@@ -57,7 +52,6 @@ definition {
 			}
 
 			if (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_ALL_ITEMS_TABLE_NAME")) {
-
 				echo("timeout exceeded");
 			}
 
@@ -139,7 +133,20 @@ definition {
 			AssertTextEquals(
 				locator1 = "WorkflowMetrics#METRICS_PERFORMANCE_BY_STEP_AVG_COMPLETION_TIME_VALUE",
 				value1 = "${key_avgCompletionTime}");
+		}
+	}
 
+	macro assertCheckboxChecked {
+		for (var itemName : list "${taskList}") {
+			var key_itemName = "${itemName}";
+			AssertElementPresent(locator1 = "WorkflowReassignModal#ITEM_CHECKBOX_CHECKED");
+		}
+	}
+
+	macro assertCheckboxUnchecked {
+		for (var itemName : list "${taskListUnchecked}") {
+			var key_itemName = "${itemName}";
+			AssertElementNotPresent(locator1 = "WorkflowReassignModal#ITEM_CHECKBOX_CHECKED");
 		}
 	}
 
@@ -161,8 +168,37 @@ definition {
 			value1 = "inst / day");
 	}
 
-	macro assertNewAssigneeModalTable {
+	macro assertMetricsIndexes {
+		AssertElementPresent(
+			key_index = "liferay-${companyId}-workflow-metrics-instances",
+			locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_METRICS_INDEXES");
 
+		AssertElementPresent(
+			key_index = "liferay-${companyId}-workflow-metrics-nodes",
+			locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_METRICS_INDEXES");
+
+		AssertElementPresent(
+			key_index = "liferay-${companyId}-workflow-metrics-processes",
+			locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_METRICS_INDEXES");
+
+		AssertElementPresent(
+			key_index = "liferay-${companyId}-workflow-metrics-sla-instance-results",
+			locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_METRICS_INDEXES");
+
+		AssertElementPresent(
+			key_index = "liferay-${companyId}-workflow-metrics-sla-task-results",
+			locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_METRICS_INDEXES");
+
+		AssertElementPresent(
+			key_index = "liferay-${companyId}-workflow-metrics-tasks",
+			locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_METRICS_INDEXES");
+
+		AssertElementPresent(
+			key_index = "liferay-${companyId}-workflow-metrics-transitions",
+			locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_METRICS_INDEXES");
+	}
+
+	macro assertNewAssigneeModalTable {
 		AssertTextEquals(
 			key_columnName = "ID",
 			locator1 = "WorkflowReassignModal#COLUMN_CHECK",
@@ -198,7 +234,6 @@ definition {
 	}
 
 	macro assertSelectTasksModalTable {
-
 		AssertTextEquals(
 			key_columnName = "ID",
 			locator1 = "WorkflowReassignModal#COLUMN_CHECK",
@@ -218,6 +253,31 @@ definition {
 			key_columnName = "Current Assignee",
 			locator1 = "WorkflowReassignModal#COLUMN_CHECK",
 			value1 = "Current Assignee");
+	}
+
+	macro assertTransitionTaskOptionNotPresent {
+		var key_taskName = "${taskName}";
+		var key_transitionOption = "${transitionOption}";
+
+		AssertElementNotPresent(locator1 = "WorkflowTransitionModal#TRANSITION_TO_OPTION");
+	}
+
+	macro assertTransitionTaskOptionPresent {
+		var key_taskName = "${taskName}";
+		var key_transitionOption = "${transitionOption}";
+
+		AssertElementPresent(locator1 = "WorkflowTransitionModal#TRANSITION_TO_OPTION");
+	}
+
+	macro assertTransitionTaskPresent {
+		var key_taskName = "${taskName}";
+		AssertElementPresent(locator1 = "WorkflowTransitionModal#TASK_PANEL");
+	}
+
+	macro assertWorkflowProcessPresent {
+		AssertElementPresent(
+			key_workflowProcessName = "${workflowProcessName}",
+			locator1 = "WorkflowMetrics#METRICS_WORKFLOW_PROCESS_NAME");
 	}
 
 	macro assertWorkloadByAssigneeCardEmptyMessage {
@@ -245,7 +305,7 @@ definition {
 			workflowDefinition = "Single Approver Alternative",
 			workflowResourceValue = "Blogs Entry");
 
-		WorkflowMetrics.createAlternativeInstances(
+		WorkflowMetrics.createAlternativeBlogInstances(
 			numberOfBlogInstances = "3",
 			numberOfUsers = "3");
 
@@ -266,13 +326,30 @@ definition {
 	}
 
 	macro bulkReassignSetup {
-
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
 		WorkflowMetrics.createUsersAndInstancesWithGroovy(
 			numberOfBlogInstances = "5",
 			numberOfUsers = "3",
 			site = "${siteName}");
+	}
+
+	macro checkCompletedWorkflowValues {
+		AssertTextEquals(
+			locator1 = "WorkflowMetrics#PERFORMANCE_TOTAL_COMPLETED_ITEMS_VALUE",
+			value1 = "${key_completed}");
+
+		AssertTextEquals(
+			locator1 = "WorkflowMetrics#PERFORMANCE_TOTAL_OVERDUE_ITEMS_VALUE",
+			value1 = "${key_overdue}");
+
+		AssertTextEquals(
+			locator1 = "WorkflowMetrics#PERFORMANCE_TOTAL_ONTIME_ITEMS_VALUE",
+			value1 = "${key_ontime}");
+
+		AssertTextEquals(
+			locator1 = "WorkflowMetrics#PERFORMANCE_TOTAL_UNTRACKED_ITEMS_VALUE",
+			value1 = "${key_untracked}");
 	}
 
 	macro checkPendingWorkflowValues {
@@ -294,7 +371,6 @@ definition {
 	}
 
 	macro checkWorkflowReports {
-
 		ApplicationsMenu.gotoPortlet(
 			category = "Workflow",
 			panel = "Applications",
@@ -323,7 +399,7 @@ definition {
 		Click(locator1 = "WorkflowMetrics#FILTER_CLEAR_ALL");
 	}
 
-	macro createAlternativeInstances {
+	macro createAlternativeBlogInstances {
 		var iterator = "1";
 		var numberOfBlogInstances = MathUtil.sum("${numberOfBlogInstances}", "1");
 
@@ -331,6 +407,19 @@ definition {
 			JSONBlog.addEntry(
 				entryContent = "Blogs Alternative Entry ${iterator} Content",
 				entryTitle = "Blogs Alternative Title ${iterator}");
+
+			var iterator = MathUtil.sum("${iterator}", "1");
+		}
+	}
+
+	macro createBlogInstances {
+		var iterator = "1";
+		var numberOfBlogInstances = MathUtil.sum("${numberOfBlogInstances}", "1");
+
+		while ("${iterator}" != "${numberOfBlogInstances}") {
+			JSONBlog.addEntry(
+				entryContent = "Blogs Entry ${iterator} Content",
+				entryTitle = "Blogs Entry Title ${iterator}");
 
 			var iterator = MathUtil.sum("${iterator}", "1");
 		}
@@ -430,7 +519,6 @@ definition {
 	}
 
 	macro executeIndexActions {
-
 		var key_actionDescription = "${actionDescription}";
 
 		ApplicationsMenu.gotoPortlet(
@@ -443,14 +531,12 @@ definition {
 		Click(locator1 = "WorkflowMetricsIndex#METRICS_MENU_INDEX");
 
 		while (IsElementNotPresent(locator1 = "WorkflowMetricsIndex#METRICS_INDEX_SETTINGS") && (maxIterations = "5")) {
-
 			Click(locator1 = "WorkflowMetricsIndex#METRICS_MENU_INDEX");
 
 			Pause(locator1 = "1000");
 		}
 
 		if (IsElementNotPresent(locator1 = "WorkflowMetricsIndex#METRICS_INDEX_SETTINGS")) {
-
 			echo("timeout exceeded");
 		}
 
@@ -493,6 +579,7 @@ definition {
 		var key_slaDefinitionDescription = "${slaDefinitionDescription}";
 		var key_slaDefinitionEnd = "${slaDefinitionEnd}";
 		var key_slaDefinitionName = "${slaDefinitionName}";
+		var key_slaDefinitionPause = "${slaDefinitionPause}";
 		var key_slaDefinitionStart = "${slaDefinitionStart}";
 
 		Type(
@@ -507,7 +594,6 @@ definition {
 			Click(locator1 = "WorkflowMetricsSLA#SLA_DEFINITION_START");
 
 			if (IsElementNotPresent(locator1 = "WorkflowMetricsSLA#SLA_DROPDOWN_START_OPTION")) {
-
 				Refresh();
 
 				WaitForSPARefresh();
@@ -518,6 +604,14 @@ definition {
 			AssertClick(
 				locator1 = "WorkflowMetricsSLA#SLA_DROPDOWN_START_OPTION",
 				value1 = "${key_slaDefinitionStart}");
+		}
+
+		if (isSet(slaDefinitionPause)) {
+			Click(locator1 = "WorkflowMetricsSLA#SLA_DEFINITION_PAUSE");
+
+			AssertClick(
+				locator1 = "WorkflowMetricsSLA#SLA_DROPDOWN_PAUSE_OPTION",
+				value1 = "${key_slaDefinitionPause}");
 		}
 
 		if (isSet(slaDefinitionEnd)) {
@@ -550,11 +644,21 @@ definition {
 	}
 
 	macro goToBulkReassignSelectTasks {
+		WaitForElementPresent(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_SELECT_ALL");
 		Click(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_SELECT_ALL");
 		Click(
 			locator1 = "WorkflowAllItems#KEBAB_DROPDOWN",
 			task = "1");
 		Click(locator1 = "WorkflowAllItems#REASSIGN_TASK_DROPDOWN");
+	}
+
+	macro goToBulkTransitionSelectTasks {
+		WaitForElementPresent(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_SELECT_ALL");
+		Click(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_SELECT_ALL");
+		Click(
+			locator1 = "WorkflowAllItems#KEBAB_DROPDOWN",
+			task = "1");
+		Click(locator1 = "WorkflowAllItems#TRANSITION_DROPDOWN");
 	}
 
 	macro goToCreatedSLAForm {
@@ -601,8 +705,11 @@ definition {
 		MenuItem.click(menuItem = "Edit");
 	}
 
-	macro goToReassignSelectTask {
+	macro goToFieldMappingsTab {
+		Click(locator1 = "WorkflowMetrics#SEARCH_FIELD_MAPPINGS_HEADER");
+	}
 
+	macro goToReassignSelectTask {
 		Click(
 			locator1 = "WorkflowAllItems#KEBAB_DROPDOWN",
 			task = "1");
@@ -610,13 +717,17 @@ definition {
 		Click(locator1 = "WorkflowAllItems#REASSIGN_TASK_DROPDOWN");
 	}
 
-	macro goToWorkflowAllItems {
-		ApplicationsMenu.gotoPortlet(
-			category = "Workflow",
-			panel = "Applications",
-			portlet = "Metrics");
+	macro goToUpdateDueDateTasks {
+		Pause(locator1 = "2000");
+		Click(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_SELECT_ALL");
+		Click(
+			locator1 = "WorkflowAllItems#KEBAB_DROPDOWN",
+			task = "1");
+		MenuItem.clickNoError(menuItem = "Update Tasks Due Dates");
+	}
 
-		WorkflowMetrics.goToWorkflowProcessMetrics(workflowProcessName = "Single Approver");
+	macro goToWorkflowAllItems {
+		WorkflowMetrics.goToWorkflowProcessMetrics(workflowProcessName = "${workflowProcessName}");
 
 		Click(locator1 = "WorkflowMetrics#DASHBOARD_TOTAL_PENDING_ITEMS_VALUE");
 	}
@@ -639,7 +750,6 @@ definition {
 		}
 
 		if (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_WORKFLOW_PROCESS_NAME")) {
-
 			echo("timeout exceeded");
 		}
 
@@ -668,6 +778,24 @@ definition {
 		KeyPress(
 			locator1 = "TextInput#SEARCH",
 			value1 = "\RETURN");
+	}
+
+	macro selectAllReassignTasks {
+		var key_taskList = "${taskList}";
+		var key_taskListUnchecked = "${taskListUnchecked}";
+		Click(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_SELECT_ALL_MODAL");
+		Click(locator1 = "WorkflowReassignModal#NEXT_PAGINATION_BUTTON");
+		WorkflowMetrics.assertCheckboxUnchecked(taskListUnchecked = "${taskListUnchecked}");
+		Click(locator1 = "WorkflowReassignModal#PREVIOUS_PAGINATION_BUTTON");
+		WorkflowMetrics.assertCheckboxChecked(taskList = "${taskList}");
+		AssertElementPresent(locator1 = "WorkflowReassignModal#SELECT_ALL_REASSIGN");
+		Click(locator1 = "WorkflowReassignModal#SELECT_ALL_REASSIGN");
+		Click(locator1 = "WorkflowReassignModal#NEXT_BUTTON");
+	}
+
+	macro selectAllTransitionTasks {
+		Click(locator1 = "WorkflowAllItems#WORKFLOW_ALL_ITEMS_SELECT_ALL_MODAL");
+		Click(locator1 = "WorkflowReassignModal#NEXT_BUTTON");
 	}
 
 	macro selectDateRange {
@@ -731,7 +859,6 @@ definition {
 	}
 
 	macro selectNewAssignee {
-
 		for (var itemName : list "${taskList}") {
 			var key_itemName = "${itemName}";
 
@@ -761,8 +888,36 @@ definition {
 		Click(locator1 = "WorkflowReassignModal#NEXT_BUTTON");
 	}
 
-	macro selectReassignTasks {
+	macro selectNewAssigneePagination {
+		for (var itemName : list "${taskList}") {
+			var key_itemName = "${itemName}";
 
+			while (!(IsElementPresent(locator1 = "WorkflowReassignModal#SEARCH_NEW_ASSIGNEE_SPECIFIC"))) {
+				Click(locator1 = "WorkflowReassignModal#NEXT_PAGINATION_BUTTON");
+			}
+
+			Click(locator1 = "WorkflowReassignModal#SEARCH_NEW_ASSIGNEE_SPECIFIC");
+
+			Click(
+				key_nameOfAssignee = "Test Test",
+				locator1 = "WorkflowReassignModal#REASSIGN_TASK_NEW_ASSIGNEE_DROPDOWN");
+		}
+		AssertTextEquals(
+			locator1 = "WorkflowReassignModal#SEARCH_NEW_ASSIGNEE_SPECIFIC",
+			value1 = "Test Test");
+
+		Click(locator1 = "WorkflowReassignModal#PREVIOUS_PAGINATION_BUTTON");
+		var key_itemName = "Blogs Entry: Blogs Entry Title 1";
+
+		AssertTextEquals(
+			button = "Reassign",
+			locator1 = "WorkflowReassignModal#SEARCH_NEW_ASSIGNEE_SPECIFIC",
+			value1 = "Test Test");
+
+		Button.click(button = "Reassign");
+	}
+
+	macro selectReassignTasks {
 		for (var itemName : list "${taskList}") {
 			var key_itemName = "${itemName}";
 
@@ -784,7 +939,6 @@ definition {
 		Click(locator1 = "WorkflowMetrics#METRICS_PERFORMANCE_BY_ASSIGNEE_VIEW_STEPS_DROPDOWN");
 
 		while (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_PERFORMANCE_BY_ASSIGNEE_DROPDOWN_STEP_${velocityUnit}") && (maxIterations = "10")) {
-
 			Refresh();
 
 			ScrollWebElementIntoView(locator1 = "WorkflowMetrics#METRICS_PERFORMANCE_BY_ASSIGNEE_VIEW_STEPS_DROPDOWN");
@@ -795,11 +949,18 @@ definition {
 		}
 
 		if (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_PERFORMANCE_BY_ASSIGNEE_DROPDOWN_STEP_${velocityUnit}")) {
-
 			echo("timeout exceeded");
 		}
 
 		Click(locator1 = "WorkflowMetrics#METRICS_PERFORMANCE_BY_ASSIGNEE_DROPDOWN_STEP_${velocityUnit}");
+	}
+
+	macro selectTransition {
+		var key_taskName = "${taskName}";
+
+		Select(
+			locator1 = "WorkflowTransitionModal#TRANSITION_TO_BUTTON",
+			value1 = "${transitionOption}");
 	}
 
 	macro selectVelocityUnit {
@@ -811,12 +972,10 @@ definition {
 	}
 
 	macro selectWorkloadByAssigneeCardFilterValue {
-
 		for (var key_workflowStep : list "${workflowStep}") {
 			Click(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER");
 
 			while (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER_OPTION") && (maxIterations = "10")) {
-
 				Refresh();
 
 				Click(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER");
@@ -825,7 +984,6 @@ definition {
 			}
 
 			if (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER_OPTION")) {
-
 				echo("timeout exceeded");
 			}
 
@@ -843,7 +1001,6 @@ definition {
 		Click(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER_PROCESS_STEP");
 
 		while (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER_OPTION") && (maxIterations = "10")) {
-
 			Refresh();
 
 			Click(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER_PROCESS_STEP");
@@ -852,7 +1009,6 @@ definition {
 		}
 
 		if (IsElementNotPresent(locator1 = "WorkflowMetrics#METRICS_WORKLOAD_BY_ASSIGNEE_CARD_FILTER_OPTION")) {
-
 			echo("timeout exceeded");
 		}
 
@@ -864,7 +1020,6 @@ definition {
 	}
 
 	macro singleReassignSetup {
-
 		ProductMenu.gotoPortlet(
 			category = "Configuration",
 			portlet = "Workflow",
@@ -928,14 +1083,14 @@ definition {
 				value1 = "${key_createdBy}");
 
 			if (!(IsTextEqual.isPartialText(locator1 = "WorkflowAllItems#DETAIL_PAGE_CREATION_DATE", value1 = "${key_currentDate}"))) {
-
 				var key_currentDateDay = MathUtil.sum("${key_currentDateDay}", "1");
-				var key_currentDate = "${key_currentDateMonthShort} ${key_currentDateDay}, ${key_currentDateYear}";
 
 				var isLessThan10 = MathUtil.isLessThan("${key_currentDateDay}", "10");
 				if ("${isLessThan10}" == "true") {
 					var key_currentDateDay = "0${key_currentDateDay}";
 				}
+
+				var key_currentDate = "${key_currentDateMonthShort} ${key_currentDateDay}, ${key_currentDateYear}";
 			}
 
 			AssertTextEquals.assertPartialText(
@@ -966,14 +1121,14 @@ definition {
 				value1 = "Completed");
 
 			if (!(IsTextEqual.isPartialText(locator1 = "WorkflowAllItems#DETAIL_PAGE_END_DATE", value1 = "${key_currentDate}"))) {
-
 				var key_currentDateDay = MathUtil.sum("${key_currentDateDay}", "1");
-				var key_currentDate = "${key_currentDateMonthShort} ${key_currentDateDay}, ${key_currentDateYear}";
 
 				var isLessThan10 = MathUtil.isLessThan("${key_currentDateDay}", "10");
 				if ("${isLessThan10}" == "true") {
 					var key_currentDateDay = "0${key_currentDateDay}";
 				}
+
+				var key_currentDate = "${key_currentDateMonthShort} ${key_currentDateDay}, ${key_currentDateYear}";
 			}
 
 			AssertTextEquals.assertPartialText(
@@ -1022,7 +1177,6 @@ definition {
 		var key_completionVelocityDateRange = "${completionVelocityDateRange}";
 
 		for (var isUnitPresent : list "${isPresent}") {
-
 			Click(locator1 = "WorkflowMetrics#METRICS_COMPLETION_VELOCITY_DATE_RANGE_DROPDOWN");
 
 			Click(locator1 = "WorkflowMetrics#METRICS_COMPLETION_VELOCITY_DATE_RANGE_DROPDOWN_OPTION");
@@ -1241,9 +1395,7 @@ definition {
 	}
 
 	macro waitForCompletedSLA {
-
 		while (IsTextEqual(locator1 = "WorkflowMetrics#DASHBOARD_TOTAL_${key_status}_ITEMS_VALUE", value1 = "${key_expectedValue}") && (maxIterations = "24")) {
-
 			echo("Waiting 5 seconds, until the Completed SLA shows up");
 
 			Pause(locator1 = "5000");
@@ -1254,14 +1406,29 @@ definition {
 		}
 
 		if (IsTextEqual(locator1 = "WorkflowMetrics#DASHBOARD_TOTAL_${key_status}_ITEMS_VALUE", value1 = "${key_expectedValue}")) {
-
 			echo("timeout exceeded");
 		}
 	}
 
 	macro waitForSLA {
-
 		while (IsTextEqual(locator1 = "WorkflowMetrics#DASHBOARD_TOTAL_${key_status}_ITEMS_VALUE", value1 = "${key_expectedValue}") && (maxIterations = "24")) {
+			echo("Waiting 5 seconds to recheck");
+
+			Pause(locator1 = "5000");
+
+			WorkflowMetrics.goToWorkflowProcessMetrics(workflowProcessName = "Single Approver");
+		}
+
+		if (IsTextEqual(locator1 = "WorkflowMetrics#DASHBOARD_TOTAL_${key_status}_ITEMS_VALUE", value1 = "${key_expectedValue}")) {
+			echo("timeout exceeded");
+		}
+	}
+
+	macro waitForSLAPendingNotChange {
+		var count = "1";
+
+		while (IsTextEqual(locator1 = "WorkflowMetrics#DASHBOARD_TOTAL_${key_status}_ITEMS_VALUE", value1 = "${key_expectedValue}") && ("${count}" != "${key_pauseTime}") && (maxIterations = "48")) {
+			var count = ${count} + 1;
 
 			echo("Waiting 5 seconds to recheck");
 
@@ -1271,7 +1438,6 @@ definition {
 		}
 
 		if (IsTextEqual(locator1 = "WorkflowMetrics#DASHBOARD_TOTAL_${key_status}_ITEMS_VALUE", value1 = "${key_expectedValue}")) {
-
 			echo("timeout exceeded");
 		}
 	}

@@ -62,6 +62,7 @@ import com.thoughtworks.qdox.model.JavaType;
 import com.thoughtworks.qdox.model.impl.AbstractBaseJavaEntity;
 import com.thoughtworks.qdox.model.impl.DefaultJavaMethod;
 import com.thoughtworks.qdox.model.impl.DefaultJavaParameterizedType;
+import com.thoughtworks.qdox.model.impl.DefaultJavaTypeVariable;
 
 import freemarker.cache.ClassTemplateLoader;
 
@@ -117,6 +118,7 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.dom4j.Attribute;
 import org.dom4j.Document;
@@ -367,8 +369,8 @@ public class ServiceBuilder {
 		try {
 			ClearThreadLocalUtil.clearThreadLocal();
 		}
-		catch (Throwable t) {
-			t.printStackTrace();
+		catch (Throwable throwable) {
+			throwable.printStackTrace();
 		}
 
 		Introspector.flushCaches();
@@ -646,11 +648,12 @@ public class ServiceBuilder {
 					"The package-path attribute is required");
 			}
 
-			_apiPackagePath = GetterUtil.getString(
-				rootElement.attributeValue("api-package-path"), packagePath);
 			_databaseNameMaxLength = GetterUtil.getInteger(
 				rootElement.attributeValue("database-name-max-length"),
 				databaseNameMaxLength);
+
+			_apiPackagePath = GetterUtil.getString(
+				rootElement.attributeValue("api-package-path"), packagePath);
 			_oldServiceOutputPath =
 				_apiDirName + "/" + StringUtil.replace(packagePath, '.', '/');
 			_outputPath =
@@ -1072,8 +1075,7 @@ public class ServiceBuilder {
 	public String getCompatJavaClassName(String key) {
 		return _compatProperties.getProperty(
 			StringBundler.concat(
-				"java.class.name", StringPool.OPEN_BRACKET, key,
-				StringPool.CLOSE_BRACKET));
+				"java.class.name[", key, StringPool.CLOSE_BRACKET));
 	}
 
 	public String getCreateMappingTableSQL(EntityMapping entityMapping)
@@ -1630,6 +1632,45 @@ public class ServiceBuilder {
 		return sb.toString();
 	}
 
+	public String getTypeParametersDefinition(
+		List<DefaultJavaTypeVariable<?>> defaultJavaTypeVariables) {
+
+		if (ListUtil.isEmpty(defaultJavaTypeVariables)) {
+			return StringPool.BLANK;
+		}
+
+		StringBundler sb = new StringBundler();
+
+		sb.append(StringPool.LESS_THAN);
+
+		for (DefaultJavaTypeVariable<?> defaultJavaTypeVariable :
+				defaultJavaTypeVariables) {
+
+			sb.append(defaultJavaTypeVariable.getFullyQualifiedName());
+
+			List<JavaType> javaTypes = defaultJavaTypeVariable.getBounds();
+
+			if (ListUtil.isNotEmpty(javaTypes)) {
+				sb.append(" extends ");
+
+				for (JavaType javaType : javaTypes) {
+					sb.append(javaType.getFullyQualifiedName());
+					sb.append(StringPool.SPACE);
+					sb.append(StringPool.AMPERSAND);
+					sb.append(StringPool.SPACE);
+				}
+
+				sb.setIndex(sb.index() - 3);
+			}
+
+			sb.append(StringPool.COMMA_AND_SPACE);
+		}
+
+		sb.setStringAt(StringPool.GREATER_THAN, sb.index() - 1);
+
+		return sb.toString();
+	}
+
 	public String getVariableName(JavaField field) {
 		String fieldName = field.getName();
 
@@ -2031,6 +2072,16 @@ public class ServiceBuilder {
 		return false;
 	}
 
+	public boolean isVersionLTE_7_3_0() {
+		if (_dtdVersion.isPreviousVersionThan("7.3.0") ||
+			_dtdVersion.isSameVersionAs("7.3.0")) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	public String javaAnnotationToString(JavaAnnotation javaAnnotation) {
 		StringBundler sb = new StringBundler();
 
@@ -2093,60 +2144,8 @@ public class ServiceBuilder {
 		return sb.toString();
 	}
 
-	private static Configuration _getConfiguration() {
-		if (_configuration != null) {
-			return _configuration;
-		}
-
-		_configuration = new Configuration(Configuration.getVersion());
-
-		_configuration.setNumberFormat("computer");
-
-		DefaultObjectWrapperBuilder defaultObjectWrapperBuilder =
-			new DefaultObjectWrapperBuilder(Configuration.getVersion());
-
-		_configuration.setObjectWrapper(defaultObjectWrapperBuilder.build());
-
-		_configuration.setTemplateLoader(
-			new ClassTemplateLoader(ServiceBuilder.class, StringPool.SLASH));
-		_configuration.setTemplateUpdateDelayMilliseconds(Long.MAX_VALUE);
-
-		return _configuration;
-	}
-
 	private static SAXReader _getSAXReader() {
 		return SAXReaderFactory.getSAXReader(null, false, false);
-	}
-
-	private static void _mkdir(File dir) throws IOException {
-		Files.createDirectories(dir.toPath());
-	}
-
-	private static void _move(File sourceFile, File destinationFile)
-		throws Exception {
-
-		File parentFile = destinationFile.getParentFile();
-
-		Path parentPath = parentFile.toPath();
-
-		if (!Files.exists(parentPath)) {
-			Files.createDirectories(parentPath);
-		}
-
-		Files.move(sourceFile.toPath(), destinationFile.toPath());
-	}
-
-	private static String _normalize(String fileName) {
-		return StringUtil.replace(
-			fileName, CharPool.BACK_SLASH, CharPool.SLASH);
-	}
-
-	private static String _read(File file) throws IOException {
-		String s = new String(
-			Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-
-		return StringUtil.replace(
-			s, StringPool.RETURN_NEW_LINE, StringPool.NEW_LINE);
 	}
 
 	private static void _readResourceActionModels(
@@ -2178,34 +2177,41 @@ public class ServiceBuilder {
 		}
 	}
 
-	private static void _touch(File file) throws IOException {
-		_mkdir(file.getParentFile());
-
-		Files.createFile(file.toPath());
-	}
-
-	private static void _write(File file, String s) throws IOException {
-		Path path = file.toPath();
-
-		Files.createDirectories(path.getParent());
-
-		Files.write(path, s.getBytes(StandardCharsets.UTF_8));
-	}
-
 	private void _addIndexMetadata(
 		Map<String, List<IndexMetadata>> indexMetadatasMap, String tableName,
 		List<String> pkEntityColumnDBNames, IndexMetadata indexMetadata) {
 
 		if ((pkEntityColumnDBNames != null) &&
-			(pkEntityColumnDBNames.size() > 1)) {
+			!pkEntityColumnDBNames.isEmpty()) {
 
 			String[] columnNames = indexMetadata.getColumnNames();
 
 			if (columnNames.length <= pkEntityColumnDBNames.size()) {
+				if (pkEntityColumnDBNames.size() > 1) {
+					boolean redundant = true;
+
+					for (int i = 0; i < columnNames.length; i++) {
+						if (!columnNames[i].equals(
+								pkEntityColumnDBNames.get(i))) {
+
+							redundant = false;
+
+							break;
+						}
+					}
+
+					if (redundant) {
+						return;
+					}
+				}
+			}
+			else if (indexMetadata.isUnique()) {
 				boolean redundant = true;
 
-				for (int i = 0; i < columnNames.length; i++) {
-					if (!columnNames[i].equals(pkEntityColumnDBNames.get(i))) {
+				for (String pkEntityColumnDBName : pkEntityColumnDBNames) {
+					if (!ArrayUtil.contains(
+							columnNames, pkEntityColumnDBName)) {
+
 						redundant = false;
 
 						break;
@@ -2252,6 +2258,24 @@ public class ServiceBuilder {
 		}
 	}
 
+	private boolean _containSpecialCharacter(String name) {
+		for (char c : name.toCharArray()) {
+			if (((c >= CharPool.LOWER_CASE_A) &&
+				 (c <= CharPool.LOWER_CASE_Z)) ||
+				((c >= CharPool.UPPER_CASE_A) &&
+				 (c <= CharPool.UPPER_CASE_Z)) ||
+				((c >= CharPool.NUMBER_0) && (c <= CharPool.NUMBER_9)) ||
+				(c == CharPool.UNDERLINE)) {
+
+				continue;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private void _createBaseUADAnonymizer(Entity entity) throws Exception {
 		Map<String, Object> context = _getContext();
 
@@ -2277,7 +2301,7 @@ public class ServiceBuilder {
 
 		context.put("hasAssetEntry", hasAssetEntry);
 
-		String content = _processTemplate(_tplBaseUADAnonymizer, context);
+		String content = _processTemplate(_TPL_BASE_UAD_ANONYMIZER, context);
 
 		File file = new File(
 			StringBundler.concat(
@@ -2292,7 +2316,7 @@ public class ServiceBuilder {
 
 		context.put("entity", entity);
 
-		String content = _processTemplate(_tplBaseUADDisplay, context);
+		String content = _processTemplate(_TPL_BASE_UAD_DISPLAY, context);
 
 		File file = new File(
 			StringBundler.concat(
@@ -2307,7 +2331,7 @@ public class ServiceBuilder {
 
 		context.put("entity", entity);
 
-		String content = _processTemplate(_tplBaseUADExporter, context);
+		String content = _processTemplate(_TPL_BASE_UAD_EXPORTER, context);
 
 		File file = new File(
 			StringBundler.concat(
@@ -2364,7 +2388,7 @@ public class ServiceBuilder {
 
 		context.put("entity", entity);
 
-		String content = _processTemplate(_tplCTServiceImpl, context);
+		String content = _processTemplate(_TPL_CT_SERVICE_IMPL, context);
 
 		_write(file, content, _modifiedFileNames);
 	}
@@ -2386,83 +2410,86 @@ public class ServiceBuilder {
 			StringBundler.concat(
 				_serviceOutputPath, "/model/", name, "Table.java"));
 
-		Map<String, Object> context = HashMapBuilder.<String, Object>put(
-			"apiPackagePath", _apiPackagePath
-		).put(
-			"author", _author
-		).put(
-			"changeTrackingEnabled", changeTrackingEnabled
-		).put(
-			"classDeprecated", classDeprecated
-		).put(
-			"classDeprecatedComment", classDeprecatedComment
-		).put(
-			"columns",
-			() -> {
-				List<Map<String, String>> columns = new ArrayList<>(
-					entityColumns.size());
+		String content = _processTemplate(
+			_TPL_MODEL_TABLE,
+			HashMapBuilder.<String, Object>put(
+				"apiPackagePath", _apiPackagePath
+			).put(
+				"author", _author
+			).put(
+				"changeTrackingEnabled", changeTrackingEnabled
+			).put(
+				"classDeprecated", classDeprecated
+			).put(
+				"classDeprecatedComment", classDeprecatedComment
+			).put(
+				"columns",
+				() -> {
+					List<Map<String, String>> columns = new ArrayList<>(
+						entityColumns.size());
 
-				for (EntityColumn entityColumn : entityColumns) {
-					String sqlType = getSqlType(
-						name, entityColumn.getName(), entityColumn.getType());
+					for (EntityColumn entityColumn : entityColumns) {
+						String sqlType = getSqlType(
+							name, entityColumn.getName(),
+							entityColumn.getType());
 
-					Map<String, String> column = HashMapBuilder.put(
-						"dbName", entityColumn.getDBName()
-					).put(
-						"flag",
-						() -> {
-							if (entityColumn.isPrimary()) {
-								return "FLAG_PRIMARY";
-							}
+						columns.add(
+							HashMapBuilder.put(
+								"dbName", entityColumn.getDBName()
+							).put(
+								"flag",
+								() -> {
+									if (entityColumn.isPrimary()) {
+										return "FLAG_PRIMARY";
+									}
 
-							if (changeTrackingEnabled &&
-								Objects.equals(
-									entityColumn.getName(), "ctCollectionId")) {
+									if (changeTrackingEnabled &&
+										Objects.equals(
+											entityColumn.getName(),
+											"ctCollectionId")) {
 
-								return "FLAG_PRIMARY";
-							}
+										return "FLAG_PRIMARY";
+									}
 
-							if (Objects.equals(
-									entityColumn.getName(), "mvccVersion")) {
+									if (Objects.equals(
+											entityColumn.getName(),
+											"mvccVersion")) {
 
-								return "FLAG_NULLITY";
-							}
+										return "FLAG_NULLITY";
+									}
 
-							return "FLAG_DEFAULT";
-						}
-					).put(
-						"javaType",
-						() -> {
-							if (entityColumn.isPrimitiveType()) {
-								return getPrimitiveObj(entityColumn.getType());
-							}
+									return "FLAG_DEFAULT";
+								}
+							).put(
+								"javaType",
+								() -> {
+									if (entityColumn.isPrimitiveType()) {
+										return getPrimitiveObj(
+											entityColumn.getType());
+									}
 
-							if (Objects.equals("CLOB", sqlType)) {
-								return "Clob";
-							}
+									if (Objects.equals("CLOB", sqlType)) {
+										return "Clob";
+									}
 
-							return entityColumn.getGenericizedType();
-						}
-					).put(
-						"name", entityColumn.getName()
-					).put(
-						"sqlType", sqlType
-					).build();
+									return entityColumn.getGenericizedType();
+								}
+							).put(
+								"name", entityColumn.getName()
+							).put(
+								"sqlType", sqlType
+							).build());
+					}
 
-					columns.add(column);
+					return columns;
 				}
-
-				return columns;
-			}
-		).put(
-			"modelNames", modelNames
-		).put(
-			"name", name
-		).put(
-			"table", tableName
-		).build();
-
-		String content = _processTemplate(_tplModelTable, context);
+			).put(
+				"modelNames", modelNames
+			).put(
+				"name", name
+			).put(
+				"table", tableName
+			).build());
 
 		_write(modelTableFile, content, _modifiedFileNames);
 	}
@@ -2670,9 +2697,7 @@ public class ServiceBuilder {
 		Map<String, JavaMethod> methods = new LinkedHashMap<>();
 
 		for (JavaMethod method : _getMethods(modelImplJavaClass)) {
-			String methodSignature = _getMethodSignature(method, false);
-
-			methods.put(methodSignature, method);
+			methods.put(_getMethodSignature(method, false), method);
 		}
 
 		Set<Map.Entry<String, JavaMethod>> entrySet = methods.entrySet();
@@ -2696,9 +2721,7 @@ public class ServiceBuilder {
 				_serviceOutputPath, "/model/", entity.getName(), "Model.java"));
 
 		for (JavaMethod method : _getMethods(modelJavaClass)) {
-			String methodSignature = _getMethodSignature(method, false);
-
-			methods.remove(methodSignature);
+			methods.remove(_getMethodSignature(method, false));
 		}
 
 		Map<String, Object> context = _getContext();
@@ -3274,7 +3297,7 @@ public class ServiceBuilder {
 				_portletShortName, "PersistenceConstants.java"));
 
 		String content = _processTemplate(
-			_tplPersistenceConstants, _getContext());
+			_TPL_PERSISTENCE_CONSTANTS, _getContext());
 
 		_write(file, content, _modifiedFileNames);
 	}
@@ -3288,14 +3311,16 @@ public class ServiceBuilder {
 		if (entity.hasPersistence()) {
 			Map<String, Object> context = _getContext();
 
-			context.put("entity", entity);
-			context.put("persistence", Boolean.TRUE);
-			context.put("referenceEntities", _mergeReferenceEntities(entity));
-
 			JavaClass modelImplJavaClass = _getJavaClass(
 				StringBundler.concat(
 					_outputPath, "/model/impl/", entity.getName(),
 					"Impl.java"));
+
+			context.put("cacheFields", _getCacheFields(modelImplJavaClass));
+
+			context.put("entity", entity);
+			context.put("persistence", Boolean.TRUE);
+			context.put("referenceEntities", _mergeReferenceEntities(entity));
 
 			context = _putDeprecatedKeys(context, modelImplJavaClass);
 
@@ -3327,12 +3352,7 @@ public class ServiceBuilder {
 				_testOutputPath, "/service/persistence/test/", entity.getName(),
 				"PersistenceTest.java"));
 
-		if (entity.isDeprecated() || !entity.hasPersistence()) {
-			System.out.println("Removing " + file);
-
-			file.delete();
-		}
-		else {
+		if (entity.hasPersistence() && !entity.isDeprecated()) {
 			Map<String, Object> context = _getContext();
 
 			context.put("entity", entity);
@@ -3344,9 +3364,14 @@ public class ServiceBuilder {
 
 			context = _putDeprecatedKeys(context, modelImplJavaClass);
 
-			String content = _processTemplate(_tplPersistenceTest, context);
+			String content = _processTemplate(_TPL_PERSISTENCE_TEST, context);
 
 			_write(file, content, _modifiedFileNames);
+		}
+		else if (file.exists()) {
+			System.out.println("Removing " + file);
+
+			file.delete();
 		}
 
 		file = new File(
@@ -3761,9 +3786,8 @@ public class ServiceBuilder {
 			return;
 		}
 
-		Map<String, Object> context = _getContext();
-
-		String content = _processTemplate(_tplServletContextUtil, context);
+		String content = _processTemplate(
+			_TPL_SERVLET_CONTEXT_UTIL, _getContext());
 
 		File file = new File(
 			_serviceOutputPath + "/service/ServletContextUtil.java");
@@ -4405,7 +4429,7 @@ public class ServiceBuilder {
 
 		context.put("entity", entity);
 
-		String content = _processTemplate(_tplUADAnonymizer, context);
+		String content = _processTemplate(_TPL_UAD_ANOYMIZER, context);
 
 		_write(file, content, _modifiedFileNames);
 	}
@@ -4439,7 +4463,7 @@ public class ServiceBuilder {
 				" UAD"));
 		context.put("uadPackagePath", entity.getUADPackagePath());
 
-		String content = _processTemplate(_tplUADBnd, context);
+		String content = _processTemplate(_TPL_UAD_BND, context);
 
 		ToolsUtil.writeFileRaw(file, content, _modifiedFileNames);
 	}
@@ -4458,7 +4482,7 @@ public class ServiceBuilder {
 		context.put("uadApplicationName", uadApplicationName);
 		context.put("uadPackagePath", entity.getUADPackagePath());
 
-		String content = _processTemplate(_tplUADConstants, context);
+		String content = _processTemplate(_TPL_UAD_CONSTANTS, context);
 
 		File file = new File(
 			StringBundler.concat(
@@ -4482,7 +4506,7 @@ public class ServiceBuilder {
 
 		context.put("entity", entity);
 
-		String content = _processTemplate(_tplUADDisplay, context);
+		String content = _processTemplate(_TPL_UAD_DISPLAY, context);
 
 		_write(file, content, _modifiedFileNames);
 	}
@@ -4501,7 +4525,7 @@ public class ServiceBuilder {
 
 		context.put("entity", entity);
 
-		String content = _processTemplate(_tplUADExporter, context);
+		String content = _processTemplate(_TPL_UAD_EXPORTER, context);
 
 		_write(file, content, _modifiedFileNames);
 	}
@@ -4747,13 +4771,34 @@ public class ServiceBuilder {
 	private Properties _getCompatProperties(String version) throws IOException {
 		Properties properties = new Properties();
 
-		try (InputStream is = ServiceBuilder.class.getResourceAsStream(
+		try (InputStream inputStream = ServiceBuilder.class.getResourceAsStream(
 				"dependencies/" + version + "/compatibility.properties")) {
 
-			properties.load(is);
+			properties.load(inputStream);
 		}
 
 		return properties;
+	}
+
+	private Configuration _getConfiguration() {
+		if (_configuration != null) {
+			return _configuration;
+		}
+
+		_configuration = new Configuration(Configuration.getVersion());
+
+		_configuration.setNumberFormat("computer");
+
+		DefaultObjectWrapperBuilder defaultObjectWrapperBuilder =
+			new DefaultObjectWrapperBuilder(Configuration.getVersion());
+
+		_configuration.setObjectWrapper(defaultObjectWrapperBuilder.build());
+
+		_configuration.setTemplateLoader(
+			new ClassTemplateLoader(ServiceBuilder.class, StringPool.SLASH));
+		_configuration.setTemplateUpdateDelayMilliseconds(Long.MAX_VALUE);
+
+		return _configuration;
 	}
 
 	private Map<String, Object> _getContext() throws Exception {
@@ -5029,6 +5074,7 @@ public class ServiceBuilder {
 
 	/**
 	 * @see #_createDSLTable(List, String, String, boolean, boolean)
+	 * @see com.liferay.object.service.internal.petra.sql.dsl.DynamicObjectDefinitionTable#getCreateTableSQL
 	 */
 	private String _getCreateTableSQL(Entity entity) {
 		List<EntityColumn> databaseRegularEntityColumns =
@@ -5679,6 +5725,46 @@ public class ServiceBuilder {
 		return Version.getInstance(version);
 	}
 
+	private boolean _hasFinderThatIsNotUniqueByCompany(
+		List<Element> columnElements, List<Element> finderColumnElements) {
+
+		if (!isVersionGTE_7_3_0()) {
+			return false;
+		}
+
+		boolean hasCompanyId = Stream.of(
+			columnElements.toArray(new Element[0])
+		).map(
+			columnElement -> columnElement.attributeValue("name")
+		).anyMatch(
+			columnName -> columnName.equals("companyId")
+		);
+
+		if (!hasCompanyId) {
+			return false;
+		}
+
+		String[] finderColumnNames = Stream.of(
+			finderColumnElements.toArray(new Element[0])
+		).map(
+			finderColumnElement -> finderColumnElement.attributeValue("name")
+		).filter(
+			finderColumnName ->
+				finderColumnName.endsWith("Id") ||
+				finderColumnName.endsWith("PK")
+		).toArray(
+			String[]::new
+		);
+
+		if ((finderColumnNames.length == 1) &&
+			finderColumnNames[0].equals("classNameId")) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private boolean _hasHttpMethods(JavaClass javaClass) {
 		for (JavaMethod javaMethod : _getMethods(javaClass)) {
 			if (javaMethod.isPublic() && isCustomMethod(javaMethod)) {
@@ -5787,7 +5873,7 @@ public class ServiceBuilder {
 			javaAnnotationsMap.put(javaAnnotation.getType(), javaAnnotation);
 		}
 
-		List<JavaAnnotation> javaAnnotations = new ArrayList<>(
+		List<JavaAnnotation> javaAnnotations3 = new ArrayList<>(
 			javaAnnotationsMap.values());
 
 		Comparator<JavaAnnotation> comparator =
@@ -5807,9 +5893,9 @@ public class ServiceBuilder {
 
 			};
 
-		Collections.sort(javaAnnotations, comparator);
+		Collections.sort(javaAnnotations3, comparator);
 
-		return javaAnnotations;
+		return javaAnnotations3;
 	}
 
 	private List<JavaMethod> _mergeMethods(
@@ -5846,7 +5932,7 @@ public class ServiceBuilder {
 			}
 		}
 
-		List<JavaMethod> javaMethods = new ArrayList<>(javaMethodMap.values());
+		List<JavaMethod> javaMethods3 = new ArrayList<>(javaMethodMap.values());
 
 		Comparator<JavaMethod> comparator = new Comparator<JavaMethod>() {
 
@@ -5867,9 +5953,9 @@ public class ServiceBuilder {
 
 		};
 
-		Collections.sort(javaMethods, comparator);
+		Collections.sort(javaMethods3, comparator);
 
-		return javaMethods;
+		return javaMethods3;
 	}
 
 	private List<Entity> _mergeReferenceEntities(Entity entity) {
@@ -5889,10 +5975,34 @@ public class ServiceBuilder {
 		return new ArrayList<>(set);
 	}
 
+	private void _mkdir(File dir) throws IOException {
+		Files.createDirectories(dir.toPath());
+	}
+
+	private void _move(File sourceFile, File destinationFile) throws Exception {
+		File parentFile = destinationFile.getParentFile();
+
+		Path parentPath = parentFile.toPath();
+
+		if (!Files.exists(parentPath)) {
+			Files.createDirectories(parentPath);
+		}
+
+		Files.move(sourceFile.toPath(), destinationFile.toPath());
+	}
+
+	private String _normalize(String fileName) {
+		return StringUtil.replace(
+			fileName, CharPool.BACK_SLASH, CharPool.SLASH);
+	}
+
 	private Entity _parseEntity(Element entityElement) throws Exception {
 		String entityName = entityElement.attributeValue("name");
 		String humanName = entityElement.attributeValue("human-name");
+		String variableName = entityElement.attributeValue("variable-name");
 		String pluralName = entityElement.attributeValue("plural-name");
+		String pluralVariableName = entityElement.attributeValue(
+			"plural-variable-name");
 
 		String tableName = entityElement.attributeValue("table");
 
@@ -5913,8 +6023,15 @@ public class ServiceBuilder {
 			entityElement.attributeValue("uuid"));
 		boolean uuidAccessor = GetterUtil.getBoolean(
 			entityElement.attributeValue("uuid-accessor"));
-		boolean externalReferenceCode = GetterUtil.getBoolean(
-			entityElement.attributeValue("external-reference-code"));
+
+		String externalReferenceCode = GetterUtil.getString(
+			entityElement.attributeValue("external-reference-code"), "none");
+
+		externalReferenceCode = StringUtil.replace(
+			externalReferenceCode, "false", "none");
+		externalReferenceCode = StringUtil.replace(
+			externalReferenceCode, "true", "company");
+
 		boolean localService = GetterUtil.getBoolean(
 			entityElement.attributeValue("local-service"));
 		boolean remoteService = GetterUtil.getBoolean(
@@ -6011,9 +6128,6 @@ public class ServiceBuilder {
 		String uadPackagePath = GetterUtil.getString(
 			entityElement.attributeValue("uad-package-path"), _packagePath);
 
-		String uadOutputPath =
-			uadDirPath + "/" + StringUtil.replace(uadPackagePath, '.', '/');
-
 		boolean versioned = GetterUtil.getBoolean(
 			entityElement.attributeValue("versioned"));
 
@@ -6036,15 +6150,6 @@ public class ServiceBuilder {
 
 		boolean deprecated = GetterUtil.getBoolean(
 			entityElement.attributeValue("deprecated"));
-
-		List<EntityColumn> pkEntityColumns = new ArrayList<>();
-		List<EntityColumn> regularEntityColumns = new ArrayList<>();
-		List<EntityColumn> blobEntityColumns = new ArrayList<>();
-		List<EntityColumn> collectionEntityColumns = new ArrayList<>();
-		List<EntityColumn> entityColumns = new ArrayList<>();
-
-		boolean permissionedModel = false;
-		boolean resourcedModel = false;
 
 		List<Element> columnElements = entityElement.elements("column");
 
@@ -6081,7 +6186,13 @@ public class ServiceBuilder {
 			derivedColumnElements.add(columnElement);
 		}
 
-		if (externalReferenceCode) {
+		if (columnElements.contains(
+				new EntityColumn(this, "externalReferenceCode"))) {
+
+			externalReferenceCode = "none";
+		}
+
+		if (!StringUtil.equals(externalReferenceCode, "none")) {
 			Element columnElement = DocumentHelper.createElement("column");
 
 			columnElement.addAttribute("name", "externalReferenceCode");
@@ -6116,6 +6227,15 @@ public class ServiceBuilder {
 						"for " + entityName);
 			}
 		}
+
+		List<EntityColumn> pkEntityColumns = new ArrayList<>();
+		List<EntityColumn> regularEntityColumns = new ArrayList<>();
+		List<EntityColumn> blobEntityColumns = new ArrayList<>();
+		List<EntityColumn> collectionEntityColumns = new ArrayList<>();
+		List<EntityColumn> entityColumns = new ArrayList<>();
+
+		boolean permissionedModel = false;
+		boolean resourcedModel = false;
 
 		columnElements.addAll(0, derivedColumnElements);
 
@@ -6393,18 +6513,22 @@ public class ServiceBuilder {
 			finderElements.add(0, finderElement);
 		}
 
-		if (externalReferenceCode &&
-			entityColumns.contains(new EntityColumn(this, "companyId"))) {
-
+		if (!StringUtil.equals(externalReferenceCode, "none")) {
 			Element finderElement = DocumentHelper.createElement("finder");
 
-			finderElement.addAttribute("name", "C_ERC");
+			String externalReferenceCodeUpperCase = StringUtil.toUpperCase(
+				externalReferenceCode);
+
+			finderElement.addAttribute(
+				"name", externalReferenceCodeUpperCase.charAt(0) + "_ERC");
+
 			finderElement.addAttribute("return-type", entityName);
 
 			Element finderColumnElement = finderElement.addElement(
 				"finder-column");
 
-			finderColumnElement.addAttribute("name", "companyId");
+			finderColumnElement.addAttribute(
+				"name", externalReferenceCode + "Id");
 
 			finderColumnElement = finderElement.addElement("finder-column");
 
@@ -6478,10 +6602,20 @@ public class ServiceBuilder {
 				for (EntityColumn column : entityColumns) {
 					String name = column.getName();
 
-					finderWhere = StringUtil.replace(
-						finderWhere, name, alias + "." + name);
-					finderDBWhere = StringUtil.replace(
-						finderDBWhere, name, alias + "." + column.getDBName());
+					if (_containSpecialCharacter(name)) {
+						finderWhere = StringUtil.replace(
+							finderWhere, name, alias + "." + name);
+						finderDBWhere = StringUtil.replace(
+							finderDBWhere, name,
+							alias + "." + column.getDBName());
+					}
+					else {
+						finderWhere = finderWhere.replaceAll(
+							"\\b" + name + "\\b", alias + "." + name);
+						finderDBWhere = finderDBWhere.replaceAll(
+							"\\b" + name + "\\b",
+							alias + "." + column.getDBName());
+					}
 				}
 			}
 
@@ -6525,12 +6659,25 @@ public class ServiceBuilder {
 				finderEntityColumns.add(entityColumn);
 			}
 
+			if (_hasFinderThatIsNotUniqueByCompany(
+					columnElements, finderColumnElements)) {
+
+				throw new IllegalArgumentException(
+					StringBundler.concat(
+						"Finder ", finderName, " for entity ", entityName,
+						" needs an additional ID column to make it unique by ",
+						"company"));
+			}
+
 			entityFinders.add(
 				new EntityFinder(
 					this, finderName, finderPluralName, finderReturn,
 					finderUnique, finderWhere, finderDBWhere, finderDBIndex,
 					finderEntityColumns));
 		}
+
+		String uadOutputPath =
+			uadDirPath + "/" + StringUtil.replace(uadPackagePath, '.', '/');
 
 		List<Entity> referenceEntities = new ArrayList<>();
 		List<String> unresolvedReferenceEntityNames = new ArrayList<>();
@@ -6611,15 +6758,15 @@ public class ServiceBuilder {
 
 		Entity entity = new Entity(
 			this, _packagePath, _apiPackagePath, _portletShortName, entityName,
-			pluralName, humanName, tableName, alias, uuid, uuidAccessor,
-			externalReferenceCode, localService, remoteService, persistence,
-			persistenceClassName, finderClassName, dataSource, sessionFactory,
-			txManager, cacheEnabled, changeTrackingEnabled,
-			dynamicUpdateEnabled, jsonEnabled, mvccEnabled, trashEnabled,
-			uadApplicationName, uadAutoDelete, uadOutputPath, uadPackagePath,
-			deprecated, pkEntityColumns, regularEntityColumns,
-			blobEntityColumns, collectionEntityColumns, entityColumns,
-			entityOrder, entityFinders, referenceEntities,
+			variableName, pluralName, pluralVariableName, humanName, tableName,
+			alias, uuid, uuidAccessor, externalReferenceCode, localService,
+			remoteService, persistence, persistenceClassName, finderClassName,
+			dataSource, sessionFactory, txManager, cacheEnabled,
+			changeTrackingEnabled, dynamicUpdateEnabled, jsonEnabled,
+			mvccEnabled, trashEnabled, uadApplicationName, uadAutoDelete,
+			uadOutputPath, uadPackagePath, deprecated, pkEntityColumns,
+			regularEntityColumns, blobEntityColumns, collectionEntityColumns,
+			entityColumns, entityOrder, entityFinders, referenceEntities,
 			unresolvedReferenceEntityNames, txRequiredMethodNames,
 			resourceActionModel);
 
@@ -7050,10 +7197,8 @@ public class ServiceBuilder {
 			}
 		}
 
-		Entity localizedEntity = _parseEntity(newLocalizedEntityElement);
-
 		entity.setLocalizedEntityColumns(localizedEntityColumns);
-		entity.setLocalizedEntity(localizedEntity);
+		entity.setLocalizedEntity(_parseEntity(newLocalizedEntityElement));
 	}
 
 	private void _parseVersionEntity(
@@ -7074,7 +7219,13 @@ public class ServiceBuilder {
 		}
 
 		versionEntityElement.addAttribute("local-service", "false");
-		versionEntityElement.addAttribute("mvcc-enabled", "false");
+
+		if (entity.isChangeTrackingEnabled()) {
+			versionEntityElement.addAttribute("mvcc-enabled", "true");
+		}
+		else {
+			versionEntityElement.addAttribute("mvcc-enabled", "false");
+		}
 
 		versionEntityElement.addAttribute("name", entity.getName() + "Version");
 
@@ -7098,7 +7249,7 @@ public class ServiceBuilder {
 			"column");
 
 		versionEntityColumnElement.addAttribute(
-			"name", entity.getVarName() + "VersionId");
+			"name", entity.getVariableName() + "VersionId");
 		versionEntityColumnElement.addAttribute("primary", "true");
 		versionEntityColumnElement.addAttribute("type", "long");
 
@@ -7126,7 +7277,10 @@ public class ServiceBuilder {
 		for (Element columnElement : columnElements) {
 			String name = columnElement.attributeValue("name");
 
-			if (!name.equals("mvccVersion") && !name.equals("headId")) {
+			if (!name.equals("mvccVersion") && !name.equals("headId") &&
+				(!name.equals("ctCollectionId") ||
+				 !entity.isChangeTrackingEnabled())) {
+
 				versionEntityColumnElement = versionEntityElement.addElement(
 					"column");
 
@@ -7282,6 +7436,14 @@ public class ServiceBuilder {
 		}
 
 		return context;
+	}
+
+	private String _read(File file) throws IOException {
+		String s = new String(
+			Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+
+		return StringUtil.replace(
+			s, StringPool.RETURN_NEW_LINE, StringPool.NEW_LINE);
 	}
 
 	private String _read(String fileName) throws IOException {
@@ -7675,6 +7837,20 @@ public class ServiceBuilder {
 		entity.setResolved();
 	}
 
+	private void _touch(File file) throws IOException {
+		_mkdir(file.getParentFile());
+
+		Files.createFile(file.toPath());
+	}
+
+	private void _write(File file, String s) throws IOException {
+		Path path = file.toPath();
+
+		Files.createDirectories(path.getParent());
+
+		Files.write(path, s.getBytes(StandardCharsets.UTF_8));
+	}
+
 	private void _write(
 			File file, String content, Set<String> modifiedFileNames)
 		throws Exception {
@@ -7710,20 +7886,59 @@ public class ServiceBuilder {
 	private static final String _TMP_DIR_NAME = System.getProperty(
 		"java.io.tmpdir");
 
+	private static final String _TPL_BASE_UAD_ANONYMIZER =
+		ServiceBuilder._TPL_ROOT + "base_uad_anonymizer.ftl";
+
+	private static final String _TPL_BASE_UAD_DISPLAY =
+		ServiceBuilder._TPL_ROOT + "base_uad_display.ftl";
+
+	private static final String _TPL_BASE_UAD_EXPORTER =
+		ServiceBuilder._TPL_ROOT + "base_uad_exporter.ftl";
+
+	private static final String _TPL_CT_SERVICE_IMPL =
+		ServiceBuilder._TPL_ROOT + "ct_service_impl.ftl";
+
+	private static final String _TPL_MODEL_TABLE =
+		ServiceBuilder._TPL_ROOT + "model_table.ftl";
+
+	private static final String _TPL_PERSISTENCE_CONSTANTS =
+		ServiceBuilder._TPL_ROOT + "persistence_constants.ftl";
+
+	private static final String _TPL_PERSISTENCE_TEST =
+		ServiceBuilder._TPL_ROOT + "persistence_test.ftl";
+
 	private static final String _TPL_ROOT =
 		"com/liferay/portal/tools/service/builder/dependencies/";
 
-	private static Pattern _beansAttributePattern = Pattern.compile(
+	private static final String _TPL_SERVLET_CONTEXT_UTIL =
+		_TPL_ROOT + "servlet_context_util.ftl";
+
+	private static final String _TPL_UAD_ANOYMIZER =
+		_TPL_ROOT + "uad_anonymizer.ftl";
+
+	private static final String _TPL_UAD_BND = _TPL_ROOT + "uad_bnd.ftl";
+
+	private static final String _TPL_UAD_CONSTANTS =
+		_TPL_ROOT + "uad_constants.ftl";
+
+	private static final String _TPL_UAD_DISPLAY =
+		_TPL_ROOT + "uad_display.ftl";
+
+	private static final String _TPL_UAD_EXPORTER =
+		_TPL_ROOT + "uad_exporter.ftl";
+
+	private static final Pattern _beansAttributePattern = Pattern.compile(
 		"\\s+([^=]*)=\\s*\"([^\"]*)\"");
-	private static Pattern _beansPattern = Pattern.compile("<beans[^>]*>");
+	private static final Pattern _beansPattern = Pattern.compile(
+		"<beans[^>]*>");
 	private static Configuration _configuration;
 	private static final Pattern _dtdVersionPattern = Pattern.compile(
 		".*service-builder_([^\\.]+)\\.dtd");
-	private static Pattern _getterPattern = Pattern.compile(
+	private static final Pattern _getterPattern = Pattern.compile(
 		StringBundler.concat(
 			"public .* get.*", Pattern.quote("("), "|public boolean is.*",
 			Pattern.quote("(")));
-	private static Pattern _setterPattern = Pattern.compile(
+	private static final Pattern _setterPattern = Pattern.compile(
 		"public void set.*" + Pattern.quote("("));
 
 	private String _apiDirName;
@@ -7747,13 +7962,13 @@ public class ServiceBuilder {
 	private Version _dtdVersion;
 	private List<Entity> _entities;
 	private Map<String, EntityMapping> _entityMappings;
-	private Map<String, Entity> _entityPool = new HashMap<>();
+	private final Map<String, Entity> _entityPool = new HashMap<>();
 	private String _hbmFileName;
 	private String _implDirName;
 	private String[] _incubationFeatures;
-	private Map<String, JavaClass> _javaClasses = new HashMap<>();
+	private final Map<String, JavaClass> _javaClasses = new HashMap<>();
 	private String _modelHintsFileName;
-	private Set<String> _modifiedFileNames = new HashSet<>();
+	private final Set<String> _modifiedFileNames = new HashSet<>();
 	private boolean _mvccEnabled;
 	private String _oldServiceOutputPath;
 	private boolean _osgiModule;
@@ -7778,12 +7993,7 @@ public class ServiceBuilder {
 	private String _tplBadAliasNames = _TPL_ROOT + "bad_alias_names.txt";
 	private String _tplBadColumnNames = _TPL_ROOT + "bad_column_names.txt";
 	private String _tplBadTableNames = _TPL_ROOT + "bad_table_names.txt";
-	private String _tplBaseUADAnonymizer =
-		_TPL_ROOT + "base_uad_anonymizer.ftl";
-	private String _tplBaseUADDisplay = _TPL_ROOT + "base_uad_display.ftl";
-	private String _tplBaseUADExporter = _TPL_ROOT + "base_uad_exporter.ftl";
 	private String _tplBlobModel = _TPL_ROOT + "blob_model.ftl";
-	private String _tplCTServiceImpl = _TPL_ROOT + "ct_service_impl.ftl";
 	private String _tplEjbPK = _TPL_ROOT + "ejb_pk.ftl";
 	private String _tplException = _TPL_ROOT + "exception.ftl";
 	private String _tplExtendedModel = _TPL_ROOT + "extended_model.ftl";
@@ -7802,13 +8012,9 @@ public class ServiceBuilder {
 	private String _tplModelHintsXml = _TPL_ROOT + "model_hints_xml.ftl";
 	private String _tplModelImpl = _TPL_ROOT + "model_impl.ftl";
 	private String _tplModelSoap = _TPL_ROOT + "model_soap.ftl";
-	private String _tplModelTable = _TPL_ROOT + "model_table.ftl";
 	private String _tplModelWrapper = _TPL_ROOT + "model_wrapper.ftl";
 	private String _tplPersistence = _TPL_ROOT + "persistence.ftl";
-	private String _tplPersistenceConstants =
-		_TPL_ROOT + "persistence_constants.ftl";
 	private String _tplPersistenceImpl = _TPL_ROOT + "persistence_impl.ftl";
-	private String _tplPersistenceTest = _TPL_ROOT + "persistence_test.ftl";
 	private String _tplPersistenceUtil = _TPL_ROOT + "persistence_util.ftl";
 	private String _tplProps = _TPL_ROOT + "props.ftl";
 	private String _tplService = _TPL_ROOT + "service.ftl";
@@ -7819,15 +8025,9 @@ public class ServiceBuilder {
 	private String _tplServiceSoap = _TPL_ROOT + "service_soap.ftl";
 	private String _tplServiceUtil = _TPL_ROOT + "service_util.ftl";
 	private String _tplServiceWrapper = _TPL_ROOT + "service_wrapper.ftl";
-	private String _tplServletContextUtil =
-		_TPL_ROOT + "servlet_context_util.ftl";
 	private String _tplSpringXml = _TPL_ROOT + "spring_xml.ftl";
-	private String _tplUADAnonymizer = _TPL_ROOT + "uad_anonymizer.ftl";
-	private String _tplUADBnd = _TPL_ROOT + "uad_bnd.ftl";
-	private String _tplUADConstants = _TPL_ROOT + "uad_constants.ftl";
-	private String _tplUADDisplay = _TPL_ROOT + "uad_display.ftl";
-	private String _tplUADExporter = _TPL_ROOT + "uad_exporter.ftl";
-	private Map<String, List<Entity>> _uadApplicationEntities = new HashMap<>();
+	private final Map<String, List<Entity>> _uadApplicationEntities =
+		new HashMap<>();
 	private String _uadDirName;
 
 }

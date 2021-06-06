@@ -55,6 +55,12 @@ public class AppBuilderAppDataRecordLinkLocalServiceWrapper
 			addAppBuilderAppDataRecordLink(appBuilderAppDataRecordLink);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 #addAppBuilderAppDataRecordLink(long, long, long, long,
+	 long)}
+	 */
+	@Deprecated
 	@Override
 	public com.liferay.app.builder.model.AppBuilderAppDataRecordLink
 		addAppBuilderAppDataRecordLink(
@@ -63,6 +69,18 @@ public class AppBuilderAppDataRecordLinkLocalServiceWrapper
 		return _appBuilderAppDataRecordLinkLocalService.
 			addAppBuilderAppDataRecordLink(
 				companyId, appBuilderAppId, ddlRecordId);
+	}
+
+	@Override
+	public com.liferay.app.builder.model.AppBuilderAppDataRecordLink
+		addAppBuilderAppDataRecordLink(
+			long groupId, long companyId, long appBuilderAppId,
+			long appBuilderAppVersionId, long ddlRecordId) {
+
+		return _appBuilderAppDataRecordLinkLocalService.
+			addAppBuilderAppDataRecordLink(
+				groupId, companyId, appBuilderAppId, appBuilderAppVersionId,
+				ddlRecordId);
 	}
 
 	/**
@@ -147,6 +165,13 @@ public class AppBuilderAppDataRecordLinkLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _appBuilderAppDataRecordLinkLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _appBuilderAppDataRecordLinkLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -252,8 +277,7 @@ public class AppBuilderAppDataRecordLinkLocalServiceWrapper
 
 	@Override
 	public com.liferay.app.builder.model.AppBuilderAppDataRecordLink
-			fetchDDLRecordAppBuilderAppDataRecordLink(long ddlRecordId)
-		throws com.liferay.portal.kernel.exception.PortalException {
+		fetchDDLRecordAppBuilderAppDataRecordLink(long ddlRecordId) {
 
 		return _appBuilderAppDataRecordLinkLocalService.
 			fetchDDLRecordAppBuilderAppDataRecordLink(ddlRecordId);
@@ -310,6 +334,16 @@ public class AppBuilderAppDataRecordLinkLocalServiceWrapper
 
 		return _appBuilderAppDataRecordLinkLocalService.
 			getAppBuilderAppDataRecordLinks(appBuilderAppId);
+	}
+
+	@Override
+	public java.util.List
+		<com.liferay.app.builder.model.AppBuilderAppDataRecordLink>
+			getAppBuilderAppDataRecordLinks(
+				long appBuilderAppId, long[] ddlRecordIds) {
+
+		return _appBuilderAppDataRecordLinkLocalService.
+			getAppBuilderAppDataRecordLinks(appBuilderAppId, ddlRecordIds);
 	}
 
 	/**

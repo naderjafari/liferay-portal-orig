@@ -31,10 +31,13 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
+import com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ClassResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -99,8 +102,9 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 		).put(
 			"removePlugins", getRemovePluginsLists()
 		).put(
-			"spritemap",
-			themeDisplay.getPathThemeImages() + "/lexicon/icons.svg"
+			"skin", "moono-lisa"
+		).put(
+			"spritemap", themeDisplay.getPathThemeImages() + "/clay/icons.svg"
 		).put(
 			"toolbars", getToolbarsJSONObject(themeDisplay.getLocale())
 		);
@@ -178,35 +182,40 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 
 		ResourceBundleLoader resourceBundleLoader =
 			new AggregateResourceBundleLoader(
-				ResourceBundleUtil.getResourceBundleLoader(
+				new ClassResourceBundleLoader(
 					"content.Language", clazz.getClassLoader()),
-				_resourceBundleLoader,
-				LanguageUtil.getPortalResourceBundleLoader());
+				_resourceBundleLoader, LanguageUtil.getResourceBundleLoader());
 
 		try {
 			resourceBundle = resourceBundleLoader.loadResourceBundle(locale);
 		}
 		catch (MissingResourceException missingResourceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(missingResourceException, missingResourceException);
+			}
+
 			resourceBundle = ResourceBundleUtil.EMPTY_RESOURCE_BUNDLE;
 		}
 
 		return JSONUtil.putAll(
 			getStyleFormatJSONObject(
-				LanguageUtil.get(resourceBundle, "small"), "p", "small", 1),
+				LanguageUtil.get(resourceBundle, "small"), "span", "small",
+				_CKEDITOR_STYLE_INLINE),
 			getStyleFormatJSONObject(
-				LanguageUtil.get(resourceBundle, "lead"), "p", "lead", 1),
+				LanguageUtil.get(resourceBundle, "lead"), "span", "lead",
+				_CKEDITOR_STYLE_INLINE),
 			getStyleFormatJSONObject(
 				LanguageUtil.format(resourceBundle, "heading-x", "1"), "h1",
-				null, 1),
+				null, _CKEDITOR_STYLE_BLOCK),
 			getStyleFormatJSONObject(
 				LanguageUtil.format(resourceBundle, "heading-x", "2"), "h2",
-				null, 1),
+				null, _CKEDITOR_STYLE_BLOCK),
 			getStyleFormatJSONObject(
 				LanguageUtil.format(resourceBundle, "heading-x", "3"), "h3",
-				null, 1),
+				null, _CKEDITOR_STYLE_BLOCK),
 			getStyleFormatJSONObject(
 				LanguageUtil.format(resourceBundle, "heading-x", "4"), "h4",
-				null, 1));
+				null, _CKEDITOR_STYLE_BLOCK));
 	}
 
 	protected JSONObject getStyleFormatsJSONObject(Locale locale) {
@@ -236,14 +245,13 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 	}
 
 	protected JSONObject getToolbarsJSONObject(Locale locale) {
-		JSONObject toolbarJSONObject = JSONUtil.put(
-			"buttons", toJSONArray("['image', 'hline']")
-		).put(
-			"tabIndex", 1
-		);
-
 		return JSONUtil.put(
-			"add", toolbarJSONObject
+			"add",
+			JSONUtil.put(
+				"buttons", toJSONArray("['image', 'hline']")
+			).put(
+				"tabIndex", 1
+			)
 		).put(
 			"styles", getToolbarsStylesJSONObject(locale)
 		);
@@ -325,6 +333,13 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 
 		return itemSelectorCriterion;
 	}
+
+	private static final int _CKEDITOR_STYLE_BLOCK = 1;
+
+	private static final int _CKEDITOR_STYLE_INLINE = 2;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		FragmentEntryLinkRichTextEditorConfigContributor.class);
 
 	@Reference
 	private ItemSelector _itemSelector;

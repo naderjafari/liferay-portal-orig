@@ -18,12 +18,17 @@ definition {
 			PortalInstances.tearDownCP();
 		}
 		else {
+			JSONDepot.deleteDepot(depotName = "Test Depot Name");
+
+			Site.tearDownCP();
+
 			User.logoutPG();
 		}
 	}
 
 	@description = "This ensures that a depot can be accessed from a connected site to create shortcut."
 	@priority = "5"
+	@refactorneeded
 	test AccessViaShortcut {
 		JSONGroup.addGroup(groupName = "Site Name");
 
@@ -36,15 +41,9 @@ definition {
 			dmDocumentTitle = "DM Document Title",
 			groupName = "Test Depot Name");
 
-		DepotNavigator.openDepotAdmin();
-
-		DepotNavigator.gotoEdit(depotName = "Test Depot Name");
-
-		DepotNavigator.gotoSites(depotName = "Test Depot Name");
-
-		Depot.connectSite(
-			connectSite = "true",
-			siteList = "Site Name");
+		JSONDepot.connectSite(
+			depotName = "Test Depot Name",
+			groupName = "Site Name");
 
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
 
@@ -57,28 +56,31 @@ definition {
 		DMDocument.viewCP(dmDocumentTitle = "DM Document Title");
 	}
 
-	@description = "This ensures that a user can redirect to the repository via Space icon."
+	@description = "This test covers LPS-120834. It ensures that a user can not redirect to the depot via Space icon."
 	@priority = "5"
-	test AccessViaSiteNavigation {
+	@refactorneeded
+	test CannotAccessDepotViaSite {
 		property portal.acceptance = "true";
-
-		JSONDepot.addDepot(
-			depotDescription = "This is the description of a depot",
-			depotName = "Test Depot Name");
 
 		Navigator.openURL();
 
-		DepotNavigator.gotoDepotViaSpaceIcon(depotName = "Test Depot Name");
-
 		ProductMenuHelper.openProductMenu();
 
-		AssertTextEquals.assertPartialText(
-			locator1 = "ProductMenu#PRODUCT_MENU_PANEL_SITE_ADMINISTRATION_SITE_NAME",
-			value1 = "Test Depot Name");
+		ProductMenuHelper.openWorkspace();
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		Pause(locator1 = "3000");
+
+		AssertElementNotPresent(
+			locator1 = "NavBar#NAV_ITEM_LINK",
+			navItem = "Asset Libraries",
+			value1 = "Asset Libraries");
 	}
 
 	@description = "This test covers LPS-104832. It ensures that the repositories can not connect to repositories."
 	@priority = "5"
+	@refactorneeded
 	test ViewRestrictionWhenConnectingSites {
 		JSONDepot.addDepot(
 			depotDescription = "This is the description of a depot",

@@ -14,41 +14,34 @@
 
 package com.liferay.jenkins.results.parser;
 
-import java.io.File;
-
 import java.util.Collections;
+import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author Michael Hashimoto
  */
 public class PortalReleaseJob extends BasePortalReleaseJob {
 
-	public PortalReleaseJob(String jobName, String portalBranchName) {
-		super(jobName, portalBranchName);
+	public PortalReleaseJob(
+		String jobName, BuildProfile buildProfile, String portalBranchName,
+		String testSuiteName) {
 
-		GitWorkingDirectory jenkinsGitWorkingDirectory =
-			getJenkinsGitWorkingDirectory();
-
-		jobPropertiesFiles.add(
-			new File(
-				jenkinsGitWorkingDirectory.getWorkingDirectory(),
-				"commands/dependencies/test-portal-release.properties"));
-
-		readJobProperties();
-	}
-
-	@Override
-	public Set<String> getBatchNames() {
-		Set<String> testBatchNames = super.getBatchNames();
-
-		testBatchNames.addAll(_getOptionalBatchNames());
-
-		return testBatchNames;
+		super(jobName, buildProfile, portalBranchName, testSuiteName);
 	}
 
 	public void setPortalReleaseRef(String portalReleaseRef) {
 		_portalReleaseRef = portalReleaseRef;
+	}
+
+	@Override
+	protected Set<String> getRawBatchNames() {
+		Set<String> batchNames = super.getRawBatchNames();
+
+		batchNames.addAll(_getOptionalBatchNames());
+
+		return batchNames;
 	}
 
 	private Set<String> _getOptionalBatchNames() {
@@ -56,11 +49,25 @@ public class PortalReleaseJob extends BasePortalReleaseJob {
 			return Collections.emptySet();
 		}
 
-		String testBatchNamesString = JenkinsResultsParserUtil.getProperty(
-			getJobProperties(),
-			"test.batch.names.optional[" + _portalReleaseRef + "]");
+		Set<String> batchNames = new TreeSet<>();
 
-		return getSetFromString(testBatchNamesString);
+		Properties jobProperties = getJobProperties();
+
+		batchNames.addAll(
+			getSetFromString(
+				JenkinsResultsParserUtil.getProperty(
+					jobProperties, "test.batch.names.optional", false,
+					_portalReleaseRef)));
+
+		BuildProfile buildProfile = getBuildProfile();
+
+		batchNames.addAll(
+			getSetFromString(
+				JenkinsResultsParserUtil.getProperty(
+					jobProperties, "test.batch.names.optional", false,
+					_portalReleaseRef, buildProfile.toString())));
+
+		return batchNames;
 	}
 
 	private String _portalReleaseRef;

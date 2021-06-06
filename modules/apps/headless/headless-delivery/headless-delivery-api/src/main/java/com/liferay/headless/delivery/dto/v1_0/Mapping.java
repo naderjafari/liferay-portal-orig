@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Mapping")
+@GraphQLName(
+	description = "The mapping of the fragment mapped value.", value = "Mapping"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Mapping")
-public class Mapping {
+public class Mapping implements Serializable {
 
 	public static Mapping toDTO(String json) {
 		return ObjectMapperUtil.readValue(Mapping.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The mapping's field key.")
 	public String getFieldKey() {
 		return fieldKey;
 	}
@@ -75,11 +79,11 @@ public class Mapping {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The mapping's field key.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String fieldKey;
 
-	@Schema
+	@Schema(description = "The mapping's item reference.")
 	@Valid
 	public Object getItemReference() {
 		return itemReference;
@@ -104,7 +108,7 @@ public class Mapping {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The mapping's item reference.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object itemReference;
 
@@ -165,6 +169,7 @@ public class Mapping {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Mapping",
 		name = "x-class-name"
 	)
@@ -200,7 +205,7 @@ public class Mapping {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -239,7 +244,7 @@ public class Mapping {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

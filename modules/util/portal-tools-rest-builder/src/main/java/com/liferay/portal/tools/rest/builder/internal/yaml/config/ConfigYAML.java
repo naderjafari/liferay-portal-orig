@@ -43,6 +43,10 @@ public class ConfigYAML {
 		return _clientMavenGroupId;
 	}
 
+	public String getGraphQLNamespace() {
+		return _graphQLNamespace;
+	}
+
 	public String getImplDir() {
 		return _implDir;
 	}
@@ -57,6 +61,10 @@ public class ConfigYAML {
 
 	public String getTestDir() {
 		return _testDir;
+	}
+
+	public boolean isForceClientVersionDescription() {
+		return _forceClientVersionDescription;
 	}
 
 	public boolean isForcePredictableContentApplicationXML() {
@@ -77,6 +85,10 @@ public class ConfigYAML {
 
 	public boolean isGenerateGraphQL() {
 		return _generateGraphQL;
+	}
+
+	public boolean isGenerateOpenAPI() {
+		return _generateOpenAPI;
 	}
 
 	public boolean isGenerateREST() {
@@ -111,6 +123,12 @@ public class ConfigYAML {
 		_clientMavenGroupId = clientMavenGroupId;
 	}
 
+	public void setForceClientVersionDescription(
+		boolean forceClientVersionDescription) {
+
+		_forceClientVersionDescription = forceClientVersionDescription;
+	}
+
 	public void setForcePredictableContentApplicationXML(
 		boolean forcePredictableContentApplicationXML) {
 
@@ -139,8 +157,16 @@ public class ConfigYAML {
 		_generateGraphQL = generateGraphQL;
 	}
 
+	public void setGenerateOpenAPI(boolean generateOpenAPI) {
+		_generateOpenAPI = generateOpenAPI;
+	}
+
 	public void setGenerateREST(boolean generateREST) {
 		_generateREST = generateREST;
+	}
+
+	public void setGraphQLNamespace(String graphQLNamespace) {
+		_graphQLNamespace = graphQLNamespace;
 	}
 
 	public void setImplDir(String implDir) {
@@ -169,12 +195,15 @@ public class ConfigYAML {
 	private String _author;
 	private String _clientDir;
 	private String _clientMavenGroupId;
+	private boolean _forceClientVersionDescription = true;
 	private boolean _forcePredictableContentApplicationXML = true;
 	private boolean _forcePredictableOperationId = true;
 	private boolean _forcePredictableSchemaPropertyName = true;
 	private boolean _generateBatch = true;
 	private boolean _generateGraphQL = true;
+	private boolean _generateOpenAPI = true;
 	private boolean _generateREST = true;
+	private String _graphQLNamespace;
 	private String _implDir = "src/main/java";
 	private String _licenseName = "Apache 2.0";
 	private String _licenseURL =

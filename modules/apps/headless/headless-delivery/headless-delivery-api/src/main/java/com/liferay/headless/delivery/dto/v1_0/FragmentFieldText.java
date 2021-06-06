@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentFieldText")
+@GraphQLName(
+	description = "Represents a fragment field with text.",
+	value = "FragmentFieldText"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentFieldText")
-public class FragmentFieldText {
+public class FragmentFieldText implements Serializable {
 
 	public static FragmentFieldText toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentFieldText.class, json);
 	}
 
-	@Schema
+	@Schema(description = "A link to a fragment.")
 	@Valid
 	public FragmentLink getFragmentLink() {
 		return fragmentLink;
@@ -76,11 +81,11 @@ public class FragmentFieldText {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A link to a fragment.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentLink fragmentLink;
 
-	@Schema
+	@Schema(description = "The fragment field's text.")
 	@Valid
 	public Object getText() {
 		return text;
@@ -103,7 +108,7 @@ public class FragmentFieldText {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment field's text.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object text;
 
@@ -160,6 +165,7 @@ public class FragmentFieldText {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentFieldText",
 		name = "x-class-name"
 	)
@@ -195,7 +201,7 @@ public class FragmentFieldText {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -234,7 +240,7 @@ public class FragmentFieldText {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

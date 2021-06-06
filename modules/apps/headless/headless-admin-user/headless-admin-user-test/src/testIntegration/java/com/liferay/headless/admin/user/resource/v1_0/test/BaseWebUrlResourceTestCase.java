@@ -107,7 +107,9 @@ public abstract class BaseWebUrlResourceTestCase {
 
 		WebUrlResource.Builder builder = WebUrlResource.builder();
 
-		webUrlResource = builder.locale(
+		webUrlResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -202,7 +204,7 @@ public abstract class BaseWebUrlResourceTestCase {
 		String irrelevantOrganizationId =
 			testGetOrganizationWebUrlsPage_getIrrelevantOrganizationId();
 
-		if ((irrelevantOrganizationId != null)) {
+		if (irrelevantOrganizationId != null) {
 			WebUrl irrelevantWebUrl = testGetOrganizationWebUrlsPage_addWebUrl(
 				irrelevantOrganizationId, randomIrrelevantWebUrl());
 
@@ -264,7 +266,7 @@ public abstract class BaseWebUrlResourceTestCase {
 		Long irrelevantUserAccountId =
 			testGetUserAccountWebUrlsPage_getIrrelevantUserAccountId();
 
-		if ((irrelevantUserAccountId != null)) {
+		if (irrelevantUserAccountId != null) {
 			WebUrl irrelevantWebUrl = testGetUserAccountWebUrlsPage_addWebUrl(
 				irrelevantUserAccountId, randomIrrelevantWebUrl());
 
@@ -420,7 +422,7 @@ public abstract class BaseWebUrlResourceTestCase {
 		}
 	}
 
-	protected void assertValid(WebUrl webUrl) {
+	protected void assertValid(WebUrl webUrl) throws Exception {
 		boolean valid = true;
 
 		if (webUrl.getId() == null) {
@@ -487,7 +489,7 @@ public abstract class BaseWebUrlResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.headless.admin.user.dto.v1_0.WebUrl.class)) {
 
 			if (!ArrayUtil.contains(
@@ -521,7 +523,7 @@ public abstract class BaseWebUrlResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -606,9 +608,22 @@ public abstract class BaseWebUrlResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -793,12 +808,12 @@ public abstract class BaseWebUrlResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -808,10 +823,10 @@ public abstract class BaseWebUrlResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

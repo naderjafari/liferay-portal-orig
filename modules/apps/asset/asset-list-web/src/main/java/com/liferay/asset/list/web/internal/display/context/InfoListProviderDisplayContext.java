@@ -17,9 +17,12 @@ package com.liferay.asset.list.web.internal.display.context;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.list.provider.InfoListProvider;
 import com.liferay.info.list.provider.InfoListProviderTracker;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -121,13 +124,20 @@ public class InfoListProviderDisplayContext {
 			return PortletURLUtil.clone(currentURLObj, _renderResponse);
 		}
 		catch (PortletException portletException) {
-			PortletURL portletURL = _renderResponse.createRenderURL();
+			if (_log.isDebugEnabled()) {
+				_log.debug(portletException, portletException);
+			}
 
-			portletURL.setParameters(currentURLObj.getParameterMap());
-
-			return portletURL;
+			return PortletURLBuilder.createRenderURL(
+				_renderResponse
+			).setParameters(
+				currentURLObj.getParameterMap()
+			).build();
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		InfoListProviderDisplayContext.class);
 
 	private final HttpServletRequest _httpServletRequest;
 	private final InfoItemServiceTracker _infoItemServiceTracker;

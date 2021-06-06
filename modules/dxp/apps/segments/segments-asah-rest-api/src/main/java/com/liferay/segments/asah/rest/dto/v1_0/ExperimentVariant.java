@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -46,7 +48,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("ExperimentVariant")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ExperimentVariant")
-public class ExperimentVariant {
+public class ExperimentVariant implements Serializable {
 
 	public static ExperimentVariant toDTO(String json) {
 		return ObjectMapperUtil.readValue(ExperimentVariant.class, json);
@@ -165,6 +167,7 @@ public class ExperimentVariant {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.segments.asah.rest.dto.v1_0.ExperimentVariant",
 		name = "x-class-name"
 	)
@@ -200,7 +203,7 @@ public class ExperimentVariant {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -239,7 +242,7 @@ public class ExperimentVariant {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

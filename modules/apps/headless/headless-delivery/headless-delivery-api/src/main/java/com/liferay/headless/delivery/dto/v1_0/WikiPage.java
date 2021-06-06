@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -49,20 +51,22 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WikiPage")
+@GraphQLName(description = "Represents a wiki page.", value = "WikiPage")
 @JsonFilter("Liferay.Vulcan")
 @Schema(
-	requiredProperties = {"encodingFormat", "headline"},
-	description = "Represents a wiki page."
+	description = "Represents a wiki page.",
+	requiredProperties = {"encodingFormat", "headline"}
 )
 @XmlRootElement(name = "WikiPage")
-public class WikiPage {
+public class WikiPage implements Serializable {
 
 	public static WikiPage toDTO(String json) {
 		return ObjectMapperUtil.readValue(WikiPage.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -88,7 +92,9 @@ public class WikiPage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -179,7 +185,9 @@ public class WikiPage {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(
+		description = "A list of the custom fields associated with the wiki page."
+	)
 	@Valid
 	public CustomField[] getCustomFields() {
 		return customFields;
@@ -204,7 +212,9 @@ public class WikiPage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of the custom fields associated with the wiki page."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected CustomField[] customFields;
 
@@ -328,6 +338,34 @@ public class WikiPage {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	@NotEmpty
 	protected String encodingFormat;
+
+	@Schema(description = "The wiki page's external reference code.")
+	public String getExternalReferenceCode() {
+		return externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		this.externalReferenceCode = externalReferenceCode;
+	}
+
+	@JsonIgnore
+	public void setExternalReferenceCode(
+		UnsafeSupplier<String, Exception> externalReferenceCodeUnsafeSupplier) {
+
+		try {
+			externalReferenceCode = externalReferenceCodeUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The wiki page's external reference code.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String externalReferenceCode;
 
 	@Schema(description = "The wiki page's main title.")
 	public String getHeadline() {
@@ -470,7 +508,7 @@ public class WikiPage {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Integer numberOfWikiPages;
 
-	@Schema
+	@Schema(description = "The ID of the wiki page's parent, if it exists.")
 	public Long getParentWikiPageId() {
 		return parentWikiPageId;
 	}
@@ -494,11 +532,13 @@ public class WikiPage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The ID of the wiki page's parent, if it exists."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long parentWikiPageId;
 
-	@Schema
+	@Schema(description = "A list of related contents to this wiki page.")
 	@Valid
 	public RelatedContent[] getRelatedContents() {
 		return relatedContents;
@@ -524,7 +564,7 @@ public class WikiPage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A list of related contents to this wiki page.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected RelatedContent[] relatedContents;
 
@@ -560,7 +600,9 @@ public class WikiPage {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long siteId;
 
-	@Schema
+	@Schema(
+		description = "A flag that indicates whether the user making the requests is subscribed to this wiki page."
+	)
 	public Boolean getSubscribed() {
 		return subscribed;
 	}
@@ -584,11 +626,13 @@ public class WikiPage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A flag that indicates whether the user making the requests is subscribed to this wiki page."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Boolean subscribed;
 
-	@Schema(description = "The categories associated with this blog post.")
+	@Schema(description = "The categories associated with this wiki page.")
 	@Valid
 	public TaxonomyCategoryBrief[] getTaxonomyCategoryBriefs() {
 		return taxonomyCategoryBriefs;
@@ -617,13 +661,13 @@ public class WikiPage {
 	}
 
 	@GraphQLField(
-		description = "The categories associated with this blog post."
+		description = "The categories associated with this wiki page."
 	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
 	@Schema(
-		description = "A write-only field that adds a `TaxonomyCategory` to this resource."
+		description = "A write-only field that adds `TaxonomyCategory` instances to the wiki page."
 	)
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;
@@ -649,7 +693,7 @@ public class WikiPage {
 	}
 
 	@GraphQLField(
-		description = "A write-only field that adds a `TaxonomyCategory` to this resource."
+		description = "A write-only field that adds `TaxonomyCategory` instances to the wiki page."
 	)
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	protected Long[] taxonomyCategoryIds;
@@ -695,6 +739,38 @@ public class WikiPage {
 	)
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	protected ViewableBy viewableBy;
+
+	@Schema(
+		description = "The ID of the wiki node to which the wiki page belongs."
+	)
+	public Long getWikiNodeId() {
+		return wikiNodeId;
+	}
+
+	public void setWikiNodeId(Long wikiNodeId) {
+		this.wikiNodeId = wikiNodeId;
+	}
+
+	@JsonIgnore
+	public void setWikiNodeId(
+		UnsafeSupplier<Long, Exception> wikiNodeIdUnsafeSupplier) {
+
+		try {
+			wikiNodeId = wikiNodeIdUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The ID of the wiki node to which the wiki page belongs."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Long wikiNodeId;
 
 	@Override
 	public boolean equals(Object object) {
@@ -842,6 +918,20 @@ public class WikiPage {
 			sb.append("\"");
 
 			sb.append(_escape(encodingFormat));
+
+			sb.append("\"");
+		}
+
+		if (externalReferenceCode != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(externalReferenceCode));
 
 			sb.append("\"");
 		}
@@ -1018,12 +1108,23 @@ public class WikiPage {
 			sb.append("\"");
 		}
 
+		if (wikiNodeId != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"wikiNodeId\": ");
+
+			sb.append(wikiNodeId);
+		}
+
 		sb.append("}");
 
 		return sb.toString();
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.WikiPage",
 		name = "x-class-name"
 	)
@@ -1093,7 +1194,7 @@ public class WikiPage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -1132,7 +1233,7 @@ public class WikiPage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

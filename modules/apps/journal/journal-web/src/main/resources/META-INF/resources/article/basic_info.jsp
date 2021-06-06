@@ -29,8 +29,8 @@ DDMStructure ddmStructure = journalEditArticleDisplayContext.getDDMStructure();
 <c:if test="<%= journalWebConfiguration.changeableDefaultLanguage() %>">
 	<div id="<%= liferayPortletResponse.getNamespace() + "-change-default-language" %>">
 		<react:component
-			data="<%= journalEditArticleDisplayContext.getChangeDefaultLanguageData() %>"
 			module="js/ChangeDefaultLanguage.es"
+			props="<%= journalEditArticleDisplayContext.getChangeDefaultLanguageData() %>"
 			servletContext="<%= application %>"
 		/>
 	</div>
@@ -87,7 +87,7 @@ DDMStructure ddmStructure = journalEditArticleDisplayContext.getDDMStructure();
 </c:choose>
 
 <div>
-	<label for="<portlet:namespace />descriptionMapAsXML"><liferay-ui:message key="summary" /></label>
+	<label for="<portlet:namespace />descriptionMapAsXML"><liferay-ui:message key="description" /></label>
 
 	<liferay-ui:input-localized
 		availableLocales="<%= journalEditArticleDisplayContext.getAvailableLocales() %>"

@@ -284,8 +284,8 @@ public class PortletBagFactory {
 		try {
 			portletClass = _classLoader.loadClass(portlet.getPortletClass());
 		}
-		catch (Throwable t) {
-			_log.error(t, t);
+		catch (Throwable throwable) {
+			_log.error(throwable, throwable);
 
 			PortletLocalServiceUtil.destroyPortlet(portlet);
 
@@ -606,7 +606,8 @@ public class PortletBagFactory {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Portlet with the name " + portlet.getPortletId() +
-						" does not have valid default preferences");
+						" does not have valid default preferences",
+					exception);
 			}
 		}
 

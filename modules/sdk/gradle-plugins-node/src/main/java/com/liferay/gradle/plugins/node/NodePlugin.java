@@ -14,6 +14,7 @@
 
 package com.liferay.gradle.plugins.node;
 
+import com.liferay.gradle.plugins.node.internal.util.FileUtil;
 import com.liferay.gradle.plugins.node.internal.util.GradleUtil;
 import com.liferay.gradle.plugins.node.internal.util.StringUtil;
 import com.liferay.gradle.plugins.node.tasks.DownloadNodeModuleTask;
@@ -63,6 +64,7 @@ import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Delete;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskOutputs;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.util.VersionNumber;
@@ -93,6 +95,8 @@ public class NodePlugin implements Plugin<Project> {
 	public void apply(Project project) {
 		final NodeExtension nodeExtension = GradleUtil.addExtension(
 			project, EXTENSION_NAME, NodeExtension.class);
+
+		_configureExtensionNode(project, nodeExtension);
 
 		Delete cleanNpmTask = _addTaskCleanNpm(project, nodeExtension);
 
@@ -416,6 +420,29 @@ public class NodePlugin implements Plugin<Project> {
 		}
 	}
 
+	private void _configureExtensionNode(
+		final Project project, NodeExtension nodeExtension) {
+
+		if (FileUtil.exists(project, "package-lock.json")) {
+			return;
+		}
+
+		Project rootProject = project.getRootProject();
+
+		PluginContainer rootPluginContainer = rootProject.getPlugins();
+
+		rootPluginContainer.withId(
+			"com.liferay.yarn",
+			new Action<Plugin>() {
+
+				@Override
+				public void execute(Plugin plugin) {
+					nodeExtension.setUseNpm(false);
+				}
+
+			});
+	}
+
 	private void _configureTaskDownloadNodeGlobal(
 		DownloadNodeTask downloadNodeTask, NodeExtension nodeExtension) {
 
@@ -640,6 +667,21 @@ public class NodePlugin implements Plugin<Project> {
 
 		npmInstallTask.setNodeVersion(nodeExtension.getNodeVersion());
 		npmInstallTask.setNpmVersion(nodeExtension.getNpmVersion());
+
+		if (!npmInstallTask.isUseNpm()) {
+			Project curProject = npmInstallTask.getProject();
+
+			do {
+				TaskProvider<Task> yarnInstallTaskProvider =
+					GradleUtil.fetchTaskProvider(
+						curProject, YarnPlugin.YARN_INSTALL_TASK_NAME);
+
+				if (yarnInstallTaskProvider != null) {
+					npmInstallTask.finalizedBy(yarnInstallTaskProvider);
+				}
+			}
+			while ((curProject = curProject.getParent()) != null);
+		}
 	}
 
 	@SuppressWarnings("serial")
@@ -745,6 +787,9 @@ public class NodePlugin implements Plugin<Project> {
 
 					@SuppressWarnings("unused")
 					public void doCall(CopySpec copySpec) {
+						copySpec.exclude("**/*.d.js");
+						copySpec.exclude("**/*.d.js.map");
+						copySpec.exclude("**/*.ts");
 						copySpec.into("META-INF/resources");
 					}
 
@@ -970,14 +1015,24 @@ public class NodePlugin implements Plugin<Project> {
 		Map<String, Object> devDependencies =
 			(Map<String, Object>)packageJSONMap.get("devDependencies");
 
-		if ((devDependencies == null) ||
-			!devDependencies.containsKey("liferay-npm-scripts")) {
+		if (devDependencies == null) {
+			return false;
+		}
 
+		String dependencyName = null;
+
+		if (devDependencies.containsKey("@liferay/npm-scripts")) {
+			dependencyName = "@liferay/npm-scripts";
+		}
+		else if (devDependencies.containsKey("liferay-npm-scripts")) {
+			dependencyName = "liferay-npm-scripts";
+		}
+		else {
 			return false;
 		}
 
 		VersionNumber versionNumber = VersionNumber.parse(
-			(String)devDependencies.get("liferay-npm-scripts"));
+			(String)devDependencies.get(dependencyName));
 
 		int majorVersion = versionNumber.getMajor();
 

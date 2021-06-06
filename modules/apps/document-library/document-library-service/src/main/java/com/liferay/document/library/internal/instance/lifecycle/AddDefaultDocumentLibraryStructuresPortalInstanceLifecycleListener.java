@@ -89,8 +89,8 @@ public class AddDefaultDocumentLibraryStructuresPortalInstanceLifecycleListener
 	protected void addDLRawMetadataStructures(long companyId) throws Exception {
 		ServiceContext serviceContext = new ServiceContext();
 
-		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setAddGroupPermissions(true);
+		serviceContext.setAddGuestPermissions(true);
 
 		Group group = _groupLocalService.getCompanyGroup(companyId);
 
@@ -140,7 +140,7 @@ public class AddDefaultDocumentLibraryStructuresPortalInstanceLifecycleListener
 					DDMStructureConstants.DEFAULT_PARENT_STRUCTURE_ID,
 					_portal.getClassNameId(RawMetadataProcessor.class), name,
 					nameMap, descriptionMap, ddmForm, ddmFormLayout,
-					StorageType.JSON.toString(),
+					StorageType.DEFAULT.toString(),
 					DDMStructureConstants.TYPE_DEFAULT, serviceContext);
 			}
 		}

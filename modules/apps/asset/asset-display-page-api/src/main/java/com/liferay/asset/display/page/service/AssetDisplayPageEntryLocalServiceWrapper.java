@@ -169,6 +169,13 @@ public class AssetDisplayPageEntryLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _assetDisplayPageEntryLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _assetDisplayPageEntryLocalService.dynamicQuery();
 	}
@@ -318,6 +325,18 @@ public class AssetDisplayPageEntryLocalServiceWrapper
 	}
 
 	@Override
+	public java.util.List<AssetDisplayPageEntry> getAssetDisplayPageEntries(
+		long classNameId, long classTypeId, long layoutPageTemplateEntryId,
+		boolean defaultTemplate, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<AssetDisplayPageEntry>
+			orderByComparator) {
+
+		return _assetDisplayPageEntryLocalService.getAssetDisplayPageEntries(
+			classNameId, classTypeId, layoutPageTemplateEntryId,
+			defaultTemplate, start, end, orderByComparator);
+	}
+
+	@Override
 	public java.util.List<AssetDisplayPageEntry>
 		getAssetDisplayPageEntriesByLayoutPageTemplateEntryId(
 			long layoutPageTemplateEntryId) {
@@ -325,6 +344,18 @@ public class AssetDisplayPageEntryLocalServiceWrapper
 		return _assetDisplayPageEntryLocalService.
 			getAssetDisplayPageEntriesByLayoutPageTemplateEntryId(
 				layoutPageTemplateEntryId);
+	}
+
+	@Override
+	public java.util.List<AssetDisplayPageEntry>
+		getAssetDisplayPageEntriesByLayoutPageTemplateEntryId(
+			long layoutPageTemplateEntryId, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<AssetDisplayPageEntry> orderByComparator) {
+
+		return _assetDisplayPageEntryLocalService.
+			getAssetDisplayPageEntriesByLayoutPageTemplateEntryId(
+				layoutPageTemplateEntryId, start, end, orderByComparator);
 	}
 
 	/**
@@ -374,6 +405,17 @@ public class AssetDisplayPageEntryLocalServiceWrapper
 	public int getAssetDisplayPageEntriesCount() {
 		return _assetDisplayPageEntryLocalService.
 			getAssetDisplayPageEntriesCount();
+	}
+
+	@Override
+	public int getAssetDisplayPageEntriesCount(
+		long classNameId, long classTypeId, long layoutPageTemplateEntryId,
+		boolean defaultTemplate) {
+
+		return _assetDisplayPageEntryLocalService.
+			getAssetDisplayPageEntriesCount(
+				classNameId, classTypeId, layoutPageTemplateEntryId,
+				defaultTemplate);
 	}
 
 	@Override

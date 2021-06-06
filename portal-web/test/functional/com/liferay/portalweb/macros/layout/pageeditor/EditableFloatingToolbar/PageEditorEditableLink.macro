@@ -1,14 +1,24 @@
 definition {
 
-	@summary = "gotoEditableFieldLink must be called first"
-	macro _gotoFromContentField {
-		Select(
-			locator1 = "PageEditorEditableLink#LINK_TYPE",
-			value1 = "From Content Field");
-	}
-
 	macro _selectContent {
-		Click(locator1 = "PageEditor#EDITABLE_FIELD_TOOLBAR_MAP_ASSET_SELECT_POPUP_BUTTON");
+		var itemSelectorContentInputValue = selenium.getElementValue("//label[normalize-space(text())='Item']/following-sibling::div//input[contains(@class,'item-selector__content-input')]");
+
+		if ("${itemSelectorContentInputValue}" == "") {
+			Click(
+				key_fieldLabel = "Item",
+				key_text = "plus",
+				locator1 = "Icon#ANY_ITEM_SELECTOR");
+		}
+		else {
+			Click(
+				key_fieldLabel = "Item",
+				key_text = "change",
+				locator1 = "Icon#ANY_ITEM_SELECTOR");
+		}
+
+		if (IsElementPresent(key_menuItem = "Select Item...",locator1 = "MenuItem#ANY_MENU_ITEM")) {
+			MenuItem.click(menuItem = "Select Item...");
+		}
 
 		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
@@ -18,7 +28,9 @@ definition {
 
 		Click(
 			key_card = "${entryTitle}",
-			locator1 = "LexiconCard#CARD_TITLE");
+			locator1 = "Card#CARD_TITLE");
+
+		Pause(locator1 = "3000");
 	}
 
 	macro _selectField {
@@ -33,17 +45,84 @@ definition {
 			fragmentName = "${fragmentName}",
 			id = "${id}");
 
-		Click(locator1 = "PageEditor#EDITABLE_FIELD_TOOLBAR_LINK_BUTTON");
+		PageEditor.gotoTab(tabName = "Selection");
+
+		AssertClick(
+			key_navItem = "Link",
+			locator1 = "PageEditor#NAV_ITEM_BUTTON",
+			value1 = "Link");
+	}
+
+	macro mapEditableFieldToPage {
+		PageEditorEditableLink.gotoEditableFieldLink(
+			fragmentName = "${fragmentName}",
+			id = "${id}");
+
+		Select(
+			key_fieldLabel = "Link",
+			locator1 = "Select#GENERIC_SELECT_FIELD",
+			value1 = "Page");
+
+		Pause(locator1 = "3000");
+
+		var itemSelectorContentInputValue = selenium.getElementValue("//label[normalize-space(text())='Page']/following-sibling::div//input[contains(@class,'item-selector__content-input')]");
+
+		if ("${itemSelectorContentInputValue}" == "") {
+			Click(
+				key_fieldLabel = "Page",
+				key_text = "plus",
+				locator1 = "Icon#ANY_ITEM_SELECTOR");
+		}
+		else {
+			Click(
+				key_fieldLabel = "Page",
+				key_text = "change",
+				locator1 = "Icon#ANY_ITEM_SELECTOR");
+		}
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		if (isSet(navItem)) {
+			Navigator.gotoNavItem(navItem = "${navItem}");
+		}
+
+		if (isSet(keywords)) {
+			Type(
+				locator1 = "ItemSelector#SEARCH_FIELD",
+				value1 = "${keywords}");
+		}
+		else {
+			Portlet.expandTree();
+		}
+
+		AssertClick.assertPartialTextClickAt(
+			key_nodeName = "${pageName}",
+			locator1 = "Treeview#NODE_UNSELECTED",
+			value1 = "${pageName}");
+
+		SelectFrameTop();
+
+		PageEditor.waitForAutoSave();
 	}
 
 	macro mapURLToAsset {
-		Variables.assertDefined(parameterList = "${entryTitle},${field},${navItem}");
+		Select(
+			key_fieldLabel = "Link",
+			locator1 = "Select#GENERIC_SELECT_FIELD",
+			value1 = "Mapped URL");
 
-		PageEditorEditableLink._gotoFromContentField();
+		if (isSet(entryTitle)) {
+			PageEditorEditableLink._selectContent(
+				entryTitle = "${entryTitle}",
+				navItem = "${navItem}");
+		}
 
-		PageEditorEditableLink._selectContent(
-			entryTitle = "${entryTitle}",
-			navItem = "${navItem}");
+		if (isSet(source)) {
+			Select(
+				key_fieldLabel = "Source",
+				locator1 = "Select#GENERIC_SELECT_FIELD",
+				value1 = "${source}");
+		}
 
 		PageEditorEditableLink._selectField(field = "${field}");
 	}
@@ -54,6 +133,29 @@ definition {
 		Type(
 			locator1 = "PageEditorEditableLink#URL",
 			value1 = "${url}");
+
+		Click(
+			key_sidebarButton = "Selection",
+			locator1 = "PageEditor#FRAGMENT_SIDEBAR_TITLE");
+
+		if ("${target}" == "Blank") {
+			while (IsNotChecked.isNotCheckedNotVisible(checkboxName = "Open in a new tab.", locator1 = "Checkbox#ANY_CHECKBOX")) {
+				Click.clickAtNotVisible(
+					checkboxName = "Open in a new tab.",
+					locator1 = "Checkbox#ANY_CHECKBOX");
+			}
+
+			Pause(locator1 = "3000");
+		}
+		else if ("${target}" == "Self") {
+			while (IsChecked.isNotCheckedNotVisible(checkboxName = "Open in a new tab.", locator1 = "Checkbox#ANY_CHECKBOX")) {
+				Click.clickAtNotVisible(
+					checkboxName = "Open in a new tab.",
+					locator1 = "Checkbox#ANY_CHECKBOX");
+			}
+
+			Pause(locator1 = "3000");
+		}
 
 		PageEditor.waitForAutoSave();
 	}

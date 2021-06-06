@@ -3,8 +3,10 @@
 exports[`Options shows the options 1`] = `
 <div>
   <div
+    aria-labelledby="options_fieldDetails"
     class="form-group hide"
     data-field-name="options"
+    tabindex="0"
   >
     <div
       class="ddm-field-options-container"
@@ -32,21 +34,34 @@ exports[`Options shows the options 1`] = `
           class="ddm-option-entry"
         >
           <div
+            aria-labelledby="option0_fieldDetails"
             class="form-group hide"
             data-field-name="option0"
+            tabindex="0"
           >
             <div
+              aria-labelledby="keyValueLabeloption0_fieldDetails"
               class="form-group hide"
               data-field-name="keyValueLabeloption0"
+              tabindex="0"
             >
               <input
-                aria-label="text"
+                aria-labelledby="keyValueLabeloption0_fieldDetails"
                 class="form-control ddm-field-text"
+                dir="rtl"
+                id="keyValueLabeloption0_fieldDetails"
+                lang="en_US"
                 name="keyValueLabeloption0"
                 placeholder="enter-an-option"
                 type="text"
                 value="Option 1"
               />
+              <input
+                name="keyValueLabeloption0_edited"
+                type="hidden"
+                value="false"
+              />
+              
             </div>
             <div
               class="active form-text key-value-editor"
@@ -54,15 +69,38 @@ exports[`Options shows the options 1`] = `
               <label
                 class="control-label key-value-label"
               >
-                field-id
+                field-name
                 :
               </label>
               <input
                 class="key-value-input"
+                tabindex="0"
                 type="text"
                 value="Option1"
               />
             </div>
+            <div
+              class="active form-text key-value-editor"
+            >
+              <label
+                class="control-label key-value-label"
+              >
+                field-reference
+                :
+              </label>
+              <input
+                class="key-value-reference-input"
+                tabindex="0"
+                type="text"
+                value="Option1"
+              />
+            </div>
+            <input
+              name="option0_edited"
+              type="hidden"
+              value="false"
+            />
+            
           </div>
           <button
             class="close close-modal"
@@ -102,21 +140,34 @@ exports[`Options shows the options 1`] = `
           class="ddm-option-entry"
         >
           <div
+            aria-labelledby="option1_fieldDetails"
             class="form-group hide"
             data-field-name="option1"
+            tabindex="0"
           >
             <div
+              aria-labelledby="keyValueLabeloption1_fieldDetails"
               class="form-group hide"
               data-field-name="keyValueLabeloption1"
+              tabindex="0"
             >
               <input
-                aria-label="text"
+                aria-labelledby="keyValueLabeloption1_fieldDetails"
                 class="form-control ddm-field-text"
+                dir="rtl"
+                id="keyValueLabeloption1_fieldDetails"
+                lang="en_US"
                 name="keyValueLabeloption1"
                 placeholder="enter-an-option"
                 type="text"
                 value="Option 2"
               />
+              <input
+                name="keyValueLabeloption1_edited"
+                type="hidden"
+                value="false"
+              />
+              
             </div>
             <div
               class="active form-text key-value-editor"
@@ -124,15 +175,38 @@ exports[`Options shows the options 1`] = `
               <label
                 class="control-label key-value-label"
               >
-                field-id
+                field-name
                 :
               </label>
               <input
                 class="key-value-input"
+                tabindex="0"
                 type="text"
                 value="Option2"
               />
             </div>
+            <div
+              class="active form-text key-value-editor"
+            >
+              <label
+                class="control-label key-value-label"
+              >
+                field-reference
+                :
+              </label>
+              <input
+                class="key-value-reference-input"
+                tabindex="0"
+                type="text"
+                value="Option2"
+              />
+            </div>
+            <input
+              name="option1_edited"
+              type="hidden"
+              value="false"
+            />
+            
           </div>
           <button
             class="close close-modal"
@@ -172,20 +246,49 @@ exports[`Options shows the options 1`] = `
           class="ddm-option-entry"
         >
           <div
+            aria-labelledby="option2_fieldDetails"
             class="form-group hide"
             data-field-name="option2"
+            tabindex="0"
           >
             <div
+              aria-labelledby="keyValueLabeloption2_fieldDetails"
               class="form-group hide"
               data-field-name="keyValueLabeloption2"
+              tabindex="0"
             >
               <input
-                aria-label="text"
+                aria-labelledby="keyValueLabeloption2_fieldDetails"
                 class="form-control ddm-field-text"
+                dir="rtl"
+                id="keyValueLabeloption2_fieldDetails"
+                lang="en_US"
                 name="keyValueLabeloption2"
                 placeholder="enter-an-option"
                 type="text"
                 value=""
+              />
+              <input
+                name="keyValueLabeloption2_edited"
+                type="hidden"
+                value="false"
+              />
+              
+            </div>
+            <div
+              class="active form-text key-value-editor"
+            >
+              <label
+                class="control-label key-value-label"
+              >
+                field-name
+                :
+              </label>
+              <input
+                class="key-value-input"
+                tabindex="0"
+                type="text"
+                value="Any<String>"
               />
             </div>
             <div
@@ -194,19 +297,32 @@ exports[`Options shows the options 1`] = `
               <label
                 class="control-label key-value-label"
               >
-                field-id
+                field-reference
                 :
               </label>
               <input
-                class="key-value-input"
+                class="key-value-reference-input"
+                tabindex="0"
                 type="text"
-                value=""
+                value="Any<String>"
               />
             </div>
+            <input
+              name="option2_edited"
+              type="hidden"
+              value="false"
+            />
+            
           </div>
         </div>
       </div>
     </div>
+    <input
+      name="options_edited"
+      type="hidden"
+      value="false"
+    />
+    
   </div>
 </div>
 `;

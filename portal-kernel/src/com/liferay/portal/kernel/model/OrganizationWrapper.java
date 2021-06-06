@@ -314,6 +314,11 @@ public class OrganizationWrapper
 		return model.getLogoId();
 	}
 
+	@Override
+	public String getLogoURL() {
+		return model.getLogoURL();
+	}
+
 	/**
 	 * Returns the modified date of this organization.
 	 *

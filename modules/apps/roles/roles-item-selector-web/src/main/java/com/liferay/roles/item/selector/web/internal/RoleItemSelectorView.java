@@ -57,8 +57,10 @@ import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Alessio Antonio Rendina
+ * @deprecated As of Mueller (7.2.x), , with no direct replacement
  */
 @Component(immediate = true, service = ItemSelectorView.class)
+@Deprecated
 public class RoleItemSelectorView
 	implements ItemSelectorView<RoleItemSelectorCriterion> {
 
@@ -100,7 +102,8 @@ public class RoleItemSelectorView
 
 		RoleItemSelectorViewDisplayContext roleItemSelectorViewDisplayContext =
 			new RoleItemSelectorViewDisplayContext(
-				httpServletRequest, itemSelectedEventName,
+				httpServletRequest, roleItemSelectorCriterion,
+				itemSelectedEventName,
 				_getSearchContainer(
 					renderRequest, renderResponse,
 					roleItemSelectorCriterion.getCheckedRoleIds(),

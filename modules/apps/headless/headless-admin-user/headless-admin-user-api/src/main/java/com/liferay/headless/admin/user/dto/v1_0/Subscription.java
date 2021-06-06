@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -49,7 +51,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("Subscription")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Subscription")
-public class Subscription {
+public class Subscription implements Serializable {
 
 	public static Subscription toDTO(String json) {
 		return ObjectMapperUtil.readValue(Subscription.class, json);
@@ -372,6 +374,7 @@ public class Subscription {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.Subscription",
 		name = "x-class-name"
 	)
@@ -407,7 +410,7 @@ public class Subscription {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -446,7 +449,7 @@ public class Subscription {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

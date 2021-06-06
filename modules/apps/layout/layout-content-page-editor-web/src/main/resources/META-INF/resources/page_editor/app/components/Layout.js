@@ -13,9 +13,8 @@
  */
 
 import ClayAlert from '@clayui/alert';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {useIsMounted} from 'frontend-js-react-web';
-import {closest} from 'metal-dom';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef} from 'react';
 
@@ -25,13 +24,16 @@ import {
 } from '../../prop-types/index';
 import {ITEM_ACTIVATION_ORIGINS} from '../config/constants/itemActivationOrigins';
 import {LAYOUT_DATA_ITEM_TYPES} from '../config/constants/layoutDataItemTypes';
-import {PAGE_TYPES} from '../config/constants/pageTypes';
+import {LAYOUT_TYPES} from '../config/constants/layoutTypes';
 import {config} from '../config/index';
-import {useSelector} from '../store/index';
+import {useSetCollectionActiveItemContext} from '../contexts/CollectionActiveItemContext';
+import {
+	useActivationOrigin,
+	useIsActive,
+	useSelectItem,
+} from '../contexts/ControlsContext';
+import {useSelector} from '../contexts/StoreContext';
 import {deepEqual} from '../utils/checkDeepEqual';
-import {useActivationOrigin, useIsActive, useSelectItem} from './Controls';
-import ShortcutManager from './ShortcutManager';
-import {EditableProcessorContextProvider} from './fragment-content/EditableProcessorContext';
 import FragmentWithControls from './layout-data-items/FragmentWithControls';
 import {
 	CollectionItemWithControls,
@@ -75,7 +77,7 @@ export default function Layout({mainItemId}) {
 		const layout = layoutRef.current;
 
 		const preventLinkClick = (event) => {
-			const closestElement = closest(event.target, '[href]');
+			const closestElement = event.target.closest('[href]');
 
 			if (
 				closestElement &&
@@ -96,7 +98,7 @@ export default function Layout({mainItemId}) {
 		};
 	}, [layoutRef]);
 
-	const isPageConversion = config.pageType === PAGE_TYPES.conversion;
+	const isPageConversion = config.layoutType === LAYOUT_TYPES.conversion;
 	const hasWarningMessages =
 		isPageConversion &&
 		config.layoutConversionWarningMessages &&
@@ -133,18 +135,16 @@ export default function Layout({mainItemId}) {
 				</div>
 			)}
 
-			<ShortcutManager />
-
-			<div
-				className={classNames('page-editor')}
-				id="page-editor"
-				onClick={onClick}
-				ref={layoutRef}
-			>
-				<EditableProcessorContextProvider>
+			{mainItem && (
+				<div
+					className="page-editor"
+					id="page-editor"
+					onClick={onClick}
+					ref={layoutRef}
+				>
 					<LayoutDataItem item={mainItem} layoutData={layoutData} />
-				</EditableProcessorContextProvider>
-			</div>
+				</div>
+			)}
 		</>
 	);
 }
@@ -248,6 +248,8 @@ LayoutDataItemContent.propTypes = {
 };
 
 const LayoutDataItemInteractionFilter = ({componentRef, item}) => {
+	useSetCollectionActiveItemContext(item.itemId);
+
 	const activationOrigin = useActivationOrigin();
 	const isActive = useIsActive()(item.itemId);
 	const isMounted = useIsMounted();
@@ -257,7 +259,7 @@ const LayoutDataItemInteractionFilter = ({componentRef, item}) => {
 			isActive &&
 			componentRef.current &&
 			isMounted() &&
-			activationOrigin === ITEM_ACTIVATION_ORIGINS.structureTree
+			activationOrigin === ITEM_ACTIVATION_ORIGINS.sidebar
 		) {
 			componentRef.current.scrollIntoView({
 				behavior: 'smooth',

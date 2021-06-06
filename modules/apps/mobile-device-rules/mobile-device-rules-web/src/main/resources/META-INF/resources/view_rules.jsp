@@ -22,12 +22,13 @@ String redirect = ParamUtil.getString(request, "redirect");
 String backURL = ParamUtil.getString(request, "backURL");
 
 if (Validator.isNull(redirect) && Validator.isNull(backURL)) {
-	PortletURL portletURL = renderResponse.createRenderURL();
-
-	portletURL.setParameter("mvcPath", "/view.jsp");
-	portletURL.setParameter("groupId", String.valueOf(groupId));
-
-	backURL = portletURL.toString();
+	backURL = PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCPath(
+		"/view.jsp"
+	).setParameter(
+		"groupId", groupId
+	).buildString();
 }
 
 long ruleGroupId = ParamUtil.getLong(request, "ruleGroupId");
@@ -36,12 +37,17 @@ MDRRuleGroup ruleGroup = MDRRuleGroupLocalServiceUtil.getRuleGroup(ruleGroupId);
 
 String displayStyle = ParamUtil.getString(request, "displayStyle", "list");
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/view_rules.jsp");
-portletURL.setParameter("redirect", redirect);
-portletURL.setParameter("ruleGroupId", String.valueOf(ruleGroupId));
-portletURL.setParameter("groupId", String.valueOf(groupId));
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCPath(
+	"/view_rules.jsp"
+).setRedirect(
+	redirect
+).setParameter(
+	"groupId", String.valueOf(groupId)
+).setParameter(
+	"ruleGroupId", String.valueOf(ruleGroupId)
+).build();
 
 SearchContainer<MDRRule> rulesSearchContainer = new SearchContainer(renderRequest, portletURL, null, "no-classification-rules-are-configured-for-this-device-family");
 
@@ -64,6 +70,7 @@ rulesSearchContainer.setOrderByComparator(orderByComparator);
 rulesSearchContainer.setOrderByType(orderByType);
 
 int rulesCount = MDRRuleLocalServiceUtil.getRulesCount(ruleGroupId);
+
 List<MDRRule> rules = MDRRuleLocalServiceUtil.getRules(ruleGroupId, rulesSearchContainer.getStart(), rulesSearchContainer.getEnd(), rulesSearchContainer.getOrderByComparator());
 
 rulesSearchContainer.setResults(rules);
@@ -77,15 +84,10 @@ renderResponse.setTitle(ruleGroup.getName(locale));
 <liferay-frontend:management-bar
 	disabled="<%= rulesCount <= 0 %>"
 >
-
-	<%
-	PortletURL displayStyleURL = PortletURLUtil.clone(portletURL, renderResponse);
-	%>
-
 	<liferay-frontend:management-bar-buttons>
 		<liferay-frontend:management-bar-display-buttons
 			displayViews='<%= new String[] {"icon", "descriptive", "list"} %>'
-			portletURL="<%= displayStyleURL %>"
+			portletURL="<%= PortletURLUtil.clone(portletURL, renderResponse) %>"
 			selectedDisplayStyle="<%= displayStyle %>"
 		/>
 
@@ -106,9 +108,11 @@ renderResponse.setTitle(ruleGroup.getName(locale));
 	</liferay-frontend:management-bar-buttons>
 
 	<%
-	PortletURL iteratorURL = PortletURLUtil.clone(portletURL, renderResponse);
-
-	iteratorURL.setParameter("displayStyle", displayStyle);
+	PortletURL iteratorURL = PortletURLBuilder.create(
+		PortletURLUtil.clone(portletURL, renderResponse)
+	).setParameter(
+		"displayStyle", displayStyle
+	).build();
 	%>
 
 	<liferay-frontend:management-bar-filters>
@@ -173,11 +177,6 @@ renderResponse.setTitle(ruleGroup.getName(locale));
 					/>
 				</c:when>
 				<c:when test='<%= displayStyle.equals("icon") %>'>
-
-					<%
-					row.setCssClass("entry-card lfr-asset-item");
-					%>
-
 					<liferay-ui:search-container-column-text>
 						<liferay-frontend:icon-vertical-card
 							actionJsp="/rule_actions.jsp"

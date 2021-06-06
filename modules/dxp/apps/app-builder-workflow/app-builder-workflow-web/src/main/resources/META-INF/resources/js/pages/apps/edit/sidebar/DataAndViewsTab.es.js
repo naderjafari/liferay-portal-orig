@@ -9,28 +9,39 @@
  * distribution rights of the Software.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
 import {ClayRadio, ClayRadioGroup} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
-import {ClayTooltipProvider} from '@clayui/tooltip';
-import SelectObjects from 'app-builder-web/js/pages/apps/SelectObjectsDropDown.es';
+import {AppContext} from 'app-builder-web/js/AppContext.es';
+import SelectObjects from 'app-builder-web/js/components/select-objects/SelectObjects.es';
 import EditAppContext, {
-	UPDATE_DATA_DEFINITION_ID,
-	UPDATE_DATA_LAYOUT_ID,
+	UPDATE_APP,
 	UPDATE_DATA_LIST_VIEW_ID,
 } from 'app-builder-web/js/pages/apps/edit/EditAppContext.es';
+import classNames from 'classnames';
+import {
+	getLocalizedValue,
+	sub,
+} from 'data-engine-js-components-web/js/utils/lang.es';
+import {successToast} from 'data-engine-js-components-web/js/utils/toast.es';
+import {concatValues} from 'data-engine-js-components-web/js/utils/utils.es';
+import {DataDefinitionUtils} from 'data-engine-taglib';
+import {openModal} from 'frontend-js-web';
 import React, {useContext} from 'react';
 
-import SelectDropdown from '../../../../components/select-dropdown/SelectDropdown.es';
+import {getTableViews} from '../actions.es';
 import {
 	ADD_STEP_FORM_VIEW,
 	REMOVE_STEP_FORM_VIEW,
 	UPDATE_DATA_OBJECT,
-	UPDATE_FORM_VIEW,
+	UPDATE_LIST_ITEMS,
 	UPDATE_STEP_FORM_VIEW,
 	UPDATE_STEP_FORM_VIEW_READONLY,
 	UPDATE_TABLE_VIEW,
 } from '../configReducer.es';
+import SelectFormView from './SelectFormView.es';
+import SelectTableView from './SelectTableView.es';
 
 const NoObjectEmptyState = () => (
 	<div className="taglib-empty-result-message">
@@ -48,75 +59,77 @@ const NoObjectEmptyState = () => (
 	</div>
 );
 
-const SelectFormView = (props) => {
-	props = {
-		...props,
-		emptyResultMessage: Liferay.Language.get(
-			'no-form-views-were-found-with-this-name-try-searching-again-with-a-different-name'
-		),
-		label: Liferay.Language.get('select-a-form-view'),
-		stateProps: {
-			emptyProps: {
-				label: Liferay.Language.get('there-are-no-form-views-yet'),
-			},
-			loadingProps: {
-				label: Liferay.Language.get('retrieving-all-form-views'),
-			},
-		},
-	};
+export const OpenButton = (props) => (
+	<ClayButtonWithIcon
+		className="ml-2 px-2 tap-ahead-icon-wrapper"
+		data-tooltip-align="bottom-right"
+		data-tooltip-delay="0"
+		displayType="secondary"
+		symbol="tap-ahead"
+		title={Liferay.Language.get('open')}
+		{...props}
+	/>
+);
 
-	return <SelectDropdown {...props} />;
-};
-
-const SelectTableView = (props) => {
-	props = {
-		...props,
-		emptyResultMessage: Liferay.Language.get(
-			'no-table-views-were-found-with-this-name-try-searching-again-with-a-different-name'
-		),
-		label: Liferay.Language.get('select-a-table-view'),
-		stateProps: {
-			emptyProps: {
-				label: Liferay.Language.get('there-are-no-table-views-yet'),
-			},
-			loadingProps: {
-				label: Liferay.Language.get('retrieving-all-table-views'),
-			},
-		},
-	};
-
-	return <SelectDropdown {...props} />;
-};
-
-export default function DataAndViewsTab() {
+export default function DataAndViewsTab({
+	config: {
+		currentStep,
+		dataObject,
+		formView,
+		listItems: {fetching, formViews, tableViews},
+		stepIndex,
+		tableView,
+	},
+	dispatch,
+	dispatchConfig,
+}) {
+	const {objectsPortletURL} = useContext(AppContext);
+	const {openFormViewModal, updateFormView} = useContext(EditAppContext);
 	const {
-		config: {
-			currentStep,
-			dataObject,
-			formView,
-			listItems: {fetching, formViews, tableViews},
-			stepIndex,
-			tableView,
-		},
-		dispatch,
-		dispatchConfig,
-		state: {app},
-	} = useContext(EditAppContext);
+		appWorkflowDataLayoutLinks: stepFormViews = [],
+		errors: {
+			formViews: {duplicatedFields = [], errorIndexes = []} = {},
+		} = {},
+	} = currentStep;
 
-	const {appWorkflowDataLayoutLinks: stepFormViews = []} = currentStep;
-
-	const availableFormViews = formViews.map((form) => ({
-		...form,
+	const availableFormViews = formViews.map((formView) => ({
+		...formView,
 		disabled:
 			stepFormViews.findIndex(
-				({dataLayoutId}) => dataLayoutId === form.id
+				({dataLayoutId}) => dataLayoutId === formView.id
 			) > -1,
+	}));
+
+	const mainFormViews = formViews.map((formView) => ({
+		...formView,
+		disabled: formView.missingRequiredFields?.nativeField,
 	}));
 
 	const addStepFormView = () => {
 		dispatchConfig({
 			type: ADD_STEP_FORM_VIEW,
 		});
+	};
+
+	const getWarningIcon = (formView) => {
+		const {
+			missingRequiredFields: {customField, nativeField} = {},
+		} = formView;
+
+		let warningIcon;
+
+		if (customField || nativeField) {
+			warningIcon = {
+				className: classNames(
+					'mr-2 tooltip-popover-icon',
+					nativeField ? 'error' : 'info'
+				),
+				fontSize: '26px',
+				symbol: nativeField ? 'exclamation-full' : 'info-circle',
+			};
+		}
+
+		return warningIcon;
 	};
 
 	const removeStepFormView = (index) => {
@@ -126,28 +139,22 @@ export default function DataAndViewsTab() {
 		});
 	};
 
-	const updateDataObject = (dataObject) => {
-		dispatchConfig({
-			dataObject,
-			type: UPDATE_DATA_OBJECT,
-		});
+	const updateDataObject = (newDataObject) => {
+		if (newDataObject.id !== dataObject.id) {
+			dispatchConfig({
+				dataObject: newDataObject,
+				type: UPDATE_DATA_OBJECT,
+			});
 
-		dispatch({
-			...dataObject,
-			type: UPDATE_DATA_DEFINITION_ID,
-		});
-	};
-
-	const updateFormView = (formView) => {
-		dispatchConfig({
-			formView,
-			type: UPDATE_FORM_VIEW,
-		});
-
-		dispatch({
-			...formView,
-			type: UPDATE_DATA_LAYOUT_ID,
-		});
+			dispatch({
+				app: {
+					dataDefinitionId: newDataObject.id,
+					dataLayoutId: null,
+					dataListViewId: null,
+				},
+				type: UPDATE_APP,
+			});
+		}
 	};
 
 	const updateStepFormView = (formView, index) => {
@@ -178,23 +185,189 @@ export default function DataAndViewsTab() {
 		});
 	};
 
+	const openTableViewModal = (
+		dataDefinitionId,
+		defaultLanguageId,
+		dataListViewId
+	) => {
+		const event = window.top?.Liferay.once(
+			'newTableViewCreated',
+			({newTableView}) => {
+				successToast(
+					Liferay.Language.get(
+						'the-table-view-was-saved-successfully'
+					)
+				);
+
+				getTableViews(dataDefinitionId, defaultLanguageId).then(
+					(tableViews) => {
+						dispatchConfig({
+							listItems: {
+								fetching: false,
+								tableViews,
+							},
+							type: UPDATE_LIST_ITEMS,
+						});
+					}
+				);
+
+				updateTableView({
+					...newTableView,
+					name: getLocalizedValue(
+						defaultLanguageId,
+						newTableView.name
+					),
+				});
+			}
+		);
+
+		openModal({
+			onClose: () => event?.detach(),
+			title: dataListViewId
+				? Liferay.Language.get('edit-table-view')
+				: Liferay.Language.get('new-table-view'),
+			url: `${Liferay.Util.PortletURL.createRenderURL(objectsPortletURL, {
+				p_p_state: 'pop_up',
+			})}#/custom-object/${dataDefinitionId}/table-views/${
+				dataListViewId ?? 'add'
+			}`,
+		});
+	};
+
+	const onCreateObject = (newObject) => {
+		const {defaultLanguageId, id, name} = newObject;
+
+		successToast(
+			Liferay.Language.get('the-object-was-created-successfully')
+		);
+
+		updateDataObject({
+			...newObject,
+			name: getLocalizedValue(defaultLanguageId, name),
+			type: 'custom',
+		});
+
+		openFormViewModal({
+			dataDefinitionId: id,
+			defaultLanguageId,
+			firstFormView: true,
+			selectFormView: updateFormView,
+		});
+	};
+
+	const AddButton = (props) => (
+		<ClayButtonWithIcon
+			className="btn btn-monospaced btn-secondary mr-2 nav-btn nav-btn-monospaced"
+			data-tooltip-align="bottom-right"
+			data-tooltip-delay="0"
+			displayType="secondary"
+			symbol="plus"
+			{...props}
+		/>
+	);
+
+	const addFormViewButton = (selectFormView) => (
+		<AddButton
+			onClick={() =>
+				openFormViewModal({
+					dataDefinitionId: dataObject.id,
+					defaultLanguageId: dataObject.defaultLanguageId,
+					selectFormView,
+				})
+			}
+			title={Liferay.Language.get('new-form-view')}
+		/>
+	);
+
+	const duplicatedFieldsMessage =
+		duplicatedFields.length === 1
+			? Liferay.Language.get(
+					'the-field-x-is-present-in-multiple-form-views'
+			  )
+			: Liferay.Language.get(
+					'the-fields-x-are-present-in-multiple-form-views'
+			  );
+
+	const fieldsLabels = duplicatedFields.map((field) =>
+		DataDefinitionUtils.getFieldLabel(dataObject, field)
+	);
+
+	const parsedFieldsLabels = fieldsLabels
+		.slice(0, 5)
+		.map((label) => `"${label}"`);
+
+	if (fieldsLabels.length > 5) {
+		parsedFieldsLabels.push(`others*`);
+	}
+
 	return (
 		<>
 			{stepIndex > 0 ? (
 				<>
+					{duplicatedFields.length > 0 && (
+						<ClayAlert
+							className="fields-alert-container mt-2"
+							displayType="danger"
+							title={`${Liferay.Language.get('error')}:`}
+						>
+							{`${sub(duplicatedFieldsMessage, [
+								concatValues(parsedFieldsLabels),
+							])} `}
+
+							{duplicatedFields.length > 5 && (
+								<a
+									className="text-primary"
+									data-tooltip-align="bottom"
+									data-tooltip-delay={0}
+									title={fieldsLabels
+										.slice(5, fieldsLabels.length)
+										.join('\n')}
+								>
+									{'*'}
+									{Liferay.Language.get('see-other-fields')}
+								</a>
+							)}
+						</ClayAlert>
+					)}
+
 					{stepFormViews.map(
 						({dataLayoutId, name, readOnly}, index) => (
-							<div className="step-form-view" key={index}>
+							<div
+								className={classNames(
+									'step-form-view',
+									errorIndexes.includes(index) &&
+										'border-error'
+								)}
+								key={index}
+							>
 								<label id="form-view-label">
 									{Liferay.Language.get('form-view')}
 								</label>
 
 								<SelectFormView
+									addButton={addFormViewButton((formView) =>
+										updateStepFormView(formView, index)
+									)}
 									ariaLabelId="form-view-label"
 									items={availableFormViews}
 									onSelect={(formView) =>
 										updateStepFormView(formView, index)
 									}
+									openButtonProps={{
+										disabled: !name,
+										onClick: () =>
+											openFormViewModal({
+												dataDefinitionId: dataObject.id,
+												dataLayoutId,
+												defaultLanguageId:
+													dataObject.defaultLanguageId,
+												selectFormView: (formView) =>
+													updateStepFormView(
+														formView,
+														index
+													),
+											}),
+									}}
 									selectedValue={name}
 								/>
 
@@ -228,22 +401,20 @@ export default function DataAndViewsTab() {
 									</ClayRadioGroup>
 
 									{stepFormViews.length > 1 && (
-										<ClayTooltipProvider>
-											<ClayButtonWithIcon
-												borderless
-												data-tooltip-align="bottom"
-												data-tooltip-delay="0"
-												displayType="secondary"
-												onClick={() =>
-													removeStepFormView(index)
-												}
-												small
-												symbol="trash"
-												title={Liferay.Language.get(
-													'remove'
-												)}
-											/>
-										</ClayTooltipProvider>
+										<ClayButtonWithIcon
+											borderless
+											data-tooltip-align="bottom"
+											data-tooltip-delay="0"
+											displayType="secondary"
+											onClick={() =>
+												removeStepFormView(index)
+											}
+											small
+											symbol="trash"
+											title={Liferay.Language.get(
+												'remove'
+											)}
+										/>
 									)}
 								</div>
 							</div>
@@ -251,7 +422,7 @@ export default function DataAndViewsTab() {
 					)}
 
 					<ClayButton
-						className="w-100"
+						className="mt-3 w-100"
 						displayType="secondary"
 						onClick={addStepFormView}
 					>
@@ -267,21 +438,19 @@ export default function DataAndViewsTab() {
 							{Liferay.Language.get('main-data-object')}
 						</label>
 
-						<ClayTooltipProvider>
-							<ClayIcon
-								className="ml-2 text-muted tooltip-icon"
-								data-tooltip-align="top"
-								data-tooltip-delay="0"
-								symbol="question-circle-full"
-								title={Liferay.Language.get(
-									'a-data-object-stores-your-business-data-and-is-composed-by-data-fields'
-								)}
-							/>
-						</ClayTooltipProvider>
+						<ClayIcon
+							className="ml-2 text-muted tooltip-icon"
+							data-tooltip-align="top"
+							data-tooltip-delay="0"
+							symbol="question-circle-full"
+							title={Liferay.Language.get(
+								'a-data-object-stores-your-business-data-and-is-composed-by-data-fields'
+							)}
+						/>
 
 						<SelectObjects
-							defaultValue={app.dataDefinitionId}
 							label={Liferay.Language.get('select-object')}
+							onCreateObject={onCreateObject}
 							onSelect={updateDataObject}
 							selectedValue={dataObject}
 						/>
@@ -298,12 +467,34 @@ export default function DataAndViewsTab() {
 							</label>
 
 							<SelectFormView
+								addButton={addFormViewButton(updateFormView)}
 								ariaLabelId="form-view-label"
+								dropdownButtonProps={{
+									className: classNames(
+										'clearfix w-100',
+										formView.missingRequiredFields
+											?.nativeField && 'border-error'
+									),
+								}}
 								isLoading={fetching}
-								items={formViews}
+								items={mainFormViews}
 								onSelect={updateFormView}
+								openButtonProps={{
+									disabled: !formView.name,
+									onClick: () =>
+										openFormViewModal({
+											dataDefinitionId: dataObject.id,
+											dataLayoutId: formView.id,
+											defaultLanguageId:
+												dataObject.defaultLanguageId,
+											selectFormView: updateFormView,
+										}),
+								}}
 								selectedValue={formView.name}
-							/>
+								warningIcon={getWarningIcon(formView)}
+							>
+								{SelectFormView.Item}
+							</SelectFormView>
 
 							<h5 className="mt-3 text-secondary text-uppercase">
 								{Liferay.Language.get('display-data')}
@@ -314,10 +505,32 @@ export default function DataAndViewsTab() {
 							</label>
 
 							<SelectTableView
+								addButton={
+									<AddButton
+										onClick={() =>
+											openTableViewModal(
+												dataObject.id,
+												dataObject.defaultLanguageId
+											)
+										}
+										title={Liferay.Language.get(
+											'new-table-view'
+										)}
+									/>
+								}
 								ariaLabelId="table-view-label"
 								isLoading={fetching}
 								items={tableViews}
 								onSelect={updateTableView}
+								openButtonProps={{
+									disabled: !tableView.name,
+									onClick: () =>
+										openTableViewModal(
+											dataObject.id,
+											dataObject.defaultLanguageId,
+											tableView.id
+										),
+								}}
 								selectedValue={tableView.name}
 							/>
 						</div>

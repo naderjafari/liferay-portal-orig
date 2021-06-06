@@ -10,7 +10,7 @@
  */
 
 import getClassName from 'classnames';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 const FilterItem = ({
 	active = false,
@@ -21,6 +21,7 @@ const FilterItem = ({
 	multiple,
 	name,
 	onClick,
+	preventClick,
 	...otherProps
 }) => {
 	const [checked, setChecked] = useState(active);
@@ -32,37 +33,38 @@ const FilterItem = ({
 		),
 		dropdown: getClassName(
 			'dropdown-item',
-
-			active && 'active',
+			checked && 'active',
 			description && 'with-description',
 			hideControl && 'control-hidden'
 		),
 	};
 
+	useEffect(() => {
+		setChecked(active);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [active]);
+
 	const onClickFilter = (event) => {
 		onClick(event);
-		setChecked(!checked);
+
+		if (!preventClick) {
+			setChecked(!checked);
+		}
 	};
 
 	return (
 		<>
-			<div
-				className={classes.dropdown}
-				data-testid="filterItem"
-				onClick={onClickFilter}
-			>
+			<div className={classes.dropdown} onClick={onClickFilter}>
 				<div className={classes.control}>
 					<input
 						checked={checked}
 						className="custom-control-input"
+						onChange={onClickFilter}
 						type={multiple ? 'checkbox' : 'radio'}
 					/>
 
 					<span className="custom-control-label">
-						<span
-							className="custom-control-label-text"
-							data-testid="filterItemName"
-						>
+						<span className="custom-control-label-text">
 							{otherProps[labelPropertyName] || name}
 						</span>
 

@@ -42,6 +42,7 @@ import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -89,7 +90,7 @@ public class AuthenticatedSessionManagerImpl
 		httpServletRequest = PortalUtil.getOriginalServletRequest(
 			httpServletRequest);
 
-		String queryString = httpServletRequest.getQueryString();
+		String queryString = HttpUtil.getQueryString(httpServletRequest);
 
 		if (Validator.isNotNull(queryString) &&
 			queryString.contains("password=")) {
@@ -191,10 +192,6 @@ public class AuthenticatedSessionManagerImpl
 
 		int loginMaxAge = PropsValues.COMPANY_SECURITY_AUTO_LOGIN_MAX_AGE;
 
-		if (PropsValues.SESSION_DISABLED) {
-			rememberMe = true;
-		}
-
 		if (rememberMe) {
 			companyIdCookie.setMaxAge(loginMaxAge);
 			idCookie.setMaxAge(loginMaxAge);
@@ -292,11 +289,8 @@ public class AuthenticatedSessionManagerImpl
 			return;
 		}
 
-		String userUUID = userIdString.concat(
-			StringPool.PERIOD
-		).concat(
-			String.valueOf(System.nanoTime())
-		);
+		String userUUID = StringBundler.concat(
+			userIdString, StringPool.PERIOD, System.nanoTime());
 
 		Cookie userUUIDCookie = new Cookie(
 			CookieKeys.USER_UUID,
@@ -356,6 +350,9 @@ public class AuthenticatedSessionManagerImpl
 			session.invalidate();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		EventsProcessorUtil.process(

@@ -34,13 +34,13 @@ definition {
 		task ("Add 2 widget page and 1 content page in the same level") {
 			for (var n : list "1,2") {
 				JSONLayout.addPublicLayout(
-					groupName = "Test Site Name-staging",
+					groupName = "Test Site Name (Staging)",
 					layoutName = "Test Page Name ${n}",
 					site = "false");
 			}
 
 			JSONLayout.addPublicLayout(
-				groupName = "Test Site Name-staging",
+				groupName = "Test Site Name (Staging)",
 				layoutName = "Test Page Name 3",
 				site = "false",
 				type = "content");
@@ -61,7 +61,7 @@ definition {
 		task ("Assert pages order in Staging site") {
 			SitePages.openPagesAdmin(siteURLKey = "test-site-name-staging");
 
-			MetalComponent.waitForManagementBar();
+			WaitForPageLoad();
 
 			Page.viewPagesOrder(
 				depth = "2",
@@ -91,7 +91,7 @@ definition {
 		task ("Assert pages order in Live site") {
 			SitePages.openPagesAdmin(siteURLKey = "test-site-name");
 
-			MetalComponent.waitForManagementBar();
+			WaitForPageLoad();
 
 			Page.viewPagesOrder(
 				depth = "2",
@@ -119,6 +119,108 @@ definition {
 				pageName2 = "Test Page Name 2",
 				pageName3 = "Test Page Name 3");
 		}
+	}
+
+	@description = "This is a test for LPS-110183. Can view information about collection items of collection page when enable Live."
+	@priority = "3"
+	test ViewCollectionItemInformationInStaging {
+		JSONWebcontent.addWebContent(
+			content = "Web Content Content",
+			groupName = "Test Site Name (Staging)",
+			site = "false",
+			title = "Webcontent Title");
+
+		JSONBlog.addEntry(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title",
+			groupName = "Test Site Name (Staging)",
+			site = "false");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentTitle = "Document Title",
+			groupName = "Test Site Name-staging",
+			mimeType = "image/jpeg",
+			site = "false",
+			sourceFileName = "Document_1.jpg");
+
+		JSONAssetlist.addDynamicAssetListEntryWithItemType(
+			groupName = "Test Site Name (Staging)",
+			itemType = "All Types",
+			site = "false",
+			title = "Dynamic Collection");
+
+		SitePages.openPagesAdmin(siteURLKey = "test-site-name-staging");
+
+		ContentPages.addPublicCollectionPage(
+			collectionName = "Dynamic Collection",
+			pageName = "Content Collection Page Name",
+			tabName = "Collections");
+
+		PageEditor.clickPublish();
+
+		SitePages.openPagesAdmin(siteURLKey = "test-site-name-staging");
+
+		PagesFinder.goToFindAPage();
+
+		PagesFinder.viewPageNameInPagesFinder(pageName = "Content Collection Page Name");
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		PagesFinder.gotoPageEllipsisItem(
+			item = "View Collection Items",
+			pageName = "Content Collection Page Name");
+
+		Pause(locator1 = "5000");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		for (var tableHeader : list "Title,Type,Author,Modified Date,Create Date") {
+			AssertElementPresent(
+				key_tableHeader = "${tableHeader}",
+				locator1 = "LexiconTable#TABLE_HEADER");
+		}
+
+		Page.viewCollectionItem(itemName = "Document Title");
+
+		Page.viewCollectionItem(
+			itemName = "Blogs Entry Title",
+			key_rowNumber = "2");
+
+		Page.viewCollectionItem(
+			itemName = "Webcontent Title",
+			key_rowNumber = "3");
+
+		IFrame.closeFrame();
+
+		ProductMenuHelper.openProductMenu();
+
+		SitePages.openPagesAdmin(siteURLKey = "test-site-name-staging");
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		SitePages.gotoPageMenuItem(
+			menuItem = "View Collection Items",
+			pageName = "Content Collection Page Name");
+
+		Pause(locator1 = "5000");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		for (var tableHeader : list "Title,Type,Author,Modified Date,Create Date") {
+			AssertElementPresent(
+				key_tableHeader = "${tableHeader}",
+				locator1 = "LexiconTable#TABLE_HEADER");
+		}
+
+		Page.viewCollectionItem(itemName = "Document Title");
+
+		Page.viewCollectionItem(
+			itemName = "Blogs Entry Title",
+			key_rowNumber = "2");
+
+		Page.viewCollectionItem(
+			itemName = "Webcontent Title",
+			key_rowNumber = "3");
 	}
 
 }

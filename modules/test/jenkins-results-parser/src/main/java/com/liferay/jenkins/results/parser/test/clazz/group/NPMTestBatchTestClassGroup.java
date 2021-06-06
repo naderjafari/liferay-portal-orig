@@ -59,7 +59,7 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 			return axisTestClassGroups.get(axisId);
 		}
 
-		return new AxisTestClassGroup(this, axisId);
+		return TestClassGroupFactory.newAxisTestClassGroup(this);
 	}
 
 	public Map<File, NPMTestBatchTestClass> getNPMTestBatchTestClasses() {
@@ -78,8 +78,7 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 		for (NPMTestBatchTestClassGroup.NPMTestBatchTestClass
 				npmTestBatchTestClass : npmTestBatchTestClasses.values()) {
 
-			TestClass.TestClassFile moduleTestClassFile =
-				npmTestBatchTestClass.getTestClassFile();
+			File moduleTestClassFile = npmTestBatchTestClass.getTestClassFile();
 
 			String moduleName = moduleTestClassFile.getName();
 
@@ -155,7 +154,7 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 				moduleDir,
 				new NPMTestBatchTestClass(
 					batchName, gitWorkingDirectory,
-					new TestClassFile(
+					new File(
 						JenkinsResultsParserUtil.getCanonicalPath(moduleDir))));
 
 			return _npmTestBatchTestClasses.get(moduleDir);
@@ -169,7 +168,7 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 
 		protected NPMTestBatchTestClass(
 			String batchName, GitWorkingDirectory gitWorkingDirectory,
-			TestClassFile testClassFile) {
+			File testClassFile) {
 
 			super(testClassFile);
 
@@ -184,7 +183,7 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 
 		protected void initJSTestClassMethods() {
 			List<File> jsFiles = JenkinsResultsParserUtil.findFiles(
-				_moduleFile, ".*\\.js");
+				_moduleFile, ".*\\.(js|ts|tsx)");
 
 			String workingDirectoryPath =
 				JenkinsResultsParserUtil.getCanonicalPath(
@@ -241,10 +240,9 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 	}
 
 	protected NPMTestBatchTestClassGroup(
-		String batchName, BuildProfile buildProfile,
-		PortalTestClassJob portalTestClassJob) {
+		String batchName, PortalTestClassJob portalTestClassJob) {
 
-		super(batchName, buildProfile, portalTestClassJob);
+		super(batchName, portalTestClassJob);
 
 		List<File> moduleDirs;
 
@@ -269,13 +267,14 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 			return;
 		}
 
-		AxisTestClassGroup axisTestClassGroup = new AxisTestClassGroup(this, 0);
+		AxisTestClassGroup axisTestClassGroup =
+			TestClassGroupFactory.newAxisTestClassGroup(this);
 
 		for (File moduleDir : moduleDirs) {
 			NPMTestBatchTestClass npmTestBatchTestClass =
 				NPMTestBatchTestClass.getInstance(
 					batchName, portalGitWorkingDirectory,
-					new TestClass.TestClassFile(
+					new File(
 						JenkinsResultsParserUtil.getCanonicalPath(moduleDir)));
 
 			testClasses.add(npmTestBatchTestClass);
@@ -283,7 +282,7 @@ public class NPMTestBatchTestClassGroup extends BatchTestClassGroup {
 			axisTestClassGroup.addTestClass(npmTestBatchTestClass);
 		}
 
-		axisTestClassGroups.put(0, axisTestClassGroup);
+		axisTestClassGroups.add(0, axisTestClassGroup);
 	}
 
 	private static final String _TOKEN_CLASS_METHOD_SEPARATOR = "::";

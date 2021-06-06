@@ -72,7 +72,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ExportImportPortletKeys.EXPORT_IMPORT,
-		"mvc.command.name=exportImport"
+		"mvc.command.name=/export_import/export_import"
 	},
 	service = MVCActionCommand.class
 )
@@ -147,12 +147,6 @@ public class ExportImportMVCActionCommand extends BaseMVCActionCommand {
 					actionRequest,
 					ExportImportHelper.TEMP_FOLDER_NAME +
 						portlet.getPortletId());
-
-				SessionMessages.add(
-					actionRequest,
-					_portal.getPortletId(actionRequest) +
-						SessionMessages.KEY_SUFFIX_CLOSE_REFRESH_PORTLET,
-					portlet.getPortletId());
 
 				sendRedirect(actionRequest, actionResponse);
 			}

@@ -61,9 +61,42 @@ import java.util.Map;
  *
  * @author Brian Wing Shun Chan
  * @see AssetVocabularyServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class AssetVocabularyServiceSoap {
+
+	public static com.liferay.asset.kernel.model.AssetVocabularySoap
+			addVocabulary(
+				long groupId, String title, String[] titleMapLanguageIds,
+				String[] titleMapValues, String[] descriptionMapLanguageIds,
+				String[] descriptionMapValues, String settings,
+				int visibilityType,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws RemoteException {
+
+		try {
+			Map<Locale, String> titleMap = LocalizationUtil.getLocalizationMap(
+				titleMapLanguageIds, titleMapValues);
+			Map<Locale, String> descriptionMap =
+				LocalizationUtil.getLocalizationMap(
+					descriptionMapLanguageIds, descriptionMapValues);
+
+			com.liferay.asset.kernel.model.AssetVocabulary returnValue =
+				AssetVocabularyServiceUtil.addVocabulary(
+					groupId, title, titleMap, descriptionMap, settings,
+					visibilityType, serviceContext);
+
+			return com.liferay.asset.kernel.model.AssetVocabularySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
 
 	public static com.liferay.asset.kernel.model.AssetVocabularySoap
 			addVocabulary(
@@ -321,6 +354,25 @@ public class AssetVocabularyServiceSoap {
 	}
 
 	public static com.liferay.asset.kernel.model.AssetVocabularySoap[]
+			getGroupVocabularies(long groupId, int visibilityType)
+		throws RemoteException {
+
+		try {
+			java.util.List<com.liferay.asset.kernel.model.AssetVocabulary>
+				returnValue = AssetVocabularyServiceUtil.getGroupVocabularies(
+					groupId, visibilityType);
+
+			return com.liferay.asset.kernel.model.AssetVocabularySoap.
+				toSoapModels(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static com.liferay.asset.kernel.model.AssetVocabularySoap[]
 			getGroupVocabularies(
 				long groupId, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
@@ -374,6 +426,25 @@ public class AssetVocabularyServiceSoap {
 			java.util.List<com.liferay.asset.kernel.model.AssetVocabulary>
 				returnValue = AssetVocabularyServiceUtil.getGroupVocabularies(
 					groupIds);
+
+			return com.liferay.asset.kernel.model.AssetVocabularySoap.
+				toSoapModels(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static com.liferay.asset.kernel.model.AssetVocabularySoap[]
+			getGroupVocabularies(long[] groupIds, int[] visibilityTypes)
+		throws RemoteException {
+
+		try {
+			java.util.List<com.liferay.asset.kernel.model.AssetVocabulary>
+				returnValue = AssetVocabularyServiceUtil.getGroupVocabularies(
+					groupIds, visibilityTypes);
 
 			return com.liferay.asset.kernel.model.AssetVocabularySoap.
 				toSoapModels(returnValue);
@@ -555,6 +626,36 @@ public class AssetVocabularyServiceSoap {
 			com.liferay.asset.kernel.model.AssetVocabulary returnValue =
 				AssetVocabularyServiceUtil.updateVocabulary(
 					vocabularyId, titleMap, descriptionMap, settings);
+
+			return com.liferay.asset.kernel.model.AssetVocabularySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static com.liferay.asset.kernel.model.AssetVocabularySoap
+			updateVocabulary(
+				long vocabularyId, String[] titleMapLanguageIds,
+				String[] titleMapValues, String[] descriptionMapLanguageIds,
+				String[] descriptionMapValues, String settings,
+				int visibilityType)
+		throws RemoteException {
+
+		try {
+			Map<Locale, String> titleMap = LocalizationUtil.getLocalizationMap(
+				titleMapLanguageIds, titleMapValues);
+			Map<Locale, String> descriptionMap =
+				LocalizationUtil.getLocalizationMap(
+					descriptionMapLanguageIds, descriptionMapValues);
+
+			com.liferay.asset.kernel.model.AssetVocabulary returnValue =
+				AssetVocabularyServiceUtil.updateVocabulary(
+					vocabularyId, titleMap, descriptionMap, settings,
+					visibilityType);
 
 			return com.liferay.asset.kernel.model.AssetVocabularySoap.
 				toSoapModel(returnValue);

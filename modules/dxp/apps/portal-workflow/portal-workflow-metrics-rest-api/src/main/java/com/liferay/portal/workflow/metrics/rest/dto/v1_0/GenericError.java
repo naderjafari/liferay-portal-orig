@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("GenericError")
+@GraphQLName(
+	description = "https://www.schema.org/GenericError", value = "GenericError"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "GenericError")
-public class GenericError {
+public class GenericError implements Serializable {
 
 	public static GenericError toDTO(String json) {
 		return ObjectMapperUtil.readValue(GenericError.class, json);
@@ -166,6 +170,7 @@ public class GenericError {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.GenericError",
 		name = "x-class-name"
 	)
@@ -201,7 +206,7 @@ public class GenericError {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -240,7 +245,7 @@ public class GenericError {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

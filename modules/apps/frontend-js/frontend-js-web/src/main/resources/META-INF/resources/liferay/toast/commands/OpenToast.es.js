@@ -13,30 +13,32 @@
  */
 
 import ClayAlert from '@clayui/alert';
-import {render} from 'frontend-js-react-web';
+import {render} from '@liferay/frontend-js-react-web';
 import React from 'react';
 import {unmountComponentAtNode} from 'react-dom';
 
-const DEFAULT_ALERT_CONTAINER_ID = 'alertContainer';
+import buildFragment from '../../util/build_fragment';
+
+const DEFAULT_ALERT_CONTAINER_ID = 'ToastAlertContainer';
 
 const DEFAULT_RENDER_DATA = {
 	portletId: 'UNKNOWN_PORTLET_ID',
 };
 
+const DEFAULT_TOAST_TYPE_TITLES = {
+	danger: Liferay.Language.get('error'),
+	info: Liferay.Language.get('info'),
+	success: Liferay.Language.get('success'),
+	warning: Liferay.Language.get('warning'),
+};
+
 const TOAST_AUTO_CLOSE_INTERVAL = 5000;
 
-const TYPES = {
-	HTML: 'html',
-	TEXT: 'text',
-};
-
-const Text = ({allowHTML, string = null}) => {
-	if (allowHTML) {
-		return <div dangerouslySetInnerHTML={{__html: string}} />;
-	}
-
-	return string;
-};
+const TPL_ALERT_CONTAINER = `
+	<div class="alert-container container">
+		<div class="alert-notifications alert-notifications-fixed" id=${DEFAULT_ALERT_CONTAINER_ID}></div>
+	</div>
+`;
 
 const getRootElement = ({container, containerId}) => {
 	if (container || containerId) {
@@ -51,15 +53,26 @@ const getRootElement = ({container, containerId}) => {
 		}
 	}
 
-	container = document.getElementById(DEFAULT_ALERT_CONTAINER_ID);
+	let alertFixed = document.getElementById(DEFAULT_ALERT_CONTAINER_ID);
 
-	if (!container) {
-		container = document.createElement('div');
+	if (!alertFixed) {
+		alertFixed = buildFragment(TPL_ALERT_CONTAINER).querySelector(
+			'.alert-container.container'
+		);
 
-		container.id = DEFAULT_ALERT_CONTAINER_ID;
-
-		document.body.appendChild(container);
+		alertFixed = document.body.appendChild(alertFixed);
 	}
+
+	// Creates a fragment to prevent React from unmounting the alert container
+
+	container = document.createElement('div');
+	container.className = 'mb-3';
+
+	const fragmentContainer = document.querySelector(
+		`.alert-notifications.alert-notifications-fixed`
+	);
+
+	fragmentContainer.appendChild(container);
 
 	return container;
 };
@@ -86,12 +99,10 @@ function openToast({
 	container,
 	containerId,
 	message = '',
-	messageType = TYPES.TEXT,
 	onClick = () => {},
 	onClose = () => {},
 	renderData = DEFAULT_RENDER_DATA,
 	title,
-	titleType = TYPES.TEXT,
 	toastProps = {},
 	type = 'success',
 	variant,
@@ -100,38 +111,46 @@ function openToast({
 
 	unmountComponentAtNode(rootElement);
 
-	const Container =
-		container || containerId ? React.Fragment : ClayAlert.ToastContainer;
-
 	const onCloseFn = (event) => {
 		if (onClose) {
 			onClose({event});
 		}
 
-		unmountComponentAtNode(rootElement);
+		if (!event || !event.defaultPrevented) {
+			if (!container || !containerId) {
+				rootElement.parentNode.removeChild(rootElement);
+			}
+
+			unmountComponentAtNode(rootElement);
+		}
 	};
 
+	let titleHTML =
+		title === undefined ? DEFAULT_TOAST_TYPE_TITLES[type] : title;
+
+	if (titleHTML) {
+		titleHTML = titleHTML.replace(/:$/, '');
+		titleHTML = `<strong class="lead">${titleHTML}:</strong>`;
+	}
+	else {
+		titleHTML = '';
+	}
+
 	render(
-		<Container>
-			<ClayAlert
-				autoClose={autoClose}
-				displayType={type}
-				onClick={(event) => onClick({event, onClose: onCloseFn})}
-				onClose={onCloseFn}
-				title={
-					title && (
-						<Text
-							allowHTML={titleType === TYPES.HTML}
-							string={title}
-						/>
-					)
-				}
-				variant={variant}
-				{...toastProps}
-			>
-				<Text allowHTML={messageType === TYPES.HTML} string={message} />
-			</ClayAlert>
-		</Container>,
+		<ClayAlert
+			autoClose={autoClose}
+			displayType={type}
+			onClick={(event) => onClick({event, onClose: onCloseFn})}
+			onClose={onCloseFn}
+			variant={variant}
+			{...toastProps}
+		>
+			<div
+				dangerouslySetInnerHTML={{
+					__html: `${titleHTML}${message}`,
+				}}
+			/>
+		</ClayAlert>,
 		renderData,
 		rootElement
 	);

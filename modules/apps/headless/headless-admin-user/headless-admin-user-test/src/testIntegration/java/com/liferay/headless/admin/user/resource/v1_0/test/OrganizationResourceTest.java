@@ -16,20 +16,32 @@ package com.liferay.headless.admin.user.resource.v1_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.headless.admin.user.client.dto.v1_0.Organization;
+import com.liferay.headless.admin.user.client.pagination.Page;
+import com.liferay.headless.admin.user.client.pagination.Pagination;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.test.rule.SynchronousMailTestRule;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
@@ -37,6 +49,11 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 public class OrganizationResourceTest extends BaseOrganizationResourceTestCase {
+
+	@ClassRule
+	@Rule
+	public static final SynchronousMailTestRule synchronousMailTestRule =
+		SynchronousMailTestRule.INSTANCE;
 
 	@Before
 	@Override
@@ -51,6 +68,82 @@ public class OrganizationResourceTest extends BaseOrganizationResourceTestCase {
 	public void tearDown() {
 		_deleteOrganizations(_childOrganizations);
 		_deleteOrganizations(_organizations);
+	}
+
+	@Override
+	@Test
+	public void testDeleteUserAccountByEmailAddress() throws Exception {
+		Organization organization = _toOrganization(
+			_addOrganization(randomOrganization(), "0"));
+		User user = UserTestUtil.addUser();
+
+		_organizationLocalService.addUserOrganization(
+			user.getUserId(), GetterUtil.getLong(organization.getId()));
+
+		Assert.assertTrue(
+			_organizationLocalService.hasUserOrganization(
+				user.getUserId(), GetterUtil.getLong(organization.getId())));
+
+		organizationResource.deleteUserAccountByEmailAddress(
+			organization.getId(), user.getEmailAddress());
+
+		Assert.assertFalse(
+			_organizationLocalService.hasUserOrganization(
+				user.getUserId(), GetterUtil.getLong(organization.getId())));
+	}
+
+	@Override
+	@Test
+	public void testGetOrganizationsPage() throws Exception {
+		Page<Organization> page = organizationResource.getOrganizationsPage(
+			null, RandomTestUtil.randomString(), null, Pagination.of(1, 2),
+			null);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		Organization organization1 = testGetOrganizationsPage_addOrganization(
+			randomOrganization());
+		Organization organization2 = testGetOrganizationsPage_addOrganization(
+			randomOrganization());
+
+		page = organizationResource.getOrganizationsPage(
+			null, null, null, Pagination.of(1, 2), null);
+
+		Assert.assertEquals(2, page.getTotalCount());
+
+		assertEqualsIgnoringOrder(
+			Arrays.asList(organization1, organization2),
+			(List<Organization>)page.getItems());
+		assertValid(page);
+
+		_userLocalService.deleteOrganizationUser(
+			GetterUtil.getLong(organization1.getId()), _user.getUserId());
+
+		organizationResource.deleteOrganization(organization1.getId());
+
+		_userLocalService.deleteOrganizationUser(
+			GetterUtil.getLong(organization2.getId()), _user.getUserId());
+
+		organizationResource.deleteOrganization(organization2.getId());
+	}
+
+	@Override
+	@Test
+	public void testPostUserAccountByEmailAddress() throws Exception {
+		Organization organization = _toOrganization(
+			_addOrganization(randomOrganization(), "0"));
+		User user = UserTestUtil.addUser();
+
+		Assert.assertFalse(
+			_organizationLocalService.hasUserOrganization(
+				user.getUserId(), GetterUtil.getLong(organization.getId())));
+
+		organizationResource.postUserAccountByEmailAddress(
+			organization.getId(), user.getEmailAddress());
+
+		Assert.assertTrue(
+			_organizationLocalService.hasUserOrganization(
+				user.getUserId(), GetterUtil.getLong(organization.getId())));
 	}
 
 	@Override
@@ -214,10 +307,17 @@ public class OrganizationResourceTest extends BaseOrganizationResourceTestCase {
 
 	private final List<com.liferay.portal.kernel.model.Organization>
 		_childOrganizations = new ArrayList<>();
+
+	@Inject
+	private OrganizationLocalService _organizationLocalService;
+
 	private final List<com.liferay.portal.kernel.model.Organization>
 		_organizations = new ArrayList<>();
 
 	@DeleteAfterTestRun
 	private User _user;
+
+	@Inject
+	private UserLocalService _userLocalService;
 
 }

@@ -26,12 +26,16 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Generated;
+
+import javax.validation.Valid;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -40,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("StructuredContentLink")
+@GraphQLName(
+	description = "A link to structured content on the server.",
+	value = "StructuredContentLink"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "StructuredContentLink")
-public class StructuredContentLink {
+public class StructuredContentLink implements Serializable {
 
 	public static StructuredContentLink toDTO(String json) {
 		return ObjectMapperUtil.readValue(StructuredContentLink.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The type of content.")
 	public String getContentType() {
 		return contentType;
 	}
@@ -73,9 +80,46 @@ public class StructuredContentLink {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The type of content.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentType;
+
+	@Schema(
+		description = "Optional field with the structured content, can be embedded with nestedFields."
+	)
+	@Valid
+	public StructuredContent getEmbeddedStructuredContent() {
+		return embeddedStructuredContent;
+	}
+
+	public void setEmbeddedStructuredContent(
+		StructuredContent embeddedStructuredContent) {
+
+		this.embeddedStructuredContent = embeddedStructuredContent;
+	}
+
+	@JsonIgnore
+	public void setEmbeddedStructuredContent(
+		UnsafeSupplier<StructuredContent, Exception>
+			embeddedStructuredContentUnsafeSupplier) {
+
+		try {
+			embeddedStructuredContent =
+				embeddedStructuredContentUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "Optional field with the structured content, can be embedded with nestedFields."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected StructuredContent embeddedStructuredContent;
 
 	@Schema(description = "The resource's ID.")
 	public Long getId() {
@@ -173,6 +217,16 @@ public class StructuredContentLink {
 			sb.append("\"");
 		}
 
+		if (embeddedStructuredContent != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"embeddedStructuredContent\": ");
+
+			sb.append(String.valueOf(embeddedStructuredContent));
+		}
+
 		if (id != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -203,6 +257,7 @@ public class StructuredContentLink {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.StructuredContentLink",
 		name = "x-class-name"
 	)
@@ -238,7 +293,7 @@ public class StructuredContentLink {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -277,7 +332,7 @@ public class StructuredContentLink {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

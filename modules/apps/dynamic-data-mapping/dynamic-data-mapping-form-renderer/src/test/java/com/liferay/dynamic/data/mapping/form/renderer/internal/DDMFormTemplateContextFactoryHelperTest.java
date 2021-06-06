@@ -23,6 +23,7 @@ import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.model.DDMFormRule;
 import com.liferay.dynamic.data.mapping.service.DDMDataProviderInstanceService;
 import com.liferay.dynamic.data.mapping.test.util.DDMFormTestUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.SetUtil;
 
@@ -88,8 +89,15 @@ public class DDMFormTemplateContextFactoryHelperTest extends PowerMockito {
 
 		ddmForm.addDDMFormField(ddmFormField4);
 
+		DDMFormField ddmFormField5 = DDMFormTestUtil.createTextDDMFormField(
+			"Field5", false, false, false);
+
+		ddmFormField5.setProperty("requireConfirmation", true);
+
+		ddmForm.addDDMFormField(ddmFormField5);
+
 		Set<String> expectedEvaluableFieldNames = SetUtil.fromArray(
-			new String[] {"Field0", "Field2", "Field4"});
+			new String[] {"Field0", "Field2", "Field4", "Field5"});
 
 		Set<String> actualEvaluableFieldNames =
 			_ddmFormTemplateContextFactoryHelper.getEvaluableDDMFormFieldNames(
@@ -126,7 +134,7 @@ public class DDMFormTemplateContextFactoryHelperTest extends PowerMockito {
 	}
 
 	protected DDMFormRule createAutoFillDDMFormRule() {
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler(5);
 
 		sb.append("call(");
 		sb.append(StringPool.APOSTROPHE);

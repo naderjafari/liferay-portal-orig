@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,16 +42,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentSubtype")
+@GraphQLName(
+	description = "The display page template's content subtype.",
+	value = "ContentSubtype"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentSubtype")
-public class ContentSubtype {
+public class ContentSubtype implements Serializable {
 
 	public static ContentSubtype toDTO(String json) {
 		return ObjectMapperUtil.readValue(ContentSubtype.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The content subtype's ID.")
 	public Long getSubtypeId() {
 		return subtypeId;
 	}
@@ -73,7 +78,7 @@ public class ContentSubtype {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The content subtype's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long subtypeId;
 
@@ -120,6 +125,7 @@ public class ContentSubtype {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentSubtype",
 		name = "x-class-name"
 	)
@@ -155,7 +161,7 @@ public class ContentSubtype {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -194,7 +200,7 @@ public class ContentSubtype {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

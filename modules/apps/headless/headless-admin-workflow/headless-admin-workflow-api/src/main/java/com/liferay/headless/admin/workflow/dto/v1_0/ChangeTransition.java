@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ChangeTransition")
+@GraphQLName(
+	description = "Represents a write-only schema to update a workflow's transition.",
+	value = "ChangeTransition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ChangeTransition")
-public class ChangeTransition {
+public class ChangeTransition implements Serializable {
 
 	public static ChangeTransition toDTO(String json) {
 		return ObjectMapperUtil.readValue(ChangeTransition.class, json);
@@ -204,6 +209,7 @@ public class ChangeTransition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.ChangeTransition",
 		name = "x-class-name"
 	)
@@ -239,7 +245,7 @@ public class ChangeTransition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -278,7 +284,7 @@ public class ChangeTransition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

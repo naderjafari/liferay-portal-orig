@@ -15,10 +15,11 @@
 package com.liferay.source.formatter.checks;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
-import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
 import com.liferay.source.formatter.parser.JavaTerm;
 import com.liferay.source.formatter.util.FileUtil;
@@ -233,6 +234,10 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 			_populateServiceXMLElements("portal-impl/src/com/liferay", 4);
 		}
 		catch (DocumentException | IOException exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 
@@ -243,9 +248,8 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 		String variableTypeName, String getterObjectName,
 		List<String> importNames) {
 
-		String packageName = _getPackageName(variableTypeName, importNames);
-
-		Element serviceXMLElement = _getServiceXMLElement(packageName);
+		Element serviceXMLElement = _getServiceXMLElement(
+			_getPackageName(variableTypeName, importNames));
 
 		if (serviceXMLElement == null) {
 			return false;
@@ -279,7 +283,7 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 	private void _populateServiceXMLElements(String dirName, int maxDepth)
 		throws DocumentException, IOException {
 
-		File directory = getFile(dirName, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		File directory = getFile(dirName, getMaxDirLevel());
 
 		if (directory == null) {
 			return;
@@ -339,6 +343,9 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 		"classes", "dependencies", "node_modules", "node_modules_cache", "sql",
 		"src", "test", "test-classes", "test-coverage", "test-results", "tmp"
 	};
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JavaServiceObjectCheck.class);
 
 	private static final Pattern _getterCallPattern = Pattern.compile(
 		"\\W(\\w+)\\.\\s*(get)([A-Z]\\w*)\\(\\)");

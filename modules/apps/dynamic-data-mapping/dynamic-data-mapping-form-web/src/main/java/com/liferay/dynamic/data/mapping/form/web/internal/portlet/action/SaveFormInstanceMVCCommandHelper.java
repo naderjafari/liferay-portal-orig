@@ -14,6 +14,7 @@
 
 package com.liferay.dynamic.data.mapping.form.web.internal.portlet.action;
 
+import com.liferay.configuration.admin.constants.ConfigurationAdminPortletKeys;
 import com.liferay.dynamic.data.mapping.exception.FormInstanceSettingsRedirectURLException;
 import com.liferay.dynamic.data.mapping.exception.StructureDefinitionException;
 import com.liferay.dynamic.data.mapping.exception.StructureLayoutException;
@@ -33,8 +34,12 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.redirect.RedirectURLSettings;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.util.InetAddressUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -42,6 +47,11 @@ import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +61,8 @@ import java.util.Set;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -117,7 +129,9 @@ public class SaveFormInstanceMVCCommandHelper {
 		DDMFormValues settingsDDMFormValues = getSettingsDDMFormValues(
 			portletRequest);
 
-		validateRedirectURL(settingsDDMFormValues);
+		validateRedirectURL(
+			settingsDDMFormValues,
+			_portal.getHttpServletRequest(portletRequest));
 
 		return formInstanceService.addFormInstance(
 			groupId, nameMap, descriptionMap, ddmForm, ddmFormLayout,
@@ -249,14 +263,18 @@ public class SaveFormInstanceMVCCommandHelper {
 		DDMFormValues settingsDDMFormValues = getSettingsDDMFormValues(
 			portletRequest);
 
-		validateRedirectURL(settingsDDMFormValues);
+		validateRedirectURL(
+			settingsDDMFormValues,
+			_portal.getHttpServletRequest(portletRequest));
 
 		return formInstanceService.updateFormInstance(
 			formInstanceId, nameMap, descriptionMap, ddmForm, ddmFormLayout,
 			settingsDDMFormValues, serviceContext);
 	}
 
-	protected void validateRedirectURL(DDMFormValues settingsDDMFormValues)
+	protected void validateRedirectURL(
+			DDMFormValues settingsDDMFormValues,
+			HttpServletRequest httpServletRequest)
 		throws PortalException {
 
 		Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesMap =
@@ -276,13 +294,66 @@ public class SaveFormInstanceMVCCommandHelper {
 		for (Locale availableLocale : value.getAvailableLocales()) {
 			String valueString = value.getString(availableLocale);
 
-			if (Validator.isNotNull(valueString)) {
-				String escapedRedirect = _portal.escapeRedirect(valueString);
+			if (Validator.isNull(valueString)) {
+				continue;
+			}
 
-				if (Validator.isNull(escapedRedirect)) {
-					throw new FormInstanceSettingsRedirectURLException();
+			String escapedRedirect = _portal.escapeRedirect(valueString);
+
+			if (Validator.isNotNull(escapedRedirect)) {
+				continue;
+			}
+
+			URI uri = _getURI(valueString);
+
+			if (uri != null) {
+				String securityMode = _redirectURLSettings.getSecurityMode(
+					_portal.getCompanyId(httpServletRequest));
+
+				String host = uri.getHost();
+
+				if (securityMode.equals("domain")) {
+					List<String> allowedDomains = Arrays.asList(
+						_redirectURLSettings.getAllowedDomains(
+							_portal.getCompanyId(httpServletRequest)));
+
+					if (!allowedDomains.contains(host)) {
+						throw new FormInstanceSettingsRedirectURLException(
+							_getRedirectURLExceptionMessage(
+								httpServletRequest, "allowed-domains", host));
+					}
+				}
+				else if (securityMode.equals("ip")) {
+					try {
+						List<String> allowedIps = Arrays.asList(
+							_redirectURLSettings.getAllowedIPs(
+								_portal.getCompanyId(httpServletRequest)));
+
+						InetAddress inetAddress =
+							InetAddressUtil.getInetAddressByName(host);
+
+						String hostAddress = inetAddress.getHostAddress();
+
+						if (!allowedIps.contains(hostAddress)) {
+							throw new FormInstanceSettingsRedirectURLException(
+								_getRedirectURLExceptionMessage(
+									httpServletRequest, "allowed-ips",
+									hostAddress));
+						}
+					}
+					catch (UnknownHostException unknownHostException) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(
+								unknownHostException, unknownHostException);
+						}
+					}
 				}
 			}
+
+			throw new FormInstanceSettingsRedirectURLException(
+				LanguageUtil.get(
+					httpServletRequest,
+					"the-specified-redirect-url-is-not-allowed"));
 		}
 	}
 
@@ -314,7 +385,40 @@ public class SaveFormInstanceMVCCommandHelper {
 	@Reference
 	protected JSONFactory jsonFactory;
 
+	private String _getRedirectURLExceptionMessage(
+		HttpServletRequest httpServletRequest, String fieldName, String value) {
+
+		return LanguageUtil.format(
+			httpServletRequest,
+			"the-external-redirect-url-x-is-not-allowed.-set-it-in-the-x-" +
+				"field-of-the-x-configuration-in-x-to-allow-it",
+			new String[] {
+				value, fieldName, "redirect-url-configuration-name",
+				"javax.portlet.title." +
+					ConfigurationAdminPortletKeys.INSTANCE_SETTINGS
+			});
+	}
+
+	private URI _getURI(String uriString) {
+		try {
+			return new URI(uriString.trim());
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
+			return null;
+		}
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		SaveFormInstanceMVCCommandHelper.class);
+
 	@Reference
 	private Portal _portal;
+
+	@Reference
+	private RedirectURLSettings _redirectURLSettings;
 
 }

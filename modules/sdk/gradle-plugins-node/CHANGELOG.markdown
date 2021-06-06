@@ -1,5 +1,78 @@
 # Liferay Gradle Plugins Node Change Log
 
+## 7.2.5 - 2020-11-02
+
+### Commits
+- [LPS-111291] Import statements (d414bad0fa)
+- [LPS-111291] Update readme (a87d2593e9)
+- [LPS-111291] Gradle 5.6.4 tests (40f4f9e2f3)
+- [LPS-111291] Update README.markdown (eea12b7f8f)
+- [LPS-111291] Update plugins Gradle version (003c3832b0)
+
+### Dependencies
+- [LPS-111291] Update the com.liferay.gradle.util dependency to version 1.0.44.
+
+## 7.2.4 - 2020-10-13
+
+### Commits
+- [LPS-105380] Revert "LPS-105380 Remove static" (51f026ea07)
+- [LPS-105380] Revert "LPS-105380 Sort" (6b61f951ee)
+- [LPS-105380] Sort (9769746a1e)
+- [LPS-105380] Remove static (05f9037b31)
+
+## 7.2.3 - 2020-10-02
+
+### Commits
+- [LPS-105380] Lock the class instead of the object (ac7dc533ff)
+
+## 7.2.2 - 2020-10-01
+
+### Commits
+- [LPS-121567] Fix logic (daaaee90b9)
+- [LPS-121567] Teach Gradle NodePlugin about new @liferay/npm-scripts
+(3c026b7688)
+- [LPS-105380] Methods don't need to be static (c42da838cc)
+
+## 7.2.1 - 2020-08-17
+
+### Commits
+- [LPS-100168] Set default package manager to npm (ecfaf97f9b)
+
+## 7.1.3 - 2020-07-21
+
+### Commits
+- [LPS-105873] Fix publishPlugins (b02ceab8c7)
+- [LPS-105873] Apply (6539d8d782)
+- [LPS-105873] Simplify (a6ab6c3589)
+- [LPS-105873] Move plugin (1bfa9788e5)
+- [LPS-105873] Fix publish task (82ceeca684)
+- [LPS-105380] SF, inline (e11238b1a3)
+
+## 7.1.2 - 2020-07-09
+
+### Commits
+- [LPS-116808] Move to Node extension (d1f6090cbc)
+- [LPS-116808] Task creation (a7b3e822f1)
+- [LPS-116808] Run downloadNode task (ec6840c082)
+- [LPS-116808] Remove unneeded property (610b35d70c)
+- [LPS-116808] Follow existing pattern (fc8925519e)
+- [LPS-116808] return null for scriptFile is node download is false (21feae3275)
+
+## 7.0.6 - 2020-07-07
+
+### Commits
+- [LPS-105873] Move to downloadNode (6e232aa56b)
+- [LPS-105873] Copy npm logic (90c25c6d16)
+- [LPS-105873] download yarn if it is not available (1e7347c00a)
+- [LPS-105380] Change to throw Exception, since that's what the calling method
+is doing, so throwing *Exception is not adding value (216100ecdd)
+
+### Dependencies
+- [LPS-115020] Update the com.liferay.gradle.util dependency to version 1.0.43.
+- [LPS-88645] Update the com.liferay.gradle.util dependency to version 1.0.42.
+- [LPS-88645] Update the com.liferay.gradle.util dependency to version 1.0.41.
+- [LPS-113624] Update the com.liferay.gradle.util dependency to version 1.0.40.
+
 ## 7.0.5 - 2020-04-28
 
 ### Commits
@@ -1192,12 +1265,18 @@ symbolic links in it will be lost (0a1438b324)
 [LPS-103580]: https://issues.liferay.com/browse/LPS-103580
 [LPS-104132]: https://issues.liferay.com/browse/LPS-104132
 [LPS-105380]: https://issues.liferay.com/browse/LPS-105380
+[LPS-105873]: https://issues.liferay.com/browse/LPS-105873
 [LPS-106149]: https://issues.liferay.com/browse/LPS-106149
 [LPS-110283]: https://issues.liferay.com/browse/LPS-110283
 [LPS-110422]: https://issues.liferay.com/browse/LPS-110422
 [LPS-110486]: https://issues.liferay.com/browse/LPS-110486
 [LPS-111192]: https://issues.liferay.com/browse/LPS-111192
+[LPS-111291]: https://issues.liferay.com/browse/LPS-111291
 [LPS-111896]: https://issues.liferay.com/browse/LPS-111896
+[LPS-113624]: https://issues.liferay.com/browse/LPS-113624
+[LPS-115020]: https://issues.liferay.com/browse/LPS-115020
+[LPS-116808]: https://issues.liferay.com/browse/LPS-116808
+[LPS-121567]: https://issues.liferay.com/browse/LPS-121567
 [LRDOCS-3663]: https://issues.liferay.com/browse/LRDOCS-3663
 [LRDOCS-4129]: https://issues.liferay.com/browse/LRDOCS-4129
 [LRQA-52072]: https://issues.liferay.com/browse/LRQA-52072

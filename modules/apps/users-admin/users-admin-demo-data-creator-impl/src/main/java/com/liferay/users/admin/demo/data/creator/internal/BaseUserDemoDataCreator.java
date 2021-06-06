@@ -78,8 +78,8 @@ public abstract class BaseUserDemoDataCreator implements UserDemoDataCreator {
 		try {
 			URL url = new URL(_RANDOM_USER_API);
 
-			try (InputStream is = url.openStream()) {
-				String json = StringUtil.read(is);
+			try (InputStream inputStream = url.openStream()) {
+				String json = StringUtil.read(inputStream);
 
 				JSONObject rootJSONObject = JSONFactoryUtil.createJSONObject(
 					json);
@@ -205,8 +205,6 @@ public abstract class BaseUserDemoDataCreator implements UserDemoDataCreator {
 		String password1 = "test";
 		String password2 = "test";
 		boolean autoScreenName = Validator.isNull(screenName);
-		long facebookId = 0;
-		String openId = StringPool.BLANK;
 		Locale locale = LocaleUtil.getDefault();
 		String middleName = StringPool.BLANK;
 		long prefixId = 0;
@@ -229,9 +227,9 @@ public abstract class BaseUserDemoDataCreator implements UserDemoDataCreator {
 
 		return userLocalService.addUser(
 			UserConstants.USER_ID_DEFAULT, companyId, autoPassword, password1,
-			password2, autoScreenName, screenName, emailAddress, facebookId,
-			openId, locale, firstName, middleName, lastName, prefixId, suffixId,
-			male, birthdayMonth, birthdayDay, birthdayYear, jobTitle, groupIds,
+			password2, autoScreenName, screenName, emailAddress, locale,
+			firstName, middleName, lastName, prefixId, suffixId, male,
+			birthdayMonth, birthdayDay, birthdayYear, jobTitle, groupIds,
 			organizationIds, roleIds, userGroupIds, sendMail,
 			new ServiceContext());
 	}
@@ -255,8 +253,8 @@ public abstract class BaseUserDemoDataCreator implements UserDemoDataCreator {
 	}
 
 	private byte[] _getBytes(URL url) throws IOException {
-		try (InputStream is = url.openStream()) {
-			return FileUtil.getBytes(is);
+		try (InputStream inputStream = url.openStream()) {
+			return FileUtil.getBytes(inputStream);
 		}
 	}
 

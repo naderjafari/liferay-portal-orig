@@ -13,7 +13,7 @@
  */
 
 import domAlign from 'dom-align';
-import dom from 'metal-dom';
+import {delegate} from 'frontend-js-web';
 
 const CssClass = {
 	SHOW: 'show',
@@ -39,19 +39,14 @@ class DropdownProvider {
 			return Liferay.DropdownProvider;
 		}
 
-		dom.delegate(
+		delegate(
 			document.body,
 			'click',
 			Selector.TRIGGER,
 			this._onTriggerClick
 		);
 
-		dom.delegate(
-			document.body,
-			'keydown',
-			Selector.TRIGGER,
-			this._onKeyDown
-		);
+		delegate(document.body, 'keydown', Selector.TRIGGER, this._onKeyDown);
 
 		Liferay.DropdownProvider = this;
 	}
@@ -96,6 +91,21 @@ class DropdownProvider {
 
 		trigger.parentElement.classList.add(CssClass.SHOW);
 		trigger.setAttribute('aria-expanded', true);
+
+		const clickOutsideHandler = (event) => {
+			if (
+				!menu.contains(event.target) &&
+				!trigger.contains(event.target)
+			) {
+				this.hide({menu, trigger});
+
+				document.removeEventListener('mousedown', clickOutsideHandler);
+				document.removeEventListener('touchstart', clickOutsideHandler);
+			}
+		};
+
+		document.addEventListener('mousedown', clickOutsideHandler);
+		document.addEventListener('touchstart', clickOutsideHandler);
 
 		menu.classList.add(CssClass.SHOW);
 

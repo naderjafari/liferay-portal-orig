@@ -80,7 +80,7 @@ public class FilePropagator {
 			"File propagation starting with " + threadCount + " threads.");
 
 		try {
-			long start = System.currentTimeMillis();
+			long start = JenkinsResultsParserUtil.getCurrentTimeMillis();
 
 			while (!_targetSlaves.isEmpty() || !_busySlaves.isEmpty()) {
 				synchronized (this) {
@@ -113,7 +113,8 @@ public class FilePropagator {
 				sb.append("\nTarget slaves:");
 				sb.append(_targetSlaves.size());
 				sb.append("\nTotal duration: ");
-				sb.append(System.currentTimeMillis() - start);
+				sb.append(
+					JenkinsResultsParserUtil.getCurrentTimeMillis() - start);
 				sb.append("\n");
 
 				System.out.println(sb.toString());
@@ -123,7 +124,8 @@ public class FilePropagator {
 
 			System.out.println(
 				"File propagation completed in " +
-					(System.currentTimeMillis() - start) + "ms.");
+					(JenkinsResultsParserUtil.getCurrentTimeMillis() - start) +
+						"ms.");
 
 			if (!_errorSlaves.isEmpty()) {
 				System.out.println(
@@ -191,7 +193,7 @@ public class FilePropagator {
 		throws IOException, TimeoutException {
 
 		StringBuffer sb = new StringBuffer(
-			"ssh -o ConnectTimeout=10 -o NumberOfPasswordPrompts=0 ");
+			"ssh -o ConnectTimeout=30 -o NumberOfPasswordPrompts=0 ");
 
 		sb.append(targetSlave);
 		sb.append(" '");
@@ -258,7 +260,7 @@ public class FilePropagator {
 
 		@Override
 		public void run() {
-			long start = System.currentTimeMillis();
+			long start = JenkinsResultsParserUtil.getCurrentTimeMillis();
 
 			List<FilePropagatorTask> filePropagatorTasks =
 				_filePropagator._filePropagatorTasks;
@@ -286,7 +288,7 @@ public class FilePropagator {
 				_successful = false;
 			}
 
-			_duration = System.currentTimeMillis() - start;
+			_duration = JenkinsResultsParserUtil.getCurrentTimeMillis() - start;
 
 			synchronized (_filePropagator) {
 				_filePropagator._busySlaves.remove(_mirrorSlave);

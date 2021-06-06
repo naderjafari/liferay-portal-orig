@@ -1,11 +1,12 @@
 @component-name = "portal-smoke"
 definition {
 
+	property portal.acceptance = "true";
 	property portal.release = "true";
 	property portal.smoke = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Smoke";
 	property test.assert.warning.exceptions = "true";
+	property testray.main.component.name = "Smoke";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -35,9 +36,10 @@ definition {
 		property database.bare.enabled = "true";
 		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
 		property environment.acceptance = "true";
+		property portal.acceptance = "false";
 		property testray.component.names = "Training";
 
-		Smoke.viewWelcomePage();
+		Smoke.viewWelcomeContentPage();
 
 		Smoke.runSmoke();
 
@@ -55,10 +57,9 @@ definition {
 		property custom.properties = "include-and-override=portal-developer.properties";
 		property osgi.module.configuration.file.names = "com.liferay.document.library.document.conversion.configuration.OpenOfficeConfiguration";
 		property osgi.module.configurations = "cacheEnabled=&quot;false&quot;";
-		property portal.acceptance = "true";
 		property portal.smoke = "false";
 
-		Smoke.viewWelcomePage();
+		Smoke.viewWelcomeContentPage();
 
 		Smoke.runSmoke();
 	}
@@ -66,11 +67,21 @@ definition {
 	@priority = "4"
 	test SmokeWithJNDI {
 		property app.server.types = "tomcat,wildfly,weblogic,websphere";
-		property database.types = "mariadb,mysql";
 		property database.jndi.enabled = "true";
+		property database.types = "mariadb,mysql";
 		property portal.smoke = "false";
 
-		Smoke.viewWelcomePage();
+		Smoke.viewWelcomeContentPage();
+
+		Smoke.runSmoke();
+	}
+
+	@priority = "5"
+	test SmokeWithRuntimeJSPCompile {
+		property delete.precompiled.jsps = "true";
+		property portal.smoke = "false";
+
+		Smoke.viewWelcomeContentPage();
 
 		Smoke.runSmoke();
 	}
@@ -80,7 +91,7 @@ definition {
 		property custom.properties = "javascript.single.page.application.enabled=false";
 		property portal.smoke = "false";
 
-		Smoke.viewWelcomePage();
+		Smoke.viewWelcomeContentPage();
 
 		Smoke.runSmoke();
 	}

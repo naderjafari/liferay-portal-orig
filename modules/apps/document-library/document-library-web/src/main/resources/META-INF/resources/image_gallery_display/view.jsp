@@ -57,6 +57,8 @@ Map<String, Object> contextObjects = HashMapBuilder.<String, Object>put(
 String[] mediaGalleryMimeTypes = dlPortletInstanceSettings.getMimeTypes();
 %>
 
+<liferay-ui:success key='<%= portletDisplay.getId() + "requestProcessed" %>' message="your-request-completed-successfully" />
+
 <liferay-ddm:template-renderer
 	className="<%= FileEntry.class.getName() %>"
 	contextObjects="<%= contextObjects %>"
@@ -73,9 +75,11 @@ String[] mediaGalleryMimeTypes = dlPortletInstanceSettings.getMimeTypes();
 
 	boolean useAssetEntryQuery = (assetCategoryId > 0) || Validator.isNotNull(assetTagName);
 
-	PortletURL portletURL = renderResponse.createRenderURL();
-
-	portletURL.setParameter("mvcRenderCommandName", "/image_gallery_display/view");
+	PortletURL portletURL = PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCRenderCommandName(
+		"/image_gallery_display/view"
+	).build();
 
 	if (Validator.isNotNull(redirect)) {
 		portletURL.setParameter("redirect", redirect);
@@ -83,8 +87,6 @@ String[] mediaGalleryMimeTypes = dlPortletInstanceSettings.getMimeTypes();
 
 	portletURL.setParameter("topLink", topLink);
 	portletURL.setParameter("folderId", String.valueOf(folderId));
-
-	request.setAttribute("view.jsp-folder", folder);
 
 	request.setAttribute("view.jsp-rootFolderId", String.valueOf(rootFolderId));
 
@@ -124,13 +126,9 @@ String[] mediaGalleryMimeTypes = dlPortletInstanceSettings.getMimeTypes();
 			assetEntryQuery.setEnablePermissions(true);
 			assetEntryQuery.setExcludeZeroViewCount(false);
 
-			int total = AssetEntryServiceUtil.getEntriesCount(assetEntryQuery);
+			igSearchContainer.setTotal(AssetEntryServiceUtil.getEntriesCount(assetEntryQuery));
 
-			igSearchContainer.setTotal(total);
-
-			List<AssetEntry> results = AssetEntryServiceUtil.getEntries(assetEntryQuery);
-
-			igSearchContainer.setResults(results);
+			igSearchContainer.setResults(AssetEntryServiceUtil.getEntries(assetEntryQuery));
 
 			mediaGalleryMimeTypes = null;
 
@@ -232,26 +230,25 @@ String[] mediaGalleryMimeTypes = dlPortletInstanceSettings.getMimeTypes();
 			%>
 
 		</c:when>
-		<c:when test='<%= topLink.equals("mine") %>'>
+		<c:when test='<%= topLink.equals("mine") || topLink.equals("recent") %>'>
 
 			<%
 			long groupImagesUserId = 0;
 
-			if (themeDisplay.isSignedIn()) {
+			if (topLink.equals("mine") && themeDisplay.isSignedIn()) {
 				groupImagesUserId = user.getUserId();
 			}
 
 			SearchContainer<FileEntry> igSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, portletURL, null, null);
 
-			int total = DLAppServiceUtil.getGroupFileEntriesCount(repositoryId, groupImagesUserId, rootFolderId, mediaGalleryMimeTypes, status);
-
-			igSearchContainer.setTotal(total);
+			igSearchContainer.setTotal(DLAppServiceUtil.getGroupFileEntriesCount(repositoryId, groupImagesUserId, rootFolderId, mediaGalleryMimeTypes, status));
 
 			List<FileEntry> results = DLAppServiceUtil.getGroupFileEntries(repositoryId, groupImagesUserId, rootFolderId, mediaGalleryMimeTypes, status, igSearchContainer.getStart(), igSearchContainer.getEnd(), igSearchContainer.getOrderByComparator());
 
 			igSearchContainer.setResults(results);
 
 			request.setAttribute("view.jsp-igSearchContainer", igSearchContainer);
+
 			request.setAttribute("view.jsp-mediaGalleryMimeTypes", mediaGalleryMimeTypes);
 			%>
 

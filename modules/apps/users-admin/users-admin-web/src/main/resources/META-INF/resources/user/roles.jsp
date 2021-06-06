@@ -27,6 +27,7 @@ groups.addAll(userDisplayContext.getInheritedSiteGroups());
 List<Organization> organizations = userDisplayContext.getOrganizations();
 
 Long[] organizationIds = UsersAdminUtil.getOrganizationIds(organizations);
+
 List<Role> roles = userDisplayContext.getRoles();
 List<UserGroupRole> organizationRoles = userDisplayContext.getOrganizationRoles();
 List<UserGroupRole> siteRoles = userDisplayContext.getSiteRoles();
@@ -110,7 +111,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 			modelVar="role"
 		>
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="title"
 			>
 				<liferay-ui:icon
@@ -139,38 +140,13 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 			);
 
 			if (selectRegularRoleLink) {
-				selectRegularRoleLink.addEventListener('click', function (event) {
+				selectRegularRoleLink.addEventListener('click', (event) => {
 					var searchContainerName = '<portlet:namespace />rolesSearchContainer';
 
 					var searchContainer = Liferay.SearchContainer.get(searchContainerName);
 
-					Liferay.Util.selectEntity(
-						{
-							dialog: {
-								constrain: true,
-								modal: true,
-							},
-
-							<%
-							String regularRoleEventName = liferayPortletResponse.getNamespace() + "selectRegularRole";
-							%>
-
-							id: '<%= regularRoleEventName %>',
-							selectedData: searchContainer.getData(true),
-							title:
-								'<liferay-ui:message arguments="regular-role" key="select-x" />',
-
-							<%
-							PortletURL selectRegularRoleURL = PortletProviderUtil.getPortletURL(request, Role.class.getName(), PortletProvider.Action.BROWSE);
-
-							selectRegularRoleURL.setParameter("p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId()));
-							selectRegularRoleURL.setParameter("eventName", regularRoleEventName);
-							selectRegularRoleURL.setWindowState(LiferayWindowState.POP_UP);
-							%>
-
-							uri: '<%= selectRegularRoleURL.toString() %>',
-						},
-						function (event) {
+					Liferay.Util.openSelectionModal({
+						onSelect: function (event) {
 							<portlet:namespace />selectRole(
 								event.entityid,
 								event.entityname,
@@ -179,8 +155,31 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 								event.groupid,
 								event.iconcssclass
 							);
-						}
-					);
+						},
+
+						<%
+						String regularRoleEventName = liferayPortletResponse.getNamespace() + "selectRegularRole";
+						%>
+
+						selectEventName: '<%= regularRoleEventName %>',
+						selectedData: searchContainer.getData(true),
+						title:
+							'<liferay-ui:message arguments="regular-role" key="select-x" />',
+
+						<%
+						PortletURL selectRegularRoleURL = PortletURLBuilder.create(
+							PortletProviderUtil.getPortletURL(request, Role.class.getName(), PortletProvider.Action.BROWSE)
+						).setParameter(
+							"eventName", regularRoleEventName
+						).setParameter(
+							"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
+						).setWindowState(
+							LiferayWindowState.POP_UP
+						).build();
+						%>
+
+						url: '<%= selectRegularRoleURL.toString() %>',
+					});
 				});
 			}
 		</aui:script>
@@ -289,7 +288,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				modelVar="userGroupRole"
 			>
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
+					cssClass="table-cell-expand"
 					name="title"
 				>
 					<liferay-ui:icon
@@ -300,7 +299,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
+					cssClass="table-cell-expand"
 					name="organization"
 					value="<%= HtmlUtil.escape(userGroupRole.getGroup().getDescriptiveName(locale)) %>"
 				/>
@@ -347,7 +346,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 
 				searchContainerContentBox.delegate(
 					'click',
-					function (event) {
+					(event) => {
 						var link = event.currentTarget;
 						var tr = link.ancestor('tr');
 
@@ -390,42 +389,14 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 			);
 
 			if (selectOrganizationRoleLink) {
-				selectOrganizationRoleLink.addEventListener('click', function (event) {
+				selectOrganizationRoleLink.addEventListener('click', (event) => {
 					var searchContainerName =
 						'<portlet:namespace />organizationRolesSearchContainer';
 
 					var searchContainer = Liferay.SearchContainer.get(searchContainerName);
 
-					Liferay.Util.selectEntity(
-						{
-							dialog: {
-								constrain: true,
-								modal: true,
-							},
-
-							<%
-							String organizationRoleEventName = liferayPortletResponse.getNamespace() + "selectOrganizationRole";
-							%>
-
-							id: '<%= organizationRoleEventName %>',
-							selectedData: searchContainer.getData(true),
-							title:
-								'<liferay-ui:message arguments="organization-role" key="select-x" />',
-
-							<%
-							PortletURL selectOrganizationRoleURL = PortletProviderUtil.getPortletURL(request, Role.class.getName(), PortletProvider.Action.BROWSE);
-
-							selectOrganizationRoleURL.setParameter("p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId()));
-							selectOrganizationRoleURL.setParameter("step", "1");
-							selectOrganizationRoleURL.setParameter("roleType", String.valueOf(RoleConstants.TYPE_ORGANIZATION));
-							selectOrganizationRoleURL.setParameter("organizationIds", StringUtil.merge(organizationIds));
-							selectOrganizationRoleURL.setParameter("eventName", organizationRoleEventName);
-							selectOrganizationRoleURL.setWindowState(LiferayWindowState.POP_UP);
-							%>
-
-							uri: '<%= selectOrganizationRoleURL.toString() %>',
-						},
-						function (event) {
+					Liferay.Util.openSelectionModal({
+						onSelect: function (event) {
 							<portlet:namespace />selectRole(
 								event.entityid,
 								event.entityname,
@@ -434,8 +405,37 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 								event.groupid,
 								event.iconcssclass
 							);
-						}
-					);
+						},
+
+						<%
+						String organizationRoleEventName = liferayPortletResponse.getNamespace() + "selectOrganizationRole";
+						%>
+
+						selectEventName: '<%= organizationRoleEventName %>',
+						selectedData: searchContainer.getData(true),
+						title:
+							'<liferay-ui:message arguments="organization-role" key="select-x" />',
+
+						<%
+						PortletURL selectOrganizationRoleURL = PortletURLBuilder.create(
+							PortletProviderUtil.getPortletURL(request, Role.class.getName(), PortletProvider.Action.BROWSE)
+						).setParameter(
+							"eventName", organizationRoleEventName
+						).setParameter(
+							"organizationIds", StringUtil.merge(organizationIds)
+						).setParameter(
+							"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
+						).setParameter(
+							"roleType", String.valueOf(RoleConstants.TYPE_ORGANIZATION)
+						).setParameter(
+							"step", "1"
+						).setWindowState(
+							LiferayWindowState.POP_UP
+						).build();
+						%>
+
+						url: '<%= selectOrganizationRoleURL.toString() %>',
+					});
 				});
 			}
 		</aui:script>
@@ -495,7 +495,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				modelVar="userGroupRole"
 			>
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
+					cssClass="table-cell-expand"
 					name="title"
 				>
 					<liferay-ui:icon
@@ -506,7 +506,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
+					cssClass="table-cell-expand"
 					name="site"
 				>
 					<liferay-staging:descriptive-name
@@ -555,7 +555,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 
 				searchContainerContentBox.delegate(
 					'click',
-					function (event) {
+					(event) => {
 						var link = event.currentTarget;
 						var tr = link.ancestor('tr');
 
@@ -588,51 +588,52 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 					'.modify-link'
 				);
 
-				A.one('#<portlet:namespace />selectSiteRoleLink').on('click', function (event) {
-					var searchContainerName = '<portlet:namespace />siteRolesSearchContainer';
+				const selectSiteRoleLink = document.getElementById(
+					'<portlet:namespace />selectSiteRoleLink'
+				);
 
-					var searchContainer = Liferay.SearchContainer.get(searchContainerName);
-
-					Util.selectEntity(
-						{
-							dialog: {
-								constrain: true,
-								modal: true,
+				if (selectSiteRoleLink) {
+					selectSiteRoleLink.addEventListener('click', (event) => {
+						Util.openSelectionModal({
+							onSelect: (selectedItem) => {
+								<portlet:namespace />selectRole(
+									selectedItem.entityid,
+									selectedItem.entityname,
+									selectedItem.searchcontainername,
+									selectedItem.groupdescriptivename,
+									selectedItem.groupid,
+									selectedItem.iconcssclass
+								);
 							},
 
 							<%
 							String siteRoleEventName = liferayPortletResponse.getNamespace() + "selectSiteRole";
 							%>
 
-							id: '<%= siteRoleEventName %>',
+							selectEventName: '<%= siteRoleEventName %>',
+
 							selectedData: searchContainer.getData(true),
 							title:
 								'<liferay-ui:message arguments="site-role" key="select-x" />',
-
-							<%
-							PortletURL selectSiteRoleURL = PortletProviderUtil.getPortletURL(request, Role.class.getName(), PortletProvider.Action.BROWSE);
-
-							selectSiteRoleURL.setParameter("p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId()));
-							selectSiteRoleURL.setParameter("step", "1");
-							selectSiteRoleURL.setParameter("roleType", String.valueOf(RoleConstants.TYPE_SITE));
-							selectSiteRoleURL.setParameter("eventName", siteRoleEventName);
-							selectSiteRoleURL.setWindowState(LiferayWindowState.POP_UP);
-							%>
-
-							uri: '<%= selectSiteRoleURL.toString() %>',
-						},
-						function (event) {
-							<portlet:namespace />selectRole(
-								event.entityid,
-								event.entityname,
-								event.searchcontainername,
-								event.groupdescriptivename,
-								event.groupid,
-								event.iconcssclass
-							);
-						}
-					);
-				});
+							url:
+								'<%=
+									PortletURLBuilder.create(
+										PortletProviderUtil.getPortletURL(request, Role.class.getName(), PortletProvider.Action.BROWSE)
+									).setParameter(
+										"eventName", siteRoleEventName
+									).setParameter(
+										"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
+									).setParameter(
+										"roleType", String.valueOf(RoleConstants.TYPE_SITE)
+									).setParameter(
+										"step", "1"
+									).setWindowState(
+										LiferayWindowState.POP_UP
+									).build()
+								%>',
+						});
+					});
+				}
 			</aui:script>
 		</c:if>
 	</c:if>
@@ -658,7 +659,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				modelVar="userGroupGroupRole"
 			>
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
+					cssClass="table-cell-expand"
 					name="title"
 				>
 					<liferay-ui:icon
@@ -669,7 +670,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
+					cssClass="table-cell-expand"
 					name="site"
 				>
 					<liferay-staging:descriptive-name
@@ -678,7 +679,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
-					cssClass="table-cell-content"
+					cssClass="table-cell-expand"
 					name="user-group"
 					value="<%= HtmlUtil.escape(userGroupGroupRole.getUserGroup().getName()) %>"
 				/>
@@ -751,7 +752,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 						.get('contentBox')
 						.all('.modify-link')
 						.getData()
-						.map(function (data) {
+						.map((data) => {
 							return data.groupid + '-' + data.rowid;
 						})
 				);
@@ -862,7 +863,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 
 			searchContainerContentBox.delegate(
 				'click',
-				function (event) {
+				(event) => {
 					var link = event.currentTarget;
 
 					var rowId = link.attr('data-rowId');

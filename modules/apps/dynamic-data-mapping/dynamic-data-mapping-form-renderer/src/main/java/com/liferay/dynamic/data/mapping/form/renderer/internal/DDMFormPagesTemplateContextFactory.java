@@ -14,6 +14,7 @@
 
 package com.liferay.dynamic.data.mapping.form.renderer.internal;
 
+import com.liferay.dynamic.data.mapping.constants.DDMPortletKeys;
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluator;
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorEvaluateRequest;
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorEvaluateResponse;
@@ -38,6 +39,8 @@ import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,6 +49,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Marcellus Tavares
@@ -73,8 +78,7 @@ public class DDMFormPagesTemplateContextFactory {
 			ListUtil.isEmpty(ddmFormValues.getDDMFormFieldValues())) {
 
 			DefaultDDMFormValuesFactory defaultDDMFormValuesFactory =
-				new DefaultDDMFormValuesFactory(
-					ddmForm, ddmFormRenderingContext.getLocale());
+				new DefaultDDMFormValuesFactory(ddmForm);
 
 			ddmFormValues = defaultDDMFormValuesFactory.create();
 		}
@@ -82,7 +86,7 @@ public class DDMFormPagesTemplateContextFactory {
 		_ddmFormValues = ddmFormValues;
 
 		_ddmFormFieldsMap = ddmForm.getDDMFormFieldsMap(true);
-		_ddmFormFieldValuesMap = ddmFormValues.getDDMFormFieldValuesMap();
+		_ddmFormFieldValuesMap = ddmFormValues.getDDMFormFieldValuesMap(true);
 		_locale = ddmFormRenderingContext.getLocale();
 	}
 
@@ -165,7 +169,8 @@ public class DDMFormPagesTemplateContextFactory {
 					getDDMFormFieldsPropertyChanges(),
 				_ddmFormFieldValuesMap.get(ddmFormFieldName),
 				_ddmFormRenderingContext, _ddmStructureLayoutLocalService,
-				_ddmStructureLocalService, _jsonFactory, _pageEnabled);
+				_ddmStructureLocalService, _jsonFactory, _pageEnabled,
+				_ddmFormLayout);
 
 		ddmFormFieldTemplateContextFactory.setDDMFormFieldTypeServicesTracker(
 			_ddmFormFieldTypeServicesTracker);
@@ -338,16 +343,24 @@ public class DDMFormPagesTemplateContextFactory {
 					DDMFormEvaluatorEvaluateRequest.Builder.newBuilder(
 						_ddmForm, _ddmFormValues, _locale);
 
+			HttpServletRequest httpServletRequest =
+				_ddmFormRenderingContext.getHttpServletRequest();
+
 			formEvaluatorEvaluateRequestBuilder.withCompanyId(
-				PortalUtil.getCompanyId(
-					_ddmFormRenderingContext.getHttpServletRequest()));
+				PortalUtil.getCompanyId(httpServletRequest));
+
+			formEvaluatorEvaluateRequestBuilder.withDDMFormInstanceId(
+				_ddmFormRenderingContext.getDDMFormInstanceId());
 			formEvaluatorEvaluateRequestBuilder.withDDMFormLayout(
 				_ddmFormLayout);
+			formEvaluatorEvaluateRequestBuilder.withEditingFieldValue(
+				Validator.isNotNull(
+					httpServletRequest.getParameter("trigger")));
 			formEvaluatorEvaluateRequestBuilder.withGroupId(
 				_ddmFormRenderingContext.getGroupId());
 			formEvaluatorEvaluateRequestBuilder.withUserId(
-				PortalUtil.getUserId(
-					_ddmFormRenderingContext.getHttpServletRequest()));
+				PortalUtil.getUserId(httpServletRequest));
+			formEvaluatorEvaluateRequestBuilder.withViewMode(_isViewMode());
 
 			_ddmFormEvaluatorEvaluateResponse = _ddmFormEvaluator.evaluate(
 				formEvaluatorEvaluateRequestBuilder.build());
@@ -358,6 +371,28 @@ public class DDMFormPagesTemplateContextFactory {
 			throw new IllegalStateException(
 				"Unexpected error occurred during form evaluation", exception);
 		}
+	}
+
+	private boolean _isViewMode() {
+		Boolean viewMode = _ddmFormRenderingContext.getProperty("viewMode");
+
+		if (viewMode != null) {
+			return viewMode;
+		}
+
+		String portletNamespace =
+			_ddmFormRenderingContext.getPortletNamespace();
+
+		if ((portletNamespace != null) &&
+			!StringUtil.equals(
+				portletNamespace,
+				PortalUtil.getPortletNamespace(
+					DDMPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN))) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

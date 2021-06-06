@@ -91,7 +91,8 @@ public class ColumnLayoutStructureItem extends LayoutStructureItem {
 	}
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getViewportConfigurations()}
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getViewportConfigurations()}
 	 */
 	@Deprecated
 	public Map<String, JSONObject> getViewportSizeConfigurations() {
@@ -124,7 +125,8 @@ public class ColumnLayoutStructureItem extends LayoutStructureItem {
 	}
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #setViewportConfiguration(String, JSONObject)}
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #setViewportConfiguration(String, JSONObject)}
 	 */
 	@Deprecated
 	public void setViewportSizeConfiguration(
@@ -154,6 +156,7 @@ public class ColumnLayoutStructureItem extends LayoutStructureItem {
 	}
 
 	private int _size;
-	private Map<String, JSONObject> _viewportConfigurations = new HashMap<>();
+	private final Map<String, JSONObject> _viewportConfigurations =
+		new HashMap<>();
 
 }

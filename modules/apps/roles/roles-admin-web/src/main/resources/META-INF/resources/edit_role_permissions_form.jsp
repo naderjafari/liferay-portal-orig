@@ -19,10 +19,6 @@
 <%
 String tabs3 = ParamUtil.getString(request, "tabs3", "current");
 
-String redirect = ParamUtil.getString(request, "redirect");
-
-String backURL = ParamUtil.getString(request, "backURL", redirect);
-
 long roleId = ParamUtil.getLong(request, "roleId");
 
 Role role = RoleServiceUtil.fetchRole(roleId);
@@ -172,11 +168,12 @@ if (Validator.isNotNull(portletResource)) {
 						if (role.getType() == RoleConstants.TYPE_REGULAR) {
 							RolePermissions rolePermissions = new RolePermissions(resource, ResourceConstants.SCOPE_GROUP, actionId, role.getRoleId());
 
-							LinkedHashMap<String, Object> groupParams = LinkedHashMapBuilder.<String, Object>put(
-								"rolePermissions", rolePermissions
-							).build();
-
-							groups = GroupLocalServiceUtil.search(company.getCompanyId(), GroupTypeContributorUtil.getClassNameIds(), null, null, groupParams, true, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+							groups = GroupLocalServiceUtil.search(
+								company.getCompanyId(), GroupTypeContributorUtil.getClassNameIds(), null, null,
+								LinkedHashMapBuilder.<String, Object>put(
+									"rolePermissions", rolePermissions
+								).build(),
+								true, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 							groupIdsArray = new long[groups.size()];
 
@@ -225,13 +222,3 @@ if (Validator.isNotNull(portletResource)) {
 		</clay:sheet-footer>
 	</clay:sheet>
 </aui:form>
-
-<%
-PortletURL definePermissionsURL = liferayPortletResponse.createRenderURL();
-
-definePermissionsURL.setParameter("mvcPath", "/edit_role_permissions.jsp");
-definePermissionsURL.setParameter(Constants.CMD, Constants.VIEW);
-definePermissionsURL.setParameter("redirect", backURL);
-definePermissionsURL.setParameter("roleId", String.valueOf(role.getRoleId()));
-definePermissionsURL.setParameter("tabs1", "define-permissions");
-%>

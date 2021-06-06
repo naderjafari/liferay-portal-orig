@@ -11,13 +11,16 @@
 
 import ClayLayout from '@clayui/layout';
 import ClayManagementToolbar from '@clayui/management-toolbar';
-import {usePrevious} from 'frontend-js-react-web';
+import {usePrevious} from '@liferay/frontend-js-react-web';
 import React, {useCallback, useContext, useEffect, useMemo} from 'react';
 
 import filterConstants from '../../shared/components/filter/util/filterConstants.es';
+import MetricsCalculatedInfo from '../../shared/components/last-updated-info/MetricsCalculatedInfo.es';
+import PromisesResolver from '../../shared/components/promises-resolver/PromisesResolver.es';
 import QuickActionKebab from '../../shared/components/quick-action-kebab/QuickActionKebab.es';
 import ResultsBar from '../../shared/components/results-bar/ResultsBar.es';
 import ToolbarWithSelection from '../../shared/components/toolbar-with-selection/ToolbarWithSelection.es';
+import {useDateModified} from '../../shared/hooks/useDateModified.es';
 import {capitalize} from '../../shared/util/util.es';
 import {AppContext} from '../AppContext.es';
 import AssigneeFilter from '../filter/AssigneeFilter.es';
@@ -30,13 +33,19 @@ import TimeRangeFilter from '../filter/TimeRangeFilter.es';
 import {InstanceListContext} from './InstanceListPageProvider.es';
 import {ModalContext} from './modal/ModalProvider.es';
 
-const Header = ({
+export default function Header({
 	filterKeys,
 	items = [],
+	processId,
 	routeParams,
 	selectedFilters,
 	totalCount,
-}) => {
+}) {
+	const {dateModified, fetchData} = useDateModified({
+		fetchDateModified: !!items?.length,
+		processId,
+	});
+
 	const {userId} = useContext(AppContext);
 	const {
 		selectAll,
@@ -44,8 +53,19 @@ const Header = ({
 		setSelectAll,
 		setSelectedItems,
 	} = useContext(InstanceListContext);
+	const {openModal} = useContext(ModalContext);
 	const previousCount = usePrevious(totalCount);
-	const {setVisibleModal} = useContext(ModalContext);
+
+	const previousFetchData = usePrevious(fetchData);
+
+	const promises = useMemo(() => {
+		if (previousFetchData !== fetchData) {
+			return [fetchData()];
+		}
+
+		return [];
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [fetchData]);
 
 	const handleClick = useCallback(
 		(bulkModal, singleModal) => {
@@ -53,9 +73,9 @@ const Header = ({
 				selectedItems.length > 1 ||
 				selectedItems[0].taskNames.length > 1;
 
-			setVisibleModal(bulkOperation ? bulkModal : singleModal);
+			openModal(bulkOperation ? bulkModal : singleModal);
 		},
-		[selectedItems, setVisibleModal]
+		[openModal, selectedItems]
 	);
 
 	const compareId = (itemId) => ({id}) => id === itemId;
@@ -65,7 +85,7 @@ const Header = ({
 			icon: 'arrow-start',
 			label: capitalize(Liferay.Language.get('transition')),
 			onClick: () => {
-				setVisibleModal('bulkTransition');
+				openModal('bulkTransition');
 			},
 		},
 		{
@@ -80,9 +100,8 @@ const Header = ({
 		},
 	];
 
-	const selectedOnPage = useMemo(
-		() => selectedItems.filter(({id}) => items.find(compareId(id))),
-		[items, selectedItems]
+	const selectedOnPage = selectedItems.filter(({id}) =>
+		items.find(compareId(id))
 	);
 
 	const allPageSelected =
@@ -94,27 +113,19 @@ const Header = ({
 			selectedOnPage.length > 0 && !allPageSelected && !selectAll,
 	};
 
-	const isRemainingItem = useCallback(
-		(clear) => ({assignees = [], id, status}) => {
-			const assignedToUser = !!assignees.find(
-				({id}) => id === Number(userId)
-			);
-			const completed = status === processStatusConstants.completed;
-			const selected = clear && selectedItems.find(compareId(id));
-			const {reviewer} = assignees.find(({id}) => id === -1) || {};
+	const isRemainingItem = (clear) => ({assignees = [], id, status}) => {
+		const assignedToUser = !!assignees.find(
+			({id}) => id === Number(userId)
+		);
+		const completed = status === processStatusConstants.completed;
+		const selected = clear && selectedItems.find(compareId(id));
+		const {reviewer} = assignees.find(({id}) => id === -1) || {};
 
-			return (reviewer || assignedToUser) && !completed && !selected;
-		},
-		[selectedItems, userId]
-	);
+		return (reviewer || assignedToUser) && !completed && !selected;
+	};
 
-	const remainingItems = useMemo(() => {
-		return items.filter(isRemainingItem(true));
-	}, [items, isRemainingItem]);
-
-	const toolbarActive = useMemo(() => selectedItems.length > 0, [
-		selectedItems,
-	]);
+	const remainingItems = items.filter(isRemainingItem(true));
+	const toolbarActive = selectedItems.length > 0;
 
 	useEffect(() => {
 		if (
@@ -154,32 +165,20 @@ const Header = ({
 		[items, remainingItems, selectedItems]
 	);
 
-	const statusesFilterItem = useMemo(
-		() => selectedFilters.find((filter) => filter.key === 'statuses'),
-		[selectedFilters]
-	);
-	const {key} = statusesFilterItem ? statusesFilterItem.items[0] : {};
-	const completedStatusSelected = useMemo(
-		() =>
-			selectedFilters.length > 0 && statusesFilterItem
-				? key === processStatusConstants.completed
-				: false,
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[key]
+	const selectedFilter = selectedFilters.find(
+		({key}) => key === filterConstants.processStatus.key
 	);
 
-	const selectedFilterItems = useMemo(
-		() =>
-			selectedFilters.filter(
-				(filter) =>
-					completedStatusSelected ||
-					filter.key !== filterConstants.timeRange.key
-			),
-		[completedStatusSelected, selectedFilters]
+	const completedSelected = selectedFilter?.items.some(
+		({key}) => key === processStatusConstants.completed
+	);
+
+	const selectedFilterItems = selectedFilters.filter(
+		({key}) => completedSelected || key !== filterConstants.timeRange.key
 	);
 
 	return (
-		<>
+		<PromisesResolver promises={promises}>
 			<ToolbarWithSelection
 				{...checkbox}
 				active={toolbarActive}
@@ -197,7 +196,7 @@ const Header = ({
 			>
 				{toolbarActive ? (
 					<ClayManagementToolbar.Item className="navbar-nav-last">
-						<ClayLayout.ContentCol data-testid="headerQuickAction">
+						<ClayLayout.ContentCol>
 							<QuickActionKebab items={kebabItems} />
 						</ClayLayout.ContentCol>
 					</ClayManagementToolbar.Item>
@@ -213,13 +212,12 @@ const Header = ({
 
 						<ProcessStatusFilter />
 
-						{completedStatusSelected && (
-							<TimeRangeFilter
-								options={{
-									withSelectionTitle: false,
-								}}
-							/>
-						)}
+						<TimeRangeFilter
+							options={{
+								show: completedSelected,
+								withSelectionTitle: false,
+							}}
+						/>
 
 						<ProcessStepFilter processId={routeParams.processId} />
 
@@ -247,8 +245,8 @@ const Header = ({
 					/>
 				</ResultsBar>
 			)}
-		</>
-	);
-};
 
-export {Header};
+			<MetricsCalculatedInfo dateModified={dateModified} />
+		</PromisesResolver>
+	);
+}

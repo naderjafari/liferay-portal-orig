@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("EmailAddress")
+@GraphQLName(
+	description = "Represents an email address. Properties follow the [email](https://schema.org/email) specification.",
+	value = "EmailAddress"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "EmailAddress")
-public class EmailAddress {
+public class EmailAddress implements Serializable {
 
 	public static EmailAddress toDTO(String json) {
 		return ObjectMapperUtil.readValue(EmailAddress.class, json);
@@ -242,6 +247,7 @@ public class EmailAddress {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.EmailAddress",
 		name = "x-class-name"
 	)
@@ -277,7 +283,7 @@ public class EmailAddress {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -316,7 +322,7 @@ public class EmailAddress {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -17,16 +17,17 @@ package com.liferay.portal.kernel.util;
 import com.liferay.petra.memory.FinalizeAction;
 import com.liferay.petra.memory.FinalizeManager;
 import com.liferay.petra.reflect.ReflectionUtil;
-import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.FinalizeManagerUtil;
 import com.liferay.portal.kernel.test.GCUtil;
-import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.rule.NewEnv;
 import com.liferay.portal.kernel.test.rule.NewEnvTestRule;
 import com.liferay.portal.kernel.test.rule.TimeoutTestRule;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.registry.BasicRegistryImpl;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
@@ -51,7 +52,6 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -202,10 +202,8 @@ public class ServiceProxyFactoryTest {
 		}
 
 		try {
-			TestServiceUtil testServiceUtil = new TestServiceUtil();
-
 			ServiceProxyFactory.newServiceTrackedInstance(
-				TestService.class, TestServiceUtil.class, testServiceUtil,
+				TestService.class, TestServiceUtil.class, new TestServiceUtil(),
 				"wrongFieldName", null, false);
 
 			Assert.fail();
@@ -218,10 +216,8 @@ public class ServiceProxyFactoryTest {
 		// Test 2, field is static
 
 		try {
-			TestServiceUtil testServiceUtil = new TestServiceUtil();
-
 			ServiceProxyFactory.newServiceTrackedInstance(
-				TestService.class, TestServiceUtil.class, testServiceUtil,
+				TestService.class, TestServiceUtil.class, new TestServiceUtil(),
 				"testService", null, false);
 
 			Assert.fail();
@@ -456,16 +452,15 @@ public class ServiceProxyFactoryTest {
 		Assert.assertTrue(ProxyUtil.isProxyClass(testService.getClass()));
 		Assert.assertNotSame(TestServiceImpl.class, testService.getClass());
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					ServiceProxyFactory.class.getName(), Level.SEVERE)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				ServiceProxyFactory.class.getName(), Level.SEVERE)) {
 
 			ReflectionTestUtil.setFieldValue(
-				captureHandler, "_logRecords",
-				new CopyOnWriteArrayList<LogRecord>() {
+				logCapture, "_logEntries",
+				new CopyOnWriteArrayList<LogEntry>() {
 
 					@Override
-					public boolean add(LogRecord e) {
+					public boolean add(LogEntry e) {
 						if (_logged) {
 							Thread currentThread = Thread.currentThread();
 
@@ -480,7 +475,8 @@ public class ServiceProxyFactoryTest {
 					private boolean _logged;
 
 				});
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
 			FutureTask<String> futureTask = new FutureTask<>(
 				testService::getTestServiceName);
@@ -491,9 +487,9 @@ public class ServiceProxyFactoryTest {
 
 			thread.join();
 
-			Assert.assertEquals(logRecords.toString(), 2, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 2, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
 			StringBundler sb = new StringBundler(9);
 
@@ -511,7 +507,7 @@ public class ServiceProxyFactoryTest {
 			sb.append(TestServiceUtil.class.getName());
 			sb.append("\", will retry...");
 
-			Assert.assertEquals(sb.toString(), logRecord.getMessage());
+			Assert.assertEquals(sb.toString(), logEntry.getMessage());
 		}
 	}
 

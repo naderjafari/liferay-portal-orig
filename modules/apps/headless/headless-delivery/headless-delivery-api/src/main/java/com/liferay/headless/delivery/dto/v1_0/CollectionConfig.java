@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -49,13 +51,13 @@ import javax.xml.bind.annotation.XmlRootElement;
 @JsonFilter("Liferay.Vulcan")
 @Schema(requiredProperties = {"collectionReference", "collectionType"})
 @XmlRootElement(name = "CollectionConfig")
-public class CollectionConfig {
+public class CollectionConfig implements Serializable {
 
 	public static CollectionConfig toDTO(String json) {
 		return ObjectMapperUtil.readValue(CollectionConfig.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The page collection's reference.")
 	@Valid
 	public Object getCollectionReference() {
 		return collectionReference;
@@ -80,12 +82,14 @@ public class CollectionConfig {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page collection's reference.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	@NotNull
 	protected Object collectionReference;
 
-	@Schema
+	@Schema(
+		description = "The page collection's type (Collection, CollectionProvider)."
+	)
 	@Valid
 	public CollectionType getCollectionType() {
 		return collectionType;
@@ -120,7 +124,9 @@ public class CollectionConfig {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The page collection's type (Collection, CollectionProvider)."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	@NotNull
 	protected CollectionType collectionType;
@@ -182,6 +188,7 @@ public class CollectionConfig {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.CollectionConfig",
 		name = "x-class-name"
 	)
@@ -251,7 +258,7 @@ public class CollectionConfig {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -290,7 +297,7 @@ public class CollectionConfig {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

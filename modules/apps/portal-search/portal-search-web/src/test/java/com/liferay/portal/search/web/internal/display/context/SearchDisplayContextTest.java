@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Html;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.search.context.SearchContextFactory;
 import com.liferay.portal.search.internal.legacy.searcher.SearchRequestBuilderFactoryImpl;
 import com.liferay.portal.search.legacy.searcher.SearchRequestBuilderFactory;
 import com.liferay.portal.search.legacy.searcher.SearchResponseBuilderFactory;
@@ -39,6 +40,7 @@ import com.liferay.portal.search.searcher.Searcher;
 import com.liferay.portal.search.summary.SummaryBuilderFactory;
 import com.liferay.portal.search.web.constants.SearchPortletParameterNames;
 import com.liferay.portal.search.web.internal.facet.SearchFacetTracker;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portlet.portletconfiguration.util.ConfigurationRenderRequest;
 
 import java.util.Collections;
@@ -51,6 +53,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mock;
@@ -62,6 +66,11 @@ import org.mockito.MockitoAnnotations;
  */
 public class SearchDisplayContextTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
@@ -71,6 +80,7 @@ public class SearchDisplayContextTest {
 		setUpHttpServletRequest();
 		setUpPortletURLFactory();
 		setUpRenderRequest();
+		setUpSearchContextFactory();
 		setUpSearcher();
 		setUpSearchResponseBuilderFactory();
 	}
@@ -226,7 +236,7 @@ public class SearchDisplayContextTest {
 			createPortal(themeDisplay, renderRequest), Mockito.mock(Html.class),
 			Mockito.mock(Language.class), searcher,
 			Mockito.mock(IndexSearchPropsValues.class), portletURLFactory,
-			Mockito.mock(SummaryBuilderFactory.class),
+			Mockito.mock(SummaryBuilderFactory.class), searchContextFactory,
 			searchRequestBuilderFactory, new SearchFacetTracker());
 	}
 
@@ -285,6 +295,18 @@ public class SearchDisplayContextTest {
 		);
 	}
 
+	protected void setUpSearchContextFactory() throws Exception {
+		Mockito.doReturn(
+			new SearchContext()
+		).when(
+			searchContextFactory
+		).getSearchContext(
+			Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong(),
+			Mockito.any(), Mockito.anyLong()
+		);
+	}
+
 	protected void setUpSearcher() throws Exception {
 		Mockito.doReturn(
 			Mockito.mock(Hits.class)
@@ -330,6 +352,9 @@ public class SearchDisplayContextTest {
 
 	@Mock
 	protected RenderRequest renderRequest;
+
+	@Mock
+	protected SearchContextFactory searchContextFactory;
 
 	@Mock
 	protected Searcher searcher;

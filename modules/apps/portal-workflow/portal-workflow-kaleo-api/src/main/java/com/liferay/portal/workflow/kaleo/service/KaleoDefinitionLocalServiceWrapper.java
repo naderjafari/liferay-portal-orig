@@ -222,6 +222,13 @@ public class KaleoDefinitionLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _kaleoDefinitionLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _kaleoDefinitionLocalService.dynamicQuery();
 	}
@@ -485,6 +492,54 @@ public class KaleoDefinitionLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _kaleoDefinitionLocalService.getPersistedModel(primaryKeyObj);
+	}
+
+	@Override
+	public java.util.List
+		<com.liferay.portal.workflow.kaleo.model.KaleoDefinition>
+			getScopeKaleoDefinitions(
+				String scope, boolean active, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.portal.workflow.kaleo.model.KaleoDefinition>
+						orderByComparator,
+				com.liferay.portal.kernel.service.ServiceContext
+					serviceContext) {
+
+		return _kaleoDefinitionLocalService.getScopeKaleoDefinitions(
+			scope, active, start, end, orderByComparator, serviceContext);
+	}
+
+	@Override
+	public java.util.List
+		<com.liferay.portal.workflow.kaleo.model.KaleoDefinition>
+			getScopeKaleoDefinitions(
+				String scope, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.portal.workflow.kaleo.model.KaleoDefinition>
+						orderByComparator,
+				com.liferay.portal.kernel.service.ServiceContext
+					serviceContext) {
+
+		return _kaleoDefinitionLocalService.getScopeKaleoDefinitions(
+			scope, start, end, orderByComparator, serviceContext);
+	}
+
+	@Override
+	public int getScopeKaleoDefinitionsCount(
+		String scope, boolean active,
+		com.liferay.portal.kernel.service.ServiceContext serviceContext) {
+
+		return _kaleoDefinitionLocalService.getScopeKaleoDefinitionsCount(
+			scope, active, serviceContext);
+	}
+
+	@Override
+	public int getScopeKaleoDefinitionsCount(
+		String scope,
+		com.liferay.portal.kernel.service.ServiceContext serviceContext) {
+
+		return _kaleoDefinitionLocalService.getScopeKaleoDefinitionsCount(
+			scope, serviceContext);
 	}
 
 	@Override

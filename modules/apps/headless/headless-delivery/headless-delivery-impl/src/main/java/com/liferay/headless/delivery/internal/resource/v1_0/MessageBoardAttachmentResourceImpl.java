@@ -16,7 +16,7 @@ package com.liferay.headless.delivery.internal.resource.v1_0;
 
 import com.liferay.document.library.util.DLURLHelper;
 import com.liferay.headless.delivery.dto.v1_0.MessageBoardAttachment;
-import com.liferay.headless.delivery.internal.dto.v1_0.util.ContentValueUtil;
+import com.liferay.headless.delivery.dto.v1_0.util.ContentValueUtil;
 import com.liferay.headless.delivery.resource.v1_0.MessageBoardAttachmentResource;
 import com.liferay.message.boards.constants.MBConstants;
 import com.liferay.message.boards.model.MBMessage;
@@ -111,14 +111,14 @@ public class MessageBoardAttachmentResourceImpl
 			Long messageBoardMessageId, MultipartBody multipartBody)
 		throws Exception {
 
-		MBMessage mbMessage = _mbMessageService.getMessage(
-			messageBoardMessageId);
-
 		BinaryFile binaryFile = multipartBody.getBinaryFile("file");
 
 		if (binaryFile == null) {
 			throw new BadRequestException("No file found in body");
 		}
+
+		MBMessage mbMessage = _mbMessageService.getMessage(
+			messageBoardMessageId);
 
 		Folder folder = mbMessage.addAttachmentsFolder();
 
@@ -154,7 +154,7 @@ public class MessageBoardAttachmentResourceImpl
 					fileEntry, fileEntry.getFileVersion(), null, "", false,
 					false);
 				contentValue = ContentValueUtil.toContentValue(
-					"contentValue", fileEntry.getContentStream(),
+					"contentValue", fileEntry::getContentStream,
 					Optional.of(contextUriInfo));
 				encodingFormat = fileEntry.getMimeType();
 				fileExtension = fileEntry.getExtension();

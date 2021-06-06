@@ -28,15 +28,14 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -243,14 +242,46 @@ public class FragmentCollectionContributorTrackerImpl
 				fragmentEntry.getFragmentEntryKey());
 
 		for (FragmentEntryLink fragmentEntryLink : fragmentEntryLinks) {
-			fragmentEntryLink.setCss(fragmentEntry.getCss());
-			fragmentEntryLink.setHtml(fragmentEntry.getHtml());
-			fragmentEntryLink.setJs(fragmentEntry.getJs());
-			fragmentEntryLink.setConfiguration(
-				fragmentEntry.getConfiguration());
+			boolean modified = false;
 
-			_fragmentEntryLinkLocalService.updateFragmentEntryLink(
-				fragmentEntryLink);
+			if (!Objects.equals(
+					fragmentEntryLink.getCss(), fragmentEntry.getCss())) {
+
+				fragmentEntryLink.setCss(fragmentEntry.getCss());
+
+				modified = true;
+			}
+
+			if (!Objects.equals(
+					fragmentEntryLink.getHtml(), fragmentEntry.getHtml())) {
+
+				fragmentEntryLink.setHtml(fragmentEntry.getHtml());
+
+				modified = true;
+			}
+
+			if (!Objects.equals(
+					fragmentEntryLink.getJs(), fragmentEntry.getJs())) {
+
+				fragmentEntryLink.setJs(fragmentEntry.getJs());
+
+				modified = true;
+			}
+
+			if (!Objects.equals(
+					fragmentEntryLink.getConfiguration(),
+					fragmentEntry.getConfiguration())) {
+
+				fragmentEntryLink.setConfiguration(
+					fragmentEntry.getConfiguration());
+
+				modified = true;
+			}
+
+			if (modified) {
+				_fragmentEntryLinkLocalService.updateFragmentEntryLink(
+					fragmentEntryLink);
+			}
 		}
 	}
 
@@ -311,17 +342,14 @@ public class FragmentCollectionContributorTrackerImpl
 			_fragmentEntries.putAll(
 				_getFragmentEntries(fragmentCollectionContributor));
 
-			Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-			properties.put(
-				"fragment.collection.key",
-				serviceReference.getProperty("fragment.collection.key"));
-
 			_bundleContext.registerService(
 				FragmentCollectionContributorRegistration.class,
 				new FragmentCollectionContributorRegistration() {
 				},
-				properties);
+				HashMapDictionaryBuilder.<String, Object>put(
+					"fragment.collection.key",
+					serviceReference.getProperty("fragment.collection.key")
+				).build());
 
 			return fragmentCollectionContributor;
 		}

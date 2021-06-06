@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WebUrl")
+@GraphQLName(
+	description = "Represents a URL to an external site. This is modeled internally as a `WebSite`.",
+	value = "WebUrl"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WebUrl")
-public class WebUrl {
+public class WebUrl implements Serializable {
 
 	public static WebUrl toDTO(String json) {
 		return ObjectMapperUtil.readValue(WebUrl.class, json);
@@ -242,6 +247,7 @@ public class WebUrl {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.WebUrl",
 		name = "x-class-name"
 	)
@@ -277,7 +283,7 @@ public class WebUrl {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -316,7 +322,7 @@ public class WebUrl {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -55,7 +55,9 @@ portletDisplay.setURLBack(redirect);
 renderResponse.setTitle(headerTitle);
 %>
 
-<clay:container-fluid>
+<clay:container-fluid
+	cssClass="container-form-lg"
+>
 	<portlet:actionURL name="/bookmarks/edit_folder" var="editFolderURL">
 		<portlet:param name="mvcRenderCommandName" value="/bookmarks/edit_folder" />
 	</portlet:actionURL>
@@ -112,35 +114,31 @@ renderResponse.setTitle(headerTitle);
 							);
 
 							if (<portlet:namespace />selectFolderButton) {
-								<portlet:namespace />selectFolderButton.addEventListener('click', function (
-									event
-								) {
-									Liferay.Util.selectEntity(
-										{
-											dialog: {
-												constrain: true,
-												destroyOnHide: true,
-												modal: true,
-												width: 680,
+								<portlet:namespace />selectFolderButton.addEventListener(
+									'click',
+									(event) => {
+										Liferay.Util.openSelectionModal({
+											onSelect: function (event) {
+												var folderData = {
+													idString: 'parentFolderId',
+													idValue: event.entityid,
+													nameString: 'parentFolderName',
+													nameValue: event.entityname,
+												};
+
+												Liferay.Util.selectFolder(
+													folderData,
+													'<portlet:namespace />'
+												);
 											},
-											id: '<portlet:namespace />selectFolder',
+											selectEventName: '<portlet:namespace />selectFolder',
 											title:
 												'<liferay-ui:message arguments="folder" key="select-x" />',
-											uri:
+											url:
 												'<liferay-portlet:renderURL windowState="<%= LiferayWindowState.POP_UP.toString() %>"><portlet:param name="mvcRenderCommandName" value="/bookmarks/select_folder" /></liferay-portlet:renderURL>',
-										},
-										function (event) {
-											var folderData = {
-												idString: 'parentFolderId',
-												idValue: event.entityid,
-												nameString: 'parentFolderName',
-												nameValue: event.entityname,
-											};
-
-											Liferay.Util.selectFolder(folderData, '<portlet:namespace />');
-										}
-									);
-								});
+										});
+									}
+								);
 							}
 						</aui:script>
 
@@ -151,7 +149,7 @@ renderResponse.setTitle(headerTitle);
 						<aui:button disabled="<%= parentFolderId <= 0 %>" name="removeFolderButton" onClick="<%= taglibRemoveFolder %>" value="remove" />
 					</div>
 
-					<aui:input disabled="<%= mergeWithParentFolderDisabled %>" label="merge-with-parent-folder" name="mergeWithParentFolder" type="toggle-switch" />
+					<aui:input disabled="<%= mergeWithParentFolderDisabled %>" inlineLabel="right" label="merge-with-parent-folder" labelCssClass="simple-toggle-switch" name="mergeWithParentFolder" type="toggle-switch" />
 				</aui:fieldset>
 			</c:if>
 
@@ -177,13 +175,13 @@ renderResponse.setTitle(headerTitle);
 					</aui:field-wrapper>
 				</aui:fieldset>
 			</c:if>
+
+			<div class="sheet-footer">
+				<aui:button type="submit" />
+
+				<aui:button href="<%= redirect %>" type="cancel" />
+			</div>
 		</aui:fieldset-group>
-
-		<aui:button-row>
-			<aui:button type="submit" />
-
-			<aui:button href="<%= redirect %>" type="cancel" />
-		</aui:button-row>
 	</aui:form>
 </clay:container-fluid>
 

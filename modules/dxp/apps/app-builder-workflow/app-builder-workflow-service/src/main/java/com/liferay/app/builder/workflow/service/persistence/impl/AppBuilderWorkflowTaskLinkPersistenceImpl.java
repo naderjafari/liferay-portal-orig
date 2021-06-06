@@ -23,6 +23,7 @@ import com.liferay.app.builder.workflow.service.persistence.AppBuilderWorkflowTa
 import com.liferay.app.builder.workflow.service.persistence.impl.constants.AppBuilderWorkflowPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
+import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -33,8 +34,11 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -48,9 +52,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -66,7 +73,11 @@ import org.osgi.service.component.annotations.Reference;
  * @author Brian Wing Shun Chan
  * @generated
  */
-@Component(service = AppBuilderWorkflowTaskLinkPersistence.class)
+@Component(
+	service = {
+		AppBuilderWorkflowTaskLinkPersistence.class, BasePersistence.class
+	}
+)
 public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	extends BasePersistenceImpl<AppBuilderWorkflowTaskLink>
 	implements AppBuilderWorkflowTaskLinkPersistence {
@@ -189,7 +200,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<AppBuilderWorkflowTaskLink>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink :
@@ -563,7 +574,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		Object[] finderArgs = new Object[] {appBuilderAppId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -604,79 +615,80 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 		_FINDER_COLUMN_APPBUILDERAPPID_APPBUILDERAPPID_2 =
 			"appBuilderWorkflowTaskLink.appBuilderAppId = ?";
 
-	private FinderPath _finderPathWithPaginationFindByA_W;
-	private FinderPath _finderPathWithoutPaginationFindByA_W;
-	private FinderPath _finderPathCountByA_W;
+	private FinderPath _finderPathWithPaginationFindByA_A;
+	private FinderPath _finderPathWithoutPaginationFindByA_A;
+	private FinderPath _finderPathCountByA_A;
 
 	/**
-	 * Returns all the app builder workflow task links where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
 	 *
 	 * @param appBuilderAppId the app builder app ID
-	 * @param workflowTaskName the workflow task name
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @return the matching app builder workflow task links
 	 */
 	@Override
-	public List<AppBuilderWorkflowTaskLink> findByA_W(
-		long appBuilderAppId, String workflowTaskName) {
+	public List<AppBuilderWorkflowTaskLink> findByA_A(
+		long appBuilderAppId, long appBuilderAppVersionId) {
 
-		return findByA_W(
-			appBuilderAppId, workflowTaskName, QueryUtil.ALL_POS,
+		return findByA_A(
+			appBuilderAppId, appBuilderAppVersionId, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, null);
 	}
 
 	/**
-	 * Returns a range of all the app builder workflow task links where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns a range of all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
 	 *
 	 * <p>
 	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>AppBuilderWorkflowTaskLinkModelImpl</code>.
 	 * </p>
 	 *
 	 * @param appBuilderAppId the app builder app ID
-	 * @param workflowTaskName the workflow task name
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param start the lower bound of the range of app builder workflow task links
 	 * @param end the upper bound of the range of app builder workflow task links (not inclusive)
 	 * @return the range of matching app builder workflow task links
 	 */
 	@Override
-	public List<AppBuilderWorkflowTaskLink> findByA_W(
-		long appBuilderAppId, String workflowTaskName, int start, int end) {
+	public List<AppBuilderWorkflowTaskLink> findByA_A(
+		long appBuilderAppId, long appBuilderAppVersionId, int start, int end) {
 
-		return findByA_W(appBuilderAppId, workflowTaskName, start, end, null);
+		return findByA_A(
+			appBuilderAppId, appBuilderAppVersionId, start, end, null);
 	}
 
 	/**
-	 * Returns an ordered range of all the app builder workflow task links where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns an ordered range of all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
 	 *
 	 * <p>
 	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>AppBuilderWorkflowTaskLinkModelImpl</code>.
 	 * </p>
 	 *
 	 * @param appBuilderAppId the app builder app ID
-	 * @param workflowTaskName the workflow task name
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param start the lower bound of the range of app builder workflow task links
 	 * @param end the upper bound of the range of app builder workflow task links (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	 * @return the ordered range of matching app builder workflow task links
 	 */
 	@Override
-	public List<AppBuilderWorkflowTaskLink> findByA_W(
-		long appBuilderAppId, String workflowTaskName, int start, int end,
+	public List<AppBuilderWorkflowTaskLink> findByA_A(
+		long appBuilderAppId, long appBuilderAppVersionId, int start, int end,
 		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator) {
 
-		return findByA_W(
-			appBuilderAppId, workflowTaskName, start, end, orderByComparator,
-			true);
+		return findByA_A(
+			appBuilderAppId, appBuilderAppVersionId, start, end,
+			orderByComparator, true);
 	}
 
 	/**
-	 * Returns an ordered range of all the app builder workflow task links where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns an ordered range of all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
 	 *
 	 * <p>
 	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>AppBuilderWorkflowTaskLinkModelImpl</code>.
 	 * </p>
 	 *
 	 * @param appBuilderAppId the app builder app ID
-	 * @param workflowTaskName the workflow task name
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param start the lower bound of the range of app builder workflow task links
 	 * @param end the upper bound of the range of app builder workflow task links (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
@@ -684,12 +696,10 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	 * @return the ordered range of matching app builder workflow task links
 	 */
 	@Override
-	public List<AppBuilderWorkflowTaskLink> findByA_W(
-		long appBuilderAppId, String workflowTaskName, int start, int end,
+	public List<AppBuilderWorkflowTaskLink> findByA_A(
+		long appBuilderAppId, long appBuilderAppVersionId, int start, int end,
 		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator,
 		boolean useFinderCache) {
-
-		workflowTaskName = Objects.toString(workflowTaskName, "");
 
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -698,14 +708,17 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 			(orderByComparator == null)) {
 
 			if (useFinderCache) {
-				finderPath = _finderPathWithoutPaginationFindByA_W;
-				finderArgs = new Object[] {appBuilderAppId, workflowTaskName};
+				finderPath = _finderPathWithoutPaginationFindByA_A;
+				finderArgs = new Object[] {
+					appBuilderAppId, appBuilderAppVersionId
+				};
 			}
 		}
 		else if (useFinderCache) {
-			finderPath = _finderPathWithPaginationFindByA_W;
+			finderPath = _finderPathWithPaginationFindByA_A;
 			finderArgs = new Object[] {
-				appBuilderAppId, workflowTaskName, start, end, orderByComparator
+				appBuilderAppId, appBuilderAppVersionId, start, end,
+				orderByComparator
 			};
 		}
 
@@ -713,7 +726,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<AppBuilderWorkflowTaskLink>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink :
@@ -721,8 +734,9 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 					if ((appBuilderAppId !=
 							appBuilderWorkflowTaskLink.getAppBuilderAppId()) ||
-						!workflowTaskName.equals(
-							appBuilderWorkflowTaskLink.getWorkflowTaskName())) {
+						(appBuilderAppVersionId !=
+							appBuilderWorkflowTaskLink.
+								getAppBuilderAppVersionId())) {
 
 						list = null;
 
@@ -745,17 +759,593 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 			sb.append(_SQL_SELECT_APPBUILDERWORKFLOWTASKLINK_WHERE);
 
-			sb.append(_FINDER_COLUMN_A_W_APPBUILDERAPPID_2);
+			sb.append(_FINDER_COLUMN_A_A_APPBUILDERAPPID_2);
+
+			sb.append(_FINDER_COLUMN_A_A_APPBUILDERAPPVERSIONID_2);
+
+			if (orderByComparator != null) {
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
+			}
+			else {
+				sb.append(AppBuilderWorkflowTaskLinkModelImpl.ORDER_BY_JPQL);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(appBuilderAppId);
+
+				queryPos.add(appBuilderAppVersionId);
+
+				list = (List<AppBuilderWorkflowTaskLink>)QueryUtil.list(
+					query, getDialect(), start, end);
+
+				cacheResult(list);
+
+				if (useFinderCache) {
+					finderCache.putResult(finderPath, finderArgs, list);
+				}
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return list;
+	}
+
+	/**
+	 * Returns the first app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching app builder workflow task link
+	 * @throws NoSuchTaskLinkException if a matching app builder workflow task link could not be found
+	 */
+	@Override
+	public AppBuilderWorkflowTaskLink findByA_A_First(
+			long appBuilderAppId, long appBuilderAppVersionId,
+			OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator)
+		throws NoSuchTaskLinkException {
+
+		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink =
+			fetchByA_A_First(
+				appBuilderAppId, appBuilderAppVersionId, orderByComparator);
+
+		if (appBuilderWorkflowTaskLink != null) {
+			return appBuilderWorkflowTaskLink;
+		}
+
+		StringBundler sb = new StringBundler(6);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("appBuilderAppId=");
+		sb.append(appBuilderAppId);
+
+		sb.append(", appBuilderAppVersionId=");
+		sb.append(appBuilderAppVersionId);
+
+		sb.append("}");
+
+		throw new NoSuchTaskLinkException(sb.toString());
+	}
+
+	/**
+	 * Returns the first app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching app builder workflow task link, or <code>null</code> if a matching app builder workflow task link could not be found
+	 */
+	@Override
+	public AppBuilderWorkflowTaskLink fetchByA_A_First(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator) {
+
+		List<AppBuilderWorkflowTaskLink> list = findByA_A(
+			appBuilderAppId, appBuilderAppVersionId, 0, 1, orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the last app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching app builder workflow task link
+	 * @throws NoSuchTaskLinkException if a matching app builder workflow task link could not be found
+	 */
+	@Override
+	public AppBuilderWorkflowTaskLink findByA_A_Last(
+			long appBuilderAppId, long appBuilderAppVersionId,
+			OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator)
+		throws NoSuchTaskLinkException {
+
+		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink = fetchByA_A_Last(
+			appBuilderAppId, appBuilderAppVersionId, orderByComparator);
+
+		if (appBuilderWorkflowTaskLink != null) {
+			return appBuilderWorkflowTaskLink;
+		}
+
+		StringBundler sb = new StringBundler(6);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("appBuilderAppId=");
+		sb.append(appBuilderAppId);
+
+		sb.append(", appBuilderAppVersionId=");
+		sb.append(appBuilderAppVersionId);
+
+		sb.append("}");
+
+		throw new NoSuchTaskLinkException(sb.toString());
+	}
+
+	/**
+	 * Returns the last app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching app builder workflow task link, or <code>null</code> if a matching app builder workflow task link could not be found
+	 */
+	@Override
+	public AppBuilderWorkflowTaskLink fetchByA_A_Last(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator) {
+
+		int count = countByA_A(appBuilderAppId, appBuilderAppVersionId);
+
+		if (count == 0) {
+			return null;
+		}
+
+		List<AppBuilderWorkflowTaskLink> list = findByA_A(
+			appBuilderAppId, appBuilderAppVersionId, count - 1, count,
+			orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the app builder workflow task links before and after the current app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
+	 *
+	 * @param appBuilderWorkflowTaskLinkId the primary key of the current app builder workflow task link
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next app builder workflow task link
+	 * @throws NoSuchTaskLinkException if a app builder workflow task link with the primary key could not be found
+	 */
+	@Override
+	public AppBuilderWorkflowTaskLink[] findByA_A_PrevAndNext(
+			long appBuilderWorkflowTaskLinkId, long appBuilderAppId,
+			long appBuilderAppVersionId,
+			OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator)
+		throws NoSuchTaskLinkException {
+
+		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink =
+			findByPrimaryKey(appBuilderWorkflowTaskLinkId);
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			AppBuilderWorkflowTaskLink[] array =
+				new AppBuilderWorkflowTaskLinkImpl[3];
+
+			array[0] = getByA_A_PrevAndNext(
+				session, appBuilderWorkflowTaskLink, appBuilderAppId,
+				appBuilderAppVersionId, orderByComparator, true);
+
+			array[1] = appBuilderWorkflowTaskLink;
+
+			array[2] = getByA_A_PrevAndNext(
+				session, appBuilderWorkflowTaskLink, appBuilderAppId,
+				appBuilderAppVersionId, orderByComparator, false);
+
+			return array;
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+
+	protected AppBuilderWorkflowTaskLink getByA_A_PrevAndNext(
+		Session session, AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink,
+		long appBuilderAppId, long appBuilderAppVersionId,
+		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator,
+		boolean previous) {
+
+		StringBundler sb = null;
+
+		if (orderByComparator != null) {
+			sb = new StringBundler(
+				5 + (orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
+		}
+		else {
+			sb = new StringBundler(4);
+		}
+
+		sb.append(_SQL_SELECT_APPBUILDERWORKFLOWTASKLINK_WHERE);
+
+		sb.append(_FINDER_COLUMN_A_A_APPBUILDERAPPID_2);
+
+		sb.append(_FINDER_COLUMN_A_A_APPBUILDERAPPVERSIONID_2);
+
+		if (orderByComparator != null) {
+			String[] orderByConditionFields =
+				orderByComparator.getOrderByConditionFields();
+
+			if (orderByConditionFields.length > 0) {
+				sb.append(WHERE_AND);
+			}
+
+			for (int i = 0; i < orderByConditionFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByConditionFields[i]);
+
+				if ((i + 1) < orderByConditionFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN_HAS_NEXT);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN);
+					}
+				}
+			}
+
+			sb.append(ORDER_BY_CLAUSE);
+
+			String[] orderByFields = orderByComparator.getOrderByFields();
+
+			for (int i = 0; i < orderByFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByFields[i]);
+
+				if ((i + 1) < orderByFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC_HAS_NEXT);
+					}
+					else {
+						sb.append(ORDER_BY_DESC_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC);
+					}
+					else {
+						sb.append(ORDER_BY_DESC);
+					}
+				}
+			}
+		}
+		else {
+			sb.append(AppBuilderWorkflowTaskLinkModelImpl.ORDER_BY_JPQL);
+		}
+
+		String sql = sb.toString();
+
+		Query query = session.createQuery(sql);
+
+		query.setFirstResult(0);
+		query.setMaxResults(2);
+
+		QueryPos queryPos = QueryPos.getInstance(query);
+
+		queryPos.add(appBuilderAppId);
+
+		queryPos.add(appBuilderAppVersionId);
+
+		if (orderByComparator != null) {
+			for (Object orderByConditionValue :
+					orderByComparator.getOrderByConditionValues(
+						appBuilderWorkflowTaskLink)) {
+
+				queryPos.add(orderByConditionValue);
+			}
+		}
+
+		List<AppBuilderWorkflowTaskLink> list = query.list();
+
+		if (list.size() == 2) {
+			return list.get(1);
+		}
+		else {
+			return null;
+		}
+	}
+
+	/**
+	 * Removes all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; from the database.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 */
+	@Override
+	public void removeByA_A(long appBuilderAppId, long appBuilderAppVersionId) {
+		for (AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink :
+				findByA_A(
+					appBuilderAppId, appBuilderAppVersionId, QueryUtil.ALL_POS,
+					QueryUtil.ALL_POS, null)) {
+
+			remove(appBuilderWorkflowTaskLink);
+		}
+	}
+
+	/**
+	 * Returns the number of app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @return the number of matching app builder workflow task links
+	 */
+	@Override
+	public int countByA_A(long appBuilderAppId, long appBuilderAppVersionId) {
+		FinderPath finderPath = _finderPathCountByA_A;
+
+		Object[] finderArgs = new Object[] {
+			appBuilderAppId, appBuilderAppVersionId
+		};
+
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+
+		if (count == null) {
+			StringBundler sb = new StringBundler(3);
+
+			sb.append(_SQL_COUNT_APPBUILDERWORKFLOWTASKLINK_WHERE);
+
+			sb.append(_FINDER_COLUMN_A_A_APPBUILDERAPPID_2);
+
+			sb.append(_FINDER_COLUMN_A_A_APPBUILDERAPPVERSIONID_2);
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(appBuilderAppId);
+
+				queryPos.add(appBuilderAppVersionId);
+
+				count = (Long)query.uniqueResult();
+
+				finderCache.putResult(finderPath, finderArgs, count);
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return count.intValue();
+	}
+
+	private static final String _FINDER_COLUMN_A_A_APPBUILDERAPPID_2 =
+		"appBuilderWorkflowTaskLink.appBuilderAppId = ? AND ";
+
+	private static final String _FINDER_COLUMN_A_A_APPBUILDERAPPVERSIONID_2 =
+		"appBuilderWorkflowTaskLink.appBuilderAppVersionId = ?";
+
+	private FinderPath _finderPathWithPaginationFindByA_A_W;
+	private FinderPath _finderPathWithoutPaginationFindByA_A_W;
+	private FinderPath _finderPathCountByA_A_W;
+
+	/**
+	 * Returns all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param workflowTaskName the workflow task name
+	 * @return the matching app builder workflow task links
+	 */
+	@Override
+	public List<AppBuilderWorkflowTaskLink> findByA_A_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName) {
+
+		return findByA_A_W(
+			appBuilderAppId, appBuilderAppVersionId, workflowTaskName,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+	}
+
+	/**
+	 * Returns a range of all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>AppBuilderWorkflowTaskLinkModelImpl</code>.
+	 * </p>
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param workflowTaskName the workflow task name
+	 * @param start the lower bound of the range of app builder workflow task links
+	 * @param end the upper bound of the range of app builder workflow task links (not inclusive)
+	 * @return the range of matching app builder workflow task links
+	 */
+	@Override
+	public List<AppBuilderWorkflowTaskLink> findByA_A_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName, int start, int end) {
+
+		return findByA_A_W(
+			appBuilderAppId, appBuilderAppVersionId, workflowTaskName, start,
+			end, null);
+	}
+
+	/**
+	 * Returns an ordered range of all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>AppBuilderWorkflowTaskLinkModelImpl</code>.
+	 * </p>
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param workflowTaskName the workflow task name
+	 * @param start the lower bound of the range of app builder workflow task links
+	 * @param end the upper bound of the range of app builder workflow task links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching app builder workflow task links
+	 */
+	@Override
+	public List<AppBuilderWorkflowTaskLink> findByA_A_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName, int start, int end,
+		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator) {
+
+		return findByA_A_W(
+			appBuilderAppId, appBuilderAppVersionId, workflowTaskName, start,
+			end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>AppBuilderWorkflowTaskLinkModelImpl</code>.
+	 * </p>
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param workflowTaskName the workflow task name
+	 * @param start the lower bound of the range of app builder workflow task links
+	 * @param end the upper bound of the range of app builder workflow task links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching app builder workflow task links
+	 */
+	@Override
+	public List<AppBuilderWorkflowTaskLink> findByA_A_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName, int start, int end,
+		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator,
+		boolean useFinderCache) {
+
+		workflowTaskName = Objects.toString(workflowTaskName, "");
+
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindByA_A_W;
+				finderArgs = new Object[] {
+					appBuilderAppId, appBuilderAppVersionId, workflowTaskName
+				};
+			}
+		}
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindByA_A_W;
+			finderArgs = new Object[] {
+				appBuilderAppId, appBuilderAppVersionId, workflowTaskName,
+				start, end, orderByComparator
+			};
+		}
+
+		List<AppBuilderWorkflowTaskLink> list = null;
+
+		if (useFinderCache) {
+			list = (List<AppBuilderWorkflowTaskLink>)finderCache.getResult(
+				finderPath, finderArgs);
+
+			if ((list != null) && !list.isEmpty()) {
+				for (AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink :
+						list) {
+
+					if ((appBuilderAppId !=
+							appBuilderWorkflowTaskLink.getAppBuilderAppId()) ||
+						(appBuilderAppVersionId !=
+							appBuilderWorkflowTaskLink.
+								getAppBuilderAppVersionId()) ||
+						!workflowTaskName.equals(
+							appBuilderWorkflowTaskLink.getWorkflowTaskName())) {
+
+						list = null;
+
+						break;
+					}
+				}
+			}
+		}
+
+		if (list == null) {
+			StringBundler sb = null;
+
+			if (orderByComparator != null) {
+				sb = new StringBundler(
+					5 + (orderByComparator.getOrderByFields().length * 2));
+			}
+			else {
+				sb = new StringBundler(5);
+			}
+
+			sb.append(_SQL_SELECT_APPBUILDERWORKFLOWTASKLINK_WHERE);
+
+			sb.append(_FINDER_COLUMN_A_A_W_APPBUILDERAPPID_2);
+
+			sb.append(_FINDER_COLUMN_A_A_W_APPBUILDERAPPVERSIONID_2);
 
 			boolean bindWorkflowTaskName = false;
 
 			if (workflowTaskName.isEmpty()) {
-				sb.append(_FINDER_COLUMN_A_W_WORKFLOWTASKNAME_3);
+				sb.append(_FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_3);
 			}
 			else {
 				bindWorkflowTaskName = true;
 
-				sb.append(_FINDER_COLUMN_A_W_WORKFLOWTASKNAME_2);
+				sb.append(_FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_2);
 			}
 
 			if (orderByComparator != null) {
@@ -778,6 +1368,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 				QueryPos queryPos = QueryPos.getInstance(query);
 
 				queryPos.add(appBuilderAppId);
+
+				queryPos.add(appBuilderAppVersionId);
 
 				if (bindWorkflowTaskName) {
 					queryPos.add(workflowTaskName);
@@ -804,34 +1396,40 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	}
 
 	/**
-	 * Returns the first app builder workflow task link in the ordered set where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns the first app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param workflowTaskName the workflow task name
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching app builder workflow task link
 	 * @throws NoSuchTaskLinkException if a matching app builder workflow task link could not be found
 	 */
 	@Override
-	public AppBuilderWorkflowTaskLink findByA_W_First(
-			long appBuilderAppId, String workflowTaskName,
+	public AppBuilderWorkflowTaskLink findByA_A_W_First(
+			long appBuilderAppId, long appBuilderAppVersionId,
+			String workflowTaskName,
 			OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator)
 		throws NoSuchTaskLinkException {
 
 		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink =
-			fetchByA_W_First(
-				appBuilderAppId, workflowTaskName, orderByComparator);
+			fetchByA_A_W_First(
+				appBuilderAppId, appBuilderAppVersionId, workflowTaskName,
+				orderByComparator);
 
 		if (appBuilderWorkflowTaskLink != null) {
 			return appBuilderWorkflowTaskLink;
 		}
 
-		StringBundler sb = new StringBundler(6);
+		StringBundler sb = new StringBundler(8);
 
 		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
 		sb.append("appBuilderAppId=");
 		sb.append(appBuilderAppId);
+
+		sb.append(", appBuilderAppVersionId=");
+		sb.append(appBuilderAppVersionId);
 
 		sb.append(", workflowTaskName=");
 		sb.append(workflowTaskName);
@@ -842,86 +1440,22 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	}
 
 	/**
-	 * Returns the first app builder workflow task link in the ordered set where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns the first app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param workflowTaskName the workflow task name
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching app builder workflow task link, or <code>null</code> if a matching app builder workflow task link could not be found
 	 */
 	@Override
-	public AppBuilderWorkflowTaskLink fetchByA_W_First(
-		long appBuilderAppId, String workflowTaskName,
+	public AppBuilderWorkflowTaskLink fetchByA_A_W_First(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName,
 		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator) {
 
-		List<AppBuilderWorkflowTaskLink> list = findByA_W(
-			appBuilderAppId, workflowTaskName, 0, 1, orderByComparator);
-
-		if (!list.isEmpty()) {
-			return list.get(0);
-		}
-
-		return null;
-	}
-
-	/**
-	 * Returns the last app builder workflow task link in the ordered set where appBuilderAppId = &#63; and workflowTaskName = &#63;.
-	 *
-	 * @param appBuilderAppId the app builder app ID
-	 * @param workflowTaskName the workflow task name
-	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
-	 * @return the last matching app builder workflow task link
-	 * @throws NoSuchTaskLinkException if a matching app builder workflow task link could not be found
-	 */
-	@Override
-	public AppBuilderWorkflowTaskLink findByA_W_Last(
-			long appBuilderAppId, String workflowTaskName,
-			OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator)
-		throws NoSuchTaskLinkException {
-
-		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink = fetchByA_W_Last(
-			appBuilderAppId, workflowTaskName, orderByComparator);
-
-		if (appBuilderWorkflowTaskLink != null) {
-			return appBuilderWorkflowTaskLink;
-		}
-
-		StringBundler sb = new StringBundler(6);
-
-		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
-
-		sb.append("appBuilderAppId=");
-		sb.append(appBuilderAppId);
-
-		sb.append(", workflowTaskName=");
-		sb.append(workflowTaskName);
-
-		sb.append("}");
-
-		throw new NoSuchTaskLinkException(sb.toString());
-	}
-
-	/**
-	 * Returns the last app builder workflow task link in the ordered set where appBuilderAppId = &#63; and workflowTaskName = &#63;.
-	 *
-	 * @param appBuilderAppId the app builder app ID
-	 * @param workflowTaskName the workflow task name
-	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
-	 * @return the last matching app builder workflow task link, or <code>null</code> if a matching app builder workflow task link could not be found
-	 */
-	@Override
-	public AppBuilderWorkflowTaskLink fetchByA_W_Last(
-		long appBuilderAppId, String workflowTaskName,
-		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator) {
-
-		int count = countByA_W(appBuilderAppId, workflowTaskName);
-
-		if (count == 0) {
-			return null;
-		}
-
-		List<AppBuilderWorkflowTaskLink> list = findByA_W(
-			appBuilderAppId, workflowTaskName, count - 1, count,
+		List<AppBuilderWorkflowTaskLink> list = findByA_A_W(
+			appBuilderAppId, appBuilderAppVersionId, workflowTaskName, 0, 1,
 			orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -932,19 +1466,97 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	}
 
 	/**
-	 * Returns the app builder workflow task links before and after the current app builder workflow task link in the ordered set where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns the last app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param workflowTaskName the workflow task name
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching app builder workflow task link
+	 * @throws NoSuchTaskLinkException if a matching app builder workflow task link could not be found
+	 */
+	@Override
+	public AppBuilderWorkflowTaskLink findByA_A_W_Last(
+			long appBuilderAppId, long appBuilderAppVersionId,
+			String workflowTaskName,
+			OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator)
+		throws NoSuchTaskLinkException {
+
+		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink =
+			fetchByA_A_W_Last(
+				appBuilderAppId, appBuilderAppVersionId, workflowTaskName,
+				orderByComparator);
+
+		if (appBuilderWorkflowTaskLink != null) {
+			return appBuilderWorkflowTaskLink;
+		}
+
+		StringBundler sb = new StringBundler(8);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("appBuilderAppId=");
+		sb.append(appBuilderAppId);
+
+		sb.append(", appBuilderAppVersionId=");
+		sb.append(appBuilderAppVersionId);
+
+		sb.append(", workflowTaskName=");
+		sb.append(workflowTaskName);
+
+		sb.append("}");
+
+		throw new NoSuchTaskLinkException(sb.toString());
+	}
+
+	/**
+	 * Returns the last app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
+	 *
+	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
+	 * @param workflowTaskName the workflow task name
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching app builder workflow task link, or <code>null</code> if a matching app builder workflow task link could not be found
+	 */
+	@Override
+	public AppBuilderWorkflowTaskLink fetchByA_A_W_Last(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName,
+		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator) {
+
+		int count = countByA_A_W(
+			appBuilderAppId, appBuilderAppVersionId, workflowTaskName);
+
+		if (count == 0) {
+			return null;
+		}
+
+		List<AppBuilderWorkflowTaskLink> list = findByA_A_W(
+			appBuilderAppId, appBuilderAppVersionId, workflowTaskName,
+			count - 1, count, orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the app builder workflow task links before and after the current app builder workflow task link in the ordered set where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
 	 *
 	 * @param appBuilderWorkflowTaskLinkId the primary key of the current app builder workflow task link
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param workflowTaskName the workflow task name
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next app builder workflow task link
 	 * @throws NoSuchTaskLinkException if a app builder workflow task link with the primary key could not be found
 	 */
 	@Override
-	public AppBuilderWorkflowTaskLink[] findByA_W_PrevAndNext(
+	public AppBuilderWorkflowTaskLink[] findByA_A_W_PrevAndNext(
 			long appBuilderWorkflowTaskLinkId, long appBuilderAppId,
-			String workflowTaskName,
+			long appBuilderAppVersionId, String workflowTaskName,
 			OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator)
 		throws NoSuchTaskLinkException {
 
@@ -961,15 +1573,17 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 			AppBuilderWorkflowTaskLink[] array =
 				new AppBuilderWorkflowTaskLinkImpl[3];
 
-			array[0] = getByA_W_PrevAndNext(
+			array[0] = getByA_A_W_PrevAndNext(
 				session, appBuilderWorkflowTaskLink, appBuilderAppId,
-				workflowTaskName, orderByComparator, true);
+				appBuilderAppVersionId, workflowTaskName, orderByComparator,
+				true);
 
 			array[1] = appBuilderWorkflowTaskLink;
 
-			array[2] = getByA_W_PrevAndNext(
+			array[2] = getByA_A_W_PrevAndNext(
 				session, appBuilderWorkflowTaskLink, appBuilderAppId,
-				workflowTaskName, orderByComparator, false);
+				appBuilderAppVersionId, workflowTaskName, orderByComparator,
+				false);
 
 			return array;
 		}
@@ -981,9 +1595,10 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 		}
 	}
 
-	protected AppBuilderWorkflowTaskLink getByA_W_PrevAndNext(
+	protected AppBuilderWorkflowTaskLink getByA_A_W_PrevAndNext(
 		Session session, AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink,
-		long appBuilderAppId, String workflowTaskName,
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName,
 		OrderByComparator<AppBuilderWorkflowTaskLink> orderByComparator,
 		boolean previous) {
 
@@ -991,26 +1606,28 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		if (orderByComparator != null) {
 			sb = new StringBundler(
-				5 + (orderByComparator.getOrderByConditionFields().length * 3) +
+				6 + (orderByComparator.getOrderByConditionFields().length * 3) +
 					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			sb = new StringBundler(4);
+			sb = new StringBundler(5);
 		}
 
 		sb.append(_SQL_SELECT_APPBUILDERWORKFLOWTASKLINK_WHERE);
 
-		sb.append(_FINDER_COLUMN_A_W_APPBUILDERAPPID_2);
+		sb.append(_FINDER_COLUMN_A_A_W_APPBUILDERAPPID_2);
+
+		sb.append(_FINDER_COLUMN_A_A_W_APPBUILDERAPPVERSIONID_2);
 
 		boolean bindWorkflowTaskName = false;
 
 		if (workflowTaskName.isEmpty()) {
-			sb.append(_FINDER_COLUMN_A_W_WORKFLOWTASKNAME_3);
+			sb.append(_FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_3);
 		}
 		else {
 			bindWorkflowTaskName = true;
 
-			sb.append(_FINDER_COLUMN_A_W_WORKFLOWTASKNAME_2);
+			sb.append(_FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_2);
 		}
 
 		if (orderByComparator != null) {
@@ -1084,6 +1701,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		queryPos.add(appBuilderAppId);
 
+		queryPos.add(appBuilderAppVersionId);
+
 		if (bindWorkflowTaskName) {
 			queryPos.add(workflowTaskName);
 		}
@@ -1108,55 +1727,67 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	}
 
 	/**
-	 * Removes all the app builder workflow task links where appBuilderAppId = &#63; and workflowTaskName = &#63; from the database.
+	 * Removes all the app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63; from the database.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param workflowTaskName the workflow task name
 	 */
 	@Override
-	public void removeByA_W(long appBuilderAppId, String workflowTaskName) {
+	public void removeByA_A_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName) {
+
 		for (AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink :
-				findByA_W(
-					appBuilderAppId, workflowTaskName, QueryUtil.ALL_POS,
-					QueryUtil.ALL_POS, null)) {
+				findByA_A_W(
+					appBuilderAppId, appBuilderAppVersionId, workflowTaskName,
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
 
 			remove(appBuilderWorkflowTaskLink);
 		}
 	}
 
 	/**
-	 * Returns the number of app builder workflow task links where appBuilderAppId = &#63; and workflowTaskName = &#63;.
+	 * Returns the number of app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and workflowTaskName = &#63;.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param workflowTaskName the workflow task name
 	 * @return the number of matching app builder workflow task links
 	 */
 	@Override
-	public int countByA_W(long appBuilderAppId, String workflowTaskName) {
+	public int countByA_A_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName) {
+
 		workflowTaskName = Objects.toString(workflowTaskName, "");
 
-		FinderPath finderPath = _finderPathCountByA_W;
+		FinderPath finderPath = _finderPathCountByA_A_W;
 
-		Object[] finderArgs = new Object[] {appBuilderAppId, workflowTaskName};
+		Object[] finderArgs = new Object[] {
+			appBuilderAppId, appBuilderAppVersionId, workflowTaskName
+		};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
-			StringBundler sb = new StringBundler(3);
+			StringBundler sb = new StringBundler(4);
 
 			sb.append(_SQL_COUNT_APPBUILDERWORKFLOWTASKLINK_WHERE);
 
-			sb.append(_FINDER_COLUMN_A_W_APPBUILDERAPPID_2);
+			sb.append(_FINDER_COLUMN_A_A_W_APPBUILDERAPPID_2);
+
+			sb.append(_FINDER_COLUMN_A_A_W_APPBUILDERAPPVERSIONID_2);
 
 			boolean bindWorkflowTaskName = false;
 
 			if (workflowTaskName.isEmpty()) {
-				sb.append(_FINDER_COLUMN_A_W_WORKFLOWTASKNAME_3);
+				sb.append(_FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_3);
 			}
 			else {
 				bindWorkflowTaskName = true;
 
-				sb.append(_FINDER_COLUMN_A_W_WORKFLOWTASKNAME_2);
+				sb.append(_FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_2);
 			}
 
 			String sql = sb.toString();
@@ -1171,6 +1802,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 				QueryPos queryPos = QueryPos.getInstance(query);
 
 				queryPos.add(appBuilderAppId);
+
+				queryPos.add(appBuilderAppVersionId);
 
 				if (bindWorkflowTaskName) {
 					queryPos.add(workflowTaskName);
@@ -1191,43 +1824,51 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_A_W_APPBUILDERAPPID_2 =
+	private static final String _FINDER_COLUMN_A_A_W_APPBUILDERAPPID_2 =
 		"appBuilderWorkflowTaskLink.appBuilderAppId = ? AND ";
 
-	private static final String _FINDER_COLUMN_A_W_WORKFLOWTASKNAME_2 =
+	private static final String _FINDER_COLUMN_A_A_W_APPBUILDERAPPVERSIONID_2 =
+		"appBuilderWorkflowTaskLink.appBuilderAppVersionId = ? AND ";
+
+	private static final String _FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_2 =
 		"appBuilderWorkflowTaskLink.workflowTaskName = ?";
 
-	private static final String _FINDER_COLUMN_A_W_WORKFLOWTASKNAME_3 =
+	private static final String _FINDER_COLUMN_A_A_W_WORKFLOWTASKNAME_3 =
 		"(appBuilderWorkflowTaskLink.workflowTaskName IS NULL OR appBuilderWorkflowTaskLink.workflowTaskName = '')";
 
-	private FinderPath _finderPathFetchByA_D_W;
-	private FinderPath _finderPathCountByA_D_W;
+	private FinderPath _finderPathFetchByA_A_D_W;
+	private FinderPath _finderPathCountByA_A_D_W;
 
 	/**
-	 * Returns the app builder workflow task link where appBuilderAppId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; or throws a <code>NoSuchTaskLinkException</code> if it could not be found.
+	 * Returns the app builder workflow task link where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; or throws a <code>NoSuchTaskLinkException</code> if it could not be found.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param ddmStructureLayoutId the ddm structure layout ID
 	 * @param workflowTaskName the workflow task name
 	 * @return the matching app builder workflow task link
 	 * @throws NoSuchTaskLinkException if a matching app builder workflow task link could not be found
 	 */
 	@Override
-	public AppBuilderWorkflowTaskLink findByA_D_W(
-			long appBuilderAppId, long ddmStructureLayoutId,
-			String workflowTaskName)
+	public AppBuilderWorkflowTaskLink findByA_A_D_W(
+			long appBuilderAppId, long appBuilderAppVersionId,
+			long ddmStructureLayoutId, String workflowTaskName)
 		throws NoSuchTaskLinkException {
 
-		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink = fetchByA_D_W(
-			appBuilderAppId, ddmStructureLayoutId, workflowTaskName);
+		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink = fetchByA_A_D_W(
+			appBuilderAppId, appBuilderAppVersionId, ddmStructureLayoutId,
+			workflowTaskName);
 
 		if (appBuilderWorkflowTaskLink == null) {
-			StringBundler sb = new StringBundler(8);
+			StringBundler sb = new StringBundler(10);
 
 			sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
 			sb.append("appBuilderAppId=");
 			sb.append(appBuilderAppId);
+
+			sb.append(", appBuilderAppVersionId=");
+			sb.append(appBuilderAppVersionId);
 
 			sb.append(", ddmStructureLayoutId=");
 			sb.append(ddmStructureLayoutId);
@@ -1248,35 +1889,39 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	}
 
 	/**
-	 * Returns the app builder workflow task link where appBuilderAppId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 * Returns the app builder workflow task link where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param ddmStructureLayoutId the ddm structure layout ID
 	 * @param workflowTaskName the workflow task name
 	 * @return the matching app builder workflow task link, or <code>null</code> if a matching app builder workflow task link could not be found
 	 */
 	@Override
-	public AppBuilderWorkflowTaskLink fetchByA_D_W(
-		long appBuilderAppId, long ddmStructureLayoutId,
-		String workflowTaskName) {
+	public AppBuilderWorkflowTaskLink fetchByA_A_D_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		long ddmStructureLayoutId, String workflowTaskName) {
 
-		return fetchByA_D_W(
-			appBuilderAppId, ddmStructureLayoutId, workflowTaskName, true);
+		return fetchByA_A_D_W(
+			appBuilderAppId, appBuilderAppVersionId, ddmStructureLayoutId,
+			workflowTaskName, true);
 	}
 
 	/**
-	 * Returns the app builder workflow task link where appBuilderAppId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 * Returns the app builder workflow task link where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param ddmStructureLayoutId the ddm structure layout ID
 	 * @param workflowTaskName the workflow task name
 	 * @param useFinderCache whether to use the finder cache
 	 * @return the matching app builder workflow task link, or <code>null</code> if a matching app builder workflow task link could not be found
 	 */
 	@Override
-	public AppBuilderWorkflowTaskLink fetchByA_D_W(
-		long appBuilderAppId, long ddmStructureLayoutId,
-		String workflowTaskName, boolean useFinderCache) {
+	public AppBuilderWorkflowTaskLink fetchByA_A_D_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		long ddmStructureLayoutId, String workflowTaskName,
+		boolean useFinderCache) {
 
 		workflowTaskName = Objects.toString(workflowTaskName, "");
 
@@ -1284,7 +1929,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		if (useFinderCache) {
 			finderArgs = new Object[] {
-				appBuilderAppId, ddmStructureLayoutId, workflowTaskName
+				appBuilderAppId, appBuilderAppVersionId, ddmStructureLayoutId,
+				workflowTaskName
 			};
 		}
 
@@ -1292,7 +1938,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		if (useFinderCache) {
 			result = finderCache.getResult(
-				_finderPathFetchByA_D_W, finderArgs, this);
+				_finderPathFetchByA_A_D_W, finderArgs);
 		}
 
 		if (result instanceof AppBuilderWorkflowTaskLink) {
@@ -1301,6 +1947,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 			if ((appBuilderAppId !=
 					appBuilderWorkflowTaskLink.getAppBuilderAppId()) ||
+				(appBuilderAppVersionId !=
+					appBuilderWorkflowTaskLink.getAppBuilderAppVersionId()) ||
 				(ddmStructureLayoutId !=
 					appBuilderWorkflowTaskLink.getDdmStructureLayoutId()) ||
 				!Objects.equals(
@@ -1312,23 +1960,25 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 		}
 
 		if (result == null) {
-			StringBundler sb = new StringBundler(5);
+			StringBundler sb = new StringBundler(6);
 
 			sb.append(_SQL_SELECT_APPBUILDERWORKFLOWTASKLINK_WHERE);
 
-			sb.append(_FINDER_COLUMN_A_D_W_APPBUILDERAPPID_2);
+			sb.append(_FINDER_COLUMN_A_A_D_W_APPBUILDERAPPID_2);
 
-			sb.append(_FINDER_COLUMN_A_D_W_DDMSTRUCTURELAYOUTID_2);
+			sb.append(_FINDER_COLUMN_A_A_D_W_APPBUILDERAPPVERSIONID_2);
+
+			sb.append(_FINDER_COLUMN_A_A_D_W_DDMSTRUCTURELAYOUTID_2);
 
 			boolean bindWorkflowTaskName = false;
 
 			if (workflowTaskName.isEmpty()) {
-				sb.append(_FINDER_COLUMN_A_D_W_WORKFLOWTASKNAME_3);
+				sb.append(_FINDER_COLUMN_A_A_D_W_WORKFLOWTASKNAME_3);
 			}
 			else {
 				bindWorkflowTaskName = true;
 
-				sb.append(_FINDER_COLUMN_A_D_W_WORKFLOWTASKNAME_2);
+				sb.append(_FINDER_COLUMN_A_A_D_W_WORKFLOWTASKNAME_2);
 			}
 
 			String sql = sb.toString();
@@ -1344,6 +1994,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 				queryPos.add(appBuilderAppId);
 
+				queryPos.add(appBuilderAppVersionId);
+
 				queryPos.add(ddmStructureLayoutId);
 
 				if (bindWorkflowTaskName) {
@@ -1355,7 +2007,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 				if (list.isEmpty()) {
 					if (useFinderCache) {
 						finderCache.putResult(
-							_finderPathFetchByA_D_W, finderArgs, list);
+							_finderPathFetchByA_A_D_W, finderArgs, list);
 					}
 				}
 				else {
@@ -1365,13 +2017,13 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 						if (_log.isWarnEnabled()) {
 							if (!useFinderCache) {
 								finderArgs = new Object[] {
-									appBuilderAppId, ddmStructureLayoutId,
-									workflowTaskName
+									appBuilderAppId, appBuilderAppVersionId,
+									ddmStructureLayoutId, workflowTaskName
 								};
 							}
 
 							_log.warn(
-								"AppBuilderWorkflowTaskLinkPersistenceImpl.fetchByA_D_W(long, long, String, boolean) with parameters (" +
+								"AppBuilderWorkflowTaskLinkPersistenceImpl.fetchByA_A_D_W(long, long, long, String, boolean) with parameters (" +
 									StringUtil.merge(finderArgs) +
 										") yields a result set with more than 1 result. This violates the logical unique restriction. There is no order guarantee on which result is returned by this finder.");
 						}
@@ -1402,66 +2054,72 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	}
 
 	/**
-	 * Removes the app builder workflow task link where appBuilderAppId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; from the database.
+	 * Removes the app builder workflow task link where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63; from the database.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param ddmStructureLayoutId the ddm structure layout ID
 	 * @param workflowTaskName the workflow task name
 	 * @return the app builder workflow task link that was removed
 	 */
 	@Override
-	public AppBuilderWorkflowTaskLink removeByA_D_W(
-			long appBuilderAppId, long ddmStructureLayoutId,
-			String workflowTaskName)
+	public AppBuilderWorkflowTaskLink removeByA_A_D_W(
+			long appBuilderAppId, long appBuilderAppVersionId,
+			long ddmStructureLayoutId, String workflowTaskName)
 		throws NoSuchTaskLinkException {
 
-		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink = findByA_D_W(
-			appBuilderAppId, ddmStructureLayoutId, workflowTaskName);
+		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink = findByA_A_D_W(
+			appBuilderAppId, appBuilderAppVersionId, ddmStructureLayoutId,
+			workflowTaskName);
 
 		return remove(appBuilderWorkflowTaskLink);
 	}
 
 	/**
-	 * Returns the number of app builder workflow task links where appBuilderAppId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63;.
+	 * Returns the number of app builder workflow task links where appBuilderAppId = &#63; and appBuilderAppVersionId = &#63; and ddmStructureLayoutId = &#63; and workflowTaskName = &#63;.
 	 *
 	 * @param appBuilderAppId the app builder app ID
+	 * @param appBuilderAppVersionId the app builder app version ID
 	 * @param ddmStructureLayoutId the ddm structure layout ID
 	 * @param workflowTaskName the workflow task name
 	 * @return the number of matching app builder workflow task links
 	 */
 	@Override
-	public int countByA_D_W(
-		long appBuilderAppId, long ddmStructureLayoutId,
-		String workflowTaskName) {
+	public int countByA_A_D_W(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		long ddmStructureLayoutId, String workflowTaskName) {
 
 		workflowTaskName = Objects.toString(workflowTaskName, "");
 
-		FinderPath finderPath = _finderPathCountByA_D_W;
+		FinderPath finderPath = _finderPathCountByA_A_D_W;
 
 		Object[] finderArgs = new Object[] {
-			appBuilderAppId, ddmStructureLayoutId, workflowTaskName
+			appBuilderAppId, appBuilderAppVersionId, ddmStructureLayoutId,
+			workflowTaskName
 		};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
-			StringBundler sb = new StringBundler(4);
+			StringBundler sb = new StringBundler(5);
 
 			sb.append(_SQL_COUNT_APPBUILDERWORKFLOWTASKLINK_WHERE);
 
-			sb.append(_FINDER_COLUMN_A_D_W_APPBUILDERAPPID_2);
+			sb.append(_FINDER_COLUMN_A_A_D_W_APPBUILDERAPPID_2);
 
-			sb.append(_FINDER_COLUMN_A_D_W_DDMSTRUCTURELAYOUTID_2);
+			sb.append(_FINDER_COLUMN_A_A_D_W_APPBUILDERAPPVERSIONID_2);
+
+			sb.append(_FINDER_COLUMN_A_A_D_W_DDMSTRUCTURELAYOUTID_2);
 
 			boolean bindWorkflowTaskName = false;
 
 			if (workflowTaskName.isEmpty()) {
-				sb.append(_FINDER_COLUMN_A_D_W_WORKFLOWTASKNAME_3);
+				sb.append(_FINDER_COLUMN_A_A_D_W_WORKFLOWTASKNAME_3);
 			}
 			else {
 				bindWorkflowTaskName = true;
 
-				sb.append(_FINDER_COLUMN_A_D_W_WORKFLOWTASKNAME_2);
+				sb.append(_FINDER_COLUMN_A_A_D_W_WORKFLOWTASKNAME_2);
 			}
 
 			String sql = sb.toString();
@@ -1476,6 +2134,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 				QueryPos queryPos = QueryPos.getInstance(query);
 
 				queryPos.add(appBuilderAppId);
+
+				queryPos.add(appBuilderAppVersionId);
 
 				queryPos.add(ddmStructureLayoutId);
 
@@ -1498,16 +2158,20 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_A_D_W_APPBUILDERAPPID_2 =
+	private static final String _FINDER_COLUMN_A_A_D_W_APPBUILDERAPPID_2 =
 		"appBuilderWorkflowTaskLink.appBuilderAppId = ? AND ";
 
-	private static final String _FINDER_COLUMN_A_D_W_DDMSTRUCTURELAYOUTID_2 =
+	private static final String
+		_FINDER_COLUMN_A_A_D_W_APPBUILDERAPPVERSIONID_2 =
+			"appBuilderWorkflowTaskLink.appBuilderAppVersionId = ? AND ";
+
+	private static final String _FINDER_COLUMN_A_A_D_W_DDMSTRUCTURELAYOUTID_2 =
 		"appBuilderWorkflowTaskLink.ddmStructureLayoutId = ? AND ";
 
-	private static final String _FINDER_COLUMN_A_D_W_WORKFLOWTASKNAME_2 =
+	private static final String _FINDER_COLUMN_A_A_D_W_WORKFLOWTASKNAME_2 =
 		"appBuilderWorkflowTaskLink.workflowTaskName = ?";
 
-	private static final String _FINDER_COLUMN_A_D_W_WORKFLOWTASKNAME_3 =
+	private static final String _FINDER_COLUMN_A_A_D_W_WORKFLOWTASKNAME_3 =
 		"(appBuilderWorkflowTaskLink.workflowTaskName IS NULL OR appBuilderWorkflowTaskLink.workflowTaskName = '')";
 
 	public AppBuilderWorkflowTaskLinkPersistenceImpl() {
@@ -1534,15 +2198,14 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 			appBuilderWorkflowTaskLink);
 
 		finderCache.putResult(
-			_finderPathFetchByA_D_W,
+			_finderPathFetchByA_A_D_W,
 			new Object[] {
 				appBuilderWorkflowTaskLink.getAppBuilderAppId(),
+				appBuilderWorkflowTaskLink.getAppBuilderAppVersionId(),
 				appBuilderWorkflowTaskLink.getDdmStructureLayoutId(),
 				appBuilderWorkflowTaskLink.getWorkflowTaskName()
 			},
 			appBuilderWorkflowTaskLink);
-
-		appBuilderWorkflowTaskLink.resetOriginalValues();
 	}
 
 	/**
@@ -1563,9 +2226,6 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 				cacheResult(appBuilderWorkflowTaskLink);
 			}
-			else {
-				appBuilderWorkflowTaskLink.resetOriginalValues();
-			}
 		}
 	}
 
@@ -1580,9 +2240,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	public void clearCache() {
 		entityCache.clearCache(AppBuilderWorkflowTaskLinkImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(AppBuilderWorkflowTaskLinkImpl.class);
 	}
 
 	/**
@@ -1597,42 +2255,25 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink) {
 
 		entityCache.removeResult(
-			AppBuilderWorkflowTaskLinkImpl.class,
-			appBuilderWorkflowTaskLink.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache(
-			(AppBuilderWorkflowTaskLinkModelImpl)appBuilderWorkflowTaskLink,
-			true);
+			AppBuilderWorkflowTaskLinkImpl.class, appBuilderWorkflowTaskLink);
 	}
 
 	@Override
 	public void clearCache(
 		List<AppBuilderWorkflowTaskLink> appBuilderWorkflowTaskLinks) {
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink :
 				appBuilderWorkflowTaskLinks) {
 
 			entityCache.removeResult(
 				AppBuilderWorkflowTaskLinkImpl.class,
-				appBuilderWorkflowTaskLink.getPrimaryKey());
-
-			clearUniqueFindersCache(
-				(AppBuilderWorkflowTaskLinkModelImpl)appBuilderWorkflowTaskLink,
-				true);
+				appBuilderWorkflowTaskLink);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(AppBuilderWorkflowTaskLinkImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
 			entityCache.removeResult(
@@ -1646,47 +2287,15 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		Object[] args = new Object[] {
 			appBuilderWorkflowTaskLinkModelImpl.getAppBuilderAppId(),
+			appBuilderWorkflowTaskLinkModelImpl.getAppBuilderAppVersionId(),
 			appBuilderWorkflowTaskLinkModelImpl.getDdmStructureLayoutId(),
 			appBuilderWorkflowTaskLinkModelImpl.getWorkflowTaskName()
 		};
 
+		finderCache.putResult(_finderPathCountByA_A_D_W, args, Long.valueOf(1));
 		finderCache.putResult(
-			_finderPathCountByA_D_W, args, Long.valueOf(1), false);
-		finderCache.putResult(
-			_finderPathFetchByA_D_W, args, appBuilderWorkflowTaskLinkModelImpl,
-			false);
-	}
-
-	protected void clearUniqueFindersCache(
-		AppBuilderWorkflowTaskLinkModelImpl appBuilderWorkflowTaskLinkModelImpl,
-		boolean clearCurrent) {
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				appBuilderWorkflowTaskLinkModelImpl.getAppBuilderAppId(),
-				appBuilderWorkflowTaskLinkModelImpl.getDdmStructureLayoutId(),
-				appBuilderWorkflowTaskLinkModelImpl.getWorkflowTaskName()
-			};
-
-			finderCache.removeResult(_finderPathCountByA_D_W, args);
-			finderCache.removeResult(_finderPathFetchByA_D_W, args);
-		}
-
-		if ((appBuilderWorkflowTaskLinkModelImpl.getColumnBitmask() &
-			 _finderPathFetchByA_D_W.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				appBuilderWorkflowTaskLinkModelImpl.
-					getOriginalAppBuilderAppId(),
-				appBuilderWorkflowTaskLinkModelImpl.
-					getOriginalDdmStructureLayoutId(),
-				appBuilderWorkflowTaskLinkModelImpl.
-					getOriginalWorkflowTaskName()
-			};
-
-			finderCache.removeResult(_finderPathCountByA_D_W, args);
-			finderCache.removeResult(_finderPathFetchByA_D_W, args);
-		}
+			_finderPathFetchByA_A_D_W, args,
+			appBuilderWorkflowTaskLinkModelImpl);
 	}
 
 	/**
@@ -1835,10 +2444,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 		try {
 			session = openSession();
 
-			if (appBuilderWorkflowTaskLink.isNew()) {
+			if (isNew) {
 				session.save(appBuilderWorkflowTaskLink);
-
-				appBuilderWorkflowTaskLink.setNew(false);
 			}
 			else {
 				appBuilderWorkflowTaskLink =
@@ -1853,88 +2460,15 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-
-		if (isNew) {
-			Object[] args = new Object[] {
-				appBuilderWorkflowTaskLinkModelImpl.getAppBuilderAppId()
-			};
-
-			finderCache.removeResult(_finderPathCountByAppBuilderAppId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByAppBuilderAppId, args);
-
-			args = new Object[] {
-				appBuilderWorkflowTaskLinkModelImpl.getAppBuilderAppId(),
-				appBuilderWorkflowTaskLinkModelImpl.getWorkflowTaskName()
-			};
-
-			finderCache.removeResult(_finderPathCountByA_W, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByA_W, args);
-
-			finderCache.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
-		}
-		else {
-			if ((appBuilderWorkflowTaskLinkModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByAppBuilderAppId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					appBuilderWorkflowTaskLinkModelImpl.
-						getOriginalAppBuilderAppId()
-				};
-
-				finderCache.removeResult(
-					_finderPathCountByAppBuilderAppId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByAppBuilderAppId, args);
-
-				args = new Object[] {
-					appBuilderWorkflowTaskLinkModelImpl.getAppBuilderAppId()
-				};
-
-				finderCache.removeResult(
-					_finderPathCountByAppBuilderAppId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByAppBuilderAppId, args);
-			}
-
-			if ((appBuilderWorkflowTaskLinkModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByA_W.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					appBuilderWorkflowTaskLinkModelImpl.
-						getOriginalAppBuilderAppId(),
-					appBuilderWorkflowTaskLinkModelImpl.
-						getOriginalWorkflowTaskName()
-				};
-
-				finderCache.removeResult(_finderPathCountByA_W, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByA_W, args);
-
-				args = new Object[] {
-					appBuilderWorkflowTaskLinkModelImpl.getAppBuilderAppId(),
-					appBuilderWorkflowTaskLinkModelImpl.getWorkflowTaskName()
-				};
-
-				finderCache.removeResult(_finderPathCountByA_W, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByA_W, args);
-			}
-		}
-
 		entityCache.putResult(
 			AppBuilderWorkflowTaskLinkImpl.class,
-			appBuilderWorkflowTaskLink.getPrimaryKey(),
-			appBuilderWorkflowTaskLink, false);
+			appBuilderWorkflowTaskLinkModelImpl, false, true);
 
-		clearUniqueFindersCache(appBuilderWorkflowTaskLinkModelImpl, false);
 		cacheUniqueFindersCache(appBuilderWorkflowTaskLinkModelImpl);
+
+		if (isNew) {
+			appBuilderWorkflowTaskLink.setNew(false);
+		}
 
 		appBuilderWorkflowTaskLink.resetOriginalValues();
 
@@ -2080,7 +2614,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<AppBuilderWorkflowTaskLink>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -2153,7 +2687,7 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -2204,87 +2738,127 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	 * Initializes the app builder workflow task link persistence.
 	 */
 	@Activate
-	public void activate() {
+	public void activate(BundleContext bundleContext) {
+		_bundleContext = bundleContext;
+
+		_argumentsResolverServiceRegistration = _bundleContext.registerService(
+			ArgumentsResolver.class,
+			new AppBuilderWorkflowTaskLinkModelArgumentsResolver(),
+			new HashMapDictionary<>());
+
 		_finderPathWithPaginationFindAll = new FinderPath(
-			AppBuilderWorkflowTaskLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			AppBuilderWorkflowTaskLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByAppBuilderAppId = new FinderPath(
-			AppBuilderWorkflowTaskLinkImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByAppBuilderAppId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"appBuilderAppId"}, true);
 
 		_finderPathWithoutPaginationFindByAppBuilderAppId = new FinderPath(
-			AppBuilderWorkflowTaskLinkImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByAppBuilderAppId",
 			new String[] {Long.class.getName()},
-			AppBuilderWorkflowTaskLinkModelImpl.APPBUILDERAPPID_COLUMN_BITMASK);
+			new String[] {"appBuilderAppId"}, true);
 
 		_finderPathCountByAppBuilderAppId = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByAppBuilderAppId", new String[] {Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByAppBuilderAppId",
+			new String[] {Long.class.getName()},
+			new String[] {"appBuilderAppId"}, false);
 
-		_finderPathWithPaginationFindByA_W = new FinderPath(
-			AppBuilderWorkflowTaskLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByA_W",
+		_finderPathWithPaginationFindByA_A = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByA_A",
 			new String[] {
-				Long.class.getName(), String.class.getName(),
+				Long.class.getName(), Long.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"appBuilderAppId", "appBuilderAppVersionId"}, true);
 
-		_finderPathWithoutPaginationFindByA_W = new FinderPath(
-			AppBuilderWorkflowTaskLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByA_W",
-			new String[] {Long.class.getName(), String.class.getName()},
-			AppBuilderWorkflowTaskLinkModelImpl.APPBUILDERAPPID_COLUMN_BITMASK |
-			AppBuilderWorkflowTaskLinkModelImpl.
-				WORKFLOWTASKNAME_COLUMN_BITMASK);
+		_finderPathWithoutPaginationFindByA_A = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByA_A",
+			new String[] {Long.class.getName(), Long.class.getName()},
+			new String[] {"appBuilderAppId", "appBuilderAppVersionId"}, true);
 
-		_finderPathCountByA_W = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByA_W",
-			new String[] {Long.class.getName(), String.class.getName()});
+		_finderPathCountByA_A = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByA_A",
+			new String[] {Long.class.getName(), Long.class.getName()},
+			new String[] {"appBuilderAppId", "appBuilderAppVersionId"}, false);
 
-		_finderPathFetchByA_D_W = new FinderPath(
-			AppBuilderWorkflowTaskLinkImpl.class, FINDER_CLASS_NAME_ENTITY,
-			"fetchByA_D_W",
+		_finderPathWithPaginationFindByA_A_W = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByA_A_W",
+			new String[] {
+				Long.class.getName(), Long.class.getName(),
+				String.class.getName(), Integer.class.getName(),
+				Integer.class.getName(), OrderByComparator.class.getName()
+			},
+			new String[] {
+				"appBuilderAppId", "appBuilderAppVersionId", "workflowTaskName"
+			},
+			true);
+
+		_finderPathWithoutPaginationFindByA_A_W = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByA_A_W",
 			new String[] {
 				Long.class.getName(), Long.class.getName(),
 				String.class.getName()
 			},
-			AppBuilderWorkflowTaskLinkModelImpl.APPBUILDERAPPID_COLUMN_BITMASK |
-			AppBuilderWorkflowTaskLinkModelImpl.
-				DDMSTRUCTURELAYOUTID_COLUMN_BITMASK |
-			AppBuilderWorkflowTaskLinkModelImpl.
-				WORKFLOWTASKNAME_COLUMN_BITMASK);
+			new String[] {
+				"appBuilderAppId", "appBuilderAppVersionId", "workflowTaskName"
+			},
+			true);
 
-		_finderPathCountByA_D_W = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByA_D_W",
+		_finderPathCountByA_A_W = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByA_A_W",
 			new String[] {
 				Long.class.getName(), Long.class.getName(),
 				String.class.getName()
-			});
+			},
+			new String[] {
+				"appBuilderAppId", "appBuilderAppVersionId", "workflowTaskName"
+			},
+			false);
+
+		_finderPathFetchByA_A_D_W = new FinderPath(
+			FINDER_CLASS_NAME_ENTITY, "fetchByA_A_D_W",
+			new String[] {
+				Long.class.getName(), Long.class.getName(),
+				Long.class.getName(), String.class.getName()
+			},
+			new String[] {
+				"appBuilderAppId", "appBuilderAppVersionId",
+				"ddmStructureLayoutId", "workflowTaskName"
+			},
+			true);
+
+		_finderPathCountByA_A_D_W = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByA_A_D_W",
+			new String[] {
+				Long.class.getName(), Long.class.getName(),
+				Long.class.getName(), String.class.getName()
+			},
+			new String[] {
+				"appBuilderAppId", "appBuilderAppVersionId",
+				"ddmStructureLayoutId", "workflowTaskName"
+			},
+			false);
 	}
 
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(AppBuilderWorkflowTaskLinkImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+
+		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -2312,6 +2886,8 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
+
+	private BundleContext _bundleContext;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -2343,14 +2919,121 @@ public class AppBuilderWorkflowTaskLinkPersistenceImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		AppBuilderWorkflowTaskLinkPersistenceImpl.class);
 
-	static {
-		try {
-			Class.forName(
-				AppBuilderWorkflowPersistenceConstants.class.getName());
+	@Override
+	protected FinderCache getFinderCache() {
+		return finderCache;
+	}
+
+	private ServiceRegistration<ArgumentsResolver>
+		_argumentsResolverServiceRegistration;
+
+	private static class AppBuilderWorkflowTaskLinkModelArgumentsResolver
+		implements ArgumentsResolver {
+
+		@Override
+		public Object[] getArguments(
+			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
+			boolean original) {
+
+			String[] columnNames = finderPath.getColumnNames();
+
+			if ((columnNames == null) || (columnNames.length == 0)) {
+				if (baseModel.isNew()) {
+					return FINDER_ARGS_EMPTY;
+				}
+
+				return null;
+			}
+
+			AppBuilderWorkflowTaskLinkModelImpl
+				appBuilderWorkflowTaskLinkModelImpl =
+					(AppBuilderWorkflowTaskLinkModelImpl)baseModel;
+
+			long columnBitmask =
+				appBuilderWorkflowTaskLinkModelImpl.getColumnBitmask();
+
+			if (!checkColumn || (columnBitmask == 0)) {
+				return _getValue(
+					appBuilderWorkflowTaskLinkModelImpl, columnNames, original);
+			}
+
+			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
+				finderPath);
+
+			if (finderPathColumnBitmask == null) {
+				finderPathColumnBitmask = 0L;
+
+				for (String columnName : columnNames) {
+					finderPathColumnBitmask |=
+						appBuilderWorkflowTaskLinkModelImpl.getColumnBitmask(
+							columnName);
+				}
+
+				if (finderPath.isBaseModelResult() &&
+					(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION ==
+						finderPath.getCacheName())) {
+
+					finderPathColumnBitmask |= _ORDER_BY_COLUMNS_BITMASK;
+				}
+
+				_finderPathColumnBitmasksCache.put(
+					finderPath, finderPathColumnBitmask);
+			}
+
+			if ((columnBitmask & finderPathColumnBitmask) != 0) {
+				return _getValue(
+					appBuilderWorkflowTaskLinkModelImpl, columnNames, original);
+			}
+
+			return null;
 		}
-		catch (ClassNotFoundException classNotFoundException) {
-			throw new ExceptionInInitializerError(classNotFoundException);
+
+		@Override
+		public String getClassName() {
+			return AppBuilderWorkflowTaskLinkImpl.class.getName();
 		}
+
+		@Override
+		public String getTableName() {
+			return AppBuilderWorkflowTaskLinkTable.INSTANCE.getTableName();
+		}
+
+		private static Object[] _getValue(
+			AppBuilderWorkflowTaskLinkModelImpl
+				appBuilderWorkflowTaskLinkModelImpl,
+			String[] columnNames, boolean original) {
+
+			Object[] arguments = new Object[columnNames.length];
+
+			for (int i = 0; i < arguments.length; i++) {
+				String columnName = columnNames[i];
+
+				if (original) {
+					arguments[i] =
+						appBuilderWorkflowTaskLinkModelImpl.
+							getColumnOriginalValue(columnName);
+				}
+				else {
+					arguments[i] =
+						appBuilderWorkflowTaskLinkModelImpl.getColumnValue(
+							columnName);
+				}
+			}
+
+			return arguments;
+		}
+
+		private static final Map<FinderPath, Long>
+			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
+
+		private static final long _ORDER_BY_COLUMNS_BITMASK;
+
+		static {
+			long orderByColumnsBitmask = 0;
+
+			_ORDER_BY_COLUMNS_BITMASK = orderByColumnsBitmask;
+		}
+
 	}
 
 }

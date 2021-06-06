@@ -81,11 +81,8 @@ public class DDMFormRuleConverterImpl implements SPIDDMFormRuleConverter {
 
 		Expression actionExpression = createExpression(actionExpressionString);
 
-		ActionExpressionVisitor actionExpressionVisitor =
-			new ActionExpressionVisitor();
-
 		return (SPIDDMFormRuleAction)actionExpression.accept(
-			actionExpressionVisitor);
+			new ActionExpressionVisitor());
 	}
 
 	protected String convertCondition(
@@ -93,16 +90,21 @@ public class DDMFormRuleConverterImpl implements SPIDDMFormRuleConverter {
 
 		String operator = spiDDMFormRuleCondition.getOperator();
 
-		String functionName = _operatorFunctionNameMap.get(operator);
-
 		List<SPIDDMFormRuleCondition.Operand> operands =
 			spiDDMFormRuleCondition.getOperands();
 
-		if (functionName == null) {
+		if (_operators.containsKey(operator)) {
+			if (operands.size() < 2) {
+				return StringPool.BLANK;
+			}
+
 			return String.format(
 				_COMPARISON_EXPRESSION_FORMAT, convertOperand(operands.get(0)),
-				_operatorMap.get(operator), convertOperand(operands.get(1)));
+				_operators.get(operator), convertOperand(operands.get(1)));
 		}
+
+		String functionName = _operatorFunctionNames.getOrDefault(
+			operator, operator);
 
 		String condition = createCondition(functionName, operands);
 
@@ -144,6 +146,11 @@ public class DDMFormRuleConverterImpl implements SPIDDMFormRuleConverter {
 				_FUNCTION_CALL_UNARY_EXPRESSION_FORMAT, "getValue",
 				StringUtil.quote(operand.getValue()));
 		}
+		else if (Objects.equals("json", operand.getType())) {
+			return String.format(
+				_FUNCTION_CALL_UNARY_EXPRESSION_FORMAT, "getJSONValue",
+				StringUtil.quote(operand.getValue()));
+		}
 
 		String value = operand.getValue();
 
@@ -176,12 +183,27 @@ public class DDMFormRuleConverterImpl implements SPIDDMFormRuleConverter {
 
 		boolean hasNestedFunction = _hasNestedFunction(operands);
 
-		for (SPIDDMFormRuleCondition.Operand operand : operands) {
+		for (int i = 0; i < operands.size(); i++) {
+			SPIDDMFormRuleCondition.Operand operand = operands.get(i);
+
 			if (hasNestedFunction) {
 				sb.append(operand.getValue());
 			}
 			else {
-				sb.append(convertOperand(operand));
+				if ((i > 0) && Objects.equals("option", operand.getType())) {
+					SPIDDMFormRuleCondition.Operand previousOperand =
+						operands.get(i - 1);
+
+					sb.append(
+						String.format(
+							_FUNCTION_CALL_BINARY_EXPRESSION_FORMAT,
+							"getOptionLabel",
+							StringUtil.quote(previousOperand.getValue()),
+							StringUtil.quote(operand.getValue())));
+				}
+				else {
+					sb.append(convertOperand(operand));
+				}
 			}
 
 			sb.append(StringPool.COMMA_AND_SPACE);
@@ -326,12 +348,15 @@ public class DDMFormRuleConverterImpl implements SPIDDMFormRuleConverter {
 
 	private static final String _COMPARISON_EXPRESSION_FORMAT = "%s %s %s";
 
+	private static final String _FUNCTION_CALL_BINARY_EXPRESSION_FORMAT =
+		"%s(%s, %s)";
+
 	private static final String _FUNCTION_CALL_UNARY_EXPRESSION_FORMAT =
 		"%s(%s)";
 
 	private static final String _NOT_EXPRESSION_FORMAT = "not(%s)";
 
-	private static final Map<String, String> _operatorFunctionNameMap =
+	private static final Map<String, String> _operatorFunctionNames =
 		HashMapBuilder.put(
 			"belongs-to", "belongsTo"
 		).put(
@@ -347,7 +372,7 @@ public class DDMFormRuleConverterImpl implements SPIDDMFormRuleConverter {
 		).put(
 			"not-is-empty", "isEmpty"
 		).build();
-	private static final Map<String, String> _operatorMap = HashMapBuilder.put(
+	private static final Map<String, String> _operators = HashMapBuilder.put(
 		"greater-than", ">"
 	).put(
 		"greater-than-equals", ">="

@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -46,7 +47,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import org.junit.After;
@@ -131,6 +131,8 @@ public class MBMessagePersistenceTest {
 
 		newMBMessage.setUuid(RandomTestUtil.randomString());
 
+		newMBMessage.setExternalReferenceCode(RandomTestUtil.randomString());
+
 		newMBMessage.setGroupId(RandomTestUtil.nextLong());
 
 		newMBMessage.setCompanyId(RandomTestUtil.nextLong());
@@ -195,6 +197,9 @@ public class MBMessagePersistenceTest {
 			newMBMessage.getCtCollectionId());
 		Assert.assertEquals(
 			existingMBMessage.getUuid(), newMBMessage.getUuid());
+		Assert.assertEquals(
+			existingMBMessage.getExternalReferenceCode(),
+			newMBMessage.getExternalReferenceCode());
 		Assert.assertEquals(
 			existingMBMessage.getMessageId(), newMBMessage.getMessageId());
 		Assert.assertEquals(
@@ -531,6 +536,15 @@ public class MBMessagePersistenceTest {
 	}
 
 	@Test
+	public void testCountByG_ERC() throws Exception {
+		_persistence.countByG_ERC(RandomTestUtil.nextLong(), "");
+
+		_persistence.countByG_ERC(0L, "null");
+
+		_persistence.countByG_ERC(0L, (String)null);
+	}
+
+	@Test
 	public void testFindByPrimaryKeyExisting() throws Exception {
 		MBMessage newMBMessage = addMBMessage();
 
@@ -562,15 +576,15 @@ public class MBMessagePersistenceTest {
 	protected OrderByComparator<MBMessage> getOrderByComparator() {
 		return OrderByComparatorFactoryUtil.create(
 			"MBMessage", "mvccVersion", true, "ctCollectionId", true, "uuid",
-			true, "messageId", true, "groupId", true, "companyId", true,
-			"userId", true, "userName", true, "createDate", true,
-			"modifiedDate", true, "classNameId", true, "classPK", true,
-			"categoryId", true, "threadId", true, "rootMessageId", true,
-			"parentMessageId", true, "treePath", true, "subject", true,
-			"urlSubject", true, "format", true, "anonymous", true, "priority",
-			true, "allowPingbacks", true, "answer", true, "lastPublishDate",
-			true, "status", true, "statusByUserId", true, "statusByUserName",
-			true, "statusDate", true);
+			true, "externalReferenceCode", true, "messageId", true, "groupId",
+			true, "companyId", true, "userId", true, "userName", true,
+			"createDate", true, "modifiedDate", true, "classNameId", true,
+			"classPK", true, "categoryId", true, "threadId", true,
+			"rootMessageId", true, "parentMessageId", true, "treePath", true,
+			"subject", true, "urlSubject", true, "format", true, "anonymous",
+			true, "priority", true, "allowPingbacks", true, "answer", true,
+			"lastPublishDate", true, "status", true, "statusByUserId", true,
+			"statusByUserName", true, "statusDate", true);
 	}
 
 	@Test
@@ -785,29 +799,83 @@ public class MBMessagePersistenceTest {
 
 		_persistence.clearCache();
 
-		MBMessage existingMBMessage = _persistence.findByPrimaryKey(
-			newMBMessage.getPrimaryKey());
+		_assertOriginalValues(
+			_persistence.findByPrimaryKey(newMBMessage.getPrimaryKey()));
+	}
 
-		Assert.assertTrue(
-			Objects.equals(
-				existingMBMessage.getUuid(),
-				ReflectionTestUtil.invoke(
-					existingMBMessage, "getOriginalUuid", new Class<?>[0])));
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromDatabase()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(true);
+	}
+
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromSession()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(false);
+	}
+
+	private void _testResetOriginalValuesWithDynamicQuery(boolean clearSession)
+		throws Exception {
+
+		MBMessage newMBMessage = addMBMessage();
+
+		if (clearSession) {
+			Session session = _persistence.openSession();
+
+			session.flush();
+
+			session.clear();
+		}
+
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			MBMessage.class, _dynamicQueryClassLoader);
+
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"messageId", newMBMessage.getMessageId()));
+
+		List<MBMessage> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
+
+		_assertOriginalValues(result.get(0));
+	}
+
+	private void _assertOriginalValues(MBMessage mbMessage) {
 		Assert.assertEquals(
-			Long.valueOf(existingMBMessage.getGroupId()),
+			mbMessage.getUuid(),
+			ReflectionTestUtil.invoke(
+				mbMessage, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "uuid_"));
+		Assert.assertEquals(
+			Long.valueOf(mbMessage.getGroupId()),
 			ReflectionTestUtil.<Long>invoke(
-				existingMBMessage, "getOriginalGroupId", new Class<?>[0]));
+				mbMessage, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "groupId"));
 
 		Assert.assertEquals(
-			Long.valueOf(existingMBMessage.getGroupId()),
+			Long.valueOf(mbMessage.getGroupId()),
 			ReflectionTestUtil.<Long>invoke(
-				existingMBMessage, "getOriginalGroupId", new Class<?>[0]));
-		Assert.assertTrue(
-			Objects.equals(
-				existingMBMessage.getUrlSubject(),
-				ReflectionTestUtil.invoke(
-					existingMBMessage, "getOriginalUrlSubject",
-					new Class<?>[0])));
+				mbMessage, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "groupId"));
+		Assert.assertEquals(
+			mbMessage.getUrlSubject(),
+			ReflectionTestUtil.invoke(
+				mbMessage, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "urlSubject"));
+
+		Assert.assertEquals(
+			Long.valueOf(mbMessage.getGroupId()),
+			ReflectionTestUtil.<Long>invoke(
+				mbMessage, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "groupId"));
+		Assert.assertEquals(
+			mbMessage.getExternalReferenceCode(),
+			ReflectionTestUtil.invoke(
+				mbMessage, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "externalReferenceCode"));
 	}
 
 	protected MBMessage addMBMessage() throws Exception {
@@ -820,6 +888,8 @@ public class MBMessagePersistenceTest {
 		mbMessage.setCtCollectionId(RandomTestUtil.nextLong());
 
 		mbMessage.setUuid(RandomTestUtil.randomString());
+
+		mbMessage.setExternalReferenceCode(RandomTestUtil.randomString());
 
 		mbMessage.setGroupId(RandomTestUtil.nextLong());
 

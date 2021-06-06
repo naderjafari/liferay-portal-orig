@@ -283,9 +283,9 @@ public class WabBundleProcessor {
 		try {
 			classAnnotations = annotatedClass.getAnnotations();
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(t.getMessage());
+				_log.debug(throwable.getMessage());
 			}
 		}
 
@@ -306,9 +306,9 @@ public class WabBundleProcessor {
 		try {
 			classMethods = annotatedClass.getDeclaredMethods();
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(t.getMessage());
+				_log.debug(throwable.getMessage());
 			}
 		}
 
@@ -318,9 +318,9 @@ public class WabBundleProcessor {
 			try {
 				methodAnnotations = method.getDeclaredAnnotations();
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(t.getMessage());
+					_log.debug(throwable.getMessage());
 				}
 			}
 
@@ -342,9 +342,9 @@ public class WabBundleProcessor {
 		try {
 			declaredFields = annotatedClass.getDeclaredFields();
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(t.getMessage());
+				_log.debug(throwable.getMessage());
 			}
 		}
 
@@ -354,9 +354,9 @@ public class WabBundleProcessor {
 			try {
 				fieldAnnotations = field.getDeclaredAnnotations();
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(t.getMessage());
+					_log.debug(throwable.getMessage());
 				}
 			}
 
@@ -827,8 +827,8 @@ public class WabBundleProcessor {
 			servletContainerInitializer.onStartup(
 				localAnnotatedClasses, servletContext);
 		}
-		catch (Throwable t) {
-			_log.error(t, t);
+		catch (Throwable throwable) {
+			_log.error(throwable, throwable);
 		}
 	}
 
@@ -858,7 +858,8 @@ public class WabBundleProcessor {
 			catch (Exception exception) {
 				_log.error(
 					"Bundle " + _bundle + " is unable to load listener " +
-						listenerClassName);
+						listenerClassName,
+					exception);
 			}
 		}
 	}
@@ -892,6 +893,9 @@ public class WabBundleProcessor {
 			}
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
 		}
 	}
 

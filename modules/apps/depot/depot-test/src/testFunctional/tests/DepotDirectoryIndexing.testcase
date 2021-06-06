@@ -22,6 +22,10 @@ definition {
 			PortalInstances.tearDownCP();
 		}
 		else {
+			JSONDepot.deleteDepot(depotName = "Test Depot Name");
+
+			Site.tearDownCP();
+
 			DMDocument.tearDownCP();
 
 			DMFolder.tearDownCP();
@@ -32,6 +36,7 @@ definition {
 
 	@description = "This test asserts that Not Found error returns when visiting FTP mode if indexing is disabled."
 	@priority = "5"
+	@refactorneeded
 	test DisableIndexing {
 		DepotNavigator.openDepotAdmin();
 
@@ -54,6 +59,7 @@ definition {
 
 	@description = "This test asserts that a document stored in a depot can be accessed from FTP mode."
 	@priority = "5"
+	@refactorneeded
 	test ViewDocument {
 		DepotNavigator.openDepotAdmin();
 
@@ -74,19 +80,20 @@ definition {
 			dmDocumentTitle = "DM Document JPG",
 			groupName = "Test Depot Name");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document JPG");
 
 		DMDocument.viewCP(dmDocumentTitle = "DM Document JPG");
 
 		Depot.viewDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document JPG");
 	}
 
 	@description = "This test asserts that no document shows in FTP mode after deleting it in a depot."
 	@priority = "5"
+	@refactorneeded
 	test ViewDocumentAfterDeleting {
 		DepotNavigator.openDepotAdmin();
 
@@ -104,20 +111,21 @@ definition {
 			groupName = "Test Depot Name");
 
 		Depot.viewDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document PDF");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMDocument.deleteCP(dmDocumentTitle = "DM Document PDF");
 
 		Depot.viewNoDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document PDF");
 	}
 
 	@description = "This test asserts that an edited document stored in a depot can be accessed from FTP mode."
 	@priority = "5"
+	@refactorneeded
 	test ViewDocumentAfterEditing {
 		DepotNavigator.openDepotAdmin();
 
@@ -135,28 +143,29 @@ definition {
 			groupName = "Test Depot Name");
 
 		Depot.viewDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document TXT");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMDocument.editCP(
 			dmDocumentTitle = "DM Document TXT",
 			dmDocumentTitleEdit = "DM Document TXT Edit");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document TXT Edit");
 
 		DMDocument.viewCP(dmDocumentTitle = "DM Document TXT Edit");
 
 		Depot.viewDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document TXT Edit");
 	}
 
 	@description = "This test asserts that a document in a folder stored in a depot can be accessed from FTP mode."
 	@priority = "5"
+	@refactorneeded
 	test ViewDocumentInFolder {
 		DepotNavigator.openDepotAdmin();
 
@@ -168,11 +177,10 @@ definition {
 
 		Depot.configureDirectoryIndexing(directoryIndexing = "Enabled");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
-
-		DMFolder.addCP(
+		JSONDocument.addFolder(
 			dmFolderDescription = "DM Folder Description",
-			dmFolderName = "DM Folder Name");
+			dmFolderName = "DM Folder Name",
+			groupName = "Test Depot Name");
 
 		JSONDocument.addFile(
 			dmDocumentDescription = "DM Document Description",
@@ -180,7 +188,7 @@ definition {
 			folderName = "DM Folder Name",
 			groupName = "Test Depot Name");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMFolder.gotoEntry(dmFolderName = "DM Folder Name");
 
@@ -189,13 +197,14 @@ definition {
 		DMDocument.viewCP(dmDocumentTitle = "DM Document DOC");
 
 		Depot.viewDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document DOC",
 			dmFolderName = "DM Folder Name");
 	}
 
 	@description = "This test asserts that the approved document in a depot can be accessed from FTP mode."
 	@priority = "4"
+	@refactorneeded
 	test ViewDocumentInWorkflow {
 		DepotNavigator.openDepotAdmin();
 
@@ -207,11 +216,12 @@ definition {
 
 		Depot.configureDirectoryIndexing(directoryIndexing = "Enabled");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
-
-		DMFolder.addCP(
+		JSONDocument.addFolder(
 			dmFolderDescription = "DM Folder Description",
-			dmFolderName = "DM Folder Name");
+			dmFolderName = "DM Folder Name",
+			groupName = "Test Depot Name");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMFolder.configureWorkflowCP(
 			dmFolderName = "DM Folder Name",
@@ -225,7 +235,7 @@ definition {
 			dmDocumentTitle = "DM Document XLS");
 
 		Depot.viewNoDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document XLS",
 			dmFolderName = "DM Folder Name");
 
@@ -244,13 +254,44 @@ definition {
 			workflowTask = "Review");
 
 		Depot.viewDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document XLS",
 			dmFolderName = "DM Folder Name");
 	}
 
+	@description = "This test asserts that a document with escape characters stored in a depot can be accessed from FTP mode."
+	@priority = "3"
+	@refactorneeded
+	test ViewDocumentWithEscapeCharacters {
+		DepotNavigator.openDepotAdmin();
+
+		DepotNavigator.gotoEdit(depotName = "Test Depot Name");
+
+		Navigator.gotoNavTab(navTab = "General");
+
+		Panel.expandPanel(panel = "Documents and Media");
+
+		AssertNotChecked.assertNotCheckedNotVisible(locator1 = "Checkbox#ENABLE_DIRECTORY_INDEXING");
+
+		Depot.configureDirectoryIndexing(directoryIndexing = "Enabled");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
+
+		DMDocument.addCP(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFile = "Document_1.txt",
+			dmDocumentTitle = "&amp; &lt; &gt; DM Document");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
+
+		Depot.viewDocumentInFTP(
+			depotName = "Test Depot Name",
+			dmDocumentTitle = "&amp; &lt; &gt; DM Document");
+	}
+
 	@description = "This test asserts that a document without guest permissions in a depot can not be accessed from FTP mode."
 	@priority = "4"
+	@refactorneeded
 	test ViewDocumentWithoutPermissions {
 		DepotNavigator.openDepotAdmin();
 
@@ -267,7 +308,7 @@ definition {
 			dmDocumentTitle = "DM Document SVG",
 			groupName = "Test Depot Name");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-depot-name");
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
 
 		DMNavigator.gotoDocumentPermissionsCP(dmDocumentTitle = "DM Document SVG");
 
@@ -276,7 +317,7 @@ definition {
 			roleList = "Guest");
 
 		Depot.viewDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document SVG");
 
 		Navigator.openURL();
@@ -284,7 +325,7 @@ definition {
 		User.logoutPG();
 
 		Depot.viewNoDocumentInFTP(
-			depotName = "test depot name",
+			depotName = "Test Depot Name",
 			dmDocumentTitle = "DM Document SVG");
 
 		User.loginPG();

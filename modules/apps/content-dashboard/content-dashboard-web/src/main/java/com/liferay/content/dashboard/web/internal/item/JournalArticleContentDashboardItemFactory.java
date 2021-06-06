@@ -14,20 +14,23 @@
 
 package com.liferay.content.dashboard.web.internal.item;
 
-import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
+import com.liferay.content.dashboard.web.internal.item.action.ContentDashboardItemActionProviderTracker;
 import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemTypeFactory;
 import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemTypeFactoryTracker;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
-import com.liferay.info.display.url.provider.InfoEditURLProviderTracker;
+import com.liferay.info.item.InfoItemServiceTracker;
+import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
+import com.liferay.journal.constants.JournalArticleConstants;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.portal.kernel.exception.NoSuchModelException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.util.Optional;
@@ -50,9 +53,26 @@ public class JournalArticleContentDashboardItemFactory
 			_journalArticleLocalService.getLatestArticle(
 				classPK, WorkflowConstants.STATUS_ANY, false);
 
-		AssetEntry assetEntry = _assetEntryLocalService.getEntry(
-			JournalArticle.class.getName(),
-			journalArticle.getResourcePrimKey());
+		AssetEntry assetEntry = null;
+
+		if (!journalArticle.isApproved() && !journalArticle.isExpired() &&
+			(journalArticle.getVersion() !=
+				JournalArticleConstants.VERSION_DEFAULT)) {
+
+			assetEntry = _assetEntryLocalService.fetchEntry(
+				JournalArticle.class.getName(), journalArticle.getPrimaryKey());
+		}
+		else {
+			assetEntry = _assetEntryLocalService.fetchEntry(
+				JournalArticle.class.getName(),
+				journalArticle.getResourcePrimKey());
+		}
+
+		if (assetEntry == null) {
+			throw new NoSuchModelException(
+				"Unable to find an asset entry for journal article " +
+					journalArticle.getPrimaryKey());
+		}
 
 		Optional<ContentDashboardItemTypeFactory>
 			contentDashboardItemTypeFactoryOptional =
@@ -66,27 +86,35 @@ public class JournalArticleContentDashboardItemFactory
 
 		DDMStructure ddmStructure = journalArticle.getDDMStructure();
 
+		InfoItemFieldValuesProvider<JournalArticle>
+			infoItemFieldValuesProvider =
+				infoItemServiceTracker.getFirstInfoItemService(
+					InfoItemFieldValuesProvider.class,
+					JournalArticle.class.getName());
+
 		JournalArticle latestApprovedJournalArticle =
 			_journalArticleLocalService.fetchLatestArticle(
 				classPK, WorkflowConstants.STATUS_APPROVED);
 
 		return new JournalArticleContentDashboardItem(
-			assetEntry.getCategories(), _assetDisplayPageFriendlyURLProvider,
+			assetEntry.getCategories(), assetEntry.getTags(),
+			_contentDashboardItemActionProviderTracker,
 			contentDashboardItemTypeFactory.create(
 				ddmStructure.getStructureId()),
 			_groupLocalService.fetchGroup(journalArticle.getGroupId()),
-			_infoEditURLProviderTracker.getInfoEditURLProvider(
-				JournalArticle.class.getName()),
-			journalArticle, _language, latestApprovedJournalArticle,
-			_modelResourcePermission);
+			infoItemFieldValuesProvider, journalArticle, _language,
+			latestApprovedJournalArticle, _portal);
 	}
 
 	@Reference
-	private AssetDisplayPageFriendlyURLProvider
-		_assetDisplayPageFriendlyURLProvider;
+	protected InfoItemServiceTracker infoItemServiceTracker;
 
 	@Reference
 	private AssetEntryLocalService _assetEntryLocalService;
+
+	@Reference
+	private ContentDashboardItemActionProviderTracker
+		_contentDashboardItemActionProviderTracker;
 
 	@Reference
 	private ContentDashboardItemTypeFactoryTracker
@@ -96,17 +124,15 @@ public class JournalArticleContentDashboardItemFactory
 	private GroupLocalService _groupLocalService;
 
 	@Reference
-	private InfoEditURLProviderTracker _infoEditURLProviderTracker;
-
-	@Reference
 	private JournalArticleLocalService _journalArticleLocalService;
 
 	@Reference
 	private Language _language;
 
-	@Reference(
-		target = "(model.class.name=com.liferay.journal.model.JournalArticle)"
-	)
-	private ModelResourcePermission<JournalArticle> _modelResourcePermission;
+	@Reference
+	private Portal _portal;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

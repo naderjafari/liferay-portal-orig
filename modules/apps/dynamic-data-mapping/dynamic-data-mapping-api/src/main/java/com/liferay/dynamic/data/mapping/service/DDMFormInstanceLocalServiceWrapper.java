@@ -118,6 +118,21 @@ public class DDMFormInstanceLocalServiceWrapper
 			ddmFormInstance, modelPermissions);
 	}
 
+	@Override
+	public DDMFormInstance copyFormInstance(
+			long userId, long groupId,
+			java.util.Map<java.util.Locale, String> nameMap,
+			DDMFormInstance ddmFormInstance,
+			com.liferay.dynamic.data.mapping.storage.DDMFormValues
+				settingsDDMFormValues,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _ddmFormInstanceLocalService.copyFormInstance(
+			userId, groupId, nameMap, ddmFormInstance, settingsDDMFormValues,
+			serviceContext);
+	}
+
 	/**
 	 * Creates a new ddm form instance with the primary key. Does not add the ddm form instance to the database.
 	 *
@@ -214,6 +229,13 @@ public class DDMFormInstanceLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _ddmFormInstanceLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _ddmFormInstanceLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override

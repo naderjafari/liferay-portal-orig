@@ -23,7 +23,6 @@ import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalService;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
-import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -31,13 +30,19 @@ import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
+
+import java.math.BigDecimal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -53,13 +58,44 @@ import org.powermock.api.mockito.PowerMockito;
 @RunWith(MockitoJUnitRunner.class)
 public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() {
 		_numericDDMFormFieldTypeReportProcessor.
 			ddmFormInstanceRecordLocalService =
 				_ddmFormInstanceRecordLocalService;
+	}
 
-		_setUpJSONFactoryUtil();
+	@Test
+	public void testFormatBigDecimal() {
+		Assert.assertEquals(
+			"12",
+			_numericDDMFormFieldTypeReportProcessor.formatBigDecimal(
+				new BigDecimal("12.00000000000000")));
+		Assert.assertEquals(
+			"12.00000000000001",
+			_numericDDMFormFieldTypeReportProcessor.formatBigDecimal(
+				new BigDecimal("12.00000000000001")));
+		Assert.assertEquals(
+			"12.000000001",
+			_numericDDMFormFieldTypeReportProcessor.formatBigDecimal(
+				new BigDecimal("12.0000000010000")));
+	}
+
+	@Test
+	public void testGetValueBigDecimal() {
+		Assert.assertEquals(
+			new BigDecimal("3.5"),
+			_numericDDMFormFieldTypeReportProcessor.getValueBigDecimal(
+				_mockDDMFormFieldValue(LocaleUtil.BRAZIL, "field1", "3,5")));
+		Assert.assertEquals(
+			new BigDecimal("4.5"),
+			_numericDDMFormFieldTypeReportProcessor.getValueBigDecimal(
+				_mockDDMFormFieldValue(LocaleUtil.US, "field1", "4.5")));
 	}
 
 	@Test
@@ -67,7 +103,7 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		throws Exception {
 
 		DDMFormFieldValue ddmFormFieldValue = _mockDDMFormFieldValue(
-			"field1", "3");
+			LocaleUtil.US, "field1", "3");
 
 		long formInstanceRecordId = 3;
 
@@ -117,13 +153,13 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 				JSONUtil.put(
 					"summary",
 					JSONUtil.put(
-						"average", 3
+						"average", "3"
 					).put(
-						"max", 5
+						"max", "5"
 					).put(
-						"min", 1
+						"min", "1"
 					).put(
-						"sum", 15
+						"sum", "15"
 					)
 				).put(
 					"totalEntries", 5
@@ -164,10 +200,10 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		JSONObject summaryJSONObject = processedFieldJSONObject.getJSONObject(
 			"summary");
 
-		Assert.assertEquals(3, summaryJSONObject.getInt("average"));
-		Assert.assertEquals(5, summaryJSONObject.getInt("max"));
-		Assert.assertEquals(1, summaryJSONObject.getInt("min"));
-		Assert.assertEquals(12, summaryJSONObject.getInt("sum"));
+		Assert.assertEquals("3", summaryJSONObject.getString("average"));
+		Assert.assertEquals("5", summaryJSONObject.getString("max"));
+		Assert.assertEquals("1", summaryJSONObject.getString("min"));
+		Assert.assertEquals("12", summaryJSONObject.getString("sum"));
 	}
 
 	@Test
@@ -175,7 +211,7 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		throws Exception {
 
 		DDMFormFieldValue ddmFormFieldValue = _mockDDMFormFieldValue(
-			"field1", "1");
+			LocaleUtil.US, "field1", "1");
 
 		long formInstanceRecordId = 1;
 
@@ -195,10 +231,10 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		JSONObject summaryJSONObject = processedFieldJSONObject.getJSONObject(
 			"summary");
 
-		Assert.assertEquals(1, summaryJSONObject.getInt("average"));
-		Assert.assertEquals(1, summaryJSONObject.getInt("max"));
-		Assert.assertEquals(1, summaryJSONObject.getInt("min"));
-		Assert.assertEquals(1, summaryJSONObject.getInt("sum"));
+		Assert.assertEquals("1", summaryJSONObject.getString("average"));
+		Assert.assertEquals("1", summaryJSONObject.getString("max"));
+		Assert.assertEquals("1", summaryJSONObject.getString("min"));
+		Assert.assertEquals("1", summaryJSONObject.getString("sum"));
 	}
 
 	@Test
@@ -206,7 +242,7 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		throws Exception {
 
 		DDMFormFieldValue ddmFormFieldValue = _mockDDMFormFieldValue(
-			"field1", "3");
+			LocaleUtil.US, "field1", "3");
 
 		long formInstanceRecordId = 0;
 
@@ -218,13 +254,13 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 				JSONUtil.put(
 					"summary",
 					JSONUtil.put(
-						"average", 1
+						"average", "1"
 					).put(
-						"max", 1
+						"max", "1"
 					).put(
-						"min", 1
+						"min", "1"
 					).put(
-						"sum", 1
+						"sum", "1"
 					)
 				).put(
 					"totalEntries", 1
@@ -245,10 +281,69 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		JSONObject summaryJSONObject = processedFieldJSONObject.getJSONObject(
 			"summary");
 
-		Assert.assertEquals(2, summaryJSONObject.getInt("average"));
-		Assert.assertEquals(3, summaryJSONObject.getInt("max"));
-		Assert.assertEquals(1, summaryJSONObject.getInt("min"));
-		Assert.assertEquals(4, summaryJSONObject.getInt("sum"));
+		Assert.assertEquals("2", summaryJSONObject.getString("average"));
+		Assert.assertEquals("3", summaryJSONObject.getString("max"));
+		Assert.assertEquals("1", summaryJSONObject.getString("min"));
+		Assert.assertEquals("4", summaryJSONObject.getString("sum"));
+	}
+
+	@Test
+	public void testProcessDDMFormInstanceReportWithLongFieldValue()
+		throws Exception {
+
+		// LPS-118317
+
+		DDMFormFieldValue ddmFormFieldValue = _mockDDMFormFieldValue(
+			LocaleUtil.US, "field1",
+			"99999999999999999999999999999999999999999");
+
+		long formInstanceRecordId = 0;
+
+		_mockDDMFormInstanceRecord(formInstanceRecordId);
+
+		JSONObject processedFieldJSONObject =
+			_numericDDMFormFieldTypeReportProcessor.process(
+				ddmFormFieldValue,
+				JSONUtil.put(
+					"summary",
+					JSONUtil.put(
+						"average", "1"
+					).put(
+						"max", "1"
+					).put(
+						"min", "1"
+					).put(
+						"sum", "1"
+					)
+				).put(
+					"totalEntries", 1
+				).put(
+					"type", DDMFormFieldType.NUMERIC
+				).put(
+					"values",
+					JSONUtil.put(
+						JSONUtil.put(
+							"formInstanceRecordId", 1
+						).put(
+							"value", "1"
+						))
+				),
+				formInstanceRecordId,
+				DDMFormInstanceReportConstants.EVENT_ADD_RECORD_VERSION);
+
+		JSONObject summaryJSONObject = processedFieldJSONObject.getJSONObject(
+			"summary");
+
+		Assert.assertEquals(
+			"50000000000000000000000000000000000000000",
+			summaryJSONObject.getString("average"));
+		Assert.assertEquals(
+			"99999999999999999999999999999999999999999",
+			summaryJSONObject.getString("max"));
+		Assert.assertEquals("1", summaryJSONObject.getString("min"));
+		Assert.assertEquals(
+			"100000000000000000000000000000000000000000",
+			summaryJSONObject.getString("sum"));
 	}
 
 	private DDMFormInstanceRecord _createDDMFormInstanceRecord(
@@ -259,7 +354,7 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 			DDMFormInstanceRecord.class);
 
 		DDMFormFieldValue ddmFormFieldValue = _mockDDMFormFieldValue(
-			"", valueString);
+			LocaleUtil.US, "", valueString);
 
 		DDMFormValues ddmFormValues = mock(DDMFormValues.class);
 
@@ -281,7 +376,7 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 	}
 
 	private DDMFormFieldValue _mockDDMFormFieldValue(
-		String fieldName, String fieldValue) {
+		Locale defaultLocale, String fieldName, String fieldValue) {
 
 		DDMFormFieldValue ddmFormFieldValue = mock(DDMFormFieldValue.class);
 
@@ -297,10 +392,9 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 			DDMFormFieldType.NUMERIC
 		);
 
-		Value value = new LocalizedValue();
+		Value value = new LocalizedValue(defaultLocale);
 
 		value.addString(value.getDefaultLocale(), fieldValue);
-		value.setDefaultLocale(LocaleUtil.US);
 
 		when(
 			ddmFormFieldValue.getValue()
@@ -332,12 +426,6 @@ public class NumericDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		);
 
 		return ddmFormInstanceRecord;
-	}
-
-	private void _setUpJSONFactoryUtil() {
-		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
-
-		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
 	}
 
 	private static final int _VALUES_MAX_LENGTH = 5;

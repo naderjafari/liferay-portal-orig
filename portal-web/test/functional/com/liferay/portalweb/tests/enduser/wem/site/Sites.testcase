@@ -54,10 +54,6 @@ definition {
 
 		Page.viewInactiveRequestMessage(resource = "site");
 
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
-
 		Site.openSitesAdmin();
 
 		Site.activateInactive(siteName = "Site Name");
@@ -239,7 +235,9 @@ definition {
 
 	@priority = "3"
 	test EditSiteFriendlyURLInvalid {
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "Sites#EditSiteFriendlyURLInvalid";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		JSONGroup.addGroup(groupName = "Site Name");

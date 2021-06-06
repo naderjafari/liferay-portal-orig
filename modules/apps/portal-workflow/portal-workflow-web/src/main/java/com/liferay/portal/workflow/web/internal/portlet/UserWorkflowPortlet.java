@@ -15,13 +15,13 @@
 package com.liferay.portal.workflow.web.internal.portlet;
 
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.workflow.WorkflowException;
 import com.liferay.portal.kernel.workflow.WorkflowInstance;
 import com.liferay.portal.kernel.workflow.WorkflowInstanceManagerUtil;
@@ -117,13 +117,13 @@ public class UserWorkflowPortlet extends BaseWorkflowPortlet {
 			RenderRequest renderRequest)
 		throws PortalException {
 
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
 		long workflowInstanceId = ParamUtil.getLong(
 			renderRequest, "workflowInstanceId");
 
 		if (workflowInstanceId != 0) {
+			PermissionChecker permissionChecker =
+				PermissionThreadLocal.getPermissionChecker();
+
 			WorkflowInstance workflowInstance =
 				WorkflowInstanceManagerUtil.getWorkflowInstance(
 					permissionChecker.getCompanyId(),

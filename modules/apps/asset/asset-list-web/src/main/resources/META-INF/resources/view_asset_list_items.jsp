@@ -42,8 +42,27 @@ ListItemsActionDropdownItems listItemsActionDropdownItems = (ListItemsActionDrop
 
 			<liferay-ui:search-container-column-text
 				name="title"
-				value="<%= HtmlUtil.escape(assetRenderer.getTitle(locale)) %>"
-			/>
+			>
+
+				<%
+				String displayPageURL = StringPool.BLANK;
+
+				if (assetListItemsDisplayContext.isShowActions()) {
+					displayPageURL = listItemsActionDropdownItems.getViewDisplayPageURL(AssetEntry.class.getName(), assetEntry);
+				}
+				%>
+
+				<c:choose>
+					<c:when test="<%= Validator.isNull(displayPageURL) %>">
+						<%= HtmlUtil.escape(assetRenderer.getTitle(locale)) %>
+					</c:when>
+					<c:otherwise>
+						<aui:a href="<%= displayPageURL %>" target="_top">
+							<%= HtmlUtil.escape(assetRenderer.getTitle(locale)) %>
+						</aui:a>
+					</c:otherwise>
+				</c:choose>
+			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-text
 				name="type"
@@ -68,8 +87,8 @@ ListItemsActionDropdownItems listItemsActionDropdownItems = (ListItemsActionDrop
 			<c:if test="<%= assetListItemsDisplayContext.isShowActions() %>">
 				<liferay-ui:search-container-column-text>
 					<clay:dropdown-actions
-						defaultEventHandler="<%= AssetListWebKeys.LIST_ITEMS_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
 						dropdownItems="<%= listItemsActionDropdownItems.getActionDropdownItems(AssetEntry.class.getName(), assetEntry) %>"
+						propsTransformer="js/ListItemsDropdownPropsTransformer"
 					/>
 				</liferay-ui:search-container-column-text>
 			</c:if>
@@ -82,6 +101,5 @@ ListItemsActionDropdownItems listItemsActionDropdownItems = (ListItemsActionDrop
 </clay:container-fluid>
 
 <liferay-frontend:component
-	componentId="<%= AssetListWebKeys.LIST_ITEMS_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
-	module="js/ListItemsDropdownDefaultEventHandler.es"
+	module="js/TopLinkEventHandler.es"
 />

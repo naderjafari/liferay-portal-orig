@@ -15,8 +15,11 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.validation;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
+import com.liferay.dynamic.data.mapping.form.field.type.internal.configuration.FFCustomDDMValidationConfiguration;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.render.DDMFormFieldRenderingContext;
+import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -27,6 +30,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Map;
 
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -34,7 +38,9 @@ import org.osgi.service.component.annotations.Reference;
  * @author Bruno Basto
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=validation",
+	configurationPid = "com.liferay.dynamic.data.mapping.form.field.type.internal.configuration.FFCustomDDMValidationConfiguration",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.VALIDATION,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		ValidationDDMFormFieldTemplateContextContributor.class
@@ -49,8 +55,18 @@ public class ValidationDDMFormFieldTemplateContextContributor
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
 		return HashMapBuilder.<String, Object>put(
+			"ffCustomDDMValidationEnabled",
+			_ffCustomDDMValidationConfiguration.enabled()
+		).put(
 			"value", getValue(ddmFormFieldRenderingContext)
 		).build();
+	}
+
+	@Activate
+	protected void activate(Map<String, Object> properties) {
+		_ffCustomDDMValidationConfiguration =
+			ConfigurableUtil.createConfigurable(
+				FFCustomDDMValidationConfiguration.class, properties);
 	}
 
 	protected Map<String, Object> getValue(
@@ -93,5 +109,8 @@ public class ValidationDDMFormFieldTemplateContextContributor
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ValidationDDMFormFieldTemplateContextContributor.class);
+
+	private FFCustomDDMValidationConfiguration
+		_ffCustomDDMValidationConfiguration;
 
 }

@@ -13,13 +13,7 @@ import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import {ClayInput} from '@clayui/form';
 import ClayModal, {useModal} from '@clayui/modal';
-import React, {
-	useCallback,
-	useContext,
-	useEffect,
-	useMemo,
-	useState,
-} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 
 import {useToaster} from '../../../../../shared/components/toaster/hooks/useToaster.es';
 import {useFetch} from '../../../../../shared/hooks/useFetch.es';
@@ -27,15 +21,15 @@ import {usePost} from '../../../../../shared/hooks/usePost.es';
 import {InstanceListContext} from '../../../InstanceListPageProvider.es';
 import {ModalContext} from '../../ModalProvider.es';
 
-const SingleTransitionModal = () => {
+export default function SingleTransitionModal() {
 	const [comment, setComment] = useState('');
 	const {
+		closeModal,
 		setSingleTransition,
-		setVisibleModal,
 		singleTransition,
 		visibleModal,
 	} = useContext(ModalContext);
-	const {selectedInstance, setSelectedItem, setSelectedItems} = useContext(
+	const {selectedInstance, setSelectedItems} = useContext(
 		InstanceListContext
 	);
 	const {title, transitionName} = singleTransition;
@@ -46,31 +40,30 @@ const SingleTransitionModal = () => {
 	const {data, fetchData} = useFetch({
 		admin: true,
 		params: {completed: false, page: 1, pageSize: 1},
-		url: `/workflow-instances/${selectedInstance.id}/workflow-tasks`,
+		url: `/workflow-instances/${selectedInstance?.id}/workflow-tasks`,
 	});
 
+	const onCloseModal = (refetch) => {
+		closeModal(refetch);
+		setSelectedItems([]);
+		setSingleTransition({
+			title: '',
+			transitionName: '',
+		});
+	};
+
 	const {observer, onClose} = useModal({
-		onClose: () => {
-			setSelectedItem({});
-			setSelectedItems([]);
-			setVisibleModal('');
-			setSingleTransition({
-				title: '',
-				transitionName: '',
-			});
-		},
+		onClose: onCloseModal,
 	});
 
 	useEffect(() => {
-		if (selectedInstance.id && visibleModal === 'singleTransition') {
+		if (selectedInstance?.id && visibleModal === 'singleTransition') {
 			fetchData();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [fetchData, visibleModal]);
 
-	const taskId = useMemo(() => (data && data.items ? data.items[0].id : {}), [
-		data,
-	]);
+	const taskId = data?.items?.[0].id;
 
 	const {postData} = usePost({
 		admin: true,
@@ -82,12 +75,13 @@ const SingleTransitionModal = () => {
 		setErrorToast(false);
 		postData()
 			.then(() => {
-				onClose();
 				toaster.success(
 					Liferay.Language.get(
 						'the-selected-step-has-transitioned-successfully'
 					)
 				);
+
+				onCloseModal(true);
 			})
 			.catch(() => {
 				setErrorToast(
@@ -102,17 +96,12 @@ const SingleTransitionModal = () => {
 	return (
 		<>
 			{visibleModal === 'singleTransition' && (
-				<ClayModal
-					data-testid="transitionModal"
-					observer={observer}
-					size="md"
-				>
+				<ClayModal observer={observer} size="md">
 					<ClayModal.Header>{title}</ClayModal.Header>
 
 					{errorToast && (
 						<ClayAlert
 							className="mb-0"
-							data-testid="alertError"
 							displayType="danger"
 							title={Liferay.Language.get('error')}
 						>
@@ -138,17 +127,13 @@ const SingleTransitionModal = () => {
 							<>
 								<ClayButton
 									className="mr-3"
-									data-testid="cancelButton"
 									displayType="secondary"
 									onClick={onClose}
 								>
 									{Liferay.Language.get('cancel')}
 								</ClayButton>
 
-								<ClayButton
-									data-testid="doneButton"
-									onClick={handleDone}
-								>
+								<ClayButton onClick={handleDone}>
 									{Liferay.Language.get('done')}
 								</ClayButton>
 							</>
@@ -158,6 +143,4 @@ const SingleTransitionModal = () => {
 			)}
 		</>
 	);
-};
-
-export default SingleTransitionModal;
+}

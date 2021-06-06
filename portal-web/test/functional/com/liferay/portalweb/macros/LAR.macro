@@ -200,6 +200,15 @@ definition {
 				locator1 = "SitePagesImport#VALIDATION_ERROR_MESSAGE_HEADER",
 				value1 = "The file ${larFileName} cannot be imported.");
 		}
+		else if (isSet(importSchemaVersionMismatching)) {
+			AssertTextEquals(
+				locator1 = "SitePagesImport#VALIDATION_ERROR_MESSAGE_HEADER",
+				value1 = "The file ${larFileName} cannot be imported.");
+
+			AssertTextPresent(
+				locator1 = "SitePagesImport#VALIDATION_ERROR_MESSAGE",
+				value1 = "LAR schema version 1.0.0 does not match deployed export/import schema version 4.0.0.");
+		}
 		else if (isSet(importValidationMissingItem)) {
 			AssertTextEquals(
 				locator1 = "SitePagesImport#VALIDATION_ERROR_MESSAGE_HEADER",
@@ -207,7 +216,11 @@ definition {
 
 			AssertTextEquals(
 				locator1 = "SitePagesImport#VALIDATION_ERROR_MESSAGE",
-				value1 = "An unexpected error occurred while uploading your file.");
+				value1 = "There are missing references that could not be found in the current environment. Please import the following elements first:");
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "SitePagesImport#VALIDATION_ERROR_LIST_ITEM",
+				value1 = "${importValidationMissingItem}");
 		}
 		else if (isSet(import6210buildNumber)) {
 			AssertTextEquals(
@@ -240,15 +253,14 @@ definition {
 			}
 
 			if ("${importPermissions}" == "true") {
-				Click(locator1 = "ExportImport#PERMISSIONS_TITLE");
-
 				Check.checkToggleSwitch(locator1 = "Checkbox#PERMISSIONS");
 			}
 
 			AssertVisible(locator1 = "Link#BACK");
 
 			AssertClickNoError(
-				locator1 = "Button#IMPORT",
+				key_text = "Import",
+				locator1 = "Button#ANY",
 				value1 = "Import");
 
 			if (isSet(failureExpected)) {
@@ -299,7 +311,7 @@ definition {
 
 			AssertTextEquals(
 				locator1 = "SitePagesImport#VALIDATION_ERROR_MESSAGE",
-				value1 = "There are missing references that could not be found in the current site. Please import the following elements first:");
+				value1 = "There are missing references that could not be found in the current environment. Please import the following elements first:");
 
 			AssertTextEquals.assertPartialText(
 				locator1 = "SitePagesImport#VALIDATION_ERROR_LIST_ITEM",
@@ -465,13 +477,17 @@ definition {
 			Click(locator1 = "Icon#TIMES");
 		}
 		else {
-			Click(locator1 = "Icon#CLOSE");
+			IFrame.closeFrame();
 		}
 	}
 
 	macro exportSiteCP {
-		LAR.openExportAdmin(siteScopeName = "${siteScopeName}");
-
+		if (isSet(depotName)) {
+			LAR.openDepotExportAdmin(depotName = "${depotName}");
+		}
+		else {
+			LAR.openExportAdmin(siteScopeName = "${siteScopeName}");
+		}
 		Click(locator1 = "SitePagesExport#CUSTOM_EXPORT_BUTTON");
 
 		if ("${privateLayout}" == "true") {
@@ -541,6 +557,8 @@ definition {
 			failureExpected = "${failureExpected}",
 			importDeletions = "${importDeletions}",
 			importPermissions = "${importPermissions}",
+			importSchemaVersionMismatching = "${importSchemaVersionMismatching}",
+			importValidationMissingItem = "${importValidationMissingItem}",
 			larFileName = "${larFileName}",
 			mirrorWithOverwriting = "${mirrorWithOverwriting}",
 			portletName = "${portletName}",
@@ -555,9 +573,16 @@ definition {
 	}
 
 	macro importSiteCP {
-		LAR.openImportAdmin(
-			baseURL = "${baseURL}",
-			siteName = "${siteName}");
+		if (isSet(depotName)) {
+			LAR.openDepotImportAdmin(
+				baseURL = "${baseURL}",
+				depotName = "${depotName}");
+		}
+		else {
+			LAR.openImportAdmin(
+				baseURL = "${baseURL}",
+				siteName = "${siteName}");
+		}
 
 		LAR._selectImportFileSite(
 			importCampaignValidationError = "${importCampaignValidationError}",
@@ -600,6 +625,28 @@ definition {
 		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Move to Recycle Bin");
 
 		VerifyElementPresent(locator1 = "Message#SUCCESS");
+	}
+
+	macro openDepotExportAdmin {
+		var baseURL = "${baseURL}";
+		var depotId = JSONGroupAPI._getDepotIdByName(depotName = "${depotName}");
+
+		if (contains("${baseURL}", "{baseURL}")) {
+			var baseURL = PropsUtil.get("portal.url");
+		}
+
+		Open(locator1 = "${baseURL}/group/asset-library-${depotId}/~/control_panel/manage?p_p_id=com_liferay_exportimport_web_portlet_ExportPortlet");
+	}
+
+	macro openDepotImportAdmin {
+		var baseURL = "${baseURL}";
+		var depotId = JSONGroupAPI._getDepotIdByName(depotName = "${depotName}");
+
+		if (contains("${baseURL}", "{baseURL}")) {
+			var baseURL = PropsUtil.get("portal.url");
+		}
+
+		Open(locator1 = "${baseURL}/group/asset-library-${depotId}/~/control_panel/manage?p_p_id=com_liferay_exportimport_web_portlet_ImportPortlet");
 	}
 
 	macro openExportAdmin {

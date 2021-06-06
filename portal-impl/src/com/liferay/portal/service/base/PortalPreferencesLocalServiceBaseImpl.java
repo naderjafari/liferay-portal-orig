@@ -36,13 +36,17 @@ import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.PortalPreferencesLocalService;
+import com.liferay.portal.kernel.service.PortalPreferencesLocalServiceUtil;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.PortalPreferenceValuePersistence;
 import com.liferay.portal.kernel.service.persistence.PortalPreferencesPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -66,7 +70,7 @@ public abstract class PortalPreferencesLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>PortalPreferencesLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.PortalPreferencesLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>PortalPreferencesLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>PortalPreferencesLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -141,6 +145,13 @@ public abstract class PortalPreferencesLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return portalPreferencesPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -298,6 +309,7 @@ public abstract class PortalPreferencesLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -316,6 +328,7 @@ public abstract class PortalPreferencesLocalServiceBaseImpl
 			(PortalPreferences)persistedModel);
 	}
 
+	@Override
 	public BasePersistence<PortalPreferences> getBasePersistence() {
 		return portalPreferencesPersistence;
 	}
@@ -437,15 +450,66 @@ public abstract class PortalPreferencesLocalServiceBaseImpl
 		this.counterLocalService = counterLocalService;
 	}
 
+	/**
+	 * Returns the portal preference value local service.
+	 *
+	 * @return the portal preference value local service
+	 */
+	public com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+		getPortalPreferenceValueLocalService() {
+
+		return portalPreferenceValueLocalService;
+	}
+
+	/**
+	 * Sets the portal preference value local service.
+	 *
+	 * @param portalPreferenceValueLocalService the portal preference value local service
+	 */
+	public void setPortalPreferenceValueLocalService(
+		com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+			portalPreferenceValueLocalService) {
+
+		this.portalPreferenceValueLocalService =
+			portalPreferenceValueLocalService;
+	}
+
+	/**
+	 * Returns the portal preference value persistence.
+	 *
+	 * @return the portal preference value persistence
+	 */
+	public PortalPreferenceValuePersistence
+		getPortalPreferenceValuePersistence() {
+
+		return portalPreferenceValuePersistence;
+	}
+
+	/**
+	 * Sets the portal preference value persistence.
+	 *
+	 * @param portalPreferenceValuePersistence the portal preference value persistence
+	 */
+	public void setPortalPreferenceValuePersistence(
+		PortalPreferenceValuePersistence portalPreferenceValuePersistence) {
+
+		this.portalPreferenceValuePersistence =
+			portalPreferenceValuePersistence;
+	}
+
 	public void afterPropertiesSet() {
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.portal.kernel.model.PortalPreferences",
 			portalPreferencesLocalService);
+
+		_setLocalServiceUtilService(portalPreferencesLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.portal.kernel.model.PortalPreferences");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -491,6 +555,23 @@ public abstract class PortalPreferencesLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		PortalPreferencesLocalService portalPreferencesLocalService) {
+
+		try {
+			Field field =
+				PortalPreferencesLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, portalPreferencesLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(type = PortalPreferencesLocalService.class)
 	protected PortalPreferencesLocalService portalPreferencesLocalService;
 
@@ -502,6 +583,16 @@ public abstract class PortalPreferencesLocalServiceBaseImpl
 	)
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.PortalPreferenceValueLocalService.class
+	)
+	protected
+		com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+			portalPreferenceValueLocalService;
+
+	@BeanReference(type = PortalPreferenceValuePersistence.class)
+	protected PortalPreferenceValuePersistence portalPreferenceValuePersistence;
 
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
 	protected PersistedModelLocalServiceRegistry

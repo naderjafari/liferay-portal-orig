@@ -13,7 +13,7 @@ import {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayModal from '@clayui/modal';
 import getCN from 'classnames';
-import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import MaskedInput from 'react-text-mask';
 
 import {
@@ -56,7 +56,7 @@ const getTimeOptions = (isAmPm) => {
 	return times;
 };
 
-const UpdateDueDateStep = ({className, dueDate = new Date()}) => {
+function UpdateDueDateStep({className, dueDate = new Date()}) {
 	const {isAmPm} = useContext(AppContext);
 	const {setUpdateDueDate, updateDueDate} = useContext(ModalContext);
 
@@ -117,7 +117,6 @@ const UpdateDueDateStep = ({className, dueDate = new Date()}) => {
 
 						<MaskedInput
 							className="form-control"
-							data-testid="dateInput"
 							mask={dateMask}
 							onChange={({target}) => setDate(target.value)}
 							placeholder={dateFormat}
@@ -140,7 +139,6 @@ const UpdateDueDateStep = ({className, dueDate = new Date()}) => {
 
 					<textarea
 						className="form-control"
-						data-testid="commentInput"
 						onChange={({target}) => setComment(target.value)}
 						placeholder={Liferay.Language.get('write-a-note')}
 					/>
@@ -148,19 +146,13 @@ const UpdateDueDateStep = ({className, dueDate = new Date()}) => {
 			</ClayModal.Body>
 		</div>
 	);
-};
+}
 
-const TimePickerInputWithOptions = ({format, isAmPm, setValue, value}) => {
+function TimePickerInputWithOptions({format, isAmPm, setValue, value}) {
 	const [invalidTime, setInvalidTime] = useState(false);
 	const [showOptions, setShowOptions] = useState(false);
 	const inputRef = useRef();
-	const options = useMemo(() => getTimeOptions(isAmPm), [isAmPm]);
-	const popoverStyle = useMemo(() => {
-		const {current: {offsetWidth = 270} = {}} = inputRef;
-
-		return {left: `${(offsetWidth - 120) / 2}px`};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [inputRef.current]);
+	const options = getTimeOptions(isAmPm);
 
 	useEffect(() => {
 		setInvalidTime(!isValidDate(value, format));
@@ -171,10 +163,8 @@ const TimePickerInputWithOptions = ({format, isAmPm, setValue, value}) => {
 			className={`form-group-item form-group-item-label-spacer ${
 				invalidTime ? 'has-error' : ''
 			}`}
-			data-testid="timePicker"
 		>
 			<ClayInput
-				data-testid="timeInput"
 				onBlur={() => setShowOptions(false)}
 				onChange={({target}) => setValue(target.value)}
 				onFocus={() => setShowOptions(true)}
@@ -186,14 +176,17 @@ const TimePickerInputWithOptions = ({format, isAmPm, setValue, value}) => {
 			{showOptions && (
 				<div
 					className="clay-popover-bottom custom-time-select fade popover show"
-					style={popoverStyle}
+					style={{
+						left: `${
+							((inputRef.current?.offsetWidth ?? 270) - 120) / 2
+						}px`,
+					}}
 				>
 					<div className="arrow"></div>
 					<div className="inline-scroller">
 						<div className="popover-body">
 							{options.map((option, index) => (
 								<li
-									data-testid="timeListItem"
 									key={index}
 									onMouseDown={() => setValue(option)}
 								>
@@ -206,7 +199,7 @@ const TimePickerInputWithOptions = ({format, isAmPm, setValue, value}) => {
 			)}
 		</div>
 	);
-};
+}
 
 UpdateDueDateStep.TimePickerInput = TimePickerInputWithOptions;
 

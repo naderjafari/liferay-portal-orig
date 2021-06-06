@@ -42,7 +42,7 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.util.ResourcePermissionTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -80,22 +80,18 @@ public class DDMRESTDataProviderTest {
 	public static void setUpClass() throws Exception {
 		ConfigurationTestUtil.saveConfiguration(
 			DDMDataProviderConfiguration.class.getName(),
-			new HashMapDictionary() {
-				{
-					put("accessLocalNetwork", true);
-				}
-			});
+			HashMapDictionaryBuilder.<String, Object>put(
+				"accessLocalNetwork", true
+			).build());
 	}
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
 		ConfigurationTestUtil.saveConfiguration(
 			DDMDataProviderConfiguration.class.getName(),
-			new HashMapDictionary() {
-				{
-					put("accessLocalNetwork", false);
-				}
-			});
+			HashMapDictionaryBuilder.<String, Object>put(
+				"accessLocalNetwork", false
+			).build());
 	}
 
 	@Before
@@ -154,7 +150,7 @@ public class DDMRESTDataProviderTest {
 
 		outputParameters.addNestedDDMFormFieldValue(
 			DDMFormValuesTestUtil.createUnlocalizedDDMFormFieldValue(
-				"outputParameterPath", "nameCurrentValue;countryId"));
+				"outputParameterPath", "nameCurrentValue;name"));
 
 		outputParameters.addNestedDDMFormFieldValue(
 			DDMFormValuesTestUtil.createUnlocalizedDDMFormFieldValue(
@@ -317,7 +313,7 @@ public class DDMRESTDataProviderTest {
 
 		outputParameters.addNestedDDMFormFieldValue(
 			DDMFormValuesTestUtil.createUnlocalizedDDMFormFieldValue(
-				"outputParameterPath", "nameCurrentValue;countryId"));
+				"outputParameterPath", "nameCurrentValue;name"));
 
 		outputParameters.addNestedDDMFormFieldValue(
 			DDMFormValuesTestUtil.createUnlocalizedDDMFormFieldValue(
@@ -361,7 +357,7 @@ public class DDMRESTDataProviderTest {
 
 		KeyValuePair actualKeyValuePair = expectedKeyValuePairs.get(0);
 
-		Assert.assertEquals("48", actualKeyValuePair.getKey());
+		Assert.assertEquals("brazil", actualKeyValuePair.getKey());
 		Assert.assertEquals("Brazil", actualKeyValuePair.getValue());
 
 		_ddmDataProviderInstanceLocalService.deleteDataProviderInstance(
@@ -418,7 +414,7 @@ public class DDMRESTDataProviderTest {
 
 		outputParameters.addNestedDDMFormFieldValue(
 			DDMFormValuesTestUtil.createUnlocalizedDDMFormFieldValue(
-				"outputParameterPath", "nameCurrentValue;countryId"));
+				"outputParameterPath", "nameCurrentValue;name"));
 
 		outputParameters.addNestedDDMFormFieldValue(
 			DDMFormValuesTestUtil.createUnlocalizedDDMFormFieldValue(
@@ -462,7 +458,7 @@ public class DDMRESTDataProviderTest {
 
 		KeyValuePair actualKeyValuePair = expectedKeyValuePairs.get(0);
 
-		Assert.assertEquals("1", actualKeyValuePair.getKey());
+		Assert.assertEquals("canada", actualKeyValuePair.getKey());
 		Assert.assertEquals("Canada", actualKeyValuePair.getValue());
 
 		_ddmDataProviderInstanceLocalService.deleteDataProviderInstance(
@@ -472,10 +468,10 @@ public class DDMRESTDataProviderTest {
 	protected List<KeyValuePair> createKeyValuePairs() {
 		List<KeyValuePair> keyValuePairs = new ArrayList<>();
 
-		keyValuePairs.add(new KeyValuePair("3", "France"));
-		keyValuePairs.add(new KeyValuePair("15", "Spain"));
-		keyValuePairs.add(new KeyValuePair("19", "United States"));
-		keyValuePairs.add(new KeyValuePair("48", "Brazil"));
+		keyValuePairs.add(new KeyValuePair("france", "France"));
+		keyValuePairs.add(new KeyValuePair("spain", "Spain"));
+		keyValuePairs.add(new KeyValuePair("united-states", "United States"));
+		keyValuePairs.add(new KeyValuePair("brazil", "Brazil"));
 
 		return keyValuePairs;
 	}

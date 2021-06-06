@@ -19,6 +19,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -34,7 +35,6 @@ import com.liferay.style.book.web.internal.servlet.taglib.util.StyleBookEntryAct
 import java.util.Collections;
 import java.util.List;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -50,9 +50,10 @@ public class StyleBookVerticalCard
 
 		super(baseModel, rowChecker);
 
-		_styleBookEntry = (StyleBookEntry)baseModel;
 		_renderRequest = renderRequest;
 		_renderResponse = renderResponse;
+
+		_styleBookEntry = (StyleBookEntry)baseModel;
 
 		_themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -92,17 +93,15 @@ public class StyleBookVerticalCard
 			return null;
 		}
 
-		PortletURL editStyleBookEntryURL = _renderResponse.createRenderURL();
-
-		editStyleBookEntryURL.setParameter(
-			"mvcRenderCommandName", "/style_book/edit_style_book_entry");
-		editStyleBookEntryURL.setParameter(
-			"redirect", _themeDisplay.getURLCurrent());
-		editStyleBookEntryURL.setParameter(
-			"styleBookEntryId",
-			String.valueOf(_styleBookEntry.getStyleBookEntryId()));
-
-		return editStyleBookEntryURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/style_book/edit_style_book_entry"
+		).setRedirect(
+			_themeDisplay.getURLCurrent()
+		).setParameter(
+			"styleBookEntryId", _styleBookEntry.getStyleBookEntryId()
+		).buildString();
 	}
 
 	@Override
@@ -149,6 +148,11 @@ public class StyleBookVerticalCard
 		}
 
 		return null;
+	}
+
+	@Override
+	public String getStickerStyle() {
+		return "primary";
 	}
 
 	@Override

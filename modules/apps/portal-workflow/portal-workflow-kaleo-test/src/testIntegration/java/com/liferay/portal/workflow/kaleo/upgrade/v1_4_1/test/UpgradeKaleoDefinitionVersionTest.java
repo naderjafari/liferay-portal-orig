@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeStep;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinition;
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
@@ -65,7 +66,9 @@ public class UpgradeKaleoDefinitionVersionTest {
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -96,7 +99,7 @@ public class UpgradeKaleoDefinitionVersionTest {
 		_addKaleoDefinition(
 			company2.getCompanyId(), company2.getGroupId(), _name, 3);
 
-		_upgradeKaleoDefinitionVersion.upgrade();
+		_kaleoDefinitionVersionUpgradeProcess.upgrade();
 
 		_getKaleoDefinition(company1.getCompanyId(), _name);
 		_getKaleoDefinitionVersion(company1.getCompanyId(), _name, 1);
@@ -139,29 +142,30 @@ public class UpgradeKaleoDefinitionVersionTest {
 
 		String sql = sb.toString();
 
-		try (Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(sql)) {
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
-			ps.setLong(1, RandomTestUtil.randomLong());
-			ps.setLong(2, groupId);
-			ps.setLong(3, companyId);
-			ps.setLong(4, TestPropsValues.getUserId());
+			preparedStatement.setLong(1, RandomTestUtil.randomLong());
+			preparedStatement.setLong(2, groupId);
+			preparedStatement.setLong(3, companyId);
+			preparedStatement.setLong(4, TestPropsValues.getUserId());
 
 			User user = TestPropsValues.getUser();
 
-			ps.setString(5, user.getFullName());
+			preparedStatement.setString(5, user.getFullName());
 
-			ps.setTimestamp(6, _timestamp);
-			ps.setTimestamp(7, _timestamp);
-			ps.setString(8, name);
-			ps.setString(9, StringUtil.randomString());
-			ps.setString(10, StringUtil.randomString());
-			ps.setString(11, StringUtil.randomString());
-			ps.setInt(12, version);
-			ps.setBoolean(13, true);
-			ps.setLong(14, RandomTestUtil.randomLong());
+			preparedStatement.setTimestamp(6, _timestamp);
+			preparedStatement.setTimestamp(7, _timestamp);
+			preparedStatement.setString(8, name);
+			preparedStatement.setString(9, StringUtil.randomString());
+			preparedStatement.setString(10, StringUtil.randomString());
+			preparedStatement.setString(11, StringUtil.randomString());
+			preparedStatement.setInt(12, version);
+			preparedStatement.setBoolean(13, true);
+			preparedStatement.setLong(14, RandomTestUtil.randomLong());
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 	}
 
@@ -196,8 +200,8 @@ public class UpgradeKaleoDefinitionVersionTest {
 	}
 
 	private void _setUpOldColumnsAndIndexes() throws Exception {
-		try (Connection con = DataAccess.getConnection()) {
-			_dbInspector = new DBInspector(con);
+		try (Connection connection = DataAccess.getConnection()) {
+			_dbInspector = new DBInspector(connection);
 
 			_addColumn("KaleoDefinition", "startKaleoNodeId");
 
@@ -227,9 +231,9 @@ public class UpgradeKaleoDefinitionVersionTest {
 						String className = clazz.getName();
 
 						if (className.contains(
-								"UpgradeKaleoDefinitionVersion")) {
+								"KaleoDefinitionVersionUpgradeProcess")) {
 
-							_upgradeKaleoDefinitionVersion =
+							_kaleoDefinitionVersionUpgradeProcess =
 								(UpgradeProcess)upgradeStep;
 						}
 					}
@@ -248,8 +252,8 @@ public class UpgradeKaleoDefinitionVersionTest {
 	private KaleoDefinitionVersionLocalService
 		_kaleoDefinitionVersionLocalService;
 
+	private UpgradeProcess _kaleoDefinitionVersionUpgradeProcess;
 	private String _name;
 	private Timestamp _timestamp;
-	private UpgradeProcess _upgradeKaleoDefinitionVersion;
 
 }

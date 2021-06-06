@@ -23,6 +23,7 @@ import com.liferay.blogs.service.persistence.BlogsStatsUserPersistence;
 import com.liferay.blogs.service.persistence.impl.constants.BlogsPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
+import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -33,8 +34,11 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ProxyUtil;
 
@@ -49,9 +53,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -67,7 +74,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Brian Wing Shun Chan
  * @generated
  */
-@Component(service = BlogsStatsUserPersistence.class)
+@Component(service = {BlogsStatsUserPersistence.class, BasePersistence.class})
 public class BlogsStatsUserPersistenceImpl
 	extends BasePersistenceImpl<BlogsStatsUser>
 	implements BlogsStatsUserPersistence {
@@ -185,7 +192,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<BlogsStatsUser>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (BlogsStatsUser blogsStatsUser : list) {
@@ -544,7 +551,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -677,7 +684,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<BlogsStatsUser>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (BlogsStatsUser blogsStatsUser : list) {
@@ -1036,7 +1043,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		Object[] finderArgs = new Object[] {userId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -1149,8 +1156,7 @@ public class BlogsStatsUserPersistenceImpl
 		Object result = null;
 
 		if (useFinderCache) {
-			result = finderCache.getResult(
-				_finderPathFetchByG_U, finderArgs, this);
+			result = finderCache.getResult(_finderPathFetchByG_U, finderArgs);
 		}
 
 		if (result instanceof BlogsStatsUser) {
@@ -1248,7 +1254,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId, userId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1387,7 +1393,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<BlogsStatsUser>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (BlogsStatsUser blogsStatsUser : list) {
@@ -1777,7 +1783,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId, entryCount};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1916,7 +1922,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<BlogsStatsUser>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (BlogsStatsUser blogsStatsUser : list) {
@@ -2306,7 +2312,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		Object[] finderArgs = new Object[] {companyId, entryCount};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -2456,7 +2462,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<BlogsStatsUser>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (BlogsStatsUser blogsStatsUser : list) {
@@ -2869,7 +2875,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		Object[] finderArgs = new Object[] {userId, _getTime(lastPostDate)};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -2956,8 +2962,6 @@ public class BlogsStatsUserPersistenceImpl
 				blogsStatsUser.getGroupId(), blogsStatsUser.getUserId()
 			},
 			blogsStatsUser);
-
-		blogsStatsUser.resetOriginalValues();
 	}
 
 	/**
@@ -2974,9 +2978,6 @@ public class BlogsStatsUserPersistenceImpl
 
 				cacheResult(blogsStatsUser);
 			}
-			else {
-				blogsStatsUser.resetOriginalValues();
-			}
 		}
 	}
 
@@ -2991,9 +2992,7 @@ public class BlogsStatsUserPersistenceImpl
 	public void clearCache() {
 		entityCache.clearCache(BlogsStatsUserImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(BlogsStatsUserImpl.class);
 	}
 
 	/**
@@ -3005,34 +3004,19 @@ public class BlogsStatsUserPersistenceImpl
 	 */
 	@Override
 	public void clearCache(BlogsStatsUser blogsStatsUser) {
-		entityCache.removeResult(
-			BlogsStatsUserImpl.class, blogsStatsUser.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache((BlogsStatsUserModelImpl)blogsStatsUser, true);
+		entityCache.removeResult(BlogsStatsUserImpl.class, blogsStatsUser);
 	}
 
 	@Override
 	public void clearCache(List<BlogsStatsUser> blogsStatsUsers) {
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (BlogsStatsUser blogsStatsUser : blogsStatsUsers) {
-			entityCache.removeResult(
-				BlogsStatsUserImpl.class, blogsStatsUser.getPrimaryKey());
-
-			clearUniqueFindersCache(
-				(BlogsStatsUserModelImpl)blogsStatsUser, true);
+			entityCache.removeResult(BlogsStatsUserImpl.class, blogsStatsUser);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(BlogsStatsUserImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
 			entityCache.removeResult(BlogsStatsUserImpl.class, primaryKey);
@@ -3047,36 +3031,9 @@ public class BlogsStatsUserPersistenceImpl
 			blogsStatsUserModelImpl.getUserId()
 		};
 
+		finderCache.putResult(_finderPathCountByG_U, args, Long.valueOf(1));
 		finderCache.putResult(
-			_finderPathCountByG_U, args, Long.valueOf(1), false);
-		finderCache.putResult(
-			_finderPathFetchByG_U, args, blogsStatsUserModelImpl, false);
-	}
-
-	protected void clearUniqueFindersCache(
-		BlogsStatsUserModelImpl blogsStatsUserModelImpl, boolean clearCurrent) {
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				blogsStatsUserModelImpl.getGroupId(),
-				blogsStatsUserModelImpl.getUserId()
-			};
-
-			finderCache.removeResult(_finderPathCountByG_U, args);
-			finderCache.removeResult(_finderPathFetchByG_U, args);
-		}
-
-		if ((blogsStatsUserModelImpl.getColumnBitmask() &
-			 _finderPathFetchByG_U.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				blogsStatsUserModelImpl.getOriginalGroupId(),
-				blogsStatsUserModelImpl.getOriginalUserId()
-			};
-
-			finderCache.removeResult(_finderPathCountByG_U, args);
-			finderCache.removeResult(_finderPathFetchByG_U, args);
-		}
+			_finderPathFetchByG_U, args, blogsStatsUserModelImpl);
 	}
 
 	/**
@@ -3212,10 +3169,8 @@ public class BlogsStatsUserPersistenceImpl
 		try {
 			session = openSession();
 
-			if (blogsStatsUser.isNew()) {
+			if (isNew) {
 				session.save(blogsStatsUser);
-
-				blogsStatsUser.setNew(false);
 			}
 			else {
 				blogsStatsUser = (BlogsStatsUser)session.merge(blogsStatsUser);
@@ -3228,103 +3183,14 @@ public class BlogsStatsUserPersistenceImpl
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		entityCache.putResult(
+			BlogsStatsUserImpl.class, blogsStatsUserModelImpl, false, true);
+
+		cacheUniqueFindersCache(blogsStatsUserModelImpl);
 
 		if (isNew) {
-			Object[] args = new Object[] {blogsStatsUserModelImpl.getGroupId()};
-
-			finderCache.removeResult(_finderPathCountByGroupId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByGroupId, args);
-
-			args = new Object[] {blogsStatsUserModelImpl.getUserId()};
-
-			finderCache.removeResult(_finderPathCountByUserId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByUserId, args);
-
-			args = new Object[] {
-				blogsStatsUserModelImpl.getUserId(),
-				blogsStatsUserModelImpl.getLastPostDate()
-			};
-
-			finderCache.removeResult(_finderPathCountByU_L, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByU_L, args);
-
-			finderCache.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
+			blogsStatsUser.setNew(false);
 		}
-		else {
-			if ((blogsStatsUserModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByGroupId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					blogsStatsUserModelImpl.getOriginalGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-
-				args = new Object[] {blogsStatsUserModelImpl.getGroupId()};
-
-				finderCache.removeResult(_finderPathCountByGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-			}
-
-			if ((blogsStatsUserModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByUserId.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					blogsStatsUserModelImpl.getOriginalUserId()
-				};
-
-				finderCache.removeResult(_finderPathCountByUserId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUserId, args);
-
-				args = new Object[] {blogsStatsUserModelImpl.getUserId()};
-
-				finderCache.removeResult(_finderPathCountByUserId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUserId, args);
-			}
-
-			if ((blogsStatsUserModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByU_L.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					blogsStatsUserModelImpl.getOriginalUserId(),
-					blogsStatsUserModelImpl.getOriginalLastPostDate()
-				};
-
-				finderCache.removeResult(_finderPathCountByU_L, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByU_L, args);
-
-				args = new Object[] {
-					blogsStatsUserModelImpl.getUserId(),
-					blogsStatsUserModelImpl.getLastPostDate()
-				};
-
-				finderCache.removeResult(_finderPathCountByU_L, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByU_L, args);
-			}
-		}
-
-		entityCache.putResult(
-			BlogsStatsUserImpl.class, blogsStatsUser.getPrimaryKey(),
-			blogsStatsUser, false);
-
-		clearUniqueFindersCache(blogsStatsUserModelImpl, false);
-		cacheUniqueFindersCache(blogsStatsUserModelImpl);
 
 		blogsStatsUser.resetOriginalValues();
 
@@ -3465,7 +3331,7 @@ public class BlogsStatsUserPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<BlogsStatsUser>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -3535,7 +3401,7 @@ public class BlogsStatsUserPersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -3585,119 +3451,123 @@ public class BlogsStatsUserPersistenceImpl
 	 * Initializes the blogs stats user persistence.
 	 */
 	@Activate
-	public void activate() {
+	public void activate(BundleContext bundleContext) {
+		_bundleContext = bundleContext;
+
+		_argumentsResolverServiceRegistration = _bundleContext.registerService(
+			ArgumentsResolver.class, new BlogsStatsUserModelArgumentsResolver(),
+			new HashMapDictionary<>());
+
 		_finderPathWithPaginationFindAll = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
-			"findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByGroupId = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
-			"findByGroupId",
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId"}, true);
 
 		_finderPathWithoutPaginationFindByGroupId = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"findByGroupId", new String[] {Long.class.getName()},
-			BlogsStatsUserModelImpl.GROUPID_COLUMN_BITMASK |
-			BlogsStatsUserModelImpl.ENTRYCOUNT_COLUMN_BITMASK);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			true);
 
 		_finderPathCountByGroupId = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByGroupId", new String[] {Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			false);
 
 		_finderPathWithPaginationFindByUserId = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
-			"findByUserId",
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUserId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"userId"}, true);
 
 		_finderPathWithoutPaginationFindByUserId = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"findByUserId", new String[] {Long.class.getName()},
-			BlogsStatsUserModelImpl.USERID_COLUMN_BITMASK |
-			BlogsStatsUserModelImpl.ENTRYCOUNT_COLUMN_BITMASK);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUserId",
+			new String[] {Long.class.getName()}, new String[] {"userId"}, true);
 
 		_finderPathCountByUserId = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByUserId", new String[] {Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUserId",
+			new String[] {Long.class.getName()}, new String[] {"userId"},
+			false);
 
 		_finderPathFetchByG_U = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_ENTITY, "fetchByG_U",
+			FINDER_CLASS_NAME_ENTITY, "fetchByG_U",
 			new String[] {Long.class.getName(), Long.class.getName()},
-			BlogsStatsUserModelImpl.GROUPID_COLUMN_BITMASK |
-			BlogsStatsUserModelImpl.USERID_COLUMN_BITMASK);
+			new String[] {"groupId", "userId"}, true);
 
 		_finderPathCountByG_U = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_U",
-			new String[] {Long.class.getName(), Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_U",
+			new String[] {Long.class.getName(), Long.class.getName()},
+			new String[] {"groupId", "userId"}, false);
 
 		_finderPathWithPaginationFindByG_NotE = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
-			"findByG_NotE",
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_NotE",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId", "entryCount"}, true);
 
 		_finderPathWithPaginationCountByG_NotE = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByG_NotE",
-			new String[] {Long.class.getName(), Integer.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByG_NotE",
+			new String[] {Long.class.getName(), Integer.class.getName()},
+			new String[] {"groupId", "entryCount"}, false);
 
 		_finderPathWithPaginationFindByC_NotE = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
-			"findByC_NotE",
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_NotE",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"companyId", "entryCount"}, true);
 
 		_finderPathWithPaginationCountByC_NotE = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByC_NotE",
-			new String[] {Long.class.getName(), Integer.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByC_NotE",
+			new String[] {Long.class.getName(), Integer.class.getName()},
+			new String[] {"companyId", "entryCount"}, false);
 
 		_finderPathWithPaginationFindByU_L = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
-			"findByU_L",
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByU_L",
 			new String[] {
 				Long.class.getName(), Date.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"userId", "lastPostDate"}, true);
 
 		_finderPathWithoutPaginationFindByU_L = new FinderPath(
-			BlogsStatsUserImpl.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"findByU_L",
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByU_L",
 			new String[] {Long.class.getName(), Date.class.getName()},
-			BlogsStatsUserModelImpl.USERID_COLUMN_BITMASK |
-			BlogsStatsUserModelImpl.LASTPOSTDATE_COLUMN_BITMASK |
-			BlogsStatsUserModelImpl.ENTRYCOUNT_COLUMN_BITMASK);
+			new String[] {"userId", "lastPostDate"}, true);
 
 		_finderPathCountByU_L = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByU_L",
-			new String[] {Long.class.getName(), Date.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByU_L",
+			new String[] {Long.class.getName(), Date.class.getName()},
+			new String[] {"userId", "lastPostDate"}, false);
 	}
 
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(BlogsStatsUserImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+
+		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -3726,13 +3596,15 @@ public class BlogsStatsUserPersistenceImpl
 		super.setSessionFactory(sessionFactory);
 	}
 
+	private BundleContext _bundleContext;
+
 	@Reference
 	protected EntityCache entityCache;
 
 	@Reference
 	protected FinderCache finderCache;
 
-	private Long _getTime(Date date) {
+	private static Long _getTime(Date date) {
 		if (date == null) {
 			return null;
 		}
@@ -3763,13 +3635,119 @@ public class BlogsStatsUserPersistenceImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		BlogsStatsUserPersistenceImpl.class);
 
-	static {
-		try {
-			Class.forName(BlogsPersistenceConstants.class.getName());
+	@Override
+	protected FinderCache getFinderCache() {
+		return finderCache;
+	}
+
+	private ServiceRegistration<ArgumentsResolver>
+		_argumentsResolverServiceRegistration;
+
+	private static class BlogsStatsUserModelArgumentsResolver
+		implements ArgumentsResolver {
+
+		@Override
+		public Object[] getArguments(
+			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
+			boolean original) {
+
+			String[] columnNames = finderPath.getColumnNames();
+
+			if ((columnNames == null) || (columnNames.length == 0)) {
+				if (baseModel.isNew()) {
+					return FINDER_ARGS_EMPTY;
+				}
+
+				return null;
+			}
+
+			BlogsStatsUserModelImpl blogsStatsUserModelImpl =
+				(BlogsStatsUserModelImpl)baseModel;
+
+			long columnBitmask = blogsStatsUserModelImpl.getColumnBitmask();
+
+			if (!checkColumn || (columnBitmask == 0)) {
+				return _getValue(
+					blogsStatsUserModelImpl, columnNames, original);
+			}
+
+			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
+				finderPath);
+
+			if (finderPathColumnBitmask == null) {
+				finderPathColumnBitmask = 0L;
+
+				for (String columnName : columnNames) {
+					finderPathColumnBitmask |=
+						blogsStatsUserModelImpl.getColumnBitmask(columnName);
+				}
+
+				if (finderPath.isBaseModelResult() &&
+					(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION ==
+						finderPath.getCacheName())) {
+
+					finderPathColumnBitmask |= _ORDER_BY_COLUMNS_BITMASK;
+				}
+
+				_finderPathColumnBitmasksCache.put(
+					finderPath, finderPathColumnBitmask);
+			}
+
+			if ((columnBitmask & finderPathColumnBitmask) != 0) {
+				return _getValue(
+					blogsStatsUserModelImpl, columnNames, original);
+			}
+
+			return null;
 		}
-		catch (ClassNotFoundException classNotFoundException) {
-			throw new ExceptionInInitializerError(classNotFoundException);
+
+		@Override
+		public String getClassName() {
+			return BlogsStatsUserImpl.class.getName();
 		}
+
+		@Override
+		public String getTableName() {
+			return BlogsStatsUserTable.INSTANCE.getTableName();
+		}
+
+		private static Object[] _getValue(
+			BlogsStatsUserModelImpl blogsStatsUserModelImpl,
+			String[] columnNames, boolean original) {
+
+			Object[] arguments = new Object[columnNames.length];
+
+			for (int i = 0; i < arguments.length; i++) {
+				String columnName = columnNames[i];
+
+				if (original) {
+					arguments[i] =
+						blogsStatsUserModelImpl.getColumnOriginalValue(
+							columnName);
+				}
+				else {
+					arguments[i] = blogsStatsUserModelImpl.getColumnValue(
+						columnName);
+				}
+			}
+
+			return arguments;
+		}
+
+		private static final Map<FinderPath, Long>
+			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
+
+		private static final long _ORDER_BY_COLUMNS_BITMASK;
+
+		static {
+			long orderByColumnsBitmask = 0;
+
+			orderByColumnsBitmask |= BlogsStatsUserModelImpl.getColumnBitmask(
+				"entryCount");
+
+			_ORDER_BY_COLUMNS_BITMASK = orderByColumnsBitmask;
+		}
+
 	}
 
 }

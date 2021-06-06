@@ -123,15 +123,25 @@ List<Group> selectedGroups = GroupLocalServiceUtil.getGroups(assetPublisherDispl
 <%
 ItemSelector itemSelector = (ItemSelector)request.getAttribute(AssetPublisherWebKeys.ITEM_SELECTOR);
 
-ItemSelectorCriterion itemSelectorCriterion = new GroupItemSelectorCriterion(layout.isPrivateLayout());
+GroupItemSelectorCriterion groupItemSelectorCriterion = new GroupItemSelectorCriterion(layout.isPrivateLayout());
 
-itemSelectorCriterion.setDesiredItemSelectorReturnTypes(new GroupItemSelectorReturnType());
+groupItemSelectorCriterion.setDesiredItemSelectorReturnTypes(new GroupItemSelectorReturnType());
+groupItemSelectorCriterion.setIncludeChildSites(true);
+groupItemSelectorCriterion.setIncludeLayoutScopes(true);
+groupItemSelectorCriterion.setIncludeMySites(false);
+groupItemSelectorCriterion.setIncludeParentSites(true);
+groupItemSelectorCriterion.setIncludeRecentSites(false);
+groupItemSelectorCriterion.setIncludeSitesThatIAdminister(true);
 
-PortletURL itemSelectorURL = itemSelector.getItemSelectorURL(RequestBackedPortletURLFactoryUtil.create(renderRequest), eventName, itemSelectorCriterion);
-
-itemSelectorURL.setParameter("plid", String.valueOf(layout.getPlid()));
-itemSelectorURL.setParameter("groupId", String.valueOf(layout.getGroupId()));
-itemSelectorURL.setParameter("portletResource", assetPublisherDisplayContext.getPortletResource());
+PortletURL itemSelectorURL = PortletURLBuilder.create(
+	itemSelector.getItemSelectorURL(RequestBackedPortletURLFactoryUtil.create(renderRequest), eventName, groupItemSelectorCriterion)
+).setParameter(
+	"groupId", String.valueOf(layout.getGroupId())
+).setParameter(
+	"plid", String.valueOf(layout.getPlid())
+).setParameter(
+	"portletResource", assetPublisherDisplayContext.getPortletResource()
+).build();
 %>
 
 <aui:script sandbox="<%= true %>">
@@ -142,7 +152,7 @@ itemSelectorURL.setParameter("portletResource", assetPublisherDisplayContext.get
 	);
 
 	if (scopeSelect) {
-		scopeSelect.addEventListener('click', function (event) {
+		scopeSelect.addEventListener('click', (event) => {
 			event.preventDefault();
 
 			var searchContainer = Liferay.SearchContainer.get(
@@ -160,7 +170,7 @@ itemSelectorURL.setParameter("portletResource", assetPublisherDisplayContext.get
 
 			var opener = Liferay.Util.getOpener();
 
-			opener.Liferay.Util.openModal({
+			opener.Liferay.Util.openSelectionModal({
 				id: '<%= eventName %>' + event.currentTarget.id,
 				onSelect: function (event) {
 					Liferay.Util.postForm(form, {

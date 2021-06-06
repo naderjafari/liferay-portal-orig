@@ -14,12 +14,28 @@
 
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
-import {ReactFieldBase} from 'dynamic-data-mapping-form-field-type';
-import {ItemSelectorDialog} from 'frontend-js-web';
+import {FieldBase} from 'dynamic-data-mapping-form-field-type/FieldBase/ReactFieldBase.es';
+import {openSelectionModal} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
+
+function getInputValue(value, predefinedValue) {
+	if (!value || value === '') {
+		return predefinedValue;
+	}
+
+	if (value && typeof value !== 'string') {
+		try {
+			return JSON.stringify(value);
+		}
+		catch (error) {}
+	}
+
+	return value;
+}
 
 const LayoutSelector = ({
 	disabled,
+	editingLanguageId,
 	inputValue,
 	itemSelectorURL,
 	name,
@@ -29,7 +45,7 @@ const LayoutSelector = ({
 	const [layout, setLayout] = useState(() => JSON.parse(inputValue || '{}'));
 
 	useEffect(() => {
-		setLayout(JSON.parse(inputValue || '{}'));
+		setLayout(JSON.parse(getInputValue(inputValue, '{}')));
 	}, [inputValue]);
 
 	const handleClearClick = () => {
@@ -37,9 +53,7 @@ const LayoutSelector = ({
 		onChange('');
 	};
 
-	const handleFieldChanged = (event) => {
-		const selectedItem = event.selectedItem;
-
+	const handleFieldChanged = (selectedItem) => {
 		if (selectedItem && selectedItem.layoutId) {
 			setLayout(selectedItem);
 			onChange(JSON.stringify(selectedItem));
@@ -49,16 +63,12 @@ const LayoutSelector = ({
 	const handleItemSelectorTriggerClick = (event) => {
 		event.preventDefault();
 
-		const itemSelectorDialog = new ItemSelectorDialog({
-			eventName: `${portletNamespace}selectLayout`,
-			singleSelect: true,
+		openSelectionModal({
+			onSelect: handleFieldChanged,
+			selectEventName: `${portletNamespace}selectLayout`,
 			title: Liferay.Language.get('page'),
 			url: itemSelectorURL,
 		});
-
-		itemSelectorDialog.on('selectedItemChange', handleFieldChanged);
-
-		itemSelectorDialog.open();
 	};
 
 	return (
@@ -73,7 +83,9 @@ const LayoutSelector = ({
 
 					<ClayInput
 						className="bg-light"
+						dir={Liferay.Language.direction[editingLanguageId]}
 						disabled={disabled}
+						lang={editingLanguageId}
 						onClick={handleItemSelectorTriggerClick}
 						readOnly
 						type="text"
@@ -110,6 +122,7 @@ const LayoutSelector = ({
 };
 
 const Main = ({
+	editingLanguageId,
 	itemSelectorURL,
 	name,
 	onChange,
@@ -119,16 +132,17 @@ const Main = ({
 	value,
 	...otherProps
 }) => (
-	<ReactFieldBase {...otherProps} name={name} readOnly={readOnly}>
+	<FieldBase {...otherProps} name={name} readOnly={readOnly}>
 		<LayoutSelector
 			disabled={readOnly}
-			inputValue={value && value !== '' ? value : predefinedValue}
+			editingLanguageId={editingLanguageId}
+			inputValue={getInputValue(value, predefinedValue)}
 			itemSelectorURL={itemSelectorURL}
 			name={name}
 			onChange={(value) => onChange({}, value)}
 			portletNamespace={portletNamespace}
 		/>
-	</ReactFieldBase>
+	</FieldBase>
 );
 
 Main.displayName = 'LayoutSelector';

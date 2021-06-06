@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.comparator.UserScreenNameComparator;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.vldap.server.internal.BaseVLDAPTestCase;
 import com.liferay.vldap.server.internal.directory.builder.CommunitiesBuilder;
 import com.liferay.vldap.server.internal.directory.builder.CommunityBuilder;
@@ -88,6 +89,8 @@ import org.apache.directory.api.ldap.model.name.Dn;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -99,6 +102,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
  */
 @PrepareForTest(LdapUtil.class)
 public class DirectoryTreeTest extends BaseVLDAPTestCase {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	@Override
@@ -1170,10 +1178,8 @@ public class DirectoryTreeTest extends BaseVLDAPTestCase {
 	public void testToFilterConstraintsFromBranchNodeWithAndNode()
 		throws Exception {
 
-		BranchNode branchNode = new AndNode();
-
 		List<FilterConstraint> filterConstraints =
-			getFilterConstraintsFromBranchNode(branchNode, true);
+			getFilterConstraintsFromBranchNode(new AndNode(), true);
 
 		assertFilterConstraints(filterConstraints);
 	}
@@ -1244,10 +1250,8 @@ public class DirectoryTreeTest extends BaseVLDAPTestCase {
 	public void testToFilterConstraintsFromBranchNodeWithNotNode()
 		throws Exception {
 
-		BranchNode branchNode = new NotNode();
-
 		List<FilterConstraint> filterConstraints =
-			getFilterConstraintsFromBranchNode(branchNode, true);
+			getFilterConstraintsFromBranchNode(new NotNode(), true);
 
 		Assert.assertTrue(ListUtil.isEmpty(filterConstraints));
 	}
@@ -1289,10 +1293,8 @@ public class DirectoryTreeTest extends BaseVLDAPTestCase {
 	public void testToFilterConstraintsFromBranchNodeWithOrNode()
 		throws Exception {
 
-		BranchNode branchNode = new OrNode();
-
 		List<FilterConstraint> filterConstraints =
-			getFilterConstraintsFromBranchNode(branchNode, true);
+			getFilterConstraintsFromBranchNode(new OrNode(), true);
 
 		assertFilterConstraints(filterConstraints);
 	}

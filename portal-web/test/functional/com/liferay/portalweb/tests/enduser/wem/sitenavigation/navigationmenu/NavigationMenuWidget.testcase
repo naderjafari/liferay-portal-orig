@@ -36,9 +36,11 @@ definition {
 		}
 	}
 
-	@description = "This is a test for LPS-75059. A user can add a link to a navigation menu."
-	@priority = "4"
-	test AddURLNavigationMenu {
+	@description = "This is a test for LPS-120277. When add an URL type item, the blank target is set up after checking Open in a new tab."
+	@priority = "5"
+	test AddURLNavigationMenuItemWithBlankTarget {
+		property portal.acceptance = "true";
+
 		task ("Add a page to the site") {
 			JSONLayout.addPublicLayout(
 				groupName = "Test Site Name",
@@ -58,7 +60,8 @@ definition {
 		task ("Add a URL item to the navigation menu") {
 			NavigationMenusAdmin.addItem(
 				item = "URL",
-				url = "https://www.liferay.com/",
+				target = "Blank",
+				url = "https://www.liferay.com",
 				urlName = "Liferay");
 		}
 
@@ -86,7 +89,69 @@ definition {
 				locator1 = "Home#PAGE",
 				value1 = "Liferay");
 
-			AssertLocation(value1 = "https://www.liferay.com/");
+			SelectWindow.selectPopUp(locator1 = "null");
+
+			AssertLocation.assertPartialLocation(value1 = "https://www.liferay.com");
+
+			var siteName = TestCase.getSiteName(siteName = "${siteName}");
+
+			SelectWindow(locator1 = "title=Test Page Name - Test Site Name - ${siteName}");
+		}
+	}
+
+	@description = "This is a test for LPS-75059 and LPS-120277. When add an URL type item, the self target is defined by default."
+	@priority = "5"
+	test AddURLNavigationMenuItemWithSelfTarget {
+		property portal.acceptance = "true";
+
+		task ("Add a page to the site") {
+			JSONLayout.addPublicLayout(
+				groupName = "Test Site Name",
+				layoutName = "Test Page Name");
+		}
+
+		task ("Add a navigation menu") {
+			JSONSitenavigation.addSiteNavigationMenu(
+				groupName = "Test Site Name",
+				siteNavigationMenuName = "Test Navigation Menu Name");
+
+			NavigationMenusAdmin.openNavigationMenusAdmin(siteURLKey = "test-site-name");
+
+			LexiconEntry.gotoEntry(rowEntry = "Test Navigation Menu Name");
+		}
+
+		task ("Add a URL item to the navigation menu") {
+			NavigationMenusAdmin.addItem(
+				item = "URL",
+				url = "https://www.liferay.com",
+				urlName = "Liferay");
+		}
+
+		task ("Assert the URL item was added to the navigation menu") {
+			NavigationMenusAdmin.viewItem(itemName = "Liferay");
+		}
+
+		task ("Navigate to the Navigation Menu widget") {
+			Navigator.gotoSitePage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+		}
+
+		task ("Configure the Navigation Menu widget to use the navigation menu") {
+			NavigationMenusWidget.gotoNavigationMenuWidgetConfig();
+
+			NavigationMenusWidget.chooseMenu(menuName = "Test Navigation Menu Name");
+
+			Portlet.saveAndCloseConfig();
+		}
+
+		task ("Assert the Navigation Menu widget has the URL item and the link works properly") {
+			AssertClick(
+				key_pageName = "Liferay",
+				locator1 = "Home#PAGE",
+				value1 = "Liferay");
+
+			AssertLocation.assertPartialLocation(value1 = "https://www.liferay.com");
 		}
 	}
 
@@ -307,6 +372,125 @@ definition {
 			NavigationMenusWidget.chooseMenu(menuName = "Global Navigation Menu Name (Global)");
 
 			Portlet.saveAndCloseConfig();
+		}
+	}
+
+	@description = "This is a test for LPS-108262. Custom fields defined in Site Navigation Menu Item can be displayed in Navigation Menu portlet."
+	@priority = "4"
+	test ViewCustomFieldOfNavigationMenu {
+		task ("Add a custom field for Site Navigation Menu Item") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Configuration",
+				panel = "Control Panel",
+				portlet = "Custom Fields");
+
+			CustomFields.addCP(
+				customFieldName = "Subtitle",
+				customFieldType = "Input Field",
+				customInputDataType = "Text",
+				resourceName = "Site Navigation Menu Item");
+		}
+
+		task ("Add a widget page") {
+			JSONLayout.addPublicLayout(
+				groupName = "Test Site Name",
+				layoutName = "Test Page Name");
+		}
+
+		task ("Add a navigation menu") {
+			JSONSitenavigation.addSiteNavigationMenu(
+				groupName = "Test Site Name",
+				siteNavigationMenuName = "Test Navigation Menu Name");
+		}
+
+		task ("Add a page type item") {
+			NavigationMenusAdmin.openNavigationMenusAdmin(siteURLKey = "test-site-name");
+
+			LexiconEntry.gotoEntry(rowEntry = "Test Navigation Menu Name");
+
+			NavigationMenusAdmin.addItem(
+				item = "Page",
+				pageNames = "Test Page Name");
+		}
+
+		task ("Type content in custom field") {
+			NavigationMenusAdmin.editItem(
+				customField = "Subtitle",
+				fieldValue = "Page",
+				itemName = "Test Page Name");
+		}
+
+		task ("Add a submenu type item") {
+			NavigationMenusAdmin.addItem(
+				item = "Submenu",
+				submenuName = "Submenu Name");
+		}
+
+		task ("Type content in custom field") {
+			NavigationMenusAdmin.editItem(
+				customField = "Subtitle",
+				fieldValue = "Submenu",
+				itemName = "Submenu Name");
+		}
+
+		task ("Add a URL type item") {
+			NavigationMenusAdmin.addItem(
+				item = "URL",
+				url = "https://www.liferay.com",
+				urlName = "Liferay");
+		}
+
+		task ("Type content in custom field") {
+			NavigationMenusAdmin.editItem(
+				customField = "Subtitle",
+				fieldValue = "URL",
+				itemName = "Liferay");
+		}
+
+		task ("Add a Navigation Menu template") {
+			var templateScript = '''
+<#if entries?has_content>
+	<#list entries as navItem>
+		<#assign customFields = navItem.getExpandoAttributes()/>
+		${customFields["subtitle"]}
+	</#list>
+</#if>
+			''';
+
+			ApplicationDisplayTemplates.openWidgetTemplatesAdmin(siteURLKey = "test-site-name");
+
+			ApplicationDisplayTemplates.addCP(
+				adtType = "Navigation Menu",
+				templateScript = "${templateScript}");
+		}
+
+		task ("Navigate to the widget page") {
+			Navigator.gotoSitePage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+		}
+
+		task ("Configure the Navigation Menu widget") {
+			NavigationMenusWidget.gotoNavigationMenuWidgetConfig();
+
+			NavigationMenusWidget.chooseMenu(menuName = "Test Navigation Menu Name");
+
+			Pause(locator1 = "3000");
+
+			NavigationMenusWidget.selectDisplayTemplate(templateName = "Navigation Menu Test ADT");
+
+			Pause(locator1 = "3000");
+
+			Portlet.saveAndCloseConfig();
+		}
+
+		task ("Assert the custom fields are shown in Navigation Menu widget") {
+			for (var fieldValue : list "Page,Submenu,URL") {
+				AssertTextEquals.assertPartialText(
+					key_portletName = "Navigation Menu",
+					locator1 = "ManagementBar#PORTLET_BODY",
+					value1 = "${fieldValue}");
+			}
 		}
 	}
 

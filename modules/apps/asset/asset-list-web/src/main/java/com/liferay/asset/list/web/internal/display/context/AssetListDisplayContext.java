@@ -15,6 +15,8 @@
 package com.liferay.asset.list.web.internal.display.context;
 
 import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.asset.kernel.model.ClassType;
+import com.liferay.asset.kernel.model.ClassTypeReader;
 import com.liferay.asset.list.constants.AssetListActionKeys;
 import com.liferay.asset.list.constants.AssetListEntryTypeConstants;
 import com.liferay.asset.list.constants.AssetListPortletKeys;
@@ -29,10 +31,15 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuil
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -42,10 +49,11 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.segments.constants.SegmentsEntryConstants;
+import com.liferay.staging.StagingGroupHelper;
+import com.liferay.staging.StagingGroupHelperUtil;
 
 import java.util.List;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
@@ -77,11 +85,11 @@ public class AssetListDisplayContext {
 		return DropdownItemListBuilder.add(
 			_getAddAssetListEntryDropdownItemUnsafeConsumer(
 				AssetListEntryTypeConstants.TYPE_MANUAL_LABEL,
-				"manual-selection", AssetListEntryTypeConstants.TYPE_MANUAL)
+				"manual-collection", AssetListEntryTypeConstants.TYPE_MANUAL)
 		).add(
 			_getAddAssetListEntryDropdownItemUnsafeConsumer(
 				AssetListEntryTypeConstants.TYPE_DYNAMIC_LABEL,
-				"dynamic-selection", AssetListEntryTypeConstants.TYPE_DYNAMIC)
+				"dynamic-collection", AssetListEntryTypeConstants.TYPE_DYNAMIC)
 		).build();
 	}
 
@@ -227,6 +235,22 @@ public class AssetListDisplayContext {
 		return className.substring(pos + 1);
 	}
 
+	public ClassType getClassType(
+		ClassTypeReader classTypeReader, long classTypeId) {
+
+		try {
+			return classTypeReader.getClassType(
+				classTypeId, _themeDisplay.getLocale());
+		}
+		catch (PortalException portalException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn("Unable to get class type", portalException);
+			}
+		}
+
+		return null;
+	}
+
 	public String getEmptyResultMessageDescription() {
 		if (isShowAddAssetListEntryAction()) {
 			return LanguageUtil.get(
@@ -346,6 +370,22 @@ public class AssetListDisplayContext {
 	}
 
 	public boolean isShowAddAssetListEntryAction() {
+		Group group = _themeDisplay.getScopeGroup();
+
+		if (group.isLayout()) {
+			group = group.getParentGroup();
+		}
+
+		StagingGroupHelper stagingGroupHelper =
+			StagingGroupHelperUtil.getStagingGroupHelper();
+
+		if (stagingGroupHelper.isLiveGroup(group) &&
+			stagingGroupHelper.isStagedPortlet(
+				group, AssetListPortletKeys.ASSET_LIST)) {
+
+			return false;
+		}
+
 		return AssetListPermission.contains(
 			_themeDisplay.getPermissionChecker(),
 			_themeDisplay.getScopeGroupId(),
@@ -366,13 +406,13 @@ public class AssetListDisplayContext {
 	}
 
 	private String _getAddAssetListEntryURL(int type) {
-		PortletURL addAssetListEntryURL = _renderResponse.createActionURL();
-
-		addAssetListEntryURL.setParameter(
-			ActionRequest.ACTION_NAME, "/asset_list/add_asset_list_entry");
-		addAssetListEntryURL.setParameter("type", String.valueOf(type));
-
-		return addAssetListEntryURL.toString();
+		return PortletURLBuilder.createActionURL(
+			_renderResponse
+		).setActionName(
+			"/asset_list/add_asset_list_entry"
+		).setParameter(
+			"type", type
+		).buildString();
 	}
 
 	private String _getAddAssetListTitle(String title) {
@@ -408,6 +448,9 @@ public class AssetListDisplayContext {
 
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AssetListDisplayContext.class);
 
 	private Integer _assetListEntriesCount;
 	private SearchContainer<AssetListEntry> _assetListEntriesSearchContainer;

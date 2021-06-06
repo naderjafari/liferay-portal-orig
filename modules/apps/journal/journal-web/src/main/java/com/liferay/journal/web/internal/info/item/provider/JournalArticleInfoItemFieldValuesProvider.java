@@ -16,17 +16,23 @@ package com.liferay.journal.web.internal.info.item.provider;
 
 import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.info.item.provider.AssetEntryInfoItemFieldSetProvider;
+import com.liferay.dynamic.data.mapping.info.item.provider.DDMFormValuesInfoFieldValuesProvider;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.util.FieldsToDDMFormValuesConverter;
 import com.liferay.expando.info.item.provider.ExpandoInfoItemFieldSetProvider;
+import com.liferay.info.constants.InfoDisplayWebKeys;
+import com.liferay.info.display.request.attributes.contributor.InfoDisplayRequestAttributesContributor;
 import com.liferay.info.exception.NoSuchInfoItemException;
 import com.liferay.info.field.InfoField;
 import com.liferay.info.field.InfoFieldValue;
 import com.liferay.info.field.type.TextInfoFieldType;
-import com.liferay.info.item.InfoItemClassPKReference;
+import com.liferay.info.item.InfoItemDetails;
 import com.liferay.info.item.InfoItemFieldValues;
+import com.liferay.info.item.InfoItemReference;
+import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.field.reader.InfoItemFieldReaderFieldSetProvider;
+import com.liferay.info.item.provider.InfoItemDetailsProvider;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.info.type.WebImage;
@@ -38,25 +44,27 @@ import com.liferay.journal.util.JournalConverter;
 import com.liferay.journal.util.comparator.ArticleVersionComparator;
 import com.liferay.journal.web.internal.asset.JournalArticleDDMFormValuesReader;
 import com.liferay.journal.web.internal.info.item.JournalArticleInfoItemFields;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 
-import java.text.Format;
-
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
@@ -95,8 +103,8 @@ public class JournalArticleInfoItemFieldValuesProvider
 				_getDDMStructureInfoFieldValues(journalArticle)
 			).infoFieldValues(
 				_getDDMTemplateInfoFieldValues(journalArticle)
-			).infoItemClassPKReference(
-				new InfoItemClassPKReference(
+			).infoItemReference(
+				new InfoItemReference(
 					JournalArticle.class.getName(),
 					journalArticle.getResourcePrimKey())
 			).build();
@@ -105,19 +113,6 @@ public class JournalArticleInfoItemFieldValuesProvider
 			throw new RuntimeException(
 				"Caught unexpected exception", noSuchInfoItemException);
 		}
-	}
-
-	private String _getDateValue(Date date) {
-		if (date == null) {
-			return StringPool.BLANK;
-		}
-
-		Locale locale = LocaleThreadLocal.getThemeDisplayLocale();
-
-		Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(
-			locale);
-
-		return dateFormatDateTime.format(date);
 	}
 
 	private List<InfoFieldValue<Object>> _getDDMStructureInfoFieldValues(
@@ -169,11 +164,55 @@ public class JournalArticleInfoItemFieldValuesProvider
 				InfoFieldValue<Object> infoFieldValue = new InfoFieldValue<>(
 					infoField,
 					() -> {
+						ThemeDisplay themeDisplay = _getThemeDisplay();
+
+						HttpServletRequest httpServletRequest =
+							themeDisplay.getRequest();
+
+						InfoItemDetailsProvider infoItemDetailsProvider =
+							_infoItemServiceTracker.getFirstInfoItemService(
+								InfoItemDetailsProvider.class,
+								JournalArticle.class.getName());
+
+						InfoItemDetails infoItemDetails =
+							infoItemDetailsProvider.getInfoItemDetails(
+								journalArticle);
+
+						httpServletRequest.setAttribute(
+							InfoDisplayWebKeys.INFO_ITEM_DETAILS,
+							infoItemDetails);
+
+						for (InfoDisplayRequestAttributesContributor
+								infoDisplayRequestAttributesContributor :
+									_infoDisplayRequestAttributesContributors) {
+
+							infoDisplayRequestAttributesContributor.
+								addAttributes(httpServletRequest);
+						}
+
+						PortletRequestModel portletRequestModel = null;
+
+						PortletRequest portletRequest =
+							(PortletRequest)httpServletRequest.getAttribute(
+								JavaConstants.JAVAX_PORTLET_REQUEST);
+
+						PortletResponse portletResponse =
+							(PortletResponse)httpServletRequest.getAttribute(
+								JavaConstants.JAVAX_PORTLET_RESPONSE);
+
+						if ((portletRequest != null) &&
+							(portletResponse != null)) {
+
+							portletRequestModel = new PortletRequestModel(
+								portletRequest, portletResponse);
+						}
+
 						JournalArticleDisplay journalArticleDisplay =
 							_journalContent.getDisplay(
 								journalArticle, ddmTemplate.getTemplateKey(),
 								com.liferay.portal.kernel.util.Constants.VIEW,
-								languageId, 1, null, _getThemeDisplay());
+								languageId, 1, portletRequestModel,
+								themeDisplay);
 
 						if (journalArticleDisplay != null) {
 							return journalArticleDisplay.getContent();
@@ -184,7 +223,7 @@ public class JournalArticleInfoItemFieldValuesProvider
 								_journalArticleLocalService.getArticleDisplay(
 									journalArticle,
 									ddmTemplate.getTemplateKey(), null,
-									languageId, 1, null, _getThemeDisplay());
+									languageId, 1, null, themeDisplay);
 
 							return journalArticleDisplay.getContent();
 						}
@@ -240,6 +279,14 @@ public class JournalArticleInfoItemFieldValuesProvider
 					).values(
 						journalArticle.getDescriptionMap()
 					).build()));
+			journalArticleFieldValues.add(
+				new InfoFieldValue<>(
+					JournalArticleInfoItemFields.createDateInfoField,
+					journalArticle.getCreateDate()));
+			journalArticleFieldValues.add(
+				new InfoFieldValue<>(
+					JournalArticleInfoItemFields.modifiedDateInfoField,
+					journalArticle.getModifiedDate()));
 
 			if (themeDisplay != null) {
 				String articleImageURL = journalArticle.getArticleImageURL(
@@ -300,13 +347,21 @@ public class JournalArticleInfoItemFieldValuesProvider
 
 			journalArticleFieldValues.add(
 				new InfoFieldValue<>(
+					JournalArticleInfoItemFields.displayDateInfoField,
+					journalArticle.getDisplayDate()));
+			journalArticleFieldValues.add(
+				new InfoFieldValue<>(
+					JournalArticleInfoItemFields.expirationDateInfoField,
+					journalArticle.getExpirationDate()));
+			journalArticleFieldValues.add(
+				new InfoFieldValue<>(
 					JournalArticleInfoItemFields.publishDateInfoField,
-					_getDateValue(journalArticle.getDisplayDate())));
+					journalArticle.getDisplayDate()));
 
 			if (themeDisplay != null) {
 				journalArticleFieldValues.add(
 					new InfoFieldValue<>(
-						JournalArticleInfoItemFields.displayPageUrlInfoField,
+						JournalArticleInfoItemFields.displayPageURLInfoField,
 						_getDisplayPageURL(journalArticle, themeDisplay)));
 			}
 
@@ -364,8 +419,15 @@ public class JournalArticleInfoItemFieldValuesProvider
 	private FieldsToDDMFormValuesConverter _fieldsToDDMFormValuesConverter;
 
 	@Reference
+	private volatile List<InfoDisplayRequestAttributesContributor>
+		_infoDisplayRequestAttributesContributors;
+
+	@Reference
 	private InfoItemFieldReaderFieldSetProvider
 		_infoItemFieldReaderFieldSetProvider;
+
+	@Reference
+	private InfoItemServiceTracker _infoItemServiceTracker;
 
 	@Reference
 	private JournalArticleLocalService _journalArticleLocalService;

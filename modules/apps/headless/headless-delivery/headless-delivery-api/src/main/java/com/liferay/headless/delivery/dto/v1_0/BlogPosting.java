@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -49,20 +51,25 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("BlogPosting")
+@GraphQLName(
+	description = "Represents a blog post. See [BlogPosting](https://www.schema.org/BlogPosting) for more information.",
+	value = "BlogPosting"
+)
 @JsonFilter("Liferay.Vulcan")
 @Schema(
-	requiredProperties = {"articleBody", "headline"},
-	description = "Represents a blog post. See [BlogPosting](https://www.schema.org/BlogPosting) for more information."
+	description = "Represents a blog post. See [BlogPosting](https://www.schema.org/BlogPosting) for more information.",
+	requiredProperties = {"articleBody", "headline"}
 )
 @XmlRootElement(name = "BlogPosting")
-public class BlogPosting {
+public class BlogPosting implements Serializable {
 
 	public static BlogPosting toDTO(String json) {
 		return ObjectMapperUtil.readValue(BlogPosting.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -88,7 +95,9 @@ public class BlogPosting {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -208,7 +217,9 @@ public class BlogPosting {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(
+		description = "A list of the custom fields associated with the blog post."
+	)
 	@Valid
 	public CustomField[] getCustomFields() {
 		return customFields;
@@ -233,7 +244,9 @@ public class BlogPosting {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of the custom fields associated with the blog post."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected CustomField[] customFields;
 
@@ -551,7 +564,7 @@ public class BlogPosting {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Integer numberOfComments;
 
-	@Schema
+	@Schema(description = "A list of related contents to this blog post.")
 	@Valid
 	public RelatedContent[] getRelatedContents() {
 		return relatedContents;
@@ -577,9 +590,43 @@ public class BlogPosting {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A list of related contents to this blog post.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected RelatedContent[] relatedContents;
+
+	@Schema(
+		description = "A list of rendered blogs posts, which results from using a display page to process the blogs post and return HTML."
+	)
+	@Valid
+	public RenderedContent[] getRenderedContents() {
+		return renderedContents;
+	}
+
+	public void setRenderedContents(RenderedContent[] renderedContents) {
+		this.renderedContents = renderedContents;
+	}
+
+	@JsonIgnore
+	public void setRenderedContents(
+		UnsafeSupplier<RenderedContent[], Exception>
+			renderedContentsUnsafeSupplier) {
+
+		try {
+			renderedContents = renderedContentsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "A list of rendered blogs posts, which results from using a display page to process the blogs post and return HTML."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected RenderedContent[] renderedContents;
 
 	@Schema(
 		description = "The ID of the site to which this blog post is scoped."
@@ -648,7 +695,7 @@ public class BlogPosting {
 	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
 	@Schema(
-		description = "A write-only field that adds a `TaxonomyCategory` to this resource."
+		description = "A write-only field that adds `TaxonomyCategory` instances to the blog post."
 	)
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;
@@ -674,7 +721,7 @@ public class BlogPosting {
 	}
 
 	@GraphQLField(
-		description = "A write-only field that adds a `TaxonomyCategory` to this resource."
+		description = "A write-only field that adds `TaxonomyCategory` instances to the blog post."
 	)
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	protected Long[] taxonomyCategoryIds;
@@ -1001,6 +1048,26 @@ public class BlogPosting {
 			sb.append("]");
 		}
 
+		if (renderedContents != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"renderedContents\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < renderedContents.length; i++) {
+				sb.append(String.valueOf(renderedContents[i]));
+
+				if ((i + 1) < renderedContents.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (siteId != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -1071,6 +1138,7 @@ public class BlogPosting {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.BlogPosting",
 		name = "x-class-name"
 	)
@@ -1140,7 +1208,7 @@ public class BlogPosting {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -1179,7 +1247,7 @@ public class BlogPosting {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

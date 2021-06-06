@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ParentKnowledgeBaseFolder")
+@GraphQLName(
+	description = "The folder's parent Knowledge Base folder, if it exists.",
+	value = "ParentKnowledgeBaseFolder"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ParentKnowledgeBaseFolder")
-public class ParentKnowledgeBaseFolder {
+public class ParentKnowledgeBaseFolder implements Serializable {
 
 	public static ParentKnowledgeBaseFolder toDTO(String json) {
 		return ObjectMapperUtil.readValue(
@@ -164,6 +169,7 @@ public class ParentKnowledgeBaseFolder {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ParentKnowledgeBaseFolder",
 		name = "x-class-name"
 	)
@@ -199,7 +205,7 @@ public class ParentKnowledgeBaseFolder {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -238,7 +244,7 @@ public class ParentKnowledgeBaseFolder {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

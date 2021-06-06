@@ -131,7 +131,7 @@
 </tr>
 <tr>
 	<td>SOURCE_SCOPE_FIELD_FILTER_AND_VALUE</td>
-	<td>//span[@class='asset-subtypefields-message']</td>
+	<td>//span[@class='asset-subtypefields-message'][contains(.,'${key_text}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -246,7 +246,7 @@
 </tr>
 <tr>
 	<td>ORDERING_AND_GROUPING_ORDER_DIRECTIONAL_ICON</td>
-	<td>//div[contains(@class,'order-by-type')]//a[contains(.,'${key_sortOrder}')][span//*[name()='svg'][contains(@class,'icon-order-arrow')]]</td>
+	<td>//div[contains(@class,'order-by-type')]//a[contains(.,'${key_sortOrder}')][span//*[name()='svg'][contains(@class,'icon-order')]]</td>
 	<td></td>
 </tr>
 <tr>
@@ -261,6 +261,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ASSET_SELECTION_MANUAL_ASSET_ENTRIES_SELECT_IN_DEPOT</td>
+	<td>//div[contains(.,'Asset Entries')]/following-sibling::div//a[@title='Select in ${key_depotName}']</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ASSET_SELECTION_MANUAL_ASSET_ENTRIES_ASSET</td>
 	<td>//a[@data-title='Select ${key_assetType}']</td>
 	<td></td>
@@ -268,7 +273,12 @@
 <!--COLLECTION_PROVIDER-->
 <tr>
 	<td>SELECT_COLLECTION_PROVIDER_FIELD</td>
-	<td>//select[contains(@id,'infoListProviderClassName')]</td>
+	<td>//select[contains(@id,'infoListProviderKey')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECT_COLLECTION_PROVIDER_FIELD_VALUE</td>
+	<td>//select[contains(@id,'infoListProviderKey')]/option[normalize-space(text())='${key_value}']</td>
 	<td></td>
 </tr>
 </tbody>

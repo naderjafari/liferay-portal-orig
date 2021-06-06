@@ -37,6 +37,7 @@ const props = {
 			'visibilityExpression',
 		],
 	},
+	contentTypeConfig: {allowInvalidAvailableLocalesForProperty: false},
 	context: {},
 	dataLayoutBuilderId:
 		'_com_liferay_journal_web_portlet_JournalPortlet_dataLayoutBuilder',
@@ -68,14 +69,10 @@ describe('DataLayoutBuilder', () => {
 		expect(component).toMatchSnapshot();
 	});
 
-	it('is emetting message', () => {
-		component = new DataLayoutBuilder(props);
-		const event = 'event:test';
-		const payload = {test: 'emeting'};
+	it('is rendering with localizable false', () => {
+		component = new DataLayoutBuilder({...props, localizable: false});
 
-		component.eventEmitter.once(event, expect(payload).toBe);
-
-		component.emit(event, payload);
+		expect(component).toMatchSnapshot();
 	});
 
 	it('is dispatching message', () => {
@@ -86,7 +83,26 @@ describe('DataLayoutBuilder', () => {
 
 		component.eventEmitter.once(event, expect(payload).toBe);
 
-		component.dispatch(event, payload);
+		component.formBuilderWithLayoutProvider.refs.layoutProvider.dispatch(
+			event,
+			payload
+		);
+	});
+
+	it('is emetting message', () => {
+		component = new DataLayoutBuilder(props);
+		const event = 'event:test';
+		const payload = {test: 'emeting'};
+
+		component.eventEmitter.once(event, expect(payload).toBe);
+
+		component.emit(event, payload);
+	});
+
+	it('is getting fieldTypes', () => {
+		component = new DataLayoutBuilder(props);
+
+		expect(props.fieldTypes).toBe(component.props.fieldTypes);
 	});
 
 	it('is removing listener after dispatching event', () => {
@@ -99,54 +115,25 @@ describe('DataLayoutBuilder', () => {
 
 			expect(payload).toBe(eventPayload);
 		});
-		component.dispatch(event, payload);
+		component.formBuilderWithLayoutProvider.refs.layoutProvider.dispatch(
+			event,
+			payload
+		);
 	});
 
-	it('is dispatching action', () => {
-		component = new DataLayoutBuilder(props);
-		const action = 'action:test';
-		component.dispatchAction(action);
-
-		expect(props.appContext[0].action).toBe(action);
-	});
-
-	it('is serializing pages', () => {
-		component = new DataLayoutBuilder(props);
-
-		expect(component.serialize([], [])).toMatchObject({
-			definition:
-				'{"availableLanguageIds":["en_US"],"dataDefinitionFields":[],"defaultLanguageId":"en_US"}',
-			layout:
-				'{"dataLayoutPages":[],"dataRules":[],"paginationMode":"wizard"}',
-		});
-	});
-
-	it('is getting fieldTypes', () => {
-		component = new DataLayoutBuilder(props);
-
-		expect(props.fieldTypes).toBe(component.getFieldTypes());
-	});
-
-	it('is getting layoutProvider', () => {
+	it('is removing listener after dispatching event with function', () => {
 		component = new DataLayoutBuilder(props);
 		component.componentDidMount();
-
-		expect(component.getLayoutProvider()).toMatchObject({
-			...{ref: 'layoutProvider'},
-		});
-	});
-
-	it('is getting component state', () => {
-		component = new DataLayoutBuilder(props);
-		component.componentDidMount();
-
-		expect(component.getState()).toMatchObject(props.appContext[0]);
-	});
-
-	it('is getting component store', () => {
-		component = new DataLayoutBuilder(props);
-		component.componentDidMount();
-
-		expect(component.getStore()).toMatchObject({});
+		const event = 'event:test';
+		const payload = {test: 'dispatching'};
+		const listener = function (eventPayload) {
+			component.removeEventListener(event, listener);
+			expect(payload).toBe(eventPayload);
+		};
+		component.on(event, listener);
+		component.formBuilderWithLayoutProvider.refs.layoutProvider.dispatch(
+			event,
+			payload
+		);
 	});
 });

@@ -142,7 +142,7 @@ public class EditChannelMVCActionCommand extends BaseAnalyticsMVCActionCommand {
 			themeDisplay.getCompanyId(),
 			String.format(
 				"api/1.0/data-sources/%s/details",
-				AnalyticsSettingsUtil.getAsahFaroBackendDataSourceId(
+				AnalyticsSettingsUtil.getDataSourceId(
 					themeDisplay.getCompanyId())));
 
 		StatusLine statusLine = httpResponse.getStatusLine();
@@ -176,25 +176,24 @@ public class EditChannelMVCActionCommand extends BaseAnalyticsMVCActionCommand {
 
 		Stream<String> stream = Arrays.stream(selectedGroupIds);
 
-		List<Group> groups = stream.map(
-			Long::valueOf
-		).map(
-			groupLocalService::fetchGroup
-		).filter(
-			Objects::nonNull
-		).collect(
-			Collectors.toList()
-		);
-
 		HttpResponse httpResponse = AnalyticsSettingsUtil.doPatch(
 			JSONUtil.put(
 				"dataSourceId",
-				AnalyticsSettingsUtil.getAsahFaroBackendDataSourceId(
+				AnalyticsSettingsUtil.getDataSourceId(
 					themeDisplay.getCompanyId())
 			).put(
 				"groups",
 				JSONUtil.toJSONArray(
-					groups, group -> _buildGroupJSONObject(group, themeDisplay))
+					stream.map(
+						Long::valueOf
+					).map(
+						groupLocalService::fetchGroup
+					).filter(
+						Objects::nonNull
+					).collect(
+						Collectors.toList()
+					),
+					group -> _buildGroupJSONObject(group, themeDisplay))
 			),
 			themeDisplay.getCompanyId(), "api/1.0/channels/" + channelId);
 

@@ -162,11 +162,6 @@ public class ${schemaName}SerDes {
 
 		Map<String, String> map = new TreeMap<>();
 
-		<#assign
-			enumSchemas = freeMarkerTool.getDTOEnumSchemas(openAPIYAML, schema)
-			properties = freeMarkerTool.getDTOProperties(configYAML, openAPIYAML, schema)
-		/>
-
 		<#list properties?keys as propertyName>
 			<#assign propertyType = properties[propertyName] />
 
@@ -232,7 +227,9 @@ public class ${schemaName}SerDes {
 
 						<#assign propertyType = properties[propertyName] />
 
-						<#if stringUtil.equals(propertyType, "Date")>
+						<#if stringUtil.equals(propertyType, "BigDecimal")>
+							new BigDecimal((String)jsonParserFieldValue)
+						<#elseif stringUtil.equals(propertyType, "Date")>
 							toDate((String)jsonParserFieldValue)
 						<#elseif stringUtil.equals(propertyType, "Date[]")>
 							toDates((Object[])jsonParserFieldValue)
@@ -254,9 +251,9 @@ public class ${schemaName}SerDes {
 							toIntegers((Object[])jsonParserFieldValue)
 						<#elseif stringUtil.equals(propertyType, "String[]")>
 							toStrings((Object[])jsonParserFieldValue)
-						<#elseif allSchemas?keys?seq_contains(propertyType)>
+						<#elseif allExternalSchemas?keys?seq_contains(propertyType) || allSchemas?keys?seq_contains(propertyType)>
 							${propertyType}SerDes.toDTO((String)jsonParserFieldValue)
-						<#elseif propertyType?ends_with("[]") && allSchemas?keys?seq_contains(propertyType?remove_ending("[]"))>
+						<#elseif propertyType?ends_with("[]") && (allExternalSchemas?keys?seq_contains(propertyType?remove_ending("[]")) || allSchemas?keys?seq_contains(propertyType?remove_ending("[]")))>
 							Stream.of(
 								toStrings((Object[])jsonParserFieldValue)
 							).map(
@@ -274,10 +271,6 @@ public class ${schemaName}SerDes {
 					}
 				}
 			</#list>
-
-			else {
-				throw new IllegalArgumentException("Unsupported field name " + jsonParserFieldName);
-			}
 		}
 	}
 
@@ -305,7 +298,7 @@ public class ${schemaName}SerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -341,7 +334,7 @@ public class ${schemaName}SerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

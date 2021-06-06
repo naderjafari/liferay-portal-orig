@@ -24,8 +24,10 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.oauth2.provider.service.http.OAuth2AuthorizationServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class OAuth2AuthorizationSoap implements Serializable {
 
 	public static OAuth2AuthorizationSoap toSoapModel(
@@ -54,6 +56,7 @@ public class OAuth2AuthorizationSoap implements Serializable {
 		soapModel.setRefreshTokenCreateDate(model.getRefreshTokenCreateDate());
 		soapModel.setRefreshTokenExpirationDate(
 			model.getRefreshTokenExpirationDate());
+		soapModel.setRememberDeviceContent(model.getRememberDeviceContent());
 
 		return soapModel;
 	}
@@ -254,6 +257,14 @@ public class OAuth2AuthorizationSoap implements Serializable {
 		_refreshTokenExpirationDate = refreshTokenExpirationDate;
 	}
 
+	public String getRememberDeviceContent() {
+		return _rememberDeviceContent;
+	}
+
+	public void setRememberDeviceContent(String rememberDeviceContent) {
+		_rememberDeviceContent = rememberDeviceContent;
+	}
+
 	private long _oAuth2AuthorizationId;
 	private long _companyId;
 	private long _userId;
@@ -271,5 +282,6 @@ public class OAuth2AuthorizationSoap implements Serializable {
 	private long _refreshTokenContentHash;
 	private Date _refreshTokenCreateDate;
 	private Date _refreshTokenExpirationDate;
+	private String _rememberDeviceContent;
 
 }

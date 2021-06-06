@@ -65,6 +65,20 @@ public class DDMFormInstanceServiceWrapper
 	}
 
 	@Override
+	public DDMFormInstance copyFormInstance(
+			long groupId, java.util.Map<java.util.Locale, String> nameMap,
+			DDMFormInstance ddmFormInstance,
+			com.liferay.dynamic.data.mapping.storage.DDMFormValues
+				settingsDDMFormValues,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _ddmFormInstanceService.copyFormInstance(
+			groupId, nameMap, ddmFormInstance, settingsDDMFormValues,
+			serviceContext);
+	}
+
+	@Override
 	public void deleteFormInstance(long ddmFormInstanceId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
@@ -118,6 +132,18 @@ public class DDMFormInstanceServiceWrapper
 
 	@Override
 	public java.util.List<DDMFormInstance> search(
+		long companyId, long groupId, String keywords, int status, int start,
+		int end,
+		com.liferay.portal.kernel.util.OrderByComparator<DDMFormInstance>
+			orderByComparator) {
+
+		return _ddmFormInstanceService.search(
+			companyId, groupId, keywords, status, start, end,
+			orderByComparator);
+	}
+
+	@Override
+	public java.util.List<DDMFormInstance> search(
 		long companyId, long groupId, String keywords, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<DDMFormInstance>
 			orderByComparator) {
@@ -142,6 +168,14 @@ public class DDMFormInstanceServiceWrapper
 	public int searchCount(long companyId, long groupId, String keywords) {
 		return _ddmFormInstanceService.searchCount(
 			companyId, groupId, keywords);
+	}
+
+	@Override
+	public int searchCount(
+		long companyId, long groupId, String keywords, int status) {
+
+		return _ddmFormInstanceService.searchCount(
+			companyId, groupId, keywords, status);
 	}
 
 	@Override

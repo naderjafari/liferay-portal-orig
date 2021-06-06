@@ -17,6 +17,7 @@ import React, {useCallback, useContext} from 'react';
 import ContentView from '../../../shared/components/content-view/ContentView.es';
 import FormGroupWithStatus from '../../../shared/components/form/FormGroupWithStatus.es';
 import ReloadButton from '../../../shared/components/list/ReloadButton.es';
+import {parse} from '../../../shared/components/router/queryString.es';
 import {useToaster} from '../../../shared/components/toaster/hooks/useToaster.es';
 import {usePageTitle} from '../../../shared/hooks/usePageTitle.es';
 import {AppContext} from '../../AppContext.es';
@@ -32,8 +33,8 @@ import {
 } from './SLAFormConstants.es';
 import {AlertChange, AlertMessage} from './SLAFormPageAlerts.es';
 import {SLAFormContext} from './SLAFormPageProvider.es';
-import {DurationSection} from './sections/DurationSection.es';
-import {TimeFrameSection} from './sections/TimeFrameSection.es';
+import DurationSection from './sections/DurationSection.es';
+import TimeFrameSection from './sections/TimeFrameSection.es';
 import {
 	hasErrors,
 	validateDuration,
@@ -42,7 +43,7 @@ import {
 	validateNodeKeys,
 } from './util/slaFormUtil.es';
 
-const Body = ({history, id, processId, query}) => {
+function Body({history, id, processId, query}) {
 	const {defaultDelta} = useContext(AppContext);
 	const {setSLAUpdated} = useContext(SLAContext);
 	const {
@@ -55,6 +56,8 @@ const Body = ({history, id, processId, query}) => {
 		sla,
 	} = useContext(SLAFormContext);
 	const toaster = useToaster();
+
+	const {slaInfoLink} = parse(query);
 
 	usePageTitle(id ? sla.name : Liferay.Language.get('new-sla'));
 
@@ -124,10 +127,15 @@ const Body = ({history, id, processId, query}) => {
 						);
 					}
 					else {
-						history.push({
-							pathname: `/sla/${processId}/list/${defaultDelta}/1`,
-							search: query,
-						});
+						if (slaInfoLink) {
+							history.push({
+								pathname: `/sla/${processId}/list/${defaultDelta}/1`,
+								search: query,
+							});
+						}
+						else {
+							history.goBack();
+						}
 
 						toaster.success(Liferay.Language.get('sla-was-saved'));
 					}
@@ -180,7 +188,7 @@ const Body = ({history, id, processId, query}) => {
 			<ClayForm>
 				<ClayLayout.Sheet size="lg">
 					<ClayLayout.SheetHeader className="mb-0">
-						<h2 className="sheet-title" data-testid="sheetTitle">
+						<h2 className="sheet-title">
 							{Liferay.Language.get('sla-definition')}
 						</h2>
 					</ClayLayout.SheetHeader>
@@ -190,7 +198,6 @@ const Body = ({history, id, processId, query}) => {
 							<ClayLayout.Col sm="5">
 								<FormGroupWithStatus
 									className="form-group"
-									data-testid="nameField"
 									error={errors[NAME]}
 									htmlFor="slaName"
 									label={Liferay.Language.get('name')}
@@ -214,7 +221,6 @@ const Body = ({history, id, processId, query}) => {
 							<ClayLayout.Col sm="7">
 								<FormGroupWithStatus
 									className="form-group"
-									data-testid="descriptionField"
 									htmlFor="slaDescription"
 									label={Liferay.Language.get('description')}
 								>
@@ -238,17 +244,13 @@ const Body = ({history, id, processId, query}) => {
 
 					<ClayLayout.SheetFooter className="sheet-footer-btn-block-sm-down">
 						<ClayButton.Group spaced>
-							<ClayButton
-								data-testid="saveButton"
-								onClick={handleSubmit}
-							>
+							<ClayButton onClick={handleSubmit}>
 								{id
 									? Liferay.Language.get('update')
 									: Liferay.Language.get('save')}
 							</ClayButton>
 
 							<ClayButton
-								data-testid="cancelButton"
 								displayType="secondary"
 								onClick={() => history.goBack()}
 							>
@@ -260,11 +262,11 @@ const Body = ({history, id, processId, query}) => {
 			</ClayForm>
 		</ContentView>
 	);
-};
+}
 
 Body.AlertChange = AlertChange;
 Body.AlertMessage = AlertMessage;
 Body.DurationSection = DurationSection;
 Body.TimeFrameSection = TimeFrameSection;
 
-export {Body};
+export default Body;

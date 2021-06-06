@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +45,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("SelectionScope")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "SelectionScope")
-public class SelectionScope {
+public class SelectionScope implements Serializable {
 
 	public static SelectionScope toDTO(String json) {
 		return ObjectMapperUtil.readValue(SelectionScope.class, json);
@@ -196,6 +198,7 @@ public class SelectionScope {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.bulk.rest.dto.v1_0.SelectionScope",
 		name = "x-class-name"
 	)
@@ -231,7 +234,7 @@ public class SelectionScope {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -270,7 +273,7 @@ public class SelectionScope {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

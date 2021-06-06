@@ -111,10 +111,8 @@ public class JournalArticleAtomCollectionProvider
 		long groupId = atomRequestContext.getLongParameter("groupId");
 		String articleId = resourceName;
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		_journalArticleService.deleteArticle(
-			groupId, articleId, null, serviceContext);
+			groupId, articleId, null, new ServiceContext());
 	}
 
 	@Override
@@ -133,13 +131,11 @@ public class JournalArticleAtomCollectionProvider
 			AtomRequestContext atomRequestContext)
 		throws Exception {
 
-		List<JournalArticle> journalArticles = new ArrayList<>();
-
 		long companyId = CompanyThreadLocal.getCompanyId();
 		long groupId = atomRequestContext.getLongParameter("groupId");
 
 		if ((companyId <= 0) || (groupId <= 0)) {
-			return journalArticles;
+			return new ArrayList<>();
 		}
 
 		List<Long> folderIds = Collections.emptyList();
@@ -150,8 +146,8 @@ public class JournalArticleAtomCollectionProvider
 		String ddmTemplateKey = null;
 		Date displayDateGT = null;
 		Date displayDateLT = new Date();
-		int status = WorkflowConstants.STATUS_APPROVED;
 		Date reviewDate = null;
+		int status = WorkflowConstants.STATUS_APPROVED;
 
 		OrderByComparator<JournalArticle> orderByComparator =
 			new ArticleVersionComparator();
@@ -159,7 +155,7 @@ public class JournalArticleAtomCollectionProvider
 		int count = _journalArticleService.searchCount(
 			companyId, groupId, folderIds, classNameId, keywords, version,
 			ddmStructureKey, ddmTemplateKey, displayDateGT, displayDateLT,
-			status, reviewDate);
+			reviewDate, status);
 
 		AtomPager atomPager = new AtomPager(atomRequestContext, count);
 
@@ -168,7 +164,7 @@ public class JournalArticleAtomCollectionProvider
 		return _journalArticleService.search(
 			companyId, groupId, folderIds, classNameId, keywords, version,
 			ddmStructureKey, ddmTemplateKey, displayDateGT, displayDateLT,
-			status, reviewDate, atomPager.getStart(), atomPager.getEnd() + 1,
+			reviewDate, status, atomPager.getStart(), atomPager.getEnd() + 1,
 			orderByComparator);
 	}
 

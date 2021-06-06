@@ -230,6 +230,19 @@ AUI.add(
 				_onDestroyPortlet() {
 					var instance = this;
 
+					const baseCellEditor = document.querySelector(
+						'.basecelleditor'
+					);
+
+					if (baseCellEditor) {
+						while (baseCellEditor.hasChildNodes()) {
+							baseCellEditor.removeChild(
+								baseCellEditor.lastChild
+							);
+						}
+						baseCellEditor.remove();
+					}
+
 					instance.destroy(true);
 				},
 
@@ -475,6 +488,36 @@ AUI.add(
 						'destroyPortlet',
 						A.bind(instance._onDestroyPortlet, instance)
 					);
+
+					document.addEventListener('keydown', (event) => {
+						const baseCellEditorPopup = document.querySelector(
+							'.basecelleditor'
+						);
+
+						if (
+							baseCellEditorPopup &&
+							!baseCellEditorPopup.contains(event.target) &&
+							event.key === 'Enter'
+						) {
+							baseCellEditorPopup.classList.add(
+								'base-cell-editor-hidden'
+							);
+						}
+
+						const scriptEditorPopup = document.querySelector(
+							'.script-cell-editor'
+						);
+
+						if (
+							scriptEditorPopup &&
+							!scriptEditorPopup.contains(event.target) &&
+							event.key === 'Enter'
+						) {
+							scriptEditorPopup.classList.add(
+								'script-cell-editor-hidden'
+							);
+						}
+					});
 				},
 
 				setEditorContent(content) {

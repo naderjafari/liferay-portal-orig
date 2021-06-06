@@ -19,6 +19,7 @@ import com.liferay.item.selector.ItemSelectorView;
 import com.liferay.item.selector.criteria.GroupItemSelectorReturnType;
 import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
 import com.liferay.item.selector.criteria.UUIDItemSelectorReturnType;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -72,27 +73,39 @@ public class RecentSitesItemSelectorView
 	}
 
 	@Override
+	public boolean isVisible(
+		SiteItemSelectorCriterion siteItemSelectorCriterion,
+		ThemeDisplay themeDisplay) {
+
+		if (siteItemSelectorCriterion.isIncludeRecentSites()) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
 	public void renderHTML(
 			ServletRequest servletRequest, ServletResponse servletResponse,
 			SiteItemSelectorCriterion siteItemSelectorCriterion,
 			PortletURL portletURL, String itemSelectedEventName, boolean search)
 		throws IOException, ServletException {
 
-		_recentGroupItemSelectorViewRender.renderHTML(
+		_recentGroupItemSelectorViewRenderer.renderHTML(
 			servletRequest, servletResponse, siteItemSelectorCriterion,
 			portletURL, itemSelectedEventName, search);
 	}
 
 	@Activate
 	protected void activate() {
-		_recentGroupItemSelectorViewRender =
+		_recentGroupItemSelectorViewRenderer =
 			new RecentGroupItemSelectorViewRenderer(
 				_groupURLProvider, _recentGroupManager, _servletContext);
 	}
 
 	@Deactivate
 	protected void deactivate() {
-		_recentGroupItemSelectorViewRender = null;
+		_recentGroupItemSelectorViewRenderer = null;
 	}
 
 	private static final List<ItemSelectorReturnType>
@@ -109,7 +122,7 @@ public class RecentSitesItemSelectorView
 	private Portal _portal;
 
 	private RecentGroupItemSelectorViewRenderer
-		_recentGroupItemSelectorViewRender;
+		_recentGroupItemSelectorViewRenderer;
 
 	@Reference
 	private RecentGroupManager _recentGroupManager;

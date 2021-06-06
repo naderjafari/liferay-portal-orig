@@ -15,8 +15,11 @@
 package com.liferay.app.builder.workflow.web.internal.portlet.tab;
 
 import com.liferay.app.builder.model.AppBuilderApp;
+import com.liferay.app.builder.model.AppBuilderAppDataRecordLink;
 import com.liferay.app.builder.portlet.tab.AppBuilderAppPortletTab;
 import com.liferay.app.builder.portlet.tab.AppBuilderAppPortletTabContext;
+import com.liferay.app.builder.service.AppBuilderAppDataRecordLinkLocalService;
+import com.liferay.app.builder.workflow.model.AppBuilderWorkflowTaskLink;
 import com.liferay.app.builder.workflow.service.AppBuilderWorkflowTaskLinkLocalService;
 import com.liferay.dynamic.data.lists.model.DDLRecord;
 import com.liferay.dynamic.data.mapping.model.DDMStructureLayout;
@@ -31,10 +34,13 @@ import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.workflow.WorkflowException;
+import com.liferay.portal.kernel.workflow.WorkflowInstance;
+import com.liferay.portal.kernel.workflow.WorkflowInstanceManager;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManager;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.osgi.service.component.annotations.Component;
@@ -59,7 +65,7 @@ public class WorkflowAppBuilderAppPortletTab
 
 		WorkflowInstanceLink workflowInstanceLink =
 			_workflowInstanceLinkLocalService.fetchWorkflowInstanceLink(
-				appBuilderApp.getCompanyId(), appBuilderApp.getGroupId(),
+				appBuilderApp.getCompanyId(), _getGroupId(dataRecordId),
 				ResourceActionsUtil.getCompositeModelName(
 					AppBuilderApp.class.getName(), DDLRecord.class.getName()),
 				dataRecordId);
@@ -78,30 +84,47 @@ public class WorkflowAppBuilderAppPortletTab
 				).build());
 		}
 
-		Stream.of(
-			_appBuilderWorkflowTaskLinkLocalService.
-				getAppBuilderWorkflowTaskLinks(
-					appBuilderApp.getAppBuilderAppId(),
-					_getWorkflowTaskName(
-						appBuilderApp.getCompanyId(), appBuilderApp.getUserId(),
-						workflowInstanceLink.getWorkflowInstanceId()))
-		).flatMap(
-			List::stream
-		).forEach(
-			appBuilderWorkflowTask -> {
-				DDMStructureLayout ddmStructureLayout =
-					_ddmStructureLayoutLocalService.fetchDDMStructureLayout(
-						appBuilderWorkflowTask.getDdmStructureLayoutId());
+		try {
+			WorkflowInstance workflowInstance =
+				_workflowInstanceManager.getWorkflowInstance(
+					workflowInstanceLink.getCompanyId(),
+					workflowInstanceLink.getWorkflowInstanceId());
 
-				appBuilderAppPortletTabContext.addDataLayoutProperties(
-					ddmStructureLayout.getStructureLayoutId(),
-					HashMapBuilder.<String, Object>put(
-						"nameMap", ddmStructureLayout.getNameMap()
-					).put(
-						"readOnly", appBuilderWorkflowTask.getReadOnly()
-					).build());
+			AppBuilderAppDataRecordLink appBuilderAppDataRecordLink =
+				_appBuilderAppDataRecordLinkLocalService.
+					fetchDDLRecordAppBuilderAppDataRecordLink(dataRecordId);
+
+			if (workflowInstance.isComplete()) {
+				_populateContext(
+					appBuilderAppPortletTabContext,
+					_appBuilderWorkflowTaskLinkLocalService.
+						getAppBuilderWorkflowTaskLinks(
+							appBuilderApp.getAppBuilderAppId(),
+							appBuilderAppDataRecordLink.
+								getAppBuilderAppVersionId()),
+					appBuilderWorkflowTaskLink -> Boolean.TRUE);
+
+				return appBuilderAppPortletTabContext;
 			}
-		);
+
+			_populateContext(
+				appBuilderAppPortletTabContext,
+				_appBuilderWorkflowTaskLinkLocalService.
+					getAppBuilderWorkflowTaskLinks(
+						appBuilderApp.getAppBuilderAppId(),
+						appBuilderAppDataRecordLink.getAppBuilderAppVersionId(),
+						_getWorkflowTaskName(
+							appBuilderApp.getCompanyId(),
+							appBuilderApp.getUserId(),
+							workflowInstanceLink.getWorkflowInstanceId())),
+				appBuilderWorkflowTaskLink ->
+					appBuilderWorkflowTaskLink.getReadOnly());
+		}
+		catch (WorkflowException workflowException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(workflowException, workflowException);
+			}
+		}
 
 		return appBuilderAppPortletTabContext;
 	}
@@ -122,6 +145,22 @@ public class WorkflowAppBuilderAppPortletTab
 	public String getViewEntryPoint() {
 		return _npmResolver.resolveModuleName(
 			"app-builder-workflow-web/js/pages/entry/ViewEntry.es");
+	}
+
+	private long _getGroupId(long dataRecordId) {
+		if (dataRecordId == 0) {
+			return 0;
+		}
+
+		AppBuilderAppDataRecordLink appBuilderAppDataRecordLink =
+			_appBuilderAppDataRecordLinkLocalService.
+				fetchDDLRecordAppBuilderAppDataRecordLink(dataRecordId);
+
+		if (appBuilderAppDataRecordLink == null) {
+			return 0;
+		}
+
+		return appBuilderAppDataRecordLink.getGroupId();
 	}
 
 	private String _getWorkflowTaskName(
@@ -151,8 +190,39 @@ public class WorkflowAppBuilderAppPortletTab
 		return StringPool.BLANK;
 	}
 
+	private void _populateContext(
+		AppBuilderAppPortletTabContext appBuilderAppPortletTabContext,
+		List<AppBuilderWorkflowTaskLink> appBuilderWorkflowTaskLinks,
+		Function<AppBuilderWorkflowTaskLink, Boolean> readOnlyFunction) {
+
+		Stream.of(
+			appBuilderWorkflowTaskLinks
+		).flatMap(
+			List::stream
+		).forEach(
+			appBuilderWorkflowTaskLink -> {
+				DDMStructureLayout ddmStructureLayout =
+					_ddmStructureLayoutLocalService.fetchDDMStructureLayout(
+						appBuilderWorkflowTaskLink.getDdmStructureLayoutId());
+
+				appBuilderAppPortletTabContext.addDataLayoutProperties(
+					ddmStructureLayout.getStructureLayoutId(),
+					HashMapBuilder.<String, Object>put(
+						"nameMap", ddmStructureLayout.getNameMap()
+					).put(
+						"readOnly",
+						readOnlyFunction.apply(appBuilderWorkflowTaskLink)
+					).build());
+			}
+		);
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		WorkflowAppBuilderAppPortletTab.class);
+
+	@Reference
+	private AppBuilderAppDataRecordLinkLocalService
+		_appBuilderAppDataRecordLinkLocalService;
 
 	@Reference
 	private AppBuilderWorkflowTaskLinkLocalService
@@ -166,6 +236,9 @@ public class WorkflowAppBuilderAppPortletTab
 
 	@Reference
 	private WorkflowInstanceLinkLocalService _workflowInstanceLinkLocalService;
+
+	@Reference
+	private WorkflowInstanceManager _workflowInstanceManager;
 
 	@Reference
 	private WorkflowTaskManager _workflowTaskManager;

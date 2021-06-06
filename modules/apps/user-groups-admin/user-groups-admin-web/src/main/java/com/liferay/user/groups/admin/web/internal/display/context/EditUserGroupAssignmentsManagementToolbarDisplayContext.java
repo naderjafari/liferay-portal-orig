@@ -14,21 +14,27 @@
 
 package com.liferay.user.groups.admin.web.internal.display.context;
 
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroup;
+import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.UserGroupServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -40,6 +46,7 @@ import com.liferay.portlet.usersadmin.search.UserSearchTerms;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.portlet.PortletURL;
@@ -73,8 +80,8 @@ public class EditUserGroupAssignmentsManagementToolbarDisplayContext {
 		return DropdownItemListBuilder.add(
 			() -> _hasAddUserGroupPermission(),
 			dropdownItem -> {
-				dropdownItem.setHref("javascript:;");
-				dropdownItem.setIcon("minus-circle");
+				dropdownItem.putData("action", "removeUsers");
+				dropdownItem.setIcon("times-circle");
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "remove"));
 				dropdownItem.setQuickAction(true);
@@ -82,12 +89,67 @@ public class EditUserGroupAssignmentsManagementToolbarDisplayContext {
 		).build();
 	}
 
+	public Map<String, Object> getAdditionalProps() {
+		return HashMapBuilder.<String, Object>put(
+			"editUserGroupAssignmentsURL",
+			() -> {
+				PortletURL editUserGroupAssignmentsURL =
+					PortletURLBuilder.createActionURL(
+						_renderResponse
+					).setActionName(
+						"editUserGroupAssignments"
+					).build();
+
+				return editUserGroupAssignmentsURL.toString();
+			}
+		).put(
+			"portletURL",
+			() -> {
+				PortletURL portletURL = getPortletURL();
+
+				return portletURL.toString();
+			}
+		).put(
+			"selectUsersURL",
+			() -> {
+				PortletURL selectUsersURL = PortletURLBuilder.createActionURL(
+					_renderResponse
+				).setMVCPath(
+					"/select_user_group_users.jsp"
+				).setParameter(
+					"userGroupId", _userGroup.getUserGroupId()
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).build();
+
+				return selectUsersURL.toString();
+			}
+		).put(
+			"userGroupName",
+			() -> {
+				String userGroupName = _userGroup.getName();
+
+				return HtmlUtil.escape(userGroupName);
+			}
+		).build();
+	}
+
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
+	}
 
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+	public CreationMenu getCreationMenu() {
+		return CreationMenuBuilder.addPrimaryDropdownItem(
+			dropdownItem -> {
+				dropdownItem.putData("action", "addUsers");
+				dropdownItem.setLabel(
+					LanguageUtil.get(_httpServletRequest, "add-users"));
+			}
+		).build();
 	}
 
 	public List<DropdownItem> getFilterDropdownItems() {
@@ -135,17 +197,17 @@ public class EditUserGroupAssignmentsManagementToolbarDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", _mvcPath);
-		portletURL.setParameter(
-			"userGroupId", String.valueOf(_userGroup.getUserGroupId()));
-
-		String redirect = ParamUtil.getString(_httpServletRequest, "redirect");
-
-		portletURL.setParameter("redirect", redirect);
-
-		portletURL.setParameter("displayStyle", _displayStyle);
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			_mvcPath
+		).setRedirect(
+			ParamUtil.getString(_httpServletRequest, "redirect")
+		).setParameter(
+			"displayStyle", _displayStyle
+		).setParameter(
+			"userGroupId", _userGroup.getUserGroupId()
+		).build();
 
 		if (Validator.isNotNull(getKeywords())) {
 			portletURL.setParameter("keywords", getKeywords());
@@ -167,12 +229,11 @@ public class EditUserGroupAssignmentsManagementToolbarDisplayContext {
 	}
 
 	public String getSearchActionURL() {
-		PortletURL searchActionURL = getPortletURL();
-
-		searchActionURL.setParameter(
-			"redirect", PortalUtil.getCurrentURL(_httpServletRequest));
-
-		return searchActionURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setRedirect(
+			PortalUtil.getCurrentURL(_httpServletRequest)
+		).buildString();
 	}
 
 	public SearchContainer<User> getSearchContainer(
@@ -219,13 +280,12 @@ public class EditUserGroupAssignmentsManagementToolbarDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = getPortletURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public List<ViewTypeItem> getViewTypeItems() {

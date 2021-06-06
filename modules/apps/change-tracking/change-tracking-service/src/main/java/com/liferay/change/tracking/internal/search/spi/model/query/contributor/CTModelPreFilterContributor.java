@@ -26,7 +26,6 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.search.filter.ExistsFilter;
 import com.liferay.portal.kernel.search.filter.Filter;
-import com.liferay.portal.kernel.search.filter.TermFilter;
 import com.liferay.portal.kernel.search.filter.TermsFilter;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.change.tracking.CTService;
@@ -50,7 +49,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author André de Oliveira
  */
 @Component(
-	immediate = true, property = "indexer.class.name=ALL",
+	immediate = true,
+	property = {"indexer.class.name=ALL", "indexer.clauses.mandatory=true"},
 	service = ModelPreFilterContributor.class
 )
 public class CTModelPreFilterContributor implements ModelPreFilterContributor {
@@ -111,10 +111,13 @@ public class CTModelPreFilterContributor implements ModelPreFilterContributor {
 			}
 
 			if (added) {
-				booleanFilter.add(
-					new TermFilter(
-						_CT_COLLECTION_ID, String.valueOf(ctCollectionId)),
-					BooleanClauseOccur.MUST);
+				booleanFilter.addTerm(
+					_CT_COLLECTION_ID, String.valueOf(ctCollectionId),
+					BooleanClauseOccur.SHOULD);
+				booleanFilter.addTerm(
+					_CT_COLLECTION_ID,
+					String.valueOf(CTConstants.CT_COLLECTION_ID_PRODUCTION),
+					BooleanClauseOccur.SHOULD);
 			}
 			else {
 				booleanFilter.add(

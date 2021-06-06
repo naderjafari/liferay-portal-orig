@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.JavaConstants;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -45,13 +46,18 @@ public class JournalArticleTag extends IncludeTag {
 
 	@Override
 	public int doStartTag() throws JspException {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		HttpServletRequest httpServletRequest = getRequest();
 
-		PortletRequest portletRequest = (PortletRequest)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_REQUEST);
-		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_RESPONSE);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		PortletRequest portletRequest =
+			(PortletRequest)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_REQUEST);
+		PortletResponse portletResponse =
+			(PortletResponse)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 		PortletRequestModel portletRequestModel = null;
 
@@ -68,7 +74,9 @@ public class JournalArticleTag extends IncludeTag {
 		try {
 			_articleDisplay = JournalArticleLocalServiceUtil.getArticleDisplay(
 				_article.getGroupId(), _article.getArticleId(),
-				_article.getVersion(), _ddmTemplateKey, Constants.VIEW,
+				_article.getVersion(), _ddmTemplateKey,
+				ParamUtil.getString(
+					httpServletRequest, "p_l_mode", Constants.VIEW),
 				getLanguageId(), 1, portletRequestModel, themeDisplay);
 		}
 		catch (PortalException portalException) {
@@ -127,7 +135,7 @@ public class JournalArticleTag extends IncludeTag {
 	public void setPageContext(PageContext pageContext) {
 		super.setPageContext(pageContext);
 
-		servletContext = ServletContextUtil.getServletContext();
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
 	public void setShowTitle(boolean showTitle) {
@@ -165,7 +173,7 @@ public class JournalArticleTag extends IncludeTag {
 			return _languageId;
 		}
 
-		return LanguageUtil.getLanguageId(request);
+		return LanguageUtil.getLanguageId(getRequest());
 	}
 
 	@Override

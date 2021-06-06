@@ -19,7 +19,7 @@ import com.liferay.portal.kernel.service.ServiceWrapper;
 /**
  * Provides a wrapper for {@link DispatchLogLocalService}.
  *
- * @author Alessio Antonio Rendina
+ * @author Matija Petanjek
  * @see DispatchLogLocalService
  * @generated
  */
@@ -48,6 +48,18 @@ public class DispatchLogLocalServiceWrapper
 		com.liferay.dispatch.model.DispatchLog dispatchLog) {
 
 		return _dispatchLogLocalService.addDispatchLog(dispatchLog);
+	}
+
+	@Override
+	public com.liferay.dispatch.model.DispatchLog addDispatchLog(
+			long userId, long dispatchTriggerId, java.util.Date endDate,
+			String error, String output, java.util.Date startDate,
+			com.liferay.dispatch.executor.DispatchTaskStatus dispatchTaskStatus)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _dispatchLogLocalService.addDispatchLog(
+			userId, dispatchTriggerId, endDate, error, output, startDate,
+			dispatchTaskStatus);
 	}
 
 	/**
@@ -110,6 +122,11 @@ public class DispatchLogLocalServiceWrapper
 		return _dispatchLogLocalService.deleteDispatchLog(dispatchLogId);
 	}
 
+	@Override
+	public void deleteDispatchLogs(long dispatchTriggerId) {
+		_dispatchLogLocalService.deleteDispatchLogs(dispatchTriggerId);
+	}
+
 	/**
 	 * @throws PortalException
 	 */
@@ -124,6 +141,13 @@ public class DispatchLogLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _dispatchLogLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _dispatchLogLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -224,6 +248,23 @@ public class DispatchLogLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.dispatch.model.DispatchLog fetchLatestDispatchLog(
+		long dispatchTriggerId) {
+
+		return _dispatchLogLocalService.fetchLatestDispatchLog(
+			dispatchTriggerId);
+	}
+
+	@Override
+	public com.liferay.dispatch.model.DispatchLog fetchLatestDispatchLog(
+		long dispatchTriggerId,
+		com.liferay.dispatch.executor.DispatchTaskStatus dispatchTaskStatus) {
+
+		return _dispatchLogLocalService.fetchLatestDispatchLog(
+			dispatchTriggerId, dispatchTaskStatus);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery
 		getActionableDynamicQuery() {
 
@@ -263,6 +304,14 @@ public class DispatchLogLocalServiceWrapper
 		return _dispatchLogLocalService.getDispatchLogs(start, end);
 	}
 
+	@Override
+	public java.util.List<com.liferay.dispatch.model.DispatchLog>
+		getDispatchLogs(long dispatchTriggerId, int start, int end) {
+
+		return _dispatchLogLocalService.getDispatchLogs(
+			dispatchTriggerId, start, end);
+	}
+
 	/**
 	 * Returns the number of dispatch logs.
 	 *
@@ -271,6 +320,11 @@ public class DispatchLogLocalServiceWrapper
 	@Override
 	public int getDispatchLogsCount() {
 		return _dispatchLogLocalService.getDispatchLogsCount();
+	}
+
+	@Override
+	public int getDispatchLogsCount(long dispatchTriggerId) {
+		return _dispatchLogLocalService.getDispatchLogsCount(dispatchTriggerId);
 	}
 
 	@Override
@@ -316,6 +370,17 @@ public class DispatchLogLocalServiceWrapper
 		com.liferay.dispatch.model.DispatchLog dispatchLog) {
 
 		return _dispatchLogLocalService.updateDispatchLog(dispatchLog);
+	}
+
+	@Override
+	public com.liferay.dispatch.model.DispatchLog updateDispatchLog(
+			long dispatchLogId, java.util.Date endDate, String error,
+			String output,
+			com.liferay.dispatch.executor.DispatchTaskStatus dispatchTaskStatus)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _dispatchLogLocalService.updateDispatchLog(
+			dispatchLogId, endDate, error, output, dispatchTaskStatus);
 	}
 
 	@Override

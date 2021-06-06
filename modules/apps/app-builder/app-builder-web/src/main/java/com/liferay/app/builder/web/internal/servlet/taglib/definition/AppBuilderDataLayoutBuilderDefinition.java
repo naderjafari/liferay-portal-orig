@@ -30,7 +30,7 @@ public class AppBuilderDataLayoutBuilderDefinition
 
 	@Override
 	public boolean allowFieldSets() {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -51,6 +51,14 @@ public class AppBuilderDataLayoutBuilderDefinition
 	@Override
 	public boolean allowSuccessPage() {
 		return false;
+	}
+
+	@Override
+	public String[] getUnimplementedProperties() {
+		return new String[] {
+			"allowGuestUsers", "fieldNamespace", "readOnly",
+			"visibilityExpression"
+		};
 	}
 
 }

@@ -13,41 +13,71 @@
  */
 
 import '@testing-library/jest-dom/extend-expect';
-import {
-	cleanup,
-	queryByText,
-	queryByTitle,
-	render,
-} from '@testing-library/react';
+import {cleanup, queryByText, render} from '@testing-library/react';
 import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
 import {RowWithControls} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
+
+jest.mock(
+	'../../../../../src/main/resources/META-INF/resources/page_editor/app/config',
+	() => ({
+		config: {
+			frontendTokens: {},
+		},
+	})
+);
 
 const renderRow = ({
 	activeItemId = 'row',
+	columnConfiguration = [],
 	hasUpdatePermissions = true,
 	lockedExperience = false,
 	viewportSize = VIEWPORT_SIZES.desktop,
 } = {}) => {
+	const childrenItems = {};
+
+	columnConfiguration.forEach(({size, children = []}, index) => {
+		const itemId = `column${index}`;
+
+		childrenItems[itemId] = {
+			children,
+			config: {
+				size,
+				styles: {},
+			},
+			itemId,
+			parentId: 'row',
+			type: LAYOUT_DATA_ITEM_TYPES.col,
+		};
+	});
+
 	const row = {
-		children: [],
-		config: {},
+		children: Object.keys(childrenItems),
+		config: {styles: {}},
 		itemId: 'row',
 		parentId: null,
 		type: LAYOUT_DATA_ITEM_TYPES.row,
 	};
 
+	const child = {
+		children: [],
+		config: {styles: {}},
+		itemId: 'child',
+		parentId: null,
+		type: LAYOUT_DATA_ITEM_TYPES.container,
+	};
+
 	const layoutData = {
-		items: {row},
+		items: {child, row, ...childrenItems},
 	};
 
 	const AutoSelect = () => {
@@ -80,14 +110,6 @@ const renderRow = ({
 describe('RowWithControls', () => {
 	afterEach(cleanup);
 
-	it('hides FloatingToolbar if user has no permissions', () => {
-		const {baseElement} = renderRow({hasUpdatePermissions: false});
-
-		expect(
-			baseElement.querySelector('.page-editor__floating-toolbar')
-		).toBe(null);
-	});
-
 	it('does not add row class if user has no permissions', () => {
 		const {baseElement} = renderRow({hasUpdatePermissions: false});
 
@@ -101,14 +123,41 @@ describe('RowWithControls', () => {
 		expect(queryByText(baseElement, 'duplicate')).not.toBeInTheDocument();
 	});
 
-	it('does not allow changing configuration if viewport is not desktop', () => {
+	it('does include the empty class when having one row and columns are empty', () => {
 		const {baseElement} = renderRow({
-			viewportSize: VIEWPORT_SIZES.landscapeMobile,
+			columnConfiguration: [{size: 4}, {size: 4}, {size: 4}],
 		});
 
-		expect(queryByTitle(baseElement, 'grid-styles')).toBeInTheDocument();
 		expect(
-			queryByTitle(baseElement, 'grid-configuration')
-		).not.toBeInTheDocument();
+			baseElement.querySelector('.page-editor__row.empty')
+		).toBeInTheDocument();
+	});
+
+	it('does not include the empty class when having one row and one column is not empty', () => {
+		const {baseElement} = renderRow({
+			columnConfiguration: [
+				{children: ['child'], size: 4},
+				{size: 4},
+				{size: 4},
+			],
+		});
+
+		expect(baseElement.querySelector('.page-editor__row.empty')).toBe(null);
+	});
+
+	it('does not include the empty class when having several rows and some columns from one row are empty', () => {
+		const {baseElement} = renderRow({
+			columnConfiguration: [
+				{children: ['child'], size: 6},
+				{size: 6},
+				{size: 4},
+				{size: 4},
+				{size: 4},
+			],
+		});
+
+		expect(
+			baseElement.querySelector('.page-editor__row.empty')
+		).toBeInTheDocument();
 	});
 });

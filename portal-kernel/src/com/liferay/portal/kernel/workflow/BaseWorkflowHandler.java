@@ -88,6 +88,28 @@ public abstract class BaseWorkflowHandler<T> implements WorkflowHandler<T> {
 	}
 
 	@Override
+	public String getNotificationLink(
+			long workflowTaskId, ServiceContext serviceContext)
+		throws PortalException {
+
+		try {
+			PortletURL portletURL = PortletURLFactoryUtil.create(
+				serviceContext.getRequest(), PortletKeys.MY_WORKFLOW_TASK,
+				PortletRequest.RENDER_PHASE);
+
+			portletURL.setParameter("mvcPath", "/edit_workflow_task.jsp");
+			portletURL.setParameter(
+				"workflowTaskId", String.valueOf(workflowTaskId));
+			portletURL.setWindowState(WindowState.MAXIMIZED);
+
+			return portletURL.toString();
+		}
+		catch (WindowStateException windowStateException) {
+			throw new PortalException(windowStateException);
+		}
+	}
+
+	@Override
 	public String getSummary(
 		long classPK, PortletRequest portletRequest,
 		PortletResponse portletResponse) {
@@ -149,26 +171,17 @@ public abstract class BaseWorkflowHandler<T> implements WorkflowHandler<T> {
 		return null;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #getNotificationLink(long, ServiceContext)}}
+	 */
+	@Deprecated
 	@Override
 	public String getURLEditWorkflowTask(
 			long workflowTaskId, ServiceContext serviceContext)
 		throws PortalException {
 
-		try {
-			PortletURL portletURL = PortletURLFactoryUtil.create(
-				serviceContext.getRequest(), PortletKeys.MY_WORKFLOW_TASK,
-				PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter("mvcPath", "/edit_workflow_task.jsp");
-			portletURL.setParameter(
-				"workflowTaskId", String.valueOf(workflowTaskId));
-			portletURL.setWindowState(WindowState.MAXIMIZED);
-
-			return portletURL.toString();
-		}
-		catch (WindowStateException windowStateException) {
-			throw new PortalException(windowStateException);
-		}
+		return getNotificationLink(workflowTaskId, serviceContext);
 	}
 
 	@Override

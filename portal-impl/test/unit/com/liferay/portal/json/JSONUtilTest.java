@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +31,8 @@ import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -37,15 +40,14 @@ import org.junit.Test;
  */
 public class JSONUtilTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
 		JSONInit.init();
-
-		JSONFactoryImpl jsonFactoryImpl = new JSONFactoryImpl();
-
-		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
-
-		jsonFactoryUtil.setJSONFactory(jsonFactoryImpl);
 	}
 
 	@Test
@@ -93,16 +95,14 @@ public class JSONUtilTest {
 
 		Stream<String> stringStream = strings.stream();
 
-		JSONArray jsonArray = stringStream.map(
-			String::toUpperCase
-		).collect(
-			JSONUtil.createCollector()
-		);
-
 		Assert.assertTrue(
 			JSONUtil.equals(
 				JSONUtil.concat(JSONUtil.putAll("FOO", "BAR", "BAZ")),
-				jsonArray));
+				stringStream.map(
+					String::toUpperCase
+				).collect(
+					JSONUtil.createCollector()
+				)));
 	}
 
 	@Test

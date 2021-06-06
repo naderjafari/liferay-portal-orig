@@ -14,6 +14,7 @@
 
 package com.liferay.segments.experiment.web.internal.product.navigation.control.menu;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -138,12 +139,13 @@ public class SegmentsExperimentProductNavigationControlMenuEntry
 		else {
 			values.put("cssClass", StringPool.BLANK);
 
-			PortletURL portletURL = _portletURLFactory.create(
-				httpServletRequest, SegmentsPortletKeys.SEGMENTS_EXPERIMENT,
-				RenderRequest.RENDER_PHASE);
-
-			portletURL.setParameter(
-				"mvcPath", "/segments_experiment_panel.jsp");
+			PortletURL portletURL = PortletURLBuilder.create(
+				_portletURLFactory.create(
+					httpServletRequest, SegmentsPortletKeys.SEGMENTS_EXPERIMENT,
+					RenderRequest.RENDER_PHASE)
+			).setMVCPath(
+				"/segments_experiment_panel.jsp"
+			).build();
 
 			try {
 				portletURL.setWindowState(LiferayWindowState.EXCLUSIVE);
@@ -321,7 +323,7 @@ public class SegmentsExperimentProductNavigationControlMenuEntry
 
 			jspWriter.write("segmentsExperimentPanelId\">");
 			jspWriter.write(
-				"<div class=\"sidebar sidebar-default sidenav-menu " +
+				"<div class=\"sidebar sidebar-light sidenav-menu " +
 					"sidebar-sm\">");
 
 			RuntimeTag runtimeTag = new RuntimeTag();

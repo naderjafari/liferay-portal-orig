@@ -19,11 +19,11 @@ import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTypeServices
 import com.liferay.frontend.js.loader.modules.extender.npm.NPMResolver;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.EventsProcessorUtil;
+import com.liferay.portal.json.JSONObjectImpl;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
@@ -34,6 +34,8 @@ import com.liferay.portal.util.PropsValues;
 
 import java.io.IOException;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -103,7 +105,7 @@ public class DDMFormFieldTypesServlet extends HttpServlet {
 
 		stream.map(
 			ddmFormFieldTypeName -> getFieldTypeMetadataJSONObject(
-				ddmFormFieldTypeName)
+				ddmFormFieldTypeName, Collections.emptyMap())
 		).forEach(
 			fieldTypesJSONArray::put
 		);
@@ -116,9 +118,15 @@ public class DDMFormFieldTypesServlet extends HttpServlet {
 	}
 
 	protected JSONObject getFieldTypeMetadataJSONObject(
-		String ddmFormFieldName) {
+		String ddmFormFieldName, Map<String, Object> configuration) {
 
-		return JSONUtil.put(
+		JSONObject jsonObject = new JSONObjectImpl();
+
+		if (!configuration.isEmpty()) {
+			jsonObject.put("configuration", configuration);
+		}
+
+		return jsonObject.put(
 			"javaScriptModule",
 			resolveModuleName(
 				_ddmFormFieldTypeServicesTracker.getDDMFormFieldType(

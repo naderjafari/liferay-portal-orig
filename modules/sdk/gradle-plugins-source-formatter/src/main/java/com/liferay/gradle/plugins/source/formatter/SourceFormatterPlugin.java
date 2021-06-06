@@ -155,6 +155,13 @@ public class SourceFormatterPlugin implements Plugin<Project> {
 			formatSourceTask.setFormatLocalChanges(
 				Boolean.parseBoolean(formatLocalChanges));
 		}
+
+		String sourceBaseDir = GradleUtil.getTaskPrefixedProperty(
+			formatSourceTask, "source.base.dir");
+
+		if (Validator.isNotNull(sourceBaseDir)) {
+			formatSourceTask.setBaseDirName(sourceBaseDir);
+		}
 	}
 
 	private void _configureTasksFormatSource(

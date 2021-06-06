@@ -22,6 +22,7 @@ import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.util.ExpandoBridgeUtil;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -103,6 +104,7 @@ import com.liferay.wiki.engine.WikiEngine;
 import com.liferay.wiki.engine.WikiEngineRenderer;
 import com.liferay.wiki.escape.WikiEscapeUtil;
 import com.liferay.wiki.exception.DuplicatePageException;
+import com.liferay.wiki.exception.DuplicatePageExternalReferenceCodeException;
 import com.liferay.wiki.exception.NoSuchPageException;
 import com.liferay.wiki.exception.PageContentException;
 import com.liferay.wiki.exception.PageTitleException;
@@ -179,12 +181,59 @@ import org.osgi.service.component.annotations.Reference;
 )
 public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * #addPage(String, long, long, String, double, String, String, boolean,
+	 * String, boolean, String, String, ServiceContext)}
+	 */
+	@Deprecated
 	@Override
 	public WikiPage addPage(
 			long userId, long nodeId, String title, double version,
 			String content, String summary, boolean minorEdit, String format,
 			boolean head, String parentTitle, String redirectTitle,
 			ServiceContext serviceContext)
+		throws PortalException {
+
+		return addPage(
+			null, userId, nodeId, title, version, content, summary, minorEdit,
+			format, head, parentTitle, redirectTitle, serviceContext);
+	}
+
+	@Override
+	public WikiPage addPage(
+			long userId, long nodeId, String title, String content,
+			String summary, boolean minorEdit, ServiceContext serviceContext)
+		throws PortalException {
+
+		double version = WikiPageConstants.VERSION_DEFAULT;
+
+		WikiNode node = wikiNodePersistence.findByPrimaryKey(nodeId);
+
+		WikiGroupServiceOverriddenConfiguration
+			wikiGroupServiceOverriddenConfiguration =
+				_configurationProvider.getConfiguration(
+					WikiGroupServiceOverriddenConfiguration.class,
+					new GroupServiceSettingsLocator(
+						node.getGroupId(), WikiConstants.SERVICE_NAME));
+
+		String format = wikiGroupServiceOverriddenConfiguration.defaultFormat();
+
+		boolean head = false;
+		String parentTitle = null;
+		String redirectTitle = null;
+
+		return addPage(
+			userId, nodeId, title, version, content, summary, minorEdit, format,
+			head, parentTitle, redirectTitle, serviceContext);
+	}
+
+	@Override
+	public WikiPage addPage(
+			String externalReferenceCode, long userId, long nodeId,
+			String title, double version, String content, String summary,
+			boolean minorEdit, String format, boolean head, String parentTitle,
+			String redirectTitle, ServiceContext serviceContext)
 		throws PortalException {
 
 		// Page
@@ -194,6 +243,13 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		Date now = new Date();
 
 		long pageId = counterLocalService.increment();
+
+		if (externalReferenceCode == null) {
+			externalReferenceCode = String.valueOf(pageId);
+		}
+
+		_validateExternalReferenceCode(
+			externalReferenceCode, node.getGroupId());
 
 		content = SanitizerUtil.sanitize(
 			user.getCompanyId(), node.getGroupId(), userId,
@@ -216,6 +272,7 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		page.setCompanyId(user.getCompanyId());
 		page.setUserId(user.getUserId());
 		page.setUserName(user.getFullName());
+		page.setExternalReferenceCode(externalReferenceCode);
 		page.setNodeId(nodeId);
 		page.setTitle(title);
 		page.setVersion(version);
@@ -262,34 +319,6 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		// Workflow
 
 		return _startWorkflowInstance(userId, page, serviceContext);
-	}
-
-	@Override
-	public WikiPage addPage(
-			long userId, long nodeId, String title, String content,
-			String summary, boolean minorEdit, ServiceContext serviceContext)
-		throws PortalException {
-
-		double version = WikiPageConstants.VERSION_DEFAULT;
-
-		WikiNode node = wikiNodePersistence.findByPrimaryKey(nodeId);
-
-		WikiGroupServiceOverriddenConfiguration
-			wikiGroupServiceOverriddenConfiguration =
-				_configurationProvider.getConfiguration(
-					WikiGroupServiceOverriddenConfiguration.class,
-					new GroupServiceSettingsLocator(
-						node.getGroupId(), WikiConstants.SERVICE_NAME));
-
-		String format = wikiGroupServiceOverriddenConfiguration.defaultFormat();
-
-		boolean head = false;
-		String parentTitle = null;
-		String redirectTitle = null;
-
-		return addPage(
-			userId, nodeId, title, version, content, summary, minorEdit, format,
-			head, parentTitle, redirectTitle, serviceContext);
 	}
 
 	@Override
@@ -854,6 +883,23 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 			nodeId, title, orderByComparator);
 	}
 
+	/**
+	 * Returns the latest wiki page matching the group and the external
+	 * reference code
+	 *
+	 * @param groupId the primary key of the group
+	 * @param externalReferenceCode the wiki page external reference code
+	 * @return the latest matching wiki page, or <code>null</code> if no
+	 *         matching wiki page could be found
+	 */
+	@Override
+	public WikiPage fetchLatestPageByExternalReferenceCode(
+		long groupId, String externalReferenceCode) {
+
+		return wikiPagePersistence.fetchByG_ERC_First(
+			groupId, externalReferenceCode, new PageVersionComparator());
+	}
+
 	@Override
 	public WikiPage fetchPage(long resourcePrimKey) {
 		WikiPageResource pageResource =
@@ -1088,6 +1134,24 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		sb.append("}");
 
 		throw new NoSuchPageException(sb.toString());
+	}
+
+	/**
+	 * Returns the latest wiki page matching the group and the external
+	 * reference code
+	 *
+	 * @param groupId the primary key of the group
+	 * @param externalReferenceCode the wiki page external reference code
+	 * @return the latest matching wiki page
+	 * @throws PortalException if a portal exception occurred
+	 */
+	@Override
+	public WikiPage getLatestPageByExternalReferenceCode(
+			long groupId, String externalReferenceCode)
+		throws PortalException {
+
+		return wikiPagePersistence.findByG_ERC_First(
+			groupId, externalReferenceCode, new PageVersionComparator());
 	}
 
 	@Override
@@ -2005,6 +2069,10 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 				format, parentTitle, redirectTitle, serviceContext);
 		}
 		catch (NoSuchPageException noSuchPageException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchPageException, noSuchPageException);
+			}
+
 			return addPage(
 				userId, nodeId, title, WikiPageConstants.VERSION_DEFAULT,
 				content, summary, minorEdit, format, true, parentTitle,
@@ -2042,18 +2110,13 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 
 		int oldStatus = page.getStatus();
 
-		page.setStatus(status);
-		page.setStatusByUserId(userId);
-		page.setStatusByUserName(user.getFullName());
-		page.setStatusDate(new Date());
-
-		page = wikiPagePersistence.update(page);
-
 		if (status == WorkflowConstants.STATUS_APPROVED) {
 			String cmd = GetterUtil.getString(
 				workflowContext.get(WorkflowConstants.CONTEXT_COMMAND));
 
 			if (cmd.equals(Constants.CHANGE_PARENT)) {
+				page = _updatePageStatus(user, page, status);
+
 				List<WikiPage> pageVersions = wikiPagePersistence.findByN_T(
 					page.getNodeId(), page.getTitle());
 
@@ -2070,9 +2133,16 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 			else if (cmd.equals(Constants.RENAME)) {
 				WikiPage oldPage = getPage(page.getResourcePrimKey(), true);
 
-				page = _renamePage(
+				WikiPage renamedPage = _renamePage(
 					userId, page.getNodeId(), oldPage.getTitle(),
 					page.getTitle(), serviceContext);
+
+				_updatePageStatus(user, page, status);
+
+				page = renamedPage;
+			}
+			else {
+				page = _updatePageStatus(user, page, status);
 			}
 
 			// Asset
@@ -2172,6 +2242,9 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 
 			clearPageCache(page);
 		}
+		else {
+			page = _updatePageStatus(user, page, status);
+		}
 
 		// Head
 
@@ -2249,7 +2322,10 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 	}
 
 	@Deactivate
+	@Override
 	protected void deactivate() {
+		super.deactivate();
+
 		_serviceTrackerMap.close();
 
 		_portalCache.removeAll();
@@ -2370,16 +2446,17 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 				URLCodec.encodeURL(WikiEscapeUtil.escapeName(page.getTitle())));
 		}
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			httpServletRequest, WikiPortletKeys.WIKI_ADMIN,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/wiki/view_page_activities");
-		portletURL.setParameter("nodeId", String.valueOf(page.getNodeId()));
-		portletURL.setParameter("title", page.getTitle());
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				httpServletRequest, WikiPortletKeys.WIKI_ADMIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/wiki/view_page_activities"
+		).setParameter(
+			"nodeId", page.getNodeId()
+		).setParameter(
+			"title", page.getTitle()
+		).buildString();
 	}
 
 	private List<ObjectValuePair<Long, Integer>> _getPageVersionStatuses(
@@ -2415,6 +2492,10 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 			return parentPage.getTitle();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 	}
@@ -2541,6 +2622,10 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		for (WikiPage versionPage : versionPages) {
 
 			// Version page
+
+			if (versionPage.equals(page)) {
+				versionPage = page;
+			}
 
 			versionPage.setNodeId(newNodeId);
 			versionPage.setTitle(page.getTitle());
@@ -2949,6 +3034,9 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 				previousVersionPage, page, null, null, attachmentURLPrefix);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		String pageContent = null;
@@ -3257,6 +3345,7 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		page.setUserId(user.getUserId());
 		page.setUserName(user.getFullName());
 		page.setCreateDate(oldPage.getCreateDate());
+		page.setExternalReferenceCode(oldPage.getExternalReferenceCode());
 		page.setNodeId(nodeId);
 		page.setTitle(
 			Validator.isNull(newTitle) ? oldPage.getTitle() : newTitle);
@@ -3306,6 +3395,15 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		return _startWorkflowInstance(userId, page, serviceContext);
 	}
 
+	private WikiPage _updatePageStatus(User user, WikiPage page, int status) {
+		page.setStatus(status);
+		page.setStatusByUserId(user.getUserId());
+		page.setStatusByUserName(user.getFullName());
+		page.setStatusDate(new Date());
+
+		return wikiPagePersistence.update(page);
+	}
+
 	private void _validate(long nodeId, String content, String format)
 		throws PortalException {
 
@@ -3331,6 +3429,21 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 		_wikiPageTitleValidator.validate(title);
 
 		_validate(nodeId, content, format);
+	}
+
+	private void _validateExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		WikiPage wikiPage = fetchLatestPageByExternalReferenceCode(
+			groupId, externalReferenceCode);
+
+		if (wikiPage != null) {
+			throw new DuplicatePageExternalReferenceCodeException(
+				StringBundler.concat(
+					"Duplicate page external reference code ",
+					externalReferenceCode, "in group ", groupId));
+		}
 	}
 
 	private static final String _OUTGOING_LINKS = "OUTGOING_LINKS";

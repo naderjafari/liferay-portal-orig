@@ -13,12 +13,15 @@
  */
 
 import {act, cleanup, fireEvent, render} from '@testing-library/react';
-import {PageProvider} from 'dynamic-data-mapping-form-renderer';
+import {PageProvider} from 'data-engine-js-components-web';
 import React from 'react';
 
 import Validation from '../../../src/main/resources/META-INF/resources/Validation/Validation.es';
 
+const globalLanguageDirection = Liferay.Language.direction;
+
 const spritemap = 'icons.svg';
+
 const defaultValue = {
 	errorMessage: {},
 	expression: {},
@@ -43,11 +46,17 @@ describe('Validation', () => {
 			}
 			originalWarn.call(console, ...args);
 		};
+
+		Liferay.Language.direction = {
+			en_US: 'rtl',
+		};
 	});
 
 	afterAll(() => {
 		// eslint-disable-next-line no-console
 		console.warn = originalWarn;
+
+		Liferay.Language.direction = globalLanguageDirection;
 	});
 
 	afterEach(cleanup);
@@ -109,8 +118,8 @@ describe('Validation', () => {
 				en_US: undefined,
 			},
 			expression: {
-				name: 'notContains',
-				value: 'NOT(contains(textfield, "{parameter}"))',
+				name: 'contains',
+				value: 'contains(textfield, "{parameter}")',
 			},
 			parameter: {
 				en_US: undefined,
@@ -153,8 +162,8 @@ describe('Validation', () => {
 				en_US: undefined,
 			},
 			expression: {
-				name: 'lt',
-				value: 'numericfield<{parameter}',
+				name: 'eq',
+				value: 'numericfield=={parameter}',
 			},
 			parameter: {
 				en_US: undefined,

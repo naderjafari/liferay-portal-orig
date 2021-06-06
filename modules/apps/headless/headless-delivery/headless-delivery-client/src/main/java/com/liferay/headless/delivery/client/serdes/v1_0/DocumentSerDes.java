@@ -18,6 +18,7 @@ import com.liferay.headless.delivery.client.dto.v1_0.AdaptedImage;
 import com.liferay.headless.delivery.client.dto.v1_0.CustomField;
 import com.liferay.headless.delivery.client.dto.v1_0.Document;
 import com.liferay.headless.delivery.client.dto.v1_0.RelatedContent;
+import com.liferay.headless.delivery.client.dto.v1_0.RenderedContent;
 import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategoryBrief;
 import com.liferay.headless.delivery.client.json.BaseJSONParser;
 
@@ -102,6 +103,20 @@ public class DocumentSerDes {
 			sb.append("\"aggregateRating\": ");
 
 			sb.append(String.valueOf(document.getAggregateRating()));
+		}
+
+		if (document.getAssetLibraryKey() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"assetLibraryKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(document.getAssetLibraryKey()));
+
+			sb.append("\"");
 		}
 
 		if (document.getContentUrl() != null) {
@@ -240,6 +255,20 @@ public class DocumentSerDes {
 			sb.append("\"");
 		}
 
+		if (document.getExternalReferenceCode() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(document.getExternalReferenceCode()));
+
+			sb.append("\"");
+		}
+
 		if (document.getFileExtension() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -316,6 +345,36 @@ public class DocumentSerDes {
 			}
 
 			sb.append("]");
+		}
+
+		if (document.getRenderedContents() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"renderedContents\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < document.getRenderedContents().length; i++) {
+				sb.append(String.valueOf(document.getRenderedContents()[i]));
+
+				if ((i + 1) < document.getRenderedContents().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		if (document.getSiteId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"siteId\": ");
+
+			sb.append(document.getSiteId());
 		}
 
 		if (document.getSizeInBytes() != null) {
@@ -444,6 +503,15 @@ public class DocumentSerDes {
 				String.valueOf(document.getAggregateRating()));
 		}
 
+		if (document.getAssetLibraryKey() == null) {
+			map.put("assetLibraryKey", null);
+		}
+		else {
+			map.put(
+				"assetLibraryKey",
+				String.valueOf(document.getAssetLibraryKey()));
+		}
+
 		if (document.getContentUrl() == null) {
 			map.put("contentUrl", null);
 		}
@@ -521,6 +589,15 @@ public class DocumentSerDes {
 				"encodingFormat", String.valueOf(document.getEncodingFormat()));
 		}
 
+		if (document.getExternalReferenceCode() == null) {
+			map.put("externalReferenceCode", null);
+		}
+		else {
+			map.put(
+				"externalReferenceCode",
+				String.valueOf(document.getExternalReferenceCode()));
+		}
+
 		if (document.getFileExtension() == null) {
 			map.put("fileExtension", null);
 		}
@@ -559,6 +636,22 @@ public class DocumentSerDes {
 			map.put(
 				"relatedContents",
 				String.valueOf(document.getRelatedContents()));
+		}
+
+		if (document.getRenderedContents() == null) {
+			map.put("renderedContents", null);
+		}
+		else {
+			map.put(
+				"renderedContents",
+				String.valueOf(document.getRenderedContents()));
+		}
+
+		if (document.getSiteId() == null) {
+			map.put("siteId", null);
+		}
+		else {
+			map.put("siteId", String.valueOf(document.getSiteId()));
 		}
 
 		if (document.getSizeInBytes() == null) {
@@ -646,6 +739,11 @@ public class DocumentSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "assetLibraryKey")) {
+				if (jsonParserFieldValue != null) {
+					document.setAssetLibraryKey((String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "contentUrl")) {
 				if (jsonParserFieldValue != null) {
 					document.setContentUrl((String)jsonParserFieldValue);
@@ -708,6 +806,14 @@ public class DocumentSerDes {
 					document.setEncodingFormat((String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(
+						jsonParserFieldName, "externalReferenceCode")) {
+
+				if (jsonParserFieldValue != null) {
+					document.setExternalReferenceCode(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "fileExtension")) {
 				if (jsonParserFieldValue != null) {
 					document.setFileExtension((String)jsonParserFieldValue);
@@ -740,6 +846,25 @@ public class DocumentSerDes {
 						).toArray(
 							size -> new RelatedContent[size]
 						));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "renderedContents")) {
+				if (jsonParserFieldValue != null) {
+					document.setRenderedContents(
+						Stream.of(
+							toStrings((Object[])jsonParserFieldValue)
+						).map(
+							object -> RenderedContentSerDes.toDTO(
+								(String)object)
+						).toArray(
+							size -> new RenderedContent[size]
+						));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "siteId")) {
+				if (jsonParserFieldValue != null) {
+					document.setSiteId(
+						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "sizeInBytes")) {
@@ -783,10 +908,6 @@ public class DocumentSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -815,7 +936,7 @@ public class DocumentSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -851,7 +972,7 @@ public class DocumentSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -190,6 +190,7 @@ public class LayoutImpl extends LayoutBaseImpl {
 		}
 	}
 
+	@Override
 	public Layout fetchDraftLayout() {
 		return LayoutLocalServiceUtil.fetchLayout(
 			PortalUtil.getClassNameId(Layout.class), getPlid());
@@ -377,6 +378,12 @@ public class LayoutImpl extends LayoutBaseImpl {
 	 */
 	@Override
 	public String getCssText() throws PortalException {
+		Layout masterLayout = _getMasterLayout();
+
+		if (masterLayout != null) {
+			return masterLayout.getCssText();
+		}
+
 		if (isInheritLookAndFeel()) {
 			LayoutSet layoutSet = getLayoutSet();
 
@@ -397,6 +404,9 @@ public class LayoutImpl extends LayoutBaseImpl {
 				return theme.getSetting(key);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 		}
 
@@ -406,6 +416,9 @@ public class LayoutImpl extends LayoutBaseImpl {
 			return layoutSet.getThemeSetting(key, device);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return StringPool.BLANK;
@@ -525,6 +538,9 @@ public class LayoutImpl extends LayoutBaseImpl {
 			friendlyURL = layoutFriendlyURL.getFriendlyURL();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return friendlyURL;

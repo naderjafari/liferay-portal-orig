@@ -109,7 +109,9 @@ public abstract class BaseSubscriptionResourceTestCase {
 
 		SubscriptionResource.Builder builder = SubscriptionResource.builder();
 
-		subscriptionResource = builder.locale(
+		subscriptionResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -427,7 +429,7 @@ public abstract class BaseSubscriptionResourceTestCase {
 		}
 	}
 
-	protected void assertValid(Subscription subscription) {
+	protected void assertValid(Subscription subscription) throws Exception {
 		boolean valid = true;
 
 		if (subscription.getDateCreated() == null) {
@@ -508,7 +510,7 @@ public abstract class BaseSubscriptionResourceTestCase {
 		graphQLFields.add(new GraphQLField("siteId"));
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.headless.admin.user.dto.v1_0.Subscription.
 						class)) {
 
@@ -543,7 +545,7 @@ public abstract class BaseSubscriptionResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -665,9 +667,22 @@ public abstract class BaseSubscriptionResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -929,12 +944,12 @@ public abstract class BaseSubscriptionResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -944,10 +959,10 @@ public abstract class BaseSubscriptionResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

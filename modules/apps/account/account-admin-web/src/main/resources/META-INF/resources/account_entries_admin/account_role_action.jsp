@@ -40,12 +40,24 @@ Role role = accountRoleDisplay.getRole();
 		<portlet:param name="accountRoleId" value="<%= String.valueOf(accountRoleDisplay.getAccountRoleId()) %>" />
 	</portlet:renderURL>
 
+	<c:if test="<%= !AccountRoleConstants.isSharedRole(role) %>">
+		<liferay-ui:icon
+			message="edit"
+			url="<%= editAccountRoleURL %>"
+		/>
+
+		<liferay-ui:icon
+			message="define-permissions"
+			url='<%= HttpUtil.setParameter(editAccountRoleURL, liferayPortletResponse.getNamespace() + "screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_DEFINE_PERMISSIONS) %>'
+		/>
+	</c:if>
+
 	<liferay-ui:icon
-		message='<%= AccountRoleConstants.isSharedRole(role) ? "assign-users" : "edit" %>'
-		url="<%= editAccountRoleURL %>"
+		message="assign-users"
+		url='<%= HttpUtil.setParameter(editAccountRoleURL, liferayPortletResponse.getNamespace() + "screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_ASSIGNEES) %>'
 	/>
 
-	<c:if test="<%= role.getType() != RoleConstants.TYPE_ACCOUNT %>">
+	<c:if test="<%= !AccountRoleConstants.isSharedRole(role) %>">
 		<portlet:actionURL name="/account_admin/delete_account_roles" var="deleteAccountRolesURL">
 			<portlet:param name="redirect" value="<%= currentURL %>" />
 			<portlet:param name="accountRoleIds" value="<%= String.valueOf(accountRoleDisplay.getAccountRoleId()) %>" />

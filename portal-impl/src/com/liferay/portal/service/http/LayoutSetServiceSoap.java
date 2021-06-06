@@ -57,8 +57,10 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see LayoutSetServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class LayoutSetServiceSoap {
 
 	/**
@@ -141,31 +143,6 @@ public class LayoutSetServiceSoap {
 			com.liferay.portal.kernel.model.LayoutSet returnValue =
 				LayoutSetServiceUtil.updateSettings(
 					groupId, privateLayout, settings);
-
-			return com.liferay.portal.kernel.model.LayoutSetSoap.toSoapModel(
-				returnValue);
-		}
-		catch (Exception exception) {
-			_log.error(exception, exception);
-
-			throw new RemoteException(exception.getMessage());
-		}
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 #updateVirtualHosts(long, boolean, TreeMap)}
-	 */
-	@Deprecated
-	public static com.liferay.portal.kernel.model.LayoutSetSoap
-			updateVirtualHost(
-				long groupId, boolean privateLayout, String virtualHostname)
-		throws RemoteException {
-
-		try {
-			com.liferay.portal.kernel.model.LayoutSet returnValue =
-				LayoutSetServiceUtil.updateVirtualHost(
-					groupId, privateLayout, virtualHostname);
 
 			return com.liferay.portal.kernel.model.LayoutSetSoap.toSoapModel(
 				returnValue);

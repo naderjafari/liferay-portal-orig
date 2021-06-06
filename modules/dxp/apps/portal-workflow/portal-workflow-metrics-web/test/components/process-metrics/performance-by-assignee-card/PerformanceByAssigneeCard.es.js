@@ -9,12 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {
-	cleanup,
-	findAllByTestId,
-	findByTestId,
-	render,
-} from '@testing-library/react';
+import {cleanup, render} from '@testing-library/react';
 import React from 'react';
 
 import PerformanceByAssigneeCard from '../../../../src/main/resources/META-INF/resources/js/components/process-metrics/performance-by-assignee-card/PerformanceByAssigneeCard.es';
@@ -94,7 +89,7 @@ const timeRangeData = {
 };
 
 describe('The performance by assignee card component should', () => {
-	let getByTestId;
+	let container, getByText;
 
 	beforeAll(() => {
 		jsonSessionStorage.set('timeRanges', timeRangeData);
@@ -120,55 +115,33 @@ describe('The performance by assignee card component should', () => {
 				{wrapper}
 			);
 
-			getByTestId = renderResult.getByTestId;
+			container = renderResult.container;
+			getByText = renderResult.getByText;
 		});
 
 		test('Be rendered with "View All Assignees" button and total "(3)"', () => {
-			const viewAllAssignees = getByTestId('viewAllAssignees');
+			const viewAllAssignees = getByText('view-all-assignees (3)');
 
-			expect(viewAllAssignees).toHaveTextContent(
-				'view-all-assignees (3)'
-			);
+			expect(viewAllAssignees).toBeTruthy();
 			expect(viewAllAssignees.parentNode.getAttribute('href')).toContain(
 				'filters.dateEnd=2019-12-09T00%3A00%3A00Z&filters.dateStart=2019-12-03T00%3A00%3A00Z&filters.timeRange%5B0%5D=7&filters.taskNames%5B0%5D=update'
 			);
 		});
 
 		test('Be rendered with process step filter', async () => {
-			const processStepFilter = getByTestId('processStepFilter');
-
-			const filterItems = await findAllByTestId(
-				processStepFilter,
-				'filterItem'
-			);
-			const activeItem = filterItems.find((item) =>
-				item.className.includes('active')
-			);
-			const activeItemName = await findByTestId(
-				activeItem,
-				'filterItemName'
-			);
+			const processStepFilter = getByText('all-steps');
+			const activeItem = container.querySelectorAll('.active')[0];
 
 			expect(processStepFilter).not.toBeNull();
-			expect(activeItemName).toHaveTextContent('Update');
+			expect(activeItem).toHaveTextContent('Update');
 		});
 
 		test('Be rendered with time range filter', async () => {
-			const timeRangeFilter = getByTestId('timeRangeFilter');
-			const filterItems = await findAllByTestId(
-				timeRangeFilter,
-				'filterItem'
-			);
-			const activeItem = filterItems.find((item) =>
-				item.className.includes('active')
-			);
-			const activeItemName = await findByTestId(
-				activeItem,
-				'filterItemName'
-			);
+			const timeRangeFilter = getByText('Last 30 Days');
+			const activeItem = container.querySelectorAll('.active')[1];
 
 			expect(timeRangeFilter).not.toBeNull();
-			expect(activeItemName).toHaveTextContent('Last 7 Days');
+			expect(activeItem).toHaveTextContent('Last 7 Days');
 		});
 	});
 
@@ -187,20 +160,15 @@ describe('The performance by assignee card component should', () => {
 				</MockRouter>
 			);
 
-			const renderResult = render(
-				<PerformanceByAssigneeCard routeParams={{processId}} />,
-				{wrapper}
-			);
-
-			getByTestId = renderResult.getByTestId;
+			render(<PerformanceByAssigneeCard routeParams={{processId}} />, {
+				wrapper,
+			});
 		});
 
 		test('Be rendered with empty state view', () => {
-			const emptyStateDiv = getByTestId('emptyState');
+			const emptyStateMessage = getByText('no-results-were-found');
 
-			expect(emptyStateDiv.children[0].children[0]).toHaveTextContent(
-				'no-results-were-found'
-			);
+			expect(emptyStateMessage).toBeTruthy();
 		});
 	});
 });

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PostalAddress")
+@GraphQLName(
+	description = "Represents a mailing address. This follows the [`PostalAddress`](https://www.schema.org/PostalAddress) specification.",
+	value = "PostalAddress"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PostalAddress")
-public class PostalAddress {
+public class PostalAddress implements Serializable {
 
 	public static PostalAddress toDTO(String json) {
 		return ObjectMapperUtil.readValue(PostalAddress.class, json);
@@ -544,6 +549,7 @@ public class PostalAddress {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.PostalAddress",
 		name = "x-class-name"
 	)
@@ -579,7 +585,7 @@ public class PostalAddress {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -618,7 +624,7 @@ public class PostalAddress {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

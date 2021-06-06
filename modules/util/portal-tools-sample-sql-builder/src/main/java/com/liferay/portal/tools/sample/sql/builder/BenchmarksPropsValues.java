@@ -75,6 +75,42 @@ public class BenchmarksPropsValues {
 	public static final int MAX_BLOGS_ENTRY_COUNT = GetterUtil.getInteger(
 		PropertiesHolder._get(BenchmarksPropsKeys.MAX_BLOGS_ENTRY_COUNT));
 
+	public static final int MAX_COMMERCE_ACCOUNT_ENTRY_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.MAX_COMMERCE_ACCOUNT_ENTRY_COUNT));
+
+	public static final int MAX_COMMERCE_CATALOG_COUNT = GetterUtil.getInteger(
+		PropertiesHolder._get(BenchmarksPropsKeys.MAX_COMMERCE_CATALOG_COUNT));
+
+	public static final int MAX_COMMERCE_GROUP_COUNT = GetterUtil.getInteger(
+		PropertiesHolder._get(BenchmarksPropsKeys.MAX_COMMERCE_GROUP_COUNT));
+
+	public static final int MAX_COMMERCE_INVENTORY_WAREHOUSE_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.MAX_COMMERCE_INVENTORY_WAREHOUSE_COUNT));
+
+	public static final int MAX_COMMERCE_ORDER_STATUS_CANCELLED_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.MAX_COMMERCE_ORDER_STATUS_CANCELLED_COUNT));
+
+	public static final int MAX_COMMERCE_ORDER_STATUS_OPEN_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.MAX_COMMERCE_ORDER_STATUS_OPEN_COUNT));
+
+	public static final int MAX_COMMERCE_ORDER_STATUS_PENDING_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.MAX_COMMERCE_ORDER_STATUS_PENDING_COUNT));
+
+	public static final int MAX_COMMERCE_PRICE_LIST_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.MAX_COMMERCE_PRICE_LIST_COUNT));
+
 	public static final int MAX_COMMERCE_PRODUCT_COUNT = GetterUtil.getInteger(
 		PropertiesHolder._get(BenchmarksPropsKeys.MAX_COMMERCE_PRODUCT_COUNT));
 
@@ -88,8 +124,37 @@ public class BenchmarksPropsValues {
 			PropertiesHolder._get(
 				BenchmarksPropsKeys.MAX_COMMERCE_PRODUCT_INSTANCE_COUNT));
 
+	public static final int MAX_COMMERCE_PRODUCT_OPTION_CATEGORY_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.
+					MAX_COMMERCE_PRODUCT_OPTION_CATEGORY_COUNT));
+
 	public static final int MAX_CONTENT_LAYOUT_COUNT = GetterUtil.getInteger(
 		PropertiesHolder._get(BenchmarksPropsKeys.MAX_CONTENT_LAYOUT_COUNT));
+
+	public static final int MAX_CP_DEFINITION_ATTACHMENT_TYPE_IMAGE_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.
+					MAX_CP_DEFINITION_ATTACHMENT_TYPE_IMAGE_COUNT));
+
+	public static final int MAX_CP_DEFINITION_ATTACHMENT_TYPE_PDF_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.
+					MAX_CP_DEFINITION_ATTACHMENT_TYPE_PDF_COUNT));
+
+	public static final int MAX_CP_DEFINITION_SPECIFICATION_OPTION_VALUE_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.
+					MAX_CP_DEFINITION_SPECIFICATION_OPTION_VALUE_COUNT));
+
+	public static final int MAX_CP_SPECIFICATION_OPTION_COUNT =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.MAX_CP_SPECIFICATION_OPTION_COUNT));
 
 	public static final int MAX_DDL_CUSTOM_FIELD_COUNT = GetterUtil.getInteger(
 		PropertiesHolder._get(BenchmarksPropsKeys.MAX_DDL_CUSTOM_FIELD_COUNT));
@@ -140,6 +205,9 @@ public class BenchmarksPropsValues {
 	public static final int MAX_MB_THREAD_COUNT = GetterUtil.getInteger(
 		PropertiesHolder._get(BenchmarksPropsKeys.MAX_MB_THREAD_COUNT));
 
+	public static final int MAX_SEGMENTS_ENTRY_COUNT = GetterUtil.getInteger(
+		PropertiesHolder._get(BenchmarksPropsKeys.MAX_SEGMENTS_ENTRY_COUNT));
+
 	public static final int MAX_USER_COUNT = GetterUtil.getInteger(
 		PropertiesHolder._get(BenchmarksPropsKeys.MAX_USER_COUNT));
 
@@ -169,6 +237,9 @@ public class BenchmarksPropsValues {
 
 	public static final String SCRIPT = PropertiesHolder._get(
 		BenchmarksPropsKeys.SCRIPT);
+
+	public static final boolean SEARCH_BAR_ENABLED = GetterUtil.getBoolean(
+		PropertiesHolder._get(BenchmarksPropsKeys.SEARCH_BAR_ENABLED));
 
 	public static final String VIRTUAL_HOST_NAME = PropertiesHolder._get(
 		BenchmarksPropsKeys.VIRTUAL_HOST_NAME);

@@ -83,7 +83,7 @@ public class UpgradeKaleoProcessTemplateLinkTest {
 	public void testCreateKaleoProcess() throws Exception {
 		addKaleoProcess(_kaleoProcessId);
 
-		_upgradeKaleoProcessTemplateLink.upgrade();
+		_kaleoProcessTemplateLinkUpgradeProcess.upgrade();
 
 		DDMTemplateLink ddmTemplateLink =
 			DDMTemplateLinkLocalServiceUtil.getTemplateLink(
@@ -98,7 +98,7 @@ public class UpgradeKaleoProcessTemplateLinkTest {
 	public void testCreateKaleoProcessLink() throws Exception {
 		addKaleoProcessLink(_kaleoProcessLinkId);
 
-		_upgradeKaleoProcessTemplateLink.upgrade();
+		_kaleoProcessTemplateLinkUpgradeProcess.upgrade();
 
 		DDMTemplateLink ddmTemplateLink =
 			DDMTemplateLinkLocalServiceUtil.getTemplateLink(
@@ -120,23 +120,24 @@ public class UpgradeKaleoProcessTemplateLinkTest {
 
 		String sql = sb.toString();
 
-		try (Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(sql)) {
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
-			ps.setString(1, PortalUUIDUtil.generate());
-			ps.setLong(2, kaleoProcessId);
-			ps.setLong(3, _group.getGroupId());
-			ps.setLong(4, _group.getCompanyId());
-			ps.setLong(5, TestPropsValues.getUserId());
-			ps.setString(6, null);
-			ps.setTimestamp(7, _timestamp);
-			ps.setTimestamp(8, _timestamp);
-			ps.setLong(9, RandomTestUtil.randomLong());
-			ps.setLong(10, RandomTestUtil.randomLong());
-			ps.setString(11, StringUtil.randomString());
-			ps.setInt(12, RandomTestUtil.randomInt());
+			preparedStatement.setString(1, PortalUUIDUtil.generate());
+			preparedStatement.setLong(2, kaleoProcessId);
+			preparedStatement.setLong(3, _group.getGroupId());
+			preparedStatement.setLong(4, _group.getCompanyId());
+			preparedStatement.setLong(5, TestPropsValues.getUserId());
+			preparedStatement.setString(6, null);
+			preparedStatement.setTimestamp(7, _timestamp);
+			preparedStatement.setTimestamp(8, _timestamp);
+			preparedStatement.setLong(9, RandomTestUtil.randomLong());
+			preparedStatement.setLong(10, RandomTestUtil.randomLong());
+			preparedStatement.setString(11, StringUtil.randomString());
+			preparedStatement.setInt(12, RandomTestUtil.randomInt());
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 	}
 
@@ -151,15 +152,16 @@ public class UpgradeKaleoProcessTemplateLinkTest {
 
 		String sql = sb.toString();
 
-		try (Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(sql)) {
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
-			ps.setLong(1, kaleoProcessLinkId);
-			ps.setLong(2, _kaleoProcessId);
-			ps.setString(3, StringUtil.randomString());
-			ps.setLong(4, RandomTestUtil.randomLong());
+			preparedStatement.setLong(1, kaleoProcessLinkId);
+			preparedStatement.setLong(2, _kaleoProcessId);
+			preparedStatement.setString(3, StringUtil.randomString());
+			preparedStatement.setLong(4, RandomTestUtil.randomLong());
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 	}
 
@@ -215,9 +217,9 @@ public class UpgradeKaleoProcessTemplateLinkTest {
 						String className = clazz.getName();
 
 						if (className.contains(
-								"UpgradeKaleoProcessTemplateLink")) {
+								"KaleoProcessTemplateLinkUpgradeProcess")) {
 
-							_upgradeKaleoProcessTemplateLink =
+							_kaleoProcessTemplateLinkUpgradeProcess =
 								(UpgradeProcess)upgradeStep;
 						}
 					}
@@ -236,7 +238,7 @@ public class UpgradeKaleoProcessTemplateLinkTest {
 	private long _kaleoProcessId;
 	private long _kaleoProcessLinkClassNameId;
 	private long _kaleoProcessLinkId;
+	private UpgradeProcess _kaleoProcessTemplateLinkUpgradeProcess;
 	private Timestamp _timestamp;
-	private UpgradeProcess _upgradeKaleoProcessTemplateLink;
 
 }

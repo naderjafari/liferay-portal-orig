@@ -23,10 +23,13 @@ String reportName = BeanParamUtil.getString(definition, request, "reportName");
 
 portletDisplay.setShowBackIcon(true);
 
-PortletURL searchDefinitionURL = reportsEngineDisplayContext.getPortletURL();
-
-searchDefinitionURL.setParameter("mvcPath", "/admin/view.jsp");
-searchDefinitionURL.setParameter("tabs1", "definitions");
+PortletURL searchDefinitionURL = PortletURLBuilder.create(
+	reportsEngineDisplayContext.getPortletURL()
+).setMVCPath(
+	"/admin/view.jsp"
+).setTabs1(
+	"definitions"
+).build();
 
 portletDisplay.setURLBack(searchDefinitionURL.toString());
 
@@ -38,12 +41,12 @@ renderResponse.setTitle(LanguageUtil.get(request, "new-report-entry"));
 	<portlet:param name="tabs1" value="reports" />
 </portlet:renderURL>
 
-<portlet:actionURL name="addScheduler" var="addSchedulerURL">
+<portlet:actionURL name="/reports_admin/add_scheduler" var="addSchedulerURL">
 	<portlet:param name="mvcPath" value="/admin/report/edit_schedule.jsp" />
 	<portlet:param name="redirect" value="<%= searchRequestsURL %>" />
 </portlet:actionURL>
 
-<aui:form action="<%= addSchedulerURL %>" cssClass="container-fluid-1280" method="post" name="fm">
+<aui:form action="<%= addSchedulerURL %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="fm">
 	<aui:input name="definitionId" type="hidden" value="<%= definition.getDefinitionId() %>" />
 
 	<portlet:renderURL var="generatedReportsURL">
@@ -80,7 +83,7 @@ renderResponse.setTitle(LanguageUtil.get(request, "new-report-entry"));
 		</aui:fieldset>
 
 		<aui:fieldset collapsible="<%= true %>" cssClass="options-group" label="schedule">
-			<liferay-ui:input-scheduler />
+			<liferay-util:include page="/admin/report/input_scheduler.jsp" servletContext="<%= application %>" />
 		</aui:fieldset>
 
 		<%
@@ -203,7 +206,6 @@ renderResponse.setTitle(LanguageUtil.get(request, "new-report-entry"));
 				%>
 
 			</aui:fieldset>
-
 		</c:if>
 
 		<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" label="permissions">

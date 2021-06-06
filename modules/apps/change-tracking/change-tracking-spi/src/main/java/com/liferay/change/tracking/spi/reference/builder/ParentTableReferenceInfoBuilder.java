@@ -29,7 +29,12 @@ import java.util.function.Function;
 import org.osgi.annotation.versioning.ProviderType;
 
 /**
+ * Used to define parent relationships for a {@link
+ * com.liferay.change.tracking.spi.reference.TableReferenceDefinition}.
+ *
  * @author Preston Crary
+ * @see    com.liferay.change.tracking.spi.reference.TableReferenceDefinition#defineParentTableReferences(
+ *         ParentTableReferenceInfoBuilder)
  */
 @ProviderType
 public interface ParentTableReferenceInfoBuilder<T extends Table<T>> {
@@ -42,13 +47,13 @@ public interface ParentTableReferenceInfoBuilder<T extends Table<T>> {
 			throw new IllegalArgumentException();
 		}
 
-		Table<?> table = pkColumn.getTable();
+		Table<?> table = classPKColumn.getTable();
 
 		return referenceInnerJoin(
 			fromStep -> fromStep.from(
-				table
+				pkColumn.getTable()
 			).innerJoinON(
-				classPKColumn.getTable(), pkColumn.eq(classPKColumn)
+				table, pkColumn.eq(classPKColumn)
 			).innerJoinON(
 				ClassNameTable.INSTANCE,
 				ClassNameTable.INSTANCE.value.eq(

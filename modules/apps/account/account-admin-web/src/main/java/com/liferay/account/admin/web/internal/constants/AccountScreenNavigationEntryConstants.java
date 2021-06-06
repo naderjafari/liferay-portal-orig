@@ -21,6 +21,8 @@ public class AccountScreenNavigationEntryConstants {
 
 	public static final String CATEGORY_KEY_ACCOUNTS = "accounts";
 
+	public static final String CATEGORY_KEY_ADDRESSES = "addresses";
+
 	public static final String CATEGORY_KEY_ASSIGNEES = "assignees";
 
 	public static final String CATEGORY_KEY_CONTACT = "contact";
@@ -31,8 +33,6 @@ public class AccountScreenNavigationEntryConstants {
 	public static final String CATEGORY_KEY_DETAILS = "details";
 
 	public static final String CATEGORY_KEY_GENERAL = "general";
-
-	public static final String CATEGORY_KEY_INFORMATION = "information";
 
 	public static final String CATEGORY_KEY_ORGANIZATIONS = "organizations";
 

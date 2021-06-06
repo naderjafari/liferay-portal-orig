@@ -25,7 +25,7 @@ portletDisplay.setURLBack(selectSiteInitializerDisplayContext.getBackURL());
 renderResponse.setTitle(LanguageUtil.get(request, "select-site-template"));
 %>
 
-<aui:form cssClass="container-fluid-1280" name="fm">
+<aui:form cssClass="container-fluid container-fluid-max-xl" name="fm">
 	<liferay-ui:search-container
 		searchContainer="<%= selectSiteInitializerDisplayContext.getSearchContainer() %>"
 	>
@@ -34,15 +34,12 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-site-template"));
 			keyProperty="key"
 			modelVar="siteInitializerItem"
 		>
-
-			<%
-			row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
-			%>
-
 			<liferay-ui:search-container-column-text>
-				<clay:vertical-card
-					verticalCard="<%= new SelectSiteInitializerVerticalCard(siteInitializerItem, renderRequest, renderResponse) %>"
-				/>
+				<button class="add-site-action-button btn btn-unstyled mb-4 w-100" type="button">
+					<clay:vertical-card
+						verticalCard="<%= new SelectSiteInitializerVerticalCard(siteInitializerItem, renderRequest, renderResponse) %>"
+					/>
+				</button>
 			</liferay-ui:search-container-column-text>
 		</liferay-ui:search-container-row>
 
@@ -52,18 +49,21 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-site-template"));
 		/>
 	</liferay-ui:search-container>
 
-	<portlet:actionURL name="addGroup" var="addSiteURL">
+	<portlet:actionURL name="/site_admin/add_group" var="addSiteURL">
 		<portlet:param name="mvcPath" value="/select_layout_set_prototype_entry.jsp" />
 		<portlet:param name="parentGroupId" value="<%= String.valueOf(selectSiteInitializerDisplayContext.getParentGroupId()) %>" />
 	</portlet:actionURL>
 
-	<aui:script require="metal-dom/src/all/dom as dom,frontend-js-web/liferay/modal/commands/OpenSimpleInputModal.es as openSimpleInputModal">
-		var addSiteActionOptionQueryClickHandler = dom.delegate(
+	<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule,frontend-js-web/liferay/modal/commands/OpenSimpleInputModal.es as openSimpleInputModal">
+		var delegate = delegateModule.default;
+
+		var addSiteActionOptionQueryClickHandler = delegate(
 			document.body,
 			'click',
-			'.add-site-action-option',
-			function (event) {
-				var data = event.delegateTarget.dataset;
+			'.add-site-action-button',
+			(event) => {
+				var data = event.delegateTarget.querySelector('.add-site-action-card')
+					.dataset;
 
 				openSimpleInputModal.default({
 					checkboxFieldLabel:
@@ -78,13 +78,13 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-site-template"));
 					mainFieldLabel: '<liferay-ui:message key="name" />',
 					namespace: '<portlet:namespace />',
 					spritemap:
-						'<%= themeDisplay.getPathThemeImages() %>/lexicon/icons.svg',
+						'<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg',
 				});
 			}
 		);
 
 		function handleDestroyPortlet() {
-			addSiteActionOptionQueryClickHandler.removeListener();
+			addSiteActionOptionQueryClickHandler.dispose();
 
 			Liferay.detach('destroyPortlet', handleDestroyPortlet);
 		}

@@ -20,32 +20,28 @@
 String redirect = ParamUtil.getString(request, "redirect");
 
 CalendarResource calendarResource = (CalendarResource)request.getAttribute(CalendarWebKeys.CALENDAR_RESOURCE);
-
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/view_calendars.jsp");
-portletURL.setParameter("redirect", redirect);
-portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.getCalendarResourceId()));
 %>
 
-<liferay-ui:header
-	backURL="<%= redirect %>"
-	localizeTitle="<%= false %>"
-	title='<%= LanguageUtil.format(request, "x-calendars", calendarResource.getName(locale), false) %>'
-/>
+<clay:container-fluid>
+	<liferay-ui:header
+		backURL="<%= redirect %>"
+		localizeTitle="<%= false %>"
+		title='<%= LanguageUtil.format(request, "x-calendars", calendarResource.getName(locale), false) %>'
+	/>
 
-<c:if test="<%= CalendarResourcePermission.contains(permissionChecker, calendarResource, CalendarActionKeys.ADD_CALENDAR) %>">
-	<aui:button-row>
-		<liferay-portlet:renderURL var="editCalendarURL">
-			<liferay-portlet:param name="mvcPath" value="/edit_calendar.jsp" />
-			<liferay-portlet:param name="redirect" value="<%= currentURL %>" />
-			<liferay-portlet:param name="backURL" value="<%= currentURL %>" />
-			<liferay-portlet:param name="calendarResourceId" value="<%= String.valueOf(calendarResource.getCalendarResourceId()) %>" />
-		</liferay-portlet:renderURL>
+	<c:if test="<%= CalendarResourcePermission.contains(permissionChecker, calendarResource, CalendarActionKeys.ADD_CALENDAR) %>">
+		<aui:button-row>
+			<liferay-portlet:renderURL var="editCalendarURL">
+				<liferay-portlet:param name="mvcPath" value="/edit_calendar.jsp" />
+				<liferay-portlet:param name="redirect" value="<%= currentURL %>" />
+				<liferay-portlet:param name="backURL" value="<%= currentURL %>" />
+				<liferay-portlet:param name="calendarResourceId" value="<%= String.valueOf(calendarResource.getCalendarResourceId()) %>" />
+			</liferay-portlet:renderURL>
 
-		<aui:button href="<%= editCalendarURL %>" primary="<%= true %>" value="add-calendar" />
-	</aui:button-row>
-</c:if>
+			<aui:button href="<%= editCalendarURL %>" primary="<%= true %>" value="add-calendar" />
+		</aui:button-row>
+	</c:if>
+</clay:container-fluid>
 
 <clay:container-fluid>
 	<liferay-ui:search-container
@@ -127,7 +123,7 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 	Liferay.provide(
 		window,
 		'<portlet:namespace />importCalendar',
-		function (url) {
+		(url) => {
 			var A = AUI();
 
 			if (!<portlet:namespace />importDialog) {
@@ -148,10 +144,10 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 									body: new FormData(form),
 									method: 'POST',
 								})
-									.then(function (response) {
+									.then((response) => {
 										return response.text();
 									})
-									.then(function (data) {
+									.then((data) => {
 										var responseData = {};
 
 										try {

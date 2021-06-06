@@ -12,11 +12,11 @@
  * details.
  */
 
+import ClayButton from '@clayui/button';
 import ClayForm, {ClayCheckbox, ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import React, {useEffect, useRef, useState} from 'react';
 
-import Button from '../../components/button/Button.es';
 import Popover from '../../components/popover/Popover.es';
 
 const CustomObjectPopover = ({
@@ -30,17 +30,7 @@ const CustomObjectPopover = ({
 	const nameInputRef = useRef();
 	const [isAddFormView, setAddFormView] = useState(true);
 	const [hasError, setHasError] = useState(false);
-
-	const handleSubmit = () => {
-		const name = nameInputRef.current.value;
-
-		if (validate(name)) {
-			onSubmit({isAddFormView, name});
-		}
-		else {
-			nameInputRef.current.focus();
-		}
-	};
+	const [isLoading, setLoading] = useState(false);
 
 	const validate = (value) => {
 		const invalid = value.trim() === '';
@@ -48,6 +38,20 @@ const CustomObjectPopover = ({
 		setHasError(invalid);
 
 		return !invalid;
+	};
+
+	const handleSubmit = () => {
+		const name = nameInputRef.current.value;
+
+		if (validate(name)) {
+			setLoading(true);
+			onSubmit({isAddFormView, name}).catch(() => {
+				setLoading(false);
+			});
+		}
+		else {
+			nameInputRef.current.focus();
+		}
 	};
 
 	const resetForm = () => {
@@ -74,7 +78,9 @@ const CustomObjectPopover = ({
 					onSubmit={(event) => {
 						event.preventDefault();
 
-						handleSubmit();
+						if (!isLoading) {
+							handleSubmit();
+						}
 					}}
 				>
 					<div
@@ -133,7 +139,7 @@ const CustomObjectPopover = ({
 			footer={() => (
 				<div className="border-top p-3" style={{width: 450}}>
 					<div className="d-flex justify-content-end">
-						<Button
+						<ClayButton
 							className="mr-3"
 							displayType="secondary"
 							onClick={() => {
@@ -144,11 +150,15 @@ const CustomObjectPopover = ({
 							small
 						>
 							{Liferay.Language.get('cancel')}
-						</Button>
+						</ClayButton>
 
-						<Button onClick={() => handleSubmit()} small>
+						<ClayButton
+							disabled={isLoading}
+							onClick={() => handleSubmit()}
+							small
+						>
 							{Liferay.Language.get('continue')}
-						</Button>
+						</ClayButton>
 					</div>
 				</div>
 			)}

@@ -21,10 +21,17 @@
 </liferay-util:html-top>
 
 <div id="<portlet:namespace />-app-builder-root">
+	<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" var="baseResourceURL" />
+
+	<liferay-portlet:renderURL portletName="<%= WorkflowPortletKeys.CONTROL_PANEL_WORKFLOW %>" var="workflowProcessBuilderPortletURL" />
+
 	<react:component
-		data='<%=
+		module="js/index.es"
+		props='<%=
 			HashMapBuilder.<String, Object>put(
 				"basePortletURL", String.valueOf(renderResponse.createRenderURL())
+			).put(
+				"baseResourceURL", String.valueOf(baseResourceURL)
 			).put(
 				"defaultDelta", PropsValues.SEARCH_CONTAINER_PAGE_DEFAULT_DELTA
 			).put(
@@ -32,9 +39,14 @@
 			).put(
 				"pathFriendlyURLPublic", PortalUtil.getPathFriendlyURLPublic()
 			).put(
+				"popUpWindow", LiferayWindowState.isPopUp(request)
+			).put(
+				"scope", AppBuilderAppConstants.SCOPE_STANDARD
+			).put(
 				"showNativeObjectsTab", request.getAttribute(AppBuilderWebKeys.SHOW_NATIVE_OBJECTS_TAB)
+			).put(
+				"workflowProcessBuilderPortletURL", String.valueOf(workflowProcessBuilderPortletURL)
 			).build()
 		%>'
-		module="js/index.es"
 	/>
 </div>

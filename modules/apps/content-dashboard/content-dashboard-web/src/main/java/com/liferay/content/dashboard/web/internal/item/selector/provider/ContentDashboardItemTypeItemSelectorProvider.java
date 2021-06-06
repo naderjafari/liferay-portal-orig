@@ -92,16 +92,17 @@ public class ContentDashboardItemTypeItemSelectorProvider {
 
 		BooleanFilter booleanFilter = new BooleanFilter();
 
-		TermsFilter termsFilter = new TermsFilter(Field.CLASS_NAME_ID);
+		TermsFilter classNameIdTermsFilter = new TermsFilter(
+			Field.CLASS_NAME_ID);
 
 		Collection<Long> classIds =
 			_contentDashboardItemFactoryTracker.getClassIds();
 
 		for (Long classId : classIds) {
-			termsFilter.addValue(String.valueOf(classId));
+			classNameIdTermsFilter.addValue(String.valueOf(classId));
 		}
 
-		booleanFilter.add(termsFilter, BooleanClauseOccur.MUST);
+		booleanFilter.add(classNameIdTermsFilter, BooleanClauseOccur.MUST);
 
 		booleanQueryImpl.setPreBooleanFilter(booleanFilter);
 
@@ -174,11 +175,15 @@ public class ContentDashboardItemTypeItemSelectorProvider {
 				false
 			).withSearchContext(
 				searchContext -> {
+					String keywords = _getKeywords(portletRequest);
+
+					searchContext.setAttribute(Field.DESCRIPTION, keywords);
+					searchContext.setAttribute(Field.NAME, keywords);
+
 					searchContext.setBooleanClauses(_getBooleanClauses());
 					searchContext.setCompanyId(
 						_portal.getCompanyId(portletRequest));
 					searchContext.setEnd(end);
-					searchContext.setKeywords(_getKeywords(portletRequest));
 					searchContext.setSorts(_getSort(portletRequest));
 					searchContext.setStart(start);
 				}

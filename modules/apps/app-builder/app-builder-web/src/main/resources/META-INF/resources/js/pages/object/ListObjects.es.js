@@ -12,20 +12,24 @@
  * details.
  */
 
+import ListView from 'data-engine-js-components-web/js/components/list-view/ListView.es';
+import {
+	getItem,
+	updateItem,
+} from 'data-engine-js-components-web/js/utils/client.es';
+import {getLocalizedValue} from 'data-engine-js-components-web/js/utils/lang.es';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AppNavigationBar} from '../../App.es';
 import ControlMenu from '../../components/control-menu/ControlMenu.es';
-import ListView from '../../components/list-view/ListView.es';
 import PermissionsModal from '../../components/permissions/PermissionsModal.es';
 import {ACTIONS} from '../../pages/entry/PermissionsContext.es';
-import {getItem, updateItem} from '../../utils/client.es';
-import {getLocalizedValue} from '../../utils/lang.es';
 import {fromNow} from '../../utils/time.es';
 
 const columns = [
 	{
+		editable: true,
 		key: 'name',
 		sortable: true,
 		value: Liferay.Language.get('name'),
@@ -33,7 +37,7 @@ const columns = [
 	{
 		key: 'dateCreated',
 		sortable: true,
-		value: Liferay.Language.get('create-date'),
+		value: Liferay.Language.get('created-date'),
 	},
 	{
 		asc: false,
@@ -124,7 +128,12 @@ export default ({history, listViewProps = {}, objectType}) => {
 
 			<AppNavigationBar />
 
-			<ListView {...listViewProps} actions={actions} columns={columns}>
+			<ListView
+				{...listViewProps}
+				actions={actions}
+				columns={columns}
+				history={history}
+			>
 				{(item) => {
 					const {
 						dateCreated,
@@ -143,6 +152,7 @@ export default ({history, listViewProps = {}, objectType}) => {
 								{getLocalizedValue(defaultLanguageId, name)}
 							</Link>
 						),
+						originalItem: item,
 					};
 				}}
 			</ListView>
@@ -192,10 +202,10 @@ export default ({history, listViewProps = {}, objectType}) => {
 						}
 					);
 
-					return updateItem(
-						`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}/permissions`,
-						dataDefinitionPermissions
-					);
+					return updateItem({
+						endpoint: `/o/data-engine/v2.0/data-definitions/${dataDefinitionId}/permissions`,
+						item: dataDefinitionPermissions,
+					});
 				}}
 				rolesFilter={rolesFilter}
 				title={Liferay.Language.get('app-permissions')}

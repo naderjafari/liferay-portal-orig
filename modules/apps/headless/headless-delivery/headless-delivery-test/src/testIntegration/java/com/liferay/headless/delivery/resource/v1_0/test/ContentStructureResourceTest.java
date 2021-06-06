@@ -50,11 +50,46 @@ public class ContentStructureResourceTest
 	}
 
 	@Override
+	protected ContentStructure
+			testGetAssetLibraryContentStructurePermissionsPage_addContentStructure()
+		throws Exception {
+
+		return testGetContentStructure_addContentStructure();
+	}
+
+	@Override
+	protected ContentStructure
+			testGetAssetLibraryContentStructuresPage_addContentStructure(
+				Long assetLibraryId, ContentStructure contentStructure)
+		throws Exception {
+
+		return _toContentStructure(
+			_addDDMStructure(
+				testDepotEntry.getGroup(), contentStructure.getName()));
+	}
+
+	@Override
 	protected ContentStructure testGetContentStructure_addContentStructure()
 		throws Exception {
 
 		return _toContentStructure(
 			_addDDMStructure(testGroup, RandomTestUtil.randomString()));
+	}
+
+	@Override
+	protected ContentStructure
+			testGetContentStructurePermissionsPage_addContentStructure()
+		throws Exception {
+
+		return testGetContentStructure_addContentStructure();
+	}
+
+	@Override
+	protected ContentStructure
+			testGetSiteContentStructurePermissionsPage_addContentStructure()
+		throws Exception {
+
+		return testGetContentStructure_addContentStructure();
 	}
 
 	@Override
@@ -76,6 +111,30 @@ public class ContentStructureResourceTest
 		return testGetContentStructure_addContentStructure();
 	}
 
+	@Override
+	protected ContentStructure
+			testPutAssetLibraryContentStructurePermission_addContentStructure()
+		throws Exception {
+
+		return testGetContentStructure_addContentStructure();
+	}
+
+	@Override
+	protected ContentStructure
+			testPutContentStructurePermission_addContentStructure()
+		throws Exception {
+
+		return testGetContentStructure_addContentStructure();
+	}
+
+	@Override
+	protected ContentStructure
+			testPutSiteContentStructurePermission_addContentStructure()
+		throws Exception {
+
+		return testGetContentStructure_addContentStructure();
+	}
+
 	private DDMStructure _addDDMStructure(Group group, String name)
 		throws Exception {
 
@@ -86,8 +145,8 @@ public class ContentStructureResourceTest
 		return ddmStructureTestHelper.addStructure(
 			PortalUtil.getClassNameId(JournalArticle.class),
 			RandomTestUtil.randomString(), name,
-			_deserialize(_read("test-structured-content-structure.json")),
-			StorageType.JSON.getValue(), DDMStructureConstants.TYPE_DEFAULT);
+			_deserialize(_read("test-ddm-structure.json")),
+			StorageType.DEFAULT.getValue(), DDMStructureConstants.TYPE_DEFAULT);
 	}
 
 	private DDMForm _deserialize(String content) {

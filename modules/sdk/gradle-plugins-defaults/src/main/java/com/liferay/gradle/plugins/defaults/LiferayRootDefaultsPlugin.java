@@ -18,6 +18,7 @@ import com.liferay.gradle.plugins.SourceFormatterDefaultsPlugin;
 import com.liferay.gradle.plugins.defaults.internal.util.FileUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.GradlePluginsDefaultsUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.GradleUtil;
+import com.liferay.gradle.plugins.python.PythonPlugin;
 import com.liferay.gradle.plugins.source.formatter.SourceFormatterPlugin;
 
 import java.io.File;
@@ -38,6 +39,7 @@ public class LiferayRootDefaultsPlugin implements Plugin<Project> {
 			GradleUtil.applyPlugin(project, LiferayAppDefaultsPlugin.class);
 		}
 
+		GradleUtil.applyPlugin(project, PythonPlugin.class);
 		GradleUtil.applyPlugin(project, SourceFormatterPlugin.class);
 		SourceFormatterDefaultsPlugin.INSTANCE.apply(project);
 
@@ -53,21 +55,6 @@ public class LiferayRootDefaultsPlugin implements Plugin<Project> {
 				GradleUtil.applyPlugin(subproject, LiferayDefaultsPlugin.class);
 			}
 		}
-
-		if ((portalRootDir == null) && _hasYarnScriptFile(project)) {
-			GradleUtil.applyPlugin(project, LiferayYarnDefaultsPlugin.class);
-		}
-	}
-
-	private boolean _hasYarnScriptFile(Project project) {
-		File[] files = FileUtil.getFiles(
-			project.getProjectDir(), "yarn-", ".js");
-
-		if ((files != null) && (files.length > 0)) {
-			return true;
-		}
-
-		return false;
 	}
 
 }

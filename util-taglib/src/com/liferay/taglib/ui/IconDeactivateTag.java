@@ -16,9 +16,9 @@ package com.liferay.taglib.ui;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.language.UnicodeLanguageUtil;
+import com.liferay.portal.kernel.servlet.FileAvailabilityUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Http;
-import com.liferay.taglib.FileAvailabilityUtil;
 import com.liferay.taglib.util.TagResourceBundleUtil;
 
 /**
@@ -42,11 +42,8 @@ public class IconDeactivateTag extends IconTag {
 		if (url.startsWith(Http.HTTP_WITH_SLASH) ||
 			url.startsWith(Http.HTTPS_WITH_SLASH)) {
 
-			url = "submitForm(document.hrefFm, '".concat(
-				HtmlUtil.escapeJS(url)
-			).concat(
-				"');"
-			);
+			url = StringBundler.concat(
+				"submitForm(document.hrefFm, '", HtmlUtil.escapeJS(url), "');");
 		}
 
 		StringBundler sb = new StringBundler(5);
@@ -62,10 +59,8 @@ public class IconDeactivateTag extends IconTag {
 		sb.append(url);
 		sb.append(" } else { self.focus(); }");
 
-		url = sb.toString();
-
 		setMessage("deactivate");
-		setUrl(url);
+		setUrl(sb.toString());
 
 		return super.getPage();
 	}

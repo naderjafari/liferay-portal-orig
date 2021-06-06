@@ -59,7 +59,7 @@ public interface AppBuilderWorkflowTaskLinkLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link AppBuilderWorkflowTaskLinkLocalServiceUtil} to access the app builder workflow task link local service. Add custom service methods to <code>com.liferay.app.builder.workflow.service.impl.AppBuilderWorkflowTaskLinkLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.app.builder.workflow.service.impl.AppBuilderWorkflowTaskLinkLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the app builder workflow task link local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link AppBuilderWorkflowTaskLinkLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -77,8 +77,9 @@ public interface AppBuilderWorkflowTaskLinkLocalService
 		AppBuilderWorkflowTaskLink appBuilderWorkflowTaskLink);
 
 	public AppBuilderWorkflowTaskLink addAppBuilderWorkflowTaskLink(
-			long companyId, long appBuilderAppId, long ddmStructureLayoutId,
-			boolean readOnly, String workflowTaskName)
+			long companyId, long appBuilderAppId, long appBuilderAppVersionId,
+			long ddmStructureLayoutId, boolean readOnly,
+			String workflowTaskName)
 		throws PortalException;
 
 	/**
@@ -129,6 +130,9 @@ public interface AppBuilderWorkflowTaskLinkLocalService
 
 	public void deleteAppBuilderWorkflowTaskLinks(long appBuilderAppId);
 
+	public void deleteAppBuilderWorkflowTaskLinks(
+		long appBuilderAppId, long appBuilderAppVersionId);
+
 	/**
 	 * @throws PortalException
 	 */
@@ -138,6 +142,9 @@ public interface AppBuilderWorkflowTaskLinkLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -245,7 +252,12 @@ public interface AppBuilderWorkflowTaskLinkLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<AppBuilderWorkflowTaskLink> getAppBuilderWorkflowTaskLinks(
-		long appBuilderAppId, String workflowTaskName);
+		long appBuilderAppId, long appBuilderAppVersionId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AppBuilderWorkflowTaskLink> getAppBuilderWorkflowTaskLinks(
+		long appBuilderAppId, long appBuilderAppVersionId,
+		String workflowTaskName);
 
 	/**
 	 * Returns the number of app builder workflow task links.

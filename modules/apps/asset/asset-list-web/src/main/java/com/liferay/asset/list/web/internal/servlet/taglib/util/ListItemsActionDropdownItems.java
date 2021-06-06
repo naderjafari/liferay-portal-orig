@@ -25,8 +25,8 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.info.display.url.provider.InfoEditURLProvider;
 import com.liferay.info.display.url.provider.InfoEditURLProviderTracker;
-import com.liferay.info.item.InfoItemClassPKReference;
 import com.liferay.info.item.InfoItemFieldValues;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.petra.function.UnsafeConsumer;
@@ -77,6 +77,44 @@ public class ListItemsActionDropdownItems {
 		).add(
 			_getEditContentActionUnsafeConsumer(className, object)
 		).build();
+	}
+
+	public String getViewDisplayPageURL(String className, Object object)
+		throws Exception {
+
+		if (_assetDisplayPageFriendlyURLProvider == null) {
+			return null;
+		}
+
+		InfoItemFieldValuesProvider<Object> infoItemFieldValuesProvider =
+			_infoItemServiceTracker.getFirstInfoItemService(
+				InfoItemFieldValuesProvider.class, className);
+
+		InfoItemFieldValues infoItemFieldValues =
+			infoItemFieldValuesProvider.getInfoItemFieldValues(object);
+
+		InfoItemReference infoItemReference =
+			infoItemFieldValues.getInfoItemReference();
+
+		long classPK = infoItemReference.getClassPK();
+
+		if (object instanceof AssetEntry) {
+			AssetEntry assetEntry = (AssetEntry)object;
+
+			classPK = assetEntry.getClassPK();
+			className = assetEntry.getClassName();
+		}
+
+		if (Objects.equals(className, DLFileEntryConstants.getClassName())) {
+			className = FileEntry.class.getName();
+		}
+
+		String viewDisplayPageURL =
+			_assetDisplayPageFriendlyURLProvider.getFriendlyURL(
+				className, classPK, _themeDisplay);
+
+		return HttpUtil.setParameter(
+			viewDisplayPageURL, "p_l_back_url", _getRedirect());
 	}
 
 	private Object _getAssetEntryObject(AssetEntry assetEntry)
@@ -163,7 +201,7 @@ public class ListItemsActionDropdownItems {
 				String className, Object object)
 		throws Exception {
 
-		String viewDisplayPageURL = _getViewDisplayPageURL(className, object);
+		String viewDisplayPageURL = getViewDisplayPageURL(className, object);
 
 		return dropdownItem -> {
 			dropdownItem.putData("action", "viewDisplayPage");
@@ -172,44 +210,6 @@ public class ListItemsActionDropdownItems {
 			dropdownItem.setLabel(
 				LanguageUtil.get(_httpServletRequest, "view-display-page"));
 		};
-	}
-
-	private String _getViewDisplayPageURL(String className, Object object)
-		throws Exception {
-
-		if (_assetDisplayPageFriendlyURLProvider == null) {
-			return null;
-		}
-
-		InfoItemFieldValuesProvider<Object> infoItemFieldValuesProvider =
-			_infoItemServiceTracker.getFirstInfoItemService(
-				InfoItemFieldValuesProvider.class, className);
-
-		InfoItemFieldValues infoFormValues =
-			infoItemFieldValuesProvider.getInfoItemFieldValues(object);
-
-		InfoItemClassPKReference infoItemClassPKReference =
-			infoFormValues.getInfoItemClassPKReference();
-
-		long classPK = infoItemClassPKReference.getClassPK();
-
-		if (object instanceof AssetEntry) {
-			AssetEntry assetEntry = (AssetEntry)object;
-
-			classPK = assetEntry.getClassPK();
-			className = assetEntry.getClassName();
-		}
-
-		if (Objects.equals(className, DLFileEntryConstants.getClassName())) {
-			className = FileEntry.class.getName();
-		}
-
-		String viewDisplayPageURL =
-			_assetDisplayPageFriendlyURLProvider.getFriendlyURL(
-				className, classPK, _themeDisplay);
-
-		return HttpUtil.setParameter(
-			viewDisplayPageURL, "p_l_back_url", _getRedirect());
 	}
 
 	private final AssetDisplayPageFriendlyURLProvider

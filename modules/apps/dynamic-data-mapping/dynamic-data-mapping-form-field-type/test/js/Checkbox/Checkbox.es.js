@@ -14,7 +14,7 @@
 
 import {act, cleanup, render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {PageProvider} from 'dynamic-data-mapping-form-renderer';
+import {PageProvider} from 'data-engine-js-components-web';
 import React from 'react';
 
 import Checkbox from '../../../src/main/resources/META-INF/resources/Checkbox/Checkbox.es';
@@ -224,5 +224,41 @@ describe('Field Checkbox', () => {
 		});
 
 		expect(handleFieldEdited).toHaveBeenCalled();
+	});
+
+	describe('Maximum Repetitions Info', () => {
+		it('does not show the maximum repetitions info', () => {
+			const {container} = render(<CheckboxWithProvider value={true} />);
+
+			const ddmInfo = container.querySelector('.ddm-info');
+
+			expect(ddmInfo).toBeNull();
+		});
+
+		it('does not show the maximum repetitions info if the value is false', () => {
+			const {container} = render(
+				<CheckboxWithProvider
+					showMaximumRepetitionsInfo={true}
+					value={false}
+				/>
+			);
+
+			const ddmInfo = container.querySelector('.ddm-info');
+
+			expect(ddmInfo).toBeNull();
+		});
+
+		it('shows the maximum repetitions info', () => {
+			const {container} = render(
+				<CheckboxWithProvider
+					showMaximumRepetitionsInfo={true}
+					value={true}
+				/>
+			);
+
+			const ddmInfo = container.querySelector('.ddm-info');
+
+			expect(ddmInfo).not.toBeNull();
+		});
 	});
 });

@@ -14,7 +14,7 @@
 
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
-import {useEventListener, useIsMounted} from 'frontend-js-react-web';
+import {useEventListener, useIsMounted} from '@liferay/frontend-js-react-web';
 import {debounce} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useLayoutEffect, useRef, useState} from 'react';
@@ -41,7 +41,7 @@ const ZOOM_LEVELS_REVERSED = ZOOM_LEVELS.slice().reverse();
  * Component that create an image preview to allow zoom
  * @review
  */
-const ImagePreviewer = ({imageURL}) => {
+const ImagePreviewer = ({alt, imageURL}) => {
 	const [currentZoom, setCurrentZoom] = useState(1);
 	const [imageHeight, setImageHeight] = useState(null);
 	const [imageWidth, setImageWidth] = useState(null);
@@ -54,6 +54,12 @@ const ImagePreviewer = ({imageURL}) => {
 	const imageContainer = useRef();
 
 	const isMounted = useIsMounted();
+
+	const updateToolbar = (zoom) => {
+		setCurrentZoom(zoom);
+		setZoomInDisabled(ZOOM_LEVELS_REVERSED[0] === zoom);
+		setZoomOutDisabled(ZOOM_LEVELS[0] >= zoom);
+	};
 
 	const applyZoom = (zoom) => {
 		const imageElement = image.current;
@@ -108,12 +114,6 @@ const ImagePreviewer = ({imageURL}) => {
 		}
 	}, 250);
 
-	const updateToolbar = (zoom) => {
-		setCurrentZoom(zoom);
-		setZoomInDisabled(ZOOM_LEVELS_REVERSED[0] === zoom);
-		setZoomOutDisabled(ZOOM_LEVELS[0] >= zoom);
-	};
-
 	useEventListener('resize', handleWindowResize, false, window);
 
 	useLayoutEffect(() => {
@@ -167,6 +167,7 @@ const ImagePreviewer = ({imageURL}) => {
 				ref={imageContainer}
 			>
 				<img
+					alt={alt}
 					className="preview-file-image"
 					onLoad={handleImageLoad}
 					ref={image}

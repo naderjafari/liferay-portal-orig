@@ -18,6 +18,8 @@ import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.memory.EqualityWeakReference;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.exception.LoggedExceptionInInitializerError;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 
 import java.io.IOException;
 
@@ -232,6 +234,9 @@ public class AggregateClassLoader extends ClassLoader {
 				return _findClass(classLoader, name);
 			}
 			catch (ClassNotFoundException classNotFoundException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(classNotFoundException, classNotFoundException);
+				}
 			}
 		}
 
@@ -251,6 +256,9 @@ public class AggregateClassLoader extends ClassLoader {
 				break;
 			}
 			catch (ClassNotFoundException classNotFoundException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(classNotFoundException, classNotFoundException);
+				}
 			}
 		}
 
@@ -264,7 +272,7 @@ public class AggregateClassLoader extends ClassLoader {
 		return loadedClass;
 	}
 
-	private static Class<?> _findClass(ClassLoader classLoader, String name)
+	private Class<?> _findClass(ClassLoader classLoader, String name)
 		throws ClassNotFoundException {
 
 		try {
@@ -281,7 +289,7 @@ public class AggregateClassLoader extends ClassLoader {
 		}
 	}
 
-	private static Class<?> _loadClass(
+	private Class<?> _loadClass(
 			ClassLoader classLoader, String name, boolean resolve)
 		throws ClassNotFoundException {
 
@@ -307,6 +315,9 @@ public class AggregateClassLoader extends ClassLoader {
 	private static final Method _FIND_CLASS_METHOD;
 
 	private static final Method _LOAD_CLASS_METHOD;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AggregateClassLoader.class);
 
 	static {
 		try {

@@ -32,7 +32,7 @@ public class ${entity.name}CTServiceImpl implements
 
 	@Override
 	public CTPersistence<${entity.name}> getCTPersistence() {
-		return _${entity.varName}Persistence;
+		return _${entity.variableName}Persistence;
 	}
 
 	@Override
@@ -42,7 +42,7 @@ public class ${entity.name}CTServiceImpl implements
 
 	@Override
 	public <R, E extends Throwable> R updateWithUnsafeFunction(UnsafeFunction<CTPersistence<${entity.name}>, R, E> updateUnsafeFunction) throws E {
-		return updateUnsafeFunction.apply(_${entity.varName}Persistence);
+		return updateUnsafeFunction.apply(_${entity.variableName}Persistence);
 	}
 
 	<#if dependencyInjectorDS>
@@ -50,6 +50,6 @@ public class ${entity.name}CTServiceImpl implements
 	<#else>
 		@BeanReference(type = ${entity.name}Persistence.class)
 	</#if>
-	private ${entity.name}Persistence _${entity.varName}Persistence;
+	private ${entity.name}Persistence _${entity.variableName}Persistence;
 
 }

@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.web.internal.info.item.provider;
 
 import com.liferay.dynamic.data.mapping.exception.NoSuchStructureException;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.info.field.converter.DDMFormFieldInfoFieldConverter;
 import com.liferay.dynamic.data.mapping.info.item.provider.DDMStructureInfoItemFieldSetProvider;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
@@ -24,7 +25,6 @@ import com.liferay.info.field.InfoFieldSet;
 import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.Validator;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -41,9 +41,26 @@ public class DDMStructureInfoItemFieldSetProviderImpl
 	public InfoFieldSet getInfoItemFieldSet(long ddmStructureId)
 		throws NoSuchStructureException {
 
+		return getInfoItemFieldSet(ddmStructureId, null);
+	}
+
+	@Override
+	public InfoFieldSet getInfoItemFieldSet(
+			long ddmStructureId,
+			InfoLocalizedValue<String> fieldSetNameInfoLocalizedValue)
+		throws NoSuchStructureException {
+
 		try {
 			DDMStructure ddmStructure =
 				_ddmStructureLocalService.getDDMStructure(ddmStructureId);
+
+			if (fieldSetNameInfoLocalizedValue == null) {
+				fieldSetNameInfoLocalizedValue =
+					InfoLocalizedValue.<String>builder(
+					).values(
+						ddmStructure.getNameMap()
+					).build();
+			}
 
 			return InfoFieldSet.builder(
 			).infoFieldSetEntry(
@@ -51,8 +68,7 @@ public class DDMStructureInfoItemFieldSetProviderImpl
 					for (DDMFormField ddmFormField :
 							ddmStructure.getDDMFormFields(false)) {
 
-						if (Validator.isNotNull(ddmFormField.getIndexType()) &&
-							ArrayUtil.contains(
+						if (ArrayUtil.contains(
 								_SELECTABLE_DDM_STRUCTURE_FIELDS,
 								ddmFormField.getType())) {
 
@@ -63,10 +79,7 @@ public class DDMStructureInfoItemFieldSetProviderImpl
 					}
 				}
 			).labelInfoLocalizedValue(
-				InfoLocalizedValue.<String>builder(
-				).values(
-					ddmStructure.getNameMap()
-				).build()
+				fieldSetNameInfoLocalizedValue
 			).name(
 				ddmStructure.getStructureKey()
 			).build();
@@ -81,8 +94,11 @@ public class DDMStructureInfoItemFieldSetProviderImpl
 	}
 
 	private static final String[] _SELECTABLE_DDM_STRUCTURE_FIELDS = {
-		"checkbox", "ddm-date", "ddm-decimal", "ddm-image", "ddm-integer",
-		"ddm-number", "ddm-text-html", "radio", "select", "text", "textarea"
+		DDMFormFieldTypeConstants.CHECKBOX,
+		DDMFormFieldTypeConstants.CHECKBOX_MULTIPLE,
+		DDMFormFieldTypeConstants.DATE, DDMFormFieldTypeConstants.NUMERIC,
+		DDMFormFieldTypeConstants.IMAGE, DDMFormFieldTypeConstants.TEXT,
+		DDMFormFieldTypeConstants.RICH_TEXT, DDMFormFieldTypeConstants.SELECT
 	};
 
 	@Reference

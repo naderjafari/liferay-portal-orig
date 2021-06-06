@@ -15,15 +15,16 @@
 package com.liferay.headless.admin.taxonomy.resource.v1_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.asset.entry.rel.service.AssetEntryAssetCategoryRelLocalServiceUtil;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetVocabulary;
-import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
 import com.liferay.asset.test.util.AssetTestUtil;
 import com.liferay.headless.admin.taxonomy.client.dto.v1_0.TaxonomyCategory;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -55,8 +56,7 @@ public class TaxonomyCategoryResourceTest
 	protected TaxonomyCategory testDeleteTaxonomyCategory_addTaxonomyCategory()
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), randomTaxonomyCategory());
+		return testGetTaxonomyCategory_addTaxonomyCategory();
 	}
 
 	@Override
@@ -80,8 +80,10 @@ public class TaxonomyCategoryResourceTest
 		AssetEntry assetEntry = AssetTestUtil.addAssetEntry(
 			testGroup.getGroupId());
 
-		AssetCategoryLocalServiceUtil.addAssetEntryAssetCategory(
-			assetEntry.getEntryId(), Long.valueOf(taxonomyCategory.getId()));
+		AssetEntryAssetCategoryRelLocalServiceUtil.
+			addAssetEntryAssetCategoryRel(
+				assetEntry.getEntryId(),
+				GetterUtil.getLong(taxonomyCategory.getId()));
 
 		return taxonomyCategory;
 	}
@@ -117,8 +119,7 @@ public class TaxonomyCategoryResourceTest
 	protected TaxonomyCategory testPatchTaxonomyCategory_addTaxonomyCategory()
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), randomTaxonomyCategory());
+		return testGetTaxonomyCategory_addTaxonomyCategory();
 	}
 
 	@Override
@@ -137,16 +138,23 @@ public class TaxonomyCategoryResourceTest
 				TaxonomyCategory taxonomyCategory)
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), taxonomyCategory);
+		return testPostTaxonomyCategoryTaxonomyCategory_addTaxonomyCategory(
+			taxonomyCategory);
 	}
 
 	@Override
 	protected TaxonomyCategory testPutTaxonomyCategory_addTaxonomyCategory()
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), randomTaxonomyCategory());
+		return testGetTaxonomyCategory_addTaxonomyCategory();
+	}
+
+	@Override
+	protected TaxonomyCategory
+			testPutTaxonomyCategoryPermission_addTaxonomyCategory()
+		throws Exception {
+
+		return testGetTaxonomyCategory_addTaxonomyCategory();
 	}
 
 	private AssetVocabulary _assetVocabulary;

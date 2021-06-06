@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,10 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Creator")
+@GraphQLName(description = "https://schema.org/Creator", value = "Creator")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Creator")
-public class Creator {
+public class Creator implements Serializable {
 
 	public static Creator toDTO(String json) {
 		return ObjectMapperUtil.readValue(Creator.class, json);
@@ -158,6 +160,7 @@ public class Creator {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.Creator",
 		name = "x-class-name"
 	)
@@ -193,7 +196,7 @@ public class Creator {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -232,7 +235,7 @@ public class Creator {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

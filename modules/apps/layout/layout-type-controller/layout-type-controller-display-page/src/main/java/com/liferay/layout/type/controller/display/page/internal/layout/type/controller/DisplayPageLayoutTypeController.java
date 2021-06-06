@@ -19,10 +19,13 @@ import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.fragment.constants.FragmentActionKeys;
 import com.liferay.fragment.renderer.FragmentRendererController;
 import com.liferay.info.display.request.attributes.contributor.InfoDisplayRequestAttributesContributor;
+import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorWebKeys;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.layout.type.controller.BaseLayoutTypeControllerImpl;
+import com.liferay.layout.type.controller.display.page.internal.constants.DisplayPageLayoutTypeControllerWebKeys;
+import com.liferay.layout.type.controller.display.page.internal.display.context.DisplayPageLayoutTypeControllerDisplayContext;
 import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -36,13 +39,13 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.servlet.TransferHeadersHelperUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.taglib.servlet.PipingServletResponse;
 
 import java.util.List;
 
@@ -144,6 +147,16 @@ public class DisplayPageLayoutTypeController
 			layoutMode = Constants.VIEW;
 		}
 
+		DisplayPageLayoutTypeControllerDisplayContext
+			displayPageLayoutTypeControllerDisplayContext =
+				new DisplayPageLayoutTypeControllerDisplayContext(
+					httpServletRequest, _infoItemServiceTracker);
+
+		httpServletRequest.setAttribute(
+			DisplayPageLayoutTypeControllerWebKeys.
+				DISPLAY_PAGE_LAYOUT_TYPE_CONTROLLER_DISPLAY_CONTEXT,
+			displayPageLayoutTypeControllerDisplayContext);
+
 		httpServletRequest.setAttribute(
 			FragmentActionKeys.FRAGMENT_RENDERER_CONTROLLER,
 			_fragmentRendererController);
@@ -162,8 +175,6 @@ public class DisplayPageLayoutTypeController
 
 		ServletResponse servletResponse = createServletResponse(
 			httpServletResponse, unsyncStringWriter);
-
-		String contentType = servletResponse.getContentType();
 
 		String includeServletPath = (String)httpServletRequest.getAttribute(
 			RequestDispatcher.INCLUDE_SERVLET_PATH);
@@ -193,12 +204,26 @@ public class DisplayPageLayoutTypeController
 				RequestDispatcher.INCLUDE_SERVLET_PATH, includeServletPath);
 		}
 
+		httpServletRequest.setAttribute(
+			WebKeys.LAYOUT_CONTENT, unsyncStringWriter.getStringBundler());
+
+		String contentType = servletResponse.getContentType();
+
 		if (contentType != null) {
 			httpServletResponse.setContentType(contentType);
 		}
 
-		httpServletRequest.setAttribute(
-			WebKeys.LAYOUT_CONTENT, unsyncStringWriter.getStringBundler());
+		if (!displayPageLayoutTypeControllerDisplayContext.hasPermission(
+				themeDisplay.getPermissionChecker(), ActionKeys.VIEW)) {
+
+			if (themeDisplay.isSignedIn()) {
+				httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+			}
+			else {
+				httpServletResponse.setStatus(
+					HttpServletResponse.SC_UNAUTHORIZED);
+			}
+		}
 
 		return false;
 	}
@@ -246,7 +271,8 @@ public class DisplayPageLayoutTypeController
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #createServletResponse(HttpServletResponse, UnsyncStringWriter)}
+	 *             #createServletResponse(HttpServletResponse,
+	 *             UnsyncStringWriter)}
 	 */
 	@Deprecated
 	@Override
@@ -351,6 +377,9 @@ public class DisplayPageLayoutTypeController
 	@Reference
 	private volatile List<InfoDisplayRequestAttributesContributor>
 		_infoDisplayRequestAttributesContributors;
+
+	@Reference
+	private InfoItemServiceTracker _infoItemServiceTracker;
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;

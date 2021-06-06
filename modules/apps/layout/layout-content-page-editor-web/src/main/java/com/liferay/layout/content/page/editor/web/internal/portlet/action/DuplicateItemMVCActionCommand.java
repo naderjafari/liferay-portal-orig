@@ -25,10 +25,10 @@ import com.liferay.fragment.service.FragmentEntryLinkService;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
-import com.liferay.layout.content.page.editor.web.internal.excecption.NoninstanceablePortletException;
+import com.liferay.layout.content.page.editor.web.internal.exception.NoninstanceablePortletException;
 import com.liferay.layout.content.page.editor.web.internal.util.FragmentEntryLinkUtil;
 import com.liferay.layout.content.page.editor.web.internal.util.layout.structure.LayoutStructureUtil;
-import com.liferay.layout.util.structure.FragmentLayoutStructureItem;
+import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -84,7 +84,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ContentPageEditorPortletKeys.CONTENT_PAGE_EDITOR_PORTLET,
-		"mvc.command.name=/content_layout/duplicate_item"
+		"mvc.command.name=/layout_content_page_editor/duplicate_item"
 	},
 	service = MVCActionCommand.class
 )
@@ -179,19 +179,19 @@ public class DuplicateItemMVCActionCommand
 							duplicatedLayoutStructureItem.getItemId());
 
 						if (!(duplicatedLayoutStructureItem instanceof
-								FragmentLayoutStructureItem)) {
+								FragmentStyledLayoutStructureItem)) {
 
 							continue;
 						}
 
-						FragmentLayoutStructureItem
-							fragmentLayoutStructureItem =
-								(FragmentLayoutStructureItem)
+						FragmentStyledLayoutStructureItem
+							fragmentStyledLayoutStructureItem =
+								(FragmentStyledLayoutStructureItem)
 									duplicatedLayoutStructureItem;
 
 						long fragmentEntryLinkId = _duplicateFragmentEntryLink(
 							actionRequest,
-							fragmentLayoutStructureItem.
+							fragmentStyledLayoutStructureItem.
 								getFragmentEntryLinkId());
 
 						layoutStructure.updateItemConfig(
@@ -205,7 +205,7 @@ public class DuplicateItemMVCActionCommand
 
 		JSONObject jsonObject = JSONUtil.put(
 			"duplicatedFragmentEntryLinks",
-			_getDuplicatedFragmentEntryLinks(
+			_getDuplicatedFragmentEntryLinksJSONArray(
 				actionRequest, actionResponse, duplicatedFragmentEntryLinkIds));
 
 		if (!duplicatedLayoutStructureItemIds.isEmpty()) {
@@ -323,7 +323,7 @@ public class DuplicateItemMVCActionCommand
 		return duplicatedFragmentEntryLink.getFragmentEntryLinkId();
 	}
 
-	private JSONArray _getDuplicatedFragmentEntryLinks(
+	private JSONArray _getDuplicatedFragmentEntryLinksJSONArray(
 			ActionRequest actionRequest, ActionResponse actionResponse,
 			Set<Long> duplicatedFragmentEntryLinkIds)
 		throws Exception {

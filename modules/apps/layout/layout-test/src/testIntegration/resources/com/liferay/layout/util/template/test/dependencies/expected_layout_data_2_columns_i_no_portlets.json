@@ -1,4 +1,6 @@
 {
+	"deletedItems": [
+	],
 	"items": {
 		"ROOT": {
 			"children": [
@@ -15,13 +17,48 @@
 				"ROOT-CONTAINER0-ROW0"
 			],
 			"config": {
-				"backgroundImage": {
+				"landscapeMobile": {
+					"styles": {
+					}
 				},
-				"paddingBottom": 0,
-				"paddingLeft": 0,
-				"paddingRight": 0,
-				"paddingTop": 0,
-				"widthType": "fluid"
+				"link": {
+				},
+				"portraitMobile": {
+					"styles": {
+					}
+				},
+				"styles": {
+					"backgroundImage": {
+					},
+					"borderRadius": "",
+					"borderWidth": 0,
+					"fontFamily": "",
+					"fontSize": "",
+					"fontWeight": "",
+					"height": "",
+					"marginBottom": "",
+					"marginLeft": "",
+					"marginRight": "",
+					"marginTop": "",
+					"maxHeight": "",
+					"maxWidth": "",
+					"minHeight": "",
+					"minWidth": "",
+					"opacity": 100,
+					"overflow": "",
+					"paddingBottom": "",
+					"paddingLeft": "",
+					"paddingRight": "",
+					"paddingTop": "",
+					"shadow": "",
+					"textAlign": "",
+					"width": ""
+				},
+				"tablet": {
+					"styles": {
+					}
+				},
+				"widthType": "fixed"
 			},
 			"itemId": "ROOT-CONTAINER0",
 			"parentId": "ROOT",
@@ -35,28 +72,46 @@
 			"config": {
 				"gutters": true,
 				"landscapeMobile": {
-					"gutters": true,
-					"modulesPerRow": 2,
-					"numberOfColumns": 2,
-					"reverseOrder": false,
-					"verticalAlignment": "top"
+					"styles": {
+					}
 				},
 				"modulesPerRow": 2,
 				"numberOfColumns": 2,
 				"portraitMobile": {
-					"gutters": true,
-					"modulesPerRow": 2,
-					"numberOfColumns": 2,
-					"reverseOrder": false,
-					"verticalAlignment": "top"
+					"styles": {
+					}
 				},
 				"reverseOrder": false,
+				"styles": {
+					"backgroundImage": {
+					},
+					"borderRadius": "",
+					"borderWidth": 0,
+					"fontFamily": "",
+					"fontSize": "",
+					"fontWeight": "",
+					"height": "",
+					"marginBottom": "",
+					"marginLeft": "",
+					"marginRight": "",
+					"marginTop": "",
+					"maxHeight": "",
+					"maxWidth": "",
+					"minHeight": "",
+					"minWidth": "",
+					"opacity": 100,
+					"overflow": "",
+					"paddingBottom": "",
+					"paddingLeft": "",
+					"paddingRight": "",
+					"paddingTop": "",
+					"shadow": "",
+					"textAlign": "",
+					"width": ""
+				},
 				"tablet": {
-					"gutters": true,
-					"modulesPerRow": 2,
-					"numberOfColumns": 2,
-					"reverseOrder": false,
-					"verticalAlignment": "top"
+					"styles": {
+					}
 				},
 				"verticalAlignment": "top"
 			},
@@ -68,7 +123,13 @@
 			"children": [
 			],
 			"config": {
-				"size": 6
+				"landscapeMobile": {
+				},
+				"portraitMobile": {
+				},
+				"size": 6,
+				"tablet": {
+				}
 			},
 			"itemId": "ROOT-CONTAINER0-ROW0-COLUMN0",
 			"parentId": "ROOT-CONTAINER0-ROW0",
@@ -78,7 +139,13 @@
 			"children": [
 			],
 			"config": {
-				"size": 6
+				"landscapeMobile": {
+				},
+				"portraitMobile": {
+				},
+				"size": 6,
+				"tablet": {
+				}
 			},
 			"itemId": "ROOT-CONTAINER0-ROW0-COLUMN1",
 			"parentId": "ROOT-CONTAINER0-ROW0",

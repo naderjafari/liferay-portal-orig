@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -48,10 +50,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Instance")
+@GraphQLName(
+	description = "https://www.schema.org/Instance", value = "Instance"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Instance")
-public class Instance {
+public class Instance implements Serializable {
 
 	public static Instance toDTO(String json) {
 		return ObjectMapperUtil.readValue(Instance.class, json);
@@ -945,6 +949,7 @@ public class Instance {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.Instance",
 		name = "x-class-name"
 	)
@@ -1014,7 +1019,7 @@ public class Instance {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -1053,7 +1058,7 @@ public class Instance {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

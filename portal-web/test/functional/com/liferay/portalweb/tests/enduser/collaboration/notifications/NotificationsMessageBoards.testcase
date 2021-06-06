@@ -1,10 +1,11 @@
 @component-name = "portal-collaboration"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property testray.main.component.name = "Notifications";
+
 	var pageName = "Message Boards Page";
 	var portletName = "Message Boards";
 
@@ -68,6 +69,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test FilterByReadAndUnread {
 		Navigator.gotoPage(pageName = "Message Boards Page");
 
@@ -141,6 +143,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewNoWebsiteNotificationForNewThreadInCategory {
 		Navigator.gotoPage(pageName = "Message Boards Page");
 
@@ -194,6 +197,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewNoWebsiteNotificationForUpdatedThreadInCategory {
 		Navigator.gotoPage(pageName = "Message Boards Page");
 
@@ -260,6 +264,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewWebsiteNotificationForNewThreadInCategory {
 		Navigator.gotoPage(pageName = "Message Boards Page");
 
@@ -316,6 +321,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewWebsiteNotificationForUpdatedThreadInCategory {
 		Navigator.gotoPage(pageName = "Message Boards Page");
 

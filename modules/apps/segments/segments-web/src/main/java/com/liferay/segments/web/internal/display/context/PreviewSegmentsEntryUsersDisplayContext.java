@@ -14,6 +14,7 @@
 
 package com.liferay.segments.web.internal.display.context;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -106,7 +107,7 @@ public class PreviewSegmentsEntryUsersDisplayContext {
 					_themeDisplay.getLocale(), userSearchContainer.getStart(),
 					userSearchContainer.getEnd());
 			}
-			else if (segmentsEntry != null) {
+			else if ((criteria == null) && (segmentsEntry != null)) {
 				total =
 					_segmentsEntryProviderRegistry.
 						getSegmentsEntryClassPKsCount(
@@ -148,20 +149,16 @@ public class PreviewSegmentsEntryUsersDisplayContext {
 	protected Criteria getCriteriaFromSession() {
 		PortletSession portletSession = _renderRequest.getPortletSession();
 
-		Criteria criteria = (Criteria)portletSession.getAttribute(
+		return (Criteria)portletSession.getAttribute(
 			SegmentsWebKeys.PREVIEW_SEGMENTS_ENTRY_CRITERIA);
-
-		portletSession.removeAttribute(
-			SegmentsWebKeys.PREVIEW_SEGMENTS_ENTRY_CRITERIA);
-
-		return criteria;
 	}
 
 	protected PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "previewSegmentsEntryUsers");
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/segments/preview_segments_entry_users"
+		).build();
 
 		SegmentsEntry segmentsEntry = getSegmentsEntry();
 

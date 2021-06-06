@@ -1,0 +1,319 @@
+@component-name = "portal-commerce"
+definition {
+
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Commerce";
+
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			Navigator.openURL();
+
+			CommerceConfiguration.commerceAdminTearDown();
+
+			CommerceConfiguration.commerceInitializersTearDown();
+		}
+	}
+
+	@description = "This is a test for COMMERCE-6258. UI lifecycle for activating a tax engine (ByAddress)"
+	@priority = "3"
+	test ActivateByAddressTaxEngine {
+		property portal.acceptance = "false";
+
+		// TODO Review
+
+		CommerceNavigator.gotoPortlet(
+			category = "Store Management",
+			portlet = "Channels");
+
+		Click(locator1 = "Button#PLUS");
+
+		CommerceEntry.addNewChannelsEntry(
+			channelCurrency = "US Dollar",
+			channelName = "Test Channel",
+			channelType = "Site");
+
+		ScrollWebElementIntoView(
+			key_nameTableChannels = "Tax Calculations",
+			locator1 = "CommerceEntry#SEARCH_TABLES_CHANNELS");
+
+		Click(
+			key_entryName = "By Address",
+			key_table = "Tax Calculations",
+			locator1 = "CommerceEntry#TABLE_ENTRY_EDIT_BUTTON");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		Check.checkToggleSwitch(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+
+		Button.clickSave();
+
+		Click(locator1 = "Icon#CLOSE");
+
+		Refresh();
+
+		ScrollWebElementIntoView(
+			key_nameTableChannels = "Tax Calculations",
+			locator1 = "CommerceEntry#SEARCH_TABLES_CHANNELS");
+
+		AssertTextEquals(
+			key_nameColumn = "By Address",
+			locator1 = "CommerceEntry#ASSERT_COLUMN_STATUS_TAX_CALCULATIONS",
+			value1 = "Active");
+
+		Click(
+			key_entryName = "By Address",
+			key_table = "Tax Calculations",
+			locator1 = "CommerceEntry#TABLE_ENTRY_EDIT_BUTTON");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		AssertChecked.assertCheckedNotVisible(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+
+		Uncheck.uncheckToggleSwitch(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+
+		Button.clickSave();
+
+		Click(locator1 = "Icon#CLOSE");
+
+		Refresh();
+
+		ScrollWebElementIntoView(
+			key_nameTableChannels = "Tax Calculations",
+			locator1 = "CommerceEntry#SEARCH_TABLES_CHANNELS");
+
+		AssertTextEquals(
+			key_nameColumn = "By Address",
+			locator1 = "CommerceEntry#ASSERT_COLUMN_STATUS_TAX_CALCULATIONS",
+			value1 = "Inactive");
+
+		Click(
+			key_entryName = "By Address",
+			key_table = "Tax Calculations",
+			locator1 = "CommerceEntry#TABLE_ENTRY_EDIT_BUTTON");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		AssertNotChecked.assertNotCheckedNotVisible(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+	}
+
+	@description = "This is a test for COMMERCE-6258. UI lifecycle for activating a tax engine (Fixed)"
+	@priority = "3"
+	test ActivateFixedTaxEngine {
+		property portal.acceptance = "false";
+
+		// TODO Review
+
+		CommerceNavigator.gotoPortlet(
+			category = "Store Management",
+			portlet = "Channels");
+
+		Click(locator1 = "Button#PLUS");
+
+		CommerceEntry.addNewChannelsEntry(
+			channelCurrency = "US Dollar",
+			channelName = "Test Channel",
+			channelType = "Site");
+
+		ScrollWebElementIntoView(
+			key_nameTableChannels = "Tax Calculations",
+			locator1 = "CommerceEntry#SEARCH_TABLES_CHANNELS");
+
+		Click(
+			key_entryName = "Fixed Tax Rate",
+			key_table = "Tax Calculations",
+			locator1 = "CommerceEntry#TABLE_ENTRY_EDIT_BUTTON");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		Check.checkToggleSwitch(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+
+		Button.clickSave();
+
+		Click(locator1 = "Icon#CLOSE");
+
+		Refresh();
+
+		ScrollWebElementIntoView(
+			key_nameTableChannels = "Tax Calculations",
+			locator1 = "CommerceEntry#SEARCH_TABLES_CHANNELS");
+
+		AssertTextEquals(
+			key_nameColumn = "Fixed Tax Rate",
+			locator1 = "CommerceEntry#ASSERT_COLUMN_STATUS_TAX_CALCULATIONS",
+			value1 = "Active");
+
+		Click(
+			key_entryName = "Fixed Tax Rate",
+			key_table = "Tax Calculations",
+			locator1 = "CommerceEntry#TABLE_ENTRY_EDIT_BUTTON");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		AssertChecked.assertCheckedNotVisible(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+
+		Uncheck.uncheckToggleSwitch(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+
+		Button.clickSave();
+
+		Click(locator1 = "Icon#CLOSE");
+
+		Refresh();
+
+		ScrollWebElementIntoView(
+			key_nameTableChannels = "Tax Calculations",
+			locator1 = "CommerceEntry#SEARCH_TABLES_CHANNELS");
+
+		AssertTextEquals(
+			key_nameColumn = "Fixed Tax Rate",
+			locator1 = "CommerceEntry#ASSERT_COLUMN_STATUS_TAX_CALCULATIONS",
+			value1 = "Inactive");
+
+		Click(
+			key_entryName = "Fixed Tax Rate",
+			key_table = "Tax Calculations",
+			locator1 = "CommerceEntry#TABLE_ENTRY_EDIT_BUTTON");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		AssertNotChecked.assertNotCheckedNotVisible(
+			key_toggleSwitchLabel = "Active",
+			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+	}
+
+	@description = "This is a test for COMMERCE-6259. Add tax rates to the newly activated engine (ByAddress)"
+	@ignore = "true"
+	@priority = "3"
+	test AddTaxRateToByAddressTaxEngine {
+		property portal.acceptance = "false";
+
+		// TODO COMMERCE-6259 AddTaxRateToByAddressTaxEngine Pending Implementation
+
+	}
+
+	@description = "This is a test for COMMERCE-6259. Add tax rates to the newly activated engine (Fixed)"
+	@ignore = "true"
+	@priority = "3"
+	test AddTaxRateToFixedTaxEngine {
+		property portal.acceptance = "false";
+
+		// TODO COMMERCE-6259 AddTaxRateToFixedTaxEngine Pending Implementation
+
+	}
+
+	@description = "This is a test for COMMERCE-6262. Test address restriction on tax calculation"
+	@ignore = "true"
+	@priority = "3"
+	test AssertAddressRestrictiedTaxIsCorrectlyCalculated {
+		property portal.acceptance = "false";
+
+		// TODO COMMERCE-6262 AssertAddressRestrictiedTaxIsCorrectlyCalculated Pending Implementation
+
+	}
+
+	@description = "This is a test for COMMERCE-6260. Test tax calculation"
+	@ignore = "true"
+	@priority = "3"
+	test AssertProductTaxCategoryIsCorrectlyCalculated {
+		property portal.acceptance = "false";
+
+		// TODO COMMERCE-6260 AssertProductTaxCategoryIsCorrectlyCalculated Pending Implementation
+
+	}
+
+	@description = "This is a test for COMMERCE-6263. Configure tax properties at channel level"
+	@priority = "3"
+	test ConfigureChannelShippingTaxCategory {
+		property portal.acceptance = "false";
+
+		// TODO Review
+
+		CommerceNavigator.gotoPortlet(
+			category = "Pricing",
+			portlet = "Tax Categories");
+
+		CommerceEntry.addTaxCategory(
+			keyDescription = "Test Description",
+			keyName = "Test",
+			keyReferenceCode = "Test Reference");
+
+		CommerceNavigator.gotoPortlet(
+			category = "Store Management",
+			portlet = "Channels");
+
+		Click(locator1 = "Button#PLUS");
+
+		CommerceEntry.addNewChannelsEntry(
+			channelCurrency = "US Dollar",
+			channelName = "Test Channel",
+			channelType = "Site");
+
+		Type(
+			key_fieldLabel = "Shipping Tax Category",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Test");
+
+		Button.clickSave();
+
+		Click(locator1 = "Icon#BACK");
+
+		CommerceNavigator.gotoEntry(entryName = "Test Channel");
+
+		AssertTextEquals(
+			key_fieldLabel = "Shipping Tax Category",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Test");
+	}
+
+	@description = "This is a test for COMMERCE-6264. Add/update/delete tax category from UI"
+	@priority = "3"
+	test TaxCategoryLifecycle {
+		property portal.acceptance = "false";
+
+		// TODO Review
+
+		CommerceNavigator.gotoPortlet(
+			category = "Pricing",
+			portlet = "Tax Categories");
+
+		CommerceEntry.addTaxCategory(
+			keyDescription = "Test Description",
+			keyName = "Test",
+			keyReferenceCode = "Test Reference");
+
+		CommerceNavigator.gotoEntry(entryName = "Test");
+
+		CommerceEntry.editTaxCategory(
+			keyDescription = "Test Description2",
+			keyName = "Test2",
+			keyReferenceCode = "Test Reference2");
+
+		CommerceEntry.deleteTaxCategory(keyName = "Test2");
+	}
+
+}

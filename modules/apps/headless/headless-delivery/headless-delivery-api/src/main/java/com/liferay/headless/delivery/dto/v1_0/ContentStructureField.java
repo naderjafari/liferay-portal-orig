@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentStructureField")
+@GraphQLName(
+	description = "Represents each field in a content structure, backed by a content field.",
+	value = "ContentStructureField"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentStructureField")
-public class ContentStructureField {
+public class ContentStructureField implements Serializable {
 
 	public static ContentStructureField toDTO(String json) {
 		return ObjectMapperUtil.readValue(ContentStructureField.class, json);
@@ -143,7 +148,7 @@ public class ContentStructureField {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String label;
 
-	@Schema
+	@Schema(description = "The form field's labels.")
 	@Valid
 	public Map<String, String> getLabel_i18n() {
 		return label_i18n;
@@ -169,7 +174,7 @@ public class ContentStructureField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The form field's labels.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> label_i18n;
 
@@ -357,7 +362,7 @@ public class ContentStructureField {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String predefinedValue;
 
-	@Schema
+	@Schema(description = "The localized form field's default values.")
 	@Valid
 	public Map<String, String> getPredefinedValue_i18n() {
 		return predefinedValue_i18n;
@@ -385,7 +390,7 @@ public class ContentStructureField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized form field's default values.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> predefinedValue_i18n;
 
@@ -699,6 +704,7 @@ public class ContentStructureField {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentStructureField",
 		name = "x-class-name"
 	)
@@ -734,7 +740,7 @@ public class ContentStructureField {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -773,7 +779,7 @@ public class ContentStructureField {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

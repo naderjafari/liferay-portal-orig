@@ -12,37 +12,50 @@
  * details.
  */
 
-import ClayButton from '@clayui/button';
+import {ClayButtonWithIcon} from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import PropTypes from 'prop-types';
 import React from 'react';
 
+import {VIEWPORT_SIZES} from '../../app/config/constants/viewportSizes';
+import {useSelector} from '../../app/contexts/StoreContext';
 import {useId} from '../../app/utils/useId';
 import {openImageSelector} from '../../core/openImageSelector';
 
 export function ImageSelector({
-	imageTitle = Liferay.Language.get('none'),
+	imageTitle = '',
 	label,
 	onClearButtonPressed,
 	onImageSelected,
 }) {
 	const imageTitleId = useId();
 
-	return (
+	const selectedViewportSize = useSelector(
+		(state) => state.selectedViewportSize
+	);
+
+	const hasImageTitle = !!imageTitle.length;
+
+	return selectedViewportSize === VIEWPORT_SIZES.desktop ? (
 		<>
-			<ClayForm.Group>
+			<ClayForm.Group small>
 				<label htmlFor={imageTitleId}>{label}</label>
-				<ClayInput
-					id={imageTitleId}
-					placeholder={Liferay.Language.get('none')}
-					readOnly
-					sizing="sm"
-					value={imageTitle}
-				/>
-			</ClayForm.Group>
-			<ClayButton.Group>
-				<div className="btn-group-item">
-					<ClayButton
+				<ClayInput.Group>
+					<ClayInput
+						className="page-editor__item-selector__content-input"
+						id={imageTitleId}
+						onClick={() =>
+							openImageSelector((image) => {
+								onImageSelected(image);
+							})
+						}
+						placeholder={Liferay.Language.get('select-image')}
+						readOnly
+						sizing="sm"
+						value={imageTitle}
+					/>
+					<ClayButtonWithIcon
+						className="ml-2 page-editor__item-selector__content-button"
 						displayType="secondary"
 						onClick={() =>
 							openImageSelector((image) => {
@@ -50,28 +63,61 @@ export function ImageSelector({
 							})
 						}
 						small
-					>
-						{Liferay.Language.get('select')}
-					</ClayButton>
-				</div>
-				<div className="btn-group-item">
-					<ClayButton
-						borderless
-						displayType="secondary"
-						onClick={onClearButtonPressed}
-						small
-					>
-						{Liferay.Language.get('clear')}
-					</ClayButton>
-				</div>
-			</ClayButton.Group>
+						symbol={hasImageTitle ? 'change' : 'plus'}
+						title={Liferay.Util.sub(
+							hasImageTitle
+								? Liferay.Language.get('change-x')
+								: Liferay.Language.get('select-x'),
+							Liferay.Language.get('image')
+						)}
+					/>
+					{hasImageTitle && (
+						<>
+							<ClayButtonWithIcon
+								className="ml-2 page-editor__item-selector__content-button"
+								displayType="secondary"
+								onClick={onClearButtonPressed}
+								small
+								symbol="times-circle"
+								title={Liferay.Language.get('clear-selection')}
+							/>
+						</>
+					)}
+				</ClayInput.Group>
+			</ClayForm.Group>
 		</>
+	) : (
+		<ReadOnlyImageInput imageTitle={imageTitle} label={label} />
 	);
 }
 
 ImageSelector.propTypes = {
 	imageTitle: PropTypes.string,
-	label: PropTypes.string,
+	label: PropTypes.string.isRequired,
 	onClearButtonPressed: PropTypes.func.isRequired,
 	onImageSelected: PropTypes.func.isRequired,
+};
+
+function ReadOnlyImageInput({imageTitle, label}) {
+	const readOnlyInputId = useId();
+
+	return (
+		<>
+			<label htmlFor={readOnlyInputId}>{label}</label>
+			<ClayForm.Group small>
+				<ClayInput
+					className="mb-2"
+					disabled
+					id={readOnlyInputId}
+					readOnly
+					value={imageTitle}
+				/>
+			</ClayForm.Group>
+		</>
+	);
+}
+
+ReadOnlyImageInput.propTypes = {
+	imageTitle: PropTypes.string,
+	label: PropTypes.string,
 };

@@ -31,7 +31,8 @@ page import="com.liferay.document.library.kernel.service.DLFileEntryLocalService
 page import="com.liferay.expando.kernel.model.ExpandoBridge" %><%@
 page import="com.liferay.expando.kernel.model.ExpandoColumnConstants" %><%@
 page import="com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu" %><%@
-page import="com.liferay.petra.log4j.Levels" %><%@
+page import="com.liferay.petra.log4j.Log4JUtil" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.CharPool" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.convert.ConvertProcess" %><%@
@@ -74,16 +75,16 @@ page import="com.liferay.portal.util.PropsValues" %><%@
 page import="com.liferay.portal.util.ShutdownUtil" %><%@
 page import="com.liferay.server.admin.web.internal.constants.ServerAdminNavigationEntryConstants" %><%@
 page import="com.liferay.server.admin.web.internal.display.context.ServerDisplayContext" %><%@
-page import="com.liferay.taglib.servlet.PipingServletResponse" %>
+page import="com.liferay.taglib.servlet.PipingServletResponseFactory" %>
 
 <%@ page import="java.text.NumberFormat" %>
 
 <%@ page import="java.util.ArrayList" %><%@
 page import="java.util.Collection" %><%@
-page import="java.util.Enumeration" %><%@
-page import="java.util.Iterator" %><%@
+page import="java.util.Date" %><%@
 page import="java.util.List" %><%@
 page import="java.util.Map" %><%@
+page import="java.util.Objects" %><%@
 page import="java.util.Properties" %><%@
 page import="java.util.TreeMap" %>
 
@@ -91,9 +92,7 @@ page import="java.util.TreeMap" %>
 page import="javax.portlet.PortletURL" %><%@
 page import="javax.portlet.WindowState" %>
 
-<%@ page import="org.apache.log4j.Level" %><%@
-page import="org.apache.log4j.LogManager" %><%@
-page import="org.apache.log4j.Logger" %>
+<%@ page import="org.apache.logging.log4j.Level" %>
 
 <liferay-frontend:defineObjects />
 
@@ -107,3 +106,7 @@ String tabs2 = ParamUtil.getString(request, "tabs2");
 %>
 
 <%@ include file="/init-ext.jsp" %>
+
+<%!
+private static final String[] _ALL_PRIORITIES = {String.valueOf(Level.OFF), String.valueOf(Level.FATAL), String.valueOf(Level.ERROR), String.valueOf(Level.WARN), String.valueOf(Level.INFO), String.valueOf(Level.DEBUG), String.valueOf(Level.TRACE), String.valueOf(Level.ALL)};
+%>

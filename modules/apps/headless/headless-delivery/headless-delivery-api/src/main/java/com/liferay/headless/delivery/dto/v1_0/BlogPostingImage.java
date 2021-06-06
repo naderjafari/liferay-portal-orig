@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -44,10 +46,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("BlogPostingImage")
+@GraphQLName(
+	description = "Represents a blog post's image. Properties follow the [image](https://schema.org/image) specification.",
+	value = "BlogPostingImage"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "BlogPostingImage")
-public class BlogPostingImage {
+public class BlogPostingImage implements Serializable {
 
 	public static BlogPostingImage toDTO(String json) {
 		return ObjectMapperUtil.readValue(BlogPostingImage.class, json);
@@ -81,7 +86,9 @@ public class BlogPostingImage {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentUrl;
 
-	@Schema
+	@Schema(
+		description = "optional field with the content of the image in Base64, can be embedded with nestedFields"
+	)
 	public String getContentValue() {
 		return contentValue;
 	}
@@ -105,7 +112,9 @@ public class BlogPostingImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "optional field with the content of the image in Base64, can be embedded with nestedFields"
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentValue;
 
@@ -430,6 +439,7 @@ public class BlogPostingImage {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.BlogPostingImage",
 		name = "x-class-name"
 	)
@@ -499,7 +509,7 @@ public class BlogPostingImage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -538,7 +548,7 @@ public class BlogPostingImage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

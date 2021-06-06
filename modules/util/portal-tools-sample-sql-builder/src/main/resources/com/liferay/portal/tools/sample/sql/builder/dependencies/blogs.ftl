@@ -1,19 +1,13 @@
-<#assign
-	blogsEntryModels = dataFactory.newBlogsEntryModels(groupId)
-
-	userNotificationDeliveryModel = dataFactory.newUserNotificationDeliveryModel("com_liferay_comment_web_portlet_CommentPortlet")
-/>
-
-${dataFactory.toInsertSQL(userNotificationDeliveryModel)}
+<#assign blogsEntryModels = dataFactory.newBlogsEntryModels(groupId) />
 
 <#list blogsEntryModels as blogsEntryModel>
 	${dataFactory.toInsertSQL(blogsEntryModel)}
 
-	<#assign friendlyURLEntryModel = dataFactory.newFriendlyURLEntryModel(blogsEntryModel) />
+	<#assign friendlyURLEntryModel = dataFactory.newFriendlyURLEntryModel(blogsEntryModel.groupId, dataFactory.blogsEntryClassNameId, blogsEntryModel.entryId) />
 
 	${dataFactory.toInsertSQL(friendlyURLEntryModel)}
 
-	${dataFactory.toInsertSQL(dataFactory.newFriendlyURLEntryLocalizationModel(friendlyURLEntryModel, blogsEntryModel))}
+	${dataFactory.toInsertSQL(dataFactory.newFriendlyURLEntryLocalizationModel(friendlyURLEntryModel, blogsEntryModel.urlTitle))}
 
 	${dataFactory.toInsertSQL(dataFactory.newFriendlyURLEntryMapping(friendlyURLEntryModel))}
 
@@ -24,10 +18,7 @@ ${dataFactory.toInsertSQL(userNotificationDeliveryModel)}
 		_entry=blogsEntryModel
 	/>
 
-	<#assign
-		mbThreadId = dataFactory.getCounterNext()
-		mbRootMessageId = dataFactory.getCounterNext()
-	/>
+	<#assign mbRootMessageId = dataFactory.getCounterNext() />
 
 	<@insertMBDiscussion
 		_classNameId=dataFactory.blogsEntryClassNameId
@@ -35,7 +26,7 @@ ${dataFactory.toInsertSQL(userNotificationDeliveryModel)}
 		_groupId=groupId
 		_maxCommentCount=dataFactory.maxBlogsEntryCommentCount
 		_mbRootMessageId=mbRootMessageId
-		_mbThreadId=mbThreadId
+		_mbThreadId=dataFactory.getCounterNext()
 	/>
 
 	${dataFactory.toInsertSQL(dataFactory.newSubscriptionModel(blogsEntryModel))}

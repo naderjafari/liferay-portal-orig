@@ -31,7 +31,10 @@ definition {
 		task ("Add a display page with fragments mapped to Basic Web Content") {
 			DisplayPageTemplatesAdmin.openDisplayPagesAdmin(siteURLKey = "test-site-name-staging");
 
-			DisplayPageTemplatesAdmin.addDisplayPage(displayPageName = "Display Page Name");
+			DisplayPageTemplatesAdmin.addDisplayPage(
+				contentType = "Web Content Article",
+				displayPageName = "Display Page Name",
+				subType = "Basic Web Content");
 
 			PageEditor.addFragment(
 				collectionName = "Collection Name",
@@ -41,7 +44,7 @@ definition {
 
 			Click.waitForMenuToggleJSClick(
 				key_card = "Display Page Name",
-				locator1 = "LexiconCard#CARD_ELLIPSIS");
+				locator1 = "Card#CARD_ELLIPSIS");
 
 			MenuItem.viewPresent(menuItem = "Discard Draft");
 
@@ -129,9 +132,7 @@ definition {
 		task ("Assert the display page still exists") {
 			DisplayPageTemplatesAdmin.openDisplayPagesAdmin(siteURLKey = "test-site-name");
 
-			AssertVisible(
-				key_cardText = "Display Page Name",
-				locator1 = "Card#SPECIFIC_LARGE_TEXT");
+			LexiconCard.viewCardPresent(card = "Display Page Name");
 		}
 	}
 
@@ -197,7 +198,7 @@ definition {
 		}
 	}
 
-	@description = "This tests one of the workarounds of LPS-86373."
+	@description = "This tests one of the workarounds of LPS-86373 and a use case for LPS-118841."
 	@priority = "5"
 	test PublishDisplayPageMarkedAsDefault {
 		property portal.acceptance = "true";
@@ -207,29 +208,11 @@ definition {
 		}
 
 		task ("Add a web content article") {
-			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name-staging");
-
-			WebContentNavigator.gotoAddCP();
-
-			WebContent.addCP(
-				webContentContent = "Webcontent Content",
-				webContentTitle = "Webcontent Title");
-		}
-
-		task ("Assert the display page is selected by default") {
-			Panel.expandPanel(panel = "Display Page Template");
-
-			AssertSelectedLabel(
-				locator1 = "WCEditWebContent#DISPLAY_PAGE_SELECT",
-				value1 = "Default Display Page Template");
-
-			AssertTextEquals(
-				locator1 = "WCEditWebContent#DISPLAY_PAGE_DEFAULT_SELECTION",
-				value1 = "Display Page Name");
-		}
-
-		task ("Publish the web content article") {
-			PortletEntry.publish();
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name (Staging)",
+				site = "false",
+				title = "Webcontent Title");
 		}
 
 		task ("Assert the web content article displays through the display page in the staging site") {
@@ -271,6 +254,22 @@ definition {
 				key_fragmentClass = "rich-text",
 				locator1 = "Fragment#FRAGMENT");
 		}
+
+		task ("Assert the web content article displays through the display page in the staging site after switching to staging view") {
+			AssertClick.assertPartialTextClickAt(
+				locator1 = "Staging#STAGING_BUTTON",
+				value1 = "Staging");
+
+			AssertVisible(
+				key_content = "Webcontent Title",
+				key_fragmentClass = "header",
+				locator1 = "Fragment#FRAGMENT");
+
+			AssertVisible(
+				key_content = "Webcontent Content",
+				key_fragmentClass = "rich-text",
+				locator1 = "Fragment#FRAGMENT");
+		}
 	}
 
 	@description = "Edits to display pages should not reflect in the live site until published."
@@ -283,15 +282,11 @@ definition {
 		}
 
 		task ("Add a web content article") {
-			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name-staging");
-
-			WebContentNavigator.gotoAddCP();
-
-			WebContent.addCP(
-				webContentContent = "Webcontent Content",
-				webContentTitle = "Webcontent Title");
-
-			Button.clickPublish();
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name (Staging)",
+				site = "false",
+				title = "Webcontent Title");
 		}
 
 		task ("Publish the site to live") {
@@ -319,7 +314,7 @@ definition {
 				id = "content",
 				source = "Basic Web Content (Default)");
 
-			Button.clickPublish();
+			PageEditor.clickPublish();
 		}
 
 		task ("Assert the web content article displays with the additional Content fragment in the staging site") {

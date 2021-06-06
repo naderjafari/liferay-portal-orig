@@ -71,6 +71,20 @@ public class ContentTemplateSerDes {
 			sb.append(_toJSON(contentTemplate.getActions()));
 		}
 
+		if (contentTemplate.getAssetLibraryKey() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"assetLibraryKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(contentTemplate.getAssetLibraryKey()));
+
+			sb.append("\"");
+		}
+
 		if (contentTemplate.getAvailableLanguages() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -278,6 +292,15 @@ public class ContentTemplateSerDes {
 			map.put("actions", String.valueOf(contentTemplate.getActions()));
 		}
 
+		if (contentTemplate.getAssetLibraryKey() == null) {
+			map.put("assetLibraryKey", null);
+		}
+		else {
+			map.put(
+				"assetLibraryKey",
+				String.valueOf(contentTemplate.getAssetLibraryKey()));
+		}
+
 		if (contentTemplate.getAvailableLanguages() == null) {
 			map.put("availableLanguages", null);
 		}
@@ -416,6 +439,12 @@ public class ContentTemplateSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "assetLibraryKey")) {
+				if (jsonParserFieldValue != null) {
+					contentTemplate.setAssetLibraryKey(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(
 						jsonParserFieldName, "availableLanguages")) {
 
@@ -500,10 +529,6 @@ public class ContentTemplateSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -532,7 +557,7 @@ public class ContentTemplateSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -568,7 +593,7 @@ public class ContentTemplateSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -1538,6 +1538,12 @@ public class VerifyProperties extends VerifyProcess {
 			"com.liferay.portal.template.velocity"
 		},
 
+		// View Count
+
+		{
+			"view.count.enabled", "enabled", "com.liferay.view.count.service"
+		},
+
 		// XSL Content
 
 		{
@@ -1655,7 +1661,8 @@ public class VerifyProperties extends VerifyProcess {
 		"dl.hook.cmis.credentials.username", "dl.hook.cmis.repository.url",
 		"dl.hook.cmis.system.root.dir", "dl.hook.file.system.root.dir",
 		"dl.hook.jcr.fetch.delay", "dl.hook.jcr.fetch.max.failures",
-		"dl.hook.jcr.move.version.labels", "dl.store.cmis.credentials.username",
+		"dl.hook.jcr.move.version.labels", "dl.store.antivirus.impl",
+		"dl.store.cmis.credentials.username",
 		"dl.store.cmis.credentials.password", "dl.store.cmis.repository.url",
 		"dl.store.cmis.system.root.dir", "dl.store.file.system.root.dir",
 		"dl.store.jcr.fetch.delay", "dl.store.jcr.fetch.max.failures",
@@ -1693,6 +1700,7 @@ public class VerifyProperties extends VerifyProcess {
 			"edit_message.html.jsp",
 		"editor.wysiwyg.portal-web.docroot.html.portlet.portal_settings." +
 			"email_notifications.jsp",
+		"editor.wysiwyg.portal-web.docroot.html.taglib.ui.discussion.jsp",
 		"ehcache.blocking.cache.allowed",
 		"ehcache.bootstrap.cache.loader.enabled",
 		"ehcache.bootstrap.cache.loader.factory",
@@ -1713,7 +1721,7 @@ public class VerifyProperties extends VerifyProcess {
 		"hibernate.cache.use_minimal_puts", "hibernate.cache.use_query_cache",
 		"hibernate.cache.use_second_level_cache",
 		"hibernate.cache.use_structured_entries", "icq.jar", "icq.login",
-		"icq.password", "index.filter.search.limit",
+		"icq.password", "index.filter.search.limit", "index.on.upgrade",
 		"index.portal.field.analyzer.enabled", "index.search.highlight.enabled",
 		"index.read.only", "invitation.email.max.recipients",
 		"invitation.email.message.body", "invitation.email.message.subject",
@@ -1797,6 +1805,7 @@ public class VerifyProperties extends VerifyProcess {
 		"microsoft.translator.client.id", "microsoft.translator.client.secret",
 		"minifier.inline.content.cache.size",
 		"mobile.device.styling.wap.enabled", "module.framework.initial.bundles",
+		"module.framework.properties.file.install.optionalImportRefreshScope",
 		"module.framework.properties.lpkg.index.validator.enabled",
 		"module.framework.register.liferay.services", "msn.login",
 		"msn.password", "multicast.group.address[\"hibernate\"]",
@@ -1822,24 +1831,27 @@ public class VerifyProperties extends VerifyProcess {
 		"permissions.inline.sql.resource.block.query.threshold",
 		"permissions.list.filter", "permissions.thread.local.cache.max.size",
 		"permissions.user.check.algorithm", "persistence.provider",
-		"ratings.max.score", "ratings.min.score", "sandbox.deploy.dir",
+		"ratings.max.score", "ratings.min.score",
+		"redirect.url.domains.allowed", "redirect.url.ips.allowed",
+		"redirect.url.security.mode", "sandbox.deploy.dir",
 		"sandbox.deploy.enabled", "sandbox.deploy.interval",
 		"sandbox.deploy.listeners", "sc.image.max.size",
 		"sc.image.thumbnail.max.height", "sc.image.thumbnail.max.width",
 		"sc.product.comments.enabled", "scheduler.classes",
 		"schema.run.minimal", "search.container.page.iterator.page.values",
-		"service.builder.service.read.only.prefixes", "setup.database.types",
-		"shard.available.names", "shard.default.name", "shard.selector",
-		"siteminder.auth.enabled", "siteminder.import.from.ldap",
-		"siteminder.user.header", "sites.form.add.advanced",
-		"sites.form.add.main", "sites.form.add.miscellaneous",
-		"sites.form.add.seo", "sites.form.update.advanced",
-		"sites.form.update.main", "sites.form.update.miscellaneous",
-		"sites.form.update.seo", "staging.lock.enabled",
-		"social.activity.sets.bundling.enabled", "social.activity.sets.enabled",
-		"social.bookmark.display.styles", "social.bookmark.types",
-		"spring.hibernate.data.source", "spring.hibernate.session.factory",
-		"spring.portlet.configs", "spring.remoting.servlet.hosts.allowed",
+		"service.builder.service.read.only.prefixes", "session.disabled",
+		"setup.database.types", "shard.available.names", "shard.default.name",
+		"shard.selector", "siteminder.auth.enabled",
+		"siteminder.import.from.ldap", "siteminder.user.header",
+		"sites.form.add.advanced", "sites.form.add.main",
+		"sites.form.add.miscellaneous", "sites.form.add.seo",
+		"sites.form.update.advanced", "sites.form.update.main",
+		"sites.form.update.miscellaneous", "sites.form.update.seo",
+		"staging.lock.enabled", "social.activity.sets.bundling.enabled",
+		"social.activity.sets.enabled", "social.bookmark.display.styles",
+		"social.bookmark.types", "spring.hibernate.data.source",
+		"spring.hibernate.session.factory", "spring.portlet.configs",
+		"spring.remoting.servlet.hosts.allowed",
 		"spring.remoting.servlet.https.required",
 		"staging.delete.temp.lar.on.failure",
 		"staging.delete.temp.lar.on.success",
@@ -1879,6 +1891,7 @@ public class VerifyProperties extends VerifyProcess {
 		{"amazon.license.1", "amazon.access.key.id"},
 		{"amazon.license.2", "amazon.access.key.id"},
 		{"amazon.license.3", "amazon.access.key.id"},
+		{"buffered.increment.enabled", "view.count.enabled"},
 		{"cdn.host", "cdn.host.http"},
 		{"cluster.executor.debug.enabled", "cluster.link.debug.enabled"},
 		{
@@ -1981,12 +1994,6 @@ public class VerifyProperties extends VerifyProcess {
 		{
 			"module.framework.properties.felix.fileinstall.noInitialDelay",
 			"module.framework.properties.file.install.noInitialDelay"
-		},
-		{
-			"module.framework.properties.felix.fileinstall." +
-				"optionalImportRefreshScope",
-			"module.framework.properties.file.install." +
-				"optionalImportRefreshScope"
 		},
 		{
 			"module.framework.properties.felix.fileinstall.subdir.mode",

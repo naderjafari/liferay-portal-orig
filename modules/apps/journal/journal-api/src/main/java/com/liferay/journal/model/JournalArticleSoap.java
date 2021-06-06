@@ -24,8 +24,10 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.journal.service.http.JournalArticleServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class JournalArticleSoap implements Serializable {
 
 	public static JournalArticleSoap toSoapModel(JournalArticle model) {
@@ -49,7 +51,6 @@ public class JournalArticleSoap implements Serializable {
 		soapModel.setArticleId(model.getArticleId());
 		soapModel.setVersion(model.getVersion());
 		soapModel.setUrlTitle(model.getUrlTitle());
-		soapModel.setContent(model.getContent());
 		soapModel.setDDMStructureKey(model.getDDMStructureKey());
 		soapModel.setDDMTemplateKey(model.getDDMTemplateKey());
 		soapModel.setDefaultLanguageId(model.getDefaultLanguageId());
@@ -268,14 +269,6 @@ public class JournalArticleSoap implements Serializable {
 		_urlTitle = urlTitle;
 	}
 
-	public String getContent() {
-		return _content;
-	}
-
-	public void setContent(String content) {
-		_content = content;
-	}
-
 	public String getDDMStructureKey() {
 		return _DDMStructureKey;
 	}
@@ -430,7 +423,6 @@ public class JournalArticleSoap implements Serializable {
 	private String _articleId;
 	private double _version;
 	private String _urlTitle;
-	private String _content;
 	private String _DDMStructureKey;
 	private String _DDMTemplateKey;
 	private String _defaultLanguageId;

@@ -14,6 +14,8 @@
 
 package com.liferay.jenkins.results.parser;
 
+import java.io.IOException;
+
 import java.net.URL;
 
 import java.util.List;
@@ -57,6 +59,11 @@ public interface Build {
 
 	public int getBuildNumber();
 
+	public Job.BuildProfile getBuildProfile();
+
+	public JSONObject getBuildResultsJSONObject(
+		String[] buildResults, String[] testStatuses, String[] dataTypes);
+
 	public String getBuildURL();
 
 	public String getBuildURLRegex();
@@ -81,11 +88,16 @@ public interface Build {
 
 	public long getDuration();
 
+	public String getFailureMessage();
+
 	public Element getGitHubMessageBuildAnchorElement();
 
 	public Element getGitHubMessageElement();
 
 	public Element getGitHubMessageUpstreamJobFailureElement();
+
+	public Map<String, String> getInjectedEnvironmentVariablesMap()
+		throws IOException;
 
 	public String getInvocationURL();
 
@@ -155,7 +167,13 @@ public interface Build {
 
 	public Map<String, String> getStopPropertiesTempMap();
 
+	public TestClassResult getTestClassResult(String testClassName);
+
+	public List<TestClassResult> getTestClassResults();
+
 	public JSONObject getTestReportJSONObject(boolean checkCache);
+
+	public List<TestResult> getTestResults();
 
 	public List<TestResult> getTestResults(String testStatus);
 
@@ -185,6 +203,12 @@ public interface Build {
 
 	public boolean isBuildModified();
 
+	public boolean isCompareToUpstream();
+
+	public boolean isCompleted();
+
+	public boolean isFailing();
+
 	public boolean isFromArchive();
 
 	public boolean isFromCompletedBuild();
@@ -194,6 +218,8 @@ public interface Build {
 	public void reinvoke();
 
 	public void reinvoke(ReinvokeRule reinvokeRule);
+
+	public void removeDownstreamBuild(Build build);
 
 	public String replaceBuildURL(String text);
 

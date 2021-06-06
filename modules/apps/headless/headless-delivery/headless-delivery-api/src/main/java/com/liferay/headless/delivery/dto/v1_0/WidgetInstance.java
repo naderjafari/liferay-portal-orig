@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WidgetInstance")
+@GraphQLName(
+	description = "Represents a Widget Instance.", value = "WidgetInstance"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WidgetInstance")
-public class WidgetInstance {
+public class WidgetInstance implements Serializable {
 
 	public static WidgetInstance toDTO(String json) {
 		return ObjectMapperUtil.readValue(WidgetInstance.class, json);
@@ -81,7 +85,7 @@ public class WidgetInstance {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, Object> widgetConfig;
 
-	@Schema
+	@Schema(description = "The widget instance's ID.")
 	public String getWidgetInstanceId() {
 		return widgetInstanceId;
 	}
@@ -105,11 +109,11 @@ public class WidgetInstance {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The widget instance's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String widgetInstanceId;
 
-	@Schema
+	@Schema(description = "The widget instance's name.")
 	public String getWidgetName() {
 		return widgetName;
 	}
@@ -133,11 +137,11 @@ public class WidgetInstance {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The widget instance's name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String widgetName;
 
-	@Schema
+	@Schema(description = "The widget instance's permissions.")
 	@Valid
 	public WidgetPermission[] getWidgetPermissions() {
 		return widgetPermissions;
@@ -163,7 +167,7 @@ public class WidgetInstance {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The widget instance's permissions.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected WidgetPermission[] widgetPermissions;
 
@@ -258,6 +262,7 @@ public class WidgetInstance {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.WidgetInstance",
 		name = "x-class-name"
 	)
@@ -293,7 +298,7 @@ public class WidgetInstance {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -332,7 +337,7 @@ public class WidgetInstance {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -87,7 +87,6 @@ public class DDLRecordSetServiceTest {
 	public void setUp() throws Exception {
 		_availableLocales = DDMFormTestUtil.createAvailableLocales(
 			LocaleUtil.US);
-		_defaultLocale = LocaleUtil.US;
 
 		_group = GroupTestUtil.addGroup();
 
@@ -102,7 +101,7 @@ public class DDLRecordSetServiceTest {
 		DDMForm ddmStructureDDMForm = DDMFormTestUtil.createDDMForm("Field");
 
 		DDLRecordSet ddlRecordSet = addRecordSet(
-			ddmStructureDDMForm, StorageType.JSON.toString());
+			ddmStructureDDMForm, StorageType.DEFAULT.toString());
 
 		Assert.assertEquals(
 			DDLRecordSetConstants.VERSION_DEFAULT, ddlRecordSet.getVersion());
@@ -133,7 +132,7 @@ public class DDLRecordSetServiceTest {
 		DDMForm ddmStructureDDMForm = DDMFormTestUtil.createDDMForm("Field");
 
 		DDLRecordSet ddlRecordSet = addRecordSet(
-			ddmStructureDDMForm, StorageType.JSON.toString());
+			ddmStructureDDMForm, StorageType.DEFAULT.toString());
 
 		DDLRecordSetLocalServiceUtil.deleteRecordSet(
 			ddlRecordSet.getRecordSetId());
@@ -150,7 +149,7 @@ public class DDLRecordSetServiceTest {
 		DDMForm ddmStructureDDMForm = DDMFormTestUtil.createDDMForm("Field");
 
 		DDMStructure ddmStructure = _ddmStructureTestHelper.addStructure(
-			ddmStructureDDMForm, StorageType.JSON.toString());
+			ddmStructureDDMForm, StorageType.DEFAULT.toString());
 
 		Map<Locale, String> nameMap = HashMapBuilder.put(
 			LocaleUtil.US, RandomTestUtil.randomString()
@@ -226,7 +225,7 @@ public class DDLRecordSetServiceTest {
 		DDMForm ddmStructureDDMForm = DDMFormTestUtil.createDDMForm("Field");
 
 		DDMStructure ddmStructure = _ddmStructureTestHelper.addStructure(
-			ddmStructureDDMForm, StorageType.JSON.toString());
+			ddmStructureDDMForm, StorageType.DEFAULT.toString());
 
 		Map<Locale, String> nameMap = HashMapBuilder.put(
 			LocaleUtil.US, RandomTestUtil.randomString()
@@ -278,7 +277,7 @@ public class DDLRecordSetServiceTest {
 		DDMForm ddmStructureDDMForm = DDMFormTestUtil.createDDMForm("Field");
 
 		DDLRecordSet ddlRecordSet = addRecordSet(
-			ddmStructureDDMForm, StorageType.JSON.toString());
+			ddmStructureDDMForm, StorageType.DEFAULT.toString());
 
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
@@ -299,7 +298,7 @@ public class DDLRecordSetServiceTest {
 		DDMForm ddmStructureDDMForm = DDMFormTestUtil.createDDMForm("Field");
 
 		DDLRecordSet ddlRecordSet = addRecordSet(
-			ddmStructureDDMForm, StorageType.JSON.toString());
+			ddmStructureDDMForm, StorageType.DEFAULT.toString());
 
 		DDLRecordSet updatedDDLRecordSet =
 			_ddlRecordSetTestHelper.updateRecordSet(
@@ -362,7 +361,6 @@ public class DDLRecordSetServiceTest {
 	private Set<Locale> _availableLocales;
 	private DDLRecordSetTestHelper _ddlRecordSetTestHelper;
 	private DDMStructureTestHelper _ddmStructureTestHelper;
-	private Locale _defaultLocale;
 
 	@DeleteAfterTestRun
 	private Group _group;

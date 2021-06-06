@@ -55,17 +55,26 @@ BlogsPortletInstanceConfiguration blogsPortletInstanceConfiguration = BlogsPortl
 					String subtitle = entry.getSubtitle();
 					%>
 
-					<c:if test="<%= blogsPortletInstanceConfiguration.displayStyle().equals(BlogsUtil.DISPLAY_STYLE_FULL_CONTENT) && Validator.isNotNull(subtitle) %>">
+					<c:if test="<%= Objects.equals(blogsPortletInstanceConfiguration.displayStyle(), BlogsUtil.DISPLAY_STYLE_FULL_CONTENT) && Validator.isNotNull(subtitle) %>">
 						<h4 class="sub-title"><%= HtmlUtil.escape(subtitle) %></h4>
 					</c:if>
 				</clay:content-col>
 
-				<clay:content-col
-					cssClass="visible-interaction"
-				>
-					<div class="dropdown dropdown-action">
-						<liferay-util:include page="/blogs/entry_action.jsp" servletContext="<%= application %>" />
-					</div>
+				<clay:content-col>
+
+					<%
+					BlogsEntryActionDropdownItemsProvider blogsEntryActionDropdownItemsProvider = new BlogsEntryActionDropdownItemsProvider(renderRequest, renderResponse, permissionChecker, resourceBundle, trashHelper);
+					%>
+
+					<clay:dropdown-actions
+						additionalProps='<%=
+							HashMapBuilder.<String, Object>put(
+								"trashEnabled", trashHelper.isTrashEnabled(themeDisplay.getScopeGroupId())
+							).build()
+						%>'
+						dropdownItems="<%= blogsEntryActionDropdownItemsProvider.getActionDropdownItems(entry) %>"
+						propsTransformer="blogs_admin/js/ElementsPropsTransformer"
+					/>
 				</clay:content-col>
 			</clay:content-row>
 
@@ -78,7 +87,7 @@ BlogsPortletInstanceConfiguration blogsPortletInstanceConfiguration = BlogsPortl
 
 				String entryUserURL = StringPool.BLANK;
 
-				if ((entryUser != null) && !entryUser.isDefaultUser()) {
+				if ((entryUser != null) && !entryUser.isDefaultUser() && !user.isDefaultUser()) {
 					entryUserURL = entryUser.getDisplayURL(themeDisplay);
 				}
 				%>
@@ -167,7 +176,7 @@ BlogsPortletInstanceConfiguration blogsPortletInstanceConfiguration = BlogsPortl
 				<liferay-util:include page="/blogs/entry_toolbar.jsp" servletContext="<%= application %>" />
 			</div>
 
-			<c:if test="<%= blogsPortletInstanceConfiguration.displayStyle().equals(BlogsUtil.DISPLAY_STYLE_FULL_CONTENT) %>">
+			<c:if test="<%= Objects.equals(blogsPortletInstanceConfiguration.displayStyle(), BlogsUtil.DISPLAY_STYLE_FULL_CONTENT) %>">
 				<liferay-asset:asset-tags-available
 					className="<%= BlogsEntry.class.getName() %>"
 					classPK="<%= entry.getEntryId() %>"

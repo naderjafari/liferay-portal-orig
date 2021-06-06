@@ -17,6 +17,7 @@ import ClayIcon from '@clayui/icon';
 import React, {useState} from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
+import {useSyncValue} from '../hooks/useSyncValue.es';
 
 const Switcher = ({
 	checked: initialChecked,
@@ -26,43 +27,67 @@ const Switcher = ({
 	onChange,
 	required,
 	showLabel,
+	showMaximumRepetitionsInfo,
 	spritemap,
+	systemSettingsURL,
+	visible,
 }) => {
-	const [checked, setChecked] = useState(initialChecked);
+	const [checked, setChecked] = useSyncValue(initialChecked, true, visible);
 
 	return (
-		<label className="ddm-toggle-switch toggle-switch">
-			<input
-				checked={checked}
-				className="toggle-switch-check"
-				disabled={disabled}
-				name={name}
-				onChange={(event) => {
-					setChecked(event.target.checked);
-					onChange(event, event.target.checked);
-				}}
-				type="checkbox"
-				value={true}
-			/>
+		<>
+			<label className="ddm-toggle-switch toggle-switch">
+				<input
+					checked={checked}
+					className="toggle-switch-check"
+					disabled={disabled}
+					name={name}
+					onChange={(event) => {
+						setChecked(event.target.checked);
+						onChange(event, event.target.checked);
+					}}
+					type="checkbox"
+					value={true}
+				/>
 
-			<span aria-hidden="true" className="toggle-switch-bar">
-				<span className="toggle-switch-handle"></span>
+				<span aria-hidden="true" className="toggle-switch-bar">
+					<span className="toggle-switch-handle"></span>
 
-				{(showLabel || required) && (
-					<span className="toggle-switch-text toggle-switch-text-right">
-						{showLabel && label}
+					{(showLabel || required) && (
+						<span className="toggle-switch-text toggle-switch-text-right">
+							{showLabel && label}
 
-						{required && (
-							<ClayIcon
-								className="reference-mark"
-								spritemap={spritemap}
-								symbol="asterisk"
-							/>
-						)}
+							{required && (
+								<ClayIcon
+									className="reference-mark"
+									spritemap={spritemap}
+									symbol="asterisk"
+								/>
+							)}
+						</span>
+					)}
+				</span>
+			</label>
+			{checked && showMaximumRepetitionsInfo && (
+				<div className="ddm-info">
+					<span className="ddm-tooltip">
+						<ClayIcon symbol="info-circle" />
 					</span>
-				)}
-			</span>
-		</label>
+					<div
+						className="ddm-info-text"
+						dangerouslySetInnerHTML={{
+							__html: Liferay.Util.sub(
+								Liferay.Language.get(
+									'for-security-reasons-upload-field-repeatability-is-limited-the-limit-is-defined-in-x-system-settings-x'
+								),
+								`<a href=${systemSettingsURL} target="_blank">`,
+								'</a>'
+							),
+						}}
+					/>
+				</div>
+			)}
+		</>
 	);
 };
 
@@ -101,15 +126,19 @@ const Checkbox = ({
 };
 
 const Main = ({
-	disabled,
 	label,
 	name,
 	onChange,
+	predefinedValue = true,
+	readOnly,
 	required,
 	showAsSwitcher = true,
 	showLabel = true,
+	showMaximumRepetitionsInfo = false,
 	spritemap,
-	value = true,
+	systemSettingsURL,
+	value,
+	visible,
 	...otherProps
 }) => {
 	const Toggle = showAsSwitcher ? Switcher : Checkbox;
@@ -121,17 +150,21 @@ const Main = ({
 			required={required}
 			showLabel={false}
 			spritemap={spritemap}
+			visible={visible}
 			{...otherProps}
 		>
 			<Toggle
-				checked={value}
-				disabled={disabled}
+				checked={value !== undefined ? value : predefinedValue}
+				disabled={readOnly}
 				label={label}
 				name={name}
 				onChange={onChange}
 				required={required}
 				showLabel={showLabel}
+				showMaximumRepetitionsInfo={showMaximumRepetitionsInfo}
 				spritemap={spritemap}
+				systemSettingsURL={systemSettingsURL}
+				visible={visible}
 			/>
 		</FieldBase>
 	);

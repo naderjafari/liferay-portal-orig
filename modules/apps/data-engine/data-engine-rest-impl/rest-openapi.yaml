@@ -129,6 +129,10 @@ components:
                 dataDefinitionId:
                     format: int64
                     type: integer
+                dataLayoutFields:
+                    additionalProperties:
+                        type: object
+                    type: object
                 dataLayoutKey:
                     type: string
                 dataLayoutPages:
@@ -193,6 +197,27 @@ components:
                         type: object
                     type: object
             type: object
+        DataLayoutRenderingContext:
+            properties:
+                containerId:
+                    type: string
+                dataRecordValues:
+                    additionalProperties:
+                        type: object
+                    type: object
+                namespace:
+                    type: string
+                pathThemeImages:
+                    type: string
+                readOnly:
+                    type: boolean
+                scopeGroupId:
+                    format: int64
+                    type: integer
+                siteGroupId:
+                    format: int64
+                    type: integer
+            type: object
         DataLayoutRow:
             properties:
                 dataLayoutColumns:
@@ -251,6 +276,9 @@ components:
                 id:
                     format: int64
                     type: integer
+                status:
+                    readOnly: true
+                    type: integer
         DataRecordCollection:
             description:
                 https://www.schema.org/DataRecordCollection
@@ -301,7 +329,7 @@ components:
 info:
     description:
         "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID
-        'com.liferay.data.engine.rest.client', and version '2.0.14'."
+        'com.liferay.data.engine.rest.client', and version '3.0.3'."
     license:
         name: "Apache 2.0"
         url: "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -421,6 +449,35 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/DataDefinition"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/DataDefinition"
+                    description:
+                        ""
+            tags: ["DataDefinition"]
+        patch:
+            operationId: patchDataDefinition
+            parameters:
+                - in: path
+                  name: dataDefinitionId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/DataDefinition"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/DataDefinition"
             responses:
                 200:
                     content:
@@ -582,6 +639,23 @@ paths:
                         ""
             tags: ["DataLayout"]
     "/data-definitions/{dataDefinitionId}/data-list-views":
+        delete:
+            operationId: deleteDataListViewsDataDefinition
+            parameters:
+                - in: path
+                  name: dataDefinitionId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["DataListView"]
         get:
             operationId: getDataDefinitionDataListViewsPage
             parameters:
@@ -929,6 +1003,40 @@ paths:
                     description:
                         ""
             tags: ["DataLayout"]
+    "/data-layouts/{dataLayoutId}/context":
+        post:
+            operationId: postDataLayoutContext
+            parameters:
+                - in: path
+                  name: dataLayoutId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/DataLayoutRenderingContext"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/DataLayoutRenderingContext"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: object
+                                type: object
+                        application/xml:
+                            schema:
+                                additionalProperties:
+                                    type: object
+                                type: object
+                    description:
+                        ""
+            tags: ["DataLayout"]
     "/data-list-views/{dataListViewId}":
         delete:
             operationId: deleteDataListView
@@ -1261,6 +1369,35 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/DataRecord"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/DataRecord"
+                    description:
+                        ""
+            tags: ["DataRecord"]
+        patch:
+            operationId: patchDataRecord
+            parameters:
+                - in: path
+                  name: dataRecordId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/DataRecord"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/DataRecord"
             responses:
                 200:
                     content:

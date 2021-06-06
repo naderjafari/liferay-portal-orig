@@ -167,6 +167,13 @@ public class KaleoInstanceLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _kaleoInstanceLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _kaleoInstanceLocalService.dynamicQuery();
 	}
@@ -284,6 +291,14 @@ public class KaleoInstanceLocalServiceWrapper
 		getIndexableActionableDynamicQuery() {
 
 		return _kaleoInstanceLocalService.getIndexableActionableDynamicQuery();
+	}
+
+	@Override
+	public int getKaleoDefinitionKaleoInstancesCount(
+		long kaleoDefinitionId, boolean completed) {
+
+		return _kaleoInstanceLocalService.getKaleoDefinitionKaleoInstancesCount(
+			kaleoDefinitionId, completed);
 	}
 
 	/**

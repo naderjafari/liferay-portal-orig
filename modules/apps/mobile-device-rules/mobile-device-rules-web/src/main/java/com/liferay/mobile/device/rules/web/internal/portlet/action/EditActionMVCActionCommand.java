@@ -111,13 +111,6 @@ public class EditActionMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	protected void updateAction(ActionRequest actionRequest) throws Exception {
-		long actionId = ParamUtil.getLong(actionRequest, "actionId");
-
-		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
-			actionRequest, "name");
-		Map<Locale, String> descriptionMap =
-			LocalizationUtil.getLocalizationMap(actionRequest, "description");
-
 		String type = ParamUtil.getString(actionRequest, "type");
 
 		ActionHandler actionHandler = ActionHandlerManagerUtil.getActionHandler(
@@ -127,8 +120,15 @@ public class EditActionMVCActionCommand extends BaseMVCActionCommand {
 			throw new ActionTypeException();
 		}
 
+		long actionId = ParamUtil.getLong(actionRequest, "actionId");
+
+		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
+			actionRequest, "name");
+		Map<Locale, String> descriptionMap =
+			LocalizationUtil.getLocalizationMap(actionRequest, "description");
+
 		UnicodeProperties typeSettingsUnicodeProperties =
-			ActionUtil.getTypeSettingsProperties(
+			ActionUtil.getTypeSettingsUnicodeProperties(
 				actionRequest, actionHandler.getPropertyNames());
 
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(

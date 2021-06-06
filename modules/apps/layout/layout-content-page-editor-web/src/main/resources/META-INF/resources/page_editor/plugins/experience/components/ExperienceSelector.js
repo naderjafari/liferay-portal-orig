@@ -17,15 +17,17 @@ import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
 import {useModal} from '@clayui/modal';
-import {useIsMounted} from 'frontend-js-react-web';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
+import {openToast} from 'frontend-js-web';
 import React, {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {config} from '../../../app/config/index';
+import {useDispatch, useSelector} from '../../../app/contexts/StoreContext';
 import selectCanUpdateExperiences from '../../../app/selectors/selectCanUpdateExperiences';
 import selectCanUpdateSegments from '../../../app/selectors/selectCanUpdateSegments';
-import {useDispatch, useSelector} from '../../../app/store/index';
 import createExperience from '../thunks/createExperience';
+import duplicateExperience from '../thunks/duplicateExperience';
 import removeExperience from '../thunks/removeExperience';
 import updateExperience from '../thunks/updateExperience';
 import updateExperiencePriority from '../thunks/updateExperiencePriority';
@@ -63,14 +65,8 @@ function getUpdateExperiencePriorityTargets(
 	const targetExperience = orderedExperiences[targetIndex];
 
 	return {
-		subtarget: {
-			priority: targetExperience.priority,
-			segmentsExperienceId: subtargetExperience.segmentsExperienceId,
-		},
-		target: {
-			priority: subtargetExperience.priority,
-			segmentsExperienceId: targetExperience.segmentsExperienceId,
-		},
+		priority: subtargetExperience.priority,
+		segmentsExperienceId: targetExperience.segmentsExperienceId,
 	};
 }
 
@@ -99,6 +95,7 @@ const ExperienceSelector = ({
 	const {observer: modalObserver, onClose: onModalClose} = useModal({
 		onClose: () => {
 			setOpenModal(false);
+			setEditingExperience({});
 		},
 	});
 
@@ -142,6 +139,7 @@ const ExperienceSelector = ({
 			) {
 				setOpenModal(true);
 				setEditingExperience({
+					languageIds: modalExperienceState.languageIds,
 					name: modalExperienceState.experienceName,
 					segmentsEntryId:
 						config.selectedSegmentsEntryId ||
@@ -152,23 +150,58 @@ const ExperienceSelector = ({
 		}
 	}, []);
 
+	useEffect(() => {
+		if (open) {
+			const element = document.querySelector(
+				'.dropdown-menu__experience--active'
+			);
+
+			element?.scrollIntoView?.({
+				behavior: 'auto',
+				block: 'center',
+				inline: 'nearest',
+			});
+		}
+	}, [open]);
+
+	useEffect(() => {
+		const element = document.querySelector(
+			'.dropdown-menu__experience--active'
+		);
+
+		element?.scrollIntoView?.({
+			behavior: 'smooth',
+			block: 'center',
+			inline: 'nearest',
+		});
+	}, [
+
+		//LPS-127205
+
+		experiences.length,
+	]);
+
 	const handleExperienceCreation = ({
+		languageIds,
 		name,
 		segmentsEntryId,
 		segmentsExperienceId,
 	}) => {
 		if (segmentsExperienceId) {
 			return dispatch(
-				updateExperience({name, segmentsEntryId, segmentsExperienceId})
+				updateExperience({
+					languageIds,
+					name,
+					segmentsEntryId,
+					segmentsExperienceId,
+				})
 			)
 				.then(() => {
 					if (isMounted()) {
-						setEditingExperience({});
 						onModalClose();
 					}
-
-					Liferay.Util.openToast({
-						title: Liferay.Language.get(
+					openToast({
+						message: Liferay.Language.get(
 							'the-experience-was-updated-successfully'
 						),
 						type: 'success',
@@ -180,6 +213,7 @@ const ExperienceSelector = ({
 							error: Liferay.Language.get(
 								'an-unexpected-error-occurred-while-updating-the-experience'
 							),
+							languageIds,
 							name,
 							segmentsEntryId,
 							segmentsExperienceId,
@@ -190,6 +224,7 @@ const ExperienceSelector = ({
 		else {
 			return dispatch(
 				createExperience({
+					languageIds,
 					name,
 					segmentsEntryId,
 				})
@@ -198,20 +233,20 @@ const ExperienceSelector = ({
 					if (isMounted()) {
 						onModalClose();
 					}
-
-					Liferay.Util.openToast({
-						title: Liferay.Language.get(
+					openToast({
+						message: Liferay.Language.get(
 							'the-experience-was-created-successfully'
 						),
 						type: 'success',
 					});
 				})
-				.catch((_error) => {
+				.catch(() => {
 					if (isMounted()) {
 						setEditingExperience({
 							error: Liferay.Language.get(
 								'an-unexpected-error-occurred-while-creating-the-experience'
 							),
+							languageIds,
 							name,
 							segmentsEntryId,
 							segmentsExperienceId,
@@ -224,11 +259,17 @@ const ExperienceSelector = ({
 	const handleOnNewExperiecneClick = () => setOpenModal(true);
 
 	const handleEditExperienceClick = (experienceData) => {
-		const {name, segmentsEntryId, segmentsExperienceId} = experienceData;
+		const {
+			languageIds,
+			name,
+			segmentsEntryId,
+			segmentsExperienceId,
+		} = experienceData;
 
 		setOpenModal(true);
 
 		setEditingExperience({
+			languageIds,
 			name,
 			segmentsEntryId,
 			segmentsExperienceId,
@@ -241,46 +282,73 @@ const ExperienceSelector = ({
 				segmentsExperienceId: id,
 				selectedExperienceId: selectedExperience.segmentsExperienceId,
 			})
-		).catch((_error) => {
+		)
+			.then(() => {
+				openToast({
+					message: Liferay.Language.get(
+						'the-experience-was-deleted-successfully'
+					),
+					type: 'success',
+				});
+			})
+			.catch(() => {
+				openToast({
+					message: Liferay.Language.get(
+						'an-unexpected-error-occurred'
+					),
+					type: 'danger',
+				});
+			});
+	};
 
-			// TODO handle error
-
-		});
+	const handleExperienceDuplication = (id) => {
+		dispatch(
+			duplicateExperience({
+				segmentsExperienceId: id,
+			})
+		)
+			.then(() => {
+				openToast({
+					message: Liferay.Language.get(
+						'the-experience-was-duplicated-successfully'
+					),
+					type: 'success',
+				});
+			})
+			.catch(() => {
+				openToast({
+					message: Liferay.Language.get(
+						'an-unexpected-error-occurred'
+					),
+					type: 'danger',
+				});
+			});
 	};
 
 	const decreasePriority = (id) => {
-		const {subtarget, target} = getUpdateExperiencePriorityTargets(
+		const target = getUpdateExperiencePriorityTargets(
 			experiences,
 			id,
 			'down'
 		);
 
-		dispatch(
-			updateExperiencePriority({
-				subtarget,
-				target,
-			})
-		);
+		dispatch(updateExperiencePriority(target));
 	};
+
 	const increasePriority = (id) => {
-		const {subtarget, target} = getUpdateExperiencePriorityTargets(
+		const target = getUpdateExperiencePriorityTargets(
 			experiences,
 			id,
 			'up'
 		);
 
-		dispatch(
-			updateExperiencePriority({
-				subtarget,
-				target,
-			})
-		);
+		dispatch(updateExperiencePriority(target));
 	};
 
 	return (
 		<>
 			<ClayButton
-				className="align-items-end d-inline-flex form-control-select justify-content-between mr-2 text-left text-truncate"
+				className="form-control-select pr-4 text-left text-truncate"
 				displayType="secondary"
 				id={selectId}
 				onBlur={handleDropdownButtonBlur}
@@ -289,11 +357,18 @@ const ExperienceSelector = ({
 				small
 				type="button"
 			>
-				<span className="text-truncate">{selectedExperience.name}</span>
-
-				{selectedExperience.hasLockedSegmentsExperiment && (
-					<ClayIcon className="mr-3" symbol="lock" />
-				)}
+				<ClayLayout.ContentRow verticalAlign="center">
+					<ClayLayout.ContentCol expand>
+						<span className="text-truncate">
+							{selectedExperience.name}
+						</span>
+					</ClayLayout.ContentCol>
+					<ClayLayout.ContentCol>
+						{selectedExperience.hasLockedSegmentsExperiment && (
+							<ClayIcon symbol="lock" />
+						)}
+					</ClayLayout.ContentCol>
+				</ClayLayout.ContentRow>
 			</ClayButton>
 
 			{open &&
@@ -325,6 +400,9 @@ const ExperienceSelector = ({
 								}
 								experiences={experiences}
 								onDeleteExperience={deleteExperience}
+								onDuplicateExperience={
+									handleExperienceDuplication
+								}
 								onEditExperience={handleEditExperienceClick}
 								onPriorityDecrease={decreasePriority}
 								onPriorityIncrease={increasePriority}
@@ -340,6 +418,7 @@ const ExperienceSelector = ({
 					errorMessage={editingExperience.error}
 					experienceId={editingExperience.segmentsExperienceId}
 					initialName={editingExperience.name}
+					languageIds={editingExperience.languageIds}
 					observer={modalObserver}
 					onClose={onModalClose}
 					onErrorDismiss={() => setEditingExperience({error: null})}

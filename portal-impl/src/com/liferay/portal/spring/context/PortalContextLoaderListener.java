@@ -26,8 +26,12 @@ import com.liferay.portal.dao.init.DBInitUtil;
 import com.liferay.portal.dao.orm.hibernate.FieldInterceptionHelperUtil;
 import com.liferay.portal.deploy.hot.CustomJspBagRegistryUtil;
 import com.liferay.portal.deploy.hot.ServiceWrapperRegistry;
+import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCacheManager;
+import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.deploy.hot.HotDeployUtil;
 import com.liferay.portal.kernel.exception.LoggedExceptionInInitializerError;
 import com.liferay.portal.kernel.log.Log;
@@ -48,7 +52,8 @@ import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.module.framework.ModuleFrameworkUtilAdapter;
+import com.liferay.portal.module.framework.ModuleFrameworkUtil;
+import com.liferay.portal.servlet.AxisServlet;
 import com.liferay.portal.servlet.PortalSessionListener;
 import com.liferay.portal.spring.aop.DynamicProxyCreator;
 import com.liferay.portal.spring.compat.CompatBeanDefinitionRegistryPostProcessor;
@@ -69,17 +74,24 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.FutureTask;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletRegistration;
 
 import javax.sql.DataSource;
 
@@ -112,7 +124,7 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 		ApplicationContext applicationContext =
 			ContextLoader.getCurrentWebApplicationContext();
 
-		ModuleFrameworkUtilAdapter.unregisterContext(applicationContext);
+		ModuleFrameworkUtil.unregisterContext(applicationContext);
 
 		ThreadLocalCacheManager.destroy();
 
@@ -147,22 +159,24 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 
 		super.contextDestroyed(servletContextEvent);
 
+		_cleanUpJDBCDrivers();
+
 		try {
-			ModuleFrameworkUtilAdapter.stopRuntime();
+			ModuleFrameworkUtil.stopRuntime();
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);
 		}
 
 		try {
-			ModuleFrameworkUtilAdapter.stopFramework(
+			ModuleFrameworkUtil.stopFramework(
 				PropsValues.MODULE_FRAMEWORK_STOP_WAIT_TIMEOUT);
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);
 		}
 
-		ModuleFrameworkUtilAdapter.unregisterContext(_arrayApplicationContext);
+		ModuleFrameworkUtil.unregisterContext(_arrayApplicationContext);
 
 		_arrayApplicationContext.close();
 
@@ -244,7 +258,7 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 		}
 
 		try {
-			ModuleFrameworkUtilAdapter.initFramework();
+			ModuleFrameworkUtil.initFramework();
 
 			DBInitUtil.init();
 
@@ -305,12 +319,11 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 		}
 
 		try {
-			ModuleFrameworkUtilAdapter.registerContext(
-				_arrayApplicationContext);
+			ModuleFrameworkUtil.registerContext(_arrayApplicationContext);
 
-			ModuleFrameworkUtilAdapter.startFramework();
+			ModuleFrameworkUtil.startFramework();
 
-			ModuleFrameworkUtilAdapter.startRuntime();
+			ModuleFrameworkUtil.startRuntime();
 		}
 		catch (Exception exception) {
 			throw new RuntimeException(exception);
@@ -340,18 +353,6 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 
 		PortalBeanLocatorUtil.setBeanLocator(beanLocatorImpl);
 
-		try {
-
-			// Upgrade
-
-			if (PropsValues.UPGRADE_DATABASE_AUTO_RUN) {
-				DBUpgrader.upgrade();
-			}
-		}
-		catch (Exception exception) {
-			throw new RuntimeException(exception);
-		}
-
 		ClassLoader classLoader = portalClassLoader;
 
 		while (classLoader != null) {
@@ -369,13 +370,22 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 		dynamicProxyCreator.clear();
 
 		try {
-			ModuleFrameworkUtilAdapter.registerContext(applicationContext);
+			if (PropsValues.UPGRADE_DATABASE_AUTO_RUN) {
+				DBUpgrader.upgrade(applicationContext);
+
+				StartupHelperUtil.setUpgrading(false);
+			}
+			else {
+				ModuleFrameworkUtil.registerContext(applicationContext);
+			}
 		}
 		catch (Exception exception) {
 			throw new RuntimeException(exception);
 		}
 
 		CustomJspBagRegistryUtil.getCustomJspBags();
+
+		initServlets(servletContext);
 
 		initListeners(servletContext);
 	}
@@ -445,6 +455,63 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 
 		servletContext.addListener(PortalSessionListener.class);
 		servletContext.addListener(PortletSessionListenerManager.class);
+	}
+
+	protected void initServlets(ServletContext servletContext) {
+		if (PropsValues.AXIS_SERVLET_ENABLED) {
+			ServletRegistration.Dynamic dynamic = servletContext.addServlet(
+				"Axis Servlet", new AxisServlet());
+
+			dynamic.addMapping(PropsValues.AXIS_SERVLET_MAPPING);
+
+			dynamic.setAsyncSupported(true);
+			dynamic.setLoadOnStartup(1);
+		}
+	}
+
+	private void _cleanUpJDBCDrivers() {
+		Enumeration<Driver> enumeration = DriverManager.getDrivers();
+
+		while (enumeration.hasMoreElements()) {
+			Driver driver = enumeration.nextElement();
+
+			Class<?> driverClass = driver.getClass();
+
+			if (PortalClassLoaderUtil.isPortalClassLoader(
+					driverClass.getClassLoader())) {
+
+				try {
+					DriverManager.deregisterDriver(driver);
+				}
+				catch (SQLException sqlException) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Unable to deregister driver " + driver,
+							sqlException);
+					}
+				}
+			}
+		}
+
+		DB db = DBManagerUtil.getDB();
+
+		DBType dbType = db.getDBType();
+
+		if (dbType == DBType.MYSQL) {
+			try {
+				Class<?> clazz = Class.forName(
+					"com.mysql.cj.jdbc.AbandonedConnectionCleanupThread");
+
+				Method method = clazz.getMethod("checkedShutdown");
+
+				method.invoke(null);
+			}
+			catch (Exception exception) {
+				if (_log.isWarnEnabled()) {
+					_log.warn("Unable to cleanly shut down MySQL", exception);
+				}
+			}
+		}
 	}
 
 	private void _logJVMArguments() {

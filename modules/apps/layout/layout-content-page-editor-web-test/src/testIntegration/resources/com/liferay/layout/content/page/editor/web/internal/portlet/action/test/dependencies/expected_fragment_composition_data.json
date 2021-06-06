@@ -1,10 +1,34 @@
 {
 	"definition": {
-		"backgroundFragmentImage": {
+		"fragmentStyle": {
+			"backgroundFragmentImage": {
+			},
+			"borderRadius": "",
+			"borderWidth": "0",
+			"fontFamily": "",
+			"fontSize": "",
+			"fontWeight": "",
+			"height": "",
+			"marginBottom": "",
+			"marginLeft": "",
+			"marginRight": "",
+			"marginTop": "",
+			"maxHeight": "",
+			"maxWidth": "",
+			"minHeight": "",
+			"minWidth": "",
+			"opacity": "100",
+			"overflow": "",
+			"paddingBottom": "",
+			"paddingLeft": "",
+			"paddingRight": "",
+			"paddingTop": "",
+			"shadow": "",
+			"textAlign": "",
+			"width": ""
 		},
 		"layout": {
 			"borderWidth": 0,
-			"contentDisplay": "Block",
 			"marginBottom": 0,
 			"marginLeft": 0,
 			"marginRight": 0,
@@ -34,19 +58,23 @@
 						"id": "link",
 						"value": {
 							"fragmentLink": {
-								"href": {
-									"defaultFragmentInlineValue": {
-										"value": "${MAPPED_LINK_DEFAULT_VALUE}"
-									},
-									"mapping": {
-										"fieldKey": "title",
-										"itemReference": {
-											"className": "${MAPPED_LINK_CLASS_NAME}",
-											"classPK": "${MAPPED_LINK_CLASS_PK}"
+								"value": {
+									"href": {
+										"defaultFragmentInlineValue": {
+											"value": "${MAPPED_LINK_DEFAULT_VALUE}"
+										},
+										"mapping": {
+											"fieldKey": "title",
+											"itemReference": {
+												"className": "${MAPPED_LINK_CLASS_NAME}",
+												"classPK": "${MAPPED_LINK_CLASS_PK}"
+											}
 										}
-									}
+									},
+									"target": "Self"
 								},
-								"target": "Top"
+								"value_i18n": {
+								}
 							},
 							"text": {
 								"defaultFragmentInlineValue": {
@@ -62,7 +90,34 @@
 							}
 						}
 					}
-				]
+				],
+				"fragmentStyle": {
+					"backgroundFragmentImage": {
+					},
+					"borderRadius": "",
+					"borderWidth": "0",
+					"fontFamily": "",
+					"fontSize": "",
+					"fontWeight": "",
+					"height": "",
+					"marginBottom": "",
+					"marginLeft": "",
+					"marginRight": "",
+					"marginTop": "",
+					"maxHeight": "",
+					"maxWidth": "",
+					"minHeight": "",
+					"minWidth": "",
+					"opacity": "100",
+					"overflow": "",
+					"paddingBottom": "",
+					"paddingLeft": "",
+					"paddingRight": "",
+					"paddingTop": "",
+					"shadow": "",
+					"textAlign": "",
+					"width": ""
+				}
 			},
 			"type": "Fragment"
 		}

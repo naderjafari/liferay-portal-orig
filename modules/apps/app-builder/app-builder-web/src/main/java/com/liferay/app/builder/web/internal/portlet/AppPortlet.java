@@ -15,18 +15,26 @@
 package com.liferay.app.builder.web.internal.portlet;
 
 import com.liferay.app.builder.constants.AppBuilderAppConstants;
+import com.liferay.app.builder.constants.AppBuilderWebKeys;
 import com.liferay.app.builder.model.AppBuilderApp;
 import com.liferay.app.builder.portlet.tab.AppBuilderAppPortletTab;
-import com.liferay.app.builder.web.internal.constants.AppBuilderWebKeys;
+import com.liferay.app.builder.web.internal.deploy.AppDeployUtil;
+import com.liferay.dynamic.data.lists.model.DDLRecord;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerCustomizerFactory.ServiceWrapper;
-import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.IOException;
 
@@ -49,74 +57,53 @@ import javax.portlet.ResourceResponse;
 public class AppPortlet extends MVCPortlet {
 
 	public AppPortlet(
-		AppBuilderApp appBuilderApp,
-		ServiceTrackerMap<String, AppBuilderAppPortletTab>
-			appBuilderAppPortletTabServiceTrackerMap,
-		String appDeploymentType, String appName,
-		ServiceTrackerMap<String, List<ServiceWrapper<MVCResourceCommand>>>
-			appPortletMVCResourceCommandServiceTrackerMap,
+		AppBuilderApp appBuilderApp, String appDeploymentType, String appName,
 		String portletName) {
 
 		this(
-			appBuilderApp, appBuilderAppPortletTabServiceTrackerMap,
-			appDeploymentType, appName,
-			appPortletMVCResourceCommandServiceTrackerMap, portletName, true,
-			true);
+			appBuilderApp, appDeploymentType, appName, portletName, true, true);
 	}
 
 	public AppPortlet(
-		AppBuilderApp appBuilderApp,
-		ServiceTrackerMap<String, AppBuilderAppPortletTab>
-			appBuilderAppPortletTabServiceTrackerMap,
-		String appDeploymentType, String appName,
-		ServiceTrackerMap<String, List<ServiceWrapper<MVCResourceCommand>>>
-			appPortletMVCResourceCommandServiceTrackerMap,
+		AppBuilderApp appBuilderApp, String appDeploymentType, String appName,
 		String portletName, boolean showFormView, boolean showTableView) {
 
 		_appBuilderApp = appBuilderApp;
-		_appBuilderAppPortletTabServiceTrackerMap =
-			appBuilderAppPortletTabServiceTrackerMap;
 		_appDeploymentType = appDeploymentType;
 		_appName = appName;
-		_appPortletMVCResourceCommandServiceTrackerMap =
-			appPortletMVCResourceCommandServiceTrackerMap;
 		_portletName = portletName;
 		_showFormView = showFormView;
 		_showTableView = showTableView;
-		_viewTemplate = showTableView ? "/view_entries.jsp" : "/edit_entry.jsp";
+
+		_viewTemplate =
+			showTableView ? "/view_app_entries.jsp" : "/edit_app_entry.jsp";
 	}
 
 	public Dictionary<String, Object> getProperties(
 		Map<String, Object> customProperties) {
 
-		HashMapDictionary<String, Object> properties =
-			new HashMapDictionary<String, Object>() {
-				{
-					put("com.liferay.portlet.add-default-resource", true);
-					put(
-						"com.liferay.portlet.display-category",
-						"category.hidden");
-					put(
-						"com.liferay.portlet.header-portlet-css",
-						"/css/main.css");
-					put("com.liferay.portlet.use-default-template", true);
-					put("javax.portlet.display-name", _appName);
-					put("javax.portlet.name", _portletName);
-					put(
-						"javax.portlet.init-param.template-path",
-						"/META-INF/resources/");
-					put(
-						"javax.portlet.init-param.view-template",
-						_viewTemplate);
-					put(
-						"javax.portlet.security-role-ref",
-						"administrator,guest,power-user,user");
-				}
-			};
-
-		properties.putAll(customProperties);
-
-		return properties;
+		return HashMapDictionaryBuilder.<String, Object>put(
+			"com.liferay.portlet.add-default-resource", true
+		).put(
+			"com.liferay.portlet.display-category", "category.hidden"
+		).put(
+			"com.liferay.portlet.header-portlet-css", "/css/main.css"
+		).put(
+			"com.liferay.portlet.use-default-template", true
+		).put(
+			"javax.portlet.display-name", _appName
+		).put(
+			"javax.portlet.name", _portletName
+		).put(
+			"javax.portlet.init-param.template-path", "/META-INF/resources/"
+		).put(
+			"javax.portlet.init-param.view-template", _viewTemplate
+		).put(
+			"javax.portlet.security-role-ref",
+			"administrator,guest,power-user,user"
+		).putAll(
+			customProperties
+		).build();
 	}
 
 	@Override
@@ -128,9 +115,24 @@ public class AppPortlet extends MVCPortlet {
 		renderRequest.setAttribute(
 			AppBuilderWebKeys.APP_DEPLOYMENT_TYPE, _appDeploymentType);
 
+		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		User user = themeDisplay.getUser();
+
+		try {
+			renderRequest.setAttribute(
+				AppBuilderWebKeys.APP_PORTRAIT_URL,
+				user.getPortraitURL(themeDisplay));
+		}
+		catch (PortalException portalException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(portalException, portalException);
+			}
+		}
+
 		AppBuilderAppPortletTab appBuilderAppPortletTab =
-			_appBuilderAppPortletTabServiceTrackerMap.getService(
-				_appBuilderApp.getScope());
+			AppDeployUtil.getAppBuilderAppPortletTab(_appBuilderApp.getScope());
 
 		renderRequest.setAttribute(
 			AppBuilderWebKeys.APP_TAB,
@@ -141,7 +143,6 @@ public class AppPortlet extends MVCPortlet {
 			).put(
 				"viewEntryPoint", appBuilderAppPortletTab.getViewEntryPoint()
 			).build());
-
 		renderRequest.setAttribute(
 			AppBuilderWebKeys.APP_TAB_CONTEXT,
 			appBuilderAppPortletTab.getAppBuilderAppPortletTabContext(
@@ -152,6 +153,10 @@ public class AppPortlet extends MVCPortlet {
 			AppBuilderWebKeys.SHOW_FORM_VIEW, _showFormView);
 		renderRequest.setAttribute(
 			AppBuilderWebKeys.SHOW_TABLE_VIEW, _showTableView);
+		renderRequest.setAttribute(
+			AppBuilderWebKeys.WORKFLOW_CLASS_NAME,
+			ResourceActionsUtil.getCompositeModelName(
+				AppBuilderApp.class.getName(), DDLRecord.class.getName()));
 
 		super.render(renderRequest, renderResponse);
 	}
@@ -204,7 +209,7 @@ public class AppPortlet extends MVCPortlet {
 		String scope) {
 
 		return Stream.of(
-			_appPortletMVCResourceCommandServiceTrackerMap.getService(scope)
+			AppDeployUtil.getServices(scope)
 		).filter(
 			Objects::nonNull
 		).flatMap(
@@ -217,14 +222,11 @@ public class AppPortlet extends MVCPortlet {
 		);
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(AppPortlet.class);
+
 	private final AppBuilderApp _appBuilderApp;
-	private final ServiceTrackerMap<String, AppBuilderAppPortletTab>
-		_appBuilderAppPortletTabServiceTrackerMap;
 	private final String _appDeploymentType;
 	private final String _appName;
-	private final ServiceTrackerMap
-		<String, List<ServiceWrapper<MVCResourceCommand>>>
-			_appPortletMVCResourceCommandServiceTrackerMap;
 	private final String _portletName;
 	private final boolean _showFormView;
 	private final boolean _showTableView;

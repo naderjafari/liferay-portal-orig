@@ -104,25 +104,15 @@ public class CustomSQL {
 		int pos = sql.indexOf(_GROUP_BY_CLAUSE);
 
 		if (pos != -1) {
-			return sql.substring(
-				0, pos + 1
-			).concat(
-				criteria
-			).concat(
-				sql.substring(pos + 1)
-			);
+			return StringBundler.concat(
+				sql.substring(0, pos + 1), criteria, sql.substring(pos + 1));
 		}
 
 		pos = sql.indexOf(_ORDER_BY_CLAUSE);
 
 		if (pos != -1) {
-			return sql.substring(
-				0, pos + 1
-			).concat(
-				criteria
-			).concat(
-				sql.substring(pos + 1)
-			);
+			return StringBundler.concat(
+				sql.substring(0, pos + 1), criteria, sql.substring(pos + 1));
 		}
 
 		return sql.concat(criteria);
@@ -379,7 +369,7 @@ public class CustomSQL {
 		String functionIsNull = PortalUtil.getCustomSQLFunctionIsNull();
 		String functionIsNotNull = PortalUtil.getCustomSQLFunctionIsNotNull();
 
-		try (Connection con = DataAccess.getConnection()) {
+		try (Connection connection = DataAccess.getConnection()) {
 			if (Validator.isNotNull(functionIsNull) &&
 				Validator.isNotNull(functionIsNotNull)) {
 
@@ -394,8 +384,8 @@ public class CustomSQL {
 							functionIsNotNull);
 				}
 			}
-			else if (con != null) {
-				DatabaseMetaData metaData = con.getMetaData();
+			else if (connection != null) {
+				DatabaseMetaData metaData = connection.getMetaData();
 
 				String dbName = GetterUtil.getString(
 					metaData.getDatabaseProductName());
@@ -573,24 +563,16 @@ public class CustomSQL {
 				sql = sql.concat(groupBy);
 			}
 			else {
-				sql = sql.substring(
-					0, x + _GROUP_BY_CLAUSE.length()
-				).concat(
-					groupBy
-				).concat(
-					sql.substring(y)
-				);
+				sql = StringBundler.concat(
+					sql.substring(0, x + _GROUP_BY_CLAUSE.length()), groupBy,
+					sql.substring(y));
 			}
 		}
 		else {
 			int y = sql.indexOf(_ORDER_BY_CLAUSE);
 
 			if (y == -1) {
-				sql = sql.concat(
-					_GROUP_BY_CLAUSE
-				).concat(
-					groupBy
-				);
+				sql = StringBundler.concat(sql, _GROUP_BY_CLAUSE, groupBy);
 			}
 			else {
 				StringBundler sb = new StringBundler(4);
@@ -770,11 +752,7 @@ public class CustomSQL {
 			sql = sql.concat(orderBy);
 		}
 		else {
-			sql = sql.concat(
-				_ORDER_BY_CLAUSE
-			).concat(
-				orderBy
-			);
+			sql = StringBundler.concat(sql, _ORDER_BY_CLAUSE, orderBy);
 		}
 
 		return sql;
@@ -848,6 +826,10 @@ public class CustomSQL {
 			}
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return sql;
 		}
 
@@ -884,8 +866,10 @@ public class CustomSQL {
 			ClassLoader classLoader, String source, Map<String, String> sqlPool)
 		throws Exception {
 
-		try (InputStream is = classLoader.getResourceAsStream(source)) {
-			if (is == null) {
+		try (InputStream inputStream = classLoader.getResourceAsStream(
+				source)) {
+
+			if (inputStream == null) {
 				return;
 			}
 
@@ -893,7 +877,7 @@ public class CustomSQL {
 				_log.debug("Loading " + source);
 			}
 
-			Document document = UnsecureSAXReaderUtil.read(is);
+			Document document = UnsecureSAXReaderUtil.read(inputStream);
 
 			Element rootElement = document.getRootElement();
 

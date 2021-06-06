@@ -123,19 +123,17 @@ public class BlogImagesDisplayContext {
 				long fileEntryId = GetterUtil.getLong(
 					doc.get(Field.ENTRY_CLASS_PK));
 
-				FileEntry fileEntry = null;
-
 				try {
-					fileEntry = DLAppLocalServiceUtil.getFileEntry(fileEntryId);
-
-					results.add(fileEntry);
+					results.add(
+						DLAppLocalServiceUtil.getFileEntry(fileEntryId));
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
 						_log.warn(
 							StringBundler.concat(
 								"Documents and Media search index is stale ",
-								"and contains file entry ", fileEntryId));
+								"and contains file entry ", fileEntryId),
+							exception);
 					}
 				}
 			}

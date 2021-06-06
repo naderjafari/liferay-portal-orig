@@ -121,10 +121,10 @@ public class DLFileEntryUADAnonymizerTest
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext(dlFileEntry.getGroupId());
 
-		serviceContext.setAssetTagNames(new String[0]);
+		serviceContext.setAssetEntryVisible(true);
 		serviceContext.setAssetLinkEntryIds(
 			new long[] {dlFileEntryAssetEntry.getEntryId()});
-		serviceContext.setAssetEntryVisible(true);
+		serviceContext.setAssetTagNames(new String[0]);
 
 		MBMessage mbMessage = MBTestUtil.addMessageWithWorkflow(
 			dlFileEntry.getGroupId(),
@@ -262,7 +262,8 @@ public class DLFileEntryUADAnonymizerTest
 			userId, fileEntryId, sourceFileName, contentType, title,
 			description, changeLog,
 			DLVersionNumberIncrease.fromMajorVersion(majorVersion), inputStream,
-			dlFileEntry.getSize(), ServiceContextTestUtil.getServiceContext());
+			dlFileEntry.getSize(), null, null,
+			ServiceContextTestUtil.getServiceContext());
 	}
 
 	@Inject

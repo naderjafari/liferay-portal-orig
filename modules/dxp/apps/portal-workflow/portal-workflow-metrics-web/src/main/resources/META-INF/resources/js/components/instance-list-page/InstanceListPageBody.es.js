@@ -10,6 +10,7 @@
  */
 
 import ClayLayout from '@clayui/layout';
+import {usePrevious} from '@liferay/frontend-js-react-web';
 import React, {useContext, useMemo} from 'react';
 
 import ContentView from '../../shared/components/content-view/ContentView.es';
@@ -26,16 +27,14 @@ import SingleTransitionModal from './modal/transition/single/SingleTransitionMod
 import BulkUpdateDueDateModal from './modal/update-due-date/BulkUpdateDueDateModal.es';
 import SingleUpdateDueDateModal from './modal/update-due-date/SingleUpdateDueDateModal.es';
 
-const Body = ({
-	data: {items, totalCount},
-	fetchData,
-	filtered,
-	routeParams,
-}) => {
-	const {visibleModal} = useContext(ModalContext);
-
+function Body({data: {items, totalCount}, fetchData, filtered, routeParams}) {
+	const {fetchOnClose, visibleModal} = useContext(ModalContext);
+	const previousFetchData = usePrevious(fetchData);
 	const promises = useMemo(() => {
-		if (!visibleModal) {
+		if (
+			(previousFetchData !== fetchData || fetchOnClose) &&
+			!visibleModal
+		) {
 			return [fetchData()];
 		}
 
@@ -43,26 +42,23 @@ const Body = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [fetchData, visibleModal]);
 
-	const statesProps = useMemo(
-		() => ({
-			emptyProps: {
-				filtered,
-				message: Liferay.Language.get(
-					'once-there-are-active-processes-metrics-will-appear-here'
-				),
-			},
-			errorProps: {
-				actionButton: <ReloadButton />,
-				hideAnimation: true,
-				message: Liferay.Language.get(
-					'there-was-a-problem-retrieving-data-please-try-reloading-the-page'
-				),
-				messageClassName: 'small',
-			},
-			loadingProps: {},
-		}),
-		[filtered]
-	);
+	const statesProps = {
+		emptyProps: {
+			filtered,
+			message: Liferay.Language.get(
+				'once-there-are-active-processes-metrics-will-appear-here'
+			),
+		},
+		errorProps: {
+			actionButton: <ReloadButton />,
+			hideAnimation: true,
+			message: Liferay.Language.get(
+				'there-was-a-problem-retrieving-data-please-try-reloading-the-page'
+			),
+			messageClassName: 'small',
+		},
+		loadingProps: {},
+	};
 
 	return (
 		<PromisesResolver promises={promises}>
@@ -84,9 +80,9 @@ const Body = ({
 			<Body.ModalWrapper />
 		</PromisesResolver>
 	);
-};
+}
 
-const ModalWrapper = () => {
+function ModalWrapper() {
 	return (
 		<>
 			<BulkReassignModal />
@@ -104,9 +100,9 @@ const ModalWrapper = () => {
 			<SingleUpdateDueDateModal />
 		</>
 	);
-};
+}
 
 Body.Table = Table;
 Body.ModalWrapper = ModalWrapper;
 
-export {Body};
+export default Body;

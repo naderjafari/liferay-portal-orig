@@ -28,11 +28,11 @@ else if (StringUtil.equals(definitionsNavigation, "not-published")) {
 	displayedStatus = WorkflowConstants.STATUS_DRAFT;
 }
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("definitionsNavigation", definitionsNavigation);
-
-WorkflowDefinitionSearch workflowDefinitionSearch = new WorkflowDefinitionSearch(renderRequest, portletURL);
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setParameter(
+	"definitionsNavigation", definitionsNavigation
+).build();
 %>
 
 <clay:management-toolbar
@@ -40,7 +40,6 @@ WorkflowDefinitionSearch workflowDefinitionSearch = new WorkflowDefinitionSearch
 	creationMenu="<%= workflowDefinitionDisplayContext.getCreationMenu(pageContext) %>"
 	filterDropdownItems="<%= workflowDefinitionDisplayContext.getFilterOptions(request) %>"
 	itemsTotal="<%= workflowDefinitionDisplayContext.getTotalItems(request, renderRequest, displayedStatus) %>"
-	namespace="<%= liferayPortletResponse.getNamespace() %>"
 	searchActionURL="<%= workflowDefinitionDisplayContext.getSearchURL(request) %>"
 	searchContainerId="workflowDefinitions"
 	searchFormName="fm1"
@@ -76,12 +75,17 @@ WorkflowDefinitionSearch workflowDefinitionSearch = new WorkflowDefinitionSearch
 		>
 
 			<%
-			PortletURL rowURL = renderResponse.createRenderURL();
-
-			rowURL.setParameter("mvcPath", "/definition/edit_workflow_definition.jsp");
-			rowURL.setParameter("redirect", currentURL);
-			rowURL.setParameter("name", workflowDefinition.getName());
-			rowURL.setParameter("version", String.valueOf(workflowDefinition.getVersion()));
+			PortletURL rowURL = PortletURLBuilder.createRenderURL(
+				renderResponse
+			).setMVCPath(
+				"/definition/edit_workflow_definition.jsp"
+			).setRedirect(
+				currentURL
+			).setParameter(
+				"name", workflowDefinition.getName()
+			).setParameter(
+				"version", workflowDefinition.getVersion()
+			).build();
 			%>
 
 			<liferay-ui:search-container-column-text
@@ -115,7 +119,7 @@ WorkflowDefinitionSearch workflowDefinitionSearch = new WorkflowDefinitionSearch
 			displayStyle="list"
 			markupView="lexicon"
 			resultRowSplitter="<%= new WorkflowDefinitionResultRowSplitter() %>"
-			searchContainer="<%= workflowDefinitionSearch %>"
+			searchContainer="<%= new WorkflowDefinitionSearch(renderRequest, portletURL) %>"
 		/>
 	</liferay-ui:search-container>
 </clay:container-fluid>

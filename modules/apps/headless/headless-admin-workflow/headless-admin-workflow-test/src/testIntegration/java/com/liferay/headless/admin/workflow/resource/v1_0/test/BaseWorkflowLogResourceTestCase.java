@@ -109,7 +109,9 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 		WorkflowLogResource.Builder builder = WorkflowLogResource.builder();
 
-		workflowLogResource = builder.locale(
+		workflowLogResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -180,6 +182,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		WorkflowLog workflowLog = randomWorkflowLog();
 
 		workflowLog.setCommentLog(regex);
+		workflowLog.setDescription(regex);
 		workflowLog.setPreviousState(regex);
 		workflowLog.setState(regex);
 
@@ -190,6 +193,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		workflowLog = WorkflowLogSerDes.toDTO(json);
 
 		Assert.assertEquals(regex, workflowLog.getCommentLog());
+		Assert.assertEquals(regex, workflowLog.getDescription());
 		Assert.assertEquals(regex, workflowLog.getPreviousState());
 		Assert.assertEquals(regex, workflowLog.getState());
 	}
@@ -208,7 +212,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		Long irrelevantWorkflowInstanceId =
 			testGetWorkflowInstanceWorkflowLogsPage_getIrrelevantWorkflowInstanceId();
 
-		if ((irrelevantWorkflowInstanceId != null)) {
+		if (irrelevantWorkflowInstanceId != null) {
 			WorkflowLog irrelevantWorkflowLog =
 				testGetWorkflowInstanceWorkflowLogsPage_addWorkflowLog(
 					irrelevantWorkflowInstanceId,
@@ -387,7 +391,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		Long irrelevantWorkflowTaskId =
 			testGetWorkflowTaskWorkflowLogsPage_getIrrelevantWorkflowTaskId();
 
-		if ((irrelevantWorkflowTaskId != null)) {
+		if (irrelevantWorkflowTaskId != null) {
 			WorkflowLog irrelevantWorkflowLog =
 				testGetWorkflowTaskWorkflowLogsPage_addWorkflowLog(
 					irrelevantWorkflowTaskId, randomIrrelevantWorkflowLog());
@@ -547,7 +551,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		}
 	}
 
-	protected void assertValid(WorkflowLog workflowLog) {
+	protected void assertValid(WorkflowLog workflowLog) throws Exception {
 		boolean valid = true;
 
 		if (workflowLog.getDateCreated() == null) {
@@ -571,6 +575,14 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 			if (Objects.equals("commentLog", additionalAssertFieldName)) {
 				if (workflowLog.getCommentLog() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("description", additionalAssertFieldName)) {
+				if (workflowLog.getDescription() == null) {
 					valid = false;
 				}
 
@@ -674,7 +686,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.headless.admin.workflow.dto.v1_0.WorkflowLog.
 						class)) {
 
@@ -709,7 +721,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -759,6 +771,17 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				if (!Objects.deepEquals(
 						workflowLog1.getDateCreated(),
 						workflowLog2.getDateCreated())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("description", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						workflowLog1.getDescription(),
+						workflowLog2.getDescription())) {
 
 					return false;
 				}
@@ -887,9 +910,22 @@ public abstract class BaseWorkflowLogResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -983,6 +1019,14 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 				sb.append(_dateFormat.format(workflowLog.getDateCreated()));
 			}
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("description")) {
+			sb.append("'");
+			sb.append(String.valueOf(workflowLog.getDescription()));
+			sb.append("'");
 
 			return sb.toString();
 		}
@@ -1085,6 +1129,8 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				commentLog = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				dateCreated = RandomTestUtil.nextDate();
+				description = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 				id = RandomTestUtil.randomLong();
 				previousState = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
@@ -1148,12 +1194,12 @@ public abstract class BaseWorkflowLogResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1163,10 +1209,10 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

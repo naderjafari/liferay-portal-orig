@@ -34,6 +34,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 			actions = {
 				"setOptions('predefinedValue', getValue('options'))",
 				"setRequired('options', true)",
+				"setVisible('requiredErrorMessage', false)",
 				"setVisible('validation', false)"
 			},
 			condition = "TRUE"
@@ -51,7 +52,8 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 						@DDMFormLayoutColumn(
 							size = 12,
 							value = {
-								"label", "tip", "required", "showAsSwitcher",
+								"label", "tip", "required",
+								"requiredErrorMessage", "showAsSwitcher",
 								"options"
 							}
 						)
@@ -67,9 +69,10 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 						@DDMFormLayoutColumn(
 							size = 12,
 							value = {
-								"name", "visibilityExpression",
-								"predefinedValue", "validation",
-								"fieldNamespace", "indexType", "localizable",
+								"name", "fieldReference",
+								"visibilityExpression", "predefinedValue",
+								"validation", "fieldNamespace", "indexType",
+								"labelAtStructureLevel", "localizable",
 								"nativeField", "readOnly", "dataType", "type",
 								"showLabel", "repeatable", "inline"
 							}
@@ -83,7 +86,10 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 public interface CheckboxMultipleDDMFormFieldTypeSettings
 	extends DefaultDDMFormFieldTypeSettings {
 
-	@DDMFormField(label = "%inline", properties = "showAsSwitcher=true")
+	@DDMFormField(
+		label = "%inline",
+		properties = {"showAsSwitcher=true", "visualProperty=true"}
+	)
 	public boolean inline();
 
 	@DDMFormField(
@@ -95,7 +101,8 @@ public interface CheckboxMultipleDDMFormFieldTypeSettings
 		label = "%predefined-value",
 		properties = {
 			"multiple=true", "placeholder=%enter-a-default-value",
-			"tooltip=%enter-a-default-value-that-is-submitted-if-no-other-value-is-entered"
+			"tooltip=%enter-a-default-value-that-is-submitted-if-no-other-value-is-entered",
+			"visualProperty=true"
 		},
 		type = "select"
 	)
@@ -104,7 +111,8 @@ public interface CheckboxMultipleDDMFormFieldTypeSettings
 
 	@DDMFormField(
 		dataType = "boolean", label = "%show-as-a-switcher",
-		properties = "showAsSwitcher=true", type = "checkbox"
+		properties = {"showAsSwitcher=true", "visualProperty=true"},
+		type = "checkbox"
 	)
 	public boolean showAsSwitcher();
 

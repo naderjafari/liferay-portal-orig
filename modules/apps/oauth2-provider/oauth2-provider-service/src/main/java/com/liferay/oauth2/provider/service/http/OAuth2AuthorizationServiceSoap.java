@@ -57,8 +57,10 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see OAuth2AuthorizationServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class OAuth2AuthorizationServiceSoap {
 
 	public static com.liferay.oauth2.provider.model.OAuth2AuthorizationSoap[]
@@ -142,6 +144,20 @@ public class OAuth2AuthorizationServiceSoap {
 					getUserOAuth2AuthorizationsCount();
 
 			return returnValue;
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static void revokeAllOAuth2Authorizations(long oAuth2ApplicationId)
+		throws RemoteException {
+
+		try {
+			OAuth2AuthorizationServiceUtil.revokeAllOAuth2Authorizations(
+				oAuth2ApplicationId);
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);

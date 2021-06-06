@@ -20,6 +20,7 @@ import com.liferay.message.boards.model.MBCategory;
 import com.liferay.message.boards.model.MBMessage;
 import com.liferay.message.boards.settings.MBGroupServiceSettings;
 import com.liferay.message.boards.web.internal.security.permission.MBMessagePermission;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -110,6 +111,18 @@ public class MBUtil {
 			httpServletRequest, "mbCategoryId", categoryId);
 	}
 
+	public static long getCategoryId(
+		PortletRequest portletRequest, MBCategory category) {
+
+		long categoryId = MBCategoryConstants.DEFAULT_PARENT_CATEGORY_ID;
+
+		if (category != null) {
+			categoryId = category.getCategoryId();
+		}
+
+		return ParamUtil.getLong(portletRequest, "mbCategoryId", categoryId);
+	}
+
 	public static String getEditorName(String messageFormat) {
 		if (messageFormat.equals("bbcode")) {
 			return "ckeditor_bbcode";
@@ -160,13 +173,15 @@ public class MBUtil {
 
 		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			httpServletRequest, portletDisplay.getId(),
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/message_boards/view_message");
-		portletURL.setParameter("messageId", String.valueOf(messageId));
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				httpServletRequest, portletDisplay.getId(),
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/message_boards/view_message"
+		).setParameter(
+			"messageId", messageId
+		).build();
 
 		return StringBundler.concat(
 			portletURL.toString(), StringPool.POUND,
@@ -176,11 +191,13 @@ public class MBUtil {
 	public static String getMBMessageURL(
 		long messageId, RenderResponse renderResponse) {
 
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/message_boards/view_message");
-		portletURL.setParameter("messageId", String.valueOf(messageId));
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCRenderCommandName(
+			"/message_boards/view_message"
+		).setParameter(
+			"messageId", messageId
+		).build();
 
 		return StringBundler.concat(
 			portletURL.toString(), StringPool.POUND,
@@ -264,11 +281,12 @@ public class MBUtil {
 				continue;
 			}
 
-			String priorityName = priorityArray[0];
-			String priorityImage = priorityArray[1];
 			double priorityValue = GetterUtil.getDouble(priorityArray[2]);
 
 			if (value == priorityValue) {
+				String priorityName = priorityArray[0];
+				String priorityImage = priorityArray[1];
+
 				return new String[] {priorityName, priorityImage};
 			}
 		}

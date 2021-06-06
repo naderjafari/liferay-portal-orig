@@ -19,7 +19,6 @@ import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalServiceUtil;
-import com.liferay.layout.taglib.internal.display.context.RenderFragmentLayoutDisplayContext;
 import com.liferay.layout.taglib.internal.servlet.ServletContextUtil;
 import com.liferay.layout.util.structure.DropZoneLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
@@ -28,9 +27,9 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.impl.VirtualLayout;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
@@ -40,7 +39,6 @@ import com.liferay.taglib.util.IncludeTag;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
 
 /**
@@ -92,7 +90,7 @@ public class RenderFragmentLayoutTag extends IncludeTag {
 	public void setPageContext(PageContext pageContext) {
 		super.setPageContext(pageContext);
 
-		servletContext = ServletContextUtil.getServletContext();
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
 	public void setPlid(long plid) {
@@ -131,41 +129,16 @@ public class RenderFragmentLayoutTag extends IncludeTag {
 			"liferay-layout:render-fragment-layout:layoutStructure",
 			_getLayoutStructure(httpServletRequest));
 		httpServletRequest.setAttribute(
-			"liferay-layout:render-fragment-layout:mainItemId",
-			_getMainItemId(httpServletRequest));
+			"liferay-layout:render-fragment-layout:mainItemId", _mainItemId);
 		httpServletRequest.setAttribute(
 			"liferay-layout:render-fragment-layout:mode", _mode);
 		httpServletRequest.setAttribute(
-			"liferay-layout:render-fragment-layout:previewClassNameId",
-			_getPreviewClassNameId());
-		httpServletRequest.setAttribute(
-			"liferay-layout:render-fragment-layout:previewClassPK",
-			_getPreviewClassPK());
-		httpServletRequest.setAttribute(
-			"liferay-layout:render-fragment-layout:previewType",
-			_getPreviewType());
-		httpServletRequest.setAttribute(
-			"liferay-layout:render-fragment-layout:" +
-				"renderFragmentLayoutDisplayContext",
-			new RenderFragmentLayoutDisplayContext(
-				httpServletRequest,
-				(HttpServletResponse)pageContext.getResponse(),
-				ServletContextUtil.getInfoDisplayContributorTracker(),
-				ServletContextUtil.getInfoItemServiceTracker(),
-				ServletContextUtil.getInfoListRendererTracker(),
-				ServletContextUtil.getLayoutListRetrieverTracker(),
-				ServletContextUtil.getListObjectReferenceFactoryTracker()));
-		httpServletRequest.setAttribute(
-			"liferay-layout:render-fragment-layout:segmentsExperienceIds",
-			_getSegmentsExperienceIds());
+			"liferay-layout:render-fragment-layout:showPreview", _showPreview);
 	}
 
 	private Layout _getLayout(HttpServletRequest httpServletRequest) {
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
-		Layout layout = themeDisplay.getLayout();
+		Layout layout = LayoutLocalServiceUtil.fetchLayout(
+			_getPlid(httpServletRequest));
 
 		if (layout instanceof VirtualLayout) {
 			VirtualLayout virtualLayout = (VirtualLayout)layout;
@@ -213,17 +186,6 @@ public class RenderFragmentLayoutTag extends IncludeTag {
 		}
 	}
 
-	private String _getMainItemId(HttpServletRequest httpServletRequest) {
-		if (Validator.isNotNull(_mainItemId)) {
-			return _mainItemId;
-		}
-
-		LayoutStructure layoutStructure = _getLayoutStructure(
-			httpServletRequest);
-
-		return layoutStructure.getMainItemId();
-	}
-
 	private String _getMasterLayoutData(HttpServletRequest httpServletRequest) {
 		Layout layout = _getLayout(httpServletRequest);
 
@@ -246,33 +208,26 @@ public class RenderFragmentLayoutTag extends IncludeTag {
 			SegmentsExperienceConstants.ID_DEFAULT);
 	}
 
-	private long _getPreviewClassNameId() {
-		if (!_showPreview) {
-			return 0;
+	private long _getPlid(HttpServletRequest httpServletRequest) {
+		long plid = getPlid();
+
+		if (plid > 0) {
+			return plid;
 		}
 
-		return ParamUtil.getLong(request, "previewClassNameId");
-	}
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
-	private long _getPreviewClassPK() {
-		if (!_showPreview) {
-			return 0;
-		}
-
-		return ParamUtil.getLong(request, "previewClassPK");
-	}
-
-	private int _getPreviewType() {
-		if (!_showPreview) {
-			return 0;
-		}
-
-		return ParamUtil.getInteger(request, "previewType");
+		return themeDisplay.getPlid();
 	}
 
 	private long[] _getSegmentsExperienceIds() {
+		HttpServletRequest httpServletRequest = getRequest();
+
 		return GetterUtil.getLongValues(
-			request.getAttribute(SegmentsWebKeys.SEGMENTS_EXPERIENCE_IDS),
+			httpServletRequest.getAttribute(
+				SegmentsWebKeys.SEGMENTS_EXPERIENCE_IDS),
 			new long[] {SegmentsExperienceConstants.ID_DEFAULT});
 	}
 

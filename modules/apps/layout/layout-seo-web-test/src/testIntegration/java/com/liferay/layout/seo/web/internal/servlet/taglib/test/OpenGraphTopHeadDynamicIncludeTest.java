@@ -15,20 +15,36 @@
 package com.liferay.layout.seo.web.internal.servlet.taglib.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.asset.display.page.constants.AssetDisplayPageWebKeys;
+import com.liferay.asset.display.page.constants.AssetDisplayPageConstants;
+import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
+import com.liferay.asset.display.page.service.AssetDisplayPageEntryLocalService;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.document.library.util.DLURLHelper;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
-import com.liferay.info.display.contributor.InfoDisplayObjectProvider;
+import com.liferay.info.constants.InfoDisplayWebKeys;
 import com.liferay.info.field.InfoField;
 import com.liferay.info.field.InfoFieldValue;
 import com.liferay.info.field.type.ImageInfoFieldType;
 import com.liferay.info.field.type.TextInfoFieldType;
+import com.liferay.info.item.ClassPKInfoItemIdentifier;
+import com.liferay.info.item.InfoItemClassDetails;
+import com.liferay.info.item.InfoItemDetails;
 import com.liferay.info.item.InfoItemFieldValues;
+import com.liferay.info.item.InfoItemReference;
+import com.liferay.info.item.InfoItemServiceTracker;
+import com.liferay.info.item.provider.InfoItemDetailsProvider;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
+import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.info.type.WebImage;
+import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
+import com.liferay.layout.display.page.LayoutDisplayPageProvider;
+import com.liferay.layout.display.page.LayoutDisplayPageProviderTracker;
+import com.liferay.layout.display.page.constants.LayoutDisplayPageWebKeys;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
+import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
+import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.layout.seo.model.LayoutSEOEntry;
 import com.liferay.layout.seo.service.LayoutSEOEntryLocalService;
 import com.liferay.layout.seo.service.LayoutSEOSiteLocalService;
@@ -49,6 +65,7 @@ import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutSetLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.servlet.taglib.DynamicInclude;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
@@ -59,7 +76,8 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -67,6 +85,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
@@ -106,7 +125,9 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -130,9 +151,15 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 			Collections.emptyMap(),
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
+		ServiceContext serviceContext = new ServiceContext();
+
+		serviceContext.setRequest(_getHttpServletRequest());
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
 		_testWithLayoutSEOCompanyConfiguration(
 			() -> _dynamicInclude.include(
-				_getHttpServletRequest(), mockHttpServletResponse,
+				serviceContext.getRequest(), mockHttpServletResponse,
 				RandomTestUtil.randomString()),
 			true);
 
@@ -144,9 +171,6 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 
 	@Test
 	public void testIncludeCustomDescription() throws Exception {
-		MockHttpServletResponse mockHttpServletResponse =
-			new MockHttpServletResponse();
-
 		_layoutSEOEntryLocalService.updateLayoutSEOEntry(
 			TestPropsValues.getUserId(), _group.getGroupId(), false,
 			_layout.getLayoutId(), true,
@@ -155,9 +179,18 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 			Collections.emptyMap(), 0, false, Collections.emptyMap(),
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
+		ServiceContext serviceContext = new ServiceContext();
+
+		serviceContext.setRequest(_getHttpServletRequest());
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+		MockHttpServletResponse mockHttpServletResponse =
+			new MockHttpServletResponse();
+
 		_testWithLayoutSEOCompanyConfiguration(
 			() -> _dynamicInclude.include(
-				_getHttpServletRequest(), mockHttpServletResponse,
+				serviceContext.getRequest(), mockHttpServletResponse,
 				RandomTestUtil.randomString()),
 			true);
 
@@ -186,6 +219,12 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 			Collections.emptyMap(), false, Collections.emptyMap(),
 			Collections.emptyMap(), 0, false, Collections.emptyMap(),
 			serviceContext);
+
+		serviceContext = new ServiceContext();
+
+		serviceContext.setRequest(_getHttpServletRequest());
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
 
 		MockHttpServletResponse mockHttpServletResponse =
 			new MockHttpServletResponse();
@@ -235,13 +274,17 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 
 		_layoutLocalService.updateLayout(_layout);
 
-		HttpServletRequest httpServletRequest = _getHttpServletRequest();
+		ServiceContext serviceContext = new ServiceContext();
+
+		serviceContext.setRequest(_getHttpServletRequest());
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
 
 		_testWithMockInfoItem(
-			httpServletRequest,
+			serviceContext.getRequest(),
 			() -> _testWithLayoutSEOCompanyConfiguration(
 				() -> _dynamicInclude.include(
-					httpServletRequest, mockHttpServletResponse,
+					serviceContext.getRequest(), mockHttpServletResponse,
 					RandomTestUtil.randomString()),
 				true));
 
@@ -257,9 +300,15 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 		MockHttpServletResponse mockHttpServletResponse =
 			new MockHttpServletResponse();
 
+		ServiceContext serviceContext = new ServiceContext();
+
+		serviceContext.setRequest(_getHttpServletRequest());
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
 		_testWithLayoutSEOCompanyConfiguration(
 			() -> _dynamicInclude.include(
-				_getHttpServletRequest(), mockHttpServletResponse,
+				serviceContext.getRequest(), mockHttpServletResponse,
 				RandomTestUtil.randomString()),
 			true);
 
@@ -556,6 +605,30 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 	}
 
 	@Test
+	public void testIncludeLinkAssetDisplayPage() throws Exception {
+		MockHttpServletResponse mockHttpServletResponse =
+			new MockHttpServletResponse();
+
+		FileEntry fileEntry = _getFileEntry();
+
+		_dynamicInclude.include(
+			_getAssetDisplayPageHttpServletRequest(fileEntry),
+			mockHttpServletResponse, RandomTestUtil.randomString());
+
+		Document document = Jsoup.parse(
+			mockHttpServletResponse.getContentAsString());
+
+		_assertCanonicalLinkTag(
+			document,
+			_assetDisplayPageFriendlyURLProvider.getFriendlyURL(
+				FileEntry.class.getName(), fileEntry.getFileEntryId(),
+				_getThemeDisplay()));
+		_assertAlternateLinkTagAssetDisplayPage(
+			document, fileEntry,
+			_language.getAvailableLocales(_group.getGroupId()));
+	}
+
+	@Test
 	public void testIncludeLocales() throws Exception {
 		MockHttpServletResponse mockHttpServletResponse =
 			new MockHttpServletResponse();
@@ -806,6 +879,40 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 	}
 
 	@Test
+	public void testMetaTagValuesAreEscaped() throws Exception {
+		String xssContent = "'\"><img src=x onerror=alert()>";
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		serviceContext.setRequest(_getHttpServletRequest());
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+		_layoutSEOEntryLocalService.updateLayoutSEOEntry(
+			TestPropsValues.getUserId(), _layout.getGroupId(), false,
+			_layout.getLayoutId(), true,
+			Collections.singletonMap(LocaleUtil.US, "http://example.com"),
+			false, Collections.emptyMap(), Collections.emptyMap(), 0, true,
+			Collections.singletonMap(LocaleUtil.US, xssContent),
+			serviceContext);
+
+		MockHttpServletResponse mockHttpServletResponse =
+			new MockHttpServletResponse();
+
+		_testWithLayoutSEOCompanyConfiguration(
+			() -> _dynamicInclude.include(
+				_getHttpServletRequest(), mockHttpServletResponse,
+				RandomTestUtil.randomString()),
+			true);
+
+		String content = mockHttpServletResponse.getContentAsString();
+
+		Assert.assertTrue(
+			content.contains(HtmlUtil.escapeAttribute(xssContent)));
+	}
+
+	@Test
 	public void testPrivateLayout() throws Exception {
 		MockHttpServletResponse mockHttpServletResponse =
 			new MockHttpServletResponse();
@@ -844,25 +951,59 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 		throws Exception {
 
 		return _dlAppLocalService.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			StringUtil.randomString(), ContentTypes.IMAGE_JPEG,
-			FileUtil.getBytes(getClass(), "dependencies/" + fileName),
-			serviceContext);
+			FileUtil.getBytes(getClass(), "dependencies/" + fileName), null,
+			null, serviceContext);
 	}
 
-	private void _assertAlternateLinkTag(
-		Document document, Set<Locale> locales) {
+	private void _assertAlternateLinkTag(Document document, Set<Locale> locales)
+		throws Exception {
 
-		Elements elements = document.select("link[rel='alternate']");
+		Elements alternateLinkElements = document.select(
+			"link[rel='alternate']");
 
-		Assert.assertNotNull(elements);
+		Assert.assertNotNull(alternateLinkElements);
 
 		for (Locale locale : locales) {
-			Elements element = elements.select(
+			Elements localeAlternateLinkElements = alternateLinkElements.select(
 				"[hrefLang='" + LocaleUtil.toW3cLanguageId(locale) + "']");
 
-			Assert.assertEquals(1, element.size());
+			Assert.assertEquals(1, localeAlternateLinkElements.size());
+
+			Element localeAlternateLinkElement =
+				localeAlternateLinkElements.get(0);
+
+			Assert.assertEquals(
+				PortalUtil.getAlternateURL(
+					PortalUtil.getCanonicalURL("", _getThemeDisplay(), _layout),
+					_getThemeDisplay(), locale, _layout),
+				localeAlternateLinkElement.attr("href"));
+		}
+	}
+
+	private void _assertAlternateLinkTagAssetDisplayPage(
+			Document document, FileEntry fileEntry, Set<Locale> locales)
+		throws Exception {
+
+		Elements alternateLinkElements = document.select(
+			"link[rel='alternate']");
+
+		for (Locale locale : locales) {
+			Elements localeAlternateLinkElements = alternateLinkElements.select(
+				"[hrefLang='" + LocaleUtil.toW3cLanguageId(locale) + "']");
+
+			Assert.assertEquals(1, localeAlternateLinkElements.size());
+
+			Element localeAlternateLinkElement =
+				localeAlternateLinkElements.get(0);
+
+			Assert.assertEquals(
+				_assetDisplayPageFriendlyURLProvider.getFriendlyURL(
+					FileEntry.class.getName(), fileEntry.getFileEntryId(),
+					locale, _getThemeDisplay()),
+				localeAlternateLinkElement.attr("href"));
 		}
 	}
 
@@ -951,6 +1092,67 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 		Assert.assertEquals(0, elements.size());
 	}
 
+	private HttpServletRequest _getAssetDisplayPageHttpServletRequest(
+			FileEntry fileEntry)
+		throws Exception {
+
+		String className = FileEntry.class.getName();
+
+		long classNameId = _classNameLocalService.getClassNameId(className);
+
+		long classPK = fileEntry.getFileEntryId();
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
+				_group.getCreatorUserId(), _group.getGroupId(), 0, classNameId,
+				0, RandomTestUtil.randomString(),
+				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE, 0, true,
+				0, 0, 0, 0,
+				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
+
+		_assetDisplayPageEntryLocalService.addAssetDisplayPageEntry(
+			TestPropsValues.getUserId(), _group.getGroupId(), classNameId,
+			classPK, layoutPageTemplateEntry.getLayoutPageTemplateEntryId(),
+			AssetDisplayPageConstants.TYPE_SPECIFIC,
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
+
+		HttpServletRequest httpServletRequest = _getHttpServletRequest();
+
+		InfoItemObjectProvider<?> infoItemObjectProvider =
+			_infoItemServiceTracker.getFirstInfoItemService(
+				InfoItemObjectProvider.class, className);
+
+		Object infoItem = infoItemObjectProvider.getInfoItem(
+			new ClassPKInfoItemIdentifier(classPK));
+
+		httpServletRequest.setAttribute(InfoDisplayWebKeys.INFO_ITEM, infoItem);
+
+		InfoItemDetailsProvider infoItemDetailsProvider =
+			_infoItemServiceTracker.getFirstInfoItemService(
+				InfoItemDetailsProvider.class, className);
+
+		httpServletRequest.setAttribute(
+			InfoDisplayWebKeys.INFO_ITEM_DETAILS,
+			infoItemDetailsProvider.getInfoItemDetails(infoItem));
+
+		LayoutDisplayPageProvider<?> layoutDisplayPageProvider =
+			_layoutDisplayPageProviderTracker.
+				getLayoutDisplayPageProviderByClassName(className);
+
+		httpServletRequest.setAttribute(
+			LayoutDisplayPageWebKeys.LAYOUT_DISPLAY_PAGE_OBJECT_PROVIDER,
+			layoutDisplayPageProvider.getLayoutDisplayPageObjectProvider(
+				new InfoItemReference(className, classPK)));
+
+		ServiceContext serviceContext = new ServiceContext();
+
+		serviceContext.setRequest(httpServletRequest);
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+		return httpServletRequest;
+	}
+
 	private long _getDDMStructureId() throws Exception {
 		Group companyGroup = _groupLocalService.getCompanyGroup(
 			TestPropsValues.getCompanyId());
@@ -964,12 +1166,23 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 		return ddmStructure.getStructureId();
 	}
 
+	private FileEntry _getFileEntry() throws Exception {
+		return _addImageFileEntry(
+			"image.jpg",
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
+	}
+
 	private HttpServletRequest _getHttpServletRequest() throws PortalException {
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest();
 
+		ThemeDisplay themeDisplay = _getThemeDisplay();
+
+		themeDisplay.setRequest(mockHttpServletRequest);
+
 		mockHttpServletRequest.setAttribute(
-			WebKeys.THEME_DISPLAY, _getThemeDisplay());
+			WebKeys.THEME_DISPLAY, themeDisplay);
+
 		mockHttpServletRequest.setRequestURI(
 			PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING +
 				_group.getFriendlyURL() + _layout.getFriendlyURL());
@@ -1006,8 +1219,7 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 		Company company = _companyLocalService.getCompany(
 			TestPropsValues.getCompanyId());
 
-		themeDisplay.setCompany(
-			_companyLocalService.getCompany(TestPropsValues.getCompanyId()));
+		themeDisplay.setCompany(company);
 
 		themeDisplay.setLanguageId(_group.getDefaultLanguageId());
 		themeDisplay.setLocale(
@@ -1017,6 +1229,7 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 			_layoutSetLocalService.getLayoutSet(_group.getGroupId(), false));
 		themeDisplay.setPortalURL(company.getPortalURL(_group.getGroupId()));
 		themeDisplay.setPortalDomain("localhost");
+		themeDisplay.setScopeGroupId(_group.getGroupId());
 		themeDisplay.setSecure(true);
 		themeDisplay.setServerName("localhost");
 		themeDisplay.setServerPort(8080);
@@ -1032,11 +1245,9 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 		try (ConfigurationTemporarySwapper configurationTemporarySwapper =
 				new ConfigurationTemporarySwapper(
 					_LAYOUT_SEO_CONFIGURATION_PID,
-					new HashMapDictionary<String, Object>() {
-						{
-							put("enableOpenGraph", enable);
-						}
-					})) {
+					HashMapDictionaryBuilder.<String, Object>put(
+						"enableOpenGraph", enable
+					).build())) {
 
 			unsafeRunnable.run();
 		}
@@ -1056,9 +1267,18 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 						(Class<?>)InfoItemFieldValuesProvider.class,
 					new MockInfoItemFieldValuesProvider(), new HashMap<>());
 
+		InfoItemClassDetails infoItemClassDetails = new InfoItemClassDetails(
+			MockObject.class.getName());
+
+		InfoItemDetails infoItemDetails = new InfoItemDetails(
+			infoItemClassDetails, null);
+
 		httpServletRequest.setAttribute(
-			AssetDisplayPageWebKeys.INFO_DISPLAY_OBJECT_PROVIDER,
-			new MockInfoDisplayObjectProvider());
+			InfoDisplayWebKeys.INFO_ITEM_DETAILS, infoItemDetails);
+
+		httpServletRequest.setAttribute(
+			LayoutDisplayPageWebKeys.LAYOUT_DISPLAY_PAGE_OBJECT_PROVIDER,
+			new MockLayoutDisplayPageObjectProvider());
 
 		try {
 			unsafeRunnable.run();
@@ -1071,6 +1291,14 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 	private static final String _LAYOUT_SEO_CONFIGURATION_PID =
 		"com.liferay.layout.seo.internal.configuration." +
 			"LayoutSEOCompanyConfiguration";
+
+	@Inject
+	private AssetDisplayPageEntryLocalService
+		_assetDisplayPageEntryLocalService;
+
+	@Inject
+	private AssetDisplayPageFriendlyURLProvider
+		_assetDisplayPageFriendlyURLProvider;
 
 	@Inject
 	private ClassNameLocalService _classNameLocalService;
@@ -1099,12 +1327,22 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 	private GroupLocalService _groupLocalService;
 
 	@Inject
+	private InfoItemServiceTracker _infoItemServiceTracker;
+
+	@Inject
 	private Language _language;
 
 	private Layout _layout;
 
 	@Inject
+	private LayoutDisplayPageProviderTracker _layoutDisplayPageProviderTracker;
+
+	@Inject
 	private LayoutLocalService _layoutLocalService;
+
+	@Inject
+	private LayoutPageTemplateEntryLocalService
+		_layoutPageTemplateEntryLocalService;
 
 	@Inject
 	private LayoutSEOEntryLocalService _layoutSEOEntryLocalService;
@@ -1114,56 +1352,6 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 
 	@Inject
 	private LayoutSetLocalService _layoutSetLocalService;
-
-	private static class MockInfoDisplayObjectProvider
-		implements InfoDisplayObjectProvider<MockObject> {
-
-		@Override
-		public long getClassNameId() {
-			return PortalUtil.getClassNameId(MockObject.class);
-		}
-
-		@Override
-		public long getClassPK() {
-			return 0;
-		}
-
-		@Override
-		public long getClassTypeId() {
-			return 0;
-		}
-
-		@Override
-		public String getDescription(Locale locale) {
-			return null;
-		}
-
-		@Override
-		public MockObject getDisplayObject() {
-			return null;
-		}
-
-		@Override
-		public long getGroupId() {
-			return 0;
-		}
-
-		@Override
-		public String getKeywords(Locale locale) {
-			return null;
-		}
-
-		@Override
-		public String getTitle(Locale locale) {
-			return null;
-		}
-
-		@Override
-		public String getURLTitle(Locale locale) {
-			return null;
-		}
-
-	}
 
 	private static class MockInfoItemFieldValuesProvider
 		implements InfoItemFieldValuesProvider<MockObject> {
@@ -1237,6 +1425,56 @@ public class OpenGraphTopHeadDynamicIncludeTest {
 					).build(),
 					"mappedImageAlt")
 			).build();
+		}
+
+	}
+
+	private static class MockLayoutDisplayPageObjectProvider
+		implements LayoutDisplayPageObjectProvider<MockObject> {
+
+		@Override
+		public long getClassNameId() {
+			return PortalUtil.getClassNameId(MockObject.class);
+		}
+
+		@Override
+		public long getClassPK() {
+			return 0;
+		}
+
+		@Override
+		public long getClassTypeId() {
+			return 0;
+		}
+
+		@Override
+		public String getDescription(Locale locale) {
+			return null;
+		}
+
+		@Override
+		public MockObject getDisplayObject() {
+			return null;
+		}
+
+		@Override
+		public long getGroupId() {
+			return 0;
+		}
+
+		@Override
+		public String getKeywords(Locale locale) {
+			return null;
+		}
+
+		@Override
+		public String getTitle(Locale locale) {
+			return null;
+		}
+
+		@Override
+		public String getURLTitle(Locale locale) {
+			return null;
 		}
 
 	}

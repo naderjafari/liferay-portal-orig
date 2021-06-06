@@ -4,6 +4,7 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Wiki";
+
 	var pageName = "Wiki Display Test Page";
 	var portletName = "Wiki Display";
 
@@ -39,6 +40,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddWikiFrontPageChildPage {
 		Navigator.openURL();
 
@@ -80,8 +82,8 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddWikiFrontPageChildPageFormatHTML {
-
 		var welcomeToLiferay = '''
 				<p><a href="http://www.liferay.com">Welcome to LIFERAY</a></p>
 			''';
@@ -120,11 +122,7 @@ definition {
 
 		WikiEntry.confirmHTML();
 
-		Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
-
-		Type(
-			locator1 = "CKEditor#BODY_FIELD_SOURCE_ON_3",
-			value1 = "${welcomeToLiferay}");
+		CKEditor.addSourceContent(content = "${welcomeToLiferay}");
 
 		SelectFrame(value1 = "relative=top");
 
@@ -146,6 +144,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddWikiFrontPageChildPageInvalidTitle {
 		Navigator.openURL();
 
@@ -237,6 +236,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DeleteWikiFrontPage {
 		Navigator.openURL();
 
@@ -275,6 +275,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewConfigurationSetupPageFrontPage {
 		Navigator.openURL();
 

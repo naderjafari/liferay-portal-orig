@@ -15,8 +15,8 @@
 package com.liferay.content.dashboard.web.internal.display.context;
 
 import com.liferay.asset.categories.configuration.AssetCategoriesCompanyConfiguration;
+import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetVocabulary;
-import com.liferay.content.dashboard.web.internal.configuration.FFContentDashboardConfiguration;
 import com.liferay.content.dashboard.web.internal.item.ContentDashboardItem;
 import com.liferay.content.dashboard.web.internal.item.selector.criteria.content.dashboard.type.criterion.ContentDashboardItemTypeItemSelectorCriterion;
 import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemType;
@@ -29,19 +29,24 @@ import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
 import com.liferay.item.selector.criteria.UUIDItemSelectorReturnType;
 import com.liferay.item.selector.criteria.group.criterion.GroupItemSelectorCriterion;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
+import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -49,14 +54,19 @@ import com.liferay.users.admin.item.selector.UserItemSelectorCriterion;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.portlet.PortletURL;
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionURL;
+import javax.portlet.WindowStateException;
 
 /**
  * @author Cristina González
@@ -70,7 +80,6 @@ public class ContentDashboardAdminDisplayContext {
 			contentDashboardDropdownItemsProvider,
 		ContentDashboardItemTypeFactoryTracker
 			contentDashboardItemTypeFactoryTracker,
-		FFContentDashboardConfiguration ffContentDashboardConfiguration,
 		ItemSelector itemSelector, String languageDirection,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse, Portal portal,
@@ -83,7 +92,6 @@ public class ContentDashboardAdminDisplayContext {
 			contentDashboardDropdownItemsProvider;
 		_contentDashboardItemTypeFactoryTracker =
 			contentDashboardItemTypeFactoryTracker;
-		_ffContentDashboardConfiguration = ffContentDashboardConfiguration;
 		_itemSelector = itemSelector;
 		_languageDirection = languageDirection;
 		_liferayPortletRequest = liferayPortletRequest;
@@ -91,6 +99,50 @@ public class ContentDashboardAdminDisplayContext {
 		_portal = portal;
 		_resourceBundle = resourceBundle;
 		_searchContainer = searchContainer;
+	}
+
+	public List<Long> getAssetCategoryIds() {
+		if (_assetCategoryIds != null) {
+			return _assetCategoryIds;
+		}
+
+		_assetCategoryIds = Arrays.asList(
+			ArrayUtil.toLongArray(
+				ParamUtil.getLongValues(
+					_liferayPortletRequest, "assetCategoryId")));
+
+		return _assetCategoryIds;
+	}
+
+	public List<String> getAssetCategoryTitles(
+		ContentDashboardItem contentDashboardItem, long assetVocabularyId) {
+
+		List<AssetCategory> assetCategories =
+			contentDashboardItem.getAssetCategories(assetVocabularyId);
+
+		Stream<AssetCategory> stream = assetCategories.stream();
+
+		Locale locale = _portal.getLocale(_liferayPortletRequest);
+
+		return stream.map(
+			assetCategory -> assetCategory.getTitle(locale)
+		).collect(
+			Collectors.toList()
+		);
+	}
+
+	public Set<String> getAssetTagIds() {
+		if (_assetTagIds != null) {
+			return _assetTagIds;
+		}
+
+		_assetTagIds = new HashSet(
+			Arrays.asList(
+				ArrayUtil.toStringArray(
+					ParamUtil.getStringValues(
+						_liferayPortletRequest, "assetTagId"))));
+
+		return _assetTagIds;
 	}
 
 	public List<AssetVocabulary> getAssetVocabularies() {
@@ -137,17 +189,16 @@ public class ContentDashboardAdminDisplayContext {
 		userItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
 			Collections.singletonList(new UUIDItemSelectorReturnType()));
 
-		PortletURL portletURL = _itemSelector.getItemSelectorURL(
-			requestBackedPortletURLFactory,
-			_liferayPortletResponse.getNamespace() + "selectedAuthorItem",
-			userItemSelectorCriterion);
-
-		portletURL.setParameter(
-			"checkedUserIds", StringUtil.merge(getAuthorIds()));
-		portletURL.setParameter(
-			"checkedUserIdsEnabled", String.valueOf(Boolean.TRUE));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			_itemSelector.getItemSelectorURL(
+				requestBackedPortletURLFactory,
+				_liferayPortletResponse.getNamespace() + "selectedAuthorItem",
+				userItemSelectorCriterion)
+		).setParameter(
+			"checkedUserIds", StringUtil.merge(getAuthorIds())
+		).setParameter(
+			"checkedUserIdsEnabled", Boolean.TRUE
+		).buildString();
 	}
 
 	public String getContentDashboardItemTypeItemSelectorURL() {
@@ -162,29 +213,30 @@ public class ContentDashboardAdminDisplayContext {
 			setDesiredItemSelectorReturnTypes(
 				Collections.singletonList(new UUIDItemSelectorReturnType()));
 
-		PortletURL portletURL = _itemSelector.getItemSelectorURL(
-			requestBackedPortletURLFactory,
-			_liferayPortletResponse.getNamespace() +
-				"selectedContentDashboardItemTypeItem",
-			contentDashboardItemTypeItemSelectorCriterion);
-
-		List<? extends ContentDashboardItemType> contentDashboardItemTypes =
-			getContentDashboardItemTypes();
-
-		Stream<? extends ContentDashboardItemType> stream =
-			contentDashboardItemTypes.stream();
-
-		portletURL.setParameter(
+		return PortletURLBuilder.create(
+			_itemSelector.getItemSelectorURL(
+				requestBackedPortletURLFactory,
+				_liferayPortletResponse.getNamespace() +
+					"selectedContentDashboardItemTypeItem",
+				contentDashboardItemTypeItemSelectorCriterion)
+		).setParameter(
 			"checkedContentDashboardItemTypes",
-			stream.map(
-				contentDashboardItemType ->
-					contentDashboardItemType.toJSONString(
-						_portal.getLocale(_liferayPortletRequest))
-			).toArray(
-				String[]::new
-			));
+			() -> {
+				List<? extends ContentDashboardItemType>
+					contentDashboardItemTypes = getContentDashboardItemTypes();
 
-		return String.valueOf(portletURL);
+				Stream<? extends ContentDashboardItemType> stream =
+					contentDashboardItemTypes.stream();
+
+				return stream.map(
+					contentDashboardItemType ->
+						contentDashboardItemType.toJSONString(
+							_portal.getLocale(_liferayPortletRequest))
+				).toArray(
+					String[]::new
+				);
+			}
+		).buildString();
 	}
 
 	public List<? extends ContentDashboardItemType>
@@ -244,6 +296,45 @@ public class ContentDashboardAdminDisplayContext {
 			contentDashboardItem);
 	}
 
+	public String getOnClickConfiguration() throws WindowStateException {
+		StringBundler sb = new StringBundler(13);
+
+		sb.append("Liferay.Portlet.openModal({namespace: '");
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
+
+		sb.append(portletDisplay.getNamespace());
+
+		sb.append("', onClose: function() {Liferay.Portlet.refresh('#p_p_id_");
+		sb.append(portletDisplay.getId());
+		sb.append("_')}, portletSelector: '#p_p_id_");
+		sb.append(portletDisplay.getId());
+		sb.append("_', portletId: '");
+		sb.append(portletDisplay.getId());
+		sb.append("', title: '");
+		sb.append(
+			ResourceBundleUtil.getString(_resourceBundle, "configuration"));
+		sb.append("', url: '");
+
+		sb.append(
+			HtmlUtil.escapeJS(
+				PortletURLBuilder.createRenderURL(
+					_liferayPortletResponse
+				).setMVCRenderCommandName(
+					"/content_dashboard/edit_content_dashboard_configuration"
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString()));
+
+		sb.append("'}); return false;");
+
+		return sb.toString();
+	}
+
 	public long getScopeId() {
 		if (_scopeId > 0) {
 			return _scopeId;
@@ -285,6 +376,16 @@ public class ContentDashboardAdminDisplayContext {
 		return _status;
 	}
 
+	public ActionURL getSwapConfigurationURL() {
+		ActionURL actionURL = _liferayPortletResponse.createActionURL();
+
+		actionURL.setParameter(
+			ActionRequest.ACTION_NAME,
+			"/content_dashboard/swap_content_dashboard_configuration");
+
+		return actionURL;
+	}
+
 	public long getUserId() {
 		if (_userId > 0) {
 			return _userId;
@@ -295,13 +396,30 @@ public class ContentDashboardAdminDisplayContext {
 		return _userId;
 	}
 
-	public boolean isAuditGraphEnabled() {
-		return _ffContentDashboardConfiguration.auditGraphEnabled();
+	public boolean isSwapConfigurationEnabled() {
+		if (_swapConfigurationEnabled != null) {
+			return _swapConfigurationEnabled;
+		}
+
+		List<String> vocabularyNames =
+			_assetVocabularyMetric.getVocabularyNames();
+
+		if (vocabularyNames.size() == 2) {
+			_swapConfigurationEnabled = true;
+		}
+		else {
+			_swapConfigurationEnabled = false;
+		}
+
+		return _swapConfigurationEnabled;
 	}
 
 	private Map<String, Object> _getContext() {
-		return Collections.singletonMap(
-			"languageDirection", _languageDirection);
+		return HashMapBuilder.<String, Object>put(
+			"languageDirection", _languageDirection
+		).put(
+			"namespace", _liferayPortletResponse.getNamespace()
+		).build();
 	}
 
 	private Map<String, Object> _getProps() {
@@ -313,18 +431,21 @@ public class ContentDashboardAdminDisplayContext {
 						WebKeys.THEME_DISPLAY);
 
 				AssetCategoriesCompanyConfiguration
-					accountEntryEmailDomainsConfiguration =
+					assetCategoriesCompanyConfiguration =
 						ConfigurationProviderUtil.getCompanyConfiguration(
 							AssetCategoriesCompanyConfiguration.class,
 							themeDisplay.getCompanyId());
 
-				return accountEntryEmailDomainsConfiguration.linkURL();
+				return assetCategoriesCompanyConfiguration.
+					linkToDocumentationURL();
 			}
 		).put(
 			"vocabularies", _assetVocabularyMetric.toJSONArray()
 		).build();
 	}
 
+	private List<Long> _assetCategoryIds;
+	private Set<String> _assetTagIds;
 	private final List<AssetVocabulary> _assetVocabularies;
 	private final AssetVocabularyMetric _assetVocabularyMetric;
 	private List<Long> _authorIds;
@@ -334,8 +455,6 @@ public class ContentDashboardAdminDisplayContext {
 		_contentDashboardItemTypeFactoryTracker;
 	private List<ContentDashboardItemType> _contentDashboardItemTypePayloads;
 	private Map<String, Object> _data;
-	private final FFContentDashboardConfiguration
-		_ffContentDashboardConfiguration;
 	private final ItemSelector _itemSelector;
 	private final String _languageDirection;
 	private final LiferayPortletRequest _liferayPortletRequest;
@@ -345,6 +464,7 @@ public class ContentDashboardAdminDisplayContext {
 	private long _scopeId;
 	private final SearchContainer<ContentDashboardItem<?>> _searchContainer;
 	private Integer _status;
+	private Boolean _swapConfigurationEnabled;
 	private long _userId;
 
 }

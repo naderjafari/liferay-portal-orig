@@ -5,6 +5,7 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Web Content Administration";
+
 	var webContentSearchPageName = "Web Content Search Page";
 	var webContentSearchPortletName = "Web Content Search";
 
@@ -362,12 +363,10 @@ definition {
 			layoutName = "Web Content Display Page",
 			widgetName = "Web Content Display");
 
-		var serviceContext = '''{"assetTagNames": ["tag name"]}''';
-
 		JSONWebcontent.addWebContent(
+			assetTagNames = "tag name",
 			content = "WC WebContent Content",
 			groupName = "Guest",
-			serviceContext = "${serviceContext}",
 			title = "WC WebContent Title");
 
 		Navigator.gotoPage(pageName = "Web Content Display Page");

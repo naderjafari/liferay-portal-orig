@@ -163,6 +163,9 @@ public class DDMFormContextToDDMForm
 				ddmFormFieldOptions.addOptionLabel(
 					optionJSONObject.getString("value"), availableLocale,
 					optionJSONObject.getString("label"));
+				ddmFormFieldOptions.addOptionReference(
+					optionJSONObject.getString("value"),
+					optionJSONObject.getString("reference"));
 			}
 		}
 
@@ -257,7 +260,7 @@ public class DDMFormContextToDDMForm
 		}
 		else {
 			errorMessageLocalizedValue = getLocalizedValue(
-				errorMessageJSONObject, availableLocales);
+				errorMessageJSONObject, availableLocales, defaultLocale);
 		}
 
 		ddmFormFieldValidation.setErrorMessageLocalizedValue(
@@ -275,7 +278,7 @@ public class DDMFormContextToDDMForm
 		}
 		else {
 			parameterLocalizedValue = getLocalizedValue(
-				parameterJSONObject, availableLocales);
+				parameterJSONObject, availableLocales, defaultLocale);
 		}
 
 		ddmFormFieldValidation.setParameterLocalizedValue(
@@ -285,20 +288,24 @@ public class DDMFormContextToDDMForm
 	}
 
 	protected LocalizedValue getLocalizedValue(
-		JSONObject jsonObject, Set<Locale> availableLocales) {
+		JSONObject jsonObject, Set<Locale> availableLocales,
+		Locale defaultLocale) {
 
-		LocalizedValue localizedValue = new LocalizedValue();
+		LocalizedValue localizedValue = new LocalizedValue(defaultLocale);
 
 		if (jsonObject == null) {
 			return localizedValue;
 		}
 
-		for (Locale availableLocale : availableLocales) {
-			String languageId = LocaleUtil.toLanguageId(availableLocale);
+		String defaultValueString = jsonObject.getString(
+			LocaleUtil.toLanguageId(defaultLocale));
 
+		for (Locale availableLocale : availableLocales) {
 			localizedValue.addString(
-				LocaleUtil.fromLanguageId(languageId),
-				jsonObject.getString(languageId));
+				availableLocale,
+				jsonObject.getString(
+					LocaleUtil.toLanguageId(availableLocale),
+					defaultValueString));
 		}
 
 		return localizedValue;
@@ -374,9 +381,7 @@ public class DDMFormContextToDDMForm
 	protected void setDDMFormDefaultLocale(
 		String defaultLanguageId, DDMForm ddmForm) {
 
-		Locale defaultLocale = LocaleUtil.fromLanguageId(defaultLanguageId);
-
-		ddmForm.setDefaultLocale(defaultLocale);
+		ddmForm.setDefaultLocale(LocaleUtil.fromLanguageId(defaultLanguageId));
 	}
 
 	protected void setDDMFormFields(JSONArray jsonArray, DDMForm ddmForm) {
@@ -402,13 +407,15 @@ public class DDMFormContextToDDMForm
 					DDMFormField ddmFormField = new DDMFormField(name, type);
 
 					if (jsonObject.has("nestedFields")) {
-						JSONArray nestedFields = jsonObject.getJSONArray(
-							"nestedFields");
+						JSONArray nestedFieldsJSONArray =
+							jsonObject.getJSONArray("nestedFields");
 
-						for (int i = 0; i < nestedFields.length(); i++) {
+						for (int i = 0; i < nestedFieldsJSONArray.length();
+							 i++) {
+
 							DDMFormField nestedDDMFormField =
 								createDDMFormField(
-									nestedFields.getJSONObject(i));
+									nestedFieldsJSONArray.getJSONObject(i));
 
 							ddmFormField.addNestedDDMFormField(
 								nestedDDMFormField);

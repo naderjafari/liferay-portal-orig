@@ -10,7 +10,7 @@
  */
 
 import {useModal} from '@clayui/modal';
-import React, {useCallback, useContext, useMemo, useState} from 'react';
+import React, {useCallback, useContext, useState} from 'react';
 
 import ModalWithSteps from '../../../../../shared/components/modal-with-steps/ModalWithSteps.es';
 import {useToaster} from '../../../../../shared/components/toaster/hooks/useToaster.es';
@@ -21,17 +21,17 @@ import SelectTasksStep from '../../shared/select-tasks-step/SelectTasksStep.es';
 import {useFetchTasks} from '../../shared/select-tasks-step/hooks/useFetchTasks.es';
 import SelectTransitionStep from './select-transition-step/SelectTransitionStep.es';
 
-const BulkTransitionModal = () => {
+export default function BulkTransitionModal() {
 	const {setSelectAll, setSelectedItems} = useContext(InstanceListContext);
 	const {
 		bulkTransition: {
 			transition: {errors},
 			transitionTasks,
 		},
+		closeModal,
 		selectTasks: {selectAll, tasks},
 		setBulkTransition,
 		setSelectTasks,
-		setVisibleModal,
 		visibleModal,
 	} = useContext(ModalContext);
 	const {clearFilters, fetchTasks} = useFetchTasks({withoutUnassigned: true});
@@ -48,15 +48,17 @@ const BulkTransitionModal = () => {
 		});
 	}, [setBulkTransition]);
 
+	const onCloseModal = (refetch) => {
+		clearContext();
+		clearFilters();
+		closeModal(refetch);
+		setSelectTasks({selectAll: false, tasks: []});
+		setCurrentStep('selectTasks');
+		setErrorToast(false);
+	};
+
 	const {observer, onClose} = useModal({
-		onClose: () => {
-			clearContext();
-			clearFilters();
-			setSelectTasks({selectAll: false, tasks: []});
-			setCurrentStep('selectTasks');
-			setVisibleModal('');
-			setErrorToast(false);
-		},
+		onClose: onCloseModal,
 	});
 
 	const {patchData} = usePatch({
@@ -76,8 +78,6 @@ const BulkTransitionModal = () => {
 
 			patchData()
 				.then(() => {
-					onClose();
-
 					toaster.success(
 						transitionTasks.length > 1
 							? Liferay.Language.get(
@@ -88,6 +88,7 @@ const BulkTransitionModal = () => {
 							  )
 					);
 
+					onCloseModal(true);
 					setSelectedItems([]);
 					setSelectAll(false);
 					setTransitioning(false);
@@ -140,72 +141,52 @@ const BulkTransitionModal = () => {
 		setCurrentStep('selectTasks');
 	}, [clearContext, setErrorToast, setCurrentStep]);
 
-	const getStep = useCallback(
-		(step) => {
-			const steps = {
-				selectTasks: {
-					cancelBtn: {
-						disabled: fetching,
-						handle: onClose,
-					},
-					component: SelectTasksStep,
-					nextBtn: {
-						disabled: tasks.length === 0 || fetching,
-						handle: handleNext,
-						text: Liferay.Language.get('next'),
-					},
-					order: 1,
-					previousBtn: false,
-					props: {setErrorToast, withoutUnassigned: true},
-					subtitle: Liferay.Language.get('select-steps'),
-					title: Liferay.Language.get('select-steps-to-transition'),
-				},
-				selectTransitions: {
-					cancelBtn: {
-						disabled: transitioning,
-						handle: onClose,
-					},
-					component: SelectTransitionStep,
-					nextBtn: {
-						disabled: transitioning,
-						handle: handleDone,
-						text: Liferay.Language.get('done'),
-					},
-					order: 2,
-					previousBtn: {
-						disabled: transitioning,
-						handle: handlePrevious,
-					},
-					props: {setErrorToast},
-					subtitle: Liferay.Language.get('choose-transition'),
-					title: Liferay.Language.get('choose-transition-per-step'),
-				},
-			};
-
-			return steps[step];
+	const steps = {
+		selectTasks: {
+			cancelBtn: {
+				disabled: fetching,
+				handle: onClose,
+			},
+			component: SelectTasksStep,
+			nextBtn: {
+				disabled: tasks.length === 0 || fetching,
+				handle: handleNext,
+				text: Liferay.Language.get('next'),
+			},
+			order: 1,
+			previousBtn: false,
+			props: {setErrorToast, withoutUnassigned: true},
+			subtitle: Liferay.Language.get('select-steps'),
+			title: Liferay.Language.get('select-steps-to-transition'),
 		},
-		[
-			fetching,
-			handleDone,
-			handleNext,
-			handlePrevious,
-			onClose,
-			tasks,
-			transitioning,
-		]
-	);
-
-	const step = useMemo(() => getStep(currentStep), [currentStep, getStep]);
+		selectTransitions: {
+			cancelBtn: {
+				disabled: transitioning,
+				handle: onClose,
+			},
+			component: SelectTransitionStep,
+			nextBtn: {
+				disabled: transitioning,
+				handle: handleDone,
+				text: Liferay.Language.get('done'),
+			},
+			order: 2,
+			previousBtn: {
+				disabled: transitioning,
+				handle: handlePrevious,
+			},
+			props: {setErrorToast},
+			subtitle: Liferay.Language.get('choose-transition'),
+			title: Liferay.Language.get('choose-transition-per-step'),
+		},
+	};
 
 	return (
 		<ModalWithSteps
-			dataTestId="bulkTransitionModal"
 			error={errorToast}
 			observer={observer}
-			step={step}
+			step={steps[currentStep]}
 			visible={visibleModal === 'bulkTransition'}
 		/>
 	);
-};
-
-export default BulkTransitionModal;
+}

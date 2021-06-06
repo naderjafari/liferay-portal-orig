@@ -19,14 +19,14 @@ import PropTypes from 'prop-types';
 import React, {useMemo, useState} from 'react';
 
 import {getLayoutDataItemPropTypes} from '../../prop-types/index';
-import {useDispatch, useSelector} from '../store/index';
+import {useSelectItem} from '../contexts/ControlsContext';
+import {useDispatch, useSelector} from '../contexts/StoreContext';
 import deleteItem from '../thunks/deleteItem';
 import duplicateItem from '../thunks/duplicateItem';
 import canBeDuplicated from '../utils/canBeDuplicated';
 import canBeRemoved from '../utils/canBeRemoved';
 import canBeSaved from '../utils/canBeSaved';
-import {useSelectItem} from './Controls';
-import SaveFragmentCompositionModal from './floating-toolbar/SaveFragmentCompositionModal';
+import SaveFragmentCompositionModal from './SaveFragmentCompositionModal';
 
 export default function ItemActions({item}) {
 	const [active, setActive] = useState(false);
@@ -126,7 +126,7 @@ export default function ItemActions({item}) {
 							}}
 							symbolLeft={itemAction.icon}
 						>
-							<p className="d-inline-block m-0 ml-2">
+							<p className="d-inline-block m-0 ml-4">
 								{itemAction.label}
 							</p>
 						</ClayDropDown.Item>
@@ -134,10 +134,11 @@ export default function ItemActions({item}) {
 				</ClayDropDown.ItemList>
 			</ClayDropDown>
 
-			<SaveFragmentCompositionModal
-				onCloseModal={() => setOpenSaveModal(false)}
-				open={openSaveModal}
-			/>
+			{openSaveModal && (
+				<SaveFragmentCompositionModal
+					onCloseModal={() => setOpenSaveModal(false)}
+				/>
+			)}
 		</>
 	) : null;
 }

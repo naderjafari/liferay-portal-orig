@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,16 +48,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageTemplate")
+@GraphQLName(
+	description = "Represents a Page template.", value = "PageTemplate"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageTemplate")
-public class PageTemplate {
+public class PageTemplate implements Serializable {
 
 	public static PageTemplate toDTO(String json) {
 		return ObjectMapperUtil.readValue(PageTemplate.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The page template's creator.")
 	@Valid
 	public Creator getCreator() {
 		return creator;
@@ -80,11 +84,11 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template's creator.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(description = "The page template's creation date.")
 	public Date getDateCreated() {
 		return dateCreated;
 	}
@@ -108,11 +112,11 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template's creation date.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateCreated;
 
-	@Schema
+	@Schema(description = "The last time the page template changed.")
 	public Date getDateModified() {
 		return dateModified;
 	}
@@ -136,11 +140,11 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The last time the page template changed.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateModified;
 
-	@Schema
+	@Schema(description = "The page template's ID.")
 	public Long getId() {
 		return id;
 	}
@@ -162,11 +166,11 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long id;
 
-	@Schema
+	@Schema(description = "A list of keywords describing the page template.")
 	public String[] getKeywords() {
 		return keywords;
 	}
@@ -190,11 +194,13 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of keywords describing the page template."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String[] keywords;
 
-	@Schema
+	@Schema(description = "The page template's name.")
 	public String getName() {
 		return name;
 	}
@@ -216,11 +222,11 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template's name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String name;
 
-	@Schema
+	@Schema(description = "The page template's definition.")
 	@Valid
 	public PageDefinition getPageDefinition() {
 		return pageDefinition;
@@ -246,11 +252,11 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template's definition.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected PageDefinition pageDefinition;
 
-	@Schema
+	@Schema(description = "The page template's collection.")
 	@Valid
 	public PageTemplateCollection getPageTemplateCollection() {
 		return pageTemplateCollection;
@@ -278,7 +284,7 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template's collection.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected PageTemplateCollection pageTemplateCollection;
 
@@ -316,7 +322,9 @@ public class PageTemplate {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
-	@Schema
+	@Schema(
+		description = "A write-only field that adds `TaxonomyCategory` instances to the page template."
+	)
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;
 	}
@@ -340,7 +348,9 @@ public class PageTemplate {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A write-only field that adds `TaxonomyCategory` instances to the page template."
+	)
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	protected Long[] taxonomyCategoryIds;
 
@@ -570,6 +580,7 @@ public class PageTemplate {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageTemplate",
 		name = "x-class-name"
 	)
@@ -605,7 +616,7 @@ public class PageTemplate {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -644,7 +655,7 @@ public class PageTemplate {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("CustomValue")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "CustomValue")
-public class CustomValue {
+public class CustomValue implements Serializable {
 
 	public static CustomValue toDTO(String json) {
 		return ObjectMapperUtil.readValue(CustomValue.class, json);
@@ -198,6 +200,7 @@ public class CustomValue {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.CustomValue",
 		name = "x-class-name"
 	)
@@ -233,7 +236,7 @@ public class CustomValue {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -272,7 +275,7 @@ public class CustomValue {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

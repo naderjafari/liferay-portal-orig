@@ -21,6 +21,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -85,11 +86,11 @@ public class ReportsEngineDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() throws PortalException {
@@ -213,9 +214,11 @@ public class ReportsEngineDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("tabs1", _getTabs1());
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setTabs1(
+			_getTabs1()
+		).build();
 
 		String navigation = ParamUtil.getString(
 			_httpServletRequest, "navigation");
@@ -244,31 +247,30 @@ public class ReportsEngineDisplayContext {
 	}
 
 	public String getSearchURL() {
-		PortletURL portletURL = getPortletURL();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"groupId",
+			() -> {
+				ThemeDisplay themeDisplay =
+					_reportsEngineRequestHelper.getThemeDisplay();
 
-		ThemeDisplay themeDisplay =
-			_reportsEngineRequestHelper.getThemeDisplay();
-
-		portletURL.setParameter(
-			"groupId", String.valueOf(themeDisplay.getScopeGroupId()));
-
-		return portletURL.toString();
+				return themeDisplay.getScopeGroupId();
+			}
+		).buildString();
 	}
 
 	public String getSortingURL() {
-		LiferayPortletResponse liferayPortletResponse =
-			_reportsEngineRequestHelper.getLiferayPortletResponse();
-
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("tabs1", _getTabs1());
-		portletURL.setParameter("orderByCol", _getOrderByCol());
-
-		portletURL.setParameter(
+		return PortletURLBuilder.createRenderURL(
+			_reportsEngineRequestHelper.getLiferayPortletResponse()
+		).setTabs1(
+			_getTabs1()
+		).setParameter(
+			"orderByCol", _getOrderByCol()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return portletURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public int getTotalItems() throws PortalException {
@@ -388,14 +390,16 @@ public class ReportsEngineDisplayContext {
 		EntryDisplayTerms displayTerms =
 			(EntryDisplayTerms)entrySearch.getDisplayTerms();
 
-		Date startDate = PortalUtil.getDate(
-			displayTerms.getStartDateMonth(), displayTerms.getStartDateDay(),
-			displayTerms.getStartDateYear(), _themeDisplay.getTimeZone(), null);
-		Date endDate = PortalUtil.getDate(
-			displayTerms.getEndDateMonth(), displayTerms.getEndDateDay() + 1,
-			displayTerms.getEndDateYear(), _themeDisplay.getTimeZone(), null);
-
 		if (displayTerms.isAdvancedSearch()) {
+			Date startDate = PortalUtil.getDate(
+				displayTerms.getStartDateMonth(),
+				displayTerms.getStartDateDay(), displayTerms.getStartDateYear(),
+				_themeDisplay.getTimeZone(), null);
+			Date endDate = PortalUtil.getDate(
+				displayTerms.getEndDateMonth(),
+				displayTerms.getEndDateDay() + 1, displayTerms.getEndDateYear(),
+				_themeDisplay.getTimeZone(), null);
+
 			int total = EntryServiceUtil.getEntriesCount(
 				_themeDisplay.getSiteGroupId(),
 				displayTerms.getDefinitionName(), null, startDate, endDate,
@@ -441,7 +445,7 @@ public class ReportsEngineDisplayContext {
 				Objects.equals(_getNavigation(), navigation));
 			dropdownItem.setHref(
 				getPortletURL(), "navigation", navigation, "mvcPath",
-				"/addmin/view.jsp", "tabs1", _getTabs1());
+				"/admin/view.jsp", "tabs1", _getTabs1());
 			dropdownItem.setLabel(
 				LanguageUtil.get(
 					_reportsEngineRequestHelper.getRequest(), navigation));

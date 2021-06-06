@@ -1,10 +1,11 @@
 @component-name = "portal-document-management"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column";
 	property testray.main.component.name = "Documents Management";
+
 	var pageName = "Documents and Media Page";
 	var portletName = "Documents and Media";
 
@@ -48,6 +49,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddDocuments {
 		property testray.component.names = "Training";
 
@@ -186,63 +188,22 @@ definition {
 			dmDocumentDescription = "DM Document Description",
 			dmDocumentTitle = "Document_1.xlsx",
 			dmDocumentType = "Basic Document");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.addPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFile = "Document_1.mov",
+			dmDocumentTitle = "Document_1.mov");
+
+		DMDocument.viewAllPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_1.mov",
+			dmDocumentType = "Basic Document");
 	}
 
 	@priority = "4"
-	test AddDocumentTypes {
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.add(
-			dmDocumentTypeDescription = "DM Document Type 1 Description",
-			dmDocumentTypeFieldNames = "Text Box",
-			dmDocumentTypeName = "DM Document Type 1 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMDocumentType.viewMenulistOption(dmDocumentTypeName = "DM Document Type 1 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.add(
-			dmDocumentTypeDescription = "DM Document Type 2 Description",
-			dmDocumentTypeFieldNames = "Text Box",
-			dmDocumentTypeName = "DM Document Type 2 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMDocumentType.viewMenulistOption(dmDocumentTypeName = "DM Document Type 2 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.add(
-			dmDocumentTypeDescription = "DM Document Type 3 Description",
-			dmDocumentTypeFieldNames = "Text Box",
-			dmDocumentTypeName = "DM Document Type 3 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMDocumentType.viewMenulistOption(dmDocumentTypeName = "DM Document Type 3 Name");
-	}
-
-	@priority = "4"
+	@refactorneeded
 	test AddFolderDocumentDuplicate {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -265,6 +226,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddFolderDocuments {
 		property testray.component.names = "Training";
 
@@ -306,6 +268,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFolderImage {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -326,6 +289,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFolderImageDuplicate {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -348,6 +312,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFolderImages {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -394,6 +359,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFolderNameSymbol {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -407,7 +373,60 @@ definition {
 		DMPortlet.viewDefaultPG();
 	}
 
+	@description = "This is a test for LPS-LPS-128366, it ensures that the folder permissions are removed after removing permissions during folder addition."
+	@priority = "3"
+	@refactorneeded
+	test AddFolderWithViewOnlyByOwnerPermissions {
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMFolder.addPG(
+			addOrRemoveViewPermission = "Remove",
+			dmFolderDescription = "DM Folder Description",
+			dmFolderName = "DM Folder Name",
+			permissionDefinitionKeyList = "ADD_SUBFOLDER,ADD_SHORTCUT,ADD_DOCUMENT,SUBSCRIBE",
+			roleTitle = "Site Member",
+			viewableBy = "Owner");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMFolder.viewFolderPermissionsPG(dmFolder = "DM Folder Name");
+
+		for (var permissionDefinitionKey : list "CONFIGURATION_PERMISSIONS_ADD_SUBFOLDER_CHECKBOX,CONFIGURATION_PERMISSIONS_ADD_SHORTCUT_CHECKBOX,CONFIGURATION_PERMISSIONS_ADD_DOCUMENT_CHECKBOX,CONFIGURATION_PERMISSIONS_SUBSCRIBE_CHECKBOX,CONFIGURATION_PERMISSIONS_VIEW_CHECKBOX" ) {
+			PermissionsInline.viewPermissionsRemoved(
+				permissionDefinitionKey = "${permissionDefinitionKey}",
+				roleTitle = "Site Member");
+		}
+
+		for (var permissionDefinitionKey : list "CONFIGURATION_PERMISSIONS_VIEW_CHECKBOX,CONFIGURATION_PERMISSIONS_ACCESS_CHECKBOX" ) {
+			PermissionsInline.viewPermissionsRemoved(
+				permissionDefinitionKey = "${permissionDefinitionKey}",
+				roleTitle = "Guest");
+		}
+	}
+
+	@description = "This test covers LPS-96652. It ensures that the PDF file can be added after enabling text extraction."
 	@priority = "4"
+	@refactorneeded
+	test AddPDFAfterEnablingTextExtraction {
+		property custom.properties = "text.extraction.fork.process.enabled=true${line.separator}text.extraction.fork.process.mime.types=application/x-tika-ooxml,application/pdf";
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.addPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFile = "Document_1.pdf",
+			dmDocumentTitle = "Document_1.pdf");
+
+		AssertConsoleTextNotPresent(value1 = "java.lang.ExceptionInInitializerError");
+
+		DMDocument.viewAllPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_1.pdf",
+			dmDocumentType = "Basic Document");
+	}
+
+	@priority = "4"
+	@refactorneeded
 	test AddSubFolderImageAndDocument {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -449,6 +468,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddSubFolderNameDocumentNameDuplicate {
 		JSONDocument.addFolder(
 			dmFolderDescription = "DM Folder Description",
@@ -475,6 +495,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddSubFolders {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -525,7 +546,28 @@ definition {
 		DMFolder.viewPG(dmFolderName = "Subfolder3 Name");
 	}
 
+	@description = "This test ensures that a document with forbidden characters in the title can be published successfully."
+	@priority = "5"
+	@refactorneeded
+	test AllowTitleWithForbiddenCharacters {
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.addPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFile = "Document_1.jpg",
+			dmDocumentTitle = '''/\<>:"?|*''');
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = '''/\<>:"?|*''',
+			escapedDocumentTitle = '''/\&lt;&gt;:&#34;?|*''',
+			titleWithForbiddenCharacters = "true");
+	}
+
 	@priority = "4"
+	@refactorneeded
 	test CancelCheckout {
 		JSONDocument.addFileWithUploadedFile(
 			dmDocumentDescription = "DM Document Description",
@@ -543,14 +585,33 @@ definition {
 		DMDocument.cancelCheckoutPG(dmDocumentTitle = "DM Document Title");
 	}
 
-	@description = "This test covers LPS-94508. It ensures that a tag can be created when selecting an item from autocomplete."
+	@description = "This test covers LPS-94508 and LPS-129430. It ensures that a tag can be created when selecting an item from autocomplete on a content page."
 	@priority = "5"
+	@refactorneeded
 	test CreateTagUsingAutocomplete {
-		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.doc,Document_2.docx");
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Content Page Name",
+			type = "content");
+
+		ContentPagesNavigator.openEditContentPage(
+			pageName = "Test Content Page Name",
+			siteName = "Guest");
+
+		PageEditor.addWidget(portletName = "Documents and Media");
+
+		DMDocument.enableActionsMenuOnPortlet();
+
+		PageEditor.clickPublish();
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		DMDocument.addMultiplePG(
+			contentPage = "true",
+			dmDocumentFileList = "Document_1.doc,Document_2.docx");
 
 		for (var tagName : list "tagone,tagtwo,tagthree") {
-
-			var key_dmDocumentTitle = "Document_1.doc";
+			var key_dmDocumentTitle = "Document_1";
 
 			Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
@@ -558,16 +619,16 @@ definition {
 
 			DMDocument.editTags(tagName = "${tagName}");
 
-			DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_1.doc");
+			DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_1");
 
 			DMDocument.viewTag(tagName = "${tagName}");
 
-			Navigator.gotoPage(pageName = "Documents and Media Page");
+			Navigator.gotoPage(pageName = "Test Content Page Name");
 		}
 
 		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
-		var key_dmDocumentTitle = "Document_2.docx";
+		var key_dmDocumentTitle = "Document_2";
 
 		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
 
@@ -600,12 +661,13 @@ definition {
 
 		Alert.viewSuccessMessageText(successMessage = "Changes saved.");
 
-		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_2.docx");
+		DMNavigator.gotoDocumentPG(dmDocumentTitle = "Document_2");
 
 		DMDocument.viewTag(tagName = "tagtwo");
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test DeleteDocumentInFolder {
 		property portal.acceptance = "true";
 
@@ -629,6 +691,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DeleteDocumentType {
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
@@ -638,7 +701,7 @@ definition {
 
 		DMDocumentType.add(
 			dmDocumentTypeDescription = "DM Document Type Description",
-			dmDocumentTypeFieldNames = "Text Box",
+			dmDocumentTypeFieldNames = "Text",
 			dmDocumentTypeName = "DM Document Type Name");
 
 		ProductMenu.gotoPortlet(
@@ -657,6 +720,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DeleteDocumentWithSlashesInTitle {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -689,6 +753,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test DeleteFolderWithDocument {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -712,6 +777,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test DeleteSubFolder {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -735,6 +801,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DeleteSubFolderImageActions {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -759,6 +826,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test DownloadDocumentWithSlashesInTitleViaDocumentView {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -771,64 +839,38 @@ definition {
 	}
 
 	@priority = "5"
-	test EditAndDeleteGoogleDoc {
-		property portal.release = "false";
-		property test.name.skip.portal.instance = "PGDocumentsandmedia#EditAndDeleteGoogleDoc";
+	@refactorneeded
+	test EditDocument {
+		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		var siteName = TestCase.getSiteName(siteName = "${siteName}");
-
-		PortalSettings.gotoConfiguration(
-			configurationCategory = "Documents and Media",
-			configurationName = "Google Drive",
-			configurationScope = "Virtual Instance Scope");
-
-		var googlePropertiesSet = MathUtil.randomNumber("3");
-		var googleClientID = PropsUtil.get("google.client.id.${googlePropertiesSet}");
-		var googleClientSecret = PropsUtil.get("google.client.secret.${googlePropertiesSet}");
-		var googlePickerAPIKey = PropsUtil.get("google.api.key.${googlePropertiesSet}");
-
-		PortalSettings.configureGoogleDrive(
-			googleClientID = "${googleClientID}",
-			googleClientSecret = "${googleClientSecret}",
-			googlePickerAPIKey = "${googlePickerAPIKey}");
+		DMDocument.addPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFile = "Document_1.doc",
+			useCurrentTitle = "true");
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
-
-		MenuItem.click(menuItem = "Google Drive Shortcut");
-
-		GoogleDrive.gotoDrive(
-			userEmailAddress = PropsUtil.get("email.address.3"),
-			userPassword = PropsUtil.get("email.password.3"),
-			windowTitle = "New Google Drive Shortcut - ${siteName}");
-
-		GoogleDrive.selectDocument(googleDocName = "liferay.txt");
+		DMDocument.editCmdPG(
+			checkFileNameText = "true",
+			checkTitleText = "true",
+			dmDocumentDescriptionEdit = "DM Document Description Edit",
+			dmDocumentFileNameEdit = "DM Document File Name Edit.doc",
+			dmDocumentTitle = "Document_1",
+			dmDocumentTitleEdit = "DM Document Title Edit");
 
 		PortletEntry.publish();
 
-		DMDocument.viewPG(dmDocumentTitle = "liferay.txt");
-
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		DMDocument.deletePG(dmDocumentTitle = "liferay.txt");
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Description Edit",
+			dmDocumentFileName = "DM Document File Name Edit.doc",
+			dmDocumentTitle = "DM Document Title Edit",
+			dmDocumentVersionNumber = "1.1");
 	}
 
 	@priority = "5"
-	test EditDocument {
-		JSONDocument.addFile(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "DM Document Title",
-			groupName = "Guest");
-
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		DMDocument.editPG(
-			dmDocumentTitle = "DM Document Title",
-			dmDocumentTitleEdit = "DM Document Title Edit");
-	}
-
-	@priority = "5"
+	@refactorneeded
 	test EditDocumentType {
 		property testray.component.names = "Training";
 
@@ -840,7 +882,7 @@ definition {
 
 		DMDocumentType.add(
 			dmDocumentTypeDescription = "DM Document Type Description",
-			dmDocumentTypeFieldNames = "Text Box",
+			dmDocumentTypeFieldNames = "Text",
 			dmDocumentTypeName = "DM Document Type Name");
 
 		ProductMenu.gotoPortlet(
@@ -867,11 +909,29 @@ definition {
 		DMDocumentType.viewMenulistOption(dmDocumentTypeName = "DM Document Type Name Edit");
 	}
 
+	@description = "This test ensures that user can edit document in folder via a content page."
 	@priority = "5"
+	@refactorneeded
 	test EditFolderDocument {
-		Navigator.gotoPage(pageName = "Documents and Media Page");
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Content Page Name",
+			type = "content");
+
+		ContentPagesNavigator.openEditContentPage(
+			pageName = "Test Content Page Name",
+			siteName = "Guest");
+
+		PageEditor.addWidget(portletName = "Documents and Media");
+
+		DMDocument.enableActionsMenuOnPortlet();
+
+		PageEditor.clickPublish();
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
 		DMFolder.addPG(
+			contentPage = "true",
 			dmFolderDescription = "DM Folder Description",
 			dmFolderName = "DM Folder Name");
 
@@ -889,7 +949,7 @@ definition {
 			dmDocumentTitle = "DM Document Title",
 			dmDocumentTitleEdit = "DM Document Title Edit");
 
-		Navigator.gotoPage(pageName = "Documents and Media Page");
+		Navigator.gotoPage(pageName = "Test Content Page Name");
 
 		DMNavigator.gotoFolder(dmFolderName = "DM Folder Name");
 
@@ -901,6 +961,7 @@ definition {
 
 	@description = "This test edits a document inside a folder. It also asserts a major version increment since the change involved changing the actual file."
 	@priority = "4"
+	@refactorneeded
 	test EditFolderDocumentFile {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -933,6 +994,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test EditSubFolder {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -953,6 +1015,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test EditSubFolderImage {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -989,7 +1052,36 @@ definition {
 			dmDocumentVersionNumber = "1.1");
 	}
 
+	@description = "This ensures that users can not upload files that exceed the storage quota through the multiple upload."
+	@priority = "5"
+	@refactorneeded
+	test ExceedStorageQuotaMultipleUpload {
+		property custom.properties = "data.limit.dl.storage.max.size=1048576";
+
+		DMDocument.addMultiplePG(dmDocumentFileList = "Document_1.doc");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.viewPG(dmDocumentTitle = "Document_1");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.addMultiplePG(
+			dmDocumentFileList = "Document_2.txt,high_resolution_photo.jpg",
+			storageQuota = "1 MB",
+			validateStorageQuota = "true");
+
+		DMDocument.viewPG(dmDocumentTitle = "Document_2");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		AssertElementNotPresent(
+			key_dmDocumentTitle = "high_resolution_photo",
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE");
+	}
+
 	@priority = "4"
+	@refactorneeded
 	test MoveDocumentWithSlashesInTitle {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1014,6 +1106,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test MoveFolderDocumentDuplicateToFolder {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1053,6 +1146,7 @@ definition {
 
 	@description = "This case covers the folder name of a document can be viewed in the info panel and navigate to it."
 	@priority = "4"
+	@refactorneeded
 	test MoveFolderDocumentToFolder {
 		JSONDocument.addFolder(
 			dmFolderDescription = "DM Folder1 Description",
@@ -1082,6 +1176,10 @@ definition {
 			dmFolderName = "DM Folder1 Name",
 			locationFieldName = "true");
 
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoFolder(dmFolderName = "DM Folder1 Name");
+
 		DMDocument.moveToFolderPG(
 			dmDocumentTitle = "DM Document Title",
 			dmFolderName = "DM Folder2 Name");
@@ -1098,59 +1196,7 @@ definition {
 	}
 
 	@priority = "5"
-	test MoveGoogleDocToFolder {
-		property portal.release = "false";
-		property test.name.skip.portal.instance = "PGDocumentsandmedia#MoveGoogleDocToFolder";
-
-		var siteName = TestCase.getSiteName(siteName = "${siteName}");
-
-		PortalSettings.gotoConfiguration(
-			configurationCategory = "Documents and Media",
-			configurationName = "Google Drive",
-			configurationScope = "Virtual Instance Scope");
-
-		var googlePropertiesSet = MathUtil.randomNumber("3");
-		var googleClientID = PropsUtil.get("google.client.id.${googlePropertiesSet}");
-		var googleClientSecret = PropsUtil.get("google.client.secret.${googlePropertiesSet}");
-		var googlePickerAPIKey = PropsUtil.get("google.api.key.${googlePropertiesSet}");
-
-		PortalSettings.configureGoogleDrive(
-			googleClientID = "${googleClientID}",
-			googleClientSecret = "${googleClientSecret}",
-			googlePickerAPIKey = "${googlePickerAPIKey}");
-
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
-
-		MenuItem.click(menuItem = "Google Drive Shortcut");
-
-		GoogleDrive.gotoDrive(
-			userEmailAddress = PropsUtil.get("email.address.3"),
-			userPassword = PropsUtil.get("email.password.3"),
-			windowTitle = "New Google Drive Shortcut - ${siteName}");
-
-		GoogleDrive.selectDocument(googleDocName = "liferay.txt");
-
-		PortletEntry.publish();
-
-		JSONDocument.addFolder(
-			dmFolderDescription = "DM Folder Description",
-			dmFolderName = "DM Folder Name",
-			groupName = "Guest");
-
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		DMDocument.moveToFolderPG(
-			dmDocumentTitle = "liferay.txt",
-			dmFolderName = "DM Folder Name");
-
-		DMNavigator.gotoFolder(dmFolderName = "DM Folder Name");
-
-		DMDocument.viewPG(dmDocumentTitle = "liferay.txt");
-	}
-
-	@priority = "5"
+	@refactorneeded
 	test RemovePortlet {
 		property portal.acceptance = "true";
 
@@ -1160,6 +1206,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test RevertVersionFolderDocumentFile {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1213,6 +1260,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test SearchContentDocument {
 		JSONDocument.addFileWithUploadedFile(
 			dmDocumentDescription = "DM Document Description",
@@ -1232,6 +1280,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test SearchDocument {
 		JSONDocument.addFileWithUploadedFile(
 			dmDocumentDescription = "DM Document Description",
@@ -1250,6 +1299,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test SearchFolderDocument {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1275,6 +1325,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test SearchFolderImage {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1299,7 +1350,45 @@ definition {
 			searchAssetType = "Document");
 	}
 
+	@description = "This test covers LPS-129887. It ensures that the user can search for documents using file name."
+	@priority = "5"
+	@refactorneeded
+	test SearchForDocumentsWithFileName {
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest",
+			mimeType = "application/msword",
+			sourceFileName = "Document_1.doc");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "DM Image Title",
+			groupName = "Guest",
+			mimeType = "image/jpeg",
+			sourceFileName = "Document_2.jpg");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		for (var searchTermList : list "Document_1.doc,Document_1") {
+			Search.searchPG(
+				portletName = "Documents and Media",
+				searchTerm = "${searchTermList}");
+
+			DMDocument.viewSearchResultsPG(dmDocumentTitle = "DM Document Title");
+		}
+
+		for (var searchTermList : list "Document_2.jpg,Document_2") {
+			Search.searchPG(
+				portletName = "Documents and Media",
+				searchTerm = "${searchTermList}");
+
+			DMDocument.viewSearchResultsPG(dmDocumentTitle = "DM Image Title");
+		}
+	}
+
 	@priority = "4"
+	@refactorneeded
 	test SearchSubFolderDocument {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1327,8 +1416,58 @@ definition {
 			searchAssetType = "Document");
 	}
 
+	@description = "This test covers LPS-102179. It ensures that the user can create a shortcut using a file from a different site after setting the root folder."
+	@priority = "3"
+	@refactorneeded
+	test ShortcutCanBeAddedToDocumentAfterSettingRootFolder {
+		JSONGroup.addGroup(groupName = "Site Name");
+
+		JSONLayout.addPublicLayout(
+			groupName = "Site Name",
+			layoutName = "Documents and Media Page");
+
+		JSONLayout.addWidgetToPublicLayout(
+			column = "1",
+			groupName = "Site Name",
+			layoutName = "Documents and Media Page",
+			widgetName = "Documents and Media");
+
+		JSONDocument.addFolder(
+			dmFolderDescription = "DM Folder Description",
+			dmFolderName = "Test Folder",
+			groupName = "Site Name");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest",
+			mimeType = "text/plain",
+			sourceFileName = "Document_1.txt");
+
+		Navigator.openSiteURL(siteName = "Site Name");
+
+		DMDocument.enableActionsMenuOnPortlet();
+
+		Navigator.openSiteURL(siteName = "Site Name");
+
+		DMDocument.setRootFolder(dmRootFolderName = "Test Folder");
+
+		Navigator.openSiteURL(siteName = "Site Name");
+
+		var siteName = TestCase.getSiteName(siteName = "${siteName}");
+
+		DMDocument.addDMShortcutPG(
+			dmDocumentTitle = "DM Document Title",
+			siteName = "${siteName}");
+
+		Navigator.openSiteURL(siteName = "Site Name");
+
+		DMDocument.viewPG(dmDocumentTitle = "DM Document Title");
+	}
+
 	@description = "This is a use case for LPS-51280"
 	@priority = "5"
+	@refactorneeded
 	test SubscribeToCommentAndViewEmailNotification {
 		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property test.smtp.server.enabled = "true";
@@ -1349,6 +1488,18 @@ definition {
 		DMFolder.addPG(
 			dmFolderDescription = "DM Folder Description",
 			dmFolderName = "DM Folder Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMNavigator.gotoDocumentPermissionsCP(dmDocumentTitle = "DM Folder Name");
+
+		PermissionsInline.addOrRemoveAccessPermissionFromAllRoles(
+			addOrRemoveViewPermission = "Add",
+			roleList = "guest");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
 
 		DMNavigator.gotoFolder(dmFolderName = "DM Folder Name");
 
@@ -1392,6 +1543,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test SubscribeToFolderAndViewEmailNotifications {
 		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property test.smtp.server.enabled = "true";
@@ -1423,6 +1575,16 @@ definition {
 		DMFolder.addPG(
 			dmFolderDescription = "DM Folder Description",
 			dmFolderName = "DM Folder Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMNavigator.gotoDocumentPermissionsCP(dmDocumentTitle = "DM Folder Name");
+
+		PermissionsInline.addOrRemoveAccessPermissionFromAllRoles(
+			addOrRemoveViewPermission = "Add",
+			roleList = "guest");
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1491,6 +1653,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test UnlockDocumentInFolder {
 		JSONDocument.addFolder(
 			dmFolderDescription = "DM Folder Description",
@@ -1537,9 +1700,9 @@ definition {
 
 	@description = "This test covers LPS-91595. It ensures that the document selection persists when navigating through the pagination in the DM widget."
 	@priority = "4"
+	@refactorneeded
 	test ViewDocumentPagination {
 		for (var documentName : list "Document_2.doc,Document_1.xls,Document_4.jpg,Document_3.jpg,Document_2.xls,Document_1.txt,Document_4.txt,Document_3.xls,Document_2.jpg,Document_1.doc") {
-
 			var extension = StringUtil.extractLast("${documentName}", ".");
 
 			if ("${extension}" == "doc") {
@@ -1584,7 +1747,79 @@ definition {
 			value1 = "2 of 10 Selected");
 	}
 
+	@description = "This ensures that the user can create a document with the topic from the Global site."
 	@priority = "4"
+	@refactorneeded
+	test ViewDocumentWithTopic {
+		JSONCategory.addCategory(
+			groupName = "Global",
+			title = "Apple",
+			vocabularyName = "Topic");
+
+		JSONCategory.addCategory(
+			groupName = "Global",
+			title = "Dragon Fruit",
+			vocabularyName = "Topic");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.addPG(
+			categoryName = "Apple",
+			dmDocumentDescription = "Document Description",
+			dmDocumentFile = "Document_1.doc",
+			dmDocumentTitle = "Document_1.doc",
+			vocabularyName = "Topic");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		Click(
+			key_dmDocumentTitle = "Document_1.doc",
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+
+		Panel.expandPanel(panel = "Categorization");
+
+		AssetCategorization.addCategory(
+			categoryName = "Dragon Fruit",
+			vocabularyName = "Topic");
+
+		Button.clickPublish();
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		Click(
+			key_dmDocumentTitle = "Document_1.doc",
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+
+		DMDocument.viewCategories(categoryNameList = "Apple,Dragon Fruit");
+	}
+
+	@description = "This ensures that a user can view the information about an image when navigating to info panel."
+	@priority = "4"
+	@refactorneeded
+	test ViewImageInfoPanel {
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest",
+			mimeType = "image/jpeg",
+			sourceFileName = "Document_2.jpg");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentExtension = "jpg",
+			dmDocumentFileTypeInfo = "Image",
+			dmDocumentTitle = "DM Document Title",
+			dmDocumentType = "Basic Document");
+	}
+
+	@priority = "4"
+	@refactorneeded
 	test ViewOlderVersion {
 		JSONDocument.addFileWithUploadedFile(
 			dmDocumentDescription = "DM Document Description",
@@ -1619,7 +1854,51 @@ definition {
 		DMDocument.viewDocumentVersionNumberCmdPG(dmDocumentVersionNumber = "1.1");
 	}
 
+	@description = "This ensures that the user can view the document through related assets."
+	@priority = "3"
+	@refactorneeded
+	test ViewRelatedDocument {
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_1.doc",
+			groupName = "Guest",
+			mimeType = "application/msword",
+			sourceFileName = "Document_1.doc");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_2.jpg",
+			groupName = "Guest",
+			mimeType = "image/jpeg",
+			sourceFileName = "Document_2.jpg");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		Click(
+			key_dmDocumentTitle = "Document_2.jpg",
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+
+		RelatedAssets.selectAsset(
+			assetTitle = "Document_1.doc",
+			assetType = "Basic Document");
+
+		Button.clickPublish();
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoRelatedAssetPG(
+			assetTitle = "Document_2.jpg",
+			dmDocumentTitle = "Document_1.doc");
+
+		AssertVisible(
+			key_dmDocumentFileName = "Document_2.jpg",
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_IMAGE_PREVIEW");
+	}
+
 	@priority = "5"
+	@refactorneeded
 	test ViewSearchResultsForChildObjectRespectsParentFolderPermissions {
 		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property test.name.skip.portal.instance = "PGDocumentsandmedia#ViewSearchResultsForChildObjectRespectsParentFolderPermissions";
@@ -1714,6 +1993,12 @@ definition {
 			groupName = "Site Name 2",
 			layoutName = "Documents and Media Page",
 			widgetName = "Documents and Media");
+
+		Navigator.gotoSitePage(
+			pageName = "Documents and Media Page",
+			siteName = "Site Name 2");
+
+		DMDocument.enableActionsMenuOnPortlet();
 
 		Navigator.gotoSitePage(
 			pageName = "Documents and Media Page",

@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -101,9 +102,6 @@ public class I18nServletTest extends I18nServlet {
 
 	@Before
 	public void setUp() throws Exception {
-		_originalLocaleUseDefaultIfNotAvailable =
-			PropsValues.LOCALE_USE_DEFAULT_IF_NOT_AVAILABLE;
-
 		_language.init();
 
 		_group = GroupTestUtil.addGroup();
@@ -122,7 +120,7 @@ public class I18nServletTest extends I18nServlet {
 	@After
 	public void tearDown() {
 		PropsValues.LOCALE_USE_DEFAULT_IF_NOT_AVAILABLE =
-			_originalLocaleUseDefaultIfNotAvailable;
+			_ORIGINAL_LOCALE_USE_DEFAULT_IF_NOT_AVAILABLE;
 	}
 
 	@Test
@@ -153,6 +151,45 @@ public class I18nServletTest extends I18nServlet {
 
 		_testIsNotDefaultOrFirstLocale(_group, LocaleUtil.UK);
 		_testIsNotDefaultOrFirstI18nData(_group, LocaleUtil.UK, LocaleUtil.US);
+	}
+
+	@Test
+	public void testGetI18nDataWithDecodedPath() throws Exception {
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setServletPath(
+			String.format(
+				"/%s_%s", LocaleUtil.SPAIN.getLanguage(),
+				LocaleUtil.SPAIN.getCountry()));
+
+		String specialCharacters = "es/^_Ñ,í-ó";
+
+		mockHttpServletRequest.setPathInfo(specialCharacters);
+
+		I18nData i18nData = getI18nData(mockHttpServletRequest);
+
+		Assert.assertEquals(
+			HttpUtil.encodePath(specialCharacters), i18nData.getPath());
+	}
+
+	@Test
+	public void testGetI18nDataWithEncodedPath() throws Exception {
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setServletPath(
+			String.format(
+				"/%s_%s", LocaleUtil.SPAIN.getLanguage(),
+				LocaleUtil.SPAIN.getCountry()));
+
+		String specialCharacters = HttpUtil.encodePath("es/^_Ñ,í-ó");
+
+		mockHttpServletRequest.setPathInfo(specialCharacters);
+
+		I18nData i18nData = getI18nData(mockHttpServletRequest);
+
+		Assert.assertEquals(specialCharacters, i18nData.getPath());
 	}
 
 	@Test
@@ -411,6 +448,9 @@ public class I18nServletTest extends I18nServlet {
 		Assert.assertNotEquals(defaultLocale, locale);
 	}
 
+	private static final boolean _ORIGINAL_LOCALE_USE_DEFAULT_IF_NOT_AVAILABLE =
+		PropsValues.LOCALE_USE_DEFAULT_IF_NOT_AVAILABLE;
+
 	private static Set<Locale> _availableLocales;
 	private static Locale _defaultLocale;
 
@@ -427,7 +467,5 @@ public class I18nServletTest extends I18nServlet {
 
 	@Inject
 	private GroupLocalService _groupLocalService;
-
-	private boolean _originalLocaleUseDefaultIfNotAvailable;
 
 }

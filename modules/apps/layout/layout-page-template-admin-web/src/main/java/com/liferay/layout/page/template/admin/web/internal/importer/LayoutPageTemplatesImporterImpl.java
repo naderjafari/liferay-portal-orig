@@ -27,7 +27,9 @@ import com.liferay.headless.delivery.dto.v1_0.PageElement;
 import com.liferay.headless.delivery.dto.v1_0.PageTemplate;
 import com.liferay.headless.delivery.dto.v1_0.PageTemplateCollection;
 import com.liferay.headless.delivery.dto.v1_0.Settings;
+import com.liferay.headless.delivery.dto.v1_0.StyleBook;
 import com.liferay.layout.admin.constants.LayoutAdminPortletKeys;
+import com.liferay.layout.page.template.admin.web.internal.exception.DropzoneLayoutStructureItemException;
 import com.liferay.layout.page.template.admin.web.internal.headless.delivery.dto.v1_0.structure.importer.LayoutStructureItemImporter;
 import com.liferay.layout.page.template.admin.web.internal.headless.delivery.dto.v1_0.structure.importer.LayoutStructureItemImporterTracker;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
@@ -49,7 +51,7 @@ import com.liferay.layout.page.template.validator.MasterPageValidator;
 import com.liferay.layout.page.template.validator.PageDefinitionValidator;
 import com.liferay.layout.page.template.validator.PageTemplateValidator;
 import com.liferay.layout.util.LayoutCopyHelper;
-import com.liferay.layout.util.structure.FragmentLayoutStructureItem;
+import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.petra.string.CharPool;
@@ -84,6 +86,8 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.style.book.model.StyleBookEntry;
+import com.liferay.style.book.service.StyleBookEntryLocalService;
 
 import java.io.File;
 import java.io.IOException;
@@ -241,7 +245,8 @@ public class LayoutPageTemplatesImporterImpl
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Invalid display page template for: " +
-							zipEntry.getName());
+							zipEntry.getName(),
+						displayPageTemplateValidatorException);
 				}
 
 				_layoutPageTemplatesImporterResultEntries.add(
@@ -280,7 +285,8 @@ public class LayoutPageTemplatesImporterImpl
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Invalid page definition for: " +
-							displayPageTemplate.getName());
+							displayPageTemplate.getName(),
+						exception);
 				}
 
 				_layoutPageTemplatesImporterResultEntries.add(
@@ -331,13 +337,17 @@ public class LayoutPageTemplatesImporterImpl
 			LayoutStructureItem layoutStructureItem =
 				layoutStructure.getLayoutStructureItem(childItemId);
 
-			if (layoutStructureItem instanceof FragmentLayoutStructureItem) {
-				FragmentLayoutStructureItem fragmentLayoutStructureItem =
-					(FragmentLayoutStructureItem)layoutStructureItem;
+			if (layoutStructureItem instanceof
+					FragmentStyledLayoutStructureItem) {
+
+				FragmentStyledLayoutStructureItem
+					fragmentStyledLayoutStructureItem =
+						(FragmentStyledLayoutStructureItem)layoutStructureItem;
 
 				fragmentEntryLinks.add(
 					_fragmentEntryLinkLocalService.getFragmentEntryLink(
-						fragmentLayoutStructureItem.getFragmentEntryLinkId()));
+						fragmentStyledLayoutStructureItem.
+							getFragmentEntryLinkId()));
 			}
 
 			List<String> currentChildrenItemIds =
@@ -451,7 +461,9 @@ public class LayoutPageTemplatesImporterImpl
 			}
 			catch (MasterPageValidatorException masterPageValidatorException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Invalid master page for: " + zipEntry.getName());
+					_log.warn(
+						"Invalid master page for: " + zipEntry.getName(),
+						masterPageValidatorException);
 				}
 
 				_layoutPageTemplatesImporterResultEntries.add(
@@ -489,7 +501,8 @@ public class LayoutPageTemplatesImporterImpl
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
-						"Invalid page definition for: " + masterPage.getName());
+						"Invalid page definition for: " + masterPage.getName(),
+						exception);
 				}
 
 				_layoutPageTemplatesImporterResultEntries.add(
@@ -594,7 +607,8 @@ public class LayoutPageTemplatesImporterImpl
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
-						"Invalid page template for: " + zipEntry.getName());
+						"Invalid page template for: " + zipEntry.getName(),
+						exception);
 				}
 
 				_layoutPageTemplatesImporterResultEntries.add(
@@ -640,7 +654,8 @@ public class LayoutPageTemplatesImporterImpl
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Invalid page definition for: " +
-							pageTemplate.getName());
+							pageTemplate.getName(),
+						exception);
 				}
 
 				_layoutPageTemplatesImporterResultEntries.add(
@@ -715,8 +730,8 @@ public class LayoutPageTemplatesImporterImpl
 
 		byte[] bytes = null;
 
-		try (InputStream is = zipFile.getInputStream(zipEntry)) {
-			bytes = FileUtil.getBytes(is);
+		try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
+			bytes = FileUtil.getBytes(inputStream);
 		}
 
 		FileEntry fileEntry = _portletFileRepository.fetchPortletFileEntry(
@@ -858,9 +873,9 @@ public class LayoutPageTemplatesImporterImpl
 			try {
 				TransactionInvokerUtil.invoke(_transactionConfig, callable);
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(t, t);
+					_log.warn(throwable, throwable);
 				}
 
 				DisplayPageTemplate displayPageTemplate =
@@ -962,6 +977,17 @@ public class LayoutPageTemplatesImporterImpl
 							})));
 			}
 		}
+		catch (DropzoneLayoutStructureItemException
+					dropzoneLayoutStructureItemException) {
+
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					dropzoneLayoutStructureItemException,
+					dropzoneLayoutStructureItemException);
+			}
+
+			throw new PortalException();
+		}
 		catch (PortalException portalException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(portalException, portalException);
@@ -993,9 +1019,9 @@ public class LayoutPageTemplatesImporterImpl
 			try {
 				TransactionInvokerUtil.invoke(_transactionConfig, callable);
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(t, t);
+					_log.warn(throwable, throwable);
 				}
 
 				MasterPage masterPage = masterPageEntry.getMasterPage();
@@ -1038,22 +1064,21 @@ public class LayoutPageTemplatesImporterImpl
 				for (PageElement childPageElement :
 						pageElement.getPageElements()) {
 
-					_processPageElement(
-						layout, layoutStructure, childPageElement,
-						rootLayoutStructureItem.getItemId(), position,
-						warningMessages);
+					if (_processPageElement(
+							layout, layoutStructure, childPageElement,
+							rootLayoutStructureItem.getItemId(), position,
+							warningMessages)) {
 
-					position++;
+						position++;
+					}
 				}
 			}
 
 			Settings settings = pageDefinition.getSettings();
 
-			if (settings != null) {
-				layout = _layoutLocalService.fetchLayout(layout.getPlid());
+			layout = _layoutLocalService.fetchLayout(layout.getPlid());
 
-				_updateLayoutSettings(layout, settings);
-			}
+			_updateLayoutSettings(layout, settings);
 		}
 
 		_updateLayoutPageTemplateStructure(layout, layoutStructure);
@@ -1061,7 +1086,7 @@ public class LayoutPageTemplatesImporterImpl
 		_updateLayouts(layoutPageTemplateEntry);
 	}
 
-	private void _processPageElement(
+	private boolean _processPageElement(
 			Layout layout, LayoutStructure layoutStructure,
 			PageElement pageElement, String parentItemId, int position,
 			Set<String> warningMessages)
@@ -1083,25 +1108,30 @@ public class LayoutPageTemplatesImporterImpl
 			layoutStructureItem = layoutStructure.getMainLayoutStructureItem();
 		}
 		else {
-			return;
+			return false;
 		}
 
-		if ((layoutStructureItem == null) ||
-			(pageElement.getPageElements() == null)) {
+		if (layoutStructureItem == null) {
+			return false;
+		}
 
-			return;
+		if (pageElement.getPageElements() == null) {
+			return true;
 		}
 
 		int childPosition = 0;
 
 		for (PageElement childPageElement : pageElement.getPageElements()) {
-			_processPageElement(
-				layout, layoutStructure, childPageElement,
-				layoutStructureItem.getItemId(), childPosition,
-				warningMessages);
+			if (_processPageElement(
+					layout, layoutStructure, childPageElement,
+					layoutStructureItem.getItemId(), childPosition,
+					warningMessages)) {
 
-			childPosition++;
+				childPosition++;
+			}
 		}
+
+		return true;
 	}
 
 	private void _processPageTemplateEntries(
@@ -1131,9 +1161,9 @@ public class LayoutPageTemplatesImporterImpl
 			try {
 				TransactionInvokerUtil.invoke(_transactionConfig, callable);
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(t, t);
+					_log.warn(throwable, throwable);
 				}
 
 				PageTemplate pageTemplate = pageTemplateEntry.getPageTemplate();
@@ -1213,6 +1243,16 @@ public class LayoutPageTemplatesImporterImpl
 	}
 
 	private void _updateLayoutSettings(Layout layout, Settings settings) {
+		if (settings == null) {
+			layout.setThemeId(null);
+
+			layout.setColorSchemeId(null);
+
+			_layoutLocalService.updateLayout(layout);
+
+			return;
+		}
+
 		UnicodeProperties unicodeProperties =
 			layout.getTypeSettingsProperties();
 
@@ -1262,6 +1302,19 @@ public class LayoutPageTemplatesImporterImpl
 			if (masterLayoutPageTemplateEntry != null) {
 				layout.setMasterLayoutPlid(
 					masterLayoutPageTemplateEntry.getPlid());
+			}
+		}
+
+		StyleBook styleBook = settings.getStyleBook();
+
+		if (styleBook != null) {
+			StyleBookEntry styleBookEntry =
+				_styleBookEntryLocalService.fetchStyleBookEntry(
+					layout.getGroupId(), styleBook.getKey());
+
+			if (styleBookEntry != null) {
+				layout.setStyleBookEntryId(
+					styleBookEntry.getStyleBookEntryId());
 			}
 		}
 
@@ -1345,6 +1398,9 @@ public class LayoutPageTemplatesImporterImpl
 
 	@Reference
 	private PortletPreferencesLocalService _portletPreferencesLocalService;
+
+	@Reference
+	private StyleBookEntryLocalService _styleBookEntryLocalService;
 
 	@Reference
 	private ThemeLocalService _themeLocalService;

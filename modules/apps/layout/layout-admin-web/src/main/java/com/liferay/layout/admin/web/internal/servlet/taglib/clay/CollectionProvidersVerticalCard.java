@@ -17,7 +17,10 @@ package com.liferay.layout.admin.web.internal.servlet.taglib.clay;
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.BaseVerticalCard;
 import com.liferay.info.list.provider.InfoListProvider;
 import com.liferay.info.list.provider.item.selector.criterion.InfoListProviderItemSelectorReturnType;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -26,7 +29,9 @@ import com.liferay.portal.kernel.util.Validator;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-import javax.portlet.PortletURL;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -51,50 +56,50 @@ public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 	}
 
 	@Override
-	public String getAspectRatioCssClasses() {
-		return "aspect-ratio-item-center-middle " +
-			"aspect-ratio-item-vertical-fluid";
+	public String getCssClass() {
+		return "select-collection-action-option card-interactive " +
+			"card-interactive-secondary";
 	}
 
 	@Override
-	public String getElementClasses() {
-		return "card-interactive card-interactive-secondary";
-	}
+	public Map<String, String> getDynamicAttributes() {
+		Map<String, String> data = new HashMap<>();
 
-	public String getHref() {
-		PortletURL selectLayoutMasterLayoutURL =
-			_renderResponse.createRenderURL();
+		try {
+			data.put(
+				"data-select-layout-master-layout-url",
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCPath(
+					"/select_layout_master_layout.jsp"
+				).setRedirect(
+					ParamUtil.getString(_httpServletRequest, "redirect")
+				).setBackURL(
+					themeDisplay.getURLCurrent()
+				).setParameter(
+					"collectionPK", _infoListProvider.getKey()
+				).setParameter(
+					"collectionType",
+					InfoListProviderItemSelectorReturnType.class.getName()
+				).setParameter(
+					"groupId", _groupId
+				).setParameter(
+					"privateLayout",
+					ParamUtil.getBoolean(_httpServletRequest, "privateLayout")
+				).setParameter(
+					"selPlid", ParamUtil.getLong(_httpServletRequest, "selPlid")
+				).buildString());
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+		}
 
-		selectLayoutMasterLayoutURL.setParameter(
-			"mvcPath", "/select_layout_master_layout.jsp");
+		data.put("role", "button");
+		data.put("tabIndex", "0");
 
-		String redirect = ParamUtil.getString(_httpServletRequest, "redirect");
-
-		selectLayoutMasterLayoutURL.setParameter("redirect", redirect);
-
-		selectLayoutMasterLayoutURL.setParameter(
-			"backURL", themeDisplay.getURLCurrent());
-		selectLayoutMasterLayoutURL.setParameter(
-			"groupId", String.valueOf(_groupId));
-
-		long selPlid = ParamUtil.getLong(_httpServletRequest, "selPlid");
-
-		selectLayoutMasterLayoutURL.setParameter(
-			"selPlid", String.valueOf(selPlid));
-
-		boolean privateLayout = ParamUtil.getBoolean(
-			_httpServletRequest, "privateLayout");
-
-		selectLayoutMasterLayoutURL.setParameter(
-			"privateLayout", String.valueOf(privateLayout));
-
-		selectLayoutMasterLayoutURL.setParameter(
-			"collectionPK", String.valueOf(_infoListProvider.getKey()));
-		selectLayoutMasterLayoutURL.setParameter(
-			"collectionType",
-			InfoListProviderItemSelectorReturnType.class.getName());
-
-		return selectLayoutMasterLayoutURL.toString();
+		return data;
 	}
 
 	@Override
@@ -124,6 +129,11 @@ public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 		return _infoListProvider.getLabel(themeDisplay.getLocale());
 	}
 
+	@Override
+	public Boolean isFlushHorizontal() {
+		return true;
+	}
+
 	private String _getClassName(InfoListProvider<?> infoListProvider) {
 		Class<?> clazz = infoListProvider.getClass();
 
@@ -141,6 +151,9 @@ public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 
 		return StringPool.BLANK;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		CollectionProvidersVerticalCard.class);
 
 	private final long _groupId;
 	private final HttpServletRequest _httpServletRequest;

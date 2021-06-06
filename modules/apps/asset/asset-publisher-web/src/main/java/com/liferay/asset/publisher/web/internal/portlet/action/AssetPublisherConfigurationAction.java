@@ -27,6 +27,7 @@ import com.liferay.asset.publisher.util.AssetQueryRule;
 import com.liferay.asset.publisher.web.internal.action.AssetEntryActionRegistry;
 import com.liferay.asset.publisher.web.internal.configuration.AssetPublisherPortletInstanceConfiguration;
 import com.liferay.asset.publisher.web.internal.configuration.AssetPublisherWebConfiguration;
+import com.liferay.asset.publisher.web.internal.constants.AssetPublisherSelectionStyleConstants;
 import com.liferay.asset.publisher.web.internal.display.context.AssetPublisherDisplayContext;
 import com.liferay.asset.publisher.web.internal.helper.AssetPublisherWebHelper;
 import com.liferay.asset.publisher.web.internal.util.AssetPublisherCustomizer;
@@ -70,6 +71,8 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.PortletPreferencesImpl;
+import com.liferay.segments.SegmentsEntryRetriever;
+import com.liferay.segments.context.RequestContextMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -149,7 +152,8 @@ public class AssetPublisherConfigurationAction
 				assetListAssetEntryProvider, assetPublisherCustomizer,
 				assetPublisherHelper, assetPublisherWebConfiguration,
 				assetPublisherWebHelper, infoListProviderTracker, itemSelector,
-				renderRequest, renderResponse, renderRequest.getPreferences());
+				renderRequest, renderResponse, renderRequest.getPreferences(),
+				requestContextMapper, segmentsEntryRetriever);
 
 		httpServletRequest.setAttribute(
 			AssetPublisherWebKeys.ASSET_PUBLISHER_DISPLAY_CONTEXT,
@@ -238,10 +242,13 @@ public class AssetPublisherConfigurationAction
 					actionRequest, "selectionStyle");
 
 				if (Validator.isNull(selectionStyle)) {
-					selectionStyle = "dynamic";
+					selectionStyle =
+						AssetPublisherSelectionStyleConstants.TYPE_DYNAMIC;
 				}
 
-				if (selectionStyle.equals("dynamic")) {
+				if (selectionStyle.equals(
+						AssetPublisherSelectionStyleConstants.TYPE_DYNAMIC)) {
+
 					updateQueryLogic(actionRequest, preferences);
 				}
 
@@ -620,7 +627,8 @@ public class AssetPublisherConfigurationAction
 
 		preferences.setValue("selectionStyle", selectionStyle);
 
-		if (selectionStyle.equals("manual") ||
+		if (selectionStyle.equals(
+				AssetPublisherSelectionStyleConstants.TYPE_MANUAL) ||
 			selectionStyle.equals("view-count")) {
 
 			preferences.setValue("enableRss", Boolean.FALSE.toString());
@@ -793,7 +801,9 @@ public class AssetPublisherConfigurationAction
 		String selectionStyle = getParameter(actionRequest, "selectionStyle");
 
 		if (Validator.isNull(selectionStyle)) {
-			setPreference(actionRequest, "selectionStyle", "dynamic");
+			setPreference(
+				actionRequest, "selectionStyle",
+				AssetPublisherSelectionStyleConstants.TYPE_DYNAMIC);
 		}
 	}
 
@@ -831,7 +841,8 @@ public class AssetPublisherConfigurationAction
 	@Reference
 	protected AssetPublisherHelper assetPublisherHelper;
 
-	protected AssetPublisherWebConfiguration assetPublisherWebConfiguration;
+	protected volatile AssetPublisherWebConfiguration
+		assetPublisherWebConfiguration;
 
 	@Reference
 	protected AssetPublisherWebHelper assetPublisherWebHelper;
@@ -856,6 +867,12 @@ public class AssetPublisherConfigurationAction
 
 	@Reference
 	protected Portal portal;
+
+	@Reference
+	protected RequestContextMapper requestContextMapper;
+
+	@Reference
+	protected SegmentsEntryRetriever segmentsEntryRetriever;
 
 	@Reference
 	protected Staging staging;

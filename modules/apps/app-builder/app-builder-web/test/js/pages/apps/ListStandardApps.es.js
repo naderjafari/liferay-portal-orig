@@ -14,20 +14,21 @@
 
 import '@testing-library/jest-dom/extend-expect';
 import {waitForElementToBeRemoved} from '@testing-library/dom';
-import {cleanup, fireEvent, render} from '@testing-library/react';
+import {act, cleanup, fireEvent, render} from '@testing-library/react';
 import React from 'react';
 
 import ListStandardApps from '../../../../src/main/resources/META-INF/resources/js/pages/apps/ListStandardApps.es';
 import * as time from '../../../../src/main/resources/META-INF/resources/js/utils/time.es';
 import AppContextProviderWrapper from '../../AppContextProviderWrapper.es';
-import {RESPONSES} from '../../constants.es';
+import {DATA_DEFINITION_RESPONSES, RESPONSES} from '../../constants.es';
 
 const DROPDOWN_VALUES = {
 	items: [
 		{
+			defaultLanguageId: 'en_US',
 			id: 123,
 			name: {
-				'en-US': 'Object test',
+				en_US: 'Object test',
 			},
 		},
 	],
@@ -55,6 +56,9 @@ describe('ListStandardApps', () => {
 
 	it('renders opening a new app popover and lists 5 apps', async () => {
 		fetch.mockResponseOnce(JSON.stringify(RESPONSES.MANY_ITEMS(5)));
+		fetch.mockResponseOnce(
+			JSON.stringify(DATA_DEFINITION_RESPONSES.ONE_ITEM)
+		);
 		fetch.mockResponse(JSON.stringify(DROPDOWN_VALUES));
 
 		const {container} = render(<ListStandardApps {...routeProps} />, {
@@ -71,8 +75,10 @@ describe('ListStandardApps', () => {
 			'.nav-btn.nav-btn-monospaced.btn.btn-monospaced.btn-primary'
 		);
 
-		await fireEvent.click(newAppButton);
-		await fireEvent.mouseOver(newAppButton);
+		await act(async () => {
+			await fireEvent.click(newAppButton);
+			await fireEvent.mouseOver(newAppButton);
+		});
 
 		expect(
 			document.querySelector('.popover.apps-popover')
@@ -84,21 +90,28 @@ describe('ListStandardApps', () => {
 			'standard-appcreate-an-app-to-collect-and-manage-an-objects-data'
 		);
 
-		await fireEvent.click(newAppButton);
-		await fireEvent.mouseOut(newAppButton);
+		await act(async () => {
+			await fireEvent.click(newAppButton);
+			await fireEvent.mouseOut(newAppButton);
+		});
 
 		expect(document.querySelector('.popover.apps-popover.hide'));
 		expect(
 			document.querySelector('.popover.clay-popover-bottom-right')
 		).not.toBeInTheDocument();
 
-		await fireEvent.click(newAppButton);
+		await act(async () => {
+			await fireEvent.click(newAppButton);
+		});
 
 		expect(document.querySelector('.popover.apps-popover.hide'));
 	});
 
 	it('renders with empty state', async () => {
 		fetch.mockResponseOnce(JSON.stringify(RESPONSES.NO_ITEMS));
+		fetch.mockResponseOnce(
+			JSON.stringify(DATA_DEFINITION_RESPONSES.ONE_ITEM)
+		);
 		fetch.mockResponse(JSON.stringify(DROPDOWN_VALUES));
 
 		const push = jest.fn();
@@ -123,7 +136,9 @@ describe('ListStandardApps', () => {
 
 		const createNewAppButton = queryByText('create-new-app');
 
-		await fireEvent.click(createNewAppButton);
+		await act(async () => {
+			await fireEvent.click(createNewAppButton);
+		});
 
 		const continueButton = document.querySelector(
 			'.apps-popover > .popover-footer button:nth-child(2)'
@@ -144,11 +159,15 @@ describe('ListStandardApps', () => {
 
 		expect(dropdownItems[0].textContent).toBe('Object test');
 
-		await fireEvent.click(dropdownItems[0]);
+		await act(async () => {
+			await fireEvent.click(dropdownItems[0]);
+		});
 
 		expect(continueButton).not.toBeDisabled();
 
-		await fireEvent.click(continueButton);
+		await act(async () => {
+			await fireEvent.click(continueButton);
+		});
 
 		expect(push).toHaveBeenCalledWith({
 			pathname: '/standard/123/deploy',

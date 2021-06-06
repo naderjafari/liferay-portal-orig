@@ -1,9 +1,9 @@
 @component-name = "portal-collaboration"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property testray.component.names = "Mentions";
 	property testray.main.component.name = "Mentions";
 
@@ -95,6 +95,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test ViewWikiCommentMentionedUser {
 		property test.name.skip.portal.instance = "MentionsWiki#ViewWikiCommentMentionedUser";
 

@@ -22,7 +22,6 @@ import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.SearchEngineHelper;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
@@ -55,6 +54,7 @@ import com.liferay.users.admin.test.util.search.UserSearchFixture;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -106,7 +106,7 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 		_userGroups = userGroupSearchFixture.getUserGroups();
 
 		indexedFieldsFixture = new IndexedFieldsFixture(
-			_resourcePermissionLocalService, _searchEngineHelper, _uidFactory,
+			_resourcePermissionLocalService, _uidFactory,
 			_documentBuilderFactory);
 	}
 
@@ -122,7 +122,7 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 
 		User user = addUser();
 
-		final Map<String, String> map = getBaseFieldValuesMap(user);
+		final Map<String, String> map = new HashMap<>();
 
 		indexedFieldsFixture.populateUID(user, map);
 
@@ -152,8 +152,12 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 
 		User user = addUser();
 
-		final Map<String, String> map1 = HashMapBuilder.putAll(
-			getBaseFieldValuesMap(user)
+		final Map<String, String> map1 = HashMapBuilder.put(
+			Field.COMPANY_ID, String.valueOf(user.getCompanyId())
+		).put(
+			Field.ENTRY_CLASS_NAME, user.getModelClassName()
+		).put(
+			Field.ENTRY_CLASS_PK, String.valueOf(user.getPrimaryKeyObj())
 		).put(
 			Field.USER_ID, String.valueOf(user.getPrimaryKeyObj())
 		).put(
@@ -278,16 +282,6 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 			String.valueOf(user), searchUser(user, fieldNames), map);
 	}
 
-	protected Map<String, String> getBaseFieldValuesMap(User user) {
-		return HashMapBuilder.put(
-			Field.COMPANY_ID, String.valueOf(user.getCompanyId())
-		).put(
-			Field.ENTRY_CLASS_NAME, user.getModelClassName()
-		).put(
-			Field.ENTRY_CLASS_PK, String.valueOf(user.getPrimaryKeyObj())
-		).build();
-	}
-
 	protected SearchRequestBuilder getSearchRequestBuilder(long companyId) {
 		return _searchRequestBuilderFactory.builder(
 		).companyId(
@@ -312,9 +306,7 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 		Document document = stream.findFirst(
 		).get();
 
-		indexedFieldsFixture.postProcessDocument(document);
-
-		return document;
+		return indexedFieldsFixture.postProcessDocument(document);
 	}
 
 	protected GroupSearchFixture groupSearchFixture;
@@ -323,7 +315,7 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 	protected UserGroupSearchFixture userGroupSearchFixture;
 	protected UserSearchFixture userSearchFixture;
 
-	private static String _toListString(Stream<?> stream) {
+	private String _toListString(Stream<?> stream) {
 		return stream.map(
 			String::valueOf
 		).collect(
@@ -333,11 +325,11 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 		);
 	}
 
-	private static String _toSingletonListString(String string) {
+	private String _toSingletonListString(String string) {
 		return String.valueOf(Collections.singletonList(string));
 	}
 
-	private static String _toSortedListString(Stream<?> stream) {
+	private String _toSortedListString(Stream<?> stream) {
 		return _toListString(
 			stream.map(
 				String::valueOf
@@ -361,9 +353,6 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 	@Inject
 	private static ResourcePermissionLocalService
 		_resourcePermissionLocalService;
-
-	@Inject
-	private static SearchEngineHelper _searchEngineHelper;
 
 	@Inject
 	private static Searcher _searcher;

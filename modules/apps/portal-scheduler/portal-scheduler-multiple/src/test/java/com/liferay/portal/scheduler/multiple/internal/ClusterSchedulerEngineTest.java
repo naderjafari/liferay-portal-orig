@@ -42,8 +42,6 @@ import com.liferay.portal.kernel.scheduler.TriggerFactory;
 import com.liferay.portal.kernel.scheduler.TriggerState;
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
 import com.liferay.portal.kernel.servlet.PluginContextLifecycleThreadLocal;
-import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.NewEnv;
 import com.liferay.portal.kernel.test.util.PropsTestUtil;
@@ -52,8 +50,11 @@ import com.liferay.portal.kernel.util.MethodKey;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.AdviseWith;
-import com.liferay.portal.test.rule.AspectJNewEnvTestRule;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.registry.BasicRegistryImpl;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
@@ -75,13 +76,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -95,9 +96,14 @@ import org.mockito.stubbing.Answer;
 @NewEnv(type = NewEnv.Type.CLASSLOADER)
 public class ClusterSchedulerEngineTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
-		setUpProps();
+		setUpPropsUtil();
 
 		setUpSchedulerEngineHelperUtil();
 		setUpClusterSchedulerEngine();
@@ -341,9 +347,8 @@ public class ClusterSchedulerEngineTest {
 
 		Assert.assertTrue(_memoryClusteredJobs.isEmpty());
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					ClusterSchedulerEngine.class.getName(), Level.OFF)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				ClusterSchedulerEngine.class.getName(), Level.OFF)) {
 
 			_mockClusterMasterExecutor.reset(false, 4, 2);
 
@@ -354,9 +359,9 @@ public class ClusterSchedulerEngineTest {
 
 			clusterMasterTokenTransitionListener.masterTokenReleased();
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertTrue(logRecords.toString(), logRecords.isEmpty());
+			Assert.assertTrue(logEntries.toString(), logEntries.isEmpty());
 
 			Assert.assertFalse(_mockClusterMasterExecutor.isMaster());
 
@@ -390,7 +395,7 @@ public class ClusterSchedulerEngineTest {
 
 			Assert.assertTrue(_memoryClusteredJobs.isEmpty());
 
-			logRecords = captureHandler.resetLogLevel(Level.ALL);
+			logEntries = logCapture.resetPriority(Level.ALL.toString());
 
 			_mockClusterMasterExecutor.reset(false, 4, 2);
 
@@ -400,24 +405,24 @@ public class ClusterSchedulerEngineTest {
 
 			clusterMasterTokenTransitionListener.masterTokenReleased();
 
-			Assert.assertEquals(logRecords.toString(), 3, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 3, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
 			Assert.assertEquals(
 				"Load 4 memory clustered jobs from master",
-				logRecord.getMessage());
+				logEntry.getMessage());
 
-			logRecord = logRecords.get(1);
+			logEntry = logEntries.get(1);
 
 			Assert.assertEquals(
 				"4 MEMORY_CLUSTERED jobs stopped running on this node",
-				logRecord.getMessage());
+				logEntry.getMessage());
 
-			logRecord = logRecords.get(2);
+			logEntry = logEntries.get(2);
 
 			Assert.assertEquals(
-				"Unable to notify slave", logRecord.getMessage());
+				"Unable to notify slave", logEntry.getMessage());
 
 			Assert.assertFalse(_mockClusterMasterExecutor.isMaster());
 
@@ -1000,9 +1005,8 @@ public class ClusterSchedulerEngineTest {
 			_TEST_JOB_NAME_0, _MEMORY_CLUSTER_TEST_GROUP_NAME,
 			StorageType.MEMORY_CLUSTERED);
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					ClusterSchedulerEngine.class.getName(), Level.OFF)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				ClusterSchedulerEngine.class.getName(), Level.OFF)) {
 
 			_mockClusterMasterExecutor.reset(true, 0, 0);
 
@@ -1013,9 +1017,9 @@ public class ClusterSchedulerEngineTest {
 
 			clusterMasterTokenTransitionListener.masterTokenAcquired();
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertTrue(logRecords.toString(), logRecords.isEmpty());
+			Assert.assertTrue(logEntries.toString(), logEntries.isEmpty());
 
 			Assert.assertTrue(_mockClusterMasterExecutor.isMaster());
 
@@ -1054,7 +1058,7 @@ public class ClusterSchedulerEngineTest {
 				_memoryClusteredJobs.toString(), 4,
 				_memoryClusteredJobs.size());
 
-			logRecords = captureHandler.resetLogLevel(Level.ALL);
+			logEntries = logCapture.resetPriority(Level.ALL.toString());
 
 			_mockClusterMasterExecutor.reset(true, 0, 0);
 
@@ -1064,18 +1068,18 @@ public class ClusterSchedulerEngineTest {
 
 			clusterMasterTokenTransitionListener.masterTokenAcquired();
 
-			Assert.assertEquals(logRecords.toString(), 2, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 2, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
 			Assert.assertEquals(
 				"4 MEMORY_CLUSTERED jobs started running on this node",
-				logRecord.getMessage());
+				logEntry.getMessage());
 
-			logRecord = logRecords.get(1);
+			logEntry = logEntries.get(1);
 
 			Assert.assertEquals(
-				"Unable to notify slave", logRecord.getMessage());
+				"Unable to notify slave", logEntry.getMessage());
 
 			Assert.assertTrue(_mockClusterMasterExecutor.isMaster());
 
@@ -1735,10 +1739,6 @@ public class ClusterSchedulerEngineTest {
 		}
 	}
 
-	@Rule
-	public final AspectJNewEnvTestRule aspectJNewEnvTestRule =
-		AspectJNewEnvTestRule.INSTANCE;
-
 	@Aspect
 	public static class ClusterableContextThreadLocalAdvice {
 
@@ -1805,11 +1805,7 @@ public class ClusterSchedulerEngineTest {
 
 		ObjectValuePair<SchedulerResponse, TriggerState> objectValuePair =
 			_memoryClusteredJobs.get(
-				groupName.concat(
-					StringPool.PERIOD
-				).concat(
-					jobName
-				));
+				StringBundler.concat(groupName, StringPool.PERIOD, jobName));
 
 		if (objectValuePair == null) {
 			return null;
@@ -1871,7 +1867,7 @@ public class ClusterSchedulerEngineTest {
 			_clusterSchedulerEngine, "_memoryClusteredJobs");
 	}
 
-	protected void setUpProps() {
+	protected void setUpPropsUtil() {
 		_props = PropsTestUtil.setProps(
 			PropsKeys.CLUSTERABLE_ADVICE_CALL_MASTER_TIMEOUT, "100");
 	}

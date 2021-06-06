@@ -36,14 +36,6 @@ String[] previewFileURLs = new String[1];
 previewFileURLs[0] = DLURLHelperUtil.getPreviewURL(fileVersion.getFileEntry(), fileVersion, themeDisplay, previewQueryString);
 
 String previewFileURL = previewFileURLs[0];
-
-Map<String, Object> data = HashMapBuilder.<String, Object>put(
-	"baseImageURL", previewFileURL
-).put(
-	"initialPage", 1
-).put(
-	"totalPages", previewFileCount
-).build();
 %>
 
 <liferay-util:html-top
@@ -54,7 +46,15 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 
 <div id="<portlet:namespace /><%= randomNamespace %>previewDocument">
 	<react:component
-		data="<%= data %>"
 		module="preview/js/DocumentPreviewer.es"
+		props='<%=
+			HashMapBuilder.<String, Object>put(
+				"baseImageURL", previewFileURL
+			).put(
+				"initialPage", 1
+			).put(
+				"totalPages", previewFileCount
+			).build()
+		%>'
 	/>
 </div>

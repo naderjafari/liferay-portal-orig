@@ -74,7 +74,7 @@ public interface ResourcePermissionLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link ResourcePermissionLocalServiceUtil} to access the resource permission local service. Add custom service methods to <code>com.liferay.portal.service.impl.ResourcePermissionLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.portal.service.impl.ResourcePermissionLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the resource permission local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link ResourcePermissionLocalServiceUtil} if injection and service tracking are not available.
 	 */
 	public void addModelResourcePermissions(
 			AuditedModel auditedModel, ServiceContext serviceContext)
@@ -325,6 +325,9 @@ public interface ResourcePermissionLocalService
 	public <T> T dslQuery(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
 
 	/**
@@ -428,6 +431,10 @@ public interface ResourcePermissionLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Map<String, List<ResourcePermission>>
+		getIndividualPortletResourcePermissions(long companyId);
 
 	/**
 	 * Returns the OSGi service identifier.

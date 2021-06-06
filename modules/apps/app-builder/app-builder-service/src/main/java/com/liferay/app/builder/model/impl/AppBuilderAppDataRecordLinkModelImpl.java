@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.ModelWrapper;
 import com.liferay.portal.kernel.model.impl.BaseModelImpl;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 
 import java.io.Serializable;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -64,8 +66,9 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 	public static final Object[][] TABLE_COLUMNS = {
 		{"appBuilderAppDataRecordLinkId", Types.BIGINT},
-		{"companyId", Types.BIGINT}, {"appBuilderAppId", Types.BIGINT},
-		{"ddlRecordId", Types.BIGINT}
+		{"groupId", Types.BIGINT}, {"companyId", Types.BIGINT},
+		{"appBuilderAppId", Types.BIGINT},
+		{"appBuilderAppVersionId", Types.BIGINT}, {"ddlRecordId", Types.BIGINT}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -73,13 +76,15 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 	static {
 		TABLE_COLUMNS_MAP.put("appBuilderAppDataRecordLinkId", Types.BIGINT);
+		TABLE_COLUMNS_MAP.put("groupId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("companyId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("appBuilderAppId", Types.BIGINT);
+		TABLE_COLUMNS_MAP.put("appBuilderAppVersionId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("ddlRecordId", Types.BIGINT);
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table AppBuilderAppDataRecordLink (appBuilderAppDataRecordLinkId LONG not null primary key,companyId LONG,appBuilderAppId LONG,ddlRecordId LONG)";
+		"create table AppBuilderAppDataRecordLink (appBuilderAppDataRecordLinkId LONG not null primary key,groupId LONG,companyId LONG,appBuilderAppId LONG,appBuilderAppVersionId LONG,ddlRecordId LONG)";
 
 	public static final String TABLE_SQL_DROP =
 		"drop table AppBuilderAppDataRecordLink";
@@ -96,10 +101,23 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
+	 */
+	@Deprecated
 	public static final long APPBUILDERAPPID_COLUMN_BITMASK = 1L;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
+	 */
+	@Deprecated
 	public static final long DDLRECORDID_COLUMN_BITMASK = 2L;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *		#getColumnBitmask(String)}
+	 */
+	@Deprecated
 	public static final long APPBUILDERAPPDATARECORDLINKID_COLUMN_BITMASK = 4L;
 
 	/**
@@ -256,6 +274,12 @@ public class AppBuilderAppDataRecordLinkModelImpl
 			(BiConsumer<AppBuilderAppDataRecordLink, Long>)
 				AppBuilderAppDataRecordLink::setAppBuilderAppDataRecordLinkId);
 		attributeGetterFunctions.put(
+			"groupId", AppBuilderAppDataRecordLink::getGroupId);
+		attributeSetterBiConsumers.put(
+			"groupId",
+			(BiConsumer<AppBuilderAppDataRecordLink, Long>)
+				AppBuilderAppDataRecordLink::setGroupId);
+		attributeGetterFunctions.put(
 			"companyId", AppBuilderAppDataRecordLink::getCompanyId);
 		attributeSetterBiConsumers.put(
 			"companyId",
@@ -267,6 +291,13 @@ public class AppBuilderAppDataRecordLinkModelImpl
 			"appBuilderAppId",
 			(BiConsumer<AppBuilderAppDataRecordLink, Long>)
 				AppBuilderAppDataRecordLink::setAppBuilderAppId);
+		attributeGetterFunctions.put(
+			"appBuilderAppVersionId",
+			AppBuilderAppDataRecordLink::getAppBuilderAppVersionId);
+		attributeSetterBiConsumers.put(
+			"appBuilderAppVersionId",
+			(BiConsumer<AppBuilderAppDataRecordLink, Long>)
+				AppBuilderAppDataRecordLink::setAppBuilderAppVersionId);
 		attributeGetterFunctions.put(
 			"ddlRecordId", AppBuilderAppDataRecordLink::getDdlRecordId);
 		attributeSetterBiConsumers.put(
@@ -289,7 +320,25 @@ public class AppBuilderAppDataRecordLinkModelImpl
 	public void setAppBuilderAppDataRecordLinkId(
 		long appBuilderAppDataRecordLinkId) {
 
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_appBuilderAppDataRecordLinkId = appBuilderAppDataRecordLinkId;
+	}
+
+	@Override
+	public long getGroupId() {
+		return _groupId;
+	}
+
+	@Override
+	public void setGroupId(long groupId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_groupId = groupId;
 	}
 
 	@Override
@@ -299,6 +348,10 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 	@Override
 	public void setCompanyId(long companyId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
 		_companyId = companyId;
 	}
 
@@ -309,19 +362,35 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 	@Override
 	public void setAppBuilderAppId(long appBuilderAppId) {
-		_columnBitmask |= APPBUILDERAPPID_COLUMN_BITMASK;
-
-		if (!_setOriginalAppBuilderAppId) {
-			_setOriginalAppBuilderAppId = true;
-
-			_originalAppBuilderAppId = _appBuilderAppId;
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
 		}
 
 		_appBuilderAppId = appBuilderAppId;
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
 	public long getOriginalAppBuilderAppId() {
-		return _originalAppBuilderAppId;
+		return GetterUtil.getLong(
+			this.<Long>getColumnOriginalValue("appBuilderAppId"));
+	}
+
+	@Override
+	public long getAppBuilderAppVersionId() {
+		return _appBuilderAppVersionId;
+	}
+
+	@Override
+	public void setAppBuilderAppVersionId(long appBuilderAppVersionId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_appBuilderAppVersionId = appBuilderAppVersionId;
 	}
 
 	@Override
@@ -331,22 +400,44 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 	@Override
 	public void setDdlRecordId(long ddlRecordId) {
-		_columnBitmask |= DDLRECORDID_COLUMN_BITMASK;
-
-		if (!_setOriginalDdlRecordId) {
-			_setOriginalDdlRecordId = true;
-
-			_originalDdlRecordId = _ddlRecordId;
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
 		}
 
 		_ddlRecordId = ddlRecordId;
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
 	public long getOriginalDdlRecordId() {
-		return _originalDdlRecordId;
+		return GetterUtil.getLong(
+			this.<Long>getColumnOriginalValue("ddlRecordId"));
 	}
 
 	public long getColumnBitmask() {
+		if (_columnBitmask > 0) {
+			return _columnBitmask;
+		}
+
+		if ((_columnOriginalValues == null) ||
+			(_columnOriginalValues == Collections.EMPTY_MAP)) {
+
+			return 0;
+		}
+
+		for (Map.Entry<String, Object> entry :
+				_columnOriginalValues.entrySet()) {
+
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
+				_columnBitmask |= _columnBitmasks.get(entry.getKey());
+			}
+		}
+
 		return _columnBitmask;
 	}
 
@@ -386,9 +477,12 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 		appBuilderAppDataRecordLinkImpl.setAppBuilderAppDataRecordLinkId(
 			getAppBuilderAppDataRecordLinkId());
+		appBuilderAppDataRecordLinkImpl.setGroupId(getGroupId());
 		appBuilderAppDataRecordLinkImpl.setCompanyId(getCompanyId());
 		appBuilderAppDataRecordLinkImpl.setAppBuilderAppId(
 			getAppBuilderAppId());
+		appBuilderAppDataRecordLinkImpl.setAppBuilderAppVersionId(
+			getAppBuilderAppVersionId());
 		appBuilderAppDataRecordLinkImpl.setDdlRecordId(getDdlRecordId());
 
 		appBuilderAppDataRecordLinkImpl.resetOriginalValues();
@@ -461,21 +555,9 @@ public class AppBuilderAppDataRecordLinkModelImpl
 
 	@Override
 	public void resetOriginalValues() {
-		AppBuilderAppDataRecordLinkModelImpl
-			appBuilderAppDataRecordLinkModelImpl = this;
+		_columnOriginalValues = Collections.emptyMap();
 
-		appBuilderAppDataRecordLinkModelImpl._originalAppBuilderAppId =
-			appBuilderAppDataRecordLinkModelImpl._appBuilderAppId;
-
-		appBuilderAppDataRecordLinkModelImpl._setOriginalAppBuilderAppId =
-			false;
-
-		appBuilderAppDataRecordLinkModelImpl._originalDdlRecordId =
-			appBuilderAppDataRecordLinkModelImpl._ddlRecordId;
-
-		appBuilderAppDataRecordLinkModelImpl._setOriginalDdlRecordId = false;
-
-		appBuilderAppDataRecordLinkModelImpl._columnBitmask = 0;
+		_columnBitmask = 0;
 	}
 
 	@Override
@@ -487,10 +569,15 @@ public class AppBuilderAppDataRecordLinkModelImpl
 		appBuilderAppDataRecordLinkCacheModel.appBuilderAppDataRecordLinkId =
 			getAppBuilderAppDataRecordLinkId();
 
+		appBuilderAppDataRecordLinkCacheModel.groupId = getGroupId();
+
 		appBuilderAppDataRecordLinkCacheModel.companyId = getCompanyId();
 
 		appBuilderAppDataRecordLinkCacheModel.appBuilderAppId =
 			getAppBuilderAppId();
+
+		appBuilderAppDataRecordLinkCacheModel.appBuilderAppVersionId =
+			getAppBuilderAppVersionId();
 
 		appBuilderAppDataRecordLinkCacheModel.ddlRecordId = getDdlRecordId();
 
@@ -503,7 +590,7 @@ public class AppBuilderAppDataRecordLinkModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			4 * attributeGetterFunctions.size() + 2);
+			(4 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -537,7 +624,7 @@ public class AppBuilderAppDataRecordLinkModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			5 * attributeGetterFunctions.size() + 4);
+			(5 * attributeGetterFunctions.size()) + 4);
 
 		sb.append("<model><model-name>");
 		sb.append(getModelClassName());
@@ -574,13 +661,75 @@ public class AppBuilderAppDataRecordLinkModelImpl
 	}
 
 	private long _appBuilderAppDataRecordLinkId;
+	private long _groupId;
 	private long _companyId;
 	private long _appBuilderAppId;
-	private long _originalAppBuilderAppId;
-	private boolean _setOriginalAppBuilderAppId;
+	private long _appBuilderAppVersionId;
 	private long _ddlRecordId;
-	private long _originalDdlRecordId;
-	private boolean _setOriginalDdlRecordId;
+
+	public <T> T getColumnValue(String columnName) {
+		Function<AppBuilderAppDataRecordLink, Object> function =
+			_attributeGetterFunctions.get(columnName);
+
+		if (function == null) {
+			throw new IllegalArgumentException(
+				"No attribute getter function found for " + columnName);
+		}
+
+		return (T)function.apply((AppBuilderAppDataRecordLink)this);
+	}
+
+	public <T> T getColumnOriginalValue(String columnName) {
+		if (_columnOriginalValues == null) {
+			return null;
+		}
+
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		return (T)_columnOriginalValues.get(columnName);
+	}
+
+	private void _setColumnOriginalValues() {
+		_columnOriginalValues = new HashMap<String, Object>();
+
+		_columnOriginalValues.put(
+			"appBuilderAppDataRecordLinkId", _appBuilderAppDataRecordLinkId);
+		_columnOriginalValues.put("groupId", _groupId);
+		_columnOriginalValues.put("companyId", _companyId);
+		_columnOriginalValues.put("appBuilderAppId", _appBuilderAppId);
+		_columnOriginalValues.put(
+			"appBuilderAppVersionId", _appBuilderAppVersionId);
+		_columnOriginalValues.put("ddlRecordId", _ddlRecordId);
+	}
+
+	private transient Map<String, Object> _columnOriginalValues;
+
+	public static long getColumnBitmask(String columnName) {
+		return _columnBitmasks.get(columnName);
+	}
+
+	private static final Map<String, Long> _columnBitmasks;
+
+	static {
+		Map<String, Long> columnBitmasks = new HashMap<>();
+
+		columnBitmasks.put("appBuilderAppDataRecordLinkId", 1L);
+
+		columnBitmasks.put("groupId", 2L);
+
+		columnBitmasks.put("companyId", 4L);
+
+		columnBitmasks.put("appBuilderAppId", 8L);
+
+		columnBitmasks.put("appBuilderAppVersionId", 16L);
+
+		columnBitmasks.put("ddlRecordId", 32L);
+
+		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
+	}
+
 	private long _columnBitmask;
 	private AppBuilderAppDataRecordLink _escapedModel;
 

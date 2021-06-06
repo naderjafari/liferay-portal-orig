@@ -22,13 +22,15 @@ AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)request.getAttrib
 String backURL = ParamUtil.getString(request, "backURL");
 
 if (Validator.isNull(backURL)) {
-	PortletURL viewAccountUserURL = renderResponse.createRenderURL();
-
-	viewAccountUserURL.setParameter("mvcRenderCommandName", "/account_admin/edit_account_entry");
-	viewAccountUserURL.setParameter("screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_USERS);
-	viewAccountUserURL.setParameter("accountEntryId", String.valueOf(accountEntryDisplay.getAccountEntryId()));
-
-	backURL = viewAccountUserURL.toString();
+	backURL = PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCRenderCommandName(
+		"/account_admin/edit_account_entry"
+	).setParameter(
+		"accountEntryId", accountEntryDisplay.getAccountEntryId()
+	).setParameter(
+		"screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_USERS
+	).buildString();
 }
 
 portletDisplay.setShowBackIcon(true);
@@ -80,7 +82,20 @@ renderResponse.setTitle(LanguageUtil.format(request, "add-new-user-to-x", accoun
 						<liferay-ui:message key="<%= usne.screenNameValidator.getDescription(locale) %>" />
 					</liferay-ui:error>
 
-					<aui:input label="screen-name" name="screenName" required="<%= true %>" type="text" />
+					<aui:model-context model="<%= User.class %>" />
+
+					<aui:input name="screenName">
+
+						<%
+						ScreenNameValidator screenNameValidator = ScreenNameValidatorFactory.getInstance();
+						%>
+
+						<c:if test="<%= Validator.isNotNull(screenNameValidator.getAUIValidatorJS()) %>">
+							<aui:validator errorMessage="<%= screenNameValidator.getDescription(locale) %>" name="custom">
+								<%= screenNameValidator.getAUIValidatorJS() %>
+							</aui:validator>
+						</c:if>
+					</aui:input>
 
 					<liferay-ui:error exception="<%= UserEmailAddressException.MustNotBeDuplicate.class %>" focusField="emailAddress" message="the-email-address-you-requested-is-already-taken" />
 					<liferay-ui:error exception="<%= UserEmailAddressException.MustNotBeNull.class %>" focusField="emailAddress" message="please-enter-an-email-address" />
@@ -125,29 +140,37 @@ renderResponse.setTitle(LanguageUtil.format(request, "add-new-user-to-x", accoun
 	</liferay-frontend:edit-form-footer>
 </liferay-frontend:edit-form>
 
-<c:if test="<%= accountEntryDisplay.isEmailDomainValidationEnabled(themeDisplay) && !Objects.equals(accountEntryDisplay.getType(), AccountConstants.ACCOUNT_ENTRY_TYPE_PERSON) %>">
+<c:if test="<%= !Objects.equals(accountEntryDisplay.getType(), AccountConstants.ACCOUNT_ENTRY_TYPE_PERSON) && (accountEntryDisplay.isValidateUserEmailAddress(themeDisplay) || Validator.isNotNull(AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()))) %>">
 
 	<%
-	PortletURL viewValidDomainsURL = renderResponse.createRenderURL();
+	Map<String, Object> context = HashMapBuilder.<String, Object>put(
+		"accountEntryNames", accountEntryDisplay.getName()
+	).build();
 
-	viewValidDomainsURL.setParameter("mvcPath", "/account_users_admin/account_user/view_valid_domains.jsp");
-	viewValidDomainsURL.setParameter("validDomains", StringUtil.merge(accountEntryDisplay.getDomains(), StringPool.COMMA));
-	viewValidDomainsURL.setWindowState(LiferayWindowState.POP_UP);
+	if (Validator.isNotNull(AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()))) {
+		context.put("blockedDomains", AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()));
+	}
+
+	if (accountEntryDisplay.isValidateUserEmailAddress(themeDisplay)) {
+		context.put("validDomains", StringUtil.merge(accountEntryDisplay.getDomains(), StringPool.COMMA));
+
+		PortletURL viewValidDomainsURL = PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/account_users_admin/account_user/view_valid_domains.jsp"
+		).setParameter(
+			"validDomains", StringUtil.merge(accountEntryDisplay.getDomains(), StringPool.COMMA)
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).build();
+
+		context.put("viewValidDomainsURL", viewValidDomainsURL.toString());
+	}
 	%>
 
 	<liferay-frontend:component
 		componentId="AccountUserEmailDomainValidator"
-		context='<%=
-			HashMapBuilder.<String, Object>put(
-				"accountEntryNames", accountEntryDisplay.getName()
-			).put(
-				"blockedDomains", AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId())
-			).put(
-				"validDomains", StringUtil.merge(accountEntryDisplay.getDomains(), StringPool.COMMA)
-			).put(
-				"viewValidDomainsURL", viewValidDomainsURL.toString()
-			).build()
-		%>'
+		context="<%= context %>"
 		module="account_users_admin/js/AccountUserEmailDomainValidator.es"
 	/>
 </c:if>

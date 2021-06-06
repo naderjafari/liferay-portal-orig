@@ -14,6 +14,8 @@
 
 package com.liferay.staging.bar.web.internal.portlet;
 
+import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.exportimport.kernel.exception.RemoteExportException;
 import com.liferay.exportimport.kernel.staging.LayoutStagingUtil;
 import com.liferay.exportimport.kernel.staging.Staging;
@@ -172,7 +174,6 @@ public class StagingBarPortlet extends MVCPortlet {
 		LayoutBranch layoutBranch = null;
 		LayoutRevision layoutRevision = null;
 		LayoutSetBranch layoutSetBranch = null;
-		Layout liveLayout = null;
 
 		if (layout != null) {
 			layoutRevision = LayoutStagingUtil.getLayoutRevision(layout);
@@ -196,12 +197,15 @@ public class StagingBarPortlet extends MVCPortlet {
 		List<LayoutSetBranch> layoutSetBranches = null;
 		Group liveGroup = _staging.getLiveGroup(group.getGroupId());
 		String liveURL = null;
+		Layout liveLayout = null;
 		Group stagingGroup = _staging.getStagingGroup(group.getGroupId());
 		String remoteSiteURL = StringPool.BLANK;
 		String remoteURL = null;
 		String stagingURL = null;
 
 		if (themeDisplay.isShowStagingIcon()) {
+			long originalScopeGroupId = themeDisplay.getScopeGroupId();
+
 			if (liveGroup != null) {
 				liveLayout = _layoutLocalService.fetchLayoutByUuidAndGroupId(
 					layout.getUuid(), liveGroup.getGroupId(),
@@ -209,6 +213,15 @@ public class StagingBarPortlet extends MVCPortlet {
 
 				if (liveLayout != null) {
 					try {
+						if (liveLayout.isTypeAssetDisplay()) {
+							themeDisplay.setScopeGroupId(
+								liveGroup.getGroupId());
+
+							_setScopedAssetEntry(
+								themeDisplay.getRequest(),
+								liveGroup.getGroupId());
+						}
+
 						liveURL = _portal.getLayoutURL(
 							liveLayout, themeDisplay);
 					}
@@ -234,6 +247,15 @@ public class StagingBarPortlet extends MVCPortlet {
 
 				if (stagingLayout != null) {
 					try {
+						if (stagingLayout.isTypeAssetDisplay()) {
+							themeDisplay.setScopeGroupId(
+								stagingGroup.getGroupId());
+
+							_setScopedAssetEntry(
+								themeDisplay.getRequest(),
+								stagingGroup.getGroupId());
+						}
+
 						stagingURL = _portal.getLayoutURL(
 							stagingLayout, themeDisplay);
 					}
@@ -246,6 +268,14 @@ public class StagingBarPortlet extends MVCPortlet {
 						themeDisplay, layout.isPrivateLayout());
 				}
 			}
+
+			Object originalAssetEntry = httpServletRequest.getAttribute(
+				WebKeys.LAYOUT_ASSET_ENTRY);
+
+			httpServletRequest.setAttribute(
+				WebKeys.LAYOUT_ASSET_ENTRY, originalAssetEntry);
+
+			themeDisplay.setScopeGroupId(originalScopeGroupId);
 
 			if (group.isStagingGroup() || group.isStagedRemotely()) {
 				layoutSetBranches =
@@ -279,16 +309,16 @@ public class StagingBarPortlet extends MVCPortlet {
 					SessionErrors.add(renderRequest, AuthException.class);
 				}
 				catch (SystemException systemException) {
-					Throwable cause = systemException.getCause();
+					Throwable throwable = systemException.getCause();
 
-					if (!(cause instanceof ConnectException)) {
+					if (!(throwable instanceof ConnectException)) {
 						throw systemException;
 					}
 
 					if (_log.isWarnEnabled()) {
 						_log.warn(
 							"Unable to connect to remote live: " +
-								cause.getMessage());
+								throwable.getMessage());
 					}
 
 					SessionErrors.add(
@@ -305,7 +335,8 @@ public class StagingBarPortlet extends MVCPortlet {
 		renderRequest.setAttribute(WebKeys.GROUP, group);
 		renderRequest.setAttribute(WebKeys.LAYOUT, layout);
 		renderRequest.setAttribute(WebKeys.LAYOUT_REVISION, layoutRevision);
-		renderRequest.setAttribute(WebKeys.PRIVATE_LAYOUT, privateLayout);
+		renderRequest.setAttribute(
+			WebKeys.PRIVATE_LAYOUT, String.valueOf(privateLayout));
 
 		renderRequest.setAttribute(
 			StagingProcessesWebKeys.BRANCHING_ENABLED,
@@ -438,10 +469,10 @@ public class StagingBarPortlet extends MVCPortlet {
 	}
 
 	@Override
-	protected boolean isSessionErrorException(Throwable cause) {
-		if (cause instanceof LayoutBranchNameException ||
-			cause instanceof LayoutSetBranchNameException ||
-			super.isSessionErrorException(cause)) {
+	protected boolean isSessionErrorException(Throwable throwable) {
+		if (throwable instanceof LayoutBranchNameException ||
+			throwable instanceof LayoutSetBranchNameException ||
+			super.isSessionErrorException(throwable)) {
 
 			return true;
 		}
@@ -554,21 +585,23 @@ public class StagingBarPortlet extends MVCPortlet {
 						layoutRevision.getLayoutSetBranchId(),
 						parentLayout.getPlid());
 
-				_layoutRevisionLocalService.updateLayoutRevision(
-					serviceContext.getUserId(),
-					parentLayoutsRevision.getLayoutRevisionId(),
-					parentLayoutsRevision.getLayoutBranchId(),
-					parentLayoutsRevision.getName(),
-					parentLayoutsRevision.getTitle(),
-					parentLayoutsRevision.getDescription(),
-					parentLayoutsRevision.getKeywords(),
-					parentLayoutsRevision.getRobots(),
-					parentLayoutsRevision.getTypeSettings(),
-					parentLayoutsRevision.getIconImage(),
-					parentLayoutsRevision.getIconImageId(),
-					parentLayoutsRevision.getThemeId(),
-					parentLayoutsRevision.getColorSchemeId(),
-					parentLayoutsRevision.getCss(), serviceContext);
+				if (parentLayoutsRevision != null) {
+					_layoutRevisionLocalService.updateLayoutRevision(
+						serviceContext.getUserId(),
+						parentLayoutsRevision.getLayoutRevisionId(),
+						parentLayoutsRevision.getLayoutBranchId(),
+						parentLayoutsRevision.getName(),
+						parentLayoutsRevision.getTitle(),
+						parentLayoutsRevision.getDescription(),
+						parentLayoutsRevision.getKeywords(),
+						parentLayoutsRevision.getRobots(),
+						parentLayoutsRevision.getTypeSettings(),
+						parentLayoutsRevision.getIconImage(),
+						parentLayoutsRevision.getIconImageId(),
+						parentLayoutsRevision.getThemeId(),
+						parentLayoutsRevision.getColorSchemeId(),
+						parentLayoutsRevision.getCss(), serviceContext);
+				}
 			}
 
 			parentPlid = parentLayout.getParentPlid();
@@ -621,8 +654,28 @@ public class StagingBarPortlet extends MVCPortlet {
 		}
 	}
 
+	private void _setScopedAssetEntry(
+		HttpServletRequest httpServletRequest, long groupId) {
+
+		Object object = httpServletRequest.getAttribute(
+			WebKeys.LAYOUT_ASSET_ENTRY);
+
+		if ((object != null) && (object instanceof AssetEntry)) {
+			AssetEntry assetEntry = (AssetEntry)object;
+
+			AssetEntry scopedAssetEntry = _assetEntryLocalService.fetchEntry(
+				groupId, assetEntry.getClassUuid());
+
+			httpServletRequest.setAttribute(
+				WebKeys.LAYOUT_ASSET_ENTRY, scopedAssetEntry);
+		}
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		StagingBarPortlet.class);
+
+	@Reference
+	private AssetEntryLocalService _assetEntryLocalService;
 
 	private LayoutLocalService _layoutLocalService;
 	private LayoutRevisionLocalService _layoutRevisionLocalService;

@@ -10,9 +10,10 @@
  */
 
 import ClayLayout from '@clayui/layout';
+import ClayPanel from '@clayui/panel';
 import React, {useMemo} from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
+import PanelHeaderWithOptions from '../../../shared/components/panel-header-with-options/PanelHeaderWithOptions.es';
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
 import {useFetch} from '../../../shared/hooks/useFetch.es';
 import {useFilter} from '../../../shared/hooks/useFilter.es';
@@ -20,25 +21,29 @@ import TimeRangeFilter from '../../filter/TimeRangeFilter.es';
 import {getTimeRangeParams} from '../../filter/util/timeRangeUtil.es';
 import {Body, Footer} from './PerformanceByStepCardBody.es';
 
-const Header = ({disableFilters, prefixKey, totalCount}) => (
-	<Panel.HeaderWithOptions
-		description={Liferay.Language.get('performance-by-step-description')}
-		elementClasses="dashboard-panel-header"
-		title={Liferay.Language.get('performance-by-step')}
-	>
-		<ClayLayout.ContentCol className="m-0 management-bar management-bar-light navbar">
-			<ul className="navbar-nav">
-				<TimeRangeFilter
-					disabled={!totalCount || disableFilters}
-					options={{position: 'right'}}
-					prefixKey={prefixKey}
-				/>
-			</ul>
-		</ClayLayout.ContentCol>
-	</Panel.HeaderWithOptions>
-);
+function Header({disableFilters, prefixKey, totalCount}) {
+	return (
+		<PanelHeaderWithOptions
+			className="dashboard-panel-header"
+			description={Liferay.Language.get(
+				'performance-by-step-description'
+			)}
+			title={Liferay.Language.get('performance-by-step')}
+		>
+			<ClayLayout.ContentCol className="m-0 management-bar management-bar-light navbar">
+				<ul className="navbar-nav">
+					<TimeRangeFilter
+						disabled={!totalCount || disableFilters}
+						options={{position: 'right'}}
+						prefixKey={prefixKey}
+					/>
+				</ul>
+			</ClayLayout.ContentCol>
+		</PanelHeaderWithOptions>
+	);
+}
 
-const PerformanceByStepCard = ({routeParams}) => {
+function PerformanceByStepCard({routeParams}) {
 	const {processId} = routeParams;
 	const filterKeys = ['timeRange'];
 	const prefixKey = 'step';
@@ -77,7 +82,7 @@ const PerformanceByStepCard = ({routeParams}) => {
 	}, [fetchData, filtersError, timeRange.dateEnd, timeRange.dateStart]);
 
 	return (
-		<Panel elementClasses="dashboard-card">
+		<ClayPanel className="dashboard-card mt-4">
 			<PromisesResolver promises={promises}>
 				<PerformanceByStepCard.Header
 					disableFilters={filtersError}
@@ -95,9 +100,9 @@ const PerformanceByStepCard = ({routeParams}) => {
 					/>
 				)}
 			</PromisesResolver>
-		</Panel>
+		</ClayPanel>
 	);
-};
+}
 
 PerformanceByStepCard.Body = Body;
 PerformanceByStepCard.Footer = Footer;

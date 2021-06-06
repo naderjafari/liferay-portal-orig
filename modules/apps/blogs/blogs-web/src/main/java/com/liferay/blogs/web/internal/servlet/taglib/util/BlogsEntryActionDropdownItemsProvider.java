@@ -24,10 +24,13 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerRegistryUtil;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.StagedModel;
 import com.liferay.portal.kernel.model.WorkflowedModel;
@@ -35,6 +38,7 @@ import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
+import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Constants;
@@ -44,10 +48,12 @@ import com.liferay.taglib.security.PermissionsURLTag;
 import com.liferay.trash.TrashHelper;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionURL;
+import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
@@ -60,11 +66,10 @@ import javax.servlet.http.HttpServletRequest;
 public class BlogsEntryActionDropdownItemsProvider {
 
 	public BlogsEntryActionDropdownItemsProvider(
-		BlogsEntry blogsEntry, RenderRequest renderRequest,
-		RenderResponse renderResponse, PermissionChecker permissionChecker,
-		ResourceBundle resourceBundle, TrashHelper trashHelper) {
+		RenderRequest renderRequest, RenderResponse renderResponse,
+		PermissionChecker permissionChecker, ResourceBundle resourceBundle,
+		TrashHelper trashHelper) {
 
-		_blogsEntry = blogsEntry;
 		_renderResponse = renderResponse;
 		_permissionChecker = permissionChecker;
 		_resourceBundle = resourceBundle;
@@ -73,42 +78,45 @@ public class BlogsEntryActionDropdownItemsProvider {
 		_httpServletRequest = PortalUtil.getHttpServletRequest(renderRequest);
 	}
 
-	public List<DropdownItem> getActionDropdownItems() throws PortalException {
+	public List<DropdownItem> getActionDropdownItems(BlogsEntry blogsEntry)
+		throws PortalException {
+
 		boolean sharingEnabled = BlogsEntrySharingUtil.isSharingEnabled(
-			_blogsEntry.getGroupId());
-		boolean hasDeletePermission = _hasDeletePermission();
+			blogsEntry.getGroupId());
+		boolean hasDeletePermission = _hasDeletePermission(blogsEntry);
 		boolean trashEnabled = _isTrashEnabled();
 
 		return DropdownItemListBuilder.add(
-			() -> _hasUpdatePermission(), _getEditEntryActionUnsafeConsumer()
+			() -> _hasUpdatePermission(blogsEntry),
+			_getEditEntryActionUnsafeConsumer(blogsEntry)
 		).add(
 			() ->
 				sharingEnabled &&
 				BlogsEntrySharingUtil.containsSharePermission(
-					_permissionChecker, _blogsEntry),
+					_permissionChecker, blogsEntry),
 			BlogsEntrySharingUtil.createShareDropdownItem(
-				_blogsEntry, _httpServletRequest)
+				blogsEntry, _httpServletRequest)
 		).add(
 			() ->
 				sharingEnabled &&
 				BlogsEntrySharingUtil.containsManageCollaboratorsPermission(
-					_permissionChecker, _blogsEntry),
+					_permissionChecker, blogsEntry),
 			BlogsEntrySharingUtil.createManageCollaboratorsDropdownItem(
-				_blogsEntry, _httpServletRequest)
+				blogsEntry, _httpServletRequest)
 		).add(
-			() -> _hasPermissionsPermission(),
-			_getPermissionsActionUnsafeConsumer()
+			() -> _hasPermissionsPermission(blogsEntry),
+			_getPermissionsActionUnsafeConsumer(blogsEntry)
 		).add(
 			() -> hasDeletePermission && trashEnabled,
-			_getMoveEntryToTrashActionUnsafeConsumer()
+			_getMoveEntryToTrashActionUnsafeConsumer(blogsEntry)
 		).add(
 			() -> hasDeletePermission && !trashEnabled,
-			_getDeleteEntryActionUnsafeConsumer()
+			_getDeleteEntryActionUnsafeConsumer(blogsEntry)
 		).add(
 			() ->
-				_isShowPublishMenuItem() &&
-				_hasExportImportPortletInfoPermission(),
-			_getPublishToLiveEntryActionUnsafeConsumer()
+				_isShowPublishMenuItem(blogsEntry) &&
+				_hasExportImportPortletInfoPermission(blogsEntry),
+			_getPublishToLiveEntryActionUnsafeConsumer(blogsEntry)
 		).build();
 	}
 
@@ -133,6 +141,10 @@ public class BlogsEntryActionDropdownItemsProvider {
 			return false;
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return false;
 		}
 	}
@@ -171,12 +183,16 @@ public class BlogsEntryActionDropdownItemsProvider {
 			return _isShowPublishMenuItem(group, portletId);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return false;
 		}
 	}
 
 	private UnsafeConsumer<DropdownItem, Exception>
-		_getDeleteEntryActionUnsafeConsumer() {
+		_getDeleteEntryActionUnsafeConsumer(BlogsEntry blogsEntry) {
 
 		ActionURL deleteURL = _renderResponse.createActionURL();
 
@@ -184,7 +200,7 @@ public class BlogsEntryActionDropdownItemsProvider {
 		deleteURL.setParameter(Constants.CMD, Constants.DELETE);
 		deleteURL.setParameter("redirect", _getRedirectURL());
 		deleteURL.setParameter(
-			"entryId", String.valueOf(_blogsEntry.getEntryId()));
+			"entryId", String.valueOf(blogsEntry.getEntryId()));
 
 		return dropdownItem -> {
 			dropdownItem.putData("action", "delete");
@@ -195,14 +211,32 @@ public class BlogsEntryActionDropdownItemsProvider {
 	}
 
 	private UnsafeConsumer<DropdownItem, Exception>
-		_getEditEntryActionUnsafeConsumer() {
+		_getEditEntryActionUnsafeConsumer(BlogsEntry blogsEntry) {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return dropdownItem -> {
+			String portletResource = StringPool.BLANK;
+
+			PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
+
+			if (!Objects.equals(
+					portletDisplay.getPortletName(),
+					BlogsPortletKeys.BLOGS_ADMIN)) {
+
+				portletResource = portletDisplay.getPortletName();
+			}
+
 			dropdownItem.setHref(
-				_renderResponse.createRenderURL(), "mvcRenderCommandName",
-				"/blogs/edit_entry", Constants.CMD, Constants.UPDATE,
-				"redirect", _getRedirectURL(), "entryId",
-				_blogsEntry.getEntryId());
+				PortalUtil.getControlPanelPortletURL(
+					_httpServletRequest, themeDisplay.getScopeGroup(),
+					BlogsPortletKeys.BLOGS_ADMIN, 0, themeDisplay.getPlid(),
+					PortletRequest.RENDER_PHASE),
+				"mvcRenderCommandName", "/blogs/edit_entry", "redirect",
+				_getRedirectURL(), "portletResource", portletResource,
+				"entryId", blogsEntry.getEntryId());
 
 			dropdownItem.setIcon("edit");
 			dropdownItem.setLabel(LanguageUtil.get(_resourceBundle, "edit"));
@@ -210,7 +244,7 @@ public class BlogsEntryActionDropdownItemsProvider {
 	}
 
 	private UnsafeConsumer<DropdownItem, Exception>
-		_getMoveEntryToTrashActionUnsafeConsumer() {
+		_getMoveEntryToTrashActionUnsafeConsumer(BlogsEntry blogsEntry) {
 
 		ActionURL moveToTrashURL = _renderResponse.createActionURL();
 
@@ -219,7 +253,7 @@ public class BlogsEntryActionDropdownItemsProvider {
 		moveToTrashURL.setParameter(Constants.CMD, Constants.MOVE_TO_TRASH);
 		moveToTrashURL.setParameter("redirect", _getRedirectURL());
 		moveToTrashURL.setParameter(
-			"entryId", String.valueOf(_blogsEntry.getEntryId()));
+			"entryId", String.valueOf(blogsEntry.getEntryId()));
 
 		return dropdownItem -> {
 			dropdownItem.putData("action", "delete");
@@ -230,22 +264,23 @@ public class BlogsEntryActionDropdownItemsProvider {
 	}
 
 	private UnsafeConsumer<DropdownItem, Exception>
-		_getPermissionsActionUnsafeConsumer() {
+		_getPermissionsActionUnsafeConsumer(BlogsEntry blogsEntry) {
 
 		return dropdownItem -> {
 			dropdownItem.putData("action", "permissions");
-			dropdownItem.putData("permissionsURL", _getPermissionsURL());
+			dropdownItem.putData(
+				"permissionsURL", _getPermissionsURL(blogsEntry));
 			dropdownItem.setLabel(
 				LanguageUtil.get(_httpServletRequest, "permissions"));
 		};
 	}
 
-	private String _getPermissionsURL() {
+	private String _getPermissionsURL(BlogsEntry blogsEntry) {
 		try {
 			return PermissionsURLTag.doTag(
 				StringPool.BLANK, BlogsEntry.class.getName(),
-				BlogsEntryUtil.getDisplayTitle(_resourceBundle, _blogsEntry),
-				null, String.valueOf(_blogsEntry.getEntryId()),
+				BlogsEntryUtil.getDisplayTitle(_resourceBundle, blogsEntry),
+				null, String.valueOf(blogsEntry.getEntryId()),
 				LiferayWindowState.POP_UP.toString(), null,
 				_httpServletRequest);
 		}
@@ -255,15 +290,17 @@ public class BlogsEntryActionDropdownItemsProvider {
 	}
 
 	private UnsafeConsumer<DropdownItem, Exception>
-		_getPublishToLiveEntryActionUnsafeConsumer() {
+		_getPublishToLiveEntryActionUnsafeConsumer(BlogsEntry blogsEntry) {
 
-		PortletURL publishEntryURL = _renderResponse.createActionURL();
-
-		publishEntryURL.setParameter(
-			ActionRequest.ACTION_NAME, "/blogs/publish_entry");
-		publishEntryURL.setParameter("backURL", _getRedirectURL());
-		publishEntryURL.setParameter(
-			"entryId", String.valueOf(_blogsEntry.getEntryId()));
+		PortletURL publishEntryURL = PortletURLBuilder.createActionURL(
+			_renderResponse
+		).setActionName(
+			"/blogs/publish_entry"
+		).setBackURL(
+			_getRedirectURL()
+		).setParameter(
+			"entryId", blogsEntry.getEntryId()
+		).build();
 
 		return dropdownItem -> {
 			dropdownItem.putData("action", "publishToLive");
@@ -274,27 +311,31 @@ public class BlogsEntryActionDropdownItemsProvider {
 	}
 
 	private String _getRedirectURL() {
-		PortletURL redirectURL = _renderResponse.createRenderURL();
-
-		redirectURL.setParameter("mvcRenderCommandName", "/blogs/view");
+		PortletURL redirectURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/blogs/view"
+		).build();
 
 		return redirectURL.toString();
 	}
 
-	private boolean _hasDeletePermission() {
+	private boolean _hasDeletePermission(BlogsEntry blogsEntry) {
 		try {
 			return BlogsEntryPermission.contains(
-				_permissionChecker, _blogsEntry, ActionKeys.DELETE);
+				_permissionChecker, blogsEntry, ActionKeys.DELETE);
 		}
 		catch (PortalException portalException) {
 			return ReflectionUtil.throwException(portalException);
 		}
 	}
 
-	private boolean _hasExportImportPortletInfoPermission() {
+	private boolean _hasExportImportPortletInfoPermission(
+		BlogsEntry blogsEntry) {
+
 		try {
 			return GroupPermissionUtil.contains(
-				_permissionChecker, _blogsEntry.getGroupId(),
+				_permissionChecker, blogsEntry.getGroupId(),
 				ActionKeys.EXPORT_IMPORT_PORTLET_INFO);
 		}
 		catch (PortalException portalException) {
@@ -302,34 +343,34 @@ public class BlogsEntryActionDropdownItemsProvider {
 		}
 	}
 
-	private boolean _hasPermissionsPermission() {
+	private boolean _hasPermissionsPermission(BlogsEntry blogsEntry) {
 		try {
 			return BlogsEntryPermission.contains(
-				_permissionChecker, _blogsEntry, ActionKeys.PERMISSIONS);
+				_permissionChecker, blogsEntry, ActionKeys.PERMISSIONS);
 		}
 		catch (PortalException portalException) {
 			return ReflectionUtil.throwException(portalException);
 		}
 	}
 
-	private boolean _hasUpdatePermission() {
+	private boolean _hasUpdatePermission(BlogsEntry blogsEntry) {
 		try {
 			return BlogsEntryPermission.contains(
-				_permissionChecker, _blogsEntry, ActionKeys.UPDATE);
+				_permissionChecker, blogsEntry, ActionKeys.UPDATE);
 		}
 		catch (PortalException portalException) {
 			return ReflectionUtil.throwException(portalException);
 		}
 	}
 
-	private boolean _isShowPublishMenuItem() {
+	private boolean _isShowPublishMenuItem(BlogsEntry blogsEntry) {
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
 		return _isShowPublishMenuItem(
 			themeDisplay.getScopeGroup(), BlogsPortletKeys.BLOGS_ADMIN,
-			BlogsEntry.class.getName(), _blogsEntry.getUuid());
+			BlogsEntry.class.getName(), blogsEntry.getUuid());
 	}
 
 	private boolean _isTrashEnabled() {
@@ -342,7 +383,9 @@ public class BlogsEntryActionDropdownItemsProvider {
 		}
 	}
 
-	private final BlogsEntry _blogsEntry;
+	private static final Log _log = LogFactoryUtil.getLog(
+		BlogsEntryActionDropdownItemsProvider.class);
+
 	private final HttpServletRequest _httpServletRequest;
 	private final PermissionChecker _permissionChecker;
 	private final RenderResponse _renderResponse;

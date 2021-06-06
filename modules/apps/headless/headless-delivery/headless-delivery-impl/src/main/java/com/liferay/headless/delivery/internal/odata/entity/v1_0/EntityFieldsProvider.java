@@ -83,22 +83,22 @@ public class EntityFieldsProvider {
 
 		if (Objects.equals(ddmFormField.getType(), DDMFormFieldType.CHECKBOX)) {
 			return new BooleanEntityField(
-				ddmFormField.getName(),
+				ddmFormField.getFieldReference(),
 				locale -> _toFilterableOrSortableFieldName(
-					ddmStructure.getStructureId(), ddmFormField.getName(),
-					locale, "String"));
+					ddmStructure.getStructureId(),
+					ddmFormField.getFieldReference(), locale, "String"));
 		}
 		else if (Objects.equals(
 					ddmFormField.getDataType(), FieldConstants.DATE)) {
 
 			return new DateEntityField(
-				ddmFormField.getName(),
+				ddmFormField.getFieldReference(),
 				locale -> _toFilterableOrSortableFieldName(
-					ddmStructure.getStructureId(), ddmFormField.getName(),
-					locale, "String"),
+					ddmStructure.getStructureId(),
+					ddmFormField.getFieldReference(), locale, "String"),
 				locale -> _toFilterableOrSortableFieldName(
-					ddmStructure.getStructureId(), ddmFormField.getName(),
-					locale, "String"),
+					ddmStructure.getStructureId(),
+					ddmFormField.getFieldReference(), locale, "String"),
 				this::_toFieldValue);
 		}
 		else if (Objects.equals(
@@ -107,10 +107,10 @@ public class EntityFieldsProvider {
 					 ddmFormField.getDataType(), FieldConstants.NUMBER)) {
 
 			return new DoubleEntityField(
-				ddmFormField.getName(),
+				ddmFormField.getFieldReference(),
 				locale -> _toFilterableOrSortableFieldName(
-					ddmStructure.getStructureId(), ddmFormField.getName(),
-					locale, "Number"));
+					ddmStructure.getStructureId(),
+					ddmFormField.getFieldReference(), locale, "Number"));
 		}
 		else if (Objects.equals(
 					ddmFormField.getDataType(), FieldConstants.INTEGER) ||
@@ -118,22 +118,22 @@ public class EntityFieldsProvider {
 					 ddmFormField.getDataType(), FieldConstants.LONG)) {
 
 			return new IntegerEntityField(
-				ddmFormField.getName(),
+				ddmFormField.getFieldReference(),
 				locale -> _toFilterableOrSortableFieldName(
-					ddmStructure.getStructureId(), ddmFormField.getName(),
-					locale, "Number"));
+					ddmStructure.getStructureId(),
+					ddmFormField.getFieldReference(), locale, "Number"));
 		}
 		else if (Objects.equals(
-					ddmFormField.getDataType(), DDMFormFieldType.RADIO) ||
+					ddmFormField.getType(), DDMFormFieldType.RADIO) ||
 				 (Objects.equals(
 					 ddmFormField.getType(), DDMFormFieldType.TEXT) &&
 				  Objects.equals(ddmFormField.getIndexType(), "keyword"))) {
 
 			return new StringEntityField(
-				ddmFormField.getName(),
+				ddmFormField.getFieldReference(),
 				locale -> _toFilterableOrSortableFieldName(
-					ddmStructure.getStructureId(), ddmFormField.getName(),
-					locale, "String"));
+					ddmStructure.getStructureId(),
+					ddmFormField.getFieldReference(), locale, "String"));
 		}
 
 		return null;
@@ -157,11 +157,12 @@ public class EntityFieldsProvider {
 	}
 
 	private String _toFilterableOrSortableFieldName(
-		long ddmStructureId, String fieldName, Locale locale, String type) {
+		long ddmStructureId, String fieldReference, Locale locale,
+		String type) {
 
 		return Field.getSortableFieldName(
 			StringBundler.concat(
-				_ddmIndexer.encodeName(ddmStructureId, fieldName, locale),
+				_ddmIndexer.encodeName(ddmStructureId, fieldReference, locale),
 				StringPool.UNDERLINE, type));
 	}
 

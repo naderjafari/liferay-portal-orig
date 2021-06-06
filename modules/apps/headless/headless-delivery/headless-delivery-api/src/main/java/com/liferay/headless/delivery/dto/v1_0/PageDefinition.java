@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageDefinition")
+@GraphQLName(
+	description = "Represent a definition of a Page.", value = "PageDefinition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageDefinition")
-public class PageDefinition {
+public class PageDefinition implements Serializable {
 
 	public static PageDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(PageDefinition.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The page's page element.")
 	@Valid
 	public PageElement getPageElement() {
 		return pageElement;
@@ -76,11 +80,11 @@ public class PageDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's page element.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected PageElement pageElement;
 
-	@Schema
+	@Schema(description = "The page's settings.")
 	@Valid
 	public Settings getSettings() {
 		return settings;
@@ -105,7 +109,7 @@ public class PageDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page's settings.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Settings settings;
 
@@ -162,6 +166,7 @@ public class PageDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageDefinition",
 		name = "x-class-name"
 	)
@@ -197,7 +202,7 @@ public class PageDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -236,7 +241,7 @@ public class PageDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -17,6 +17,7 @@ package com.liferay.roles.admin.web.internal.display.context;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -222,40 +223,53 @@ public class RoleDisplayContext {
 
 		Role role = RoleServiceUtil.fetchRole(roleId);
 
-		PortletURL assignMembersURL = _renderResponse.createRenderURL();
-
-		assignMembersURL.setParameter("mvcPath", "/edit_role_assignments.jsp");
-		assignMembersURL.setParameter("tabs1", "assignees");
-		assignMembersURL.setParameter("redirect", redirect);
-		assignMembersURL.setParameter("backURL", backURL);
-		assignMembersURL.setParameter(
-			"roleId", String.valueOf(role.getRoleId()));
-
-		PortletURL definePermissionsURL = _renderResponse.createRenderURL();
-
-		definePermissionsURL.setParameter(
-			"mvcPath", "/edit_role_permissions.jsp");
-		definePermissionsURL.setParameter("tabs1", "define-permissions");
-		definePermissionsURL.setParameter("redirect", redirect);
-		definePermissionsURL.setParameter("backURL", backURL);
-		definePermissionsURL.setParameter(Constants.CMD, Constants.VIEW);
-		definePermissionsURL.setParameter(
-			"roleId", String.valueOf(role.getRoleId()));
-
-		PortletURL editRoleURL = _renderResponse.createRenderURL();
-
-		editRoleURL.setParameter("mvcPath", "/edit_role.jsp");
-		editRoleURL.setParameter("tabs1", "details");
-		editRoleURL.setParameter("redirect", redirect);
-		editRoleURL.setParameter("backURL", backURL);
-		editRoleURL.setParameter("roleId", String.valueOf(role.getRoleId()));
-
 		return HashMapBuilder.put(
-			"assignees", assignMembersURL.toString()
+			"assignees",
+			() -> PortletURLBuilder.createRenderURL(
+				_renderResponse
+			).setMVCPath(
+				"/edit_role_assignments.jsp"
+			).setRedirect(
+				redirect
+			).setBackURL(
+				backURL
+			).setTabs1(
+				"assignees"
+			).setParameter(
+				"roleId", role.getRoleId()
+			).buildString()
 		).put(
-			"define-permissions", definePermissionsURL.toString()
+			"define-permissions",
+			() -> PortletURLBuilder.createRenderURL(
+				_renderResponse
+			).setMVCPath(
+				"/edit_role_permissions.jsp"
+			).setCMD(
+				Constants.VIEW
+			).setRedirect(
+				redirect
+			).setBackURL(
+				backURL
+			).setTabs1(
+				"define-permissions"
+			).setParameter(
+				"roleId", role.getRoleId()
+			).buildString()
 		).put(
-			"details", editRoleURL.toString()
+			"details",
+			() -> PortletURLBuilder.createRenderURL(
+				_renderResponse
+			).setMVCPath(
+				"/edit_role.jsp"
+			).setRedirect(
+				redirect
+			).setBackURL(
+				backURL
+			).setTabs1(
+				"details"
+			).setParameter(
+				"roleId", role.getRoleId()
+			).buildString()
 		).build();
 	}
 

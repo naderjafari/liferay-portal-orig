@@ -19,8 +19,8 @@ import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLinkLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.fragment.model.FragmentEntryLink;
-import com.liferay.info.display.contributor.InfoDisplayObjectProvider;
 import com.liferay.layout.content.page.editor.web.internal.util.ContentUtil;
+import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
 import com.liferay.layout.model.LayoutClassedModelUsage;
 import com.liferay.layout.service.LayoutClassedModelUsageLocalService;
 import com.liferay.portal.kernel.comment.CommentManager;
@@ -52,6 +52,15 @@ import org.osgi.service.component.annotations.Reference;
 @Component(service = ModelListener.class)
 public class FragmentEntryLinkModelListener
 	extends BaseModelListener<FragmentEntryLink> {
+
+	@Override
+	public void onAfterCreate(FragmentEntryLink fragmentEntryLink)
+		throws ModelListenerException {
+
+		_updateLayoutClassedModelUsage(fragmentEntryLink);
+
+		_updateDDMTemplateLink(fragmentEntryLink);
+	}
 
 	@Override
 	public void onAfterRemove(FragmentEntryLink fragmentEntryLink)
@@ -220,18 +229,21 @@ public class FragmentEntryLinkModelListener
 			_portal.getClassNameId(FragmentEntryLink.class),
 			fragmentEntryLink.getPlid());
 
-		Set<InfoDisplayObjectProvider<?>> infoDisplayObjectProviders =
-			ContentUtil.getFragmentEntryLinkMappedInfoDisplayObjectProviders(
-				fragmentEntryLink);
+		Set<LayoutDisplayPageObjectProvider<?>>
+			layoutDisplayPageObjectProviders =
+				ContentUtil.
+					getFragmentEntryLinkMappedLayoutDisplayPageObjectProviders(
+						fragmentEntryLink);
 
-		for (InfoDisplayObjectProvider<?> infoDisplayObjectProvider :
-				infoDisplayObjectProviders) {
+		for (LayoutDisplayPageObjectProvider<?>
+				layoutDisplayPageObjectProvider :
+					layoutDisplayPageObjectProviders) {
 
 			LayoutClassedModelUsage layoutClassedModelUsage =
 				_layoutClassedModelUsageLocalService.
 					fetchLayoutClassedModelUsage(
-						infoDisplayObjectProvider.getClassNameId(),
-						infoDisplayObjectProvider.getClassPK(),
+						layoutDisplayPageObjectProvider.getClassNameId(),
+						layoutDisplayPageObjectProvider.getClassPK(),
 						String.valueOf(
 							fragmentEntryLink.getFragmentEntryLinkId()),
 						_portal.getClassNameId(FragmentEntryLink.class),
@@ -249,8 +261,8 @@ public class FragmentEntryLinkModelListener
 
 			_layoutClassedModelUsageLocalService.addLayoutClassedModelUsage(
 				fragmentEntryLink.getGroupId(),
-				infoDisplayObjectProvider.getClassNameId(),
-				infoDisplayObjectProvider.getClassPK(),
+				layoutDisplayPageObjectProvider.getClassNameId(),
+				layoutDisplayPageObjectProvider.getClassPK(),
 				String.valueOf(fragmentEntryLink.getFragmentEntryLinkId()),
 				_portal.getClassNameId(FragmentEntryLink.class),
 				fragmentEntryLink.getPlid(), serviceContext);

@@ -25,7 +25,7 @@ ConfigurationScopeDisplayContext configurationScopeDisplayContext = Configuratio
 <portlet:renderURL var="redirectURL" />
 
 <portlet:renderURL var="searchURL">
-	<portlet:param name="mvcRenderCommandName" value="/search" />
+	<portlet:param name="mvcRenderCommandName" value="/configuration_admin/search_results" />
 	<portlet:param name="redirect" value="<%= redirectURL %>" />
 </portlet:renderURL>
 
@@ -34,6 +34,8 @@ ConfigurationScopeDisplayContext configurationScopeDisplayContext = Configuratio
 	selectable="<%= false %>"
 	showSearch="<%= true %>"
 />
+
+<liferay-ui:success key='<%= ConfigurationAdminPortletKeys.SITE_SETTINGS + "requestProcessed" %>' message="site-was-added" />
 
 <clay:container-fluid
 	cssClass="container-view"
@@ -65,12 +67,10 @@ ConfigurationScopeDisplayContext configurationScopeDisplayContext = Configuratio
 						if (configurationCategoryMenuDisplay.isEmpty()) {
 							continue;
 						}
-
-						String viewCategoryHREF = ConfigurationCategoryUtil.getHREF(configurationCategoryMenuDisplay, liferayPortletResponse, renderRequest, renderResponse);
 					%>
 
 						<li class="list-group-card-item">
-							<a href="<%= viewCategoryHREF %>">
+							<a href="<%= ConfigurationCategoryUtil.getHREF(configurationCategoryMenuDisplay, liferayPortletResponse, renderRequest, renderResponse) %>">
 								<clay:icon
 									symbol="<%= configurationCategoryDisplay.getCategoryIcon() %>"
 								/>

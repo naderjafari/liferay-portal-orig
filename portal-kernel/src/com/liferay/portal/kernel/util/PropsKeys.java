@@ -139,6 +139,12 @@ public interface PropsKeys {
 	public static final String APPLICATION_STARTUP_EVENTS =
 		"application.startup.events";
 
+	public static final String APPLICATIONS_MENU_DEFAULT_LIFERAY_LOGO =
+		"application.menu.default.liferay.logo";
+
+	public static final String APPLICATIONS_MENU_DEFAULT_LIFERAY_NAME =
+		"application.menu.default.liferay.name";
+
 	public static final String ASSET_BROWSER_SEARCH_WITH_DATABASE =
 		"asset.browser.search.with.database";
 
@@ -307,6 +313,10 @@ public interface PropsKeys {
 	public static final String AUTO_LOGIN_IGNORE_PATHS =
 		"auto.login.ignore.paths";
 
+	public static final String AXIS_SERVLET_ENABLED = "axis.servlet.enabled";
+
+	public static final String AXIS_SERVLET_MAPPING = "axis.servlet.mapping";
+
 	public static final String BASIC_AUTH_PASSWORD_REQUIRED =
 		"basic.auth.password.required";
 
@@ -391,6 +401,11 @@ public interface PropsKeys {
 
 	public static final String BROWSER_LAUNCHER_URL = "browser.launcher.url";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #VIEW_COUNT_ENABLED}
+	 */
+	@Deprecated
 	public static final String BUFFERED_INCREMENT_ENABLED =
 		"buffered.increment.enabled";
 
@@ -588,6 +603,9 @@ public interface PropsKeys {
 	public static final String COMPANY_SECURITY_STRANGERS_WITH_MX =
 		"company.security.strangers.with.mx";
 
+	public static final String COMPANY_SECURITY_UPDATE_PASSWORD_REQUIRED =
+		"company.security.update.password.required";
+
 	public static final String COMPANY_SETTINGS_FORM_AUTHENTICATION =
 		"company.settings.form.authentication";
 
@@ -621,6 +639,9 @@ public interface PropsKeys {
 	public static final String CONTROL_PANEL_NAVIGATION_MAX_SITES =
 		"control.panel.navigation.max.sites";
 
+	public static final String CORS_DISABLE_AUTHORIZATION_CONTEXT_CHECK =
+		"cors.disable.authorization.context.check";
+
 	public static final String COUNTER_DATA_CENTER_COUNT =
 		"counter.data.center.count";
 
@@ -639,6 +660,88 @@ public interface PropsKeys {
 
 	public static final String CUSTOM_SQL_FUNCTION_ISNULL =
 		"custom.sql.function.isnull";
+
+	public static final String DATA_LIMIT_DL_STORAGE_MAX_SIZE =
+		"data.limit.dl.storage.max.size";
+
+	public static final String DATA_LIMIT_MAIL_MESSAGE_MAX_COUNT =
+		"data.limit.mail.message.max.count";
+
+	public static final String DATA_LIMIT_MAIL_MESSAGE_MAX_PERIOD =
+		"data.limit.mail.message.max.period";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_DL_STORAGE_SIZE =
+		"data.limit.max.dl.storage.size";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_JOURNAL_ARTICLE_COUNT =
+		"data.limit.max.journal.article.count";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_JOURNAL_FOLDER_COUNT =
+		"data.limit.max.journal.folder.count";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_MAIL_MESSAGE_COUNT =
+		"data.limit.max.mail.message.count";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_MAIL_MESSAGE_PERIOD =
+		"data.limit.max.mail.message.period";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_ORGANIZATION_COUNT =
+		"data.limit.max.organization.count";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_ROLE_COUNT =
+		"data.limit.max.role.count";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_SITE_COUNT =
+		"data.limit.max.site.count";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_TEAM_COUNT =
+		"data.limit.max.team.count";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DATA_LIMIT_MAX_USER_COUNT =
+		"data.limit.max.user.count";
+
+	public static final String DATA_LIMIT_SITE_MAX_COUNT =
+		"data.limit.site.max.count";
 
 	public static final String DATABASE_IN_MAX_PARAMETERS =
 		"database.in.max.parameters";
@@ -903,6 +1006,9 @@ public interface PropsKeys {
 	public static final String DL_FILE_ENTRY_PREVIEW_FORK_PROCESS_ENABLED =
 		"dl.file.entry.preview.fork.process.enabled";
 
+	public static final String DL_FILE_ENTRY_PREVIEW_FORK_PROCESS_JVM_OPTIONS =
+		"dl.file.entry.preview.fork.process.jvm.options";
+
 	public static final String
 		DL_FILE_ENTRY_PREVIEW_GENERATION_DECRYPT_PASSWORDS_PDFBOX =
 			"dl.file.entry.preview.generation.decrypt.passwords.pdfbox";
@@ -1035,9 +1141,6 @@ public interface PropsKeys {
 
 	public static final String DL_STORE_ANTIVIRUS_ENABLED =
 		"dl.store.antivirus.enabled";
-
-	public static final String DL_STORE_ANTIVIRUS_IMPL =
-		"dl.store.antivirus.impl";
 
 	public static final String DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_AMPERSAND =
 		"dl.store.file.impl.safe.file.name.2.ampersand";
@@ -1271,6 +1374,10 @@ public interface PropsKeys {
 	public static final String INDEX_ON_STARTUP_DELAY =
 		"index.on.startup.delay";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String INDEX_ON_UPGRADE = "index.on.upgrade";
 
 	public static final String
@@ -1446,6 +1553,9 @@ public interface PropsKeys {
 
 	public static final String JSON_SERVICE_INVALID_METHOD_NAMES =
 		"json.service.invalid.method.names";
+
+	public static final String JSON_SERVICE_SERIALIZE_THROWABLE =
+		"json.service.serialize.throwable";
 
 	public static final String JSON_WEB_SERVICE_ENABLED =
 		"json.web.service.enabled";
@@ -1659,6 +1769,15 @@ public interface PropsKeys {
 
 	public static final String LDAP_ATTRS_TRANSFORMER_IMPL =
 		"ldap.attrs.transformer.impl";
+
+	public static final String LEARN_RESOURCES_CDN_ENABLED =
+		"learn.resources.cdn.enabled";
+
+	public static final String LEARN_RESOURCES_ENABLED =
+		"learn.resources.enabled";
+
+	public static final String LEARN_RESOURCES_REFRESH_TIME =
+		"learn.resources.refresh.time";
 
 	public static final String LIFERAY_HOME = "liferay.home";
 
@@ -1989,6 +2108,9 @@ public interface PropsKeys {
 
 	public static final String MODULE_FRAMEWORK_EXPORT_PASSWORD_ATTRIBUTES =
 		"module.framework.export.password.attributes";
+
+	public static final String MODULE_FRAMEWORK_FILE_INSTALL_CFG_ENABLED =
+		"module.framework.file.install.cfg.enabled";
 
 	public static final String MODULE_FRAMEWORK_MARKETPLACE_DIR =
 		"module.framework.marketplace.dir";
@@ -2625,12 +2747,27 @@ public interface PropsKeys {
 	public static final String RECENT_CONTENT_MAX_DISPLAY_ITEMS =
 		"recent.content.max.display.items";
 
+	public static final String RECENT_GROUPS_MAX_ELEMENTS =
+		"recent.groups.max.elements";
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public static final String REDIRECT_URL_DOMAINS_ALLOWED =
 		"redirect.url.domains.allowed";
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public static final String REDIRECT_URL_IPS_ALLOWED =
 		"redirect.url.ips.allowed";
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public static final String REDIRECT_URL_SECURITY_MODE =
 		"redirect.url.security.mode";
 
@@ -2657,6 +2794,9 @@ public interface PropsKeys {
 
 	public static final String RESOURCE_ACTIONS_READ_PORTLET_RESOURCES =
 		"resource.actions.read.portlet.resources";
+
+	public static final String RESOURCE_ACTIONS_STRICT_MODE_ENABLED =
+		"resource.actions.strict.mode.enabled";
 
 	public static final String RESOURCE_REPOSITORIES_ROOT =
 		"resource.repositories.root";
@@ -2747,6 +2887,9 @@ public interface PropsKeys {
 	public static final String SEARCH_CONTAINER_PAGE_ITERATOR_MAX_PAGES =
 		"search.container.page.iterator.max.pages";
 
+	public static final String SEARCH_CONTAINER_PAGE_MAX_DELTA =
+		"search.container.page.max.delta";
+
 	/**
 	 * @deprecated As of Judson (7.1.x), with no direct replacement
 	 */
@@ -2797,6 +2940,10 @@ public interface PropsKeys {
 	public static final String SESSION_COOKIE_USE_FULL_HOSTNAME =
 		"session.cookie.use.full.hostname";
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String SESSION_DISABLED = "session.disabled";
 
 	public static final String SESSION_ENABLE_PERSISTENT_COOKIES =
@@ -3283,6 +3430,9 @@ public interface PropsKeys {
 	public static final String USERS_REMINDER_QUERIES_CUSTOM_QUESTION_ENABLED =
 		"users.reminder.queries.custom.question.enabled";
 
+	public static final String USERS_REMINDER_QUERIES_DISPLAY_IN_PLAIN_TEXT =
+		"users.reminder.queries.display.answer.in.plain.text";
+
 	public static final String USERS_REMINDER_QUERIES_ENABLED =
 		"users.reminder.queries.enabled";
 
@@ -3374,6 +3524,14 @@ public interface PropsKeys {
 	 */
 	@Deprecated
 	public static final String VERIFY_PROCESSES = "verify.processes";
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             com.liferay.view.count.configuration.ViewCountsConfiguration
+	 *             #enabled()}
+	 */
+	@Deprecated
+	public static final String VIEW_COUNT_ENABLED = "view.count.enabled";
 
 	public static final String VIRTUAL_HOSTS_DEFAULT_SITE_NAME =
 		"virtual.hosts.default.site.name";

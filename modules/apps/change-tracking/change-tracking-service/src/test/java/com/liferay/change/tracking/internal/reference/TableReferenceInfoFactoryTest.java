@@ -24,11 +24,21 @@ import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.sql.dsl.Table;
 import com.liferay.petra.sql.dsl.base.BaseTable;
+import com.liferay.petra.sql.dsl.expression.Predicate;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.petra.sql.dsl.query.FromStep;
 import com.liferay.petra.sql.dsl.query.JoinStep;
+import com.liferay.petra.sql.dsl.query.WhereStep;
+import com.liferay.petra.sql.dsl.spi.ast.DefaultASTNodeListener;
+import com.liferay.petra.sql.dsl.spi.expression.Scalar;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.model.ClassNameTable;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.sql.Clob;
 import java.sql.Types;
@@ -38,8 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -48,24 +61,42 @@ import org.junit.Test;
 public class TableReferenceInfoFactoryTest {
 
 	@ClassRule
-	public static final CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor() {
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new CodeCoverageAssertor() {
 
-			@Override
-			public void appendAssertClasses(List<Class<?>> assertClasses) {
-				assertClasses.add(BaseTableReferenceInfoBuilder.class);
-				assertClasses.add(ChildTableReferenceInfoBuilderImpl.class);
-				assertClasses.add(ParentTableReferenceInfoBuilderImpl.class);
-				assertClasses.add(TableJoinHolderFactory.class);
+				@Override
+				public void appendAssertClasses(List<Class<?>> assertClasses) {
+					assertClasses.add(BaseTableReferenceInfoBuilder.class);
+					assertClasses.add(ChildTableReferenceInfoBuilderImpl.class);
+					assertClasses.add(
+						ParentTableReferenceInfoBuilderImpl.class);
+					assertClasses.add(TableJoinHolderFactory.class);
 
-				Collections.addAll(
-					assertClasses,
-					TableJoinHolderFactory.class.getDeclaredClasses());
+					Collections.addAll(
+						assertClasses,
+						TableJoinHolderFactory.class.getDeclaredClasses());
 
-				assertClasses.add(TableReferenceInfo.class);
-			}
+					assertClasses.add(TableReferenceInfo.class);
+				}
 
-		};
+			},
+			LiferayUnitTestRule.INSTANCE);
+
+	@BeforeClass
+	public static void setUpClass() {
+		_tableReferenceAppenders = ReflectionTestUtil.getAndSetFieldValue(
+			TableReferenceAppenderRegistry.class, "_tableReferenceAppenders",
+			Collections.emptyList());
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		ReflectionTestUtil.getAndSetFieldValue(
+			TableReferenceAppenderRegistry.class, "_tableReferenceAppenders",
+			_tableReferenceAppenders);
+	}
 
 	@Test
 	public void testChildInnerJoin() {
@@ -101,8 +132,9 @@ public class TableReferenceInfoFactoryTest {
 
 		TableReferenceInfo<MainExampleTable> tableReferenceInfo =
 			TableReferenceInfoFactory.create(
-				tableReferenceDefinition,
-				MainExampleTable.INSTANCE.mainExampleId);
+				MainExampleTable.CLASS_NAME_ID,
+				MainExampleTable.INSTANCE.mainExampleId,
+				tableReferenceDefinition);
 
 		Assert.assertNotNull(tableReferenceInfo);
 
@@ -133,6 +165,10 @@ public class TableReferenceInfoFactoryTest {
 		Assert.assertTrue(
 			parentTableJoinHoldersMap.toString(),
 			parentTableJoinHoldersMap.isEmpty());
+
+		Assert.assertEquals(
+			MainExampleTable.CLASS_NAME_ID,
+			tableReferenceInfo.getClassNameId());
 	}
 
 	@Test
@@ -140,6 +176,120 @@ public class TableReferenceInfoFactoryTest {
 		new TableReferenceInfoFactory();
 
 		new TableJoinHolderFactory();
+	}
+
+	@Test
+	public void testMissingRequirements() {
+		TableReferenceInfo<ReferenceExampleTable> tableReferenceInfo =
+			TableReferenceInfoFactory.create(
+				ReferenceExampleTable.CLASS_NAME_ID,
+				ReferenceExampleTable.INSTANCE.mainExampleId,
+				new MissingRequirementsTableReferenceDefinition());
+
+		Map<Table<?>, List<TableJoinHolder>> parentTableJoinHoldersMap =
+			tableReferenceInfo.getParentTableJoinHoldersMap();
+
+		Assert.assertEquals(
+			parentTableJoinHoldersMap.toString(), 3,
+			parentTableJoinHoldersMap.size());
+
+		_assertMissingRequirementsSQL(
+			parentTableJoinHoldersMap.get(MainExampleTable.INSTANCE),
+			DSLQueryFactoryUtil.select(
+				ReferenceExampleTable.INSTANCE.mainExampleId,
+				new Scalar<>(MainExampleTable.INSTANCE.getTableName())
+			).from(
+				ReferenceExampleTable.INSTANCE
+			).leftJoinOn(
+				MainExampleTable.INSTANCE,
+				ReferenceExampleTable.INSTANCE.referenceExampleId.eq(
+					MainExampleTable.INSTANCE.classPK)
+			).leftJoinOn(
+				ClassNameTable.INSTANCE,
+				ClassNameTable.INSTANCE.classNameId.eq(
+					MainExampleTable.INSTANCE.classNameId)
+			).where(
+				() -> {
+					Predicate predicate =
+						MainExampleTable.INSTANCE.mainExampleId.isNull();
+
+					Scalar<String> key = new Scalar<>("key");
+
+					return predicate.and(
+						key.eq(MainExampleTable.INSTANCE.name)
+					).and(
+						MainExampleTable.INSTANCE.flag.eq(0)
+					).and(
+						ClassNameTable.INSTANCE.value.eq(
+							TableReferenceInfoFactoryTest.class.getName())
+					).and(
+						ReferenceExampleTable.INSTANCE.referenceExampleId.
+							isNotNull()
+					).and(
+						ReferenceExampleTable.INSTANCE.referenceExampleId.neq(
+							0L)
+					);
+				}
+			));
+
+		ReferenceExampleTable aliasReferenceExampleTable =
+			ReferenceExampleTable.INSTANCE.as("aliasParentTable");
+
+		_assertMissingRequirementsSQL(
+			parentTableJoinHoldersMap.get(ReferenceExampleTable.INSTANCE),
+			DSLQueryFactoryUtil.select(
+				ReferenceExampleTable.INSTANCE.mainExampleId,
+				new Scalar<>(ReferenceExampleTable.INSTANCE.getTableName())
+			).from(
+				ReferenceExampleTable.INSTANCE
+			).leftJoinOn(
+				aliasReferenceExampleTable,
+				ReferenceExampleTable.INSTANCE.parentReferenceExampleId.eq(
+					aliasReferenceExampleTable.referenceExampleId)
+			).where(
+				() -> {
+					Predicate predicate =
+						aliasReferenceExampleTable.referenceExampleId.isNull();
+
+					return predicate.and(
+						ReferenceExampleTable.INSTANCE.parentReferenceExampleId.
+							isNotNull()
+					).and(
+						ReferenceExampleTable.INSTANCE.parentReferenceExampleId.
+							neq(0L)
+					);
+				}
+			));
+
+		_assertMissingRequirementsSQL(
+			parentTableJoinHoldersMap.get(StringIntExampleTable.INSTANCE),
+			DSLQueryFactoryUtil.select(
+				ReferenceExampleTable.INSTANCE.mainExampleId,
+				new Scalar<>(StringIntExampleTable.INSTANCE.getTableName())
+			).from(
+				ReferenceExampleTable.INSTANCE
+			).leftJoinOn(
+				StringIntExampleTable.INSTANCE,
+				ReferenceExampleTable.INSTANCE.stringKey.eq(
+					StringIntExampleTable.INSTANCE.stringKey
+				).and(
+					ReferenceExampleTable.INSTANCE.integerKey.eq(
+						StringIntExampleTable.INSTANCE.integerKey)
+				)
+			).where(
+				() -> {
+					Predicate predicate =
+						StringIntExampleTable.INSTANCE.id.isNull();
+
+					return predicate.and(
+						ReferenceExampleTable.INSTANCE.stringKey.isNotNull()
+					).and(
+						ReferenceExampleTable.INSTANCE.stringKey.neq("")
+					).and(
+						ReferenceExampleTable.INSTANCE.integerKey.isNotNull()
+					);
+				}
+			));
 	}
 
 	@Test
@@ -167,29 +317,11 @@ public class TableReferenceInfoFactoryTest {
 
 		Function<FromStep, JoinStep> selfJoinFunction2 =
 			fromStep -> fromStep.from(
-				ReferenceExampleTable.INSTANCE
-			).innerJoinON(
-				aliasReferenceExampleTable,
-				aliasReferenceExampleTable.referenceExampleId.eq(
-					ReferenceExampleTable.INSTANCE.parentReferenceExampleId)
-			);
-
-		Function<FromStep, JoinStep> selfJoinFunction3 =
-			fromStep -> fromStep.from(
 				aliasReferenceExampleTable
 			).innerJoinON(
 				ReferenceExampleTable.INSTANCE,
 				ReferenceExampleTable.INSTANCE.parentReferenceExampleId.eq(
 					aliasReferenceExampleTable.referenceExampleId)
-			);
-
-		Function<FromStep, JoinStep> selfJoinFunction4 =
-			fromStep -> fromStep.from(
-				ReferenceExampleTable.INSTANCE
-			).innerJoinON(
-				aliasReferenceExampleTable,
-				aliasReferenceExampleTable.parentReferenceExampleId.eq(
-					ReferenceExampleTable.INSTANCE.referenceExampleId)
 			);
 
 		TableReferenceDefinition<ReferenceExampleTable>
@@ -203,10 +335,7 @@ public class TableReferenceInfoFactoryTest {
 							childTableReferenceInfoBuilder) {
 
 						childTableReferenceInfoBuilder.referenceInnerJoin(
-							selfJoinFunction1
-						).referenceInnerJoin(
-							selfJoinFunction2
-						);
+							selfJoinFunction1);
 					}
 
 					@Override
@@ -217,9 +346,7 @@ public class TableReferenceInfoFactoryTest {
 						parentTableReferenceInfoBuilder.referenceInnerJoin(
 							parentJoinFunction
 						).referenceInnerJoin(
-							selfJoinFunction3
-						).referenceInnerJoin(
-							selfJoinFunction4
+							selfJoinFunction2
 						);
 					}
 
@@ -227,8 +354,9 @@ public class TableReferenceInfoFactoryTest {
 
 		TableReferenceInfo<ReferenceExampleTable> tableReferenceInfo =
 			TableReferenceInfoFactory.create(
-				tableReferenceDefinition,
-				ReferenceExampleTable.INSTANCE.referenceExampleId);
+				ReferenceExampleTable.CLASS_NAME_ID,
+				ReferenceExampleTable.INSTANCE.referenceExampleId,
+				tableReferenceDefinition);
 
 		Assert.assertNotNull(tableReferenceInfo);
 
@@ -247,7 +375,7 @@ public class TableReferenceInfoFactoryTest {
 			childTableJoinHoldersMap.get(ReferenceExampleTable.INSTANCE);
 
 		Assert.assertEquals(
-			childTableJoinHolders.toString(), 2, childTableJoinHolders.size());
+			childTableJoinHolders.toString(), 1, childTableJoinHolders.size());
 
 		TableJoinHolder childJoinHolder = childTableJoinHolders.get(0);
 
@@ -259,18 +387,6 @@ public class TableReferenceInfoFactoryTest {
 
 		Assert.assertSame(
 			ReferenceExampleTable.INSTANCE.referenceExampleId,
-			childJoinHolder.getChildPKColumn());
-
-		childJoinHolder = childTableJoinHolders.get(1);
-
-		Assert.assertSame(selfJoinFunction2, childJoinHolder.getJoinFunction());
-
-		Assert.assertSame(
-			ReferenceExampleTable.INSTANCE.referenceExampleId,
-			childJoinHolder.getParentPKColumn());
-
-		Assert.assertSame(
-			aliasReferenceExampleTable.referenceExampleId,
 			childJoinHolder.getChildPKColumn());
 
 		Map<Table<?>, List<TableJoinHolder>> parentTableJoinHoldersMap =
@@ -304,12 +420,12 @@ public class TableReferenceInfoFactoryTest {
 			ReferenceExampleTable.INSTANCE);
 
 		Assert.assertEquals(
-			parentTableJoinHolders.toString(), 2,
+			parentTableJoinHolders.toString(), 1,
 			parentTableJoinHolders.size());
 
 		childJoinHolder = parentTableJoinHolders.get(0);
 
-		Assert.assertSame(selfJoinFunction3, childJoinHolder.getJoinFunction());
+		Assert.assertSame(selfJoinFunction2, childJoinHolder.getJoinFunction());
 
 		Assert.assertSame(
 			aliasReferenceExampleTable.referenceExampleId,
@@ -319,18 +435,9 @@ public class TableReferenceInfoFactoryTest {
 			ReferenceExampleTable.INSTANCE.referenceExampleId,
 			childJoinHolder.getChildPKColumn());
 
-		parentJoinHolder = parentTableJoinHolders.get(1);
-
-		Assert.assertSame(
-			selfJoinFunction4, parentJoinHolder.getJoinFunction());
-
-		Assert.assertSame(
-			ReferenceExampleTable.INSTANCE.referenceExampleId,
-			parentJoinHolder.getParentPKColumn());
-
-		Assert.assertSame(
-			aliasReferenceExampleTable.referenceExampleId,
-			parentJoinHolder.getChildPKColumn());
+		Assert.assertEquals(
+			ReferenceExampleTable.CLASS_NAME_ID,
+			tableReferenceInfo.getClassNameId());
 	}
 
 	@Test
@@ -434,7 +541,7 @@ public class TableReferenceInfoFactoryTest {
 						childTableReferenceInfoBuilder.referenceInnerJoin(
 							fromStep -> fromStep.from(
 								MainExampleTable.INSTANCE
-							).leftJoinOn(
+							).innerJoinON(
 								ReferenceExampleTable.INSTANCE,
 								ReferenceExampleTable.INSTANCE.mainExampleId.eq(
 									MainExampleTable.INSTANCE.mainExampleId)
@@ -445,9 +552,9 @@ public class TableReferenceInfoFactoryTest {
 					catch (IllegalArgumentException illegalArgumentException) {
 						Assert.assertEquals(
 							StringBundler.concat(
-								"Invalid join type \"left\" for join step ",
-								"\"... from MainExample left join ",
-								"ReferenceExample on ",
+								"First join must be on table \"MainExample\" ",
+								"for join step \"... from MainExample inner ",
+								"join ReferenceExample on ",
 								"ReferenceExample.mainExampleId = ",
 								"MainExample.mainExampleId\""),
 							illegalArgumentException.getMessage());
@@ -456,9 +563,32 @@ public class TableReferenceInfoFactoryTest {
 					try {
 						childTableReferenceInfoBuilder.referenceInnerJoin(
 							fromStep -> fromStep.from(
-								MainExampleTable.INSTANCE
+								ReferenceExampleTable.INSTANCE
+							).leftJoinOn(
+								MainExampleTable.INSTANCE,
+								ReferenceExampleTable.INSTANCE.mainExampleId.eq(
+									MainExampleTable.INSTANCE.mainExampleId)
+							));
+
+						Assert.fail();
+					}
+					catch (IllegalArgumentException illegalArgumentException) {
+						Assert.assertEquals(
+							StringBundler.concat(
+								"Invalid join type \"left\" for join step ",
+								"\"... from ReferenceExample left join ",
+								"MainExample on ",
+								"ReferenceExample.mainExampleId = ",
+								"MainExample.mainExampleId\""),
+							illegalArgumentException.getMessage());
+					}
+
+					try {
+						childTableReferenceInfoBuilder.referenceInnerJoin(
+							fromStep -> fromStep.from(
+								ReferenceExampleTable.INSTANCE
 							).innerJoinON(
-								ReferenceExampleTable.INSTANCE,
+								MainExampleTable.INSTANCE,
 								ReferenceExampleTable.INSTANCE.mainExampleId.
 									neq(
 										MainExampleTable.INSTANCE.mainExampleId
@@ -476,8 +606,8 @@ public class TableReferenceInfoFactoryTest {
 						Assert.assertEquals(
 							StringBundler.concat(
 								"Invalid predicate operand \"!=\" for join ",
-								"step \"... from MainExample inner join ",
-								"ReferenceExample on ",
+								"step \"... from ReferenceExample inner join ",
+								"MainExample on ",
 								"ReferenceExample.mainExampleId != ",
 								"MainExample.mainExampleId and ",
 								"MainExample.mainExampleId >= ",
@@ -488,10 +618,9 @@ public class TableReferenceInfoFactoryTest {
 					try {
 						childTableReferenceInfoBuilder.referenceInnerJoin(
 							fromStep -> fromStep.from(
-								MainExampleTable.INSTANCE
+								MainExampleTable.INSTANCE.as("aliasMainExample")
 							).innerJoinON(
-								MainExampleTable.INSTANCE.as(
-									"aliasMainExample"),
+								MainExampleTable.INSTANCE,
 								ReferenceExampleTable.INSTANCE.mainExampleId.eq(
 									MainExampleTable.INSTANCE.mainExampleId)
 							));
@@ -504,8 +633,8 @@ public class TableReferenceInfoFactoryTest {
 								"Predicate column tables [MainExample, ",
 								"ReferenceExample] do not match join tables ",
 								"[MainExample, MainExample aliasMainExample] ",
-								"for join step \"... from MainExample inner ",
-								"join MainExample aliasMainExample on ",
+								"for join step \"... from MainExample ",
+								"aliasMainExample inner join MainExample on ",
 								"ReferenceExample.mainExampleId = ",
 								"MainExample.mainExampleId\""),
 							illegalArgumentException.getMessage());
@@ -529,27 +658,6 @@ public class TableReferenceInfoFactoryTest {
 								"from InvalidTable inner join MainExample on ",
 								"MainExample.mainExampleId = ",
 								"InvalidTable.mainExampleId\""),
-							illegalArgumentException.getMessage());
-					}
-
-					try {
-						childTableReferenceInfoBuilder.referenceInnerJoin(
-							fromStep -> fromStep.from(
-								MainExampleTable.INSTANCE
-							).innerJoinON(
-								ReferenceExampleTable.INSTANCE,
-								ReferenceExampleTable.INSTANCE.mainExampleId.eq(
-									MainExampleTable.INSTANCE.mainExampleId)
-							));
-					}
-					catch (IllegalArgumentException illegalArgumentException) {
-						Assert.assertEquals(
-							StringBundler.concat(
-								"From table should be a different table than ",
-								"\"MainExample\" for join step \"... from ",
-								"MainExample inner join ReferenceExample on ",
-								"ReferenceExample.mainExampleId = ",
-								"MainExample.mainExampleId\""),
 							illegalArgumentException.getMessage());
 					}
 
@@ -612,8 +720,9 @@ public class TableReferenceInfoFactoryTest {
 
 		TableReferenceInfo<MainExampleTable> tableReferenceInfo =
 			TableReferenceInfoFactory.create(
-				tableReferenceDefinition,
-				MainExampleTable.INSTANCE.mainExampleId);
+				MainExampleTable.CLASS_NAME_ID,
+				MainExampleTable.INSTANCE.mainExampleId,
+				tableReferenceDefinition);
 
 		Assert.assertNotNull(tableReferenceInfo);
 
@@ -634,7 +743,42 @@ public class TableReferenceInfoFactoryTest {
 		Assert.assertTrue(
 			parentTableJoinHoldersMap.toString(),
 			parentTableJoinHoldersMap.isEmpty());
+
+		Assert.assertEquals(
+			MainExampleTable.CLASS_NAME_ID,
+			tableReferenceInfo.getClassNameId());
 	}
+
+	private void _assertMissingRequirementsSQL(
+		List<TableJoinHolder> tableJoinHolders, DSLQuery expectedDSLQuery) {
+
+		Assert.assertNotNull(tableJoinHolders);
+
+		Assert.assertEquals(
+			tableJoinHolders.toString(), 1, tableJoinHolders.size());
+
+		TableJoinHolder tableJoinHolder = tableJoinHolders.get(0);
+
+		WhereStep whereStep = tableJoinHolder.getMissingRequirementWhereStep();
+
+		DSLQuery dslQuery = whereStep.where(
+			tableJoinHolder.getMissingRequirementWherePredicate());
+
+		DefaultASTNodeListener expectedDefaultASTNodeListener =
+			new DefaultASTNodeListener();
+		DefaultASTNodeListener actualDefaultASTNodeListener =
+			new DefaultASTNodeListener();
+
+		Assert.assertEquals(
+			expectedDSLQuery.toSQL(expectedDefaultASTNodeListener),
+			dslQuery.toSQL(actualDefaultASTNodeListener));
+
+		Assert.assertEquals(
+			expectedDefaultASTNodeListener.getScalarValues(),
+			actualDefaultASTNodeListener.getScalarValues());
+	}
+
+	private static List<TableReferenceAppender> _tableReferenceAppenders;
 
 	private static class InvalidTable extends BaseTable<InvalidTable> {
 
@@ -651,8 +795,14 @@ public class TableReferenceInfoFactoryTest {
 
 	private static class MainExampleTable extends BaseTable<MainExampleTable> {
 
+		public static final long CLASS_NAME_ID = 1;
+
 		public static final MainExampleTable INSTANCE = new MainExampleTable();
 
+		public final Column<MainExampleTable, Long> classNameId = createColumn(
+			"classNameId", Long.class, Types.BIGINT, Column.FLAG_DEFAULT);
+		public final Column<MainExampleTable, Long> classPK = createColumn(
+			"classPK", Long.class, Types.BIGINT, Column.FLAG_DEFAULT);
 		public final Column<MainExampleTable, Clob> description = createColumn(
 			"description", Clob.class, Types.CLOB, Column.FLAG_DEFAULT);
 		public final Column<MainExampleTable, Integer> flag = createColumn(
@@ -671,12 +821,80 @@ public class TableReferenceInfoFactoryTest {
 
 	}
 
+	private static class MissingRequirementsTableReferenceDefinition
+		extends TestTableReferenceDefinition<ReferenceExampleTable> {
+
+		@Override
+		public void defineChildTableReferences(
+			ChildTableReferenceInfoBuilder<ReferenceExampleTable>
+				childTableReferenceInfoBuilder) {
+		}
+
+		@Override
+		public void defineParentTableReferences(
+			ParentTableReferenceInfoBuilder<ReferenceExampleTable>
+				parentTableReferenceInfoBuilder) {
+
+			parentTableReferenceInfoBuilder.parentColumnReference(
+				ReferenceExampleTable.INSTANCE.referenceExampleId,
+				ReferenceExampleTable.INSTANCE.parentReferenceExampleId
+			).referenceInnerJoin(
+				fromStep -> fromStep.from(
+					StringIntExampleTable.INSTANCE
+				).innerJoinON(
+					ReferenceExampleTable.INSTANCE,
+					ReferenceExampleTable.INSTANCE.stringKey.eq(
+						StringIntExampleTable.INSTANCE.stringKey
+					).and(
+						ReferenceExampleTable.INSTANCE.integerKey.eq(
+							StringIntExampleTable.INSTANCE.integerKey)
+					)
+				)
+			).referenceInnerJoin(
+				fromStep -> {
+					Scalar<String> key = new Scalar<>("key");
+
+					return fromStep.from(
+						MainExampleTable.INSTANCE
+					).innerJoinON(
+						ReferenceExampleTable.INSTANCE,
+						ReferenceExampleTable.INSTANCE.referenceExampleId.eq(
+							MainExampleTable.INSTANCE.classPK
+						).and(
+							key.eq(MainExampleTable.INSTANCE.name)
+						).and(
+							MainExampleTable.INSTANCE.flag.eq(0)
+						)
+					).innerJoinON(
+						ClassNameTable.INSTANCE,
+						ClassNameTable.INSTANCE.classNameId.eq(
+							MainExampleTable.INSTANCE.classNameId
+						).and(
+							ClassNameTable.INSTANCE.value.eq(
+								TableReferenceInfoFactoryTest.class.getName())
+						)
+					);
+				}
+			);
+		}
+
+		private MissingRequirementsTableReferenceDefinition() {
+			super(ReferenceExampleTable.INSTANCE);
+		}
+
+	}
+
 	private static class ReferenceExampleTable
 		extends BaseTable<ReferenceExampleTable> {
+
+		public static final long CLASS_NAME_ID = 2;
 
 		public static final ReferenceExampleTable INSTANCE =
 			new ReferenceExampleTable();
 
+		public final Column<ReferenceExampleTable, Integer> integerKey =
+			createColumn(
+				"integerKey", Integer.class, Types.BIGINT, Column.FLAG_DEFAULT);
 		public final Column<ReferenceExampleTable, Long> mainExampleId =
 			createColumn(
 				"mainExampleId", Long.class, Types.BIGINT, Column.FLAG_DEFAULT);
@@ -691,6 +909,9 @@ public class TableReferenceInfoFactoryTest {
 			createColumn(
 				"referenceExampleId", Long.class, Types.BIGINT,
 				Column.FLAG_PRIMARY);
+		public final Column<ReferenceExampleTable, String> stringKey =
+			createColumn(
+				"stringKey", String.class, Types.BIGINT, Column.FLAG_DEFAULT);
 
 		private ReferenceExampleTable() {
 			super("ReferenceExample", ReferenceExampleTable::new);
@@ -698,12 +919,34 @@ public class TableReferenceInfoFactoryTest {
 
 	}
 
-	private abstract class TestTableReferenceDefinition<T extends Table<T>>
-		implements TableReferenceDefinition<T> {
+	private static class StringIntExampleTable
+		extends BaseTable<StringIntExampleTable> {
+
+		public static final StringIntExampleTable INSTANCE =
+			new StringIntExampleTable();
+
+		public final Column<StringIntExampleTable, Long> id = createColumn(
+			"id", Long.class, Types.BIGINT, Column.FLAG_PRIMARY);
+		public final Column<StringIntExampleTable, Integer> integerKey =
+			createColumn(
+				"integerKey", Integer.class, Types.BIGINT, Column.FLAG_DEFAULT);
+		public final Column<StringIntExampleTable, String> stringKey =
+			createColumn(
+				"stringKey", String.class, Types.BIGINT, Column.FLAG_DEFAULT);
+
+		private StringIntExampleTable() {
+			super("StringIntExample", StringIntExampleTable::new);
+		}
+
+	}
+
+	private abstract static class TestTableReferenceDefinition
+		<T extends Table<T>>
+			implements TableReferenceDefinition<T> {
 
 		@Override
 		public BasePersistence<?> getBasePersistence() {
-			return null;
+			return new BasePersistenceImpl<>();
 		}
 
 		@Override

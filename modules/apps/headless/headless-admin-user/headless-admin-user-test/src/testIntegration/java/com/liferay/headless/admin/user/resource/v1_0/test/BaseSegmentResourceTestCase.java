@@ -109,7 +109,9 @@ public abstract class BaseSegmentResourceTestCase {
 
 		SegmentResource.Builder builder = SegmentResource.builder();
 
-		segmentResource = builder.locale(
+		segmentResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -204,7 +206,7 @@ public abstract class BaseSegmentResourceTestCase {
 		Long siteId = testGetSiteSegmentsPage_getSiteId();
 		Long irrelevantSiteId = testGetSiteSegmentsPage_getIrrelevantSiteId();
 
-		if ((irrelevantSiteId != null)) {
+		if (irrelevantSiteId != null) {
 			Segment irrelevantSegment = testGetSiteSegmentsPage_addSegment(
 				irrelevantSiteId, randomIrrelevantSegment());
 
@@ -463,7 +465,7 @@ public abstract class BaseSegmentResourceTestCase {
 		}
 	}
 
-	protected void assertValid(Segment segment) {
+	protected void assertValid(Segment segment) throws Exception {
 		boolean valid = true;
 
 		if (segment.getDateCreated() == null) {
@@ -495,6 +497,14 @@ public abstract class BaseSegmentResourceTestCase {
 
 			if (Objects.equals("criteria", additionalAssertFieldName)) {
 				if (segment.getCriteria() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("criteriaValue", additionalAssertFieldName)) {
+				if (segment.getCriteriaValue() == null) {
 					valid = false;
 				}
 
@@ -552,7 +562,7 @@ public abstract class BaseSegmentResourceTestCase {
 		graphQLFields.add(new GraphQLField("siteId"));
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.headless.admin.user.dto.v1_0.Segment.class)) {
 
 			if (!ArrayUtil.contains(
@@ -586,7 +596,7 @@ public abstract class BaseSegmentResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -625,6 +635,17 @@ public abstract class BaseSegmentResourceTestCase {
 			if (Objects.equals("criteria", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						segment1.getCriteria(), segment2.getCriteria())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("criteriaValue", additionalAssertFieldName)) {
+				if (!equals(
+						(Map)segment1.getCriteriaValue(),
+						(Map)segment2.getCriteriaValue())) {
 
 					return false;
 				}
@@ -708,9 +729,22 @@ public abstract class BaseSegmentResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -774,6 +808,11 @@ public abstract class BaseSegmentResourceTestCase {
 			sb.append("'");
 
 			return sb.toString();
+		}
+
+		if (entityFieldName.equals("criteriaValue")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("dateCreated")) {
@@ -977,12 +1016,12 @@ public abstract class BaseSegmentResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -992,10 +1031,10 @@ public abstract class BaseSegmentResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

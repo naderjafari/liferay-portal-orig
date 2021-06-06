@@ -37,116 +37,9 @@ definition {
 		}
 	}
 
-	@description = "This is for LPS-109298. Each tab of Tabs fragment is able to contain any elements in custom master."
-	@priority = "4"
-	test AddFragmentToIndividualTabOfTabsFragmentInMasterPageTemplate {
-		property test.assert.warning.exceptions = "true";
-
-		MastersPageTemplatesAdmin.gotoMasters(masterLayoutName = "Custom Masters Page Template");
-
-		PageEditor.addFragment(
-			collectionName = "Basic Components",
-			dropTarget = "Footer",
-			fragmentName = "Tabs",
-			scope = "Master");
-
-		AssertVisible(
-			key_content = "Place fragments here.",
-			key_fragmentClass = "content",
-			key_position = "1",
-			locator1 = "Fragment#PAGE_EDITOR_NO_FRAGMENTS_MESSAGE");
-
-		PageEditor.expandFragmentCollection(collectionName = "Layout Elements");
-
-		DragAndDrop.javaScriptDragAndDropToObject(
-			key_collectionName = "Layout Elements",
-			key_fragmentName = "Container",
-			key_index = "2",
-			locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_FRAGMENT",
-			locator2 = "PageEditor#FRAGMENT_WITH_DROP_TARGET",
-			value1 = "");
-
-		AssertElementPresent(
-			key_fragmentName = "Container",
-			key_inFragmentName = "Tabs",
-			locator1 = "Fragment#FRAGMENT_BODY_IN_FRAGMENT");
-
-		PageEditor.gotoTabsFragmentNavItem(navItem = "Tab 2");
-
-		AssertVisible(
-			key_content = "Place fragments here.",
-			key_fragmentClass = "content",
-			key_position = "1",
-			locator1 = "Fragment#PAGE_EDITOR_NO_FRAGMENTS_MESSAGE");
-
-		PageEditor.expandFragmentCollection(collectionName = "Basic Components");
-
-		DragAndDrop.javaScriptDragAndDropToObject(
-			key_collectionName = "Basic Components",
-			key_fragmentName = "Heading",
-			key_index = "3",
-			locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_FRAGMENT",
-			locator2 = "PageEditor#FRAGMENT_WITH_DROP_TARGET",
-			value1 = "");
-
-		AssertElementPresent(
-			key_fragmentName = "Heading",
-			key_inFragmentName = "Tabs",
-			locator1 = "Fragment#FRAGMENT_BODY_IN_FRAGMENT");
-
-		PageEditor.gotoTabsFragmentNavItem(navItem = "Tab 3");
-
-		AssertVisible(
-			key_content = "Place fragments here.",
-			key_fragmentClass = "content",
-			key_position = "1",
-			locator1 = "Fragment#PAGE_EDITOR_NO_FRAGMENTS_MESSAGE");
-
-		PageEditor.expandFragmentCollection(collectionName = "Basic Components");
-
-		DragAndDrop.javaScriptDragAndDropToObject(
-			key_collectionName = "Basic Components",
-			key_fragmentName = "Tabs",
-			key_index = "4",
-			locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_FRAGMENT",
-			locator2 = "PageEditor#FRAGMENT_WITH_DROP_TARGET",
-			value1 = "");
-
-		AssertElementPresent(
-			key_fragmentName = "Tabs",
-			key_inFragmentName = "Tabs",
-			locator1 = "Fragment#FRAGMENT_BODY_IN_FRAGMENT");
-
-		PageEditor.gotoTabsFragmentNavItem(navItem = "Tab 4");
-
-		AssertVisible(
-			key_content = "Place fragments here.",
-			key_fragmentClass = "content",
-			key_position = "5",
-			locator1 = "Fragment#PAGE_EDITOR_NO_FRAGMENTS_MESSAGE");
-
-		Navigator.gotoNavTab(navTab = "Widgets");
-
-		DragAndDrop.javaScriptDragAndDropToObject(
-			key_index = "9",
-			key_portletName = "Asset Publisher",
-			locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_WIDGET",
-			locator2 = "PageEditor#FRAGMENT_WITH_DROP_TARGET",
-			value1 = "Asset Publisher");
-
-		AssertElementPresent(
-			key_fragmentName = "Asset Publisher",
-			key_inFragmentName = "Tabs",
-			locator1 = "Fragment#FRAGMENT_BODY_IN_FRAGMENT");
-
-		Button.click(button = "Publish Master");
-
-		Alert.viewSuccessMessage();
-	}
-
-	@description = "This is a test for LPS-102566 and LPS-109594. There's a custom masters page created in site, when add a new page, there's an option to select the created masters, and the common elements added in masters page are added in page. The header of drop zone is next to border of the management toolbar by default on master page template."
+	@description = "This is a test for LPS-102566, LPS-109594 and LPS-119634. Add a page based on custom master."
 	@priority = "5"
-	test AddPageBasedOnCustomMastersAndInheritElementsFromCustomMasters {
+	test AddPageBasedOnCustomMaster {
 		property portal.acceptance = "true";
 
 		task ("Assert header of Drop Zone is inside body by default") {
@@ -161,12 +54,29 @@ definition {
 				locator1 = "Fragment#FRAGMENT_HEADER_INSET_STYLE");
 		}
 
-		task ("Add a custom masters with Button fragment") {
+		task ("Add a Button fragment to master") {
 			PageEditor.addFragment(
 				collectionName = "Basic Components",
 				dropTarget = "Header",
 				fragmentName = "Button",
 				scope = "Master");
+		}
+
+		task ("Configure the Button fragment") {
+			PageEditor.gotoConfiguration(fragmentName = "Button");
+
+			PageEditor.configureFragment(type = "Link");
+
+			PageEditor.gotoStyle(fragmentName = "Button");
+
+			PageEditor.configureFragment(
+				alignment = "Center",
+				backgroundColor = "Gray 300",
+				size = "Large");
+
+			PageEditor.viewFragmentStyle(
+				backgroundColor = "gray-300",
+				fragmentName = "button");
 
 			Button.click(button = "Publish Master");
 		}
@@ -183,6 +93,14 @@ definition {
 			AssertVisible(
 				key_fragmentName = "button",
 				locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS");
+
+			PageEditor.viewFragmentStyle(
+				fragmentName = "button",
+				size = "lg",
+				type = "link");
+
+			AssertElementPresent(locator1 = "//div[contains(@class,'fragment-content--master')][contains(@class,'text-center')][//div[contains(@class,'component-button')]]");
+			AssertElementPresent(locator1 = "//div[contains(@class,'fragment-content--master')][contains(@style,'color: var(--gray-300)')][//div[contains(@class,'component-button')]]");
 		}
 	}
 
@@ -210,13 +128,13 @@ definition {
 		task ("Assert the Blank page template without ellipsis icon button") {
 			AssertElementNotPresent(
 				key_card = "Blank",
-				locator1 = "LexiconCard#CARD_ELLIPSIS");
+				locator1 = "Card#CARD_ELLIPSIS");
 		}
 
 		task ("Assert the Blank page template without checkbox") {
 			AssertElementNotPresent(
 				key_card = "Blank",
-				locator1 = "LexiconCard#CARD_CHECKBOX");
+				locator1 = "Card#CARD_CHECKBOX");
 		}
 	}
 
@@ -232,7 +150,89 @@ definition {
 		task ("Assert the Blank page template without ellipsis icon button") {
 			AssertElementNotPresent(
 				key_card = "Blank",
-				locator1 = "LexiconCard#CARD_ELLIPSIS");
+				locator1 = "Card#CARD_ELLIPSIS");
+		}
+	}
+
+	@description = "This is for LPS-121979. Change the configuration of page won't break the connection with its master page."
+	@priority = "4"
+	test ChangeConfigurationOfPageBasedOnMasterPage {
+		task ("Add header and footer in custom master") {
+			MastersPageTemplatesAdmin.gotoMasters(masterLayoutName = "Custom Masters Page Template");
+
+			PageEditor.addFragment(
+				collectionName = "Navigation Bars",
+				dropTarget = "Header",
+				fragmentName = "Header Dark",
+				scope = "Master");
+
+			PageEditor.addFragment(
+				collectionName = "Footers",
+				dropTarget = "Footer",
+				fragmentName = "Footer Nav Dark",
+				scope = "Master");
+
+			Button.click(button = "Publish Master");
+		}
+
+		task ("Add a content page based on custom master") {
+			SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+
+			ContentPages.addPage(
+				masterLayoutName = "Custom Masters Page Template",
+				pageName = "Test Page Name");
+		}
+
+		task ("Add a Heading fragment to page") {
+			PageEditor.addFragment(
+				collectionName = "Basic Components",
+				fragmentName = "Heading");
+
+			PageEditor.clickPublish();
+		}
+
+		task ("Assert the elements are shown in view mode") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			AssertVisible(
+				key_type = "dark",
+				locator1 = "PageEditor#NAVIGATION_BARS");
+
+			AssertVisible(
+				key_type = "dark",
+				locator1 = "PageEditor#FOOTERS");
+
+			AssertTextEquals(
+				key_fragmentName = "heading",
+				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
+				value1 = "Heading Example");
+		}
+
+		task ("Modify the page name") {
+			Navigator.gotoEditPageViaControlMenu(pageName = "Test Page Name");
+
+			Page.editName(pageNameEdit = "New Test Page Name");
+
+			Alert.viewSuccessMessage();
+		}
+
+		task ("Assert the elements are still shown in view mode") {
+			Navigator.gotoBack();
+
+			AssertVisible(
+				key_type = "dark",
+				locator1 = "PageEditor#NAVIGATION_BARS");
+
+			AssertVisible(
+				key_type = "dark",
+				locator1 = "PageEditor#FOOTERS");
+
+			AssertTextEquals(
+				key_fragmentName = "heading",
+				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
+				value1 = "Heading Example");
 		}
 	}
 
@@ -271,7 +271,9 @@ definition {
 		}
 
 		task ("Assert can change master from Blank to custom master") {
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			AssertTextEquals(
 				key_masterLayoutName = "Blank",
@@ -313,8 +315,6 @@ definition {
 				locator1 = "PageEditor#FOOTERS");
 
 			PageEditor.clickPublish();
-
-			Alert.viewSuccessMessage();
 		}
 
 		task ("Add a content page based on custom master") {
@@ -326,7 +326,9 @@ definition {
 		}
 
 		task ("Assert can change master from custom master to Blank") {
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			AssertTextEquals(
 				key_masterLayoutName = "Custom Masters Page Template",
@@ -427,7 +429,9 @@ definition {
 
 			PageEditor.assertFragmentSidebarLoaded();
 
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			AssertTextEquals(
 				key_masterLayoutName = "Blank",
@@ -469,8 +473,6 @@ definition {
 				locator1 = "PageEditor#FOOTERS");
 
 			PageEditor.clickPublish();
-
-			Alert.viewSuccessMessage();
 		}
 
 		task ("Add a content page template based on custom master") {
@@ -492,7 +494,9 @@ definition {
 		}
 
 		task ("Assert can change master from custom master to Blank") {
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			AssertTextEquals(
 				key_masterLayoutName = "Custom Masters Page Template",
@@ -575,7 +579,9 @@ definition {
 		}
 
 		task ("Assert can change master from Blank to custom master") {
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			AssertTextEquals(
 				key_masterLayoutName = "Blank",
@@ -617,8 +623,6 @@ definition {
 				locator1 = "PageEditor#FOOTERS");
 
 			PageEditor.clickPublish();
-
-			Alert.viewSuccessMessage();
 		}
 
 		task ("Add a display page template based on custom masters") {
@@ -635,7 +639,9 @@ definition {
 		}
 
 		task ("Assert can change master from custom master to Blank") {
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			AssertTextEquals(
 				key_masterLayoutName = "Custom Masters Page Template",
@@ -852,13 +858,22 @@ definition {
 		}
 
 		task ("Add a widget page template") {
+			JSONLayoutpagetemplate.addLayoutPageTemplateEntry(
+				groupName = "Test Site Name",
+				layoutPageTemplateCollectionName = "Page Template Collection",
+				layoutPageTemplateEntryName = "Page Template Name",
+				layoutPageTemplateStatus = "Approved",
+				layoutPageTemplateType = "Widget Page Template");
+
 			PageTemplatesAdmin.openPageTemplatesAdmin(siteURLKey = "test-site-name");
 
 			Navigator.gotoNavNested(navNested = "Page Template Collection");
 
-			PageTemplatesAdmin.addPageTemplate(
-				pageTemplateName = "Page Template Name",
-				pageTemplateType = "Widget Page Template");
+			PageTemplatesAdmin.gotoPageTemplateEllipsisItem(
+				item = "Edit",
+				pageTemplateName = "Page Template Name");
+
+			Pause(locator1 = "3000");
 		}
 
 		task ("Assert can change master from Blank to custom master") {
@@ -999,7 +1014,9 @@ definition {
 
 		PageEditor.viewFragment(fragmentName = "Heading");
 
-		PageEditor.gotoTab(tabName = "Look and Feel");
+		PageEditor.gotoTab(tabName = "Page Design Options");
+
+		Click(locator1 = "PageEditor#MORE_LINK");
 
 		AssertClick(
 			key_text = "Change Master",
@@ -1202,13 +1219,13 @@ definition {
 				pageName = "Test Page Name");
 		}
 
-		Pause(locator1 = "10000");
+		WaitForPageLoad();
 
 		PageEditor.gotoTab(tabName = "Fragments");
 
 		PageEditor.expandFragmentCollection(collectionName = "Basic Components");
 
-		for (var fragmentName : list "Button,Card,Heading,HTML,Image,Paragraph,Separator,Slider,Social,Spacer,Video") {
+		for (var fragmentName : list "Button,Card,Heading,HTML,Image,Paragraph,Separator,Slider,Social,Spacer,Video URL") {
 			AssertVisible(
 				key_collectionName = "Basic Components",
 				key_fragmentName = "${fragmentName}",
@@ -1260,7 +1277,9 @@ definition {
 		}
 
 		task ("Change master from custom master to Blank") {
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			AssertClick(
 				key_text = "Change Master",
@@ -1408,7 +1427,9 @@ definition {
 
 		PageEditor.viewFragment(fragmentName = "Heading");
 
-		PageEditor.gotoTab(tabName = "Look and Feel");
+		PageEditor.gotoTab(tabName = "Page Design Options");
+
+		Click(locator1 = "PageEditor#MORE_LINK");
 
 		Click(
 			key_text = "Edit Master",
@@ -1489,7 +1510,9 @@ definition {
 			masterLayoutName = "Custom Masters Page Template",
 			pageName = "Test Content Page Name");
 
-		PageEditor.gotoTab(tabName = "Look and Feel");
+		PageEditor.gotoTab(tabName = "Page Design Options");
+
+		Click(locator1 = "PageEditor#MORE_LINK");
 
 		Click(
 			key_text = "Edit Master",
@@ -1508,72 +1531,7 @@ definition {
 
 		WebContentDisplayPortlet.viewDefaultMessage();
 
-		AssertVisible(locator1 = "PageEditor#FRAGMENT_SIDEBAR");
-	}
-
-	@description = "This is for LPS-109298. If move the Drop Zone of master to one tab, only can add elements to that tab in content page."
-	@priority = "4"
-	test MoveDropZoneToOneTabOfTabsFragment {
-		property test.assert.warning.exceptions = "true";
-
-		MastersPageTemplatesAdmin.gotoMasters(masterLayoutName = "Custom Masters Page Template");
-
-		PageEditor.addFragment(
-			collectionName = "Basic Components",
-			dropTarget = "Footer",
-			fragmentName = "Tabs",
-			scope = "Master");
-
-		Click(
-			key_fragmentName = "Drop Zone",
-			locator1 = "Fragment#FRAGMENT_BODY");
-
-		DragAndDrop.javaScriptDragAndDropToObject(
-			key_dragFragmentName = "Drop Zone",
-			key_index = "2",
-			locator1 = "Fragment#FRAGMENT_HEADER_DRAG_HANDLER",
-			locator2 = "PageEditor#FRAGMENT_WITH_DROP_TARGET",
-			value1 = "");
-
-		Button.click(button = "Publish Master");
-
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
-
-		ContentPages.addPage(
-			masterLayoutName = "Custom Masters Page Template",
-			pageName = "Test Page Name");
-
-		AssertVisible(
-			key_fragmentName = "tabs",
-			locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS");
-
-		AssertVisible(
-			key_content = "Place fragments here.",
-			key_fragmentClass = "content",
-			key_position = "1",
-			locator1 = "Fragment#PAGE_EDITOR_NO_FRAGMENTS_MESSAGE");
-
-		PageEditor.addFragment(
-			collectionName = "Basic Components",
-			fragmentName = "Card");
-
-		AssertElementNotPresent(
-			key_index = "2",
-			locator1 = "PageEditor#FRAGMENT_WITH_DROP_TARGET");
-
-		for (var navItem : list "Tab 2,Tab 3,Tab 4") {
-			PageEditor.gotoTabsFragmentNavItem(navItem = "${navItem}");
-
-			AssertElementNotPresent(
-				key_fragmentName = "Place fragments here.",
-				locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS");
-
-			AssertElementNotPresent(
-				key_index = "2",
-				locator1 = "PageEditor#FRAGMENT_WITH_DROP_TARGET");
-		}
-
-		PageEditor.clickPublish();
+		AssertVisible(locator1 = "PageEditor#FRAGMENT_SIDEBAR_BODY");
 	}
 
 	@description = "This is a test for LPS-102566. The new elements can only be added into Drop Zone in a page based on custom master and the elements inherited from the custom master are changless."
@@ -1750,54 +1708,6 @@ definition {
 				key_fragmentName = "heading",
 				locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS");
 		}
-	}
-
-	@description = "This is for LPS-109298. Can not add elements to each tab of Tabs fragment that is inherited from custom master in content page."
-	@priority = "4"
-	test ViewNoDropzoneAtIndividualTabOfTabsFragmentInContentPage {
-		property test.assert.warning.exceptions = "true";
-
-		MastersPageTemplatesAdmin.gotoMasters(masterLayoutName = "Custom Masters Page Template");
-
-		PageEditor.addFragment(
-			collectionName = "Basic Components",
-			dropTarget = "Footer",
-			fragmentName = "Tabs",
-			scope = "Master");
-
-		Button.click(button = "Publish Master");
-
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
-
-		ContentPages.addPage(
-			masterLayoutName = "Custom Masters Page Template",
-			pageName = "Test Page Name");
-
-		AssertVisible(
-			key_fragmentName = "tabs",
-			locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS");
-
-		AssertTextEquals(
-			locator1 = "PageEditor#FRAGMENT_DROP_TARGET",
-			value1 = "Place fragments here.");
-
-		AssertElementNotPresent(
-			key_fragmentName = "Place fragments here.",
-			locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS");
-
-		for (var navItem : list "Tab 2,Tab 3,Tab 4") {
-			PageEditor.gotoTabsFragmentNavItem(navItem = "${navItem}");
-
-			AssertElementNotPresent(
-				key_fragmentName = "Place fragments here.",
-				locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS");
-
-			AssertElementNotPresent(
-				key_index = "2",
-				locator1 = "PageEditor#FRAGMENT_WITH_DROP_TARGET");
-		}
-
-		PageEditor.clickPublish();
 	}
 
 }

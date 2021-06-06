@@ -14,18 +14,45 @@
 
 import {waitForElementToBeRemoved} from '@testing-library/dom';
 import {act, cleanup, fireEvent, render} from '@testing-library/react';
+import * as toast from 'data-engine-js-components-web/js/utils/toast.es';
 import {createMemoryHistory} from 'history';
 import React from 'react';
 
 import ListCustomObjects from '../../../../src/main/resources/META-INF/resources/js/pages/custom-object/ListCustomObjects.es';
 import * as time from '../../../../src/main/resources/META-INF/resources/js/utils/time.es';
-import * as toast from '../../../../src/main/resources/META-INF/resources/js/utils/toast.es';
 import AppContextProviderWrapper from '../../AppContextProviderWrapper.es';
 import {RESPONSES} from '../../constants.es';
 
+const mockFetch = fetch;
+
+jest.mock('frontend-js-web', () => ({
+	ALIGN_POSITIONS: {
+		Bottom: 4,
+		BottomCenter: 4,
+		BottomLeft: 5,
+		BottomRight: 3,
+		Left: 6,
+		LeftCenter: 6,
+		Right: 2,
+		RightCenter: 2,
+		Top: 0,
+		TopCenter: 0,
+		TopLeft: 7,
+		TopRight: 1,
+	},
+	align: () => jest.fn(),
+	createResourceURL: jest.fn(() => 'http://resource_url?'),
+	debounce: jest.fn().mockResolvedValue(),
+	fetch: (...args) => mockFetch(...args),
+}));
+
 describe('ListCustomObjects', () => {
-	let spySuccessToast;
-	let spyFromNow;
+	const appContext = {
+		basePortletURL: 'portlet_url',
+		baseResourceURL: 'resource_url',
+		namespace: 'listCustomObjects',
+	};
+	let spySuccessToast, spyFromNow;
 
 	beforeEach(() => {
 		jest.useFakeTimers();
@@ -50,9 +77,11 @@ describe('ListCustomObjects', () => {
 	it('renders', async () => {
 		fetch.mockResponseOnce(JSON.stringify(RESPONSES.ONE_ITEM));
 
-		const {asFragment} = render(<ListCustomObjects />, {
-			wrapper: AppContextProviderWrapper,
-		});
+		const {asFragment} = render(
+			<AppContextProviderWrapper appContext={appContext}>
+				<ListCustomObjects />
+			</AppContextProviderWrapper>
+		);
 
 		await waitForElementToBeRemoved(() =>
 			document.querySelector('span.loading-animation')
@@ -117,9 +146,11 @@ describe('ListCustomObjects', () => {
 			.mockResponseOnce(JSON.stringify(RESPONSES.NO_ITEMS))
 			.mockResponseOnce(JSON.stringify({}));
 
-		const {container, queryAllByText} = render(<ListCustomObjects />, {
-			wrapper: AppContextProviderWrapper,
-		});
+		const {container, queryAllByText} = render(
+			<AppContextProviderWrapper appContext={appContext}>
+				<ListCustomObjects />
+			</AppContextProviderWrapper>
+		);
 
 		await waitForElementToBeRemoved(() =>
 			document.querySelector('span.loading-animation')
@@ -203,7 +234,7 @@ describe('ListCustomObjects', () => {
 		expect(
 			document.querySelectorAll('.dropdown-menu.show .dropdown-item')
 				.length
-		).toBe(5);
+		).toBe(6);
 
 		await act(async () => {
 			fireEvent.click(deleteButton);
@@ -255,9 +286,11 @@ describe('ListCustomObjects', () => {
 			.mockResponseOnce(JSON.stringify(permissionResponse))
 			.mockResponse(JSON.stringify({}));
 
-		const {queryAllByText, queryByText} = render(<ListCustomObjects />, {
-			wrapper: AppContextProviderWrapper,
-		});
+		const {queryAllByText, queryByText} = render(
+			<AppContextProviderWrapper appContext={appContext}>
+				<ListCustomObjects />
+			</AppContextProviderWrapper>
+		);
 
 		await waitForElementToBeRemoved(() =>
 			document.querySelector('span.loading-animation')
@@ -310,11 +343,14 @@ describe('ListCustomObjects', () => {
 
 		const history = createMemoryHistory();
 
-		const {baseElement} = render(<ListCustomObjects />, {
-			wrapper: (props) => (
-				<AppContextProviderWrapper history={history} {...props} />
-			),
-		});
+		const {baseElement} = render(
+			<AppContextProviderWrapper
+				appContext={appContext}
+				history={history}
+			>
+				<ListCustomObjects />
+			</AppContextProviderWrapper>
+		);
 
 		expect(history.length).toBe(1);
 		expect(history.location.pathname).toBe('/');
@@ -328,7 +364,7 @@ describe('ListCustomObjects', () => {
 		const dropDownMenu = baseElement.querySelectorAll('.dropdown-menu');
 		const actions = dropDownMenu[1].querySelectorAll('.dropdown-item');
 
-		expect(actions.length).toBe(5);
+		expect(actions.length).toBe(6);
 		expect(history.length).toBe(1);
 		expect(history.location.pathname).toBe('/');
 

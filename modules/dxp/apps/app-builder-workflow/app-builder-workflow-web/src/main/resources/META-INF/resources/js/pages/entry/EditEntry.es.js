@@ -9,20 +9,42 @@
  * distribution rights of the Software.
  */
 
-import ClayButton from '@clayui/button';
+import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
+import {useTimeout} from '@liferay/frontend-js-react-web';
 import {AppContext} from 'app-builder-web/js/AppContext.es';
 import {ControlMenuBase} from 'app-builder-web/js/components/control-menu/ControlMenu.es';
-import {getItem} from 'app-builder-web/js/utils/client.es';
-import {successToast} from 'app-builder-web/js/utils/toast.es';
+import useDataDefinition from 'app-builder-web/js/hooks/useDataDefinition.es';
+import {getLocalizedUserPreferenceValue} from 'app-builder-web/js/utils/lang.es';
+import Loading from 'data-engine-js-components-web/js/components/loading/Loading.es';
+import {getItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {
+	errorToast,
+	successToast,
+} from 'data-engine-js-components-web/js/utils/toast.es';
 import {createResourceURL, fetch} from 'frontend-js-web';
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 import WorkflowInfoBar from '../../components/workflow-info-bar/WorkflowInfoBar.es';
 import useAppWorkflow from '../../hooks/useAppWorkflow.es';
-import useDDMForms from '../../hooks/useDDMForms.es';
+import useDDMForms, {
+	useDDMFormsSubmit,
+	useDDMFormsValidation,
+} from '../../hooks/useDDMForms.es';
+import useDataLayouts from '../../hooks/useDataLayouts.es';
+import useDataRecordApps from '../../hooks/useDataRecordApps.es';
+import ReassignEntryModal from './ReassignEntryModal.es';
+import {METRIC_INDEXES_KEY, refreshIndex} from './actions.es';
 
-const createWorkflowInfoPortal = (props) => {
+const queryFields = ['availableLanguageIds', 'defaultLanguageId'].join(',');
+
+const WorkflowInfoPortal = ({children}) => {
 	const portalElementId = 'workflowInfoBar';
 	const targetElement = document.getElementById('edit-app-content');
 
@@ -37,18 +59,19 @@ const createWorkflowInfoPortal = (props) => {
 	}
 
 	portalElement = document.createElement('div');
-	portalElement.className = 'border-bottom py-4';
 	portalElement.id = portalElementId;
 
 	portalContainer.insertBefore(portalElement, targetElement);
 
-	return createPortal(
-		<WorkflowInfoBar {...props} hideColumns={['step']} />,
-		portalElement
-	);
+	return createPortal(children, portalElement);
 };
 
-export default function EditEntry({dataRecordId, redirect}) {
+export default function EditEntry({
+	dataDefinitionId,
+	dataRecordId,
+	redirect,
+	userLanguageId,
+}) {
 	const {
 		appId,
 		basePortletURL,
@@ -57,14 +80,35 @@ export default function EditEntry({dataRecordId, redirect}) {
 		namespace,
 	} = useContext(AppContext);
 
+	const {availableLanguageIds, defaultLanguageId} = useDataDefinition({
+		dataDefinitionId,
+		defaultState: {
+			availableLanguageIds: [],
+			defaultLanguageId: '',
+		},
+		queryFields,
+	});
+
+	const dataLayouts = useDataLayouts(dataLayoutIds);
+	const dataRecordApps = useDataRecordApps(
+		appId,
+		useMemo(() => [dataRecordId], [dataRecordId])
+	);
+	const delay = useTimeout();
+
+	const appWorkflow = useAppWorkflow(appId);
+
 	const {
+		appVersion,
 		appWorkflowDefinitionId,
 		appWorkflowStates: [initialState = {}] = [],
 		appWorkflowTasks,
-	} = useAppWorkflow(appId);
+	} = dataRecordApps[dataRecordId] ?? appWorkflow;
 
 	const {appWorkflowTransitions: [transition = {}] = []} = initialState;
 
+	const [isLoading, setLoading] = useState(true);
+	const [isModalVisible, setModalVisible] = useState(false);
 	const [transitioning, setTransitioning] = useState(false);
 	const [workflowInfo, setWorkflowInfo] = useState();
 
@@ -75,9 +119,71 @@ export default function EditEntry({dataRecordId, redirect}) {
 			? Liferay.Language.get('edit-entry')
 			: Liferay.Language.get('add-entry');
 
-	const onCancel = useCallback(() => {
-		setTransitioning(false);
+	const ddmForms = useDDMForms(
+		dataLayoutIds.map(
+			(dataLayoutId) => `${namespace}container${dataLayoutId}`
+		)
+	);
 
+	const doFetch = useCallback(
+		({newAssignee} = {}) => {
+			setLoading(true);
+
+			if (appWorkflowDefinitionId) {
+				if (isEdit) {
+					const getWorkflowInfo = () => {
+						getItem(
+							`/o/portal-workflow-metrics/v1.0/processes/${appWorkflowDefinitionId}/instances`,
+							{classPKs: [dataRecordId]}
+						).then(({items}) => {
+							let retryCount = 0;
+							if (items.length) {
+								const {id, ...instance} = items.pop();
+
+								const [assignee] = instance.assignees || [];
+
+								if (
+									newAssignee &&
+									newAssignee.id !== assignee?.id &&
+									retryCount <= 5
+								) {
+									retryCount++;
+
+									return delay(getWorkflowInfo, 1000);
+								}
+
+								const assignedToUser =
+									Number(themeDisplay.getUserId()) ===
+									assignee?.id;
+
+								setLoading(false);
+								setWorkflowInfo({
+									...instance,
+									appVersion,
+									canReassign:
+										assignedToUser || assignee?.reviewer,
+									instanceId: id,
+									tasks: appWorkflowTasks,
+								});
+							}
+							else {
+								setLoading(false);
+							}
+						});
+					};
+
+					getWorkflowInfo();
+				}
+				else {
+					setLoading(false);
+				}
+			}
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[appWorkflowDefinitionId, dataRecordId, isEdit]
+	);
+
+	const onCancel = useCallback(() => {
 		if (redirect) {
 			Liferay.Util.navigate(redirect);
 		}
@@ -86,71 +192,128 @@ export default function EditEntry({dataRecordId, redirect}) {
 		}
 	}, [basePortletURL, redirect]);
 
-	const onSubmit = useDDMForms(
-		dataLayoutIds.map(
-			(dataLayoutId) => `${namespace}container${dataLayoutId}`
-		),
-		useCallback(
-			({transitionName}, dataRecord) => {
-				setTransitioning(true);
+	const saveDataRecord = useCallback(
+		({transitionName}, dataRecord) => {
+			const params = {
+				appBuilderAppId: appId,
+				dataRecord: JSON.stringify(dataRecord),
+				dataRecordId,
+			};
 
-				const params = {
-					appBuilderAppId: appId,
-					dataRecord: JSON.stringify(dataRecord),
-					dataRecordId,
-				};
+			const resource = `${
+				isEdit ? 'app_builder_workflow/update' : 'app_builder/add'
+			}_data_record`;
 
-				const resource = `${isEdit ? 'update' : 'add'}_data_record`;
+			if (workflowInfo) {
+				const {
+					instanceId,
+					tasks = [],
+					taskNames: [taskName],
+				} = workflowInfo;
 
-				if (workflowInfo) {
-					const {
-						id,
-						tasks = [],
-						taskNames: [taskName],
-					} = workflowInfo;
+				//avoids enter submission putting primary action
 
-					//avoids enter submission putting primary action
+				const {appWorkflowTransitions: transitions = []} =
+					tasks.find(({name}) => name === taskName) || {};
 
-					const {appWorkflowTransitions: transitions = []} =
-						tasks.find(({name}) => name === taskName) || {};
+				const action = transitions.find(({primary}) => primary);
 
-					const action = transitions.find(({primary}) => primary);
+				params.taskName = taskName;
+				params.transitionName = transitionName ?? action.name;
+				params.workflowInstanceId = instanceId;
+			}
 
-					params.taskName = taskName;
-					params.transitionName = transitionName ?? action.name;
-					params.workflowInstanceId = id;
+			fetch(
+				createResourceURL(baseResourceURL, {
+					p_p_resource_id: `/${resource}`,
+				}),
+				{
+					body: new URLSearchParams(
+						Liferay.Util.ns(namespace, params)
+					),
+					method: 'POST',
 				}
-
-				fetch(
-					createResourceURL(baseResourceURL, {
-						p_p_resource_id: `/app_builder/${resource}`,
-					}),
-					{
-						body: new URLSearchParams(
-							Liferay.Util.ns(namespace, params)
-						),
-						method: 'POST',
-					}
-				).then(() => {
+			)
+				.then(() => {
 					successToast(
 						isEdit
 							? Liferay.Language.get('an-entry-was-updated')
 							: Liferay.Language.get('an-entry-was-added')
 					);
-					onCancel();
+
+					refreshIndex(METRIC_INDEXES_KEY)
+						.then(onCancel)
+						.catch(onCancel);
+				})
+				.catch(() => {
+					errorToast();
+					setTransitioning(false);
 				});
-			},
-			[
-				appId,
-				baseResourceURL,
-				dataRecordId,
-				isEdit,
-				namespace,
-				onCancel,
-				workflowInfo,
-			]
-		)
+		},
+		[
+			appId,
+			baseResourceURL,
+			dataRecordId,
+			isEdit,
+			namespace,
+			onCancel,
+			workflowInfo,
+		]
 	);
+
+	const validateForms = useDDMFormsValidation(
+		ddmForms,
+		defaultLanguageId,
+		availableLanguageIds
+	);
+
+	const onSubmit = useCallback(
+		(event) => {
+			setTransitioning(true);
+
+			validateForms(event)
+				.then((dataRecord) => saveDataRecord(event, dataRecord))
+				.catch(() => setTransitioning(false));
+		},
+		[saveDataRecord, validateForms]
+	);
+
+	useDDMFormsSubmit(ddmForms, onSubmit);
+
+	useEffect(() => {
+		if (dataLayoutIds.length === ddmForms.length) {
+			ddmForms.forEach((ddmForm) => {
+				const ddmReactForm = ddmForm.reactComponentRef.current;
+
+				ddmReactForm.updateEditingLanguageId({
+					editingLanguageId: userLanguageId,
+					preserveValue: true,
+				});
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ddmForms.length, userLanguageId]);
+
+	useEffect(() => {
+		if (dataLayoutIds.length === dataLayouts.length) {
+			dataLayouts.forEach(({id, name}) => {
+				const formName = document.getElementById(`${id}_name`);
+
+				if (formName) {
+					formName.innerText = getLocalizedUserPreferenceValue(
+						name,
+						userLanguageId,
+						defaultLanguageId
+					);
+				}
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dataLayouts.length, userLanguageId]);
+
+	useEffect(() => {
+		doFetch();
+	}, [doFetch]);
 
 	if (workflowInfo) {
 		const {
@@ -203,22 +366,6 @@ export default function EditEntry({dataRecordId, redirect}) {
 		);
 	}
 
-	useEffect(() => {
-		if (appWorkflowDefinitionId && isEdit) {
-			getItem(
-				`/o/portal-workflow-metrics/v1.0/processes/${appWorkflowDefinitionId}/instances`,
-				{classPKs: [dataRecordId]}
-			).then(({items, totalCount}) => {
-				if (totalCount > 0) {
-					setWorkflowInfo({
-						...items.pop(),
-						tasks: appWorkflowTasks,
-					});
-				}
-			});
-		}
-	}, [appWorkflowDefinitionId, appWorkflowTasks, dataRecordId, isEdit]);
-
 	return (
 		<>
 			<ControlMenuBase
@@ -227,19 +374,52 @@ export default function EditEntry({dataRecordId, redirect}) {
 				url={location.href}
 			/>
 
-			{workflowInfo && createWorkflowInfoPortal(workflowInfo)}
+			<Loading isLoading={isLoading}>
+				{workflowInfo && (
+					<WorkflowInfoPortal>
+						<div className="d-flex justify-content-center mt-4">
+							<WorkflowInfoBar
+								className="bar-sm"
+								{...workflowInfo}
+								hideColumns={['step']}
+							/>
 
-			<ClayButton.Group className="app-builder-form-buttons" spaced>
-				{actionButtons}
+							{workflowInfo?.canReassign && (
+								<ClayButtonWithIcon
+									className="ml-2"
+									data-tooltip-align="bottom"
+									data-tooltip-delay="200"
+									displayType="secondary"
+									onClick={() => setModalVisible(true)}
+									small
+									symbol="change"
+									title={Liferay.Language.get('assign-to')}
+								/>
+							)}
+						</div>
+					</WorkflowInfoPortal>
+				)}
 
-				<ClayButton
-					disabled={transitioning}
-					displayType="secondary"
-					onClick={onCancel}
-				>
-					{Liferay.Language.get('cancel')}
-				</ClayButton>
-			</ClayButton.Group>
+				<ClayButton.Group className="app-builder-form-buttons" spaced>
+					{actionButtons}
+
+					<ClayButton
+						disabled={transitioning}
+						displayType="secondary"
+						onClick={onCancel}
+					>
+						{Liferay.Language.get('cancel')}
+					</ClayButton>
+				</ClayButton.Group>
+			</Loading>
+
+			{isModalVisible && (
+				<ReassignEntryModal
+					entry={workflowInfo}
+					onCloseModal={() => setModalVisible(false)}
+					refetch={doFetch}
+				/>
+			)}
 		</>
 	);
 }

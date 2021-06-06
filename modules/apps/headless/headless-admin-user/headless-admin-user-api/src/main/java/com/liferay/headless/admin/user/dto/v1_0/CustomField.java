@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("CustomField")
+@GraphQLName(
+	description = "Represents the value of each custom field. Fields can contain different information types (e.g., geolocation, strings, etc.).",
+	value = "CustomField"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "CustomField")
-public class CustomField {
+public class CustomField implements Serializable {
 
 	public static CustomField toDTO(String json) {
 		return ObjectMapperUtil.readValue(CustomField.class, json);
@@ -209,6 +214,7 @@ public class CustomField {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.CustomField",
 		name = "x-class-name"
 	)
@@ -244,7 +250,7 @@ public class CustomField {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -283,7 +289,7 @@ public class CustomField {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -41,6 +41,16 @@ public class AppBuilderFieldSetDataDefinitionContentType
 	implements DataDefinitionContentType {
 
 	@Override
+	public boolean allowInvalidAvailableLocalesForProperty() {
+		return true;
+	}
+
+	@Override
+	public boolean allowReferencedDataDefinitionDeletion() {
+		return true;
+	}
+
+	@Override
 	public long getClassNameId() {
 		return _portal.getClassNameId(AppBuilderFieldSet.class);
 	}

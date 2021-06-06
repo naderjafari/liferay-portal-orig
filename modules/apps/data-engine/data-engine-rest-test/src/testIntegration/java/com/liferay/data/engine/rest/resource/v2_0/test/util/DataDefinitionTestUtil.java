@@ -30,23 +30,90 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.InputStream;
 
+import java.util.Map;
+
 /**
  * @author Gabriel Albuquerque
  */
 public class DataDefinitionTestUtil {
 
-	public static DataDefinition addDataDefinition(long groupId)
+	public static DataDefinition addDataDefinition(
+			DataDefinition dataDefinition, Long groupId)
 		throws Exception {
 
 		DataDefinitionResource.Builder builder =
 			DataDefinitionResource.builder();
 
-		DataDefinitionResource dataDefinitionResource = builder.locale(
+		DataDefinitionResource dataDefinitionResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 
 		return dataDefinitionResource.postSiteDataDefinitionByContentType(
-			groupId, "app-builder", _randomDataDefinition(groupId));
+			groupId, "app-builder", dataDefinition);
+	}
+
+	public static DataDefinition addDataDefinition(long groupId)
+		throws Exception {
+
+		return addDataDefinition(_randomDataDefinition(groupId), groupId);
+	}
+
+	public static DataDefinition addDataDefinitionWithDataLayout(long groupId)
+		throws Exception {
+
+		DataDefinition dataDefinition = DataDefinition.toDTO(
+			read("data-definition-basic.json"));
+
+		dataDefinition.setSiteId(groupId);
+
+		DataDefinitionResource.Builder builder =
+			DataDefinitionResource.builder();
+
+		DataDefinitionResource dataDefinitionResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
+			LocaleUtil.getDefault()
+		).build();
+
+		return dataDefinitionResource.postSiteDataDefinitionByContentType(
+			groupId, "app-builder", dataDefinition);
+	}
+
+	public static DataDefinition addDataDefinitionWithFieldset(long groupId)
+		throws Exception {
+
+		DataDefinition dataDefinition = DataDefinition.toDTO(
+			read("data-definition-object-structure-with-fieldset.json"));
+
+		DataDefinitionResource.Builder builder =
+			DataDefinitionResource.builder();
+
+		DataDefinitionResource dataDefinitionResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
+			LocaleUtil.getDefault()
+		).build();
+
+		DataDefinition fieldsetDataDefinition =
+			dataDefinitionResource.postSiteDataDefinitionByContentType(
+				groupId, "app-builder-fieldset",
+				DataDefinition.toDTO(
+					read("data-definition-fieldset-structure.json")));
+
+		for (DataDefinitionField dataDefinitionField :
+				dataDefinition.getDataDefinitionFields()) {
+
+			Map<String, Object> customProperties =
+				dataDefinitionField.getCustomProperties();
+
+			customProperties.put(
+				"ddmStructureId", fieldsetDataDefinition.getId());
+		}
+
+		return dataDefinitionResource.postSiteDataDefinitionByContentType(
+			groupId, "app-builder", dataDefinition);
 	}
 
 	public static DDMStructure addDDMStructure(Group group) throws Exception {
@@ -61,7 +128,7 @@ public class DataDefinitionTestUtil {
 				"com.liferay.app.builder.model.AppBuilderApp"),
 			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
 			read("test-structured-content-structure.json"),
-			StorageType.JSON.getValue());
+			StorageType.DEFAULT.getValue());
 	}
 
 	public static String read(String fileName) throws Exception {

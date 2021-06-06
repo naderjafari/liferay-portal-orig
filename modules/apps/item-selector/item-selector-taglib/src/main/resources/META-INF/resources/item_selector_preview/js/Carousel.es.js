@@ -17,6 +17,10 @@ import ClayIcon from '@clayui/icon';
 import ClayTabs from '@clayui/tabs';
 import React, {useState} from 'react';
 
+import PreviewImage from './PreviewImage.es';
+import PreviewVideo from './PreviewVideo.es';
+import {STR_VIDEO_HTML_RETURN_TYPE} from './constants';
+
 const Arrow = ({direction, handleClick}) => (
 	<div className={`pull-${direction}`}>
 		<ClayButton
@@ -96,10 +100,14 @@ const Carousel = ({
 				<Arrow direction="left" handleClick={handleClickPrevious} />
 			)}
 
-			<img
-				alt={currentItem.title}
-				src={currentItem.url || currentItem.base64}
-			/>
+			{currentItem.returntype === STR_VIDEO_HTML_RETURN_TYPE ? (
+				<PreviewVideo html={currentItem.value} />
+			) : (
+				<PreviewImage
+					src={currentItem.url || currentItem.base64}
+					title={currentItem.title}
+				/>
+			)}
 
 			{showArrows && (
 				<Arrow direction="right" handleClick={handleClickNext} />

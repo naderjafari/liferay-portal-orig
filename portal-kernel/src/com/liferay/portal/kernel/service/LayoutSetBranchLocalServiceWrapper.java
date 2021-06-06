@@ -138,6 +138,28 @@ public class LayoutSetBranchLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.portal.kernel.model.LayoutSetBranch
+			deleteLayoutSetBranch(
+				long currentLayoutPlid,
+				com.liferay.portal.kernel.model.LayoutSetBranch layoutSetBranch,
+				boolean includeMaster)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutSetBranchLocalService.deleteLayoutSetBranch(
+			currentLayoutPlid, layoutSetBranch, includeMaster);
+	}
+
+	@Override
+	public com.liferay.portal.kernel.model.LayoutSetBranch
+			deleteLayoutSetBranch(
+				long currentLayoutPlid, long layoutSetBranchId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutSetBranchLocalService.deleteLayoutSetBranch(
+			currentLayoutPlid, layoutSetBranchId);
+	}
+
+	@Override
 	public void deleteLayoutSetBranches(long groupId, boolean privateLayout)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
@@ -169,6 +191,13 @@ public class LayoutSetBranchLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _layoutSetBranchLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _layoutSetBranchLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override

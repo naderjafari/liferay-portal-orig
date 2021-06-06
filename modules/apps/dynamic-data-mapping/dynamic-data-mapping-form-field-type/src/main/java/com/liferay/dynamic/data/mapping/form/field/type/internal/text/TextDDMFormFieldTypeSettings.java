@@ -38,7 +38,9 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 		@DDMFormRule(
 			actions = {
 				"setValue('autocomplete', FALSE)",
-				"setVisible('autocomplete', FALSE)"
+				"setValue('requireConfirmation', FALSE)",
+				"setVisible('autocomplete', FALSE)",
+				"setVisible('requireConfirmation', FALSE)"
 			},
 			condition = "not(equals(getValue('displayStyle'), 'singleline'))"
 		),
@@ -48,12 +50,23 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 				"setRequired('ddmDataProviderInstanceOutput', equals(getValue('dataSourceType'), \"data-provider\"))",
 				"setValidationDataType('validation', getValue('dataType'))",
 				"setValidationFieldName('validation', getValue('name'))",
+				"setVisible('confirmationErrorMessage', getValue('requireConfirmation'))",
+				"setVisible('confirmationLabel', getValue('requireConfirmation'))",
 				"setVisible('dataSourceType', getValue('autocomplete'))",
 				"setVisible('ddmDataProviderInstanceId', equals(getValue('dataSourceType'), \"data-provider\") and getValue('autocomplete'))",
 				"setVisible('ddmDataProviderInstanceOutput', equals(getValue('dataSourceType'), \"data-provider\") and getValue('autocomplete'))",
-				"setVisible('options', contains(getValue('dataSourceType'), \"manual\") and getValue('autocomplete'))"
+				"setVisible('direction', getValue('requireConfirmation'))",
+				"setVisible('options', contains(getValue('dataSourceType'), \"manual\") and getValue('autocomplete'))",
+				"setVisible('requiredErrorMessage', false)"
 			},
 			condition = "TRUE"
+		),
+		@DDMFormRule(
+			actions = {
+				"setValue('ddmDataProviderInstanceId', '')",
+				"setValue('ddmDataProviderInstanceOutput', '')"
+			},
+			condition = "not(equals(getValue('dataSourceType'), \"data-provider\")) or not(getValue('autocomplete'))"
 		)
 	}
 )
@@ -69,7 +82,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"label", "placeholder", "tip", "displayStyle",
-								"required"
+								"required", "requiredErrorMessage"
 							}
 						)
 					}
@@ -84,11 +97,15 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 						@DDMFormLayoutColumn(
 							size = 12,
 							value = {
-								"name", "predefinedValue",
+								"name", "fieldReference", "predefinedValue",
 								"visibilityExpression", "fieldNamespace",
-								"indexType", "localizable", "nativeField",
-								"readOnly", "dataType", "type", "showLabel",
-								"repeatable", "validation", "tooltip"
+								"indexType", "labelAtStructureLevel",
+								"localizable", "nativeField", "readOnly",
+								"dataType", "type", "hideField", "showLabel",
+								"repeatable", "requireConfirmation",
+								"direction", "confirmationLabel",
+								"confirmationErrorMessage", "validation",
+								"tooltip"
 							}
 						)
 					}
@@ -121,6 +138,19 @@ public interface TextDDMFormFieldTypeSettings
 	public boolean autocomplete();
 
 	@DDMFormField(
+		dataType = "string", label = "%error-message",
+		properties = "initialValue=%the-information-does-not-match",
+		type = "text"
+	)
+	public LocalizedValue confirmationErrorMessage();
+
+	@DDMFormField(
+		dataType = "string", label = "%label",
+		properties = "initialValue=%confirm", type = "text"
+	)
+	public LocalizedValue confirmationLabel();
+
+	@DDMFormField(
 		label = "%create-list",
 		optionLabels = {"%manually", "%from-data-provider"},
 		optionValues = {"manual", "data-provider"},
@@ -147,12 +177,30 @@ public interface TextDDMFormFieldTypeSettings
 	public String ddmDataProviderInstanceOutput();
 
 	@DDMFormField(
+		label = "%direction", optionLabels = {"%horizontal", "%vertical"},
+		optionValues = {"horizontal", "vertical"},
+		predefinedValue = "[\"vertical\"]",
+		properties = "showEmptyOption=false", type = "select"
+	)
+	public String direction();
+
+	@DDMFormField(
 		label = "%field-type",
 		optionLabels = {"%single-line", "%multiple-lines"},
 		optionValues = {"singleline", "multiline"},
 		predefinedValue = "singleline", type = "radio"
 	)
 	public String displayStyle();
+
+	@DDMFormField(
+		label = "%hide-field",
+		properties = {
+			"showAsSwitcher=true",
+			"tooltip=%the-user-filling-the-form-will-not-be-able-to-see-this-field"
+		},
+		visibilityExpression = "FALSE"
+	)
+	public boolean hideField();
 
 	@DDMFormField(
 		label = "%searchable", optionLabels = {"%disable", "%keyword", "%text"},
@@ -171,10 +219,18 @@ public interface TextDDMFormFieldTypeSettings
 
 	@DDMFormField(
 		dataType = "string", label = "%placeholder-text",
-		properties = "tooltip=%enter-text-that-assists-the-user-but-is-not-submitted-as-a-field-value",
+		properties = {
+			"tooltip=%enter-text-that-assists-the-user-but-is-not-submitted-as-a-field-value",
+			"visualProperty=true"
+		},
 		type = "text"
 	)
 	public LocalizedValue placeholder();
+
+	@DDMFormField(
+		label = "%require-confirmation", properties = "showAsSwitcher=true"
+	)
+	public boolean requireConfirmation();
 
 	@DDMFormField(visibilityExpression = "FALSE")
 	public LocalizedValue tooltip();

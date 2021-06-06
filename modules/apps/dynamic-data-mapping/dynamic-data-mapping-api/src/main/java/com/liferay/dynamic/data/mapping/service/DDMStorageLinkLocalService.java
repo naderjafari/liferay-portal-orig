@@ -66,7 +66,7 @@ public interface DDMStorageLinkLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link DDMStorageLinkLocalServiceUtil} to access the ddm storage link local service. Add custom service methods to <code>com.liferay.dynamic.data.mapping.service.impl.DDMStorageLinkLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.dynamic.data.mapping.service.impl.DDMStorageLinkLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the ddm storage link local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link DDMStorageLinkLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -83,8 +83,9 @@ public interface DDMStorageLinkLocalService
 	public DDMStorageLink addDDMStorageLink(DDMStorageLink ddmStorageLink);
 
 	public DDMStorageLink addStorageLink(
-		long classNameId, long classPK, long structureVersionId,
-		ServiceContext serviceContext);
+			long classNameId, long classPK, long structureVersionId,
+			ServiceContext serviceContext)
+		throws PortalException;
 
 	/**
 	 * Creates a new ddm storage link with the primary key. Does not add the ddm storage link to the database.
@@ -146,6 +147,9 @@ public interface DDMStorageLinkLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -212,6 +216,9 @@ public interface DDMStorageLinkLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public long dynamicQueryCount(
 		DynamicQuery dynamicQuery, Projection projection);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public DDMStorageLink fetchClassStorageLink(long classPK);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DDMStorageLink fetchDDMStorageLink(long storageLinkId);

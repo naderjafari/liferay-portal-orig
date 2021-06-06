@@ -12,96 +12,87 @@
  * details.
  */
 
-import {Editor} from 'frontend-editor-ckeditor-web';
-import React from 'react';
+import {ClassicEditor} from 'frontend-editor-ckeditor-web';
+import React, {useEffect, useRef, useState} from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
 import {useSyncValue} from '../hooks/useSyncValue.es';
 
-const CKEDITOR_CONFIG = {
-	toolbar: [
-		{items: ['Undo', 'Redo'], name: 'clipboard'},
-		'/',
-		{
-			items: [
-				'Bold',
-				'Italic',
-				'Underline',
-				'Strike',
-				'-',
-				'CopyFormatting',
-				'RemoveFormat',
-			],
-			name: 'basicstyles',
-		},
-		{
-			items: [
-				'NumberedList',
-				'BulletedList',
-				'-',
-				'Outdent',
-				'Indent',
-				'-',
-				'Blockquote',
-				'-',
-				'JustifyLeft',
-				'JustifyCenter',
-				'JustifyRight',
-				'JustifyBlock',
-			],
-			name: 'paragraph',
-		},
-		{items: ['Link', 'Unlink', 'Anchor'], name: 'links'},
-		{
-			items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar'],
-			name: 'insert',
-		},
-		'/',
-		{items: ['Styles', 'Format', 'Font', 'FontSize'], name: 'styles'},
-		{items: ['TextColor', 'BGColor'], name: 'colors'},
-		{items: ['Maximize'], name: 'tools'},
-		{
-			items: ['Source'],
-			name: 'document',
-		},
-	],
-};
-
 const RichText = ({
+	editingLanguageId,
+	editorConfig,
 	id,
 	name,
 	onChange,
 	predefinedValue,
 	readOnly,
 	value,
+	visible,
 	...otherProps
 }) => {
 	const [currentValue, setCurrentValue] = useSyncValue(
 		value ? value : predefinedValue
 	);
 
-	const editorProps = {
-		config: CKEDITOR_CONFIG,
-		data: currentValue,
-	};
+	const [dirty, setDirty] = useState(false);
 
-	if (readOnly) {
-		editorProps.readOnly = true;
-		editorProps.style = {pointerEvents: 'none'};
-	}
-	else {
-		editorProps.onChange = (event) => {
-			const newValue = event.editor.getData();
+	const editorRef = useRef();
 
-			setCurrentValue(newValue);
+	useEffect(() => {
+		const editor = editorRef.current?.editor;
 
-			onChange(event, newValue);
-		};
-	}
+		if (editor) {
+			editor.config.contentsLangDirection =
+				Liferay.Language.direction[editingLanguageId];
+
+			editor.config.contentsLanguage = editingLanguageId;
+
+			editor.setData(editor.getData());
+		}
+	}, [editingLanguageId, editorRef]);
 
 	return (
-		<FieldBase {...otherProps} id={id} name={name} readOnly={readOnly}>
-			<Editor {...editorProps} />
+		<FieldBase
+			{...otherProps}
+			id={id}
+			name={name}
+			readOnly={readOnly}
+			style={readOnly ? {pointerEvents: 'none'} : null}
+			visible={visible}
+		>
+			<ClassicEditor
+				contents={currentValue}
+				data={currentValue}
+				editorConfig={editorConfig}
+				name={name}
+				onChange={(data) => {
+					if (currentValue?.trim() !== data?.trim()) {
+						setCurrentValue(data);
+						setDirty(true);
+
+						onChange({}, data);
+					}
+					else if (!dirty) {
+						CKEDITOR.instances[name].resetUndo();
+					}
+				}}
+				onMode={({editor}) => {
+					if (editor.mode === 'source') {
+						editor.on('afterSetData', ({data}) => {
+							const {dataValue} = data;
+
+							setCurrentValue(dataValue);
+
+							onChange({}, dataValue);
+						});
+					}
+					else {
+						editor.removeListener('afterSetData');
+					}
+				}}
+				readOnly={readOnly}
+				ref={editorRef}
+			/>
 
 			<input
 				defaultValue={currentValue}

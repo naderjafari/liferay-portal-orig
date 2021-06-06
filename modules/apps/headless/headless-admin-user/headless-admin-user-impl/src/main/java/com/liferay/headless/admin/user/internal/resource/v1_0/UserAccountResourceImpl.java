@@ -39,6 +39,7 @@ import com.liferay.headless.admin.user.internal.dto.v1_0.util.ServiceBuilderWebs
 import com.liferay.headless.admin.user.internal.dto.v1_0.util.WebUrlUtil;
 import com.liferay.headless.admin.user.internal.odata.entity.v1_0.UserAccountEntityModel;
 import com.liferay.headless.admin.user.resource.v1_0.UserAccountResource;
+import com.liferay.headless.common.spi.service.context.ServiceContextRequestUtil;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Address;
@@ -63,7 +64,6 @@ import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.ContactLocalService;
 import com.liferay.portal.kernel.service.GroupService;
 import com.liferay.portal.kernel.service.RoleService;
-import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.service.UserService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -199,8 +199,8 @@ public class UserAccountResourceImpl
 
 		User user = _userService.addUser(
 			contextCompany.getCompanyId(), true, null, null, false,
-			userAccount.getAlternateName(), userAccount.getEmailAddress(), 0,
-			null, contextAcceptLanguage.getPreferredLocale(),
+			userAccount.getAlternateName(), userAccount.getEmailAddress(),
+			contextAcceptLanguage.getPreferredLocale(),
 			userAccount.getGivenName(), userAccount.getAdditionalName(),
 			userAccount.getFamilyName(), _getPrefixId(userAccount),
 			_getSuffixId(userAccount), true, _getBirthdayMonth(userAccount),
@@ -210,7 +210,12 @@ public class UserAccountResourceImpl
 			_getServiceBuilderEmailAddresses(userAccount),
 			_getServiceBuilderPhones(userAccount), _getWebsites(userAccount),
 			Collections.emptyList(), false,
-			ServiceContextFactory.getInstance(contextHttpServletRequest));
+			ServiceContextRequestUtil.createServiceContext(
+				CustomFieldsUtil.toMap(
+					User.class.getName(), contextCompany.getCompanyId(),
+					userAccount.getCustomFields(),
+					contextAcceptLanguage.getPreferredLocale()),
+				contextCompany.getGroupId(), contextHttpServletRequest, null));
 
 		UserAccountContactInformation userAccountContactInformation =
 			userAccount.getUserAccountContactInformation();
@@ -260,14 +265,14 @@ public class UserAccountResourceImpl
 			_userService.updateUser(
 				userAccountId, null, null, null, false, null, null,
 				userAccount.getAlternateName(), userAccount.getEmailAddress(),
-				user.getFacebookId(), user.getOpenId(), false, null,
-				user.getLanguageId(), user.getTimeZoneId(), user.getGreeting(),
-				user.getComments(), userAccount.getGivenName(),
-				userAccount.getAdditionalName(), userAccount.getFamilyName(),
-				_getPrefixId(userAccount), _getSuffixId(userAccount), true,
-				_getBirthdayMonth(userAccount), _getBirthdayDay(userAccount),
-				_getBirthdayYear(userAccount), sms, facebook, jabber, skype,
-				twitter, userAccount.getJobTitle(), user.getGroupIds(),
+				false, null, user.getLanguageId(), user.getTimeZoneId(),
+				user.getGreeting(), user.getComments(),
+				userAccount.getGivenName(), userAccount.getAdditionalName(),
+				userAccount.getFamilyName(), _getPrefixId(userAccount),
+				_getSuffixId(userAccount), true, _getBirthdayMonth(userAccount),
+				_getBirthdayDay(userAccount), _getBirthdayYear(userAccount),
+				sms, facebook, jabber, skype, twitter,
+				userAccount.getJobTitle(), user.getGroupIds(),
 				user.getOrganizationIds(), user.getRoleIds(),
 				_userGroupRoleLocalService.getUserGroupRoles(userAccountId),
 				user.getUserGroupIds(), _getAddresses(userAccount),
@@ -276,7 +281,13 @@ public class UserAccountResourceImpl
 				_getWebsites(userAccount),
 				_announcementsDeliveryLocalService.getUserDeliveries(
 					userAccountId),
-				ServiceContextFactory.getInstance(contextHttpServletRequest)));
+				ServiceContextRequestUtil.createServiceContext(
+					CustomFieldsUtil.toMap(
+						User.class.getName(), contextCompany.getCompanyId(),
+						userAccount.getCustomFields(),
+						contextAcceptLanguage.getPreferredLocale()),
+					contextCompany.getGroupId(), contextHttpServletRequest,
+					null)));
 	}
 
 	@Override
@@ -337,6 +348,14 @@ public class UserAccountResourceImpl
 				existingUserAccountContactInformation::setWebUrls
 			);
 		}
+
+		if (userAccount.getCustomFields() != null) {
+			Optional.ofNullable(
+				userAccount.getCustomFields()
+			).ifPresent(
+				existingUserAccount::setCustomFields
+			);
+		}
 	}
 
 	private List<Address> _getAddresses(UserAccount userAccount) {
@@ -350,7 +369,8 @@ public class UserAccountResourceImpl
 					postalAddresses,
 					_postalAddress ->
 						ServiceBuilderAddressUtil.toServiceBuilderAddress(
-							_postalAddress, ListTypeConstants.CONTACT_ADDRESS)),
+							contextCompany.getCompanyId(), _postalAddress,
+							ListTypeConstants.CONTACT_ADDRESS)),
 				Objects::nonNull)
 		).orElse(
 			Collections.emptyList()

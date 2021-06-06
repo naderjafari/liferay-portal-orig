@@ -60,10 +60,11 @@ page import="com.liferay.fragment.web.internal.display.context.SelectFragmentCol
 page import="com.liferay.fragment.web.internal.display.context.SelectFragmentCollectionManagementToolbarDisplayContext" %><%@
 page import="com.liferay.fragment.web.internal.security.permission.resource.FragmentPermission" %><%@
 page import="com.liferay.fragment.web.internal.servlet.taglib.clay.ContributedFragmentEntryVerticalCard" %><%@
-page import="com.liferay.fragment.web.internal.servlet.taglib.clay.FragmentCollectionHorizontalCard" %><%@
+page import="com.liferay.fragment.web.internal.servlet.taglib.clay.FragmentCollectionNavigationCard" %><%@
 page import="com.liferay.fragment.web.internal.servlet.taglib.clay.FragmentCollectionResourceVerticalCard" %><%@
 page import="com.liferay.fragment.web.internal.servlet.taglib.clay.FragmentEntryVerticalCardFactory" %><%@
 page import="com.liferay.frontend.taglib.servlet.taglib.util.EmptyResultMessageKeys" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
 page import="com.liferay.portal.kernel.model.Group" %><%@
@@ -82,8 +83,6 @@ page import="com.liferay.taglib.search.ResultRow" %>
 <%@ page import="java.util.List" %><%@
 page import="java.util.Map" %><%@
 page import="java.util.Objects" %>
-
-<%@ page import="javax.portlet.PortletURL" %>
 
 <liferay-frontend:defineObjects />
 

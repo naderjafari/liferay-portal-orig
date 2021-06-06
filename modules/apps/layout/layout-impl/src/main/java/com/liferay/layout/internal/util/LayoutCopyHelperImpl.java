@@ -27,11 +27,13 @@ import com.liferay.layout.seo.model.LayoutSEOEntry;
 import com.liferay.layout.seo.service.LayoutSEOEntryLocalService;
 import com.liferay.layout.service.LayoutClassedModelUsageLocalService;
 import com.liferay.layout.util.LayoutCopyHelper;
-import com.liferay.layout.util.structure.FragmentLayoutStructureItem;
+import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.portal.kernel.comment.CommentManager;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Image;
 import com.liferay.portal.kernel.model.Layout;
@@ -42,10 +44,12 @@ import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
+import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.ImageLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
+import com.liferay.portal.kernel.service.PortletPreferenceValueLocalService;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
@@ -55,10 +59,12 @@ import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
+import com.liferay.portal.kernel.util.CopyLayoutThreadLocal;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portlet.exportimport.staging.StagingAdvicesThreadLocal;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
 import com.liferay.segments.model.SegmentsExperience;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
@@ -90,16 +96,22 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 		Callable<Layout> callable = new CopyLayoutCallable(
 			sourceLayout, targetLayout);
 
+		boolean copyLayout = CopyLayoutThreadLocal.isCopyLayout();
+
 		ServiceContext currentServiceContext =
 			ServiceContextThreadLocal.getServiceContext();
 
 		try {
+			CopyLayoutThreadLocal.setCopyLayout(true);
+
 			return TransactionInvokerUtil.invoke(_transactionConfig, callable);
 		}
-		catch (Throwable t) {
-			throw new Exception(t);
+		catch (Throwable throwable) {
+			throw new Exception(throwable);
 		}
 		finally {
+			CopyLayoutThreadLocal.setCopyLayout(copyLayout);
+
 			ServiceContextThreadLocal.pushServiceContext(currentServiceContext);
 		}
 	}
@@ -201,23 +213,32 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 				fragmentEntryLinkMap, entry.getValue(), serviceContext);
 		}
 
-		_layoutClassedModelUsageLocalService.
-			deleteLayoutClassedModelUsagesByPlid(targetLayout.getPlid());
-
-		List<LayoutClassedModelUsage> layoutClassedModelUsages =
+		List<LayoutClassedModelUsage> sourceLayoutLayoutClassedModelUsages =
 			_layoutClassedModelUsageLocalService.
 				getLayoutClassedModelUsagesByPlid(sourceLayout.getPlid());
 
-		for (LayoutClassedModelUsage layoutClassedModelUsage :
-				layoutClassedModelUsages) {
+		_deleteLayoutClassedModelUsages(
+			sourceLayoutLayoutClassedModelUsages, targetLayout);
 
-			_layoutClassedModelUsageLocalService.addLayoutClassedModelUsage(
-				layoutClassedModelUsage.getGroupId(),
-				layoutClassedModelUsage.getClassNameId(),
-				layoutClassedModelUsage.getClassPK(),
-				layoutClassedModelUsage.getContainerKey(),
-				layoutClassedModelUsage.getContainerType(),
-				targetLayout.getPlid(), serviceContext);
+		List<LayoutClassedModelUsage> targetLayoutLayoutClassedModelUsages =
+			_layoutClassedModelUsageLocalService.
+				getLayoutClassedModelUsagesByPlid(targetLayout.getPlid());
+
+		for (LayoutClassedModelUsage sourceLayoutLayoutClassedModelUsage :
+				sourceLayoutLayoutClassedModelUsages) {
+
+			if (!_hasLayoutClassedModelUsage(
+					targetLayoutLayoutClassedModelUsages,
+					sourceLayoutLayoutClassedModelUsage)) {
+
+				_layoutClassedModelUsageLocalService.addLayoutClassedModelUsage(
+					sourceLayoutLayoutClassedModelUsage.getGroupId(),
+					sourceLayoutLayoutClassedModelUsage.getClassNameId(),
+					sourceLayoutLayoutClassedModelUsage.getClassPK(),
+					sourceLayoutLayoutClassedModelUsage.getContainerKey(),
+					sourceLayoutLayoutClassedModelUsage.getContainerType(),
+					targetLayout.getPlid(), serviceContext);
+			}
 		}
 	}
 
@@ -319,47 +340,122 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 	}
 
 	private void _copyPortletPreferences(
-		Layout sourceLayout, Layout targetLayout) {
+			Layout sourceLayout, Layout targetLayout)
+		throws Exception {
 
-		List<PortletPreferences> portletPreferencesList =
-			_portletPreferencesLocalService.getPortletPreferences(
-				PortletKeys.PREFS_OWNER_ID_DEFAULT,
-				PortletKeys.PREFS_OWNER_TYPE_LAYOUT, sourceLayout.getPlid());
+		boolean stagingAdvicesThreadLocalEnabled =
+			StagingAdvicesThreadLocal.isEnabled();
 
-		_portletPreferencesLocalService.deletePortletPreferences(
-			PortletKeys.PREFS_OWNER_ID_DEFAULT,
-			PortletKeys.PREFS_OWNER_TYPE_LAYOUT, targetLayout.getPlid());
+		try {
+			StagingAdvicesThreadLocal.setEnabled(false);
 
-		for (PortletPreferences portletPreferences : portletPreferencesList) {
-			Portlet portlet = _portletLocalService.getPortletById(
-				portletPreferences.getPortletId());
-
-			if ((portlet == null) || portlet.isUndeployedPortlet()) {
-				continue;
-			}
-
-			PortletPreferences targetPortletPreferences =
-				_portletPreferencesLocalService.fetchPortletPreferences(
+			List<PortletPreferences> portletPreferencesList =
+				_portletPreferencesLocalService.getPortletPreferences(
 					PortletKeys.PREFS_OWNER_ID_DEFAULT,
-					PortletKeys.PREFS_OWNER_TYPE_LAYOUT, targetLayout.getPlid(),
+					PortletKeys.PREFS_OWNER_TYPE_LAYOUT,
+					sourceLayout.getPlid());
+
+			List<PortletPreferences> targetPortletPreferencesList =
+				_portletPreferencesLocalService.getPortletPreferences(
+					PortletKeys.PREFS_OWNER_ID_DEFAULT,
+					PortletKeys.PREFS_OWNER_TYPE_LAYOUT,
+					targetLayout.getPlid());
+
+			Stream<PortletPreferences> targetPortletPreferencesStream =
+				targetPortletPreferencesList.stream();
+
+			List<String> targetPortletIds = targetPortletPreferencesStream.map(
+				PortletPreferences::getPortletId
+			).collect(
+				Collectors.toList()
+			);
+
+			for (PortletPreferences portletPreferences :
+					portletPreferencesList) {
+
+				Portlet portlet = _portletLocalService.getPortletById(
 					portletPreferences.getPortletId());
 
-			if (targetPortletPreferences != null) {
-				targetPortletPreferences.setPreferences(
-					portletPreferences.getPreferences());
+				if ((portlet == null) || portlet.isUndeployedPortlet()) {
+					continue;
+				}
 
-				_portletPreferencesLocalService.updatePortletPreferences(
-					targetPortletPreferences);
+				targetPortletIds.remove(portletPreferences.getPortletId());
+
+				javax.portlet.PortletPreferences jxPortletPreferences =
+					_portletPreferenceValueLocalService.getPreferences(
+						portletPreferences);
+
+				PortletPreferences targetPortletPreferences =
+					_portletPreferencesLocalService.fetchPortletPreferences(
+						PortletKeys.PREFS_OWNER_ID_DEFAULT,
+						PortletKeys.PREFS_OWNER_TYPE_LAYOUT,
+						targetLayout.getPlid(),
+						portletPreferences.getPortletId());
+
+				if (targetPortletPreferences != null) {
+					_portletPreferencesLocalService.updatePreferences(
+						targetPortletPreferences.getOwnerId(),
+						targetPortletPreferences.getOwnerType(),
+						targetPortletPreferences.getPlid(),
+						targetPortletPreferences.getPortletId(),
+						jxPortletPreferences);
+				}
+				else {
+					_portletPreferencesLocalService.addPortletPreferences(
+						targetLayout.getCompanyId(),
+						PortletKeys.PREFS_OWNER_ID_DEFAULT,
+						PortletKeys.PREFS_OWNER_TYPE_LAYOUT,
+						targetLayout.getPlid(),
+						portletPreferences.getPortletId(),
+						_portletLocalService.getPortletById(
+							portletPreferences.getPortletId()),
+						PortletPreferencesFactoryUtil.toXML(
+							jxPortletPreferences));
+				}
 			}
-			else {
-				_portletPreferencesLocalService.addPortletPreferences(
-					targetLayout.getCompanyId(),
-					PortletKeys.PREFS_OWNER_ID_DEFAULT,
-					PortletKeys.PREFS_OWNER_TYPE_LAYOUT, targetLayout.getPlid(),
-					portletPreferences.getPortletId(),
-					_portletLocalService.getPortletById(
-						portletPreferences.getPortletId()),
-					portletPreferences.getPreferences());
+
+			for (String portletId : targetPortletIds) {
+				try {
+					_portletPreferencesLocalService.deletePortletPreferences(
+						PortletKeys.PREFS_OWNER_ID_DEFAULT,
+						PortletKeys.PREFS_OWNER_TYPE_LAYOUT,
+						targetLayout.getPlid(), portletId);
+				}
+				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(
+							"Unable to delete portlet preferences for " +
+								"portlet " + portletId,
+							exception);
+					}
+				}
+			}
+		}
+		finally {
+			StagingAdvicesThreadLocal.setEnabled(
+				stagingAdvicesThreadLocalEnabled);
+		}
+	}
+
+	private void _deleteLayoutClassedModelUsages(
+		List<LayoutClassedModelUsage> sourceLayoutLayoutClassedModelUsages,
+		Layout targetLayout) {
+
+		List<LayoutClassedModelUsage> targetLayoutClassedModelUsages =
+			_layoutClassedModelUsageLocalService.
+				getLayoutClassedModelUsagesByPlid(targetLayout.getPlid());
+
+		for (LayoutClassedModelUsage targetLayoutClassedModelUsage :
+				targetLayoutClassedModelUsages) {
+
+			if (!_hasLayoutClassedModelUsage(
+					sourceLayoutLayoutClassedModelUsages,
+					targetLayoutClassedModelUsage)) {
+
+				_layoutClassedModelUsageLocalService.
+					deleteLayoutClassedModelUsage(
+						targetLayoutClassedModelUsage);
 			}
 		}
 	}
@@ -463,6 +559,30 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 		return segmentsExperienceIds;
 	}
 
+	private boolean _hasLayoutClassedModelUsage(
+		List<LayoutClassedModelUsage> layoutClassedModelUsages,
+		LayoutClassedModelUsage targetLayoutClassedModelUsage) {
+
+		for (LayoutClassedModelUsage layoutClassedModelUsage :
+				layoutClassedModelUsages) {
+
+			if ((layoutClassedModelUsage.getClassNameId() ==
+					targetLayoutClassedModelUsage.getClassNameId()) &&
+				(layoutClassedModelUsage.getClassPK() ==
+					targetLayoutClassedModelUsage.getClassPK()) &&
+				Objects.equals(
+					layoutClassedModelUsage.getContainerKey(),
+					targetLayoutClassedModelUsage.getContainerKey()) &&
+				(layoutClassedModelUsage.getContainerType() ==
+					targetLayoutClassedModelUsage.getContainerType())) {
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private boolean _isDraft(Layout layout) {
 		if (layout.getClassPK() <= 0) {
 			return false;
@@ -488,15 +608,18 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 		for (LayoutStructureItem layoutStructureItem :
 				layoutStructure.getLayoutStructureItems()) {
 
-			if (!(layoutStructureItem instanceof FragmentLayoutStructureItem)) {
+			if (!(layoutStructureItem instanceof
+					FragmentStyledLayoutStructureItem)) {
+
 				continue;
 			}
 
-			FragmentLayoutStructureItem fragmentLayoutStructureItem =
-				(FragmentLayoutStructureItem)layoutStructureItem;
+			FragmentStyledLayoutStructureItem
+				fragmentStyledLayoutStructureItem =
+					(FragmentStyledLayoutStructureItem)layoutStructureItem;
 
 			FragmentEntryLink fragmentEntryLink = fragmentEntryLinkMap.get(
-				fragmentLayoutStructureItem.getFragmentEntryLinkId());
+				fragmentStyledLayoutStructureItem.getFragmentEntryLinkId());
 
 			if (fragmentEntryLink == null) {
 				continue;
@@ -514,7 +637,6 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 				serviceContext.getCreateDate(new Date()));
 			newFragmentEntryLink.setModifiedDate(
 				serviceContext.getModifiedDate(new Date()));
-			newFragmentEntryLink.setOriginalFragmentEntryLinkId(0);
 			newFragmentEntryLink.setSegmentsExperienceId(
 				targetSegmentsExperienceId);
 			newFragmentEntryLink.setClassNameId(
@@ -528,7 +650,7 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 				_fragmentEntryLinkLocalService.addFragmentEntryLink(
 					newFragmentEntryLink);
 
-			fragmentLayoutStructureItem.setFragmentEntryLinkId(
+			fragmentStyledLayoutStructureItem.setFragmentEntryLinkId(
 				newFragmentEntryLink.getFragmentEntryLinkId());
 
 			_commentManager.copyDiscussion(
@@ -541,6 +663,9 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 
 		return layoutStructure.toJSONObject();
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		LayoutCopyHelperImpl.class);
 
 	private static final TransactionConfig _transactionConfig =
 		TransactionConfig.Factory.create(
@@ -588,6 +713,10 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 	private PortletPreferencesLocalService _portletPreferencesLocalService;
 
 	@Reference
+	private PortletPreferenceValueLocalService
+		_portletPreferenceValueLocalService;
+
+	@Reference
 	private PortletRegistry _portletRegistry;
 
 	@Reference
@@ -633,6 +762,11 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 				_targetLayout.getGroupId(), _targetLayout.isPrivateLayout(),
 				_targetLayout.getLayoutId(),
 				_sourceLayout.getMasterLayoutPlid());
+
+			_layoutLocalService.updateStyleBookEntryId(
+				_targetLayout.getGroupId(), _targetLayout.isPrivateLayout(),
+				_targetLayout.getLayoutId(),
+				_sourceLayout.getStyleBookEntryId());
 
 			UnicodeProperties unicodeProperties = new UnicodeProperties();
 

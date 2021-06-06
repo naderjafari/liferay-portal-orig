@@ -2081,7 +2081,14 @@ public class ArrayUtil {
 		for (int i = 0; i < array.length; i++) {
 			Object bean = array[i];
 
-			Object value = BeanPropertiesUtil.getObject(bean, param);
+			Object value = null;
+
+			if (Validator.isNull(param)) {
+				value = String.valueOf(bean);
+			}
+			else {
+				value = BeanPropertiesUtil.getObject(bean, param);
+			}
 
 			if (value != null) {
 				if (locale != null) {
@@ -2244,11 +2251,11 @@ public class ArrayUtil {
 		return newArray;
 	}
 
-	public static String[] toStringArray(JSONArray array) {
-		String[] newArray = new String[array.length()];
+	public static String[] toStringArray(JSONArray jsonArray) {
+		String[] newArray = new String[jsonArray.length()];
 
-		for (int i = 0; i < array.length(); i++) {
-			newArray[i] = array.getString(i);
+		for (int i = 0; i < jsonArray.length(); i++) {
+			newArray[i] = jsonArray.getString(i);
 		}
 
 		return newArray;

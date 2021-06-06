@@ -15,14 +15,12 @@
 import classNames from 'classnames';
 import React, {useRef} from 'react';
 
-import {
-	LayoutDataPropTypes,
-	getLayoutDataItemPropTypes,
-} from '../../prop-types/index';
+import {getLayoutDataItemPropTypes} from '../../prop-types/index';
+import {useSelector} from '../contexts/StoreContext';
 import selectCanUpdatePageStructure from '../selectors/selectCanUpdatePageStructure';
-import {useSelector} from '../store/index';
+import {TARGET_POSITIONS} from '../utils/drag-and-drop/constants/targetPositions';
+import {useDropTarget} from '../utils/drag-and-drop/useDragAndDrop';
 import getLayoutDataItemLabel from '../utils/getLayoutDataItemLabel';
-import {TARGET_POSITION, useDropTarget} from '../utils/useDragAndDrop';
 
 export default function ({children, ...props}) {
 	const canUpdatePageStructure = useSelector(selectCanUpdatePageStructure);
@@ -34,7 +32,7 @@ export default function ({children, ...props}) {
 	);
 }
 
-function TopperEmpty({children, item, layoutData}) {
+function TopperEmpty({children, item}) {
 	const containerRef = useRef(null);
 	const fragmentEntryLinks = useSelector((state) => state.fragmentEntryLinks);
 
@@ -44,7 +42,7 @@ function TopperEmpty({children, item, layoutData}) {
 		sourceItem,
 		targetPosition,
 		targetRef,
-	} = useDropTarget(item, layoutData);
+	} = useDropTarget(item);
 
 	const isFragment = children.type === React.Fragment;
 	const realChildren = isFragment ? children.props.children : children;
@@ -72,13 +70,13 @@ function TopperEmpty({children, item, layoutData}) {
 					className: classNames(child.props.className, {
 						'drag-over-bottom':
 							isOverTarget &&
-							targetPosition === TARGET_POSITION.BOTTOM,
+							targetPosition === TARGET_POSITIONS.BOTTOM,
 						'drag-over-middle':
 							isOverTarget &&
-							targetPosition === TARGET_POSITION.MIDDLE,
+							targetPosition === TARGET_POSITIONS.MIDDLE,
 						'drag-over-top':
 							isOverTarget &&
-							targetPosition === TARGET_POSITION.TOP,
+							targetPosition === TARGET_POSITIONS.TOP,
 						'not-droppable': !!notDroppableMessage,
 						'page-editor__topper': true,
 					}),
@@ -104,5 +102,4 @@ function TopperEmpty({children, item, layoutData}) {
 
 TopperEmpty.propTypes = {
 	item: getLayoutDataItemPropTypes().isRequired,
-	layoutData: LayoutDataPropTypes.isRequired,
 };

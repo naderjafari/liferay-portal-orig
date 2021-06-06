@@ -50,15 +50,13 @@ public class SamlIdpSpConnectionLocalServiceImpl
 
 	@Override
 	public SamlIdpSpConnection addSamlIdpSpConnection(
-			String samlSpEntityId, int assertionLifetime, String attributeNames,
+			int assertionLifetime, String attributeNames,
 			boolean attributesEnabled, boolean attributesNamespaceEnabled,
 			boolean enabled, boolean encryptionForced, String metadataUrl,
 			InputStream metadataXmlInputStream, String name,
-			String nameIdAttribute, String nameIdFormat,
+			String nameIdAttribute, String nameIdFormat, String samlSpEntityId,
 			ServiceContext serviceContext)
 		throws PortalException {
-
-		Date now = new Date();
 
 		if (Validator.isNull(samlSpEntityId)) {
 			throw new SamlIdpSpConnectionSamlSpEntityIdException(
@@ -83,10 +81,11 @@ public class SamlIdpSpConnectionLocalServiceImpl
 		SamlIdpSpConnection samlIdpSpConnection =
 			samlIdpSpConnectionPersistence.create(samlIdpSpConnectionId);
 
+		Date now = new Date();
+
 		samlIdpSpConnection.setCompanyId(serviceContext.getCompanyId());
 		samlIdpSpConnection.setCreateDate(now);
 		samlIdpSpConnection.setModifiedDate(now);
-		samlIdpSpConnection.setSamlSpEntityId(samlSpEntityId);
 		samlIdpSpConnection.setAssertionLifetime(assertionLifetime);
 		samlIdpSpConnection.setAttributeNames(attributeNames);
 		samlIdpSpConnection.setAttributesEnabled(attributesEnabled);
@@ -124,6 +123,7 @@ public class SamlIdpSpConnectionLocalServiceImpl
 		samlIdpSpConnection.setName(name);
 		samlIdpSpConnection.setNameIdAttribute(nameIdAttribute);
 		samlIdpSpConnection.setNameIdFormat(nameIdFormat);
+		samlIdpSpConnection.setSamlSpEntityId(samlSpEntityId);
 
 		return samlIdpSpConnectionPersistence.update(samlIdpSpConnection);
 	}
@@ -211,16 +211,14 @@ public class SamlIdpSpConnectionLocalServiceImpl
 
 	@Override
 	public SamlIdpSpConnection updateSamlIdpSpConnection(
-			long samlIdpSpConnectionId, String samlSpEntityId,
-			int assertionLifetime, String attributeNames,
-			boolean attributesEnabled, boolean attributesNamespaceEnabled,
-			boolean enabled, boolean encryptionForced, String metadataUrl,
+			long samlIdpSpConnectionId, int assertionLifetime,
+			String attributeNames, boolean attributesEnabled,
+			boolean attributesNamespaceEnabled, boolean enabled,
+			boolean encryptionForced, String metadataUrl,
 			InputStream metadataXmlInputStream, String name,
-			String nameIdAttribute, String nameIdFormat,
+			String nameIdAttribute, String nameIdFormat, String samlSpEntityId,
 			ServiceContext serviceContext)
 		throws PortalException {
-
-		Date now = new Date();
 
 		if (Validator.isNull(samlSpEntityId)) {
 			throw new SamlIdpSpConnectionSamlSpEntityIdException(
@@ -242,8 +240,10 @@ public class SamlIdpSpConnectionLocalServiceImpl
 			}
 		}
 
+		Date now = new Date();
+
 		samlIdpSpConnection.setModifiedDate(now);
-		samlIdpSpConnection.setSamlSpEntityId(samlSpEntityId);
+
 		samlIdpSpConnection.setAssertionLifetime(assertionLifetime);
 		samlIdpSpConnection.setAttributeNames(attributeNames);
 		samlIdpSpConnection.setAttributesEnabled(attributesEnabled);
@@ -285,6 +285,7 @@ public class SamlIdpSpConnectionLocalServiceImpl
 		samlIdpSpConnection.setName(name);
 		samlIdpSpConnection.setNameIdAttribute(nameIdAttribute);
 		samlIdpSpConnection.setNameIdFormat(nameIdFormat);
+		samlIdpSpConnection.setSamlSpEntityId(samlSpEntityId);
 
 		return samlIdpSpConnectionPersistence.update(samlIdpSpConnection);
 	}

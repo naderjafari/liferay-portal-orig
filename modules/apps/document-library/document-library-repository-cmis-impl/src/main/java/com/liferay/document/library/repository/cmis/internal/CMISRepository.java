@@ -22,6 +22,7 @@ import com.liferay.document.library.kernel.exception.NoSuchFileVersionException;
 import com.liferay.document.library.kernel.exception.NoSuchFolderException;
 import com.liferay.document.library.kernel.model.DLFileEntryConstants;
 import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.model.DLVersionNumberIncrease;
 import com.liferay.document.library.kernel.util.comparator.RepositoryModelCreateDateComparator;
 import com.liferay.document.library.kernel.util.comparator.RepositoryModelModifiedDateComparator;
@@ -45,6 +46,7 @@ import com.liferay.portal.kernel.lock.Lock;
 import com.liferay.portal.kernel.lock.LockManager;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Repository;
 import com.liferay.portal.kernel.model.RepositoryEntry;
 import com.liferay.portal.kernel.repository.RepositoryException;
 import com.liferay.portal.kernel.repository.model.FileEntry;
@@ -62,6 +64,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.service.RepositoryEntryLocalServiceUtil;
+import com.liferay.portal.kernel.service.RepositoryLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -77,6 +80,7 @@ import java.math.BigInteger;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -141,9 +145,11 @@ public class CMISRepository extends BaseCmisRepository {
 
 	@Override
 	public FileEntry addFileEntry(
-			long userId, long folderId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog,
-			InputStream inputStream, long size, ServiceContext serviceContext)
+			String externalReferenceCode, long userId, long folderId,
+			String sourceFileName, String mimeType, String title,
+			String description, String changeLog, InputStream inputStream,
+			long size, Date expirationDate, Date reviewDate,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		if (Validator.isNull(title)) {
@@ -941,12 +947,8 @@ public class CMISRepository extends BaseCmisRepository {
 	@Override
 	public void initRepository() throws PortalException {
 		try {
-			_sessionKey = Session.class.getName(
-			).concat(
-				StringPool.POUND
-			).concat(
-				String.valueOf(getRepositoryId())
-			);
+			_sessionKey = StringBundler.concat(
+				Session.class.getName(), StringPool.POUND, getRepositoryId());
 
 			Session session = getSession();
 
@@ -1188,7 +1190,7 @@ public class CMISRepository extends BaseCmisRepository {
 				userId, fileEntryId, contentStream.getFileName(), mimeType,
 				title, StringPool.BLANK, changeLog,
 				DLVersionNumberIncrease.MAJOR, contentStream.getStream(),
-				contentStream.getLength(), serviceContext);
+				contentStream.getLength(), null, null, serviceContext);
 		}
 		catch (PortalException | SystemException exception) {
 			throw exception;
@@ -1296,7 +1298,8 @@ public class CMISRepository extends BaseCmisRepository {
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
 			DLVersionNumberIncrease dlVersionNumberIncrease,
-			InputStream inputStream, long size, ServiceContext serviceContext)
+			InputStream inputStream, long size, Date expirationDate,
+			Date reviewDate, ServiceContext serviceContext)
 		throws PortalException {
 
 		Document document = null;
@@ -1400,7 +1403,7 @@ public class CMISRepository extends BaseCmisRepository {
 	public FileEntry updateFileEntry(
 			String objectId, String mimeType, Map<String, Object> properties,
 			InputStream inputStream, String sourceFileName, long size,
-			ServiceContext serviceContext)
+			Date expirationDate, Date reviewDate, ServiceContext serviceContext)
 		throws PortalException {
 
 		try {
@@ -1776,17 +1779,17 @@ public class CMISRepository extends BaseCmisRepository {
 			}
 			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
-					Throwable cause = exception.getCause();
+					Throwable throwable = exception.getCause();
 
-					if (cause != null) {
-						cause = cause.getCause();
+					if (throwable != null) {
+						throwable = throwable.getCause();
 					}
 
-					if (cause instanceof CmisObjectNotFoundException) {
+					if (throwable instanceof CmisObjectNotFoundException) {
 						_log.debug(
 							"Search result ignored for CMIS document which " +
 								"has a version with an invalid object ID " +
-									cause.getMessage());
+									throwable.getMessage());
 					}
 					else {
 						_log.debug(
@@ -2281,7 +2284,7 @@ public class CMISRepository extends BaseCmisRepository {
 			return repositoryEntry.getMappedId();
 		}
 
-		DLFolder dlFolder = dlFolderLocalService.fetchFolder(folderId);
+		DLFolder dlFolder = _fetchDLFolder(folderId);
 
 		if (dlFolder == null) {
 			throw new NoSuchFolderException(
@@ -2346,6 +2349,21 @@ public class CMISRepository extends BaseCmisRepository {
 		if (objectId != null) {
 			throw new DuplicateFolderNameException(title);
 		}
+	}
+
+	private DLFolder _fetchDLFolder(long folderId) {
+		if (folderId != DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
+			return dlFolderLocalService.fetchFolder(folderId);
+		}
+
+		Repository repository = RepositoryLocalServiceUtil.fetchRepository(
+			getRepositoryId());
+
+		if (repository == null) {
+			return null;
+		}
+
+		return dlFolderLocalService.fetchFolder(repository.getDlFolderId());
 	}
 
 	private final <T> Set<T> _toSet(T... items) {

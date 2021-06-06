@@ -22,6 +22,10 @@
 <clay:container-fluid
 	cssClass="container-view"
 >
+	<liferay-ui:breadcrumb
+		showLayout="<%= false %>"
+	/>
+
 	<clay:row>
 		<clay:col
 			lg="3"
@@ -30,7 +34,7 @@
 				<ul class="nav nav-nested">
 					<li class="nav-item">
 						<c:choose>
-							<c:when test="<%= ListUtil.isNotEmpty(assetCategoriesDisplayContext.getInheritedVocabularies()) || ListUtil.isNotEmpty(assetCategoriesDisplayContext.getVocabularies()) %>">
+							<c:when test="<%= MapUtil.isNotEmpty(assetCategoriesDisplayContext.getInheritedVocabularies()) || ListUtil.isNotEmpty(assetCategoriesDisplayContext.getVocabularies()) %>">
 								<clay:content-row
 									cssClass="mb-4"
 									verticalAlign="center"
@@ -53,9 +57,11 @@
 													%>
 
 													<clay:link
-														buttonStyle="borderless"
+														borderless="<%= true %>"
+														cssClass="component-action"
 														href="<%= editVocabularyURL.toString() %>"
 														icon="plus"
+														type="button"
 													/>
 												</c:if>
 											</li>
@@ -68,16 +74,14 @@
 													<portlet:param name="mvcPath" value="/view_vocabularies.jsp" />
 												</portlet:renderURL>
 
-												<%
-												Map<String, Object> additionalProps = HashMapBuilder.<String, Object>put(
-													"deleteVocabulariesURL", deleteVocabulariesURL.toString()
-												).put(
-													"viewVocabulariesURL", viewVocabulariesURL.toString()
-												).build();
-												%>
-
 												<clay:dropdown-actions
-													additionalProps="<%= additionalProps %>"
+													additionalProps='<%=
+														HashMapBuilder.<String, Object>put(
+															"deleteVocabulariesURL", deleteVocabulariesURL.toString()
+														).put(
+															"viewVocabulariesURL", viewVocabulariesURL.toString()
+														).build()
+													%>'
 													dropdownItems="<%= assetCategoriesDisplayContext.getVocabulariesDropdownItems() %>"
 													propsTransformer="js/ActionsComponentPropsTransformer"
 												/>
@@ -86,60 +90,97 @@
 									</clay:content-col>
 								</clay:content-row>
 
-								<c:if test="<%= ListUtil.isNotEmpty(assetCategoriesDisplayContext.getInheritedVocabularies()) %>">
-									<ul class="mb-2 nav nav-stacked">
-										<span class="text-truncate"><%= LanguageUtil.get(request, "global") %></span>
+								<c:if test="<%= MapUtil.isNotEmpty(assetCategoriesDisplayContext.getInheritedVocabularies()) %>">
 
-										<%
-										for (AssetVocabulary vocabulary : assetCategoriesDisplayContext.getInheritedVocabularies()) {
-										%>
+									<%
+									Map<String, List<AssetVocabulary>> inheritedVocabularies = assetCategoriesDisplayContext.getInheritedVocabularies();
 
-											<li class="nav-item">
+									for (Map.Entry<String, List<AssetVocabulary>> entry : inheritedVocabularies.entrySet()) {
+									%>
 
-												<%
-												PortletURL vocabularyURL = renderResponse.createRenderURL();
+										<ul class="mb-2 nav nav-stacked">
+											<span class="text-truncate"><%= entry.getKey() %></span>
 
-												vocabularyURL.setParameter("mvcPath", "/view.jsp");
-												vocabularyURL.setParameter("vocabularyId", String.valueOf(vocabulary.getVocabularyId()));
-												%>
+											<%
+											for (AssetVocabulary vocabulary : entry.getValue()) {
+											%>
 
-												<a class="nav-link text-truncate <%= (assetCategoriesDisplayContext.getVocabularyId() == vocabulary.getVocabularyId()) ? "active" : StringPool.BLANK %>" href="<%= vocabularyURL.toString() %>">
-													<%= HtmlUtil.escape(vocabulary.getTitle(locale)) %>
+												<li class="nav-item">
+													<a
+														class="d-flex nav-link <%= (assetCategoriesDisplayContext.getVocabularyId() == vocabulary.getVocabularyId()) ? "active" : StringPool.BLANK %>"
+														href="<%=
+															PortletURLBuilder.createRenderURL(
+																renderResponse
+															).setMVCPath(
+																"/view.jsp"
+															).setParameter(
+																"vocabularyId", vocabulary.getVocabularyId()
+															).buildString()
+														%>"
+													>
+														<span class="text-truncate"><%= HtmlUtil.escape(vocabulary.getTitle(locale)) %></span>
 
-													<liferay-ui:icon
-														icon="lock"
-														iconCssClass="text-muted"
-														markupView="lexicon"
-													/>
-												</a>
-											</li>
+														<liferay-ui:icon
+															icon="lock"
+															iconCssClass="ml-1 text-muted"
+															markupView="lexicon"
+															message="this-vocabulary-can-only-be-edited-from-the-global-site"
+														/>
 
-										<%
-										}
-										%>
+														<c:if test="<%= vocabulary.getVisibilityType() == AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL %>">
+															<liferay-ui:icon
+																icon="low-vision"
+																iconCssClass="ml-1 text-muted"
+																markupView="lexicon"
+																message="for-internal-use-only"
+															/>
+														</c:if>
+													</a>
+												</li>
 
-									</ul>
+											<%
+											}
+											%>
+
+										</ul>
+
+									<%
+									}
+									%>
+
 								</c:if>
 
 								<c:if test="<%= ListUtil.isNotEmpty(assetCategoriesDisplayContext.getVocabularies()) %>">
 									<ul class="mb-2 nav nav-stacked">
-										<span class="text-truncate"><%= assetCategoriesDisplayContext.getGroupName() %></span>
+										<span class="text-truncate"><%= HtmlUtil.escape(assetCategoriesDisplayContext.getGroupName()) %></span>
 
 										<%
 										for (AssetVocabulary vocabulary : assetCategoriesDisplayContext.getVocabularies()) {
 										%>
 
 											<li class="nav-item">
+												<a
+													class="d-flex nav-link <%= (assetCategoriesDisplayContext.getVocabularyId() == vocabulary.getVocabularyId()) ? "active" : StringPool.BLANK %>"
+													href="<%=
+														PortletURLBuilder.createRenderURL(
+															renderResponse
+														).setMVCPath(
+															"/view.jsp"
+														).setParameter(
+															"vocabularyId", vocabulary.getVocabularyId()
+														).buildString()
+													%>"
+												>
+													<span class="text-truncate"><%= HtmlUtil.escape(vocabulary.getTitle(locale)) %></span>
 
-												<%
-												PortletURL vocabularyURL = renderResponse.createRenderURL();
-
-												vocabularyURL.setParameter("mvcPath", "/view.jsp");
-												vocabularyURL.setParameter("vocabularyId", String.valueOf(vocabulary.getVocabularyId()));
-												%>
-
-												<a class="nav-link text-truncate <%= (assetCategoriesDisplayContext.getVocabularyId() == vocabulary.getVocabularyId()) ? "active" : StringPool.BLANK %>" href="<%= vocabularyURL.toString() %>">
-													<%= HtmlUtil.escape(vocabulary.getTitle(locale)) %>
+													<c:if test="<%= vocabulary.getVisibilityType() == AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL %>">
+														<liferay-ui:icon
+															icon="low-vision"
+															iconCssClass="ml-1 text-muted"
+															markupView="lexicon"
+															message="for-internal-use-only"
+														/>
+													</c:if>
 												</a>
 											</li>
 
@@ -178,7 +219,9 @@
 			%>
 
 			<c:if test="<%= vocabulary != null %>">
-				<clay:sheet>
+				<clay:sheet
+					size="full"
+				>
 					<h2 class="sheet-title">
 						<clay:content-row
 							verticalAlign="center"
@@ -188,7 +231,7 @@
 							</clay:content-col>
 
 							<clay:content-col
-								cssClass="inline-item-after"
+								cssClass="component-action inline-item-after justify-content-end"
 							>
 								<liferay-util:include page="/vocabulary_action.jsp" servletContext="<%= application %>" />
 							</clay:content-col>
@@ -209,8 +252,8 @@
 						sb.append("\" target=\"_blank\">");
 						%>
 
-						<p>
-							<liferay-ui:message arguments='<%= new String[] {sb.toString(), "</a>"} %>' key="learn-how-to-tailor-categories-to-your-needs" />
+						<p class="mb-5 text-secondary">
+							<liferay-ui:message arguments='<%= new String[] {sb.toString(), "</a>"} %>' key="x-learn-how-x-to-tailor-categories-to-your-needs" />
 						</p>
 					</c:if>
 

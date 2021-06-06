@@ -15,6 +15,8 @@
 package com.liferay.users.admin.item.selector.web.internal.display.context;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -40,13 +42,18 @@ public class UserItemSelectorViewManagementToolbarDisplayContext
 		super(
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
 			userItemSelectorViewDisplayContext.getSearchContainer());
+
+		_userItemSelectorViewDisplayContext =
+			userItemSelectorViewDisplayContext;
 	}
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	@Override
@@ -58,12 +65,17 @@ public class UserItemSelectorViewManagementToolbarDisplayContext
 
 	@Override
 	public String getSearchContainerId() {
-		return "users";
+		return _userItemSelectorViewDisplayContext.getSearchContainerId();
+	}
+
+	@Override
+	protected String getDisplayStyle() {
+		return _userItemSelectorViewDisplayContext.getDisplayStyle();
 	}
 
 	@Override
 	protected String[] getDisplayViews() {
-		return new String[] {"list"};
+		return new String[] {"descriptive", "icon", "list"};
 	}
 
 	@Override
@@ -75,5 +87,8 @@ public class UserItemSelectorViewManagementToolbarDisplayContext
 	protected String[] getOrderByKeys() {
 		return new String[] {"first-name", "last-name", "screen-name"};
 	}
+
+	private final UserItemSelectorViewDisplayContext
+		_userItemSelectorViewDisplayContext;
 
 }

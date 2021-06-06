@@ -15,6 +15,7 @@
 package com.liferay.site.admin.web.internal.servlet.taglib.clay;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -26,8 +27,6 @@ import com.liferay.site.admin.web.internal.util.SiteInitializerItem;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -49,33 +48,31 @@ public class SelectSiteInitializerVerticalCard implements VerticalCard {
 	}
 
 	@Override
-	public Map<String, String> getData() {
+	public String getCssClass() {
+		return "add-site-action-card mb-0";
+	}
+
+	@Override
+	public Map<String, String> getDynamicAttributes() {
 		return HashMapBuilder.put(
-			"add-site-url",
-			() -> {
-				PortletURL addSiteURL = _renderResponse.createActionURL();
-
-				addSiteURL.setParameter(ActionRequest.ACTION_NAME, "addGroup");
-
-				addSiteURL.setParameter(
-					"mvcPath", "/select_layout_set_prototype_entry.jsp");
-
-				long parentGroupId = ParamUtil.getLong(
-					_httpServletRequest, "parentGroupId");
-
-				addSiteURL.setParameter(
-					"parentGroupId", String.valueOf(parentGroupId));
-
-				addSiteURL.setParameter(
-					"creationType", _siteInitializerItem.getType());
-				addSiteURL.setParameter(
-					"siteInitializerKey",
-					_siteInitializerItem.getSiteInitializerKey());
-
-				return addSiteURL.toString();
-			}
+			"data-add-site-url",
+			() -> PortletURLBuilder.createActionURL(
+				_renderResponse
+			).setActionName(
+				"/site_admin/add_group"
+			).setMVCPath(
+				"/select_layout_set_prototype_entry.jsp"
+			).setParameter(
+				"creationType", _siteInitializerItem.getType()
+			).setParameter(
+				"parentGroupId",
+				ParamUtil.getLong(_httpServletRequest, "parentGroupId")
+			).setParameter(
+				"siteInitializerKey",
+				_siteInitializerItem.getSiteInitializerKey()
+			).buildString()
 		).put(
-			"checkbox-field-name",
+			"data-checkbox-field-name",
 			() -> {
 				if (Objects.equals(
 						_siteInitializerItem.getType(),
@@ -87,15 +84,9 @@ public class SelectSiteInitializerVerticalCard implements VerticalCard {
 				return StringPool.BLANK;
 			}
 		).put(
-			"layout-set-prototype-id",
+			"data-layout-set-prototype-id",
 			String.valueOf(_siteInitializerItem.getLayoutSetPrototypeId())
 		).build();
-	}
-
-	@Override
-	public String getElementClasses() {
-		return "add-site-action-option card-interactive " +
-			"card-interactive-secondary";
 	}
 
 	@Override

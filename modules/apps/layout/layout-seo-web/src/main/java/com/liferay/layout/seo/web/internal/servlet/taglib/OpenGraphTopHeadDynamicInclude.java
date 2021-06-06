@@ -14,7 +14,7 @@
 
 package com.liferay.layout.seo.web.internal.servlet.taglib;
 
-import com.liferay.asset.display.page.constants.AssetDisplayPageWebKeys;
+import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.document.library.kernel.service.DLFileEntryMetadataLocalService;
 import com.liferay.document.library.util.DLURLHelper;
@@ -24,8 +24,9 @@ import com.liferay.dynamic.data.mapping.kernel.StorageEngineManagerUtil;
 import com.liferay.dynamic.data.mapping.kernel.Value;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.storage.StorageEngine;
-import com.liferay.info.display.contributor.InfoDisplayObjectProvider;
+import com.liferay.info.constants.InfoDisplayWebKeys;
 import com.liferay.info.field.InfoFieldValue;
+import com.liferay.info.item.InfoItemDetails;
 import com.liferay.info.item.InfoItemFieldValues;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
@@ -43,6 +44,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.servlet.taglib.BaseDynamicInclude;
 import com.liferay.portal.kernel.servlet.taglib.DynamicInclude;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -271,12 +273,11 @@ public class OpenGraphTopHeadDynamicInclude extends BaseDynamicInclude {
 			_ddmStructureLocalService, _dlAppLocalService,
 			_dlFileEntryMetadataLocalService, _dlurlHelper,
 			_layoutSEOSiteLocalService, _portal, _storageEngine);
-
 		_titleProvider = new TitleProvider(_layoutSEOLinkManager);
 	}
 
 	private String _addLinkTag(LayoutSEOLink layoutSEOLink) {
-		StringBuilder sb = new StringBuilder(10);
+		StringBundler sb = new StringBundler(10);
 
 		sb.append("<link data-senna-track=\"temporary\" ");
 		sb.append("href=\"");
@@ -321,27 +322,31 @@ public class OpenGraphTopHeadDynamicInclude extends BaseDynamicInclude {
 	private InfoItemFieldValues _getInfoItemFieldValues(
 		HttpServletRequest httpServletRequest, Layout layout) {
 
-		if (layout.isTypeAssetDisplay()) {
-			InfoDisplayObjectProvider<Object> infoDisplayObjectProvider =
-				(InfoDisplayObjectProvider<Object>)
-					httpServletRequest.getAttribute(
-						AssetDisplayPageWebKeys.INFO_DISPLAY_OBJECT_PROVIDER);
-
-			if (infoDisplayObjectProvider != null) {
-				InfoItemFieldValuesProvider infoItemFormProvider =
-					_infoItemServiceTracker.getFirstInfoItemService(
-						InfoItemFieldValuesProvider.class,
-						_portal.getClassName(
-							infoDisplayObjectProvider.getClassNameId()));
-
-				if (infoItemFormProvider != null) {
-					return infoItemFormProvider.getInfoItemFieldValues(
-						infoDisplayObjectProvider.getDisplayObject());
-				}
-			}
+		if (!layout.isTypeAssetDisplay()) {
+			return null;
 		}
 
-		return null;
+		InfoItemDetails infoItemDetails =
+			(InfoItemDetails)httpServletRequest.getAttribute(
+				InfoDisplayWebKeys.INFO_ITEM_DETAILS);
+
+		if (infoItemDetails == null) {
+			return null;
+		}
+
+		InfoItemFieldValuesProvider infoItemFormProvider =
+			_infoItemServiceTracker.getFirstInfoItemService(
+				InfoItemFieldValuesProvider.class,
+				infoItemDetails.getClassName());
+
+		if (infoItemFormProvider == null) {
+			return null;
+		}
+
+		Object infoItem = httpServletRequest.getAttribute(
+			InfoDisplayWebKeys.INFO_ITEM);
+
+		return infoItemFormProvider.getInfoItemFieldValues(infoItem);
 	}
 
 	private String _getMappedStringValue(
@@ -384,7 +389,8 @@ public class OpenGraphTopHeadDynamicInclude extends BaseDynamicInclude {
 		}
 
 		return StringBundler.concat(
-			"<meta property=\"", property, "\" content=\"", content, "\">");
+			"<meta property=\"", HtmlUtil.escapeAttribute(property),
+			"\" content=\"", HtmlUtil.escapeAttribute(content), "\">");
 	}
 
 	private String _getTitleTagValue(
@@ -413,6 +419,13 @@ public class OpenGraphTopHeadDynamicInclude extends BaseDynamicInclude {
 
 		return _titleProvider.getTitle(httpServletRequest);
 	}
+
+	@Reference
+	private AssetDisplayPageFriendlyURLProvider
+		_assetDisplayPageFriendlyURLProvider;
+
+	@Reference
+	private ClassNameLocalService _classNameLocalService;
 
 	@Reference
 	private DDMStructureLocalService _ddmStructureLocalService;

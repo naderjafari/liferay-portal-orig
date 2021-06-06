@@ -49,15 +49,15 @@ public class DynamicCSSUtil {
 			HttpServletRequest httpServletRequest, String content)
 		throws Exception {
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
 		Theme theme = _getTheme(httpServletRequest);
 
 		if (theme == null) {
 			return content;
 		}
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return replaceToken(
 			servletContext, httpServletRequest, themeDisplay, theme, content);
@@ -93,7 +93,7 @@ public class DynamicCSSUtil {
 	protected static String propagateQueryString(
 		String content, String queryString) {
 
-		StringBuilder sb = new StringBuilder(content.length());
+		StringBundler sb = new StringBundler(content.length());
 
 		int pos = 0;
 

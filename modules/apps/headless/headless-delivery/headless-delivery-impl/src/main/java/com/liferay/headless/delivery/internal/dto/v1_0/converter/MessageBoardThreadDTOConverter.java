@@ -21,10 +21,10 @@ import com.liferay.asset.kernel.service.AssetLinkLocalService;
 import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.headless.delivery.dto.v1_0.MessageBoardThread;
 import com.liferay.headless.delivery.dto.v1_0.TaxonomyCategoryBrief;
+import com.liferay.headless.delivery.dto.v1_0.util.CreatorUtil;
+import com.liferay.headless.delivery.dto.v1_0.util.CustomFieldsUtil;
 import com.liferay.headless.delivery.internal.dto.v1_0.util.AggregateRatingUtil;
 import com.liferay.headless.delivery.internal.dto.v1_0.util.CreatorStatisticsUtil;
-import com.liferay.headless.delivery.internal.dto.v1_0.util.CreatorUtil;
-import com.liferay.headless.delivery.internal.dto.v1_0.util.CustomFieldsUtil;
 import com.liferay.headless.delivery.internal.dto.v1_0.util.RelatedContentUtil;
 import com.liferay.headless.delivery.internal.dto.v1_0.util.TaxonomyCategoryBriefUtil;
 import com.liferay.message.boards.model.MBMessage;
@@ -33,10 +33,9 @@ import com.liferay.message.boards.service.MBMessageLocalService;
 import com.liferay.message.boards.service.MBMessageService;
 import com.liferay.message.boards.service.MBStatsUserLocalService;
 import com.liferay.message.boards.service.MBThreadFlagLocalService;
-import com.liferay.message.boards.service.MBThreadLocalService;
-import com.liferay.message.boards.service.MBThreadService;
 import com.liferay.message.boards.settings.MBGroupServiceSettings;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -79,14 +78,13 @@ public class MessageBoardThreadDTOConverter
 			DTOConverterContext dtoConverterContext, MBThread mbThread)
 		throws Exception {
 
-		MBMessage mbMessage = _mbMessageService.getMessage(
-			mbThread.getRootMessageId());
-
 		String languageId = LocaleUtil.toLanguageId(
 			dtoConverterContext.getLocale());
-
+		MBMessage mbMessage = _mbMessageLocalService.getMessage(
+			mbThread.getRootMessageId());
 		Optional<UriInfo> uriInfoOptional =
 			dtoConverterContext.getUriInfoOptional();
+		User user = _userLocalService.fetchUser(mbThread.getUserId());
 
 		return new MessageBoardThread() {
 			{
@@ -96,11 +94,10 @@ public class MessageBoardThreadDTOConverter
 						MBMessage.class.getName(), mbMessage.getMessageId()));
 				articleBody = mbMessage.getBody();
 				creator = CreatorUtil.toCreator(
-					_portal, _userLocalService.fetchUser(mbThread.getUserId()));
+					_portal, dtoConverterContext.getUriInfoOptional(), user);
 				creatorStatistics = CreatorStatisticsUtil.toCreatorStatistics(
 					mbMessage.getGroupId(), languageId,
-					_mbStatsUserLocalService, uriInfoOptional.get(),
-					_userLocalService.fetchUser(mbThread.getUserId()));
+					_mbStatsUserLocalService, uriInfoOptional.get(), user);
 				customFields = CustomFieldsUtil.toCustomFields(
 					dtoConverterContext.isAcceptAllLanguages(),
 					MBMessage.class.getName(), mbMessage.getMessageId(),
@@ -124,6 +121,7 @@ public class MessageBoardThreadDTOConverter
 					_assetTagLocalService.getTags(
 						MBMessage.class.getName(), mbMessage.getMessageId()),
 					AssetTag.NAME_ACCESSOR);
+				locked = mbThread.isLocked();
 				messageBoardSectionId = mbMessage.getCategoryId();
 				numberOfMessageBoardAttachments =
 					mbMessage.getAttachmentsFileEntriesCount();
@@ -140,6 +138,7 @@ public class MessageBoardThreadDTOConverter
 					dtoConverterContext.getUserId(), mbThread);
 				showAsQuestion = mbThread.isQuestion();
 				siteId = mbThread.getGroupId();
+				status = WorkflowConstants.getStatusLabel(mbThread.getStatus());
 				subscribed = _subscriptionLocalService.isSubscribed(
 					mbMessage.getCompanyId(), dtoConverterContext.getUserId(),
 					MBThread.class.getName(), mbMessage.getThreadId());
@@ -148,8 +147,7 @@ public class MessageBoardThreadDTOConverter
 						MBMessage.class.getName(), mbThread.getRootMessageId()),
 					assetCategory ->
 						TaxonomyCategoryBriefUtil.toTaxonomyCategoryBrief(
-							dtoConverterContext.isAcceptAllLanguages(),
-							assetCategory, dtoConverterContext.getLocale()),
+							assetCategory, dtoConverterContext),
 					TaxonomyCategoryBrief.class);
 				threadType = _toThreadType(
 					languageId, mbThread.getGroupId(), mbThread.getPriority());
@@ -201,12 +199,6 @@ public class MessageBoardThreadDTOConverter
 
 	@Reference
 	private MBThreadFlagLocalService _mbThreadFlagLocalService;
-
-	@Reference
-	private MBThreadLocalService _mbThreadLocalService;
-
-	@Reference
-	private MBThreadService _mbThreadService;
 
 	@Reference
 	private Portal _portal;

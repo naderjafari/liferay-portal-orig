@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsValues;
 
 import java.sql.Connection;
@@ -61,20 +62,30 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	public void verify() throws VerifyException {
 		long start = System.currentTimeMillis();
 
-		if (_log.isInfoEnabled()) {
-			_log.info("Verifying " + ClassUtil.getClassName(this));
-		}
+		try (Connection connection = DataAccess.getConnection()) {
+			this.connection = connection;
 
-		try (Connection con = DataAccess.getConnection()) {
-			connection = con;
+			process(
+				companyId -> {
+					if (_log.isInfoEnabled()) {
+						String info =
+							"Verifying " + ClassUtil.getClassName(this);
 
-			doVerify();
+						if (Validator.isNotNull(companyId)) {
+							info += "#" + companyId;
+						}
+
+						_log.info(info);
+					}
+
+					doVerify();
+				});
 		}
 		catch (Exception exception) {
 			throw new VerifyException(exception);
 		}
 		finally {
-			connection = null;
+			this.connection = null;
 
 			if (_log.isInfoEnabled()) {
 				_log.info(
@@ -130,16 +141,17 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	 *         com.liferay.portal.kernel.util.ReleaseInfo#getBuildNumber}
 	 */
 	protected int getBuildNumber() throws Exception {
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"select buildNumber from Release_ where servletContextName = " +
 					"?")) {
 
-			ps.setString(1, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
+			preparedStatement.setString(
+				1, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				rs.next();
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				resultSet.next();
 
-				return rs.getInt(1);
+				return resultSet.getInt(1);
 			}
 		}
 	}

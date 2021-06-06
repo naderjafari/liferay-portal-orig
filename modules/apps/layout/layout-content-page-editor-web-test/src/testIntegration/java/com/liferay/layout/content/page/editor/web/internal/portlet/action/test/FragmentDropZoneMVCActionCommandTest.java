@@ -23,9 +23,9 @@ import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
 import com.liferay.layout.util.constants.LayoutDataItemTypeConstants;
-import com.liferay.layout.util.structure.ContainerLayoutStructureItem;
+import com.liferay.layout.util.structure.ContainerStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.FragmentDropZoneLayoutStructureItem;
-import com.liferay.layout.util.structure.FragmentLayoutStructureItem;
+import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.petra.string.StringPool;
@@ -340,7 +340,7 @@ public class FragmentDropZoneMVCActionCommandTest {
 
 			Assert.assertTrue(
 				fragmentLayoutStructureItem instanceof
-					FragmentLayoutStructureItem);
+					FragmentStyledLayoutStructureItem);
 
 			List<String> fragmentChildrenItemIds =
 				fragmentLayoutStructureItem.getChildrenItemIds();
@@ -362,7 +362,7 @@ public class FragmentDropZoneMVCActionCommandTest {
 
 			Assert.assertTrue(
 				containerLayoutStructureItem instanceof
-					ContainerLayoutStructureItem);
+					ContainerStyledLayoutStructureItem);
 		}
 	}
 
@@ -422,7 +422,7 @@ public class FragmentDropZoneMVCActionCommandTest {
 			"fragmentEntryLinkId", String.valueOf(fragmentEntryLinkId));
 		actionRequest.addParameter(
 			"editableValues",
-			_getFileAsString("drop_zone_fragment_entry_editable_values.json"));
+			_readFileToString("drop_zone_fragment_entry_editable_values.json"));
 
 		jsonObject = ReflectionTestUtil.invoke(
 			_updateConfigurationValuesMVCActionCommand,
@@ -470,9 +470,9 @@ public class FragmentDropZoneMVCActionCommandTest {
 			fragmentCollection.getFragmentCollectionId(),
 			StringUtil.randomString(), StringUtil.randomString(),
 			RandomTestUtil.randomString(),
-			_getFileAsString("drop_zone_fragment_entry.html"),
+			_readFileToString("drop_zone_fragment_entry.html"),
 			RandomTestUtil.randomString(),
-			_getFileAsString("drop_zone_fragment_entry_configuration.json"), 0,
+			_readFileToString("drop_zone_fragment_entry_configuration.json"), 0,
 			FragmentConstants.TYPE_COMPONENT, WorkflowConstants.STATUS_APPROVED,
 			serviceContext);
 	}
@@ -488,15 +488,6 @@ public class FragmentDropZoneMVCActionCommandTest {
 			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
 			StringPool.BLANK, LayoutConstants.TYPE_CONTENT, false,
 			StringPool.BLANK, serviceContext);
-	}
-
-	private String _getFileAsString(String fileName) throws Exception {
-		Class<?> clazz = getClass();
-
-		return StringUtil.read(
-			clazz.getClassLoader(),
-			"com/liferay/layout/content/page/editor/web/internal/portlet" +
-				"/action/test/dependencies/" + fileName);
 	}
 
 	private MockHttpServletRequest _getMockHttpServletRequest()
@@ -556,10 +547,21 @@ public class FragmentDropZoneMVCActionCommandTest {
 		return themeDisplay;
 	}
 
-	@Inject(filter = "mvc.command.name=/content_layout/add_fragment_entry_link")
+	private String _readFileToString(String fileName) throws Exception {
+		Class<?> clazz = getClass();
+
+		return StringUtil.read(
+			clazz.getClassLoader(),
+			"com/liferay/layout/content/page/editor/web/internal/portlet" +
+				"/action/test/dependencies/" + fileName);
+	}
+
+	@Inject(
+		filter = "mvc.command.name=/layout_content_page_editor/add_fragment_entry_link"
+	)
 	private MVCActionCommand _addFragmentEntryLinkMVCActionCommand;
 
-	@Inject(filter = "mvc.command.name=/content_layout/add_item")
+	@Inject(filter = "mvc.command.name=/layout_content_page_editor/add_item")
 	private MVCActionCommand _addItemMVCActionCommand;
 
 	private Company _company;
@@ -567,10 +569,12 @@ public class FragmentDropZoneMVCActionCommandTest {
 	@Inject
 	private CompanyLocalService _companyLocalService;
 
-	@Inject(filter = "mvc.command.name=/content_layout/delete_item")
+	@Inject(filter = "mvc.command.name=/layout_content_page_editor/delete_item")
 	private MVCActionCommand _deleteItemMVCActionCommand;
 
-	@Inject(filter = "mvc.command.name=/content_layout/duplicate_item")
+	@Inject(
+		filter = "mvc.command.name=/layout_content_page_editor/duplicate_item"
+	)
 	private MVCActionCommand _duplicateItemMVCActionCommand;
 
 	@Inject
@@ -602,7 +606,7 @@ public class FragmentDropZoneMVCActionCommandTest {
 	private ThemeLocalService _themeLocalService;
 
 	@Inject(
-		filter = "mvc.command.name=/content_layout/update_configuration_values"
+		filter = "mvc.command.name=/layout_content_page_editor/update_configuration_values"
 	)
 	private MVCActionCommand _updateConfigurationValuesMVCActionCommand;
 

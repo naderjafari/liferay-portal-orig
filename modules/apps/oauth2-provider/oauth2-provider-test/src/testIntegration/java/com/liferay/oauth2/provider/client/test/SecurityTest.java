@@ -155,7 +155,8 @@ public class SecurityTest extends BaseClientTestCase {
 
 		Assert.assertEquals(400, getStatus(response));
 		Assert.assertEquals(
-			"<html><body>HTTP 400 Bad Request</body></html>",
+			"{\"error\":\"invalid_request\",\"error_description\":\"Client " +
+				"Redirect Uri is invalid\"}",
 			getBodyAsString(response));
 	}
 
@@ -201,8 +202,8 @@ public class SecurityTest extends BaseClientTestCase {
 			createOAuth2Application(
 				defaultCompanyId, user, "oauthTestApplicationCodePKCE", null,
 				Collections.singletonList(GrantType.AUTHORIZATION_CODE_PKCE),
-				Collections.singletonList("everything"),
-				Collections.singletonList("http://redirecturi:8080"));
+				Collections.singletonList("http://redirecturi:8080"),
+				Collections.singletonList("everything"));
 		}
 
 	}

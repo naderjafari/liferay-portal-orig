@@ -647,6 +647,11 @@ public class IMAPAccessor {
 						folderId, remoteMessageId);
 				}
 				catch (NoSuchMessageException noSuchMessageException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(
+							noSuchMessageException, noSuchMessageException);
+					}
+
 					MessageLocalServiceUtil.addMessage(
 						_user.getUserId(), folderId, sender, to, cc, bcc,
 						sentDate, subject, StringPool.BLANK, flags,
@@ -850,6 +855,10 @@ public class IMAPAccessor {
 				folderId, oldest);
 		}
 		catch (NoSuchMessageException noSuchMessageException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchMessageException, noSuchMessageException);
+			}
+
 			return null;
 		}
 
@@ -995,11 +1004,7 @@ public class IMAPAccessor {
 
 				getParts(
 					userId, bodyPlainSB, bodyHtmlSB,
-					contentPath.concat(
-						StringPool.PERIOD
-					).concat(
-						String.valueOf(i)
-					),
+					StringBundler.concat(contentPath, StringPool.PERIOD, i),
 					curPart, mailFiles);
 			}
 		}
@@ -1018,12 +1023,7 @@ public class IMAPAccessor {
 		}
 		else {
 			MailFile mailFile = new MailFile(
-				contentPath.concat(
-					StringPool.PERIOD
-				).concat(
-					"-1"
-				),
-				fileName, part.getSize());
+				contentPath + ".-1", fileName, part.getSize());
 
 			mailFiles.add(mailFile);
 		}

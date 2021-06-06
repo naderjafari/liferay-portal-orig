@@ -15,6 +15,7 @@
 package com.liferay.style.book.service;
 
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.style.book.model.StyleBookEntry;
 
 /**
  * Provides a wrapper for {@link StyleBookEntryService}.
@@ -33,7 +34,7 @@ public class StyleBookEntryServiceWrapper
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry addStyleBookEntry(
+	public StyleBookEntry addStyleBookEntry(
 			long groupId, String name, String styleBookEntryKey,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -43,18 +44,19 @@ public class StyleBookEntryServiceWrapper
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry addStyleBookEntry(
-			long groupId, String name, String styleBookEntryKey,
-			String tokensValues,
+	public StyleBookEntry addStyleBookEntry(
+			long groupId, String frontendTokensValues, String name,
+			String styleBookEntryKey,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.addStyleBookEntry(
-			groupId, name, styleBookEntryKey, tokensValues, serviceContext);
+			groupId, frontendTokensValues, name, styleBookEntryKey,
+			serviceContext);
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry copyStyleBookEntry(
+	public StyleBookEntry copyStyleBookEntry(
 			long groupId, long styleBookEntryId,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -64,24 +66,21 @@ public class StyleBookEntryServiceWrapper
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry deleteStyleBookEntry(
-			long styleBookEntryId)
+	public StyleBookEntry deleteStyleBookEntry(long styleBookEntryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.deleteStyleBookEntry(styleBookEntryId);
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry deleteStyleBookEntry(
-			com.liferay.style.book.model.StyleBookEntry styleBookEntry)
+	public StyleBookEntry deleteStyleBookEntry(StyleBookEntry styleBookEntry)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.deleteStyleBookEntry(styleBookEntry);
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry
-			discardDraftStyleBookEntry(long styleBookEntryId)
+	public StyleBookEntry discardDraftStyleBookEntry(long styleBookEntryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.discardDraftStyleBookEntry(
@@ -99,17 +98,15 @@ public class StyleBookEntryServiceWrapper
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry publishDraft(
-			long styleBookEntryId)
+	public StyleBookEntry publishDraft(long styleBookEntryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.publishDraft(styleBookEntryId);
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry
-			updateDefaultStyleBookEntry(
-				long styleBookEntryId, boolean defaultStyleBookEntry)
+	public StyleBookEntry updateDefaultStyleBookEntry(
+			long styleBookEntryId, boolean defaultStyleBookEntry)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.updateDefaultStyleBookEntry(
@@ -117,15 +114,23 @@ public class StyleBookEntryServiceWrapper
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry updateName(
-			long styleBookEntryId, String name)
+	public StyleBookEntry updateFrontendTokensValues(
+			long styleBookEntryId, String frontendTokensValues)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _styleBookEntryService.updateFrontendTokensValues(
+			styleBookEntryId, frontendTokensValues);
+	}
+
+	@Override
+	public StyleBookEntry updateName(long styleBookEntryId, String name)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.updateName(styleBookEntryId, name);
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry updatePreviewFileEntryId(
+	public StyleBookEntry updatePreviewFileEntryId(
 			long styleBookEntryId, long previewFileEntryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
@@ -134,21 +139,12 @@ public class StyleBookEntryServiceWrapper
 	}
 
 	@Override
-	public com.liferay.style.book.model.StyleBookEntry updateStyleBookEntry(
-			long styleBookEntryId, String name, String tokensValues)
+	public StyleBookEntry updateStyleBookEntry(
+			long styleBookEntryId, String frontendTokensValues, String name)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _styleBookEntryService.updateStyleBookEntry(
-			styleBookEntryId, name, tokensValues);
-	}
-
-	@Override
-	public com.liferay.style.book.model.StyleBookEntry updateTokensValues(
-			long styleBookEntryId, String tokensValue)
-		throws com.liferay.portal.kernel.exception.PortalException {
-
-		return _styleBookEntryService.updateTokensValues(
-			styleBookEntryId, tokensValue);
+			styleBookEntryId, frontendTokensValues, name);
 	}
 
 	@Override

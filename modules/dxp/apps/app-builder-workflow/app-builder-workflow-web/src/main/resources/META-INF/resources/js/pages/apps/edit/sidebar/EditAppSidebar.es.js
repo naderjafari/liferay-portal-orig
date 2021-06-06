@@ -12,19 +12,24 @@
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
-import {ClayTooltipProvider} from '@clayui/tooltip';
 import EditAppContext from 'app-builder-web/js/pages/apps/edit/EditAppContext.es';
+import classNames from 'classnames';
+import {sub} from 'data-engine-js-components-web/js/utils/lang.es';
 import {Sidebar} from 'data-engine-taglib';
 import React, {useContext, useEffect, useState} from 'react';
 
-import {AutocompleteMultiSelect} from '../../../../components/autocomplete/AutocompleteMultiSelect.es';
+import AutocompleteMultiSelect from '../../../../components/autocomplete/AutocompleteMultiSelect.es';
 import ButtonInfo from '../../../../components/button-info/ButtonInfo.es';
-import {UPDATE_STEP} from '../configReducer.es';
+import MissingRequiredFieldsPopover from '../MissingRequiredFieldsPopover.es';
+import {REMOVE_STEP_EMPTY_FORM_VIEWS, UPDATE_STEP} from '../configReducer.es';
 import ActionsTab from './ActionsTab.es';
 import DataAndViewsTab from './DataAndViewsTab.es';
 
 export default function EditAppSidebar() {
+	const editAppContext = useContext(EditAppContext);
+
 	const {
+		appId,
 		config: {
 			currentStep,
 			dataObject,
@@ -35,16 +40,19 @@ export default function EditAppSidebar() {
 			tableView,
 		},
 		dispatchConfig,
-	} = useContext(EditAppContext);
-
+		openFormViewModal,
+		state: {app},
+		updateFormView,
+	} = editAppContext;
 	const [currentTab, setCurrentTab] = useState();
+	const [showPopover, setShowPopover] = useState(false);
 
 	const {
 		appWorkflowTransitions: [primaryAction, secondaryAction] = [],
-		appWorkflowDataLayoutLinks: [stepFormView] = [{}],
+		appWorkflowDataLayoutLinks = [{}],
 	} = currentStep;
-
 	const actionsInfo = [];
+	const {missingRequiredFields: {customField, nativeField} = {}} = formView;
 
 	if (primaryAction) {
 		actionsInfo.push({
@@ -64,6 +72,10 @@ export default function EditAppSidebar() {
 		{
 			content: DataAndViewsTab,
 			disabled: stepIndex > 0 && !dataObject.id,
+			error:
+				stepIndex > 0 &&
+				stepIndex < steps.length - 1 &&
+				steps[stepIndex].errors.formViews.duplicatedFields.length > 0,
 			infoItems:
 				stepIndex === 0
 					? [
@@ -82,11 +94,32 @@ export default function EditAppSidebar() {
 					  ]
 					: [
 							{
-								...stepFormView,
 								label: Liferay.Language.get('form-view'),
+								name:
+									appWorkflowDataLayoutLinks.length > 0
+										? appWorkflowDataLayoutLinks
+												.map(({name}) => name)
+												.reduce(
+													(acc, cur) =>
+														`${acc}, ${cur}`
+												)
+										: '',
 							},
 					  ],
+			onClickBack: () => {
+				if (stepIndex > 0) {
+					dispatchConfig({
+						stepIndex,
+						type: REMOVE_STEP_EMPTY_FORM_VIEWS,
+					});
+				}
+			},
 			show: stepIndex !== steps.length - 1,
+			showPopoverIcon:
+				!app.active &&
+				appId &&
+				stepIndex == 0 &&
+				(customField || nativeField),
 			title: Liferay.Language.get('data-and-views'),
 		},
 		{
@@ -119,6 +152,11 @@ export default function EditAppSidebar() {
 		});
 	};
 
+	const onClick = () => {
+		setCurrentTab(null);
+		currentTab.onClickBack?.();
+	};
+
 	useEffect(() => {
 		setCurrentTab(null);
 	}, [currentStep]);
@@ -133,9 +171,8 @@ export default function EditAppSidebar() {
 				) : (
 					<div className="tab-title">
 						<ClayButton
-							data-testid="back-button"
 							displayType="secondary"
-							onClick={() => setCurrentTab(null)}
+							onClick={onClick}
 							small
 						>
 							<span className="icon-monospaced">
@@ -176,17 +213,15 @@ export default function EditAppSidebar() {
 										</span>
 									</label>
 
-									<ClayTooltipProvider>
-										<ClayIcon
-											className="ml-2 text-muted tooltip-icon"
-											data-tooltip-align="top"
-											data-tooltip-delay="0"
-											symbol="question-circle-full"
-											title={Liferay.Language.get(
-												'assignees-are-the-roles-responsible-to-transition-this-workflow-step'
-											)}
-										/>
-									</ClayTooltipProvider>
+									<ClayIcon
+										className="ml-2 text-muted tooltip-icon"
+										data-tooltip-align="top"
+										data-tooltip-delay="0"
+										symbol="question-circle-full"
+										title={Liferay.Language.get(
+											'assignees-are-the-roles-responsible-to-transition-this-workflow-step'
+										)}
+									/>
 
 									<AutocompleteMultiSelect
 										emptyMessage={Liferay.Language.get(
@@ -212,10 +247,26 @@ export default function EditAppSidebar() {
 						</ClayForm.Group>
 
 						{tabs.map(
-							({disabled, infoItems, show, title}, index) =>
+							(
+								{
+									disabled,
+									error,
+									infoItems,
+									show,
+									showPopoverIcon,
+									title,
+								},
+								index
+							) =>
 								show && (
 									<ClayButton
-										className="mb-3 tab-button"
+										className={classNames(
+											'mb-3 tab-button',
+											(error ||
+												(showPopoverIcon &&
+													nativeField)) &&
+												'border-error'
+										)}
 										disabled={disabled}
 										displayType="secondary"
 										key={index}
@@ -229,16 +280,74 @@ export default function EditAppSidebar() {
 											<ButtonInfo items={infoItems} />
 										</div>
 
-										<ClayIcon
-											className="dropdown-button-asset"
-											symbol="angle-right"
-										/>
+										<div className="d-flex">
+											{error && (
+												<ClayIcon
+													className="error mr-2 mt-1 tooltip-popover-icon"
+													data-tooltip-align="left"
+													data-tooltip-delay="0"
+													fontSize="26px"
+													symbol="exclamation-full"
+													title={`${Liferay.Language.get(
+														'error'
+													)}: ${Liferay.Language.get(
+														'there-are-form-views-with-duplicated-fields'
+													)}`}
+												/>
+											)}
+
+											{showPopoverIcon && (
+												<MissingRequiredFieldsPopover
+													dataObjectName={
+														dataObject.name
+													}
+													message={{
+														custom: sub(
+															Liferay.Language.get(
+																'the-form-view-for-this-app-was-modified-and-does-not-contain-all-required-fields-for-the-x-object'
+															),
+															[dataObject.name]
+														),
+														native: sub(
+															Liferay.Language.get(
+																'the-form-view-for-this-app-was-modified-and-does-not-contain-all-native-required-fields-it-cannot-be-used-to-create-new-records-for-the-x-object'
+															),
+															[dataObject.name]
+														),
+													}}
+													nativeField={nativeField}
+													onClick={() => {
+														setShowPopover(false);
+
+														openFormViewModal({
+															dataDefinitionId:
+																dataObject.id,
+															dataLayoutId:
+																formView.id,
+															defaultLanguageId:
+																dataObject.defaultLanguageId,
+															selectFormView: updateFormView,
+														});
+													}}
+													setShowPopover={
+														setShowPopover
+													}
+													showPopover={showPopover}
+													triggerClassName="help-cursor icon-with-popover"
+												/>
+											)}
+
+											<ClayIcon
+												className="dropdown-button-asset"
+												symbol="angle-right"
+											/>
+										</div>
 									</ClayButton>
 								)
 						)}
 					</>
 				) : (
-					currentTab.content()
+					currentTab.content(editAppContext)
 				)}
 			</Sidebar.Body>
 		</Sidebar>

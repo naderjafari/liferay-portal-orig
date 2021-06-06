@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("KnowledgeBaseAttachment")
+@GraphQLName(
+	description = "Represents a binary file attached to a Knowledge Base article.",
+	value = "KnowledgeBaseAttachment"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "KnowledgeBaseAttachment")
-public class KnowledgeBaseAttachment {
+public class KnowledgeBaseAttachment implements Serializable {
 
 	public static KnowledgeBaseAttachment toDTO(String json) {
 		return ObjectMapperUtil.readValue(KnowledgeBaseAttachment.class, json);
@@ -77,7 +82,9 @@ public class KnowledgeBaseAttachment {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentUrl;
 
-	@Schema
+	@Schema(
+		description = "optional field with the content of the document in Base64, can be embedded with nestedFields"
+	)
 	public String getContentValue() {
 		return contentValue;
 	}
@@ -101,7 +108,9 @@ public class KnowledgeBaseAttachment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "optional field with the content of the document in Base64, can be embedded with nestedFields"
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentValue;
 
@@ -371,6 +380,7 @@ public class KnowledgeBaseAttachment {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.KnowledgeBaseAttachment",
 		name = "x-class-name"
 	)
@@ -406,7 +416,7 @@ public class KnowledgeBaseAttachment {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -445,7 +455,7 @@ public class KnowledgeBaseAttachment {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

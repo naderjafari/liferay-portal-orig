@@ -17,6 +17,7 @@ package com.liferay.login.web.internal.portlet.action;
 import com.liferay.captcha.configuration.CaptchaConfiguration;
 import com.liferay.captcha.util.CaptchaUtil;
 import com.liferay.login.web.constants.LoginPortletKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.captcha.CaptchaConfigurationException;
 import com.liferay.portal.kernel.captcha.CaptchaException;
@@ -164,9 +165,6 @@ public class CreateAnonymousAccountMVCActionCommand
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		PortletConfig portletConfig = (PortletConfig)actionRequest.getAttribute(
 			JavaConstants.JAVAX_PORTLET_CONFIG);
 
@@ -175,6 +173,9 @@ public class CreateAnonymousAccountMVCActionCommand
 		if (!portletName.equals(LoginPortletKeys.FAST_LOGIN)) {
 			throw new PrincipalException("Unable to create anonymous account");
 		}
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 
 		if (actionRequest.getRemoteUser() != null) {
 			actionResponse.sendRedirect(themeDisplay.getPathMain());
@@ -187,15 +188,19 @@ public class CreateAnonymousAccountMVCActionCommand
 		String emailAddress = ParamUtil.getString(
 			actionRequest, "emailAddress");
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			actionRequest, LoginPortletKeys.FAST_LOGIN,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/login/login_redirect");
-		portletURL.setParameter("emailAddress", emailAddress);
-		portletURL.setParameter("anonymousUser", Boolean.TRUE.toString());
-		portletURL.setWindowState(LiferayWindowState.POP_UP);
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				actionRequest, LoginPortletKeys.FAST_LOGIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/login/login_redirect"
+		).setParameter(
+			"anonymousUser", Boolean.TRUE.toString()
+		).setParameter(
+			"emailAddress", emailAddress
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).build();
 
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 

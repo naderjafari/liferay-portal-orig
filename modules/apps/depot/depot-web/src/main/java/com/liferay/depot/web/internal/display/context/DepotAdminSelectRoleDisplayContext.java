@@ -16,7 +16,9 @@ package com.liferay.depot.web.internal.display.context;
 
 import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.model.DepotEntry;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -195,13 +197,13 @@ public class DepotAdminSelectRoleDisplayContext {
 		}
 
 		public PortletURL getSelectRolePortletURL() {
-			PortletURL portletURL = _getPortletURL(
-				_renderRequest, _renderResponse, _user);
-
-			portletURL.setParameter("resetCur", Boolean.TRUE.toString());
-			portletURL.setParameter("step", String.valueOf(Step2.TYPE));
-
-			return portletURL;
+			return PortletURLBuilder.create(
+				_getPortletURL(_renderRequest, _renderResponse, _user)
+			).setParameter(
+				"resetCur", Boolean.TRUE.toString()
+			).setParameter(
+				"step", Step2.TYPE
+			).build();
 		}
 
 		public int getType() {
@@ -221,7 +223,7 @@ public class DepotAdminSelectRoleDisplayContext {
 				while (iterator.hasNext()) {
 					Group group = iterator.next();
 
-					if (group.getType() != GroupConstants.TYPE_DEPOT) {
+					if (!group.isDepot()) {
 						iterator.remove();
 					}
 				}
@@ -274,16 +276,17 @@ public class DepotAdminSelectRoleDisplayContext {
 		}
 
 		public String getBreadCrumbs() throws PortalException {
-			PortletURL portletURL = _getPortletURL(
-				_renderRequest, _renderResponse, _user);
-
-			portletURL.setParameter("step", String.valueOf(Step1.TYPE));
-
 			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 				_themeDisplay.getLocale(), getClass());
 
 			return StringBundler.concat(
-				"<a href=\"", portletURL.toString(), "\">",
+				"<a href=\"",
+				PortletURLBuilder.create(
+					_getPortletURL(_renderRequest, _renderResponse, _user)
+				).setParameter(
+					"step", Step1.TYPE
+				).buildString(),
+				"\">",
 				ResourceBundleUtil.getString(resourceBundle, "asset-libraries"),
 				"</a> &raquo; ",
 				HtmlUtil.escape(
@@ -292,12 +295,11 @@ public class DepotAdminSelectRoleDisplayContext {
 
 		public Map<String, Object> getData(Role role) throws PortalException {
 			return HashMapBuilder.<String, Object>put(
-				"entityid", role.getRoleId()
+				"entityid",
+				_group.getGroupId() + StringPool.DASH + role.getRoleId()
 			).put(
 				"groupdescriptivename",
 				_group.getDescriptiveName(_themeDisplay.getLocale())
-			).put(
-				"groupid", _group.getGroupId()
 			).put(
 				"iconcssclass", RolesAdminUtil.getIconCssClass(role)
 			).put(
@@ -396,7 +398,8 @@ public class DepotAdminSelectRoleDisplayContext {
 		}
 
 		/**
-		 * @see com.liferay.site.memberships.web.internal.display.context.UserRolesDisplayContext#_filterGroupRoles(PermissionChecker, long, List)
+		 * @see com.liferay.site.memberships.web.internal.display.context.UserRolesDisplayContext#_filterGroupRoles(
+		 *      PermissionChecker, long, List)
 		 */
 		private List<Role> _filterGroupRoles(List<Role> roles)
 			throws PortalException {
@@ -493,7 +496,8 @@ public class DepotAdminSelectRoleDisplayContext {
 				"p_u_i_d", String.valueOf(user.getUserId()));
 		}
 
-		portletURL.setParameter("mvcRenderCommandName", "/depot/select_role");
+		portletURL.setParameter(
+			"mvcRenderCommandName", "/depot/select_depot_role");
 
 		String[] keywords = ParamUtil.getStringValues(
 			renderRequest, "keywords");

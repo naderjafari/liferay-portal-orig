@@ -101,6 +101,15 @@ public class OrganizationResourceImpl
 	}
 
 	@Override
+	public void deleteUserAccountByEmailAddress(
+			String organizationId, String emailAddress)
+		throws Exception {
+
+		_organizationService.deleteUserOrganizationByEmailAddress(
+			emailAddress, _getServiceBuilderOrganizationId(organizationId));
+	}
+
+	@Override
 	public EntityModel getEntityModel(MultivaluedMap multivaluedMap) {
 		return _entityModel;
 	}
@@ -119,7 +128,7 @@ public class OrganizationResourceImpl
 		throws Exception {
 
 		return _getOrganizationsPage(
-			HashMapBuilder.<String, Map<String, String>>put(
+			HashMapBuilder.put(
 				"get",
 				addAction(
 					"VIEW", "getOrganizationOrganizationsPage",
@@ -137,7 +146,7 @@ public class OrganizationResourceImpl
 		throws Exception {
 
 		return _getOrganizationsPage(
-			HashMapBuilder.<String, Map<String, String>>put(
+			HashMapBuilder.put(
 				"create",
 				addAction(
 					"ADD_ORGANIZATION", "postOrganization",
@@ -173,8 +182,18 @@ public class OrganizationResourceImpl
 				ServiceContextFactory.getInstance(contextHttpServletRequest));
 
 		return _organizationResourceDTOConverter.toDTO(
-			_getDTOConverterContext(String.valueOf(serviceBuilderOrganization)),
+			_getDTOConverterContext(
+				String.valueOf(serviceBuilderOrganization.getOrganizationId())),
 			serviceBuilderOrganization);
+	}
+
+	@Override
+	public void postUserAccountByEmailAddress(
+			String organizationId, String emailAddress)
+		throws Exception {
+
+		_organizationService.addUserOrganizationByEmailAddress(
+			emailAddress, _getServiceBuilderOrganizationId(organizationId));
 	}
 
 	@Override
@@ -252,7 +271,7 @@ public class OrganizationResourceImpl
 					postalAddresses,
 					_postalAddress ->
 						ServiceBuilderAddressUtil.toServiceBuilderAddress(
-							_postalAddress,
+							contextCompany.getCompanyId(), _postalAddress,
 							ListTypeConstants.ORGANIZATION_ADDRESS)),
 				Objects::nonNull)
 		).orElse(
@@ -266,7 +285,9 @@ public class OrganizationResourceImpl
 		).map(
 			Location::getAddressCountry
 		).map(
-			ServiceBuilderCountryUtil::toServiceBuilderCountryId
+			addressCountry ->
+				ServiceBuilderCountryUtil.toServiceBuilderCountryId(
+					contextCompany.getCompanyId(), addressCountry)
 		).orElse(
 			0L
 		);
@@ -293,7 +314,7 @@ public class OrganizationResourceImpl
 
 		return new DefaultDTOConverterContext(
 			contextAcceptLanguage.isAcceptAllLanguages(),
-			HashMapBuilder.<String, Map<String, String>>put(
+			HashMapBuilder.put(
 				"delete",
 				addAction(
 					"DELETE", "deleteOrganization",

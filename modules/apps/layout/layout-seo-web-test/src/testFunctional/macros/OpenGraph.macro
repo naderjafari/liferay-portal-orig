@@ -39,31 +39,49 @@ definition {
 		if (isSet(customImage)) {
 			var key_uploadFileName = "${uploadFileName}";
 
-			AssertElementPresent.pauseAssertVisible(locator1 = "Button#SELECT_OPEN_GRAPH_IMAGE");
+			AssertElementPresent.pauseAssertVisible(
+				key_fieldLabel = "Image",
+				key_text = "Select",
+				locator1 = "Button#ANY_WITH_LABEL");
 
-			Click.pauseClickAt(locator1 = "Button#SELECT_OPEN_GRAPH_IMAGE");
+			Click.pauseClickAt(
+				key_fieldLabel = "Image",
+				key_text = "Select",
+				locator1 = "Button#ANY_WITH_LABEL");
 
-			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+			AssertTextEquals(
+				locator1 = "Modal#HEADER",
+				value1 = "Open Graph Image");
 
 			Pause(locator1 = "3000");
 
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
 			AssertElementPresent(locator1 = "ItemSelector#SELECT_FILE_UPLOAD_IMAGE");
 
-			UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
-				locator1 = "TextInput#FILE",
-				value1 = "${uploadFileName}");
+			if (isSet(depotName)) {
+				ItemSelector.selectRepositoryImage(
+					customImage = "${customImage}",
+					depotName = "${depotName}",
+					imageFileName = "${uploadFileName}");
+			}
+			else {
+				UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
+					locator1 = "TextInput#FILE",
+					value1 = "${uploadFileName}");
 
-			Pause(locator1 = "2000");
+				Pause(locator1 = "2000");
 
-			AssertElementPresent.pauseAssertVisible(
-				locator1 = "ItemSelector#ADD_BUTTON",
-				value1 = "Add");
+				AssertElementPresent.pauseAssertVisible(
+					locator1 = "ItemSelector#ADD_BUTTON",
+					value1 = "Add");
 
-			AssertClick(
-				locator1 = "ItemSelector#ADD_BUTTON",
-				value1 = "Add");
+				AssertClick(
+					locator1 = "ItemSelector#ADD_BUTTON",
+					value1 = "Add");
 
-			SelectFrameTop(value1 = "relative=top");
+				SelectFrameTop(value1 = "relative=top");
+			}
 
 			if (isSet(altDescription)) {
 				Type(
@@ -76,21 +94,17 @@ definition {
 			Button.click(button = "Save");
 
 			if (isSet(customImage)) {
-				AssertTextEquals(
+				var uploadFileName = StringUtil.extractFirst("${uploadFileName}", ".");
+
+				AssertElementPresent.assertVisible(
 					key_dmDocumentURL = "${uploadFileName}",
-					locator1 = "TextInput#OPEN_GRAPH_CUSTOM_IMAGE_INPUT",
-					value1 = "${uploadFileName}");
+					locator1 = "TextInput#OPEN_GRAPH_CUSTOM_IMAGE_INPUT");
 			}
 		}
 	}
 
 	macro disableOpenGraphAtSiteLevel {
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Site Administration",
-			portlet = "Settings");
-
-		Panel.expandPanel(panel = "Open Graph");
+		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage/-/site/settings?_com_liferay_site_admin_web_portlet_SiteSettingsPortlet_mvcRenderCommandName=%2Fconfiguration_admin%2Fview_configuration_screen&_com_liferay_site_admin_web_portlet_SiteSettingsPortlet_configurationScreenKey=site-configuration-open-graph");
 
 		if (IsChecked(locator1 = "Checkbox#ANY_CHECKBOX", checkboxName = "Enable Open Graph")) {
 			Click(
@@ -157,7 +171,10 @@ definition {
 				locator1 = "FormFields#OPEN_GRAPH_LABEL",
 				value1 = "Image Alt Description");
 
-			AssertElementPresent(locator1 = "Button#SELECT_OPEN_GRAPH_IMAGE");
+			AssertElementPresent(
+				key_fieldLabel = "Image",
+				key_text = "Select",
+				locator1 = "Button#ANY_WITH_LABEL");
 		}
 	}
 

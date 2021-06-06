@@ -40,7 +40,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -48,7 +48,9 @@ import org.elasticsearch.common.xcontent.XContentType;
 /**
  * @author André de Oliveira
  */
-public class LiferayDocumentTypeFactory implements TypeMappingsHelper {
+public class LiferayDocumentTypeFactory
+	implements com.liferay.portal.search.spi.settings.TypeMappingsHelper,
+			   TypeMappingsHelper {
 
 	public LiferayDocumentTypeFactory(
 		IndicesClient indicesClient, JSONFactory jsonFactory) {
@@ -143,11 +145,11 @@ public class LiferayDocumentTypeFactory implements TypeMappingsHelper {
 			throw new RuntimeException(ioException);
 		}
 
-		Map<String, MappingMetaData> mappings = getMappingsResponse.mappings();
+		Map<String, MappingMetadata> mappings = getMappingsResponse.mappings();
 
-		MappingMetaData mappingMetaData = mappings.get(indexName);
+		MappingMetadata mappingMetadata = mappings.get(indexName);
 
-		CompressedXContent compressedXContent = mappingMetaData.source();
+		CompressedXContent compressedXContent = mappingMetadata.source();
 
 		return compressedXContent.toString();
 	}
@@ -161,7 +163,22 @@ public class LiferayDocumentTypeFactory implements TypeMappingsHelper {
 
 		JSONArray jsonArray3 = _jsonFactory.createJSONArray();
 
-		linkedHashMap.forEach((key, value) -> jsonArray3.put(value));
+		JSONObject defaultTemplateJSONObject = null;
+
+		for (Map.Entry<String, JSONObject> entry : linkedHashMap.entrySet()) {
+			String key = entry.getKey();
+
+			if (key.equals("template_")) {
+				defaultTemplateJSONObject = entry.getValue();
+			}
+			else {
+				jsonArray3.put(entry.getValue());
+			}
+		}
+
+		if (defaultTemplateJSONObject != null) {
+			jsonArray3.put(defaultTemplateJSONObject);
+		}
 
 		return jsonArray3;
 	}

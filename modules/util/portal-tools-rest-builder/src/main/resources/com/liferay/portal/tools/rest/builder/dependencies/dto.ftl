@@ -4,6 +4,14 @@ package ${configYAML.apiPackagePath}.dto.${escapedVersion};
 	import ${configYAML.apiPackagePath}.constant.${escapedVersion}.${globalEnumSchemaName};
 </#list>
 
+<#list allExternalSchemas?keys as externalSchemaName>
+	<#if javaDataTypeMap?keys?seq_contains(externalSchemaName)>
+		import ${javaDataTypeMap[externalSchemaName]};
+	</#if>
+</#list>
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -20,12 +28,15 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.math.BigDecimal;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -72,10 +83,19 @@ import javax.xml.bind.annotation.XmlRootElement;
 </#if>
 
 @Generated("")
-@GraphQLName("${schemaName}")
+@GraphQLName(
+	<#if schema.description?has_content>
+		description = "${schema.description?j_string}", value = "${schemaName}"
+	<#else>
+		"${schemaName}"
+	</#if>
+)
 @JsonFilter("Liferay.Vulcan")
 <#if schema.requiredPropertySchemaNames?has_content>
 	@Schema(
+		<#if schema.deprecated>
+			deprecated = ${schema.deprecated?c},
+		</#if>
 		requiredProperties =
 			{
 				<#list schema.requiredPropertySchemaNames as requiredProperty>
@@ -85,14 +105,13 @@ import javax.xml.bind.annotation.XmlRootElement;
 					</#if>
 				</#list>
 			}
-
 		<#if schema.description??>
-			, description = "${schema.description}"
+			, description = "${schema.description?j_string}"
 		</#if>
 	)
 </#if>
 @XmlRootElement(name = "${schemaName}")
-public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoParentClassName}</#if> {
+public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoParentClassName}</#if> implements Serializable {
 
 	public static ${schemaName} toDTO(String json) {
 		return ObjectMapperUtil.readValue(${schemaName}.class, json);
@@ -112,17 +131,29 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 		<#if propertySchema.maximum??>
 			@DecimalMax("${propertySchema.maximum}")
 		</#if>
+
 		<#if propertySchema.minimum??>
 			@DecimalMin("${propertySchema.minimum}")
 		</#if>
 
+		<#if propertySchema.jsonMap>
+			@JsonAnyGetter
+		</#if>
+
 		@Schema(
+			<#if propertySchema.deprecated>
+				deprecated = ${propertySchema.deprecated?c}
+			</#if>
+
 			<#if propertySchema.description??>
-				description = "${propertySchema.description}"
+				<#if propertySchema.deprecated>
+					,
+				</#if>
+				description = "${propertySchema.description?j_string}"
 			</#if>
 
 			<#if propertySchema.example??>
-				<#if propertySchema.description??>
+				<#if propertySchema.deprecated || propertySchema.description??>
 					,
 				</#if>
 
@@ -177,9 +208,12 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 		</#if>
 		@GraphQLField(
 			<#if propertySchema.description??>
-				description = "${propertySchema.description}"
+				description = "${propertySchema.description?j_string}"
 			</#if>
 		)
+		<#if propertySchema.jsonMap>
+			@JsonAnySetter
+		</#if>
 		@JsonProperty(
 			<#if propertySchema.readOnly>
 				access = JsonProperty.Access.READ_ONLY
@@ -196,7 +230,7 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 				@NotNull
 			</#if>
 		</#if>
-		protected ${propertyType} ${propertyName};
+		protected ${propertyType} ${propertyName}<#if propertySchema.jsonMap> = new HashMap<>()</#if>;
 	</#list>
 
 	@Override
@@ -225,11 +259,6 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 		StringBundler sb = new StringBundler();
 
 		sb.append("{");
-
-		<#assign
-			enumSchemas = freeMarkerTool.getDTOEnumSchemas(openAPIYAML, schema)
-			properties = freeMarkerTool.getDTOProperties(configYAML, openAPIYAML, schema)
-		/>
 
 		<#list properties?keys as propertyName>
 			<#assign propertyType = properties[propertyName] />
@@ -312,7 +341,7 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 		return sb.toString();
 	}
 
-	@Schema(defaultValue = "${configYAML.apiPackagePath}.dto.${escapedVersion}.${schemaName}", name = "x-class-name")
+	@Schema(accessMode = Schema.AccessMode.READ_ONLY, defaultValue = "${configYAML.apiPackagePath}.dto.${escapedVersion}.${schemaName}", name = "x-class-name")
 	public String xClassName;
 
 	<#list enumSchemas?keys as enumName>
@@ -387,7 +416,7 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -426,7 +455,7 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

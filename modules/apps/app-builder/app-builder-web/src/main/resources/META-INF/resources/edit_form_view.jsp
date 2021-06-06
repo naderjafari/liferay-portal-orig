@@ -34,35 +34,40 @@ boolean newCustomObject = ParamUtil.getBoolean(request, "newCustomObject");
 
 		<portlet:renderURL var="basePortletURL" />
 
-		<div class="app-builder-form-view-app" id="<%= editFormViewRootElementId %>">
+		<%
+		String popUpCssClass = "";
 
-			<%
-			Map<String, Object> data = HashMapBuilder.<String, Object>put(
-				"basePortletURL", basePortletURL.toString()
-			).put(
-				"customObjectSidebarElementId", customObjectSidebarElementId
-			).put(
-				"dataDefinitionId", dataDefinitionId
-			).put(
-				"dataLayoutBuilderElementId", dataLayoutBuilderElementId
-			).put(
-				"dataLayoutBuilderId", componentId
-			).put(
-				"dataLayoutId", dataLayoutId
-			).put(
-				"newCustomObject", newCustomObject
-			).put(
-				"showTranslationManager", request.getAttribute(AppBuilderWebKeys.SHOW_TRANSLATION_MANAGER)
-			).build();
-			%>
+		if (LiferayWindowState.isPopUp(request)) {
+			popUpCssClass = "app-builder-popup";
+		}
+		%>
 
+		<div class="app-builder-form-view-app <%= popUpCssClass %>" id="<%= editFormViewRootElementId %>">
 			<react:component
-				data="<%= data %>"
 				module="js/pages/form-view/EditFormViewApp.es"
+				props='<%=
+					HashMapBuilder.<String, Object>put(
+						"basePortletURL", basePortletURL.toString()
+					).put(
+						"customObjectSidebarElementId", customObjectSidebarElementId
+					).put(
+						"dataDefinitionId", dataDefinitionId
+					).put(
+						"dataLayoutBuilderElementId", dataLayoutBuilderElementId
+					).put(
+						"dataLayoutBuilderId", componentId
+					).put(
+						"dataLayoutId", dataLayoutId
+					).put(
+						"newCustomObject", newCustomObject
+					).put(
+						"popUpWindow", LiferayWindowState.isPopUp(request)
+					).build()
+				%>'
 			/>
 		</div>
 
-		<div class="app-builder-form-view-body">
+		<div class="app-builder-form-view-body <%= popUpCssClass %>">
 			<div class="app-builder-custom-object-sidebar" id="<%= customObjectSidebarElementId %>"></div>
 
 			<div class="data-layout-builder-wrapper" id="<%= dataLayoutBuilderElementId %>">
@@ -72,6 +77,8 @@ boolean newCustomObject = ParamUtil.getBoolean(request, "newCustomObject");
 					dataDefinitionId="<%= dataDefinitionId %>"
 					dataLayoutId="<%= dataLayoutId %>"
 					fieldSetContentType="app-builder-fieldset"
+					module="js/pages/form-view/EditFormViewPropsTransformer.es"
+					moduleServletContext="<%= application %>"
 					namespace="<%= liferayPortletResponse.getNamespace() %>"
 					scopes='<%= SetUtil.fromCollection(Arrays.asList("app-builder")) %>'
 				/>

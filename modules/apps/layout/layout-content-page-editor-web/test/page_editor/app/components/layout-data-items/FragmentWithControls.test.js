@@ -18,15 +18,24 @@ import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
-import {EditableProcessorContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/fragment-content/EditableProcessorContext';
 import FragmentWithControls from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items/FragmentWithControls';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {EditableProcessorContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/EditableProcessorContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
+
+jest.mock(
+	'../../../../../src/main/resources/META-INF/resources/page_editor/app/config',
+	() => ({
+		config: {
+			frontendTokens: {},
+		},
+	})
+);
 
 const renderFragment = ({
 	activeItemId = 'fragment',
@@ -42,6 +51,7 @@ const renderFragment = ({
 		children: [],
 		config: {
 			fragmentEntryLinkId: fragmentEntryLink.fragmentEntryLinkId,
+			styles: {},
 		},
 		itemId: 'fragment',
 		parentId: null,
@@ -88,16 +98,6 @@ const renderFragment = ({
 
 describe('FragmentWithControls', () => {
 	afterEach(cleanup);
-
-	it('hides FloatingToolbar if user has no permissions', async () => {
-		await act(async () => {
-			renderFragment({hasUpdatePermissions: false});
-		});
-
-		expect(
-			document.body.querySelector('.page-editor__floating-toolbar')
-		).toBe(null);
-	});
 
 	it('does not allow deleting or duplicating the fragment if user has no permissions', async () => {
 		await act(async () => {

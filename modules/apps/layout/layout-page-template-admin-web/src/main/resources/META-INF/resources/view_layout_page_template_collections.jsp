@@ -40,7 +40,7 @@ List<LayoutPageTemplateCollection> layoutPageTemplateCollections = layoutPageTem
 				<ul class="nav nav-nested">
 					<li class="nav-item">
 						<portlet:renderURL var="editLayoutPageTemplateCollectionURL">
-							<portlet:param name="mvcRenderCommandName" value="/layout_page_template/edit_layout_page_template_collection" />
+							<portlet:param name="mvcRenderCommandName" value="/layout_page_template_admin/edit_layout_page_template_collection" />
 							<portlet:param name="redirect" value="<%= currentURL %>" />
 						</portlet:renderURL>
 
@@ -64,36 +64,36 @@ List<LayoutPageTemplateCollection> layoutPageTemplateCollections = layoutPageTem
 											<c:if test="<%= layoutPageTemplateDisplayContext.isShowAddButton(LayoutPageTemplateActionKeys.ADD_LAYOUT_PAGE_TEMPLATE_COLLECTION) %>">
 												<li>
 													<clay:link
-														buttonStyle="borderless"
+														borderless="<%= true %>"
+														cssClass="component-action"
 														href="<%= editLayoutPageTemplateCollectionURL.toString() %>"
 														icon="plus"
+														type="button"
 													/>
 												</li>
 											</c:if>
 
 											<li>
 												<portlet:renderURL var="viewLayoutPageTemplateCollectionURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
-													<portlet:param name="mvcRenderCommandName" value="/layout_page_template/select_layout_page_template_collections" />
+													<portlet:param name="mvcRenderCommandName" value="/layout_page_template_admin/select_layout_page_template_collections" />
 												</portlet:renderURL>
 
 												<portlet:renderURL var="redirectURL">
 													<portlet:param name="tabs1" value="page-templates" />
 												</portlet:renderURL>
 
-												<liferay-portlet:actionURL copyCurrentRenderParameters="<%= false %>" name="/layout_page_template/delete_layout_page_template_collection" var="deleteLayoutPageTemplateCollectionURL">
+												<liferay-portlet:actionURL copyCurrentRenderParameters="<%= false %>" name="/layout_page_template_admin/delete_layout_page_template_collection" var="deleteLayoutPageTemplateCollectionURL">
 													<portlet:param name="redirect" value="<%= redirectURL %>" />
 												</liferay-portlet:actionURL>
 
-												<%
-												Map<String, Object> additionalProps = HashMapBuilder.<String, Object>put(
-													"deleteLayoutPageTemplateCollectionURL", deleteLayoutPageTemplateCollectionURL.toString()
-												).put(
-													"viewLayoutPageTemplateCollectionURL", viewLayoutPageTemplateCollectionURL.toString()
-												).build();
-												%>
-
 												<clay:dropdown-actions
-													additionalProps="<%= additionalProps %>"
+													additionalProps='<%=
+														HashMapBuilder.<String, Object>put(
+															"deleteLayoutPageTemplateCollectionURL", deleteLayoutPageTemplateCollectionURL.toString()
+														).put(
+															"viewLayoutPageTemplateCollectionURL", viewLayoutPageTemplateCollectionURL.toString()
+														).build()
+													%>'
 													dropdownItems="<%= layoutPageTemplateDisplayContext.getCollectionsDropdownItems() %>"
 													propsTransformer="js/ActionsComponentPropsTransformer"
 												/>
@@ -109,15 +109,18 @@ List<LayoutPageTemplateCollection> layoutPageTemplateCollections = layoutPageTem
 									%>
 
 										<li class="nav-item">
-
-											<%
-											PortletURL layoutPageTemplateCollectionURL = renderResponse.createRenderURL();
-
-											layoutPageTemplateCollectionURL.setParameter("layoutPageTemplateCollectionId", String.valueOf(layoutPageTemplateCollection.getLayoutPageTemplateCollectionId()));
-											layoutPageTemplateCollectionURL.setParameter("tabs1", "page-templates");
-											%>
-
-											<a class="nav-link text-truncate <%= (layoutPageTemplateCollection.getLayoutPageTemplateCollectionId() == layoutPageTemplateDisplayContext.getLayoutPageTemplateCollectionId()) ? "active" : StringPool.BLANK %>" href="<%= layoutPageTemplateCollectionURL.toString() %>">
+											<a
+												class="nav-link text-truncate <%= (layoutPageTemplateCollection.getLayoutPageTemplateCollectionId() == layoutPageTemplateDisplayContext.getLayoutPageTemplateCollectionId()) ? "active" : StringPool.BLANK %>"
+												href="<%=
+													PortletURLBuilder.createRenderURL(
+														renderResponse
+													).setTabs1(
+														"page-templates"
+													).setParameter(
+														"layoutPageTemplateCollectionId", layoutPageTemplateCollection.getLayoutPageTemplateCollectionId()
+													).buildString()
+												%>"
+											>
 												<%= HtmlUtil.escape(layoutPageTemplateCollection.getName()) %>
 											</a>
 										</li>
@@ -155,7 +158,9 @@ List<LayoutPageTemplateCollection> layoutPageTemplateCollections = layoutPageTem
 			%>
 
 			<c:if test="<%= layoutPageTemplateCollection != null %>">
-				<clay:sheet>
+				<clay:sheet
+					size="full"
+				>
 					<h2 class="sheet-title">
 						<clay:content-row
 							verticalAlign="center"

@@ -16,6 +16,7 @@ package com.liferay.depot.web.internal.util;
 
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.web.internal.constants.DepotPortletKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
@@ -95,17 +96,17 @@ public class DepotEntryURLUtil {
 		DepotEntry depotEntry, String redirect,
 		LiferayPortletRequest liferayPortletRequest) {
 
-		PortletURL editDepotEntryURL = PortalUtil.getControlPanelPortletURL(
-			liferayPortletRequest, DepotPortletKeys.DEPOT_ADMIN,
-			PortletRequest.RENDER_PHASE);
-
-		editDepotEntryURL.setParameter(
-			"mvcRenderCommandName", "/depot/edit_depot_entry");
-		editDepotEntryURL.setParameter("redirect", redirect);
-		editDepotEntryURL.setParameter(
-			"depotEntryId", String.valueOf(depotEntry.getDepotEntryId()));
-
-		return editDepotEntryURL;
+		return PortletURLBuilder.create(
+			PortalUtil.getControlPanelPortletURL(
+				liferayPortletRequest, DepotPortletKeys.DEPOT_ADMIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/depot/edit_depot_entry"
+		).setRedirect(
+			redirect
+		).setParameter(
+			"depotEntryId", depotEntry.getDepotEntryId()
+		).build();
 	}
 
 	public static ActionURL getUpdateDDMStructuresAvailableActionURL(
@@ -117,7 +118,7 @@ public class DepotEntryURLUtil {
 
 		updateDDMStructuresAvailableActionURL.setParameter(
 			ActionRequest.ACTION_NAME,
-			"/depot/update_depot_entry_group_rel_ddm_structures_available");
+			"/depot/update_ddm_structures_available");
 		updateDDMStructuresAvailableActionURL.setParameter(
 			"redirect", redirect);
 		updateDDMStructuresAvailableActionURL.setParameter(
@@ -136,8 +137,7 @@ public class DepotEntryURLUtil {
 			liferayPortletResponse.createActionURL();
 
 		updateSearchableActionURL.setParameter(
-			ActionRequest.ACTION_NAME,
-			"/depot/update_depot_entry_group_rel_searchable");
+			ActionRequest.ACTION_NAME, "/depot/update_searchable");
 		updateSearchableActionURL.setParameter("redirect", redirect);
 		updateSearchableActionURL.setParameter(
 			"depotEntryGroupRelId", String.valueOf(depotEntryGroupRelId));

@@ -26,12 +26,26 @@ SelectAccountUsersManagementToolbarDisplayContext selectAccountUsersManagementTo
 if (selectAccountUsersManagementToolbarDisplayContext.isSingleSelect()) {
 	userSearchContainer.setRowChecker(null);
 }
-
-String eventName = ParamUtil.getString(request, "eventName", liferayPortletResponse.getNamespace() + "assignAccountUsers");
 %>
 
+<liferay-portlet:renderURL portletName="<%= AccountPortletKeys.ACCOUNT_USERS_ADMIN %>" var="addAccountEntryUserURL">
+	<portlet:param name="mvcRenderCommandName" value="/account_admin/add_account_user" />
+	<portlet:param name="redirect" value='<%= ParamUtil.getString(request, "redirect") %>' />
+	<portlet:param name="backURL" value='<%= ParamUtil.getString(request, "redirect") %>' />
+	<portlet:param name="accountEntryId" value='<%= ParamUtil.getString(request, "accountEntryId") %>' />
+</liferay-portlet:renderURL>
+
 <clay:management-toolbar
-	displayContext="<%= selectAccountUsersManagementToolbarDisplayContext %>"
+	additionalProps='<%=
+		HashMapBuilder.<String, Object>put(
+			"addAccountEntryUserURL", addAccountEntryUserURL.toString()
+		).put(
+			"openModalOnRedirect", selectAccountUsersManagementToolbarDisplayContext.isOpenModalOnRedirect()
+		).build()
+	%>'
+	managementToolbarDisplayContext="<%= selectAccountUsersManagementToolbarDisplayContext %>"
+	propsTransformer="account_entries_admin/js/SelectAccountUsersManagementToolbarPropsTransformer"
+	showCreationMenu="<%= selectAccountUsersManagementToolbarDisplayContext.isShowCreateButton() %>"
 />
 
 <clay:container-fluid
@@ -65,26 +79,33 @@ String eventName = ParamUtil.getString(request, "eventName", liferayPortletRespo
 
 			<liferay-ui:search-container-column-text
 				cssClass="table-cell-expand-small table-cell-minw-150"
+				name="job-title"
+				property="jobTitle"
+			/>
+
+			<liferay-ui:search-container-column-text
+				cssClass="table-cell-expand-small table-cell-minw-150"
 				name="account-roles"
 				value="<%= accountUserDisplay.getAccountRoleNamesString(accountEntryId, locale) %>"
 			/>
 
 			<c:if test="<%= selectAccountUsersManagementToolbarDisplayContext.isSingleSelect() %>">
 				<liferay-ui:search-container-column-text>
-
-					<%
-					Map<String, Object> data = HashMapBuilder.<String, Object>put(
-						"emailaddress", accountUserDisplay.getEmailAddress()
-					).put(
-						"entityid", accountUserDisplay.getUserId()
-					).put(
-						"entityname", accountUserDisplay.getName()
-					).put(
-						"jobtitle", accountUserDisplay.getJobTitle()
-					).build();
-					%>
-
-					<aui:button cssClass="choose-user selector-button" data="<%= data %>" value="choose" />
+					<aui:button
+						cssClass="choose-user selector-button"
+						data='<%=
+							HashMapBuilder.<String, Object>put(
+								"emailaddress", accountUserDisplay.getEmailAddress()
+							).put(
+								"entityid", accountUserDisplay.getUserId()
+							).put(
+								"entityname", accountUserDisplay.getName()
+							).put(
+								"jobtitle", accountUserDisplay.getJobTitle()
+							).build()
+						%>'
+						value="choose"
+					/>
 				</liferay-ui:search-container-column-text>
 			</c:if>
 		</liferay-ui:search-container-row>
@@ -94,56 +115,3 @@ String eventName = ParamUtil.getString(request, "eventName", liferayPortletRespo
 		/>
 	</liferay-ui:search-container>
 </clay:container-fluid>
-
-<aui:script use="liferay-search-container">
-	var searchContainer = Liferay.SearchContainer.get(
-		'<portlet:namespace />accountUsers'
-	);
-
-	searchContainer.on('rowToggled', function (event) {
-		var selectedItems = event.elements.allSelectedElements;
-
-		var result = {};
-
-		if (!selectedItems.isEmpty()) {
-			result = {
-				data: {
-					value: selectedItems.get('value').join(','),
-				},
-			};
-		}
-
-		Liferay.Util.getOpener().Liferay.fire(
-			'<%= HtmlUtil.escapeJS(eventName) %>',
-			result
-		);
-	});
-
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />selectAccountUser',
-		'<%= HtmlUtil.escapeJS(eventName) %>'
-	);
-</aui:script>
-
-<c:if test="<%= selectAccountUsersManagementToolbarDisplayContext.isShowCreateButton() %>">
-	<liferay-portlet:renderURL portletName="<%= AccountPortletKeys.ACCOUNT_USERS_ADMIN %>" var="addAccountEntryUserURL">
-		<portlet:param name="mvcRenderCommandName" value="/account_admin/add_account_user" />
-		<portlet:param name="redirect" value='<%= ParamUtil.getString(request, "redirect") %>' />
-		<portlet:param name="backURL" value='<%= ParamUtil.getString(request, "redirect") %>' />
-		<portlet:param name="accountEntryId" value='<%= ParamUtil.getString(request, "accountEntryId") %>' />
-	</liferay-portlet:renderURL>
-
-	<%
-	Map<String, Object> context = HashMapBuilder.<String, Object>put(
-		"addAccountEntryUserURL", addAccountEntryUserURL.toString()
-	).put(
-		"openModalOnRedirect", selectAccountUsersManagementToolbarDisplayContext.isOpenModalOnRedirect()
-	).build();
-	%>
-
-	<liferay-frontend:component
-		componentId="<%= selectAccountUsersManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-		context="<%= context %>"
-		module="account_entries_admin/js/SelectAccountUsersManagementToolbarDefaultEventHandler.es"
-	/>
-</c:if>

@@ -18,11 +18,18 @@
 
 <%
 String redirect = ParamUtil.getString(request, "redirect");
+String backURL = ParamUtil.getString(request, "backURL");
 
-if (Validator.isNull(redirect)) {
+if (Validator.isNotNull(backURL)) {
+	portletDisplay.setURLBack(backURL);
+}
+else if (Validator.isNull(redirect)) {
 	PortletURL portletURL = renderResponse.createRenderURL();
 
-	redirect = portletURL.toString();
+	backURL = portletURL.toString();
+}
+else {
+	backURL = redirect;
 }
 
 AssetListEntry assetListEntry = assetListDisplayContext.getAssetListEntry();
@@ -40,6 +47,7 @@ AssetListEntry assetListEntry = assetListDisplayContext.getAssetListEntry();
 	name="fm"
 >
 	<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
+	<aui:input name="backURL" type="hidden" value="<%= backURL %>" />
 	<aui:input name="assetListEntryId" type="hidden" value="<%= assetListDisplayContext.getAssetListEntryId() %>" />
 	<aui:input name="segmentsEntryId" type="hidden" value="<%= assetListDisplayContext.getSegmentsEntryId() %>" />
 	<aui:input name="type" type="hidden" value="<%= assetListDisplayContext.getAssetListEntryType() %>" />
@@ -70,61 +78,11 @@ AssetListEntry assetListEntry = assetListDisplayContext.getAssetListEntry();
 		/>
 	</liferay-frontend:edit-form-body>
 
-	<liferay-frontend:edit-form-footer>
-		<aui:button disabled="<%= editAssetListDisplayContext.isNoAssetTypeSelected() %>" id="saveButton" onClick='<%= liferayPortletResponse.getNamespace() + "saveSelectBoxes();" %>' type="submit" />
+	<c:if test="<%= !editAssetListDisplayContext.isLiveGroup() %>">
+		<liferay-frontend:edit-form-footer>
+			<aui:button disabled="<%= editAssetListDisplayContext.isNoAssetTypeSelected() %>" id="saveButton" onClick='<%= liferayPortletResponse.getNamespace() + "saveSelectBoxes();" %>' type="submit" />
 
-		<aui:button href="<%= redirect %>" type="cancel" />
-	</liferay-frontend:edit-form-footer>
+			<aui:button href="<%= backURL %>" type="cancel" />
+		</liferay-frontend:edit-form-footer>
+	</c:if>
 </liferay-frontend:edit-form>
-
-<script>
-	function <portlet:namespace />saveSelectBoxes() {
-		var form = document.<portlet:namespace />fm;
-
-		<%
-		List<AssetRendererFactory<?>> assetRendererFactories = ListUtil.sort(AssetRendererFactoryRegistryUtil.getAssetRendererFactories(company.getCompanyId()), new AssetRendererFactoryTypeNameComparator(locale));
-
-		for (AssetRendererFactory<?> assetRendererFactory : assetRendererFactories) {
-			ClassTypeReader classTypeReader = assetRendererFactory.getClassTypeReader();
-
-			List<ClassType> classTypes = classTypeReader.getAvailableClassTypes(editAssetListDisplayContext.getReferencedModelsGroupIds(), locale);
-
-			if (classTypes.isEmpty()) {
-				continue;
-			}
-
-			String className = assetListDisplayContext.getClassName(assetRendererFactory);
-		%>
-
-			Liferay.Util.setFormValues(form, {
-				classTypeIds<%= className %>: Liferay.Util.listSelect(
-					Liferay.Util.getFormElement(
-						form,
-						'<%= className %>currentClassTypeIds'
-					)
-				),
-			});
-
-		<%
-		}
-		%>
-
-		var currentClassNameIdsSelect = Liferay.Util.getFormElement(
-			form,
-			'currentClassNameIds'
-		);
-
-		if (currentClassNameIdsSelect) {
-			Liferay.Util.postForm(form, {
-				data: {
-					classNameIds: Liferay.Util.listSelect(
-						currentClassNameIdsSelect
-					),
-				},
-			});
-		}
-		else {
-			submitForm(form);
-		}
-	}
-</script>

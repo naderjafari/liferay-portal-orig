@@ -51,29 +51,26 @@
 <div id="<portlet:namespace />ConditionForm"></div>
 
 <div>
-
-	<%
-	Map<String, Object> data = HashMapBuilder.<String, Object>put(
-		"categorySelectorURL", assetPublisherDisplayContext.getCategorySelectorURL()
-	).put(
-		"groupIds", ListUtil.toList(assetPublisherDisplayContext.getReferencedModelsGroupIds())
-	).put(
-		"id", "autofield"
-	).put(
-		"namespace", liferayPortletResponse.getNamespace()
-	).put(
-		"pathThemeImages", themeDisplay.getPathThemeImages()
-	).put(
-		"rules", assetPublisherDisplayContext.getAutoFieldRulesJSONArray()
-	).put(
-		"tagSelectorURL", assetPublisherDisplayContext.getTagSelectorURL()
-	).put(
-		"vocabularyIds", assetPublisherDisplayContext.getVocabularyIds()
-	).build();
-	%>
-
 	<react:component
-		data="<%= data %>"
 		module="auto_field/index"
+		props='<%=
+			HashMapBuilder.<String, Object>put(
+				"categorySelectorURL", assetPublisherDisplayContext.getCategorySelectorURL()
+			).put(
+				"groupIds", ListUtil.toList(assetPublisherDisplayContext.getReferencedModelsGroupIds())
+			).put(
+				"id", "autofield"
+			).put(
+				"namespace", liferayPortletResponse.getNamespace()
+			).put(
+				"pathThemeImages", themeDisplay.getPathThemeImages()
+			).put(
+				"rules", assetPublisherDisplayContext.getAutoFieldRulesJSONArray()
+			).put(
+				"tagSelectorURL", assetPublisherDisplayContext.getTagSelectorURL()
+			).put(
+				"vocabularyIds", assetPublisherDisplayContext.getVocabularyIds()
+			).build()
+		%>'
 	/>
 </div>

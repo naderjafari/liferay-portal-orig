@@ -19,6 +19,8 @@
 <%
 SelectLayoutCollectionDisplayContext selectLayoutCollectionDisplayContext = (SelectLayoutCollectionDisplayContext)request.getAttribute(LayoutAdminWebKeys.SELECT_LAYOUT_COLLECTION_DISPLAY_CONTEXT);
 
+SelectCollectionManagementToolbarDisplayContext selectCollectionManagementToolbarDisplayContext = new SelectCollectionManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, selectLayoutCollectionDisplayContext);
+
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(layoutsAdminDisplayContext.getBackURL());
 
@@ -31,8 +33,14 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-collection"));
 	navigationItems="<%= selectLayoutCollectionDisplayContext.getNavigationItems() %>"
 />
 
+<c:if test="<%= selectLayoutCollectionDisplayContext.isCollections() %>">
+	<clay:management-toolbar
+		managementToolbarDisplayContext="<%= selectCollectionManagementToolbarDisplayContext %>"
+		propsTransformer="js/SelectLayoutCollectionManagementToolbarPropsTransformer"
+	/>
+</c:if>
+
 <clay:container-fluid
-	cssClass="container-view"
 	id='<%= liferayPortletResponse.getNamespace() + "collections" %>'
 >
 	<c:choose>
@@ -44,3 +52,28 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-collection"));
 		</c:otherwise>
 	</c:choose>
 </clay:container-fluid>
+
+<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule">
+	var collections = document.getElementById('<portlet:namespace />collections');
+
+	var delegate = delegateModule.default;
+
+	var selectLayoutMasterLayoutActionOptionQueryClickHandler = delegate(
+		collections,
+		'click',
+		'.select-collection-action-option',
+		(event) => {
+			Liferay.Util.navigate(
+				event.delegateTarget.dataset.selectLayoutMasterLayoutUrl
+			);
+		}
+	);
+
+	function handleDestroyPortlet() {
+		selectLayoutMasterLayoutActionOptionQueryClickHandler.dispose();
+
+		Liferay.detach('destroyPortlet', handleDestroyPortlet);
+	}
+
+	Liferay.on('destroyPortlet', handleDestroyPortlet);
+</aui:script>

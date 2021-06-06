@@ -212,6 +212,10 @@ public class KaleoInstanceLocalServiceImpl
 			kaleoInstance = kaleoInstancePersistence.remove(kaleoInstanceId);
 		}
 		catch (NoSuchInstanceException noSuchInstanceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchInstanceException, noSuchInstanceException);
+			}
+
 			return null;
 		}
 
@@ -243,6 +247,14 @@ public class KaleoInstanceLocalServiceImpl
 
 		return kaleoInstancePersistence.fetchByKII_C_U(
 			kaleoInstanceId, companyId, userId);
+	}
+
+	@Override
+	public int getKaleoDefinitionKaleoInstancesCount(
+		long kaleoDefinitionId, boolean completed) {
+
+		return kaleoInstancePersistence.countByKDI_C(
+			kaleoDefinitionId, completed);
 	}
 
 	@Override
@@ -410,8 +422,12 @@ public class KaleoInstanceLocalServiceImpl
 			long kaleoInstanceId = GetterUtil.getLong(
 				document.get(KaleoInstanceTokenField.KALEO_INSTANCE_ID));
 
-			kaleoInstances.add(
-				kaleoInstancePersistence.findByPrimaryKey(kaleoInstanceId));
+			KaleoInstance kaleoInstance =
+				kaleoInstancePersistence.fetchByPrimaryKey(kaleoInstanceId);
+
+			if (kaleoInstance != null) {
+				kaleoInstances.add(kaleoInstance);
+			}
 		}
 
 		return new BaseModelSearchResult<>(kaleoInstances, hits.getLength());
@@ -457,6 +473,7 @@ public class KaleoInstanceLocalServiceImpl
 		searchContext.setAttributes(searchAttributes);
 		searchContext.setCompanyId(serviceContext.getCompanyId());
 		searchContext.setEnd(end);
+		searchContext.setGroupIds(new long[] {-1L});
 		searchContext.setStart(start);
 
 		if (orderByComparator != null) {

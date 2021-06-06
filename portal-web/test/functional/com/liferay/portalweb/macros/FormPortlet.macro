@@ -59,6 +59,22 @@ definition {
 		FormPortlet.clickSubmit();
 	}
 
+	macro submitAndViewSuccessPage {
+		FormPortlet.submit();
+
+		if (!(isSet(successPageDescription))) {
+			var successPageDescription = "Your information was successfully received. Thank you for filling out the form.";
+		}
+
+		if (!(isSet(successPageTitle))) {
+			var successPageTitle = "Thank you.";
+		}
+
+		FormPortlet.viewSuccessPage(
+			successPageDescription = "${successPageDescription}",
+			successPageTitle = "${successPageTitle}");
+	}
+
 	macro submitLocalizedSuccessfully {
 		AssertClick(
 			locator1 = "Button#MAIN_CONTENT_SUBMIT",
@@ -77,6 +93,22 @@ definition {
 		Alert.viewSuccessMessage();
 	}
 
+	macro submitSuccessfullyAndViewSuccessPage {
+		FormPortlet.submitSuccessfully();
+
+		if (!(isSet(successPageDescription))) {
+			var successPageDescription = "Your information was successfully received. Thank you for filling out the form.";
+		}
+
+		if (!(isSet(successPageTitle))) {
+			var successPageTitle = "Thank you.";
+		}
+
+		FormPortlet.viewSuccessPage(
+			successPageDescription = "${successPageDescription}",
+			successPageTitle = "${successPageTitle}");
+	}
+
 	macro submitWithError {
 		FormPortlet.submit();
 
@@ -90,13 +122,7 @@ definition {
 	macro submitWithValidationError {
 		FormPortlet.submit();
 
-		WaitForElementPresent(
-			locator1 = "Message#ERROR_FORM_FIELD_REQUIRED",
-			value1 = "${validationErrorMessage}");
-
-		AssertTextEquals(
-			locator1 = "Message#ERROR_FORM_FIELD_REQUIRED",
-			value1 = "${validationErrorMessage}");
+		FormPortlet.viewValidationErrorMessage(validationErrorMessage = "${validationErrorMessage}");
 	}
 
 	macro viewSuccessPage {
@@ -111,6 +137,16 @@ definition {
 		AssertTextEquals(
 			locator1 = "FormPortlet#SUCCESS_PAGE_DESCRIPTION",
 			value1 = "${successPageDescription}");
+	}
+
+	macro viewValidationErrorMessage {
+		WaitForElementPresent(
+			locator1 = "Message#ERROR_FORM_FIELD_REQUIRED",
+			value1 = "${validationErrorMessage}");
+
+		AssertTextEquals(
+			locator1 = "Message#ERROR_FORM_FIELD_REQUIRED",
+			value1 = "${validationErrorMessage}");
 	}
 
 	macro waitFormRenderer {

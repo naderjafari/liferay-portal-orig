@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +45,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("LandscapeMobile")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "LandscapeMobile")
-public class LandscapeMobile {
+public class LandscapeMobile implements Serializable {
 
 	public static LandscapeMobile toDTO(String json) {
 		return ObjectMapperUtil.readValue(LandscapeMobile.class, json);
@@ -200,6 +202,7 @@ public class LandscapeMobile {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.LandscapeMobile",
 		name = "x-class-name"
 	)
@@ -235,7 +238,7 @@ public class LandscapeMobile {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -274,7 +277,7 @@ public class LandscapeMobile {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

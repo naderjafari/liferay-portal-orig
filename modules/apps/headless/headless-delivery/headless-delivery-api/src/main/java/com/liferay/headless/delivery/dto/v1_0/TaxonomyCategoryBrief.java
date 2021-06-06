@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,11 +47,46 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("TaxonomyCategoryBrief")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "TaxonomyCategoryBrief")
-public class TaxonomyCategoryBrief {
+public class TaxonomyCategoryBrief implements Serializable {
 
 	public static TaxonomyCategoryBrief toDTO(String json) {
 		return ObjectMapperUtil.readValue(TaxonomyCategoryBrief.class, json);
 	}
+
+	@Schema(
+		description = "Optional field with the embedded taxonomy category, can be embedded with nestedFields"
+	)
+	@Valid
+	public Object getEmbeddedTaxonomyCategory() {
+		return embeddedTaxonomyCategory;
+	}
+
+	public void setEmbeddedTaxonomyCategory(Object embeddedTaxonomyCategory) {
+		this.embeddedTaxonomyCategory = embeddedTaxonomyCategory;
+	}
+
+	@JsonIgnore
+	public void setEmbeddedTaxonomyCategory(
+		UnsafeSupplier<Object, Exception>
+			embeddedTaxonomyCategoryUnsafeSupplier) {
+
+		try {
+			embeddedTaxonomyCategory =
+				embeddedTaxonomyCategoryUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "Optional field with the embedded taxonomy category, can be embedded with nestedFields"
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Object embeddedTaxonomyCategory;
 
 	@Schema(
 		description = "The category's ID. This can be used to retrieve more information in the `TaxonomyCategory` API."
@@ -111,7 +148,7 @@ public class TaxonomyCategoryBrief {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String taxonomyCategoryName;
 
-	@Schema
+	@Schema(description = "The localized category's names.")
 	@Valid
 	public Map<String, String> getTaxonomyCategoryName_i18n() {
 		return taxonomyCategoryName_i18n;
@@ -140,7 +177,7 @@ public class TaxonomyCategoryBrief {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized category's names.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> taxonomyCategoryName_i18n;
 
@@ -171,6 +208,16 @@ public class TaxonomyCategoryBrief {
 		StringBundler sb = new StringBundler();
 
 		sb.append("{");
+
+		if (embeddedTaxonomyCategory != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"embeddedTaxonomyCategory\": ");
+
+			sb.append(String.valueOf(embeddedTaxonomyCategory));
+		}
 
 		if (taxonomyCategoryId != null) {
 			if (sb.length() > 1) {
@@ -212,6 +259,7 @@ public class TaxonomyCategoryBrief {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.TaxonomyCategoryBrief",
 		name = "x-class-name"
 	)
@@ -247,7 +295,7 @@ public class TaxonomyCategoryBrief {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -286,7 +334,7 @@ public class TaxonomyCategoryBrief {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

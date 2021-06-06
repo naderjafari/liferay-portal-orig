@@ -14,21 +14,17 @@
 
 package com.liferay.site.memberships.web.internal.display.context;
 
-import com.liferay.depot.constants.DepotRolesConstants;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.role.RoleConstants;
-import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
-import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
-import com.liferay.portal.kernel.service.permission.RolePermissionUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -38,13 +34,11 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.rolesadmin.search.RoleSearch;
 import com.liferay.portlet.rolesadmin.search.RoleSearchTerms;
 import com.liferay.portlet.sites.search.UserGroupRoleRoleChecker;
+import com.liferay.site.memberships.constants.SiteMembershipsPortletKeys;
+import com.liferay.site.memberships.web.internal.util.DepotRolesUtil;
 import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
@@ -71,8 +65,10 @@ public class UserRolesDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_httpServletRequest, "displayStyle", "icon");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest,
+			SiteMembershipsPortletKeys.SITE_MEMBERSHIPS_ADMIN,
+			"display-style-roles", "icon");
 
 		return _displayStyle;
 	}
@@ -118,8 +114,8 @@ public class UserRolesDisplayContext {
 			new Integer[] {_getRoleType()}, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, roleSearch.getOrderByComparator());
 
-		if (group.getType() == GroupConstants.TYPE_DEPOT) {
-			roles = _filterGroupRoles(
+		if (group.isDepot()) {
+			roles = DepotRolesUtil.filterGroupRoles(
 				themeDisplay.getPermissionChecker(), _getGroupId(), roles);
 		}
 		else {
@@ -141,60 +137,6 @@ public class UserRolesDisplayContext {
 		return _roleSearch;
 	}
 
-	/**
-	 * @see com.liferay.depot.web.internal.display.context.DepotAdminMembershipsDisplayContext.Step2#_filterGroupRoles(List)
-	 */
-	private List<Role> _filterGroupRoles(
-			PermissionChecker permissionChecker, long groupId, List<Role> roles)
-		throws PortalException {
-
-		if (permissionChecker.isCompanyAdmin() ||
-			permissionChecker.isGroupOwner(groupId)) {
-
-			Stream<Role> stream = roles.stream();
-
-			return stream.filter(
-				role ->
-					!Objects.equals(
-						role.getName(),
-						DepotRolesConstants.
-							ASSET_LIBRARY_CONNECTED_SITE_MEMBER) &&
-					!Objects.equals(
-						role.getName(),
-						DepotRolesConstants.ASSET_LIBRARY_MEMBER)
-			).collect(
-				Collectors.toList()
-			);
-		}
-
-		if (!GroupPermissionUtil.contains(
-				permissionChecker, groupId, ActionKeys.ASSIGN_USER_ROLES)) {
-
-			return Collections.emptyList();
-		}
-
-		Stream<Role> stream = roles.stream();
-
-		return stream.filter(
-			role ->
-				!Objects.equals(
-					role.getName(),
-					DepotRolesConstants.ASSET_LIBRARY_CONNECTED_SITE_MEMBER) &&
-				!Objects.equals(
-					role.getName(), DepotRolesConstants.ASSET_LIBRARY_MEMBER) &&
-				!Objects.equals(
-					role.getName(),
-					DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR) &&
-				!Objects.equals(
-					role.getName(), DepotRolesConstants.ASSET_LIBRARY_OWNER) &&
-				RolePermissionUtil.contains(
-					permissionChecker, groupId, role.getRoleId(),
-					ActionKeys.ASSIGN_MEMBERS)
-		).collect(
-			Collectors.toList()
-		);
-	}
-
 	private long _getGroupId() {
 		if (_groupId != null) {
 			return _groupId;
@@ -212,10 +154,13 @@ public class UserRolesDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() throws PortalException {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("p_u_i_d", String.valueOf(_getUserId()));
-		portletURL.setParameter("mvcPath", "/users_roles.jsp");
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/users_roles.jsp"
+		).setParameter(
+			"p_u_i_d", _getUserId()
+		).build();
 
 		String displayStyle = getDisplayStyle();
 

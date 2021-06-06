@@ -20,14 +20,12 @@ import com.liferay.portal.jericho.CachedLoggerProvider;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
-import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.SimpleAction;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
-import com.liferay.portal.kernel.service.ResourceActionLocalServiceUtil;
 import com.liferay.portal.kernel.util.BasePortalLifecycle;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -39,7 +37,6 @@ import com.liferay.portal.util.PropsValues;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceRegistration;
-import com.liferay.taglib.servlet.JspFactorySwapper;
 
 import java.io.InputStream;
 
@@ -103,14 +100,9 @@ public class StartupAction extends SimpleAction {
 
 		// Check required schema version
 
-		if (PropsValues.UPGRADE_DATABASE_AUTO_RUN) {
-			DependencyManagerSyncUtil.sync();
-		}
-		else {
-			StartupHelperUtil.verifyRequiredSchemaVersion();
+		StartupHelperUtil.verifyRequiredSchemaVersion();
 
-			DBUpgrader.checkReleaseState();
-		}
+		DBUpgrader.checkReleaseState();
 
 		Registry registry = RegistryUtil.getRegistry();
 
@@ -157,28 +149,17 @@ public class StartupAction extends SimpleAction {
 			_log.debug("Check resource actions");
 		}
 
-		if (StartupHelperUtil.isDBNew() ||
-			PropsValues.UPGRADE_DATABASE_AUTO_RUN) {
+		StartupHelperUtil.initResourceActions();
 
-			StartupHelperUtil.initResourceActions();
-
-			ResourceActionLocalServiceUtil.checkResourceActions();
-
+		if (StartupHelperUtil.isDBNew()) {
 			DBUpgrader.verify();
 
 			DLFileEntryTypeLocalServiceUtil.getBasicDocumentDLFileEntryType();
-		}
-		else {
-			ResourceActionLocalServiceUtil.checkResourceActions();
 		}
 
 		if (PropsValues.DATABASE_INDEXES_UPDATE_ON_STARTUP) {
 			StartupHelperUtil.updateIndexes(true);
 		}
-
-		// Liferay JspFactory
-
-		JspFactorySwapper.swap();
 
 		// Jericho
 

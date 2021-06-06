@@ -21,10 +21,10 @@ RolesDisplayContext rolesDisplayContext = new RolesDisplayContext(request, rende
 %>
 
 <clay:management-toolbar
-	displayContext="<%= new RolesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, rolesDisplayContext) %>"
+	managementToolbarDisplayContext="<%= new RolesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, rolesDisplayContext) %>"
 />
 
-<aui:form cssClass="container-fluid-1280 portlet-site-memberships-assign-roles" name="fm">
+<aui:form cssClass="container-fluid container-fluid-max-xl portlet-site-memberships-assign-roles" name="fm">
 	<liferay-ui:search-container
 		id="roles"
 		searchContainer="<%= rolesDisplayContext.getRoleSearchSearchContainer() %>"
@@ -53,7 +53,7 @@ RolesDisplayContext rolesDisplayContext = new RolesDisplayContext(request, rende
 <aui:script use="liferay-search-container">
 	var searchContainer = Liferay.SearchContainer.get('<portlet:namespace />roles');
 
-	searchContainer.on('rowToggled', function (event) {
+	searchContainer.on('rowToggled', (event) => {
 		Liferay.Util.getOpener().Liferay.fire(
 			'<%= HtmlUtil.escapeJS(rolesDisplayContext.getEventName()) %>',
 			{

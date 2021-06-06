@@ -12,12 +12,14 @@
  * details.
  */
 
-import {PagesVisitor} from 'dynamic-data-mapping-form-renderer/js/util/visitors.es';
+import {PagesVisitor} from 'data-engine-js-components-web/js/utils/visitors.es';
 
 import {getField} from '../../../util/fieldSupport.es';
+import {findInvalidFieldReference} from '../util/fields.es';
 import {updateRulesReferences} from '../util/rules.es';
 import {
 	updateField,
+	updateFieldReference,
 	updateSettingsContextProperty,
 } from '../util/settingsContext.es';
 
@@ -100,11 +102,19 @@ export const updateState = (props, state, propertyName, propertyValue) => {
 		propertyValue
 	);
 
+	const visitor = new PagesVisitor(pages);
+
+	let stateField = visitor.findField(
+		(field) => field.fieldName === previousFocusedFieldName
+	);
+
+	stateField = updateField(props, stateField, propertyName, propertyValue);
+
 	const newPages = updatePages(
 		props,
 		pages,
 		previousFocusedFieldName,
-		newFocusedField
+		stateField
 	);
 
 	return {
@@ -128,6 +138,25 @@ export const handleFieldEdited = (props, state, event) => {
 			...state,
 			...(fieldName && {focusedField: getField(state.pages, fieldName)}),
 		};
+
+		if (
+			propertyName === 'fieldReference' &&
+			propertyValue !== '' &&
+			propertyValue !== state.focusedField.fieldName
+		) {
+			state = {
+				...state,
+				focusedField: updateFieldReference(
+					state.focusedField,
+					findInvalidFieldReference(
+						state.focusedField,
+						state.pages,
+						propertyValue
+					),
+					false
+				),
+			};
+		}
 
 		newState = updateState(props, state, propertyName, propertyValue);
 	}

@@ -107,7 +107,9 @@ public abstract class BaseRoleResourceTestCase {
 
 		RoleResource.Builder builder = RoleResource.builder();
 
-		roleResource = builder.locale(
+		roleResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -199,7 +201,7 @@ public abstract class BaseRoleResourceTestCase {
 		Long irrelevantProcessId =
 			testGetProcessRolesPage_getIrrelevantProcessId();
 
-		if ((irrelevantProcessId != null)) {
+		if (irrelevantProcessId != null) {
 			Role irrelevantRole = testGetProcessRolesPage_addRole(
 				irrelevantProcessId, randomIrrelevantRole());
 
@@ -292,7 +294,7 @@ public abstract class BaseRoleResourceTestCase {
 		}
 	}
 
-	protected void assertValid(Role role) {
+	protected void assertValid(Role role) throws Exception {
 		boolean valid = true;
 
 		if (role.getId() == null) {
@@ -343,7 +345,7 @@ public abstract class BaseRoleResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.portal.workflow.metrics.rest.dto.v1_0.Role.
 						class)) {
 
@@ -378,7 +380,7 @@ public abstract class BaseRoleResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -443,9 +445,22 @@ public abstract class BaseRoleResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -615,12 +630,12 @@ public abstract class BaseRoleResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -630,10 +645,10 @@ public abstract class BaseRoleResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

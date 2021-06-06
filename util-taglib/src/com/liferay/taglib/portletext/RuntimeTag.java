@@ -40,13 +40,14 @@ import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.taglib.DirectTag;
-import com.liferay.taglib.servlet.PipingServletResponse;
+import com.liferay.taglib.servlet.PipingServletResponseFactory;
 import com.liferay.taglib.util.PortalIncludeUtil;
 import com.liferay.taglib.util.ThreadLocalUtil;
 
@@ -174,7 +175,7 @@ public class RuntimeTag extends TagSupport implements DirectTag {
 		if (pageContext != null) {
 			if (httpServletResponse == pageContext.getResponse()) {
 				httpServletResponse =
-					PipingServletResponse.createPipingServletResponse(
+					PipingServletResponseFactory.createPipingServletResponse(
 						pageContext);
 			}
 			else {
@@ -194,15 +195,19 @@ public class RuntimeTag extends TagSupport implements DirectTag {
 
 		String portletInstanceKey = portletName;
 
-		if (Validator.isNotNull(instanceId) && !instanceId.startsWith("0")) {
+		if (Validator.isNotNull(instanceId) && !instanceId.equals("0")) {
 			portletInstanceKey = PortletIdCodec.encode(
 				PortletIdCodec.decodePortletName(portletName),
 				PortletIdCodec.decodeUserId(portletName), instanceId);
 		}
 
+		boolean resetLifecycleRender = false;
+
 		if (!Objects.equals(
 				portletInstanceKey,
 				httpServletRequest.getParameter("p_p_id"))) {
+
+			resetLifecycleRender = true;
 
 			Set<String> keySet = parameterMap.keySet();
 
@@ -335,8 +340,21 @@ public class RuntimeTag extends TagSupport implements DirectTag {
 
 			embeddedPortletIds.push(portletInstanceKey);
 
-			PortletContainerUtil.render(
-				httpServletRequest, httpServletResponse, portlet);
+			boolean lifecycleRender = themeDisplay.isLifecycleRender();
+
+			try {
+				if (resetLifecycleRender) {
+					themeDisplay.setLifecycleRender(true);
+				}
+
+				PortletContainerUtil.render(
+					httpServletRequest, httpServletResponse, portlet);
+			}
+			finally {
+				if (resetLifecycleRender) {
+					themeDisplay.setLifecycleRender(lifecycleRender);
+				}
+			}
 
 			embeddedPortletIds.pop();
 

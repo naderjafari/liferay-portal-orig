@@ -340,9 +340,8 @@ public class ServletResponseUtil {
 			BufferCacheServletResponse bufferCacheServletResponse =
 				(BufferCacheServletResponse)httpServletResponse;
 
-			ByteBuffer byteBuffer = ByteBuffer.wrap(FileUtil.getBytes(file));
-
-			bufferCacheServletResponse.setByteBuffer(byteBuffer);
+			bufferCacheServletResponse.setByteBuffer(
+				ByteBuffer.wrap(FileUtil.getBytes(file)));
 		}
 		else {
 			FileInputStream fileInputStream = new FileInputStream(file);
@@ -474,14 +473,7 @@ public class ServletResponseUtil {
 		if (!ascii) {
 			String encodedFileName = URLCodec.encodeURL(fileName, true);
 
-			if (BrowserSnifferUtil.isIe(httpServletRequest)) {
-				contentDispositionFileName =
-					"filename=\"" + encodedFileName + "\"";
-			}
-			else {
-				contentDispositionFileName =
-					"filename*=UTF-8''" + encodedFileName;
-			}
+			contentDispositionFileName = "filename*=UTF-8''" + encodedFileName;
 		}
 
 		if (Validator.isNull(contentDispositionType)) {
@@ -497,6 +489,10 @@ public class ServletResponseUtil {
 					PropsKeys.MIME_TYPES_CONTENT_DISPOSITION_INLINE);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
+
 				mimeTypesContentDispositionInline = new String[0];
 			}
 
@@ -555,7 +551,11 @@ public class ServletResponseUtil {
 			isClientAbortException(ioException)) {
 
 			if (_log.isWarnEnabled()) {
-				_log.warn(ioException, ioException);
+				_log.warn(ioException.getMessage());
+			}
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
 			}
 		}
 		else {
@@ -563,64 +563,65 @@ public class ServletResponseUtil {
 		}
 	}
 
-	private static InputStream _copyRange(
-			InputStream inputStream, OutputStream outputStream, long start,
-			long length)
+	private static void _copyRangeFromPosition(
+			ByteArrayInputStream byteArrayInputStream,
+			OutputStream outputStream, Range range)
 		throws IOException {
 
-		if (inputStream instanceof ByteArrayInputStream) {
-			ByteArrayInputStream byteArrayInputStream =
-				(ByteArrayInputStream)inputStream;
+		byteArrayInputStream.reset();
 
-			byteArrayInputStream.reset();
+		byteArrayInputStream.skip(range.getStart());
 
-			byteArrayInputStream.skip(start);
-
-			try {
-				StreamUtil.transfer(
-					byteArrayInputStream, outputStream, StreamUtil.BUFFER_SIZE,
-					false, length);
-			}
-			catch (IOException ioException) {
-				_checkSocketException(ioException);
-			}
-
-			return byteArrayInputStream;
+		try {
+			StreamUtil.transfer(
+				byteArrayInputStream, outputStream, StreamUtil.BUFFER_SIZE,
+				false, range.getLength());
 		}
-		else if (inputStream instanceof FileInputStream) {
-			FileInputStream fileInputStream = (FileInputStream)inputStream;
-
-			FileChannel fileChannel = fileInputStream.getChannel();
-
-			try {
-				fileChannel.transferTo(
-					start, length, Channels.newChannel(outputStream));
-			}
-			catch (IOException ioException) {
-				_checkSocketException(ioException);
-			}
-
-			return fileInputStream;
+		catch (IOException ioException) {
+			_checkSocketException(ioException);
 		}
-		else if (inputStream instanceof RandomAccessInputStream) {
-			RandomAccessInputStream randomAccessInputStream =
-				(RandomAccessInputStream)inputStream;
+	}
 
-			randomAccessInputStream.seek(start);
+	private static void _copyRangeFromPosition(
+			FileInputStream fileInputStream, OutputStream outputStream,
+			Range range)
+		throws IOException {
 
-			try {
-				StreamUtil.transfer(
-					randomAccessInputStream, outputStream,
-					StreamUtil.BUFFER_SIZE, false, length);
-			}
-			catch (IOException ioException) {
-				_checkSocketException(ioException);
-			}
+		FileChannel fileChannel = fileInputStream.getChannel();
 
-			return randomAccessInputStream;
+		try {
+			fileChannel.transferTo(
+				range.getStart(), range.getLength(),
+				Channels.newChannel(outputStream));
 		}
+		catch (IOException ioException) {
+			_checkSocketException(ioException);
+		}
+	}
 
-		inputStream.skip(start);
+	private static void _copyRangeFromPosition(
+			RandomAccessInputStream randomAccessInputStream,
+			OutputStream outputStream, Range range)
+		throws IOException {
+
+		randomAccessInputStream.seek(range.getStart());
+
+		try {
+			StreamUtil.transfer(
+				randomAccessInputStream, outputStream, StreamUtil.BUFFER_SIZE,
+				false, range.getLength());
+		}
+		catch (IOException ioException) {
+			_checkSocketException(ioException);
+		}
+	}
+
+	private static void _copyRangeSkipping(
+			InputStream inputStream, OutputStream outputStream,
+			long skipBytesCount, long length)
+		throws IOException {
+
+		inputStream.skip(skipBytesCount);
 
 		try {
 			StreamUtil.transfer(
@@ -630,8 +631,6 @@ public class ServletResponseUtil {
 		catch (IOException ioException) {
 			_checkSocketException(ioException);
 		}
-
-		return inputStream;
 	}
 
 	private static List<Range> _getRanges(
@@ -650,8 +649,6 @@ public class ServletResponseUtil {
 					rangeString);
 		}
 
-		List<Range> ranges = new ArrayList<>();
-
 		String[] rangeFields = StringUtil.split(rangeString.substring(6));
 
 		if (rangeFields.length > _MAX_RANGE_FIELDS) {
@@ -668,6 +665,8 @@ public class ServletResponseUtil {
 
 			throw new IOException(sb.toString());
 		}
+
+		List<Range> ranges = new ArrayList<>();
 
 		for (String rangeField : rangeFields) {
 			int index = rangeField.indexOf(StringPool.DASH);
@@ -695,44 +694,6 @@ public class ServletResponseUtil {
 		}
 
 		return ranges;
-	}
-
-	private static boolean _isRandomAccessSupported(InputStream inputStream) {
-		if (inputStream instanceof ByteArrayInputStream ||
-			inputStream instanceof FileInputStream ||
-			inputStream instanceof RandomAccessInputStream) {
-
-			return true;
-		}
-
-		return false;
-	}
-
-	private static boolean _isSequentialRangeList(List<Range> ranges) {
-		Range previousRange = null;
-
-		for (Range range : ranges) {
-			if ((previousRange != null) &&
-				(range.getStart() <= previousRange.getEnd())) {
-
-				return false;
-			}
-
-			previousRange = range;
-		}
-
-		return true;
-	}
-
-	private static InputStream _toRandomAccessInputStream(
-			InputStream inputStream)
-		throws IOException {
-
-		if (_isRandomAccessSupported(inputStream)) {
-			return inputStream;
-		}
-
-		return new RandomAccessInputStream(inputStream);
 	}
 
 	private static void _write(
@@ -764,7 +725,7 @@ public class ServletResponseUtil {
 					httpServletRequest, httpServletResponse, fileName,
 					contentType, null, fullRange);
 
-				_copyRange(
+				_copyRangeSkipping(
 					inputStream, outputStream, fullRange.getStart(),
 					fullRange.getLength());
 			}
@@ -784,7 +745,7 @@ public class ServletResponseUtil {
 				httpServletResponse.setStatus(
 					HttpServletResponse.SC_PARTIAL_CONTENT);
 
-				_copyRange(
+				_copyRangeSkipping(
 					inputStream, outputStream, range.getStart(),
 					range.getLength());
 			}
@@ -811,14 +772,6 @@ public class ServletResponseUtil {
 				httpServletResponse.setStatus(
 					HttpServletResponse.SC_PARTIAL_CONTENT);
 
-				boolean sequentialRangeList = _isSequentialRangeList(ranges);
-
-				if (!sequentialRangeList) {
-					inputStream = _toRandomAccessInputStream(inputStream);
-				}
-
-				Range previousRange = null;
-
 				for (Range curRange : ranges) {
 					servletOutputStream.println();
 					servletOutputStream.println(
@@ -830,25 +783,37 @@ public class ServletResponseUtil {
 							curRange.getContentRange());
 					servletOutputStream.println();
 
-					long start = curRange.getStart();
-
-					if (sequentialRangeList) {
-						if (previousRange != null) {
-							start -= previousRange.getEnd() + 1;
-						}
-
-						previousRange = curRange;
+					if (inputStream instanceof ByteArrayInputStream) {
+						_copyRangeFromPosition(
+							(ByteArrayInputStream)inputStream,
+							servletOutputStream, curRange);
 					}
+					else if (inputStream instanceof FileInputStream) {
+						_copyRangeFromPosition(
+							(FileInputStream)inputStream, servletOutputStream,
+							curRange);
+					}
+					else if (inputStream instanceof RandomAccessInputStream) {
+						_copyRangeFromPosition(
+							(RandomAccessInputStream)inputStream,
+							servletOutputStream, curRange);
+					}
+					else {
+						inputStream = new RandomAccessInputStream(inputStream);
 
-					_copyRange(
-						inputStream, servletOutputStream, start,
-						curRange.getLength());
+						_copyRangeFromPosition(
+							(RandomAccessInputStream)inputStream,
+							servletOutputStream, curRange);
+					}
 				}
 
 				servletOutputStream.println();
 				servletOutputStream.println(
 					StringPool.DOUBLE_DASH + boundary + StringPool.DOUBLE_DASH);
 			}
+		}
+		catch (IOException ioException) {
+			_checkSocketException(ioException);
 		}
 		finally {
 			StreamUtil.cleanUp(true, inputStream);

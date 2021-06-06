@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +45,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +110,55 @@ public class ModulesStructureTest {
 					_checkoutPrivateAppsDirs, StringUtil.split(dirs));
 			}
 		}
+	}
+
+	@Test
+	public void testScanArchivedProjects() throws IOException {
+		Path archivedPath = _modulesDirPath.resolve("apps/archived");
+
+		if (!Files.exists(archivedPath)) {
+			return;
+		}
+
+		Files.walkFileTree(
+			archivedPath, EnumSet.noneOf(FileVisitOption.class), 2,
+			new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult visitFile(
+						Path path, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					if (Files.isDirectory(path)) {
+						return FileVisitResult.CONTINUE;
+					}
+
+					String fileName = String.valueOf(path.getFileName());
+
+					if (!StringUtil.startsWith(fileName, ".lfrbuild-portal")) {
+						return FileVisitResult.CONTINUE;
+					}
+
+					if (StringUtil.endsWith(fileName, "-deprecated")) {
+						return FileVisitResult.CONTINUE;
+					}
+
+					Files.move(
+						path,
+						path.resolveSibling(".lfrbuild-portal-deprecated"));
+
+					StringBundler sb = new StringBundler(3);
+
+					sb.append("Renamed archived module build marker to ");
+					sb.append("'.lfrbuild-portal-deprecated' ");
+					sb.append(path);
+
+					Assert.fail(sb.toString());
+
+					return FileVisitResult.CONTINUE;
+				}
+
+			});
 	}
 
 	@Test
@@ -799,6 +850,25 @@ public class ModulesStructureTest {
 		return ":" + projectPathPrefix;
 	}
 
+	private boolean _hasGitCommitMarkerFile(Path dirPath) {
+		while (dirPath != null) {
+			if (dirPath.equals(_modulesDirPath)) {
+				return false;
+			}
+
+			Path gitRepoPath = dirPath.resolve(
+				"git-commit-" + String.valueOf(dirPath.getFileName()));
+
+			if (Files.exists(gitRepoPath)) {
+				return true;
+			}
+
+			dirPath = dirPath.getParent();
+		}
+
+		return false;
+	}
+
 	private boolean _isEmptyGitRepo(Path dirPath) {
 		File dir = dirPath.toFile();
 
@@ -921,6 +991,7 @@ public class ModulesStructureTest {
 			name.equals("com.liferay.arquillian.extension.junit.bridge") ||
 			name.equals("com.liferay.gradle.plugins.defaults") ||
 			name.equals("com.liferay.portal.cache.test.util") ||
+			name.equals("com.liferay.poshi.core") ||
 			name.equals("com.liferay.whip") ||
 			!name.startsWith("com.liferay.")) {
 
@@ -929,7 +1000,7 @@ public class ModulesStructureTest {
 
 		if (_isInModulesRootDir(dirPath, "sdk", "third-party", "util") ||
 			Files.exists(dirPath.resolve(".lfrbuild-ci")) ||
-			_isInGitRepoReadOnly(dirPath) ||
+			_hasGitCommitMarkerFile(dirPath) || _isInGitRepoReadOnly(dirPath) ||
 			_isInPrivateModulesCheckoutDir(dirPath)) {
 
 			return false;

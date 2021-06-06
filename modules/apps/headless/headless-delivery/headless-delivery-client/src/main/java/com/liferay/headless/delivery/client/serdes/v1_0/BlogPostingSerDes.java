@@ -17,6 +17,7 @@ package com.liferay.headless.delivery.client.serdes.v1_0;
 import com.liferay.headless.delivery.client.dto.v1_0.BlogPosting;
 import com.liferay.headless.delivery.client.dto.v1_0.CustomField;
 import com.liferay.headless.delivery.client.dto.v1_0.RelatedContent;
+import com.liferay.headless.delivery.client.dto.v1_0.RenderedContent;
 import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategoryBrief;
 import com.liferay.headless.delivery.client.json.BaseJSONParser;
 
@@ -318,6 +319,26 @@ public class BlogPostingSerDes {
 			sb.append("]");
 		}
 
+		if (blogPosting.getRenderedContents() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"renderedContents\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < blogPosting.getRenderedContents().length; i++) {
+				sb.append(String.valueOf(blogPosting.getRenderedContents()[i]));
+
+				if ((i + 1) < blogPosting.getRenderedContents().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (blogPosting.getSiteId() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -556,6 +577,15 @@ public class BlogPostingSerDes {
 				String.valueOf(blogPosting.getRelatedContents()));
 		}
 
+		if (blogPosting.getRenderedContents() == null) {
+			map.put("renderedContents", null);
+		}
+		else {
+			map.put(
+				"renderedContents",
+				String.valueOf(blogPosting.getRenderedContents()));
+		}
+
 		if (blogPosting.getSiteId() == null) {
 			map.put("siteId", null);
 		}
@@ -729,6 +759,19 @@ public class BlogPostingSerDes {
 						));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "renderedContents")) {
+				if (jsonParserFieldValue != null) {
+					blogPosting.setRenderedContents(
+						Stream.of(
+							toStrings((Object[])jsonParserFieldValue)
+						).map(
+							object -> RenderedContentSerDes.toDTO(
+								(String)object)
+						).toArray(
+							size -> new RenderedContent[size]
+						));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "siteId")) {
 				if (jsonParserFieldValue != null) {
 					blogPosting.setSiteId(
@@ -765,10 +808,6 @@ public class BlogPostingSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -797,7 +836,7 @@ public class BlogPostingSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -833,7 +872,7 @@ public class BlogPostingSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

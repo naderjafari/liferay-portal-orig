@@ -154,6 +154,10 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return logoId;
 		}
 
@@ -379,7 +383,7 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 	 * @see   #getVirtualHostnames()
 	 */
 	@Override
-	public void setVirtualHostnames(TreeMap virtualHostnames) {
+	public void setVirtualHostnames(TreeMap<String, String> virtualHostnames) {
 		_virtualHostnames = virtualHostnames;
 	}
 
@@ -392,6 +396,9 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 			controlPanel = group.isControlPanel();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		if (controlPanel) {

@@ -14,7 +14,6 @@
 
 package com.liferay.segments.asah.connector.internal.messaging;
 
-import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -100,17 +99,18 @@ public class IndividualSegmentsChecker {
 
 		Stream<String> stream = individualSegmentIds.stream();
 
-		long[] segmentsEntryIds = stream.map(
-			segmentsEntryKey -> _segmentsEntryLocalService.fetchSegmentsEntry(
-				serviceContext.getScopeGroupId(), segmentsEntryKey, true)
-		).filter(
-			Objects::nonNull
-		).mapToLong(
-			SegmentsEntryModel::getSegmentsEntryId
-		).toArray();
-
 		_asahSegmentsEntryCache.putSegmentsEntryIds(
-			individualPK, segmentsEntryIds);
+			individualPK,
+			stream.map(
+				segmentsEntryKey ->
+					_segmentsEntryLocalService.fetchSegmentsEntry(
+						serviceContext.getScopeGroupId(), segmentsEntryKey,
+						true)
+			).filter(
+				Objects::nonNull
+			).mapToLong(
+				SegmentsEntryModel::getSegmentsEntryId
+			).toArray());
 	}
 
 	@Activate
@@ -249,22 +249,12 @@ public class IndividualSegmentsChecker {
 	}
 
 	private void _checkIndividualSegments() {
-		ActionableDynamicQuery actionableDynamicQuery =
-			_companyLocalService.getActionableDynamicQuery();
-
-		actionableDynamicQuery.setPerformActionMethod(
-			(Company company) -> {
-				if (AsahUtil.isAnalyticsEnabled(company.getCompanyId())) {
-					_checkIndividualSegments(company.getCompanyId());
+		_companyLocalService.forEachCompanyId(
+			companyId -> {
+				if (AsahUtil.isAnalyticsEnabled(companyId)) {
+					_checkIndividualSegments(companyId);
 				}
 			});
-
-		try {
-			actionableDynamicQuery.performActions();
-		}
-		catch (PortalException portalException) {
-			_log.error("Unable to check individual segments", portalException);
-		}
 	}
 
 	private void _checkIndividualSegments(long companyId) {

@@ -16,13 +16,16 @@ package com.liferay.portal.cache.internal.dao.orm;
 
 import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.cache.PortalCache;
+import com.liferay.portal.kernel.cluster.ClusterExecutor;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.registry.BasicRegistryImpl;
 import com.liferay.registry.RegistryUtil;
 
@@ -32,12 +35,19 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
  * @author Tina Tian
  */
 public class EntityCacheImplTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -63,11 +73,23 @@ public class EntityCacheImplTest {
 	public void testNotifyPortalCacheRemovedPortalCacheName() {
 		EntityCacheImpl entityCacheImpl = new EntityCacheImpl();
 
-		entityCacheImpl.setMultiVMPool(
-			(MultiVMPool)ProxyUtil.newProxyInstance(
-				_classLoader, new Class<?>[] {MultiVMPool.class},
-				new MultiVMPoolInvocationHandler(_classLoader, true)));
-		entityCacheImpl.setProps(_props);
+		MultiVMPool multiVMPool = (MultiVMPool)ProxyUtil.newProxyInstance(
+			_classLoader, new Class<?>[] {MultiVMPool.class},
+			new MultiVMPoolInvocationHandler(_classLoader, true));
+
+		ReflectionTestUtil.setFieldValue(
+			entityCacheImpl, "_clusterExecutor",
+			ProxyFactory.newDummyInstance(ClusterExecutor.class));
+		ReflectionTestUtil.setFieldValue(
+			entityCacheImpl, "_multiVMPool", multiVMPool);
+		ReflectionTestUtil.setFieldValue(entityCacheImpl, "_props", _props);
+
+		FinderCacheImpl finderCacheImpl = new FinderCacheImpl();
+
+		ReflectionTestUtil.setFieldValue(
+			entityCacheImpl, "_finderCacheImpl", finderCacheImpl);
+		ReflectionTestUtil.setFieldValue(
+			finderCacheImpl, "_multiVMPool", multiVMPool);
 
 		entityCacheImpl.activate();
 
@@ -93,14 +115,15 @@ public class EntityCacheImplTest {
 		_testPutAndGetNullModel(true);
 	}
 
-	private void _testPutAndGetNullModel(boolean serialized) throws Exception {
+	private void _testPutAndGetNullModel(boolean serialized) {
 		EntityCacheImpl entityCacheImpl = new EntityCacheImpl();
 
-		entityCacheImpl.setMultiVMPool(
-			(MultiVMPool)ProxyUtil.newProxyInstance(
+		ReflectionTestUtil.setFieldValue(
+			entityCacheImpl, "_multiVMPool",
+			ProxyUtil.newProxyInstance(
 				_classLoader, new Class<?>[] {MultiVMPool.class},
 				new MultiVMPoolInvocationHandler(_classLoader, serialized)));
-		entityCacheImpl.setProps(_props);
+		ReflectionTestUtil.setFieldValue(entityCacheImpl, "_props", _props);
 
 		entityCacheImpl.activate();
 

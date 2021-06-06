@@ -17,9 +17,11 @@ package com.liferay.site.my.sites.web.internal.display.context;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -34,6 +36,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portlet.usersadmin.search.GroupSearch;
 import com.liferay.portlet.usersadmin.search.GroupSearchTerms;
+import com.liferay.site.my.sites.web.internal.constants.MySitesPortletKeys;
 import com.liferay.site.my.sites.web.internal.servlet.taglib.util.SiteActionDropdownItemsProvider;
 import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 
@@ -68,8 +71,8 @@ public class SiteMySitesDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_renderRequest, "displayStyle", "descriptive");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest, MySitesPortletKeys.MY_SITES, "descriptive");
 
 		return _displayStyle;
 	}
@@ -145,6 +148,10 @@ public class SiteMySitesDisplayContext {
 	}
 
 	public int getGroupUsersCounts(long groupId) {
+		if (_groupUsersCounts != null) {
+			return GetterUtil.getInteger(_groupUsersCounts.get(groupId));
+		}
+
 		ThemeDisplay themeDisplay = (ThemeDisplay)_renderRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
@@ -153,11 +160,11 @@ public class SiteMySitesDisplayContext {
 		long[] groupIds = ListUtil.toLongArray(
 			groupSearch.getResults(), Group.GROUP_ID_ACCESSOR);
 
-		Map<Long, Integer> groupUsersCounts = UserLocalServiceUtil.searchCounts(
+		_groupUsersCounts = UserLocalServiceUtil.searchCounts(
 			themeDisplay.getCompanyId(), WorkflowConstants.STATUS_APPROVED,
 			groupIds);
 
-		return GetterUtil.getInteger(groupUsersCounts.get(groupId));
+		return GetterUtil.getInteger(_groupUsersCounts.get(groupId));
 	}
 
 	public List<NavigationItem> getNavigationItems() {
@@ -204,12 +211,13 @@ public class SiteMySitesDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("tabs1", getTabs1());
-		portletURL.setParameter("displayStyle", getDisplayStyle());
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setTabs1(
+			getTabs1()
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).build();
 	}
 
 	public String getTabs1() {
@@ -234,6 +242,7 @@ public class SiteMySitesDisplayContext {
 
 	private String _displayStyle;
 	private GroupSearch _groupSearch;
+	private Map<Long, Integer> _groupUsersCounts;
 	private final HttpServletRequest _httpServletRequest;
 	private String _orderByCol;
 	private String _orderByType;

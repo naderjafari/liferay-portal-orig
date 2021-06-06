@@ -793,6 +793,7 @@ definition {
 
 	@priority = "5"
 	test UnpublishAndDeleteUploadedDefinition {
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "WorkflowUsecase#UnpublishAndDeleteUploadedDefinition";
 
 		ApplicationsMenu.gotoPortlet(
@@ -933,21 +934,13 @@ definition {
 
 		Button.clickPublish();
 
-		if (IsElementPresent(locator1 = "KaleoDesignerEditWorkflow#SOURCE_KALEO_XML_TAB")) {
-			AssertTextEquals.assertPartialText(
-				locator1 = "Message#ERROR_1",
-				value1 = "Please enter valid content.");
-		}
-		else {
-			AssertTextEquals.assertPartialText(
-				locator1 = "Message#ERROR_1",
-				value1 = "Please enter a valid definition before publishing.");
-		}
+		AssertTextEquals.assertPartialText(
+			locator1 = "Message#ERROR_1",
+			value1 = "Please enter valid content.");
 	}
 
 	@priority = "3"
 	test ViewTaskCount {
-
 		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
@@ -989,6 +982,8 @@ definition {
 				panel = "Site Administration",
 				portlet = "Blogs");
 
+			Pause(locator1 = "3000");
+
 			Blogs.addWithWorkflow(
 				entryContent = "Blogs Entry Content ${number}",
 				entrySubtitle = "Subtitle ${number}",
@@ -1016,13 +1011,13 @@ definition {
 
 		Pagination.viewResults(results = "Showing 1 to 6 of 6 entries.");
 
-		AssertElementPresent(locator1 = "xpath=(//div[contains(@id,'workflowTasksSearchContainer')]//tr[contains(@class,'entry-display-style')])[6]");
+		AssertElementPresent(locator1 = "xpath=(//div[contains(@id,'workflowTasksSearchContainer')]//tr[@data-qa-id])[6]");
 
 		Pagination.changePagination(itemsPerPage = "4");
 
 		Pagination.viewResults(results = "Showing 1 to 4 of 6 entries.");
 
-		AssertElementNotPresent(locator1 = "xpath=(//div[contains(@id,'workflowTasksSearchContainer')]//tr[contains(@class,'entry-display-style')])[6]");
+		AssertElementNotPresent(locator1 = "xpath=(//div[contains(@id,'workflowTasksSearchContainer')]//tr[@data-qa-id])[6]");
 	}
 
 	@priority = "3"
@@ -1208,6 +1203,8 @@ definition {
 				panel = "Site Administration",
 				portlet = "Blogs");
 
+			Pause(locator1 = "3000");
+
 			Blogs.addWithWorkflow(
 				entryContent = "User ${n} Blog Content Approved",
 				entrySubtitle = "User ${n} Blog Subtitle Approved",
@@ -1219,6 +1216,8 @@ definition {
 				category = "Content &amp; Data",
 				panel = "Site Administration",
 				portlet = "Blogs");
+
+			Pause(locator1 = "3000");
 
 			Blogs.addWithWorkflow(
 				entryContent = "User ${n} Blog Content Pending",
@@ -1316,7 +1315,7 @@ definition {
 		Workflow.webContentGoToAddCP();
 
 		WebContent.addWithWorkflowCP(
-			webContentContent = '''&lt;script&gt;alert(123);&lt;/script&gt;''',
+			webContentContent = '''<script>alert(123);</script>''',
 			webContentTitle = "WC WebContent Title");
 
 		WebContent.viewWithWorkflowCP(
@@ -1326,14 +1325,6 @@ definition {
 			workflowTask = "Review");
 
 		AssertAlertNotPresent();
-
-		var actualScript = '''<script>alert(123);</script>''';
-
-		var escapedScript = '''&lt;script&gt;alert(123);&lt;/script&gt;''';
-
-		AssertHTMLSourceTextNotPresent(value1 = "${actualScript}");
-
-		AssertHTMLSourceTextPresent(value1 = "${escapedScript}");
 
 		UserBar.gotoDropdownItem(dropdownItem = "My Workflow Tasks");
 
@@ -1385,14 +1376,6 @@ definition {
 			webContentTitle = "WC WebContent Title");
 
 		AssertAlertNotPresent();
-
-		var actualScript = '''<script>alert(123);</script>''';
-
-		var escapedScript = '''&lt;script&gt;alert(123);&lt;/script&gt;''';
-
-		AssertHTMLSourceTextNotPresent(value1 = "${actualScript}");
-
-		AssertHTMLSourceTextPresent(value1 = "${escapedScript}");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Sites",

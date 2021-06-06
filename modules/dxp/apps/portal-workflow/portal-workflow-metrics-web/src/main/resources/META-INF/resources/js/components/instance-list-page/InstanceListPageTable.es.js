@@ -12,23 +12,32 @@
 import ClayTable from '@clayui/table';
 import React from 'react';
 
-import {Item} from './InstanceListPageItem.es';
+import ListHeadItem from '../../shared/components/list/ListHeadItem.es';
+import Item from './InstanceListPageItem.es';
 
 const Table = ({items, totalCount}) => {
 	return (
 		<ClayTable>
 			<ClayTable.Head>
 				<ClayTable.Row>
-					<ClayTable.Cell headingCell style={{width: '7%'}} />
-					<ClayTable.Cell headingCell style={{width: '8%'}}>
+					<ClayTable.Cell headingCell style={{width: '5%'}} />
+
+					<ClayTable.Cell headingCell style={{width: '5%'}}>
 						{Liferay.Language.get('id')}
 					</ClayTable.Cell>
 
-					<ClayTable.Cell headingCell style={{width: '17%'}}>
+					<ClayTable.Cell headingCell style={{width: '14%'}}>
+						<ListHeadItem
+							name="dateOverdue"
+							title={Liferay.Language.get('due-date')}
+						/>
+					</ClayTable.Cell>
+
+					<ClayTable.Cell headingCell style={{width: '13%'}}>
 						{Liferay.Language.get('item-subject')}
 					</ClayTable.Cell>
 
-					<ClayTable.Cell headingCell style={{width: '18%'}}>
+					<ClayTable.Cell headingCell style={{width: '14%'}}>
 						{Liferay.Language.get('process-step')}
 					</ClayTable.Cell>
 
@@ -36,11 +45,15 @@ const Table = ({items, totalCount}) => {
 						{Liferay.Language.get('assignee')}
 					</ClayTable.Cell>
 
-					<ClayTable.Cell headingCell style={{width: '17%'}}>
+					<ClayTable.Cell headingCell style={{width: '14%'}}>
 						{Liferay.Language.get('created-by')}
 					</ClayTable.Cell>
-					<ClayTable.Cell headingCell style={{width: '18%'}}>
-						{Liferay.Language.get('creation-date')}
+
+					<ClayTable.Cell headingCell style={{width: '16%'}}>
+						<ListHeadItem
+							name="dateCreated"
+							title={Liferay.Language.get('creation-date')}
+						/>
 					</ClayTable.Cell>
 
 					<ClayTable.Cell headingCell style={{width: '5%'}} />

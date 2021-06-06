@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("AdaptedImage")
+@GraphQLName(
+	description = "An array of images in several resolutions and sizes, created by the Adaptive Media framework.",
+	value = "AdaptedImage"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "AdaptedImage")
-public class AdaptedImage {
+public class AdaptedImage implements Serializable {
 
 	public static AdaptedImage toDTO(String json) {
 		return ObjectMapperUtil.readValue(AdaptedImage.class, json);
@@ -77,7 +82,9 @@ public class AdaptedImage {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String contentUrl;
 
-	@Schema
+	@Schema(
+		description = "Optional field with the content of the image in Base64, can be embedded with nestedFields."
+	)
 	public String getContentValue() {
 		return contentValue;
 	}
@@ -101,7 +108,9 @@ public class AdaptedImage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Optional field with the content of the image in Base64, can be embedded with nestedFields."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentValue;
 
@@ -326,6 +335,7 @@ public class AdaptedImage {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.AdaptedImage",
 		name = "x-class-name"
 	)
@@ -361,7 +371,7 @@ public class AdaptedImage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -400,7 +410,7 @@ public class AdaptedImage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

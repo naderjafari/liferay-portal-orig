@@ -19,15 +19,13 @@ import {parse} from '../../shared/components/router/queryString.es';
 import SearchField from '../../shared/components/search-field/SearchField.es';
 import {useFetch} from '../../shared/hooks/useFetch.es';
 import {usePageTitle} from '../../shared/hooks/usePageTitle.es';
-import {Body} from './ProcessListPageBody.es';
+import Body from './ProcessListPageBody.es';
 
 const Header = ({page, pageSize, search, sort, totalCount}) => {
 	return (
 		<>
 			<ClayManagementToolbar className="mb-0">
-				<div className="navbar-form-autofit">
-					<SearchField disabled={!search && totalCount === 0} />
-				</div>
+				<SearchField disabled={!search && totalCount === 0} />
 			</ClayManagementToolbar>
 
 			{search && (
@@ -48,7 +46,7 @@ const Header = ({page, pageSize, search, sort, totalCount}) => {
 	);
 };
 
-const ProcessListPage = ({history, query, routeParams}) => {
+function ProcessListPage({history, query, routeParams}) {
 	if (history.location.pathname === '/') {
 		history.replace(`/processes/20/1/overdueInstanceCount:desc`);
 	}
@@ -56,7 +54,7 @@ const ProcessListPage = ({history, query, routeParams}) => {
 	usePageTitle(Liferay.Language.get('metrics'));
 
 	const {page, pageSize, sort} = routeParams;
-	const {search = null} = parse(query);
+	const {search = ''} = parse(query);
 
 	const {data, fetchData} = useFetch({
 		params: {
@@ -93,7 +91,7 @@ const ProcessListPage = ({history, query, routeParams}) => {
 			<ProcessListPage.Body {...data} filtered={search} />
 		</PromisesResolver>
 	);
-};
+}
 
 ProcessListPage.Body = Body;
 ProcessListPage.Header = Header;

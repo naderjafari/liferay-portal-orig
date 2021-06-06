@@ -364,6 +364,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 		}
@@ -647,11 +650,7 @@ public class LocalizationImpl implements Localization {
 
 	@Override
 	public String getLocalizedName(String name, String languageId) {
-		return name.concat(
-			StringPool.UNDERLINE
-		).concat(
-			languageId
-		);
+		return StringBundler.concat(name, StringPool.UNDERLINE, languageId);
 	}
 
 	@Override
@@ -1007,9 +1006,6 @@ public class LocalizationImpl implements Localization {
 			if ((availableLocales != null) &&
 				availableLocales.contains(requestedLanguageId)) {
 
-				availableLocales = StringUtil.removeFromList(
-					availableLocales, requestedLanguageId);
-
 				UnsyncStringWriter unsyncStringWriter =
 					new UnsyncStringWriter();
 
@@ -1023,8 +1019,12 @@ public class LocalizationImpl implements Localization {
 				xmlStreamWriter.writeStartElement(_ROOT);
 
 				if (localized) {
+					availableLocales = StringUtil.removeFromList(
+						availableLocales, requestedLanguageId);
+
 					xmlStreamWriter.writeAttribute(
 						_AVAILABLE_LOCALES, availableLocales);
+
 					xmlStreamWriter.writeAttribute(
 						_DEFAULT_LOCALE, defaultLanguageId);
 				}
@@ -1058,6 +1058,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 
@@ -1066,6 +1069,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamWriter.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 		}
@@ -1301,6 +1307,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 
@@ -1309,6 +1318,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamWriter.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 		}
@@ -1322,6 +1334,9 @@ public class LocalizationImpl implements Localization {
 				xmlStreamWriter.close();
 			}
 			catch (XMLStreamException xmlStreamException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(xmlStreamException, xmlStreamException);
+				}
 			}
 		}
 	}
@@ -1405,6 +1420,9 @@ public class LocalizationImpl implements Localization {
 					value.getBytes(StringPool.ISO_8859_1), StringPool.UTF8);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 		}
 
@@ -1472,6 +1490,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 		}

@@ -47,15 +47,19 @@
 		</span>
 	</c:when>
 	<c:otherwise>
-
-		<%
-		Map<String, Object> anchorData = HashMapBuilder.<String, Object>put(
-			"redirect", String.valueOf(PortalUtil.isLoginRedirectRequired(request))
-		).build();
-		%>
-
 		<span class="sign-in text-default" role="presentation">
-			<aui:icon cssClass="sign-in text-default" data="<%= anchorData %>" image="user" label="sign-in" markupView="lexicon" url="<%= themeDisplay.getURLSignIn() %>" />
+			<aui:icon
+				cssClass="sign-in text-default"
+				data='<%=
+					HashMapBuilder.<String, Object>put(
+						"redirect", String.valueOf(PortalUtil.isLoginRedirectRequired(request))
+					).build()
+				%>'
+				image="user"
+				label="sign-in"
+				markupView="lexicon"
+				url="<%= themeDisplay.getURLSignIn() %>"
+			/>
 		</span>
 
 		<aui:script sandbox="<%= true %>">
@@ -96,10 +100,10 @@
 					loading = true;
 
 					Liferay.Util.fetch(modalSignInURL)
-						.then(function (response) {
+						.then((response) => {
 							return response.text();
 						})
-						.then(function (response) {
+						.then((response) => {
 							if (!loading) {
 								return;
 							}
@@ -118,7 +122,7 @@
 								setModalContent(response);
 							}
 						})
-						.catch(function () {
+						.catch(() => {
 							redirect = true;
 						});
 				};
@@ -126,7 +130,7 @@
 				signInLink.addEventListener('mouseover', fetchModalSignIn);
 				signInLink.addEventListener('focus', fetchModalSignIn);
 
-				signInLink.addEventListener('click', function (event) {
+				signInLink.addEventListener('click', (event) => {
 					event.preventDefault();
 
 					if (redirect) {
@@ -151,6 +155,7 @@
 								setModalContent(html);
 							}
 						},
+						size: 'md',
 						title: '<liferay-ui:message key="sign-in" />',
 					});
 				});

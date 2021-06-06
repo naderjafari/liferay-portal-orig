@@ -35,7 +35,6 @@ import com.liferay.calendar.util.JCalendarUtil;
 import com.liferay.calendar.util.RecurrenceUtil;
 import com.liferay.calendar.workflow.constants.CalendarBookingWorkflowConstants;
 import com.liferay.layout.test.util.LayoutTestUtil;
-import com.liferay.petra.mail.MailEngine;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
@@ -63,8 +62,6 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManager;
 import com.liferay.portal.search.test.util.SearchTestRule;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.mail.MailMessage;
 import com.liferay.portal.test.mail.MailServiceTestUtil;
 import com.liferay.portal.test.rule.Inject;
@@ -79,8 +76,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -206,7 +201,7 @@ public class CalendarBookingLocalServiceTest {
 		_calendarBookingLocalService.checkCalendarBookings();
 
 		String mailMessageSubject = StringBundler.concat(
-			"Calendar: Event Reminder for ", StringPool.QUOTE,
+			"Calendar: Event Reminder for \"",
 			calendarBooking.getTitle(LocaleUtil.getSiteDefault()),
 			StringPool.QUOTE);
 
@@ -304,12 +299,12 @@ public class CalendarBookingLocalServiceTest {
 			CalendarBookingTestUtil.addChildCalendarBooking(
 				invintingCalendar, resourceCalendar);
 
-		long[] childCalendarIds = {
-			invitedCalendar.getCalendarId(), resourceCalendar.getCalendarId()
-		};
-
 		CalendarBookingTestUtil.addMasterCalendarBooking(
-			_user, invintingCalendar, childCalendarIds,
+			_user, invintingCalendar,
+			new long[] {
+				invitedCalendar.getCalendarId(),
+				resourceCalendar.getCalendarId()
+			},
 			firstChildCalendarBooking.getStartTime(),
 			firstChildCalendarBooking.getEndTime(), createServiceContext());
 
@@ -652,7 +647,7 @@ public class CalendarBookingLocalServiceTest {
 		Assert.assertNotNull(calendarBooking);
 
 		String mailMessageSubject = StringBundler.concat(
-			"Calendar: Event Update for ", StringPool.QUOTE,
+			"Calendar: Event Update for \"",
 			calendarBooking.getTitle(LocaleUtil.getSiteDefault()),
 			StringPool.QUOTE);
 
@@ -670,7 +665,7 @@ public class CalendarBookingLocalServiceTest {
 		Assert.assertNotNull(calendarBooking);
 
 		mailMessageSubject = StringBundler.concat(
-			"Calendar: Event Deletion for ", StringPool.QUOTE,
+			"Calendar: Event Deletion for \"",
 			calendarBooking.getTitle(LocaleUtil.getSiteDefault()),
 			StringPool.QUOTE);
 
@@ -1237,7 +1232,7 @@ public class CalendarBookingLocalServiceTest {
 				WorkflowConstants.ACTION_PUBLISH);
 
 		String mailMessageSubject = StringBundler.concat(
-			"Calendar: Event Notification for ", StringPool.QUOTE,
+			"Calendar: Event Notification for \"",
 			calendarBooking.getTitle(LocaleUtil.getSiteDefault()),
 			StringPool.QUOTE);
 
@@ -1465,7 +1460,7 @@ public class CalendarBookingLocalServiceTest {
 				WorkflowConstants.ACTION_PUBLISH);
 
 		String mailMessageSubject = StringBundler.concat(
-			"Calendar: Event Notification for ", StringPool.QUOTE,
+			"Calendar: Event Notification for \"",
 			calendarBooking.getTitle(LocaleUtil.getSiteDefault()),
 			StringPool.QUOTE);
 
@@ -1704,9 +1699,9 @@ public class CalendarBookingLocalServiceTest {
 		_calendarBookingLocalService.moveCalendarBookingToTrash(
 			_user.getUserId(), calendarBooking);
 
-		childCalendarBooking = getChildCalendarBooking(calendarBooking);
-
-		assertStatus(childCalendarBooking, WorkflowConstants.STATUS_IN_TRASH);
+		assertStatus(
+			getChildCalendarBooking(calendarBooking),
+			WorkflowConstants.STATUS_IN_TRASH);
 	}
 
 	@Test
@@ -1837,9 +1832,9 @@ public class CalendarBookingLocalServiceTest {
 			startTime + (Time.HOUR * 10), false, null, 0, null, 0, null,
 			serviceContext);
 
-		childCalendarBooking = getChildCalendarBooking(calendarBooking);
-
-		assertStatus(childCalendarBooking, WorkflowConstants.STATUS_PENDING);
+		assertStatus(
+			getChildCalendarBooking(calendarBooking),
+			WorkflowConstants.STATUS_PENDING);
 	}
 
 	@Test
@@ -1868,16 +1863,16 @@ public class CalendarBookingLocalServiceTest {
 		_calendarBookingLocalService.moveCalendarBookingToTrash(
 			_user.getUserId(), calendarBooking);
 
-		childCalendarBooking = getChildCalendarBooking(calendarBooking);
-
-		assertStatus(childCalendarBooking, WorkflowConstants.STATUS_IN_TRASH);
+		assertStatus(
+			getChildCalendarBooking(calendarBooking),
+			WorkflowConstants.STATUS_IN_TRASH);
 
 		_calendarBookingLocalService.restoreCalendarBookingFromTrash(
 			_user.getUserId(), calendarBooking.getCalendarBookingId());
 
-		childCalendarBooking = getChildCalendarBooking(calendarBooking);
-
-		assertStatus(childCalendarBooking, WorkflowConstants.STATUS_PENDING);
+		assertStatus(
+			getChildCalendarBooking(calendarBooking),
+			WorkflowConstants.STATUS_PENDING);
 	}
 
 	@Test
@@ -1998,7 +1993,7 @@ public class CalendarBookingLocalServiceTest {
 		_calendarBookingLocalService.checkCalendarBookings();
 
 		String mailMessageSubject = StringBundler.concat(
-			"Calendar: Event Reminder for ", StringPool.QUOTE,
+			"Calendar: Event Reminder for \"",
 			calendarBooking.getTitle(LocaleUtil.getSiteDefault()),
 			StringPool.QUOTE);
 
@@ -2684,10 +2679,8 @@ public class CalendarBookingLocalServiceTest {
 			calendarBooking.getSecondReminder(),
 			calendarBooking.getSecondReminderType(), serviceContext);
 
-		childCalendarBooking = getChildCalendarBooking(calendarBooking);
-
 		assertStatus(
-			childCalendarBooking,
+			getChildCalendarBooking(calendarBooking),
 			CalendarBookingWorkflowConstants.STATUS_MAYBE);
 	}
 
@@ -2857,10 +2850,8 @@ public class CalendarBookingLocalServiceTest {
 			childCalendarBooking.getSecondReminder(),
 			childCalendarBooking.getSecondReminderType(), serviceContext);
 
-		childCalendarBooking = getChildCalendarBooking(calendarBooking);
-
 		assertStatus(
-			childCalendarBooking,
+			getChildCalendarBooking(calendarBooking),
 			CalendarBookingWorkflowConstants.STATUS_MAYBE);
 	}
 
@@ -3221,8 +3212,9 @@ public class CalendarBookingLocalServiceTest {
 
 		MailMessage mailMessage = mailMessages.get(0);
 
-		Assert.assertEquals(
-			mailMessages.toString(), mailMessage.getBody(), expectedBody);
+		String body = mailMessage.getBody();
+
+		Assert.assertTrue(body.contains(expectedBody));
 	}
 
 	protected void assertMailSubjectCount(String messageSubject, int count) {
@@ -3357,27 +3349,21 @@ public class CalendarBookingLocalServiceTest {
 	}
 
 	private void _completeWorkflow(Group group) throws Exception {
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					MailEngine.class.getName(), Level.OFF)) {
+		for (WorkflowTask workflowTask : _getWorkflowTasks()) {
+			workflowTask = _workflowTaskManager.assignWorkflowTaskToUser(
+				group.getCompanyId(), TestPropsValues.getUserId(),
+				workflowTask.getWorkflowTaskId(), TestPropsValues.getUserId(),
+				StringPool.BLANK, null, null);
 
-			for (WorkflowTask workflowTask : _getWorkflowTasks()) {
-				workflowTask = _workflowTaskManager.assignWorkflowTaskToUser(
-					group.getCompanyId(), TestPropsValues.getUserId(),
-					workflowTask.getWorkflowTaskId(),
-					TestPropsValues.getUserId(), StringPool.BLANK, null, null);
+			Assert.assertEquals(
+				TestPropsValues.getUserId(), workflowTask.getAssigneeUserId());
 
-				Assert.assertEquals(
-					TestPropsValues.getUserId(),
-					workflowTask.getAssigneeUserId());
+			workflowTask = _workflowTaskManager.completeWorkflowTask(
+				group.getCompanyId(), TestPropsValues.getUserId(),
+				workflowTask.getWorkflowTaskId(), Constants.APPROVE,
+				StringPool.BLANK, null);
 
-				workflowTask = _workflowTaskManager.completeWorkflowTask(
-					group.getCompanyId(), TestPropsValues.getUserId(),
-					workflowTask.getWorkflowTaskId(), Constants.APPROVE,
-					StringPool.BLANK, null);
-
-				Assert.assertEquals(true, workflowTask.isCompleted());
-			}
+			Assert.assertEquals(true, workflowTask.isCompleted());
 		}
 	}
 

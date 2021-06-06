@@ -21,6 +21,8 @@ import com.liferay.portal.kernel.concurrent.DefaultNoticeableFuture;
 import com.liferay.portal.kernel.concurrent.NoticeableFuture;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.process.ProcessCallable;
 import com.liferay.portal.kernel.process.ProcessChannel;
 import com.liferay.portal.kernel.process.ProcessConfig;
@@ -123,7 +125,7 @@ public class LocalProcessExecutor implements ProcessExecutor {
 		}
 	}
 
-	private static String _buildThreadName(
+	private String _buildThreadName(
 		ProcessCallable<?> processCallable, List<String> arguments) {
 
 		StringBundler sb = new StringBundler((arguments.size() * 2) + 2);
@@ -143,7 +145,7 @@ public class LocalProcessExecutor implements ProcessExecutor {
 		return sb.toString();
 	}
 
-	private static <T> NoticeableFuture<T> _submit(
+	private <T> NoticeableFuture<T> _submit(
 		String threadName, Callable<T> callable) {
 
 		DefaultNoticeableFuture<T> defaultNoticeableFuture =
@@ -157,6 +159,9 @@ public class LocalProcessExecutor implements ProcessExecutor {
 
 		return defaultNoticeableFuture;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		LocalProcessExecutor.class);
 
 	private class SubprocessReactor<T extends Serializable>
 		implements Callable<T> {
@@ -214,6 +219,11 @@ public class LocalProcessExecutor implements ProcessExecutor {
 						break;
 					}
 					catch (StreamCorruptedException streamCorruptedException) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(
+								streamCorruptedException,
+								streamCorruptedException);
+						}
 
 						// Collecting bad header as log information
 
@@ -273,12 +283,12 @@ public class LocalProcessExecutor implements ProcessExecutor {
 									returnValue),
 								null));
 					}
-					catch (Throwable t) {
+					catch (Throwable throwable) {
 						_processLogConsumer.accept(
 							new LocalProcessLog(
 								ProcessLog.Level.ERROR,
 								"Unable to invoke generic process callable",
-								t));
+								throwable));
 					}
 				}
 			}
@@ -304,12 +314,13 @@ public class LocalProcessExecutor implements ProcessExecutor {
 				throw new ProcessException(
 					"Subprocess piping back ended prematurely", eofException);
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				_processLogConsumer.accept(
 					new LocalProcessLog(
-						ProcessLog.Level.ERROR, "Abort subprocess piping", t));
+						ProcessLog.Level.ERROR, "Abort subprocess piping",
+						throwable));
 
-				throw t;
+				throw throwable;
 			}
 			finally {
 				try {

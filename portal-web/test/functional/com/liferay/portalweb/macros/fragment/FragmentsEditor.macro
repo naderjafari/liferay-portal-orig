@@ -19,8 +19,6 @@ definition {
 	macro autocompleteFragmentHTML {
 		FragmentsEditor.typeHtmlEditor(content = "");
 
-		var htmlSnippet = '''<lfr-''';
-
 		Type.sendKeysAceEditor(
 			locator1 = "FragmentEditor#HTML_EDITOR_CONTENT",
 			value1 = "${htmlSnippet}");
@@ -90,6 +88,14 @@ definition {
 		Type.typeCodeMirrorEditorNoError(
 			locator1 = "FragmentEditor#JS_EDITOR",
 			value1 = "${content}");
+	}
+
+	macro waitForAutoSave {
+		Pause(locator1 = "1000");
+
+		AssertTextEquals(
+			locator1 = "FragmentEditor#AUTOSAVE_MESSAGE",
+			value1 = "Changes Saved");
 	}
 
 }

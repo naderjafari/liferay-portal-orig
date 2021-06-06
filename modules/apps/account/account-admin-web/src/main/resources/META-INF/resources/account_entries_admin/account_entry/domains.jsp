@@ -82,13 +82,13 @@ List<String> domains = accountEntryDisplay.getDomains();
 			modelVar="domain"
 		>
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="name"
 				value="<%= domain %>"
 			/>
 
 			<liferay-ui:search-container-column-text>
-				<a class="modify-link pull-right" data-rowId="<%= domain %>" href="javascript:;"><%= removeDomainIcon %></a>
+				<a class="float-right modify-link" data-rowId="<%= domain %>" href="javascript:;"><%= removeDomainIcon %></a>
 			</liferay-ui:search-container-column-text>
 		</liferay-ui:search-container-row>
 
@@ -112,7 +112,7 @@ List<String> domains = accountEntryDisplay.getDomains();
 
 	searchContainerContentBox.delegate(
 		'click',
-		function (event) {
+		(event) => {
 			var link = event.currentTarget;
 
 			var rowId = link.attr('data-rowId');
@@ -131,18 +131,18 @@ List<String> domains = accountEntryDisplay.getDomains();
 	var addDomainsIcon = document.getElementById('<portlet:namespace />addDomains');
 
 	if (addDomainsIcon) {
-		addDomainsIcon.addEventListener('click', function (event) {
+		addDomainsIcon.addEventListener('click', (event) => {
 			event.preventDefault();
 
 			Liferay.Util.openModal({
 				customEvents: [
 					{
 						name:
-							'<%= liferayPortletResponse.getNamespace() + "addDomains" %>',
+							'<%= liferayPortletResponse.getNamespace() %>addDomains',
 						onEvent: function (event) {
 							var newDomains = event.data.split(',');
 
-							newDomains.forEach(function (domain) {
+							newDomains.forEach((domain) => {
 								domain = domain.trim();
 
 								if (!domains.includes(domain)) {
@@ -150,7 +150,7 @@ List<String> domains = accountEntryDisplay.getDomains();
 
 									rowColumns.push(Liferay.Util.escape(domain));
 									rowColumns.push(
-										'<a class="modify-link pull-right" data-rowId="' +
+										'<a class="float-right modify-link" data-rowId="' +
 											domain +
 											'" href="javascript:;"><%= UnicodeFormatter.toString(removeDomainIcon) %></a>'
 									);
@@ -167,17 +167,18 @@ List<String> domains = accountEntryDisplay.getDomains();
 						},
 					},
 				],
-				id: '<%= liferayPortletResponse.getNamespace() + "addDomains" %>',
+				id: '<%= liferayPortletResponse.getNamespace() %>addDomains',
 				title: '<liferay-ui:message key="add-domain" />',
-
-				<%
-				PortletURL addDomainsURL = renderResponse.createRenderURL();
-
-				addDomainsURL.setParameter("mvcPath", "/account_entries_admin/account_entry/add_domains.jsp");
-				addDomainsURL.setWindowState(LiferayWindowState.POP_UP);
-				%>
-
-				url: '<%= addDomainsURL.toString() %>',
+				url:
+					'<%=
+						PortletURLBuilder.createRenderURL(
+							renderResponse
+						).setMVCPath(
+							"/account_entries_admin/account_entry/add_domains.jsp"
+						).setWindowState(
+							LiferayWindowState.POP_UP
+						).build()
+				%>',
 			});
 		});
 	}

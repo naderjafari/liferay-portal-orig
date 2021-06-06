@@ -277,11 +277,9 @@ public class JSONWebServiceActionsManagerImpl
 	public int registerService(
 		String contextName, String contextPath, Object service) {
 
-		JSONWebServiceRegistrator jsonWebServiceRegistrator =
-			new DefaultJSONWebServiceRegistrator();
-
 		return registerService(
-			contextName, contextPath, service, jsonWebServiceRegistrator);
+			contextName, contextPath, service,
+			new DefaultJSONWebServiceRegistrator());
 	}
 
 	@Override
@@ -473,20 +471,17 @@ public class JSONWebServiceActionsManagerImpl
 					" and method ", method, " for ", contextName));
 		}
 
-		String[] parameterNames =
-			jsonWebServiceActionParameters.getParameterNames();
-
 		JSONWebServiceActionConfig jsonWebServiceActionConfig =
 			_getJSONWebServiceActionConfig(
-				contextName, path, method, parameterNames);
+				contextName, path, method,
+				jsonWebServiceActionParameters.getParameterNames());
 
 		if ((jsonWebServiceActionConfig == null) &&
 			jsonWebServiceActionParameters.includeDefaultParameters()) {
 
-			parameterNames = jsonWebServiceActionParameters.getParameterNames();
-
 			jsonWebServiceActionConfig = _getJSONWebServiceActionConfig(
-				contextName, path, method, parameterNames);
+				contextName, path, method,
+				jsonWebServiceActionParameters.getParameterNames());
 		}
 
 		if (jsonWebServiceActionConfig == null) {
@@ -508,11 +503,8 @@ public class JSONWebServiceActionsManagerImpl
 		int offset = 0;
 
 		if (Validator.isNotNull(contextName)) {
-			String pathPrefix = StringPool.SLASH.concat(
-				contextName
-			).concat(
-				StringPool.PERIOD
-			);
+			String pathPrefix = StringBundler.concat(
+				StringPool.SLASH, contextName, StringPool.PERIOD);
 
 			if (path.startsWith(pathPrefix)) {
 				offset = pathPrefix.length();

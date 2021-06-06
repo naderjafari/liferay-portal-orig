@@ -38,6 +38,11 @@ definition {
 		else if ("${widgetName}" == "Blogs") {
 			var portletId = "com_liferay_blogs_web_portlet_BlogsPortlet";
 		}
+
+		else if ("${widgetName}" == "Blogs Aggregator") {
+			var portletId = "com_liferay_blogs_web_portlet_BlogsAgreggatorPortlet";
+		}
+
 		else if ("${widgetName}" == "Bookmarks") {
 			var portletId = "com_liferay_bookmarks_web_portlet_BookmarksPortlet";
 		}
@@ -55,6 +60,9 @@ definition {
 		}
 		else if ("${widgetName}" == "Documents and Media") {
 			var portletId = "com_liferay_document_library_web_portlet_DLPortlet";
+		}
+		else if ("${widgetName}" == "Form") {
+			var portletId = "com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormPortlet";
 		}
 		else if ("${widgetName}" == "Highest Rated Assets") {
 			var portletId = "com_liferay_asset_publisher_web_portlet_HighestRatedAssetsPortlet";
@@ -94,6 +102,9 @@ definition {
 		}
 		else if ("${widgetName}" == "Profile") {
 			var portletId = "com_liferay_contacts_web_portlet_ProfilePortlet";
+		}
+		else if ("${widgetName}" == "Questions") {
+			var portletId = "com_liferay_questions_web_internal_portlet_QuestionsPortlet";
 		}
 		else if ("${widgetName}" == "Related Assets") {
 			var portletId = "com_liferay_asset_publisher_web_portlet_RelatedAssetsPortlet";

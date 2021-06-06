@@ -25,9 +25,12 @@ import com.liferay.journal.util.comparator.ArticleVersionComparator;
 import com.liferay.journal.web.internal.constants.JournalWebConstants;
 import com.liferay.journal.web.internal.security.permission.resource.JournalArticlePermission;
 import com.liferay.journal.web.internal.servlet.taglib.util.JournalArticleActionDropdownItemsProvider;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -45,7 +48,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -87,6 +89,9 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 			return articleActionDropdownItemsProvider.getActionDropdownItems();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
@@ -107,27 +112,30 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 				return StringPool.BLANK;
 			}
 
-			String referringPortletResource = ParamUtil.getString(
-				_httpServletRequest, "referringPortletResource");
-
-			PortletURL editArticleURL = _renderResponse.createRenderURL();
-
-			editArticleURL.setParameter("mvcPath", "/edit_article.jsp");
-			editArticleURL.setParameter(
-				"redirect", themeDisplay.getURLCurrent());
-			editArticleURL.setParameter(
-				"referringPortletResource", referringPortletResource);
-			editArticleURL.setParameter(
-				"groupId", String.valueOf(_article.getGroupId()));
-			editArticleURL.setParameter(
-				"folderId", String.valueOf(_article.getFolderId()));
-			editArticleURL.setParameter("articleId", _article.getArticleId());
-			editArticleURL.setParameter(
-				"version", String.valueOf(_article.getVersion()));
-
-			return editArticleURL.toString();
+			return PortletURLBuilder.createRenderURL(
+				_renderResponse
+			).setMVCPath(
+				"/edit_article.jsp"
+			).setRedirect(
+				themeDisplay.getURLCurrent()
+			).setParameter(
+				"articleId", _article.getArticleId()
+			).setParameter(
+				"folderId", _article.getFolderId()
+			).setParameter(
+				"groupId", _article.getGroupId()
+			).setParameter(
+				"referringPortletResource",
+				ParamUtil.getString(
+					_httpServletRequest, "referringPortletResource")
+			).setParameter(
+				"version", _article.getVersion()
+			).buildString();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
@@ -165,7 +173,7 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 
 	@Override
 	public String getStickerCssClass() {
-		User user = _getOriginalAuthor();
+		User user = _getOriginalAuthorUser();
 
 		if (user == null) {
 			return StringPool.BLANK;
@@ -176,7 +184,7 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 
 	@Override
 	public String getStickerIcon() {
-		User user = _getOriginalAuthor();
+		User user = _getOriginalAuthorUser();
 
 		if (user == null) {
 			return StringPool.BLANK;
@@ -192,7 +200,7 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 	@Override
 	public String getStickerImageSrc() {
 		try {
-			User user = _getOriginalAuthor();
+			User user = _getOriginalAuthorUser();
 
 			if (user == null) {
 				return StringPool.BLANK;
@@ -205,6 +213,10 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 			return user.getPortraitURL(themeDisplay);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}
@@ -238,7 +250,7 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 		return HtmlUtil.escape(_article.getTitle(defaultLanguage));
 	}
 
-	private User _getOriginalAuthor() {
+	private User _getOriginalAuthorUser() {
 		List<JournalArticle> articles =
 			JournalArticleLocalServiceUtil.getArticles(
 				_article.getGroupId(), _article.getArticleId(), 0, 1,
@@ -248,6 +260,9 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 
 		return UserLocalServiceUtil.fetchUser(article.getUserId());
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JournalArticleVerticalCard.class);
 
 	private final JournalArticle _article;
 	private final AssetDisplayPageFriendlyURLProvider

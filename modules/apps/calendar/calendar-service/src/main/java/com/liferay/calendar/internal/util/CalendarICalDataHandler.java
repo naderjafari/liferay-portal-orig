@@ -34,6 +34,8 @@ import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.model.User;
@@ -115,15 +117,14 @@ public class CalendarICalDataHandler implements CalendarDataHandler {
 
 	@Override
 	public String exportCalendar(long calendarId) throws Exception {
-		int[] statuses = {
-			WorkflowConstants.STATUS_APPROVED,
-			CalendarBookingWorkflowConstants.STATUS_MAYBE,
-			WorkflowConstants.STATUS_PENDING
-		};
-
 		List<CalendarBooking> calendarBookings =
 			CalendarBookingServiceUtil.getCalendarBookings(
-				calendarId, statuses);
+				calendarId,
+				new int[] {
+					WorkflowConstants.STATUS_APPROVED,
+					CalendarBookingWorkflowConstants.STATUS_MAYBE,
+					WorkflowConstants.STATUS_PENDING
+				});
 
 		net.fortuna.ical4j.model.Calendar iCalCalendar = toICalCalendar(
 			calendarBookings);
@@ -462,6 +463,10 @@ public class CalendarICalDataHandler implements CalendarDataHandler {
 			NotificationType.parse(value);
 		}
 		catch (IllegalArgumentException illegalArgumentException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(illegalArgumentException, illegalArgumentException);
+			}
+
 			return false;
 		}
 
@@ -671,21 +676,18 @@ public class CalendarICalDataHandler implements CalendarDataHandler {
 		Company company = CompanyLocalServiceUtil.getCompany(
 			calendarBooking.getCompanyId());
 
-		String calendarBookingDescription = HtmlUtil.stripHtml(
-			StringUtil.replace(
-				calendarBooking.getDescription(user.getLocale()),
-				new String[] {"href=\"/", "src=\"/"},
-				new String[] {
-					"href=\"" +
-						company.getPortalURL(calendarBooking.getGroupId()) +
-							"/",
-					"src=\"" +
-						company.getPortalURL(calendarBooking.getGroupId()) + "/"
-				}));
+		String calendarBookingDescription = StringUtil.replace(
+			calendarBooking.getDescription(user.getLocale()),
+			new String[] {"href=\"/", "src=\"/"},
+			new String[] {
+				"href=\"" + company.getPortalURL(calendarBooking.getGroupId()) +
+					"/",
+				"src=\"" + company.getPortalURL(calendarBooking.getGroupId()) +
+					"/"
+			});
 
-		Description description = new Description(calendarBookingDescription);
-
-		propertyList.add(description);
+		propertyList.add(
+			new Description(HtmlUtil.stripHtml(calendarBookingDescription)));
 
 		XProperty xProperty = new XProperty(
 			"X-ALT-DESC", calendarBookingDescription);
@@ -899,6 +901,9 @@ public class CalendarICalDataHandler implements CalendarDataHandler {
 	private static final String _EXDATE_FORMAT = "%04d%02d%02dT%02d%02d%02dZ";
 
 	private static final String _RRULE = "RRULE:";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		CalendarICalDataHandler.class);
 
 	private static TimeZoneRegistry _timeZoneRegistry;
 

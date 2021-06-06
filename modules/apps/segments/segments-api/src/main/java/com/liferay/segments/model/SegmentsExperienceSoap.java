@@ -24,8 +24,10 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.segments.service.http.SegmentsExperienceServiceSoap}.
  *
  * @author Eduardo Garcia
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class SegmentsExperienceSoap implements Serializable {
 
 	public static SegmentsExperienceSoap toSoapModel(SegmentsExperience model) {
@@ -48,6 +50,7 @@ public class SegmentsExperienceSoap implements Serializable {
 		soapModel.setName(model.getName());
 		soapModel.setPriority(model.getPriority());
 		soapModel.setActive(model.isActive());
+		soapModel.setTypeSettings(model.getTypeSettings());
 		soapModel.setLastPublishDate(model.getLastPublishDate());
 
 		return soapModel;
@@ -251,6 +254,14 @@ public class SegmentsExperienceSoap implements Serializable {
 		_active = active;
 	}
 
+	public String getTypeSettings() {
+		return _typeSettings;
+	}
+
+	public void setTypeSettings(String typeSettings) {
+		_typeSettings = typeSettings;
+	}
+
 	public Date getLastPublishDate() {
 		return _lastPublishDate;
 	}
@@ -276,6 +287,7 @@ public class SegmentsExperienceSoap implements Serializable {
 	private String _name;
 	private int _priority;
 	private boolean _active;
+	private String _typeSettings;
 	private Date _lastPublishDate;
 
 }

@@ -22,14 +22,14 @@ import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.ServiceComponentLocalService;
 import com.liferay.portal.kernel.service.configuration.ServiceComponentConfiguration;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.spring.extender.internal.loader.ModuleResourceLoader;
+import com.liferay.portal.util.PropsValues;
 
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.List;
 import java.util.Properties;
 
@@ -52,10 +52,10 @@ public class ServiceConfigurationInitializer {
 		_classLoader = classLoader;
 		_portletConfiguration = portletConfiguration;
 		_serviceConfiguration = serviceConfiguration;
-
-		_serviceComponentConfiguration = new ModuleResourceLoader(bundle);
 		_resourceActions = resourceActions;
 		_serviceComponentLocalService = serviceComponentLocalService;
+
+		_serviceComponentConfiguration = new ModuleResourceLoader(bundle);
 	}
 
 	public void stop() {
@@ -126,26 +126,18 @@ public class ServiceConfigurationInitializer {
 
 	private void _readResourceActions() {
 		try {
-			String portlets = _portletConfiguration.get(
-				"service.configurator.portlet.ids");
+			_resourceActions.populateModelResources(
+				_classLoader,
+				StringUtil.split(
+					_portletConfiguration.get(
+						PropsKeys.RESOURCE_ACTIONS_CONFIGS)));
 
-			if (Validator.isNull(portlets)) {
-				_resourceActions.readAndCheck(
-					null, _classLoader,
+			if (!PropsValues.RESOURCE_ACTIONS_STRICT_MODE_ENABLED) {
+				_resourceActions.populatePortletResources(
+					_classLoader,
 					StringUtil.split(
 						_portletConfiguration.get(
 							PropsKeys.RESOURCE_ACTIONS_CONFIGS)));
-			}
-			else {
-				_resourceActions.read(
-					null, _classLoader,
-					StringUtil.split(
-						_portletConfiguration.get(
-							PropsKeys.RESOURCE_ACTIONS_CONFIGS)));
-
-				for (String portletId : StringUtil.split(portlets)) {
-					_resourceActions.check(portletId);
-				}
 			}
 		}
 		catch (Exception exception) {
@@ -159,15 +151,14 @@ public class ServiceConfigurationInitializer {
 	private void _registerConfiguration(
 		BundleContext bundleContext, Configuration configuration, String name) {
 
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("name", name);
-		properties.put(
-			"origin.bundle.symbolic.name", _bundle.getSymbolicName());
-
 		_serviceRegistrations.add(
 			bundleContext.registerService(
-				Configuration.class, configuration, properties));
+				Configuration.class, configuration,
+				HashMapDictionaryBuilder.<String, Object>put(
+					"name", name
+				).put(
+					"origin.bundle.symbolic.name", _bundle.getSymbolicName()
+				).build()));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

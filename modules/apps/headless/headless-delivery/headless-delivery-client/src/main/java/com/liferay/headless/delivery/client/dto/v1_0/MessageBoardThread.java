@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.MessageBoardThreadSerDes;
 
+import java.io.Serializable;
+
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
@@ -28,7 +30,7 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class MessageBoardThread implements Cloneable {
+public class MessageBoardThread implements Cloneable, Serializable {
 
 	public static MessageBoardThread toDTO(String json) {
 		return MessageBoardThreadSerDes.toDTO(json);
@@ -329,6 +331,27 @@ public class MessageBoardThread implements Cloneable {
 
 	protected String[] keywords;
 
+	public Boolean getLocked() {
+		return locked;
+	}
+
+	public void setLocked(Boolean locked) {
+		this.locked = locked;
+	}
+
+	public void setLocked(
+		UnsafeSupplier<Boolean, Exception> lockedUnsafeSupplier) {
+
+		try {
+			locked = lockedUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean locked;
+
 	public Long getMessageBoardSectionId() {
 		return messageBoardSectionId;
 	}
@@ -482,6 +505,27 @@ public class MessageBoardThread implements Cloneable {
 	}
 
 	protected Long siteId;
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public void setStatus(
+		UnsafeSupplier<String, Exception> statusUnsafeSupplier) {
+
+		try {
+			status = statusUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String status;
 
 	public Boolean getSubscribed() {
 		return subscribed;

@@ -1,0 +1,283 @@
+definition {
+
+	macro accessSegment {
+		var key_segmentName = "${segmentName}";
+
+		Click(locator1 = "ACSegments#SELECT_SEGMENT");
+	}
+
+	macro addSegmentField {
+		var key_SegmentField = "${segmentField}";
+
+		DragAndDrop.javaScriptDragAndDropToObject(
+			locator1 = "ACSegments#SEGMENT_CRITERION_ITEM",
+			locator2 = "ACSegments#SEGMENT_DROP_AREA");
+	}
+
+	macro addStaticMember {
+		var key_TableMember = "${tableMember}";
+
+		Click(locator1 = "ACSegments#ADD_MEMBERS_BUTTON");
+
+		ACSegments.searchSegment(findSegment = "${searchTerm}");
+
+		Click(locator1 = "ACSegments#TABLE_CHECKBOX");
+
+		Click(locator1 = "ACSegments#ADD_BUTTON");
+	}
+
+	macro cancelSegment {
+		Click(locator1 = "ACSegments#CANCEL_SEGMENT");
+	}
+
+	macro createDynamicSegment {
+		Click(locator1 = "ACSegments#CREATE_SEGMENT_BUTTON");
+
+		ACSegments.selectSegmentType(segmentType = "DYNAMIC");
+	}
+
+	macro createStaticSegment {
+		Click(locator1 = "ACSegments#CREATE_SEGMENT_BUTTON");
+
+		ACSegments.selectSegmentType(segmentType = "STATIC");
+	}
+
+	macro deleteSegment {
+		ACSegments.searchSegment(findSegment = "${searchTerm}");
+
+		Click(locator1 = "ACSegments#SEGMENT_ELLIPSES");
+
+		Click(locator1 = "ACSegments#DELETE_SEGMENT");
+
+		Click(locator1 = "ACSegments#CONFIRM_DELETION");
+	}
+
+	macro deleteSegmentCriterion {
+		Click(locator1 = "ACSegments#DELETE_SEGMENT_CRITERION");
+	}
+
+	macro duplicateSegmentCriterion {
+		Click(locator1 = "ACSegments#DUPLICATE_SEGMENT_CRITERION");
+	}
+
+	macro editDateCriterion {
+		var key_MonthInput = "${monthInput}";
+		var key_DayInput = "${dayInput}";
+		var key_YearInput = "${yearInput}";
+
+		Click(locator1 = "ACSegments#CALENDAR_INPUT");
+	}
+
+	macro editFormControlCriterion {
+		var key_Criterion = "${criterionName}";
+
+		var key_option = "${option}";
+
+		Click(locator1 = "ACSegments#FORM_CONTROL_CRITERION");
+
+		Click(locator1 = "ACSegments#FORM_CONTROL_CRITERION_OPTION");
+	}
+
+	macro editSegment {
+		if (!IsTextEqual.isPartialText(locator1 = "ACSegments#SEGMENT_LABEL", value1 = "SEGMENT")) {
+			ACSegments.searchSegment(findSegment = "${searchTerm}");
+
+			Click(locator1 = "ACSegments#SEGMENT_ELLIPSES");
+		}
+
+		Click(locator1 = "ACSegments#EDIT_SEGMENT");
+	}
+
+	macro editSessionCriterion {
+		echo("TODO");
+	}
+
+	macro editTextCriterion {
+		var key_TextInput = "${textInput}";
+
+		Type(
+			locator1 = "ACSegments#TEXT_INPUT",
+			value1 = "${textInput}");
+	}
+
+	macro editWebBehaviorCriterion {
+		var key_AtLeastMostOption = "${atLeastMost}";
+
+		Click(locator1 = "ACSegments#SELECT_BUTTON");
+
+		ACSegments.searchSegment(findSegment = "${searchTerm}");
+
+		Click(locator1 = "ACSegments#TABLE_CHECKBOX");
+
+		Click(locator1 = "ACSegments#ADD_BUTTON");
+
+		Select(
+			locator1 = "ACSegments#OPTION_SELECT",
+			value1 = "${atLeastMost}");
+	}
+
+	macro goToSidebarAttrributes {
+		var key_Criterion = "${criterion}";
+
+		Click(locator1 = "ACSegments#CRITERION_TYPE_DROPDOWN");
+
+		Click(
+			locator1 = "ACSegments#SELECT_CRITERION_TYPE",
+			value1 = "${criterion}");
+	}
+
+	macro includeAnonymous {
+		Check.checkToggleSwitch(locator1 = "ACSegments#ANONYMOUS_SWITCH");
+	}
+
+	macro nameSegment {
+		WaitForElementPresent(locator1 = "ACSegments#SEGMENT_CREATION_PAGE");
+
+		if (IsTextEqual.isPartialText(locator1 = "ACSegments#SEGMENT_LABEL", value1 = "DYNAMIC")) {
+			Click(locator1 = "ACSegments#EDIT_NAME_BUTTON");
+		}
+
+		Type.sendKeys(
+			locator1 = "ACSegments#NAME_FIELD",
+			value1 = "${segmentName}");
+
+		Click(locator1 = "ACSegments#SEGMENT_LABEL");
+	}
+
+	macro previewSegmentMembership {
+		Click(locator1 = "ACSegments#SEGMENT_MEMBERSHIP_BUTTON");
+	}
+
+	macro saveSegment {
+		Click(locator1 = "ACSegments#SAVE_SEGMENT");
+	}
+
+	macro searchSegment {
+		var key_SearchTerm = "${searchTerm}";
+
+		Type(
+			locator1 = "ACSegments#SEARCH_SEGMENT",
+			value1 = "${searchTerm}");
+	}
+
+	macro selectDocument {
+		var key_indexField = "${indexField}";
+
+		var key_titleName = "${titleName}";
+
+		Click(locator1 = "ACSegments#SELECT_BUTTON");
+
+		Click(locator1 = "ACSegments#SELECT_DOCUMENT");
+
+		Click(locator1 = "ACSegments#ADD_BUTTON");
+	}
+
+	macro selectSegmentType {
+		var key_SegmentType = "${segmentType}";
+
+		Click(locator1 = "ACSegments#SELECT_SEGMENT_TYPE");
+	}
+
+	macro setOccurence {
+		Click(locator1 = "ACSegments#OCCURENCE_INPUT");
+
+		Type(
+			locator1 = "ACSegments#OCCURENCE_INPUT",
+			value1 = "${occurenceNumber}");
+	}
+
+	macro viewActivePageCreationModel {
+		AssertTextEquals(
+			locator1 = "ACSegments#ACTIVE_PAGE",
+			value1 = "${pageNumber}");
+	}
+
+	macro viewDeletedCriteria {
+		AssertTextPresent(
+			locator1 = "ACSegments#DELETED_CRITERIA",
+			value1 = "Drag and drop criterion from the right to add rules.");
+	}
+
+	macro viewDuplicatedCriteria {
+		var i = "1";
+
+		while ("${i}" != "${totalCriteriaCount}") {
+			var i = ${i} + 1;
+
+			AssertElementPresent(locator1 = "ACSegments#DUPLICATED_CRITERIA");
+		}
+	}
+
+	macro viewEditorLabel {
+		AssertTextPresent(
+			locator1 = "ACSegments#EDITOR_LABEL",
+			value1 = "${labelName}");
+	}
+
+	macro viewIncludeAnonymousLabel {
+		AssertElementPresent(locator1 = "ACSegments#ANONYMOUS_LABEL");
+	}
+
+	macro viewSegmentComposition {
+		if ("${individualsType}" == "Active") {
+			AssertTextEquals(
+				locator1 = "ACSegments#SEGMENT_COMPOSITION_COUNT",
+				value1 = "${individualsNumber}");
+		}
+		else if ("${individualsType}" == "Known") {
+			AssertTextEquals(
+				locator1 = "ACSegments#SEGMENT_COMPOSITION_COUNT",
+				value1 = "${individualsNumber}");
+		}
+	}
+
+	macro viewSegmentCriteria {
+		AssertTextEquals(
+			locator1 = "ACSegments#SEGMENT_CRITERIA_ATTRIBUTE_VALUE",
+			value1 = "${attributeValue}");
+
+		AssertTextEquals(
+			locator1 = "ACSegments#SEGMENT_CRITERIA_CRITERIA_NAME",
+			value1 = "${criteriaName}");
+
+		AssertTextEquals(
+			locator1 = "ACSegments#SEGMENT_CRITERIA_CRITERIA_DETAIL",
+			value1 = "${criteriaDetail}");
+
+		AssertTextEquals(
+			locator1 = "ACSegments#SEGMENT_CRITERIA_CRITERIA_VALUE",
+			value1 = "${criteriaValue}");
+	}
+
+	macro viewSegmentMembershipLegendNumbers {
+		AssertTextEquals(
+			key_memberType = "Known Members:",
+			locator1 = "ACSegments#SEGMENT_MEMBERSHIP_LEGEND",
+			value1 = "${knownNumber}");
+
+		AssertTextEquals(
+			key_memberType = "Anonymous Members:",
+			locator1 = "ACSegments#SEGMENT_MEMBERSHIP_LEGEND",
+			value1 = "${anonymousNumber}");
+
+		AssertTextEquals(
+			key_memberType = "Total Members:",
+			locator1 = "ACSegments#SEGMENT_MEMBERSHIP_LEGEND",
+			value1 = "${totalNumber}");
+	}
+
+	macro viewSegmentProfileCards {
+		AssertTextPresent(
+			locator1 = "ACSegments#SEGMENT_MEMBERSHIP_CARD",
+			value1 = "Segment Membership");
+
+		AssertTextPresent(
+			locator1 = "ACSegments#SEGMENT_TOP_INTERESTS_CARD",
+			value1 = "Top Interests");
+
+		AssertTextPresent(
+			locator1 = "ACSegments#SEGMENT_BREAKDOWN_CARD",
+			value1 = "Add a Breakdown by Attribute");
+	}
+
+}

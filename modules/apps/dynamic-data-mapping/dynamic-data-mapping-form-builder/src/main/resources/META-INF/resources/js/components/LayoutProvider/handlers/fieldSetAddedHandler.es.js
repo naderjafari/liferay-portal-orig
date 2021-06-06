@@ -12,20 +12,37 @@
  * details.
  */
 
-import {PagesVisitor} from 'dynamic-data-mapping-form-renderer';
+import {PagesVisitor} from 'data-engine-js-components-web';
 
+import {addField} from '../../../util/fieldSupport.es';
 import {createFieldSet} from '../util/fieldset.es';
 import {updateField} from '../util/settingsContext.es';
-import {addField} from './fieldAddedHandler.es';
+import handleSectionAdded from './sectionAddedHandler.es';
 
 const handleFieldSetAdded = (props, state, event) => {
-	const {fieldSet, indexes, parentFieldName, rows, useFieldName} = event;
+	const {
+		defaultLanguageId,
+		fieldName,
+		fieldSet,
+		indexes,
+		parentFieldName,
+		properties,
+		rows,
+		useFieldName,
+	} = event;
 	const {pages} = state;
 	const visitor = new PagesVisitor(fieldSet.pages);
 	const nestedFields = [];
 
 	visitor.mapFields((nestedField) => {
-		nestedFields.push(nestedField);
+		nestedFields.push(
+			updateField(
+				{...props, defaultLanguageId},
+				nestedField,
+				'label',
+				nestedField.label
+			)
+		);
 	});
 
 	let fieldSetField = createFieldSet(
@@ -33,6 +50,17 @@ const handleFieldSetAdded = (props, state, event) => {
 		{skipFieldNameGeneration: false, useFieldName},
 		nestedFields
 	);
+
+	if (properties) {
+		Object.keys(properties).forEach((key) => {
+			fieldSetField = updateField(
+				props,
+				fieldSetField,
+				key,
+				properties[key]
+			);
+		});
+	}
 
 	if (fieldSet.id) {
 		fieldSetField = updateField(
@@ -47,9 +75,38 @@ const handleFieldSetAdded = (props, state, event) => {
 		fieldSetField = updateField(props, fieldSetField, 'rows', rows);
 	}
 
-	return addField(props, {
+	if (fieldName) {
+		return handleSectionAdded(
+			props,
+			{
+				...state,
+				pages,
+			},
+			{
+				data: {
+					fieldName,
+					parentFieldName,
+				},
+				indexes,
+				newField: updateField(
+					props,
+					fieldSetField,
+					'label',
+					fieldSet.localizedTitle
+				),
+			}
+		);
+	}
+
+	return addField({
+		...props,
 		indexes,
-		newField: updateField(props, fieldSetField, 'label', fieldSet.title),
+		newField: updateField(
+			{...props, defaultLanguageId},
+			fieldSetField,
+			'label',
+			fieldSet.localizedTitle
+		),
 		pages,
 		parentFieldName,
 	});

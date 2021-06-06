@@ -15,6 +15,7 @@
 package com.liferay.users.admin.search.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.Country;
@@ -25,7 +26,6 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.SearchEngineHelper;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalService;
@@ -193,16 +193,13 @@ public class UserIndexerIndexedFieldsTest {
 	}
 
 	protected User addUser() throws Exception {
-		String[] assetTagNames = {};
-
 		return userSearchFixture.addUser(
-			RandomTestUtil.randomString(), group, assetTagNames);
+			RandomTestUtil.randomString(), group, new String[0]);
 	}
 
 	protected void setUpIndexedFieldsFixture() {
 		indexedFieldsFixture = new IndexedFieldsFixture(
-			resourcePermissionLocalService, searchEngineHelper, uidFactory,
-			documentBuilderFactory);
+			resourcePermissionLocalService, uidFactory, documentBuilderFactory);
 	}
 
 	protected void setUpIndexerFixture() {
@@ -253,9 +250,6 @@ public class UserIndexerIndexedFieldsTest {
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
 
 	@Inject
-	protected SearchEngineHelper searchEngineHelper;
-
-	@Inject
 	protected UIDFactory uidFactory;
 
 	@Inject
@@ -267,6 +261,10 @@ public class UserIndexerIndexedFieldsTest {
 	protected UserLocalService userLocalService;
 
 	protected UserSearchFixture userSearchFixture;
+
+	private String _getEmailAddressDomain(String emailAddress) {
+		return emailAddress.substring(emailAddress.indexOf(StringPool.AT) + 1);
+	}
 
 	private Map<String, String> _getExpectedFieldValues(User user)
 		throws Exception {
@@ -293,6 +291,8 @@ public class UserIndexerIndexedFieldsTest {
 			"defaultUser", String.valueOf(user.isDefaultUser())
 		).put(
 			"emailAddress", user.getEmailAddress()
+		).put(
+			"emailAddressDomain", _getEmailAddressDomain(user.getEmailAddress())
 		).put(
 			"firstName", user.getFirstName()
 		).put(

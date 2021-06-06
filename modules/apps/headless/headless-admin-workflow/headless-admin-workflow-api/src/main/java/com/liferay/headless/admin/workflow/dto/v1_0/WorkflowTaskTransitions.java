@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("WorkflowTaskTransitions")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WorkflowTaskTransitions")
-public class WorkflowTaskTransitions {
+public class WorkflowTaskTransitions implements Serializable {
 
 	public static WorkflowTaskTransitions toDTO(String json) {
 		return ObjectMapperUtil.readValue(WorkflowTaskTransitions.class, json);
@@ -138,6 +140,7 @@ public class WorkflowTaskTransitions {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.WorkflowTaskTransitions",
 		name = "x-class-name"
 	)
@@ -173,7 +176,7 @@ public class WorkflowTaskTransitions {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -212,7 +215,7 @@ public class WorkflowTaskTransitions {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

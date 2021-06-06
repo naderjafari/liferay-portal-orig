@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,10 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("NodeKey")
+@GraphQLName(description = "https://www.schema.org/NodeKey", value = "NodeKey")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "NodeKey")
-public class NodeKey {
+public class NodeKey implements Serializable {
 
 	public static NodeKey toDTO(String json) {
 		return ObjectMapperUtil.readValue(NodeKey.class, json);
@@ -164,6 +166,7 @@ public class NodeKey {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.NodeKey",
 		name = "x-class-name"
 	)
@@ -199,7 +202,7 @@ public class NodeKey {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -238,7 +241,7 @@ public class NodeKey {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

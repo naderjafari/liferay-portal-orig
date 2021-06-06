@@ -20,6 +20,8 @@ import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
@@ -55,7 +57,7 @@ public class Query {
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {appWorkflow(appId: ___){appId, appWorkflowDefinitionId, appWorkflowStates, appWorkflowTasks}}"}' -u 'test@liferay.com:test'
+	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {appWorkflow(appId: ___){appId, appVersion, appWorkflowDefinitionId, appWorkflowStates, appWorkflowTasks}}"}' -u 'test@liferay.com:test'
 	 */
 	@GraphQLField
 	public AppWorkflow appWorkflow(@GraphQLName("appId") Long appId)
@@ -72,6 +74,7 @@ public class Query {
 
 		public AppWorkflowPage(Page appWorkflowPage) {
 			actions = appWorkflowPage.getActions();
+
 			items = appWorkflowPage.getItems();
 			lastPage = appWorkflowPage.getLastPage();
 			page = appWorkflowPage.getPage();
@@ -128,18 +131,22 @@ public class Query {
 		appWorkflowResource.setContextHttpServletResponse(_httpServletResponse);
 		appWorkflowResource.setContextUriInfo(_uriInfo);
 		appWorkflowResource.setContextUser(_user);
+		appWorkflowResource.setGroupLocalService(_groupLocalService);
+		appWorkflowResource.setRoleLocalService(_roleLocalService);
 	}
 
 	private static ComponentServiceObjects<AppWorkflowResource>
 		_appWorkflowResourceComponentServiceObjects;
 
 	private AcceptLanguage _acceptLanguage;
-	private BiFunction<Object, String, Filter> _filterBiFunction;
-	private BiFunction<Object, String, Sort[]> _sortsBiFunction;
 	private com.liferay.portal.kernel.model.Company _company;
-	private com.liferay.portal.kernel.model.User _user;
+	private BiFunction<Object, String, Filter> _filterBiFunction;
+	private GroupLocalService _groupLocalService;
 	private HttpServletRequest _httpServletRequest;
 	private HttpServletResponse _httpServletResponse;
+	private RoleLocalService _roleLocalService;
+	private BiFunction<Object, String, Sort[]> _sortsBiFunction;
 	private UriInfo _uriInfo;
+	private com.liferay.portal.kernel.model.User _user;
 
 }

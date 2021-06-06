@@ -615,16 +615,20 @@ AUI.add(
 
 						return [
 							{
-								label: strings.site,
-								value: 'site',
+								label: strings.depot,
+								value: 'depot',
+							},
+							{
+								label: strings.organization,
+								value: 'organization',
 							},
 							{
 								label: strings.regular,
 								value: 'regular',
 							},
 							{
-								label: strings.organization,
-								value: 'organization',
+								label: strings.site,
+								value: 'site',
 							},
 						];
 					},
@@ -1433,6 +1437,8 @@ AUI.add(
 			NotificationRecipientsEditorFormConfig
 		);
 
+		var NotificationsEditorForm;
+
 		var NotificationsEditorFormConfig = {
 			ATTRS: {
 				notificationTypes: {
@@ -1445,14 +1451,6 @@ AUI.add(
 							{
 								label: strings.email,
 								value: 'email',
-							},
-							{
-								label: strings.im,
-								value: 'im',
-							},
-							{
-								label: strings.privateMessage,
-								value: 'private-message',
 							},
 							{
 								label: strings.userNotification,
@@ -1764,7 +1762,7 @@ AUI.add(
 			},
 		};
 
-		var NotificationsEditorForm = A.Component.create(
+		NotificationsEditorForm = A.Component.create(
 			NotificationsEditorFormConfig
 		);
 

@@ -14,12 +14,15 @@
 
 package com.liferay.headless.delivery.internal.resource.v1_0;
 
-import com.liferay.headless.common.spi.service.context.ServiceContextUtil;
+import com.liferay.headless.common.spi.service.context.ServiceContextRequestUtil;
 import com.liferay.headless.delivery.dto.v1_0.NavigationMenu;
 import com.liferay.headless.delivery.dto.v1_0.NavigationMenuItem;
-import com.liferay.headless.delivery.internal.dto.v1_0.util.CreatorUtil;
+import com.liferay.headless.delivery.dto.v1_0.util.CreatorUtil;
 import com.liferay.headless.delivery.resource.v1_0.NavigationMenuResource;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.LayoutFriendlyURL;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.LayoutFriendlyURLLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
@@ -31,7 +34,9 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
+import com.liferay.portal.vulcan.util.JaxRsLinkUtil;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
+import com.liferay.site.navigation.constants.SiteNavigationActionKeys;
 import com.liferay.site.navigation.constants.SiteNavigationConstants;
 import com.liferay.site.navigation.model.SiteNavigationMenu;
 import com.liferay.site.navigation.model.SiteNavigationMenuItem;
@@ -86,8 +91,9 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 			Collections.singletonMap(
 				"create",
 				addAction(
-					"ADD_SITE_NAVIGATION_MENU", "postSiteNavigationMenu",
-					"com.liferay.site.navigation", siteId)),
+					SiteNavigationActionKeys.ADD_SITE_NAVIGATION_MENU,
+					"postSiteNavigationMenu",
+					SiteNavigationConstants.RESOURCE_NAME, siteId)),
 			transform(
 				_siteNavigationMenuService.getSiteNavigationMenus(
 					siteId, pagination.getStartPosition(),
@@ -106,7 +112,8 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 			_siteNavigationMenuService.addSiteNavigationMenu(
 				siteId, navigationMenu.getName(),
 				SiteNavigationConstants.TYPE_DEFAULT, true,
-				ServiceContextUtil.createServiceContext(siteId, null));
+				ServiceContextRequestUtil.createServiceContext(
+					siteId, contextHttpServletRequest, null));
 
 		_createNavigationMenuItems(
 			navigationMenu.getNavigationMenuItems(), 0, siteId,
@@ -129,8 +136,10 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 			siteNavigationMenu.getGroupId(),
 			siteNavigationMenu.getSiteNavigationMenuId());
 
-		ServiceContext serviceContext = ServiceContextUtil.createServiceContext(
-			siteNavigationMenu.getGroupId(), null);
+		ServiceContext serviceContext =
+			ServiceContextRequestUtil.createServiceContext(
+				siteNavigationMenu.getGroupId(), contextHttpServletRequest,
+				null);
 
 		NavigationMenu.NavigationType navigationType =
 			navigationMenu.getNavigationType();
@@ -146,6 +155,24 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 				navigationMenuId, navigationMenu.getName(), serviceContext));
 	}
 
+	@Override
+	protected Long getPermissionCheckerGroupId(Object id) throws Exception {
+		SiteNavigationMenu siteNavigationMenu =
+			_siteNavigationMenuService.fetchSiteNavigationMenu((Long)id);
+
+		return siteNavigationMenu.getGroupId();
+	}
+
+	@Override
+	protected String getPermissionCheckerPortletName(Object id) {
+		return SiteNavigationConstants.RESOURCE_NAME;
+	}
+
+	@Override
+	protected String getPermissionCheckerResourceName(Object id) {
+		return SiteNavigationMenu.class.getName();
+	}
+
 	private void _createNavigationMenuItem(
 			NavigationMenuItem navigationMenuItem, long parentNavigationMenuId,
 			long siteId, long siteNavigationMenuId)
@@ -158,7 +185,8 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 			_siteNavigationMenuItemService.addSiteNavigationMenuItem(
 				siteId, siteNavigationMenuId, parentNavigationMenuId,
 				_getType(navigationMenuItem), unicodeProperties,
-				ServiceContextUtil.createServiceContext(siteId, null));
+				ServiceContextRequestUtil.createServiceContext(
+					siteId, contextHttpServletRequest, null));
 
 		_createNavigationMenuItems(
 			navigationMenuItem.getNavigationMenuItems(),
@@ -396,7 +424,7 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 		return new NavigationMenu() {
 			{
 				creator = CreatorUtil.toCreator(
-					_portal,
+					_portal, Optional.of(contextUriInfo),
 					_userLocalService.fetchUser(
 						siteNavigationMenu.getUserId()));
 				dateCreated = siteNavigationMenu.getCreateDate();
@@ -415,12 +443,13 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 					() -> HashMapBuilder.put(
 						"delete",
 						addAction(
-							"DELETE", siteNavigationMenu,
+							ActionKeys.DELETE, siteNavigationMenu,
 							"deleteNavigationMenu")
 					).put(
 						"replace",
 						addAction(
-							"UPDATE", siteNavigationMenu, "putNavigationMenu")
+							ActionKeys.UPDATE, siteNavigationMenu,
+							"putNavigationMenu")
 					).build());
 				setNavigationType(
 					() -> {
@@ -450,7 +479,7 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 		return new NavigationMenuItem() {
 			{
 				creator = CreatorUtil.toCreator(
-					_portal,
+					_portal, Optional.of(contextUriInfo),
 					_userLocalService.fetchUser(
 						siteNavigationMenuItem.getUserId()));
 				dateCreated = siteNavigationMenuItem.getCreateDate();
@@ -479,7 +508,33 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 							return null;
 						}
 
-						return layout.getFriendlyURL();
+						return layout.getFriendlyURL(
+							contextAcceptLanguage.getPreferredLocale());
+					});
+				setLink_i18n(
+					() -> {
+						if ((layout == null) ||
+							!contextAcceptLanguage.isAcceptAllLanguages()) {
+
+							return null;
+						}
+
+						Map<String, String> i18nMap = new HashMap<>();
+
+						List<LayoutFriendlyURL> layoutFriendlyURLs =
+							_layoutFriendlyURLLocalService.
+								getLayoutFriendlyURLs(layout.getPlid());
+
+						for (LayoutFriendlyURL layoutFriendlyURL :
+								layoutFriendlyURLs) {
+
+							i18nMap.put(
+								LocaleUtil.toBCP47LanguageId(
+									layoutFriendlyURL.getLanguageId()),
+								layoutFriendlyURL.getFriendlyURL());
+						}
+
+						return i18nMap;
 					});
 				setName(
 					() -> {
@@ -508,6 +563,26 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 						}
 
 						return null;
+					});
+				setSitePageURL(
+					() -> {
+						if (layout == null) {
+							return null;
+						}
+
+						List<Object> arguments = new ArrayList<>();
+
+						arguments.add(layout.getGroupId());
+
+						String friendlyURL = layout.getFriendlyURL(
+							contextAcceptLanguage.getPreferredLocale());
+
+						arguments.add(friendlyURL.substring(1));
+
+						return JaxRsLinkUtil.getJaxRsLink(
+							"headless-delivery", BaseSitePageResourceImpl.class,
+							"getSiteSitePage", contextUriInfo,
+							arguments.toArray(new Object[0]));
 					});
 				setUseCustomName(
 					() -> {
@@ -570,8 +645,8 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 								_getUnicodeProperties(
 									false, navigationMenuItem, siteId,
 									existingSiteNavigationMenuItem),
-								ServiceContextUtil.createServiceContext(
-									siteId, null));
+								ServiceContextRequestUtil.createServiceContext(
+									siteId, contextHttpServletRequest, null));
 
 					_updateNavigationMenuItems(
 						navigationMenuItem.getNavigationMenuItems(),
@@ -596,6 +671,9 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 				siteNavigationMenuItem.getSiteNavigationMenuItemId());
 		}
 	}
+
+	@Reference
+	private LayoutFriendlyURLLocalService _layoutFriendlyURLLocalService;
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;

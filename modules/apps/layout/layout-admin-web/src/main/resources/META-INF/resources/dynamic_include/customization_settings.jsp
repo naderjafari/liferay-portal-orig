@@ -20,10 +20,6 @@
 String portletNamespace = PortalUtil.getPortletNamespace(LayoutAdminPortletKeys.GROUP_PAGES);
 
 boolean hasUpdateLayoutPermission = GetterUtil.getBoolean(request.getAttribute(CustomizationSettingsControlMenuJSPDynamicInclude.CUSTOMIZATION_SETTINGS_LAYOUT_UPDATE_PERMISSION));
-
-Map<String, Object> data = HashMapBuilder.<String, Object>put(
-	"qa-id", "customizations"
-).build();
 %>
 
 <div id="<%= portletNamespace %>customizationBar">
@@ -41,7 +37,11 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 				<li class="control-menu-nav-item mb-0">
 					<span class="text-info">
 						<liferay-ui:icon
-							data="<%= data %>"
+							data='<%=
+								HashMapBuilder.<String, Object>put(
+									"qa-id", "customizations"
+								).build()
+							%>'
 							icon="info-circle"
 							label="<%= false %>"
 							markupView="lexicon"
@@ -84,7 +84,7 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 							namespace: '<%= portletNamespace %>',
 						});
 
-						Liferay.once('screenLoad', function () {
+						Liferay.once('screenLoad', () => {
 							layoutCustomizationSettings.destroy();
 						});
 					</aui:script>
@@ -102,17 +102,21 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 
 				toggleCustomizedViewMessage = LanguageUtil.get(resourceBundle, toggleCustomizedViewMessage);
 
-				PortletURL resetCustomizationViewURL = PortletURLFactoryUtil.create(request, LayoutAdminPortletKeys.GROUP_PAGES, PortletRequest.ACTION_PHASE);
+				String resetCustomizationViewURL = PortletURLBuilder.create(
+					PortletURLFactoryUtil.create(request, LayoutAdminPortletKeys.GROUP_PAGES, PortletRequest.ACTION_PHASE)
+				).setActionName(
+					"/layout_admin/reset_customization_view"
+				).buildString();
 
-				resetCustomizationViewURL.setParameter(ActionRequest.ACTION_NAME, "/layout/reset_customization_view");
+				String resetCustomizationsViewURLString = "javascript:if (confirm('" + UnicodeLanguageUtil.get(resourceBundle, "are-you-sure-you-want-to-reset-your-customizations-to-default") + "')){submitForm(document.hrefFm, '" + HtmlUtil.escapeJS(resetCustomizationViewURL) + "');}";
 
-				String resetCustomizationsViewURLString = "javascript:if (confirm('" + UnicodeLanguageUtil.get(resourceBundle, "are-you-sure-you-want-to-reset-your-customizations-to-default") + "')){submitForm(document.hrefFm, '" + HtmlUtil.escapeJS(resetCustomizationViewURL.toString()) + "');}";
-
-				PortletURL toggleCustomizationViewPortletURL = PortletURLFactoryUtil.create(request, LayoutAdminPortletKeys.GROUP_PAGES, PortletRequest.ACTION_PHASE);
-
-				toggleCustomizationViewPortletURL.setParameter(ActionRequest.ACTION_NAME, "/layout/toggle_customized_view");
-
-				String toggleCustomizationViewURL = HttpUtil.addParameter(toggleCustomizationViewPortletURL.toString(), "customized_view", !layoutTypePortlet.isCustomizedView());
+				String toggleCustomizationViewURL = HttpUtil.addParameter(
+					PortletURLBuilder.create(
+						PortletURLFactoryUtil.create(request, LayoutAdminPortletKeys.GROUP_PAGES, PortletRequest.ACTION_PHASE)
+					).setActionName(
+						"/layout_admin/toggle_customized_view"
+					).buildString(),
+					"customized_view", !layoutTypePortlet.isCustomizedView());
 				%>
 
 				<li class="control-menu-nav-item d-md-block d-none">
@@ -156,7 +160,7 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 					</div>
 				</li>
 
-				<aui:script require="metal-dom/src/dom as dom">
+				<aui:script>
 					var closeCustomizationOptions = document.getElementById(
 						'<%= portletNamespace %>closeCustomizationOptions'
 					);
@@ -165,8 +169,8 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 					);
 
 					if (closeCustomizationOptions && controlMenu) {
-						closeCustomizationOptions.addEventListener('click', function (event) {
-							dom.toggleClasses(controlMenu, 'open');
+						closeCustomizationOptions.addEventListener('click', (event) => {
+							controlMenu.classList.toggle('open');
 						});
 					}
 
@@ -175,8 +179,8 @@ Map<String, Object> data = HashMapBuilder.<String, Object>put(
 					);
 
 					if (customizationButton && controlMenu) {
-						customizationButton.addEventListener('click', function (event) {
-							dom.toggleClasses(controlMenu, 'open');
+						customizationButton.addEventListener('click', (event) => {
+							controlMenu.classList.toggle('open');
 						});
 					}
 				</aui:script>

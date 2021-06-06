@@ -15,6 +15,7 @@
 package com.liferay.blogs.web.internal.info.item;
 
 import com.liferay.info.field.InfoField;
+import com.liferay.info.field.type.DateInfoFieldType;
 import com.liferay.info.field.type.ImageInfoFieldType;
 import com.liferay.info.field.type.TextInfoFieldType;
 import com.liferay.info.field.type.URLInfoFieldType;
@@ -75,6 +76,16 @@ public interface BlogsEntryInfoItemFields {
 			InfoLocalizedValue.localize(
 				BlogsEntryInfoItemFields.class, "cover-image")
 		).build();
+	public static final InfoField<DateInfoFieldType> createDateInfoField =
+		InfoField.builder(
+		).infoFieldType(
+			DateInfoFieldType.INSTANCE
+		).name(
+			"createDate"
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(
+				BlogsEntryInfoItemFields.class, "create-date")
+		).build();
 	public static final InfoField<TextInfoFieldType> descriptionInfoField =
 		InfoField.builder(
 		).infoFieldType(
@@ -85,7 +96,17 @@ public interface BlogsEntryInfoItemFields {
 			InfoLocalizedValue.localize(
 				BlogsEntryInfoItemFields.class, "description")
 		).build();
-	public static final InfoField<URLInfoFieldType> displayPageUrlInfoField =
+	public static final InfoField<DateInfoFieldType> displayDateInfoField =
+		InfoField.builder(
+		).infoFieldType(
+			DateInfoFieldType.INSTANCE
+		).name(
+			"displayDate"
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(
+				BlogsEntryInfoItemFields.class, "display-date")
+		).build();
+	public static final InfoField<URLInfoFieldType> displayPageURLInfoField =
 		InfoField.builder(
 		).infoFieldType(
 			URLInfoFieldType.INSTANCE
@@ -95,10 +116,20 @@ public interface BlogsEntryInfoItemFields {
 			InfoLocalizedValue.localize(
 				"com.liferay.asset.info.display.impl", "display-page-url")
 		).build();
-	public static final InfoField<TextInfoFieldType> publishDateInfoField =
+	public static final InfoField<DateInfoFieldType> modifiedDateInfoField =
 		InfoField.builder(
 		).infoFieldType(
-			TextInfoFieldType.INSTANCE
+			DateInfoFieldType.INSTANCE
+		).name(
+			"modifiedDate"
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(
+				BlogsEntryInfoItemFields.class, "modified-date")
+		).build();
+	public static final InfoField<DateInfoFieldType> publishDateInfoField =
+		InfoField.builder(
+		).infoFieldType(
+			DateInfoFieldType.INSTANCE
 		).name(
 			"publishDate"
 		).labelInfoLocalizedValue(

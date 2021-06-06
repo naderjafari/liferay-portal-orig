@@ -42,10 +42,10 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 
 import com.microsoft.graph.concurrency.ChunkedUploadProvider;
 import com.microsoft.graph.concurrency.IProgressCallback;
@@ -241,15 +241,12 @@ public class UploadOneDriveDocumentBackgroundTaskExecutor
 		jsonObject.add("file", new JsonObject());
 		jsonObject.add("name", new JsonPrimitive(fileEntry.getFileName()));
 
-		JsonObject responseJSONObject = customRequest.post(jsonObject);
+		JsonObject responseJsonObject = customRequest.post(jsonObject);
 
-		JsonPrimitive jsonPrimitive = responseJSONObject.getAsJsonPrimitive(
+		JsonPrimitive jsonPrimitive = responseJsonObject.getAsJsonPrimitive(
 			"id");
 
 		if (fileEntry.getSize() > 0) {
-			DriveItemUploadableProperties driveItemUploadableProperties =
-				new DriveItemUploadableProperties();
-
 			IDriveItemCreateUploadSessionRequest
 				iDriveItemCreateUploadSessionRequest =
 					iGraphServiceClientBuilder.me(
@@ -257,7 +254,7 @@ public class UploadOneDriveDocumentBackgroundTaskExecutor
 					).items(
 						jsonPrimitive.getAsString()
 					).createUploadSession(
-						driveItemUploadableProperties
+						new DriveItemUploadableProperties()
 					).buildRequest();
 
 			ChunkedUploadProvider<DriveItem> chunkedUploadProvider =

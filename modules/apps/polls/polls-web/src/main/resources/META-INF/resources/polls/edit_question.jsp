@@ -71,7 +71,7 @@ portletDisplay.setURLBack(redirect);
 	<portlet:param name="mvcPath" value="/polls/edit_question.jsp" />
 </liferay-portlet:actionURL>
 
-<aui:form action="<%= editQuestionURL %>" cssClass="container-fluid-1280" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "saveQuestion();" %>'>
+<aui:form action="<%= editQuestionURL %>" cssClass="container-fluid container-fluid-max-xl container-form-lg" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "saveQuestion();" %>'>
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="" />
 	<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
 	<aui:input name="referringPortletResource" type="hidden" value="<%= referringPortletResource %>" />
@@ -107,7 +107,7 @@ portletDisplay.setURLBack(redirect);
 					String paramName = null;
 
 					if (deleteChoice && (i >= choiceName)) {
-						paramName = EditQuestionMVCActionCommand.CHOICE_DESCRIPTION_PREFIX + ((char)(c + 1));
+						paramName = EditQuestionMVCActionCommand.CHOICE_DESCRIPTION_PREFIX + (char)(c + 1);
 					}
 					else {
 						paramName = EditQuestionMVCActionCommand.CHOICE_DESCRIPTION_PREFIX + c;
@@ -142,8 +142,10 @@ portletDisplay.setURLBack(redirect);
 				}
 				%>
 
-				<div class="button-holder">
-					<aui:button cssClass="add-choice" onClick='<%= liferayPortletResponse.getNamespace() + "addPollChoice();" %>' value="add-choice" />
+				<div class="btn-group">
+					<div class="btn-group-item">
+						<aui:button cssClass="add-choice" onClick='<%= liferayPortletResponse.getNamespace() + "addPollChoice();" %>' value="add-choice" />
+					</div>
 				</div>
 			</aui:field-wrapper>
 		</aui:fieldset>
@@ -155,14 +157,33 @@ portletDisplay.setURLBack(redirect);
 				/>
 			</aui:fieldset>
 		</c:if>
+
+		<div class="sheet-footer">
+			<aui:button type="submit" />
+
+			<aui:button href="<%= redirect %>" type="cancel" />
+		</div>
 	</aui:fieldset-group>
-
-	<aui:button-row>
-		<aui:button type="submit" />
-
-		<aui:button href="<%= redirect %>" type="cancel" />
-	</aui:button-row>
 </aui:form>
+
+<aui:script use="aui-char-counter">
+
+	<%
+	for (int i = 1; i <= choicesCount; i++) {
+		char c = (char)(96 + i);
+	%>
+
+		new A.CharCounter({
+			input:
+				'#<portlet:namespace /><%= EditQuestionMVCActionCommand.CHOICE_DESCRIPTION_PREFIX + c %>',
+			maxLength: <%= ModelHintsUtil.getMaxLength(PollsChoice.class.getName(), "description") %>,
+		});
+
+	<%
+	}
+	%>
+
+</aui:script>
 
 <aui:script>
 	function <portlet:namespace />addPollChoice() {

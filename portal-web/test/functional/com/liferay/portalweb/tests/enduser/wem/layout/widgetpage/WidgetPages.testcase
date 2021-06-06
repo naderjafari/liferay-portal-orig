@@ -152,6 +152,7 @@ definition {
 	@priority = "4"
 	test AddSitePrivateChildPage {
 		property testray.component.names = "Site Pages Administration";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		JSONLayout.addPrivateLayout(
@@ -176,6 +177,7 @@ definition {
 	@priority = "4"
 	test AddSitePrivatePagePortlet {
 		property testray.component.names = "Site Pages Administration";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		JSONLayout.addPrivateLayout(
@@ -197,6 +199,7 @@ definition {
 	@priority = "4"
 	test AddSitePublicPage {
 		property testray.component.names = "Site Pages Administration";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		JSONLayout.addPublicLayout(
@@ -327,6 +330,7 @@ definition {
 	@priority = "4"
 	test SaveEmbeddedPageType {
 		property testray.component.names = "Site Pages Administration";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
@@ -372,8 +376,31 @@ definition {
 		Blogs.viewControlsPG();
 	}
 
+	@description = "This is a use case for LPS-123143."
+	@priority = "3"
+	test ViewLanguageNameOfLanguageButtonInWidgetConfigurationPage {
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
+
+		SitePages.addPublicPage(
+			pageName = "Test Page Name",
+			sitePageType = "Widget Page");
+
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
+
+		SitePages.gotoPageMenuItem(
+			menuItem = "Configure",
+			pageName = "Test Page Name");
+
+		PortletEntry.viewLocale(locale = "en-US");
+	}
+
 	@priority = "3"
 	test ViewNoInfoMessageWhenChangingSiteTemplateAsUser {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property testray.component.names = "Site and Page Templates,Site Pages Administration";
 
 		JSONUser.addUser(
@@ -382,47 +409,48 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		User.openUsersAdmin();
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
-		User.editPasswordCP(
-			userEmailAddress = "userea@liferay.com",
-			userScreenName = "usersn");
+		SiteTemplates.addCP(siteTemplateName = "Site Template Name");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Sites",
 			panel = "Control Panel",
 			portlet = "Sites");
 
-		Site.addCommunityCP(siteName = "Site Name");
+		Site.addCP(
+			siteName = "Site Name",
+			siteTemplateName = "Site Template Name",
+			siteType = "Site Template");
 
 		JSONUser.addUserToSite(
 			groupName = "Site Name",
 			userEmailAddress = "userea@liferay.com");
 
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "userea@liferay.com");
+		User.logoutAndLoginPG(userLoginEmailAddress = "userea@liferay.com");
 
 		Navigator.openSiteURL(siteName = "Site Name");
 
 		Page.viewDefaultSiteTemplatePagesPG(
 			pageName = "Home",
-			siteName = "Site Name",
-			siteTemplate = "Community",
-			siteURL = "true");
+			siteName = "Site Name");
 
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
+		User.logoutAndLoginPG(userLoginEmailAddress = "test@liferay.com");
 
-		JSONLayout.addWidgetToPublicLayout(
-			groupName = "Site Name",
-			layoutName = "Home",
-			widgetName = "Blogs");
+		Navigator.gotoSitePage(
+			pageName = "Home",
+			siteName = "Site Name");
 
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "userea@liferay.com");
+		ContentPages.clickPencil();
+
+		PageEditor.addWidget(portletName = "Blogs");
+
+		PageEditor.clickPublish();
+
+		User.logoutAndLoginPG(userLoginEmailAddress = "userea@liferay.com");
 
 		Navigator.gotoSitePage(
 			pageName = "Home",
@@ -430,9 +458,7 @@ definition {
 
 		SiteTemplates.viewNoInfoMessage();
 
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
+		User.logoutAndLoginPG(userLoginEmailAddress = "test@liferay.com");
 	}
 
 }

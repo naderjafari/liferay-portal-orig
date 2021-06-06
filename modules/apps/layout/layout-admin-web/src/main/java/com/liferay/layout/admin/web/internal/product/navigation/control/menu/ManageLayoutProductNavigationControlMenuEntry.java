@@ -19,6 +19,7 @@ import com.liferay.layout.page.template.admin.constants.LayoutPageTemplateAdminP
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
@@ -101,11 +102,13 @@ public class ManageLayoutProductNavigationControlMenuEntry
 		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 			"content.Language", themeDisplay.getLocale(), getClass());
 
-		PortletURL editPageURL = _portal.getControlPanelPortletURL(
-			httpServletRequest, LayoutAdminPortletKeys.GROUP_PAGES,
-			PortletRequest.RENDER_PHASE);
-
-		editPageURL.setParameter("mvcRenderCommandName", "/layout/edit_layout");
+		PortletURL editPageURL = PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				httpServletRequest, LayoutAdminPortletKeys.GROUP_PAGES,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/layout_admin/edit_layout"
+		).build();
 
 		String currentURL = _portal.getCurrentURL(httpServletRequest);
 
@@ -194,10 +197,10 @@ public class ManageLayoutProductNavigationControlMenuEntry
 		}
 
 		if (layout.isSystem() && layout.isTypeContent()) {
-			layout = _layoutLocalService.getLayout(layout.getClassPK());
-
 			return _layoutPermission.contains(
-				themeDisplay.getPermissionChecker(), layout, ActionKeys.UPDATE);
+				themeDisplay.getPermissionChecker(),
+				_layoutLocalService.getLayout(layout.getClassPK()),
+				ActionKeys.UPDATE);
 		}
 
 		return super.isShow(httpServletRequest);
@@ -230,8 +233,8 @@ public class ManageLayoutProductNavigationControlMenuEntry
 
 	private static final String _TMPL_CONTENT = StringUtil.read(
 		ManageLayoutProductNavigationControlMenuEntry.class,
-		"/META-INF/resources/control/menu/edit_layout_control_menu_entry_" +
-			"icon.tmpl");
+		"/META-INF/resources/control/menu" +
+			"/edit_layout_control_menu_entry_icon.tmpl");
 
 	@Reference
 	private Html _html;

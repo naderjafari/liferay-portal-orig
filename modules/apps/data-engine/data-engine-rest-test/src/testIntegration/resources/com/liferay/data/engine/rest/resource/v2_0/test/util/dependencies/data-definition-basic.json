@@ -5,11 +5,15 @@
 	],
 	"dataDefinitionFields": [
 		{
+			"customProperties": {
+				"dataType": "string"
+			},
 			"fieldType": "text",
 			"label": {
 				"en_US": "Text",
 				"pt_BR": "Texto"
 			},
+			"localizable": true,
 			"name": "Text"
 		}
 	],
@@ -49,5 +53,5 @@
 		"en_US": "Structure",
 		"pt_BR": "Estrutura"
 	},
-	"storageType": "json"
+	"storageType": "default"
 }

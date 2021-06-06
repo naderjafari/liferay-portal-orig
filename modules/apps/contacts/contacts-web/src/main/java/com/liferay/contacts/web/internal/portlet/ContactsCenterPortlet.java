@@ -25,6 +25,7 @@ import com.liferay.contacts.service.EntryLocalService;
 import com.liferay.contacts.util.ContactsUtil;
 import com.liferay.contacts.web.internal.constants.ContactsPortletKeys;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
@@ -60,7 +61,6 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.notifications.UserNotificationManagerUtil;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
@@ -111,7 +111,6 @@ import javax.portlet.Portlet;
 import javax.portlet.PortletException;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 import javax.portlet.ResourceRequest;
@@ -309,14 +308,14 @@ public class ContactsCenterPortlet extends MVCPortlet {
 
 		for (long userId : userIds) {
 			try {
-				JSONObject userJSONObject = JSONUtil.put(
-					"success", Boolean.TRUE
-				).put(
-					"user",
-					getUserJSONObject(resourceResponse, themeDisplay, userId)
-				);
-
-				jsonArray.put(userJSONObject);
+				jsonArray.put(
+					JSONUtil.put(
+						"success", Boolean.TRUE
+					).put(
+						"user",
+						getUserJSONObject(
+							resourceResponse, themeDisplay, userId)
+					));
 			}
 			catch (NoSuchUserException noSuchUserException) {
 
@@ -713,6 +712,10 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			jsonObject.put("success", Boolean.TRUE);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			jsonObject.put("success", Boolean.FALSE);
 		}
 
@@ -774,13 +777,13 @@ public class ContactsCenterPortlet extends MVCPortlet {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (long userId : userIds) {
-			JSONObject userJSONObject = JSONUtil.put(
-				"success", Boolean.TRUE
-			).put(
-				"user", getUserJSONObject(actionResponse, themeDisplay, userId)
-			);
-
-			jsonArray.put(userJSONObject);
+			jsonArray.put(
+				JSONUtil.put(
+					"success", Boolean.TRUE
+				).put(
+					"user",
+					getUserJSONObject(actionResponse, themeDisplay, userId)
+				));
 		}
 
 		jsonObject.put("contacts", jsonArray);
@@ -806,17 +809,17 @@ public class ContactsCenterPortlet extends MVCPortlet {
 		int start = ParamUtil.getInteger(portletRequest, "start");
 		int end = ParamUtil.getInteger(portletRequest, "end");
 
-		JSONObject optionsJSONObject = JSONUtil.put(
-			"end", end
-		).put(
-			"filterBy", filterBy
-		).put(
-			"keywords", keywords
-		).put(
-			"start", start
-		);
-
-		JSONObject jsonObject = JSONUtil.put("options", optionsJSONObject);
+		JSONObject jsonObject = JSONUtil.put(
+			"options",
+			JSONUtil.put(
+				"end", end
+			).put(
+				"filterBy", filterBy
+			).put(
+				"keywords", keywords
+			).put(
+				"start", start
+			));
 
 		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
@@ -1000,22 +1003,22 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			themeDisplay.getPathImage() + "/user_male_portrait?img_id=0"
 		).put(
 			"redirect", redirect
+		).put(
+			"viewSummaryURL",
+			PortletURLBuilder.createRenderURL(
+				portal.getLiferayPortletResponse(portletResponse)
+			).setMVCPath(
+				"/contacts_center/view_resources.jsp"
+			).setRedirect(
+				redirect
+			).setParameter(
+				"entryId", entry.getEntryId()
+			).setParameter(
+				"portalUser", Boolean.FALSE.toString()
+			).setWindowState(
+				LiferayWindowState.EXCLUSIVE
+			).buildString()
 		);
-
-		LiferayPortletResponse liferayPortletResponse =
-			portal.getLiferayPortletResponse(portletResponse);
-
-		PortletURL viewSummaryURL = liferayPortletResponse.createRenderURL();
-
-		viewSummaryURL.setParameter(
-			"mvcPath", "/contacts_center/view_resources.jsp");
-		viewSummaryURL.setParameter("redirect", redirect);
-		viewSummaryURL.setParameter(
-			"entryId", String.valueOf(entry.getEntryId()));
-		viewSummaryURL.setParameter("portalUser", Boolean.FALSE.toString());
-		viewSummaryURL.setWindowState(LiferayWindowState.EXCLUSIVE);
-
-		jsonObject.put("viewSummaryURL", viewSummaryURL.toString());
 
 		return jsonObject;
 	}
@@ -1095,20 +1098,22 @@ public class ContactsCenterPortlet extends MVCPortlet {
 		JSONObject jsonObject = ContactsUtil.getUserJSONObject(
 			themeDisplay.getUserId(), user);
 
-		jsonObject.put("portraitURL", user.getPortraitURL(themeDisplay));
-
-		LiferayPortletResponse liferayPortletResponse =
-			portal.getLiferayPortletResponse(portletResponse);
-
-		PortletURL viewSummaryURL = liferayPortletResponse.createRenderURL();
-
-		viewSummaryURL.setParameter(
-			"mvcPath", "/contacts_center/view_resources.jsp");
-		viewSummaryURL.setParameter("userId", String.valueOf(user.getUserId()));
-		viewSummaryURL.setParameter("portalUser", Boolean.TRUE.toString());
-		viewSummaryURL.setWindowState(LiferayWindowState.EXCLUSIVE);
-
-		jsonObject.put("viewSummaryURL", viewSummaryURL.toString());
+		jsonObject.put(
+			"portraitURL", user.getPortraitURL(themeDisplay)
+		).put(
+			"viewSummaryURL",
+			PortletURLBuilder.createRenderURL(
+				portal.getLiferayPortletResponse(portletResponse)
+			).setMVCPath(
+				"/contacts_center/view_resources.jsp"
+			).setParameter(
+				"portalUser", Boolean.TRUE.toString()
+			).setParameter(
+				"userId", user.getUserId()
+			).setWindowState(
+				LiferayWindowState.EXCLUSIVE
+			).buildString()
+		);
 
 		return jsonObject;
 	}
@@ -1122,17 +1127,15 @@ public class ContactsCenterPortlet extends MVCPortlet {
 				SocialRelationConstants.SOCIAL_RELATION_REQUEST,
 				UserNotificationDeliveryConstants.TYPE_WEBSITE)) {
 
-			JSONObject notificationEventJSONObject = JSONUtil.put(
-				"classPK", socialRequest.getRequestId()
-			).put(
-				"userId", socialRequest.getUserId()
-			);
-
 			userNotificationEventLocalService.sendUserNotificationEvents(
 				socialRequest.getReceiverUserId(),
 				ContactsPortletKeys.CONTACTS_CENTER,
 				UserNotificationDeliveryConstants.TYPE_WEBSITE, true,
-				notificationEventJSONObject);
+				JSONUtil.put(
+					"classPK", socialRequest.getRequestId()
+				).put(
+					"userId", socialRequest.getUserId()
+				));
 		}
 	}
 
@@ -1260,15 +1263,15 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			user.getPasswordUnencrypted(), user.getPasswordUnencrypted(),
 			user.isPasswordReset(), user.getReminderQueryQuestion(),
 			user.getReminderQueryAnswer(), screenName, emailAddress,
-			user.getFacebookId(), user.getOpenId(), !deleteLogo, portraitBytes,
-			user.getLanguageId(), user.getTimeZoneId(), user.getGreeting(),
-			comments, firstName, middleName, lastName, contact.getPrefixId(),
-			contact.getSuffixId(), user.isMale(), birthdayMonth, birthdayDay,
-			birthdayYear, smsSn, facebookSn, jabberSn, skypeSn, twitterSn,
-			jobTitle, user.getGroupIds(), user.getOrganizationIds(),
-			user.getRoleIds(), null, user.getUserGroupIds(),
-			user.getAddresses(), null, user.getPhones(), user.getWebsites(),
-			announcementsDeliveries, new ServiceContext());
+			!deleteLogo, portraitBytes, user.getLanguageId(),
+			user.getTimeZoneId(), user.getGreeting(), comments, firstName,
+			middleName, lastName, contact.getPrefixId(), contact.getSuffixId(),
+			user.isMale(), birthdayMonth, birthdayDay, birthdayYear, smsSn,
+			facebookSn, jabberSn, skypeSn, twitterSn, jobTitle,
+			user.getGroupIds(), user.getOrganizationIds(), user.getRoleIds(),
+			null, user.getUserGroupIds(), user.getAddresses(), null,
+			user.getPhones(), user.getWebsites(), announcementsDeliveries,
+			new ServiceContext());
 	}
 
 	protected void updateWebsites(ActionRequest actionRequest)

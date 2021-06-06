@@ -59,7 +59,7 @@ public interface AppBuilderAppDataRecordLinkLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link AppBuilderAppDataRecordLinkLocalServiceUtil} to access the app builder app data record link local service. Add custom service methods to <code>com.liferay.app.builder.service.impl.AppBuilderAppDataRecordLinkLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.app.builder.service.impl.AppBuilderAppDataRecordLinkLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the app builder app data record link local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link AppBuilderAppDataRecordLinkLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -76,8 +76,18 @@ public interface AppBuilderAppDataRecordLinkLocalService
 	public AppBuilderAppDataRecordLink addAppBuilderAppDataRecordLink(
 		AppBuilderAppDataRecordLink appBuilderAppDataRecordLink);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 #addAppBuilderAppDataRecordLink(long, long, long, long,
+	 long)}
+	 */
+	@Deprecated
 	public AppBuilderAppDataRecordLink addAppBuilderAppDataRecordLink(
 		long companyId, long appBuilderAppId, long ddlRecordId);
+
+	public AppBuilderAppDataRecordLink addAppBuilderAppDataRecordLink(
+		long groupId, long companyId, long appBuilderAppId,
+		long appBuilderAppVersionId, long ddlRecordId);
 
 	/**
 	 * Creates a new app builder app data record link with the primary key. Does not add the app builder app data record link to the database.
@@ -134,6 +144,9 @@ public interface AppBuilderAppDataRecordLinkLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -207,8 +220,7 @@ public interface AppBuilderAppDataRecordLinkLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public AppBuilderAppDataRecordLink
-			fetchDDLRecordAppBuilderAppDataRecordLink(long ddlRecordId)
-		throws PortalException;
+		fetchDDLRecordAppBuilderAppDataRecordLink(long ddlRecordId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
@@ -243,6 +255,10 @@ public interface AppBuilderAppDataRecordLinkLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<AppBuilderAppDataRecordLink> getAppBuilderAppDataRecordLinks(
 		long appBuilderAppId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AppBuilderAppDataRecordLink> getAppBuilderAppDataRecordLinks(
+		long appBuilderAppId, long[] ddlRecordIds);
 
 	/**
 	 * Returns the number of app builder app data record links.

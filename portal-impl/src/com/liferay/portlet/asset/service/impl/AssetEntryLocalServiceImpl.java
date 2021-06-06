@@ -991,15 +991,17 @@ public class AssetEntryLocalServiceImpl extends AssetEntryLocalServiceBaseImpl {
 			return;
 		}
 
-		List<AssetEntryValidatorExclusionRule> exclusionRules =
-			_assetEntryValidatorExclusionRuleServiceTrackerMap.getService(
-				className);
+		List<AssetEntryValidatorExclusionRule>
+			assetEntryValidatorExclusionRules =
+				_assetEntryValidatorExclusionRuleServiceTrackerMap.getService(
+					className);
 
-		if (exclusionRules != null) {
-			for (AssetEntryValidatorExclusionRule exclusionRule :
-					exclusionRules) {
+		if (assetEntryValidatorExclusionRules != null) {
+			for (AssetEntryValidatorExclusionRule
+					assetEntryValidatorExclusionRule :
+						assetEntryValidatorExclusionRules) {
 
-				if (exclusionRule.isValidationExcluded(
+				if (assetEntryValidatorExclusionRule.isValidationExcluded(
 						groupId, className, classPK, classTypePK, categoryIds,
 						tagNames)) {
 
@@ -1063,8 +1065,8 @@ public class AssetEntryLocalServiceImpl extends AssetEntryLocalServiceBaseImpl {
 		searchContext.setCompanyId(companyId);
 		searchContext.setEnd(end);
 		searchContext.setGroupIds(groupIds);
-		searchContext.setStart(start);
 		searchContext.setSorts(sort);
+		searchContext.setStart(start);
 		searchContext.setUserId(userId);
 
 		return searchContext;

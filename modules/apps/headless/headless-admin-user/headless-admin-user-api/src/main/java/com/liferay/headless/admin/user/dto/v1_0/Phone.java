@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Phone")
+@GraphQLName(
+	description = "Represents a phone number. This follows the [telephone](https://schema.org/telephone) specification.",
+	value = "Phone"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Phone")
-public class Phone {
+public class Phone implements Serializable {
 
 	public static Phone toDTO(String json) {
 		return ObjectMapperUtil.readValue(Phone.class, json);
@@ -286,6 +291,7 @@ public class Phone {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.Phone",
 		name = "x-class-name"
 	)
@@ -321,7 +327,7 @@ public class Phone {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -360,7 +366,7 @@ public class Phone {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

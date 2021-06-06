@@ -16,15 +16,21 @@ package com.liferay.journal.web.internal.display.context;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
+import com.liferay.journal.constants.JournalPortletKeys;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleServiceUtil;
 import com.liferay.journal.web.internal.util.JournalPortletUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.portlet.PortalPreferences;
+import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.List;
 
@@ -48,6 +54,9 @@ public class JournalHistoryDisplayContext {
 		_article = article;
 
 		_httpServletRequest = PortalUtil.getHttpServletRequest(renderRequest);
+
+		_portalPreferences = PortletPreferencesFactoryUtil.getPortalPreferences(
+			_httpServletRequest);
 	}
 
 	public SearchContainer<JournalArticle> getArticleSearchContainer() {
@@ -99,8 +108,9 @@ public class JournalHistoryDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_renderRequest, "displayStyle", "list");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			PortalUtil.getHttpServletRequest(_renderRequest),
+			JournalPortletKeys.JOURNAL, "history-display-style", "list");
 
 		return _displayStyle;
 	}
@@ -131,28 +141,44 @@ public class JournalHistoryDisplayContext {
 			return _orderByType;
 		}
 
-		_orderByType = ParamUtil.getString(
-			_renderRequest, "orderByType", "asc");
+		String orderByType = ParamUtil.getString(_renderRequest, "orderByType");
+
+		if (Validator.isNotNull(orderByType)) {
+			_portalPreferences.setValue(
+				JournalPortletKeys.JOURNAL, "orderByType", orderByType);
+		}
+		else {
+			orderByType = _portalPreferences.getValue(
+				JournalPortletKeys.JOURNAL, "orderByType", "asc");
+		}
+
+		_orderByType = orderByType;
 
 		return _orderByType;
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view_article_history.jsp");
-		portletURL.setParameter("redirect", _getRedirect());
-		portletURL.setParameter("backURL", getBackURL());
-		portletURL.setParameter(
-			"referringPortletResource", getReferringPortletResource());
-		portletURL.setParameter(
-			"groupId", String.valueOf(_article.getGroupId()));
-		portletURL.setParameter("articleId", _article.getArticleId());
-		portletURL.setParameter("displayStyle", getDisplayStyle());
-		portletURL.setParameter("orderByCol", getOrderByCol());
-		portletURL.setParameter("orderByType", getOrderByType());
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view_article_history.jsp"
+		).setRedirect(
+			_getRedirect()
+		).setBackURL(
+			getBackURL()
+		).setParameter(
+			"articleId", _article.getArticleId()
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).setParameter(
+			"groupId", _article.getGroupId()
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).setParameter(
+			"referringPortletResource", getReferringPortletResource()
+		).build();
 	}
 
 	public String getReferringPortletResource() {
@@ -182,6 +208,7 @@ public class JournalHistoryDisplayContext {
 	private final HttpServletRequest _httpServletRequest;
 	private String _orderByCol;
 	private String _orderByType;
+	private final PortalPreferences _portalPreferences;
 	private String _redirect;
 	private String _referringPortletResource;
 	private final RenderRequest _renderRequest;

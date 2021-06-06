@@ -13,95 +13,121 @@ import ClayAlert from '@clayui/alert';
 import PropTypes from 'prop-types';
 import React, {useCallback, useContext, useState} from 'react';
 
+import {ChartStateContext} from '../context/ChartStateContext';
 import ConnectionContext from '../context/ConnectionContext';
-import {StoreContext, useHistoricalWarning, useWarning} from '../context/store';
-import {numberFormat} from '../utils/numberFormat';
+import {StoreStateContext} from '../context/StoreContext';
+import APIService from '../utils/APIService';
 import Detail from './Detail';
 import Main from './Main';
 
+const noop = () => {};
+
 export default function Navigation({
-	api,
-	authorName,
-	defaultTimeRange,
-	defaultTimeSpanKey,
-	languageTag,
+	author,
+	canonicalURL,
+	onSelectedLanguageClick = noop,
 	pagePublishDate,
 	pageTitle,
 	timeSpanOptions,
-	trafficSources,
+	viewURLs,
 }) {
-	const [currentPage, setCurrentPage] = useState({view: 'main'});
-
-	const [trafficSourceName, setTrafficSourceName] = useState('');
+	const {endpoints, namespace, page, publishedToday, warning} = useContext(
+		StoreStateContext
+	);
 
 	const {validAnalyticsConnection} = useContext(ConnectionContext);
 
-	const [hasWarning] = useWarning();
+	const [currentPage, setCurrentPage] = useState({view: 'main'});
 
-	const [hasHistoricalWarning] = useHistoricalWarning();
+	const [trafficSources, setTrafficSources] = useState([]);
 
-	const {getHistoricalReads, getHistoricalViews} = api;
+	const [trafficSourceName, setTrafficSourceName] = useState('');
+
+	const {timeSpanKey, timeSpanOffset} = useContext(ChartStateContext);
 
 	const handleCurrentPage = useCallback((currentPage) => {
 		setCurrentPage({view: currentPage.view});
 	}, []);
 
+	const handleHistoricalReads = useCallback(() => {
+		return APIService.getHistoricalReads(
+			endpoints.analyticsReportsHistoricalReadsURL,
+			{namespace, plid: page.plid, timeSpanKey, timeSpanOffset}
+		).then((response) => response);
+	}, [
+		endpoints.analyticsReportsHistoricalReadsURL,
+		namespace,
+		page.plid,
+		timeSpanKey,
+		timeSpanOffset,
+	]);
+
+	const handleHistoricalViews = useCallback(() => {
+		return APIService.getHistoricalReads(
+			endpoints.analyticsReportsHistoricalViewsURL,
+			{namespace, plid: page.plid, timeSpanKey, timeSpanOffset}
+		).then((response) => response);
+	}, [
+		endpoints.analyticsReportsHistoricalViewsURL,
+		namespace,
+		page.plid,
+		timeSpanKey,
+		timeSpanOffset,
+	]);
+
 	const handleTotalReads = useCallback(() => {
-		return api.getTotalReads().then((response) => {
-			return numberFormat(
-				languageTag,
-				response.analyticsReportsTotalReads
-			);
-		});
-	}, [api, languageTag]);
+		return APIService.getTotalReads(
+			endpoints.analyticsReportsTotalReadsURL,
+			{namespace, plid: page.plid}
+		).then(({analyticsReportsTotalReads}) => analyticsReportsTotalReads);
+	}, [endpoints.analyticsReportsTotalReadsURL, namespace, page.plid]);
 
 	const handleTotalViews = useCallback(() => {
-		return api.getTotalViews().then((response) => {
-			return numberFormat(
-				languageTag,
-				response.analyticsReportsTotalViews
-			);
+		return APIService.getTotalReads(
+			endpoints.analyticsReportsTotalViewsURL,
+			{namespace, plid: page.plid}
+		).then(({analyticsReportsTotalViews}) => analyticsReportsTotalViews);
+	}, [endpoints.analyticsReportsTotalViewsURL, namespace, page.plid]);
+
+	const handleTrafficSources = useCallback(() => {
+		return APIService.getTrafficSources(
+			endpoints.analyticsReportsTrafficSourcesURL,
+			{namespace, plid: page.plid}
+		).then(({trafficSources}) => trafficSources);
+	}, [endpoints.analyticsReportsTrafficSourcesURL, namespace, page.plid]);
+
+	const handleTrafficSourceClick = (trafficSources, trafficSourceName) => {
+		setTrafficSources(trafficSources);
+		setTrafficSourceName(trafficSourceName);
+
+		const trafficSource = trafficSources.find((trafficSource) => {
+			return trafficSource.name === trafficSourceName;
 		});
-	}, [api, languageTag]);
+
+		setCurrentPage({
+			data: trafficSource,
+			view: trafficSource.name,
+		});
+	};
+
+	const handleTrafficSourceName = (trafficSourceName) =>
+		setTrafficSourceName(trafficSourceName);
 
 	const handleTrafficShare = useCallback(() => {
 		const trafficSource = trafficSources.find((trafficSource) => {
-			return trafficSource['name'] === trafficSourceName;
+			return trafficSource.name === trafficSourceName;
 		});
 
 		return Promise.resolve(trafficSource?.share ?? '-');
 	}, [trafficSourceName, trafficSources]);
 
-	const handleTrafficSourceClick = (trafficSourceName) => {
-		setTrafficSourceName(trafficSourceName);
-
-		const trafficSource = trafficSources.find((trafficSource) => {
-			return trafficSource['name'] === trafficSourceName;
-		});
-
-		setCurrentPage({
-			data: trafficSource,
-			view: 'traffic-source-detail',
-		});
-	};
-
-	const handleTrafficSourceName = useCallback((trafficSourceName) => {
-		setTrafficSourceName(trafficSourceName);
-	}, []);
-
 	const handleTrafficVolume = useCallback(() => {
 		const trafficSource = trafficSources.find((trafficSource) => {
-			return trafficSource['name'] === trafficSourceName;
+			return trafficSource.name === trafficSourceName;
 		});
 
 		return Promise.resolve(trafficSource?.value ?? '-');
 	}, [trafficSourceName, trafficSources]);
-
-	const [{publishedToday, readsEnabled}] = useContext(StoreContext);
-
-	const chartDataProviders = readsEnabled
-		? [getHistoricalViews, getHistoricalReads]
-		: [getHistoricalViews];
 
 	return (
 		<>
@@ -111,7 +137,7 @@ export default function Navigation({
 				</ClayAlert>
 			)}
 
-			{validAnalyticsConnection && (hasWarning || hasHistoricalWarning) && (
+			{validAnalyticsConnection && warning && (
 				<ClayAlert displayType="warning" variant="stripe">
 					{Liferay.Language.get(
 						'some-data-is-temporarily-unavailable'
@@ -119,67 +145,61 @@ export default function Navigation({
 				</ClayAlert>
 			)}
 
-			{validAnalyticsConnection &&
-				publishedToday &&
-				!hasWarning &&
-				!hasHistoricalWarning && (
-					<ClayAlert
-						displayType="info"
-						title={Liferay.Language.get('no-data-is-available-yet')}
-						variant="stripe"
-					>
-						{Liferay.Language.get(
-							'content-has-just-been-published'
-						)}
-					</ClayAlert>
-				)}
+			{validAnalyticsConnection && publishedToday && !warning && (
+				<ClayAlert
+					displayType="info"
+					title={Liferay.Language.get('no-data-is-available-yet')}
+					variant="stripe"
+				>
+					{Liferay.Language.get('content-has-just-been-published')}
+				</ClayAlert>
+			)}
 
 			{currentPage.view === 'main' && (
-				<div className="p-3">
+				<div>
 					<Main
-						authorName={authorName}
-						chartDataProviders={chartDataProviders}
-						defaultTimeRange={defaultTimeRange}
-						defaultTimeSpanOption={defaultTimeSpanKey}
-						languageTag={languageTag}
+						author={author}
+						canonicalURL={canonicalURL}
+						chartDataProviders={
+							endpoints.analyticsReportsHistoricalReadsURL
+								? [handleHistoricalViews, handleHistoricalReads]
+								: [handleHistoricalViews]
+						}
+						onSelectedLanguageClick={onSelectedLanguageClick}
 						onTrafficSourceClick={handleTrafficSourceClick}
 						pagePublishDate={pagePublishDate}
 						pageTitle={pageTitle}
 						timeSpanOptions={timeSpanOptions}
-						totalReadsDataProvider={handleTotalReads}
+						totalReadsDataProvider={
+							endpoints.analyticsReportsTotalReadsURL &&
+							handleTotalReads
+						}
 						totalViewsDataProvider={handleTotalViews}
-						trafficSources={trafficSources}
+						trafficSourcesDataProvider={handleTrafficSources}
+						viewURLs={viewURLs}
 					/>
 				</div>
 			)}
 
-			{currentPage.view === 'traffic-source-detail' &&
-				currentPage.data.countryKeywords.length > 0 && (
-					<Detail
-						currentPage={currentPage}
-						languageTag={languageTag}
-						onCurrentPageChange={handleCurrentPage}
-						onTrafficSourceNameChange={handleTrafficSourceName}
-						trafficShareDataProvider={handleTrafficShare}
-						trafficVolumeDataProvider={handleTrafficVolume}
-					/>
-				)}
+			{currentPage.view !== 'main' && (
+				<Detail
+					currentPage={currentPage}
+					onCurrentPageChange={handleCurrentPage}
+					onTrafficSourceNameChange={handleTrafficSourceName}
+					timeSpanOptions={timeSpanOptions}
+					trafficShareDataProvider={handleTrafficShare}
+					trafficVolumeDataProvider={handleTrafficVolume}
+				/>
+			)}
 		</>
 	);
 }
 
-Navigation.proptypes = {
-	api: PropTypes.object.isRequired,
-	authorName: PropTypes.string.isRequired,
-	defaultTimeRange: PropTypes.objectOf(
-		PropTypes.shape({
-			endDate: PropTypes.string.isRequired,
-			startDate: PropTypes.string.isRequired,
-		})
-	).isRequired,
-	defaultTimeSpanKey: PropTypes.string.isRequired,
-	languageTag: PropTypes.string.isRequired,
-	pagePublishDate: PropTypes.number.isRequired,
+Navigation.propTypes = {
+	author: PropTypes.object.isRequired,
+	canonicalURL: PropTypes.string.isRequired,
+	onSelectedLanguageClick: PropTypes.func.isRequired,
+	pagePublishDate: PropTypes.string.isRequired,
 	pageTitle: PropTypes.string.isRequired,
 	timeSpanOptions: PropTypes.arrayOf(
 		PropTypes.shape({
@@ -187,5 +207,13 @@ Navigation.proptypes = {
 			label: PropTypes.string.isRequired,
 		})
 	).isRequired,
-	trafficSources: PropTypes.array.isRequired,
+	viewURLs: PropTypes.arrayOf(
+		PropTypes.shape({
+			default: PropTypes.bool.isRequired,
+			languageId: PropTypes.string.isRequired,
+			languageLabel: PropTypes.string.isRequired,
+			selected: PropTypes.bool.isRequired,
+			viewURL: PropTypes.string.isRequired,
+		})
+	).isRequired,
 };

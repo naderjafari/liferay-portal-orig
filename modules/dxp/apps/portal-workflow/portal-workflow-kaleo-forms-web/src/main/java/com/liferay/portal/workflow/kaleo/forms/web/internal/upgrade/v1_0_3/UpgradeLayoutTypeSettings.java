@@ -24,7 +24,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutTypePortletConstants;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
-import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
+import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -33,7 +33,7 @@ import com.liferay.portal.kernel.util.Validator;
 /**
  * @author Inácio Nery
  */
-public class UpgradeLayoutTypeSettings extends BaseUpgradePortletId {
+public class UpgradeLayoutTypeSettings extends BasePortletIdUpgradeProcess {
 
 	protected void deleteLayoutTypeSettingsColumnKeyWithoutValue()
 		throws Exception {
@@ -66,7 +66,8 @@ public class UpgradeLayoutTypeSettings extends BaseUpgradePortletId {
 					UnicodeProperties oldtypeSettingsUnicodeProperties =
 						layout.getTypeSettingsProperties();
 					UnicodeProperties newTypeSettingsUnicodeProperties =
-						getNewTypeSettings(layout.getTypeSettingsProperties());
+						getNewTypeSettingsUnicodeProperties(
+							layout.getTypeSettingsProperties());
 
 					if (!oldtypeSettingsUnicodeProperties.equals(
 							newTypeSettingsUnicodeProperties)) {
@@ -93,7 +94,7 @@ public class UpgradeLayoutTypeSettings extends BaseUpgradePortletId {
 		deleteLayoutTypeSettingsColumnKeyWithoutValue();
 	}
 
-	protected UnicodeProperties getNewTypeSettings(
+	protected UnicodeProperties getNewTypeSettingsUnicodeProperties(
 		UnicodeProperties oldtypeSettingsUnicodeProperties) {
 
 		UnicodeProperties newtypeSettingsUnicodeProperties =

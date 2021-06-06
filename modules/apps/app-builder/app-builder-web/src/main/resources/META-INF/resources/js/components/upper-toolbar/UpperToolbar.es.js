@@ -12,11 +12,10 @@
  * details.
  */
 
+import ClayButton from '@clayui/button';
 import {ClayInput} from '@clayui/form';
 import classNames from 'classnames';
 import React from 'react';
-
-import Button from '../button/Button.es';
 
 const UpperToolbar = ({children, className = ''}) => {
 	return (
@@ -39,24 +38,26 @@ const UpperToolbar = ({children, className = ''}) => {
 const UpperToolbarButton = ({children, ...otherProps}) => {
 	return (
 		<ClayInput.GroupItem>
-			<Button className="ml-3" small {...otherProps}>
+			<ClayButton className="ml-3" small {...otherProps}>
 				{children}
-			</Button>
+			</ClayButton>
 		</ClayInput.GroupItem>
 	);
 };
 
 const UpperToolbarInput = ({
+	autoFocus = true,
 	onChange = () => {},
 	placeholder,
 	...otherProps
 }) => {
 	return (
-		<UpperToolbarItem expand={true}>
+		<UpperToolbarItem expand>
 			<ClayInput.Group>
 				<ClayInput.GroupItem>
 					<ClayInput
 						aria-label={placeholder}
+						autoFocus={autoFocus}
 						className="form-control-inline"
 						onChange={onChange}
 						placeholder={placeholder}

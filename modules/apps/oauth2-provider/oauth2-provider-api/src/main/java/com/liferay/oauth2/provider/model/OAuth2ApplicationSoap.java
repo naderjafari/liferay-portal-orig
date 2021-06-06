@@ -24,8 +24,10 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.oauth2.provider.service.http.OAuth2ApplicationServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class OAuth2ApplicationSoap implements Serializable {
 
 	public static OAuth2ApplicationSoap toSoapModel(OAuth2Application model) {
@@ -53,6 +55,8 @@ public class OAuth2ApplicationSoap implements Serializable {
 		soapModel.setName(model.getName());
 		soapModel.setPrivacyPolicyURL(model.getPrivacyPolicyURL());
 		soapModel.setRedirectURIs(model.getRedirectURIs());
+		soapModel.setRememberDevice(model.isRememberDevice());
+		soapModel.setTrustedApplication(model.isTrustedApplication());
 
 		return soapModel;
 	}
@@ -276,6 +280,30 @@ public class OAuth2ApplicationSoap implements Serializable {
 		_redirectURIs = redirectURIs;
 	}
 
+	public boolean getRememberDevice() {
+		return _rememberDevice;
+	}
+
+	public boolean isRememberDevice() {
+		return _rememberDevice;
+	}
+
+	public void setRememberDevice(boolean rememberDevice) {
+		_rememberDevice = rememberDevice;
+	}
+
+	public boolean getTrustedApplication() {
+		return _trustedApplication;
+	}
+
+	public boolean isTrustedApplication() {
+		return _trustedApplication;
+	}
+
+	public void setTrustedApplication(boolean trustedApplication) {
+		_trustedApplication = trustedApplication;
+	}
+
 	private long _oAuth2ApplicationId;
 	private long _companyId;
 	private long _userId;
@@ -296,5 +324,7 @@ public class OAuth2ApplicationSoap implements Serializable {
 	private String _name;
 	private String _privacyPolicyURL;
 	private String _redirectURIs;
+	private boolean _rememberDevice;
+	private boolean _trustedApplication;
 
 }

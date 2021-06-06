@@ -28,6 +28,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -52,13 +53,13 @@ public class ModulesCompileBatchTestClassGroup
 			File moduleBaseDir, File modulesDir) {
 
 			return new ModulesCompileBatchTestClass(
-				new TestClassFile(
+				new File(
 					JenkinsResultsParserUtil.getCanonicalPath(moduleBaseDir)),
 				modulesDir);
 		}
 
 		protected ModulesCompileBatchTestClass(
-			TestClassFile moduleBaseDir, File modulesDir) {
+			File moduleBaseDir, File modulesDir) {
 
 			super(moduleBaseDir);
 
@@ -145,10 +146,9 @@ public class ModulesCompileBatchTestClassGroup
 	}
 
 	protected ModulesCompileBatchTestClassGroup(
-		String batchName, BuildProfile buildProfile,
-		PortalTestClassJob portalTestClassJob) {
+		String batchName, PortalTestClassJob portalTestClassJob) {
 
-		super(batchName, buildProfile, portalTestClassJob);
+		super(batchName, portalTestClassJob);
 	}
 
 	@Override
@@ -185,10 +185,12 @@ public class ModulesCompileBatchTestClassGroup
 		for (File moduleDir : moduleDirsList) {
 			testClasses.add(
 				ModulesCompileBatchTestClass.getInstance(
-					new TestClass.TestClassFile(
+					new File(
 						JenkinsResultsParserUtil.getCanonicalPath(moduleDir)),
 					portalModulesBaseDir));
 		}
+
+		Collections.sort(testClasses);
 	}
 
 }

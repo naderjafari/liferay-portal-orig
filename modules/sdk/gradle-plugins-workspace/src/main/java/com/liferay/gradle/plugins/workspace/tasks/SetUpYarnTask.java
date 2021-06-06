@@ -16,6 +16,7 @@ package com.liferay.gradle.plugins.workspace.tasks;
 
 import com.liferay.gradle.plugins.workspace.internal.util.FileUtil;
 import com.liferay.gradle.plugins.workspace.internal.util.GradleUtil;
+import com.liferay.gradle.util.GUtil;
 
 import groovy.json.JsonOutput;
 import groovy.json.JsonSlurper;
@@ -39,7 +40,6 @@ import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.util.GUtil;
 
 /**
  * @author David Truong
@@ -125,7 +125,8 @@ public class SetUpYarnTask extends DefaultTask {
 
 		workspaces.put("packages", packages);
 
-		String packageJSON = JsonOutput.toJson(packageJsonMap);
+		String packageJSON = JsonOutput.prettyPrint(
+			JsonOutput.toJson(packageJsonMap));
 
 		Files.write(path, packageJSON.getBytes(StandardCharsets.UTF_8));
 	}

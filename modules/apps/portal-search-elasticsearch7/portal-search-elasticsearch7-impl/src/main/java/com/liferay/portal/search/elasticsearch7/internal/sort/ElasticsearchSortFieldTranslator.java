@@ -81,9 +81,7 @@ public class ElasticsearchSortFieldTranslator
 		}
 
 		if (fieldSort.getSortMode() != null) {
-			SortMode sortMode = fieldSort.getSortMode();
-
-			fieldSortBuilder.sortMode(translate(sortMode));
+			fieldSortBuilder.sortMode(translate(fieldSort.getSortMode()));
 		}
 
 		return fieldSortBuilder.unmappedType("keyword");
@@ -96,14 +94,16 @@ public class ElasticsearchSortFieldTranslator
 
 		Stream<GeoLocationPoint> stream = geoLocationPoints.stream();
 
-		GeoPoint[] geoPoints = stream.map(
-			GeoLocationPointTranslator::translate
-		).toArray(
-			GeoPoint[]::new
-		);
-
 		GeoDistanceSortBuilder geoDistanceSortBuilder =
-			SortBuilders.geoDistanceSort(geoDistanceSort.getField(), geoPoints);
+			SortBuilders.geoDistanceSort(
+				geoDistanceSort.getField(),
+				stream.map(
+					GeoLocationPointTranslator::translate
+				).toArray(
+					GeoPoint[]::new
+				));
+
+		geoDistanceSortBuilder.order(translate(geoDistanceSort.getSortOrder()));
 
 		if (geoDistanceSort.getDistanceUnit() != null) {
 			geoDistanceSortBuilder.unit(
@@ -124,9 +124,8 @@ public class ElasticsearchSortFieldTranslator
 		}
 
 		if (geoDistanceSort.getSortMode() != null) {
-			SortMode sortMode = geoDistanceSort.getSortMode();
-
-			geoDistanceSortBuilder.sortMode(translate(sortMode));
+			geoDistanceSortBuilder.sortMode(
+				translate(geoDistanceSort.getSortMode()));
 		}
 
 		return geoDistanceSortBuilder;
@@ -134,7 +133,10 @@ public class ElasticsearchSortFieldTranslator
 
 	@Override
 	public SortBuilder<?> visit(ScoreSort scoreSort) {
-		return SortBuilders.scoreSort();
+		return SortBuilders.scoreSort(
+		).order(
+			translate(scoreSort.getSortOrder())
+		);
 	}
 
 	@Override
@@ -159,10 +161,10 @@ public class ElasticsearchSortFieldTranslator
 		}
 
 		if (scriptSort.getSortMode() != null) {
-			SortMode sortMode = scriptSort.getSortMode();
-
-			scriptSortBuilder.sortMode(translate(sortMode));
+			scriptSortBuilder.sortMode(translate(scriptSort.getSortMode()));
 		}
+
+		scriptSortBuilder.order(translate(scriptSort.getSortOrder()));
 
 		return scriptSortBuilder;
 	}

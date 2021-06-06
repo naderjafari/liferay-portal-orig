@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("RoleBrief")
+@GraphQLName(
+	description = "Represents a role's basic information, to be embedded with other resources. The ID of this resource can be used to query the role's complete information.",
+	value = "RoleBrief"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "RoleBrief")
-public class RoleBrief {
+public class RoleBrief implements Serializable {
 
 	public static RoleBrief toDTO(String json) {
 		return ObjectMapperUtil.readValue(RoleBrief.class, json);
@@ -200,6 +205,7 @@ public class RoleBrief {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.RoleBrief",
 		name = "x-class-name"
 	)
@@ -235,7 +241,7 @@ public class RoleBrief {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -274,7 +280,7 @@ public class RoleBrief {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

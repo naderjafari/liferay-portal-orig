@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,10 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Role")
+@GraphQLName(description = "https://www.schema.org/Role", value = "Role")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Role")
-public class Role {
+public class Role implements Serializable {
 
 	public static Role toDTO(String json) {
 		return ObjectMapperUtil.readValue(Role.class, json);
@@ -158,6 +160,7 @@ public class Role {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.Role",
 		name = "x-class-name"
 	)
@@ -193,7 +196,7 @@ public class Role {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -232,7 +235,7 @@ public class Role {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -91,13 +91,16 @@ public abstract class BasePortalWorkspace
 
 		_primaryPortalWorkspaceGitRepository.setUp();
 
-		_companionPortalWorkspaceGitRepository =
-			WorkspaceUtil.getDependencyWorkspaceGitRepository(
-				CompanionPortalWorkspaceGitRepository.TYPE,
-				_primaryPortalWorkspaceGitRepository);
+		if (portalUpstreamBranchName.endsWith("private")) {
+			_companionPortalWorkspaceGitRepository =
+				WorkspaceUtil.getDependencyWorkspaceGitRepository(
+					CompanionPortalWorkspaceGitRepository.TYPE,
+					_primaryPortalWorkspaceGitRepository);
 
-		if (_companionPortalWorkspaceGitRepository != null) {
 			_companionPortalWorkspaceGitRepository.setUp();
+		}
+		else {
+			_companionPortalWorkspaceGitRepository = null;
 		}
 
 		workspaceGitRepository = WorkspaceUtil.getWorkspaceGitRepository(
@@ -319,7 +322,7 @@ public abstract class BasePortalWorkspace
 
 	private static final Pattern _portalBatchNamePattern = Pattern.compile(
 		".*-(?<databaseName>(?<databaseType>db2|mariadb|mysql|oracle|" +
-			"postgresql|sybase)\\d+)(-.*|$)");
+			"postgresql|sqlserver|sybase)\\d+)(-.*|$)");
 	private static final Pattern _portalGitHubURLPattern = Pattern.compile(
 		"https://github.com/[^/]+/(?<gitRepositoryName>" +
 			"liferay-portal(-ee)?)/.*");

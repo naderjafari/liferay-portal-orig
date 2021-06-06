@@ -15,6 +15,7 @@
 package com.liferay.portal.setup;
 
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.EventsProcessorUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataSourceFactoryUtil;
@@ -82,6 +83,10 @@ public class SetupWizardUtil {
 			return defaultUser.getTimeZoneId();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return PropsValues.COMPANY_DEFAULT_TIME_ZONE;
 		}
 	}
@@ -204,11 +209,8 @@ public class SetupWizardUtil {
 		HttpServletRequest httpServletRequest, String name,
 		String defaultValue) {
 
-		name = _PROPERTIES_PREFIX.concat(
-			name
-		).concat(
-			StringPool.DOUBLE_DASH
-		);
+		name = StringBundler.concat(
+			_PROPERTIES_PREFIX, name, StringPool.DOUBLE_DASH);
 
 		return ParamUtil.getString(httpServletRequest, name, defaultValue);
 	}
@@ -370,9 +372,13 @@ public class SetupWizardUtil {
 
 		int index = emailAddress.indexOf(CharPool.AT);
 
+		String companyDefaultWebId = emailAddress.substring(index + 1);
+
+		PropsValues.COMPANY_DEFAULT_WEB_ID = companyDefaultWebId;
+
 		unicodeProperties.put(
-			PropsKeys.COMPANY_DEFAULT_WEB_ID,
-			emailAddress.substring(index + 1));
+			PropsKeys.COMPANY_DEFAULT_WEB_ID, companyDefaultWebId);
+
 		unicodeProperties.put(
 			PropsKeys.DEFAULT_ADMIN_EMAIL_ADDRESS_PREFIX,
 			emailAddress.substring(0, index));
@@ -400,6 +406,8 @@ public class SetupWizardUtil {
 
 		String languageId = ParamUtil.getString(
 			httpServletRequest, "companyLocale", getDefaultLanguageId());
+
+		PropsValues.COMPANY_DEFAULT_LOCALE = languageId;
 
 		unicodeProperties.put(PropsKeys.COMPANY_DEFAULT_LOCALE, languageId);
 

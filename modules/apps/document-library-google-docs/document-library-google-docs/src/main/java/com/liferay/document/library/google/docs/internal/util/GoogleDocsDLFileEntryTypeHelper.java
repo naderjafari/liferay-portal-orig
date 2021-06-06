@@ -16,7 +16,9 @@ package com.liferay.document.library.google.docs.internal.util;
 
 import com.liferay.document.library.google.docs.internal.util.constants.GoogleDocsConstants;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
+import com.liferay.dynamic.data.mapping.constants.DDMStructureConstants;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.util.DefaultDDMStructureHelper;
@@ -28,7 +30,6 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -61,11 +62,11 @@ public class GoogleDocsDLFileEntryTypeHelper {
 			ddmStructure = _addGoogleDocsDDMStructure();
 		}
 
-		List<DLFileEntryType> dlFileEntryTypes =
-			_dlFileEntryTypeLocalService.getFileEntryTypes(
-				ddmStructure.getStructureId());
+		DLFileEntryType dlFileEntryType =
+			_dlFileEntryTypeLocalService.fetchDataDefinitionFileEntryType(
+				_company.getGroupId(), ddmStructure.getStructureId());
 
-		if (dlFileEntryTypes.isEmpty()) {
+		if (dlFileEntryType == null) {
 			_addGoogleDocsDLFileEntryType(ddmStructure.getStructureId());
 		}
 	}
@@ -73,8 +74,8 @@ public class GoogleDocsDLFileEntryTypeHelper {
 	private DDMStructure _addGoogleDocsDDMStructure() throws Exception {
 		ServiceContext serviceContext = new ServiceContext();
 
-		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setAddGroupPermissions(true);
+		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setScopeGroupId(_company.getGroupId());
 
 		long defaultUserId = _userLocalService.getDefaultUserId(
@@ -96,6 +97,7 @@ public class GoogleDocsDLFileEntryTypeHelper {
 			GoogleDocsConstants.DL_FILE_ENTRY_TYPE_KEY);
 
 		ddmStructure.setNameMap(_updateNameMap(ddmStructure.getNameMap()));
+		ddmStructure.setType(DDMStructureConstants.TYPE_AUTO);
 
 		_ddmStructureLocalService.updateDDMStructure(ddmStructure);
 
@@ -116,15 +118,16 @@ public class GoogleDocsDLFileEntryTypeHelper {
 
 		ServiceContext serviceContext = new ServiceContext();
 
-		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setAddGroupPermissions(true);
+		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setScopeGroupId(_company.getGroupId());
 		serviceContext.setUserId(defaultUserId);
 
 		_dlFileEntryTypeLocalService.addFileEntryType(
-			defaultUserId, _company.getGroupId(),
+			defaultUserId, _company.getGroupId(), ddmStructureId,
 			GoogleDocsConstants.DL_FILE_ENTRY_TYPE_KEY, nameMap, descriptionMap,
-			new long[] {ddmStructureId}, serviceContext);
+			DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_SYSTEM,
+			serviceContext);
 	}
 
 	private Map<Locale, String> _updateNameMap(Map<Locale, String> nameMap) {

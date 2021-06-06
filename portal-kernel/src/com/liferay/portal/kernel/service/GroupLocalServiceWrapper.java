@@ -386,6 +386,13 @@ public class GroupLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _groupLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _groupLocalService.dynamicQuery();
 	}
@@ -1811,7 +1818,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(
@@ -1902,7 +1910,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(
@@ -1994,7 +2003,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(
@@ -2092,7 +2102,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(
@@ -2178,7 +2189,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(
@@ -2273,7 +2285,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(
@@ -2353,7 +2366,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(
@@ -2440,7 +2454,8 @@ public class GroupLocalServiceWrapper
 	 inclusive)
 	 * @param orderByComparator the comparator to order the groups (optionally
 	 <code>null</code>)
-	 * @return the matching groups ordered by comparator <code>orderByComparator</code>
+	 * @return the matching groups ordered by comparator
+	 <code>orderByComparator</code>
 	 */
 	@Override
 	public java.util.List<Group> search(

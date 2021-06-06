@@ -22,8 +22,8 @@ LayoutsTreeDisplayContext layoutsTreeDisplayContext = new LayoutsTreeDisplayCont
 
 <div id="<%= liferayPortletResponse.getNamespace() + "-layout-finder" %>">
 	<react:component
-		data="<%= layoutsTreeDisplayContext.getLayoutFinderData() %>"
 		module="js/LayoutFinder.es"
+		props="<%= layoutsTreeDisplayContext.getLayoutFinderData() %>"
 		servletContext="<%= application %>"
 	/>
 </div>
@@ -31,8 +31,8 @@ LayoutsTreeDisplayContext layoutsTreeDisplayContext = new LayoutsTreeDisplayCont
 <div id="<%= liferayPortletResponse.getNamespace() + "layoutsTree" %>">
 	<div id="<%= liferayPortletResponse.getNamespace() + "-page-type" %>">
 		<react:component
-			data="<%= layoutsTreeDisplayContext.getPageTypeSelectorData() %>"
 			module="js/PageTypeSelector.es"
+			props="<%= layoutsTreeDisplayContext.getPageTypeSelectorData() %>"
 			servletContext="<%= application %>"
 		/>
 	</div>
@@ -43,34 +43,20 @@ LayoutsTreeDisplayContext layoutsTreeDisplayContext = new LayoutsTreeDisplayCont
 		<clay:content-row
 			containerElement="span"
 		>
-			<clay:content-col
-				containerElement="span"
-				cssClass="mr-2 list-icon {type}-layout"
-			>
-				<aui:icon image="list" markupView="lexicon" />
-			</clay:content-col>
-
-			<clay:content-col
-				containerElement="span"
-				cssClass="mr-2 page-icon {type}-layout"
-			>
-				<aui:icon image="page" markupView="lexicon" />
-			</clay:content-col>
-
-			<clay:content-col
-				containerElement="span"
-			>
-				<a class="{cssClass}" data-regular-url="{regularURL}" data-url="{url}" data-uuid="{uuid}" href="{url}" id="{id}" title="{title}">
+			<a class="{cssClass}" data-regular-url="{regularURL}" data-url="{url}" data-uuid="{uuid}" href="{url}" id="{id}" title="{title}">
+				<span class="c-inner" tabindex="-1">
+					<span class="mr-1 list-icon {type}-layout">
+						<aui:icon image="list" markupView="lexicon" />
+					</span>
+					<span class="mr-1 page-icon {type}-layout">
+						<aui:icon image="page" markupView="lexicon" />
+					</span>
 					{label}
-				</a>
-			</clay:content-col>
+				</span>
+			</a>
 
-			<clay:content-col
-				containerElement="span"
-				cssClass="pages-tree-dropdown"
-				expand="<%= true %>"
-			>
-				<span class="d-sm-block dropdown text-right">
+			<c:if test="<%= (layoutsTreeDisplayContext.hasAddLayoutPermission() && ((stagingGroup == null) || Objects.equals(scopeGroupId, stagingGroupId))) || layoutsTreeDisplayContext.hasConfigureLayoutPermission() %>">
+				<span class="d-sm-block dropdown pages-tree-dropdown text-right">
 					<button class="btn btn-unstyled dropdown-toggle ml-1 taglib-icon" data-toggle="liferay-dropdown">
 						<aui:icon image="ellipsis-v" markupView="lexicon" />
 
@@ -80,7 +66,7 @@ LayoutsTreeDisplayContext layoutsTreeDisplayContext = new LayoutsTreeDisplayCont
 					</button>
 
 					<ul class="dropdown-menu dropdown-menu-left" role="menu">
-						<c:if test="<%= (stagingGroup == null) || Objects.equals(scopeGroupId, stagingGroupId) %>">
+						<c:if test="<%= layoutsTreeDisplayContext.hasAddLayoutPermission() && ((stagingGroup == null) || Objects.equals(scopeGroupId, stagingGroupId)) %>">
 							<li class="child-page-action-option type-{parentable}">
 								<clay:content-row
 									containerElement="a"
@@ -121,25 +107,28 @@ LayoutsTreeDisplayContext layoutsTreeDisplayContext = new LayoutsTreeDisplayCont
 							</li>
 						</c:if>
 
-						<li>
-							<clay:content-row
-								containerElement="a"
-								cssClass="dropdown-item layout-action"
-								href="<%= layoutsTreeDisplayContext.getConfigureLayoutURLTemplate() %>"
-							>
-								<clay:content-col
-									containerElement="span"
-									expand="<%= true %>"
+						<c:if test="<%= layoutsTreeDisplayContext.hasConfigureLayoutPermission() %>">
+							<li>
+								<clay:content-row
+									containerElement="a"
+									cssClass="dropdown-item layout-action"
+									href="<%= layoutsTreeDisplayContext.getConfigureLayoutURLTemplate() %>"
 								>
-									<clay:content-section
+									<clay:content-col
 										containerElement="span"
-										cssClass="text-left"
+										expand="<%= true %>"
 									>
-										<liferay-ui:message key="configure" />
-									</clay:content-section>
-								</clay:content-col>
-							</clay:content-row>
-						</li>
+										<clay:content-section
+											containerElement="span"
+											cssClass="text-left"
+										>
+											<liferay-ui:message key="configure" />
+										</clay:content-section>
+									</clay:content-col>
+								</clay:content-row>
+							</li>
+						</c:if>
+
 						<li class="view-collection-items-action-option {type}" data-view-collection-items-url="<%= layoutsTreeDisplayContext.getViewCollectionItemsURL() %>">
 							<clay:content-row
 								containerElement="a"
@@ -160,8 +149,8 @@ LayoutsTreeDisplayContext layoutsTreeDisplayContext = new LayoutsTreeDisplayCont
 							</clay:content-row>
 						</li>
 					</ul>
-				</span>
-			</clay:content-col>
+				</c:if>
+			</span>
 		</clay:content-row>
 	</liferay-util:buffer>
 
@@ -173,50 +162,20 @@ LayoutsTreeDisplayContext layoutsTreeDisplayContext = new LayoutsTreeDisplayCont
 		groupId="<%= layoutsTreeDisplayContext.getGroupId() %>"
 		linkTemplate="<%= linkTemplate %>"
 		privateLayout="<%= layoutsTreeDisplayContext.isPrivateLayout() %>"
-		rootLinkTemplate='<a class="{cssClass}" href="javascript:void(0);" id="{id}" title="{title}">{label}</a>'
+		rootLinkTemplate='<a tabindex="-1" class="{cssClass}ml-1" href="javascript:void(0);" id="{id}" title="{title}">{label}</a>'
 		rootNodeName="<%= siteGroup.getLayoutRootNodeName(layoutsTreeDisplayContext.isPrivateLayout(), locale) %>"
-		selPlid="<%= plid %>"
+		selPlid="<%= layoutsTreeDisplayContext.getSelPlid() %>"
 		treeId="pagesTree"
 	/>
 
-	<div class="pages-administration-link">
-		<aui:a cssClass="ml-2" href="<%= layoutsTreeDisplayContext.getAdministrationPortletURL() %>"><%= LanguageUtil.get(request, "go-to-pages-administration") %></aui:a>
-	</div>
+	<c:if test="<%= layoutsTreeDisplayContext.hasAdministrationPortletPermission() %>">
+		<div class="pages-administration-link">
+			<aui:a cssClass="ml-2" href="<%= layoutsTreeDisplayContext.getAdministrationPortletURL() %>"><%= LanguageUtil.get(request, "go-to-pages-administration") %></aui:a>
+		</div>
+	</c:if>
 </div>
 
 <liferay-frontend:component
-	componentId="<%= ProductNavigationProductMenuWebKeys.PAGES_TREE_EVENT_HANDLER %>"
-	module="js/PagesTreeEventHandler.es"
+	componentId="<%= ProductNavigationProductMenuWebKeys.PAGES_TREE %>"
+	module="js/PagesTree.es"
 />
-
-<aui:script require="metal-dom/src/all/dom as dom">
-	var layoutsTree = document.getElementById('<portlet:namespace />layoutsTree');
-
-	var viewCollectionItemsActionOptionQueryClickHandler = dom.delegate(
-		layoutsTree,
-		'click',
-		'.view-collection-items-action-option.collection',
-		function (event) {
-			Liferay.Util.openModal({
-				id: '<portlet:namespace />viewCollectionItemsDialog',
-				title: '<liferay-ui:message key="collection-items" />',
-				url: event.delegateTarget.dataset.viewCollectionItemsUrl,
-			});
-		}
-	);
-
-	function handleDestroyPortlet() {
-		Liferay.destroyComponent(
-			'<%= liferayPortletResponse.getNamespace() %>pagesTree'
-		);
-		Liferay.destroyComponent(
-			'<%= ProductNavigationProductMenuWebKeys.PAGES_TREE_EVENT_HANDLER %>'
-		);
-
-		viewCollectionItemsActionOptionQueryClickHandler.removeListener();
-
-		Liferay.detach('destroyPortlet', handleDestroyPortlet);
-	}
-
-	Liferay.on('destroyPortlet', handleDestroyPortlet);
-</aui:script>

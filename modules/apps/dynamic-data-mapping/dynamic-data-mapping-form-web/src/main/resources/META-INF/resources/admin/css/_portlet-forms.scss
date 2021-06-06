@@ -1,6 +1,22 @@
+.portlet-forms {
+	.ddm-form-builder {
+		.multi-panel-sidebar {
+			top: 168px;
+		}
+
+		transition: padding ease 0.5s;
+
+		&--sidebar-open {
+			padding-left: 0;
+			padding-right: 338px;
+		}
+	}
+}
+
 .portlet-forms,
 .form-entry {
 	label,
+	legend,
 	p {
 		float: initial;
 	}
@@ -31,12 +47,20 @@
 			font-weight: normal;
 			line-height: 24px;
 			padding: $baseline * 2 0 0 0;
+
+			p {
+				font-weight: 400;
+			}
 		}
 
 		.ddm-form-name {
 			font-size: 32px;
 			font-weight: 300;
 			padding: $baseline * 5 0 0 0;
+
+			p {
+				font-weight: 600;
+			}
 		}
 	}
 
@@ -67,6 +91,10 @@
 	.form-builder-page-header-description.form-control,
 	.lfr-ddm-form-page-description {
 		font-size: 14px;
+	}
+
+	.form-builder-page-header-title {
+		font-weight: 600;
 	}
 
 	.form-feedback-item {

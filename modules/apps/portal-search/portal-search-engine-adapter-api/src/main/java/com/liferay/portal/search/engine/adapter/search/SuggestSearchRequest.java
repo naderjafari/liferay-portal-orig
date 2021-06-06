@@ -28,9 +28,9 @@ public class SuggestSearchRequest
 	implements SearchRequest<SuggestSearchResponse> {
 
 	public SuggestSearchRequest(String... indexNames) {
-		setPreferLocalCluster(true);
-
 		_indexNames = indexNames;
+
+		setPreferLocalCluster(true);
 	}
 
 	@Override
@@ -66,6 +66,6 @@ public class SuggestSearchRequest
 
 	private String _globalText;
 	private final String[] _indexNames;
-	private Map<String, Suggester> _suggesterMap = new HashMap<>();
+	private final Map<String, Suggester> _suggesterMap = new HashMap<>();
 
 }

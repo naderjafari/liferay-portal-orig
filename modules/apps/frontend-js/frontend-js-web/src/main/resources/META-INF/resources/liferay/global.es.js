@@ -101,10 +101,6 @@ Liferay.Address = {
  */
 Liferay.DynamicSelect = DynamicSelect;
 
-Liferay.Language = {
-	get: (key) => key,
-};
-
 Liferay.LayoutExporter = {
 	all: hideLayoutPane,
 	details: toggleLayoutDetails,
@@ -246,6 +242,15 @@ Liferay.Util.openModal = (...args) => {
 		'frontend-js-web/liferay/modal/Modal',
 		(commands) => {
 			commands.openModal(...args);
+		}
+	);
+};
+
+Liferay.Util.openSelectionModal = (...args) => {
+	Liferay.Loader.require(
+		'frontend-js-web/liferay/modal/Modal',
+		(commands) => {
+			commands.openSelectionModal(...args);
 		}
 	);
 };

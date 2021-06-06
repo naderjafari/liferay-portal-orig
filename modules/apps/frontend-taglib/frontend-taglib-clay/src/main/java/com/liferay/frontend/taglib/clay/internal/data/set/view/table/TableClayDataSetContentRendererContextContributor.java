@@ -42,12 +42,13 @@ import org.osgi.service.component.annotations.Reference;
  * @author Marco Leo
  */
 @Component(
-	property = "clay.data.set.content.renderer.name=" + ClayDataSetConstants.CONTENT_RENDERER_TABLE,
+	property = "clay.data.set.content.renderer.name=" + ClayDataSetConstants.TABLE,
 	service = ClayDataSetContentRendererContextContributor.class
 )
 public class TableClayDataSetContentRendererContextContributor
 	implements ClayDataSetContentRendererContextContributor {
 
+	@Override
 	public Map<String, Object> getContentRendererContext(
 		ClayDataSetDisplayView clayDataSetDisplayView, Locale locale) {
 
@@ -83,24 +84,31 @@ public class TableClayDataSetContentRendererContextContributor
 				label = StringPool.BLANK;
 			}
 
-			String name = clayTableSchemaField.getFieldName();
-
 			JSONObject jsonObject = JSONUtil.put(
 				"actionId", clayTableSchemaField.getActionId()
 			).put(
 				"contentRenderer", clayTableSchemaField.getContentRenderer()
 			).put(
-				"contentRendererModuleUrl",
+				"contentRendererModuleURL",
 				clayTableSchemaField.getContentRendererModuleURL()
 			).put(
 				"expand", clayTableSchemaField.isExpand()
-			).put(
-				"fieldName", name
 			).put(
 				"label", label
 			).put(
 				"sortable", clayTableSchemaField.isSortable()
 			);
+
+			String fieldName = clayTableSchemaField.getFieldName();
+
+			if (fieldName.contains(StringPool.PERIOD)) {
+				jsonObject.put(
+					"fieldName",
+					StringUtil.split(fieldName, StringPool.PERIOD));
+			}
+			else {
+				jsonObject.put("fieldName", fieldName);
+			}
 
 			ClayTableSchemaField.SortingOrder sortingOrder =
 				clayTableSchemaField.getSortingOrder();

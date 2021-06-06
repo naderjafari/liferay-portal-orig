@@ -9,12 +9,12 @@
  * distribution rights of the Software.
  */
 
-const createItems = (size) => {
+const createItems = ({active = true, size}) => {
 	const items = [];
 
 	for (let i = 0; i < size; i++) {
 		items.push({
-			active: true,
+			active,
 			appDeployments: [
 				{
 					settings: {},
@@ -28,58 +28,62 @@ const createItems = (size) => {
 			name: {
 				en_US: `Item ${i + 1}`,
 			},
+			version: '1.0',
 		});
 	}
 
 	return items;
 };
 
+const APP_WORKFLOW = {
+	appVersion: '1.0',
+	appWorkflowDefinitionId: 1,
+	appWorkflowStates: [
+		{
+			appWorkflowTransitions: [
+				{
+					name: 'Submit',
+					primary: true,
+					transitionTo: 'Review',
+				},
+			],
+			initial: true,
+			name: 'Created',
+		},
+		{
+			appWorkflowTransitions: [],
+			initial: false,
+			name: 'Closed',
+		},
+	],
+	appWorkflowTasks: [
+		{
+			appWorkflowDataLayoutLinks: [
+				{
+					dataLayoutId: 1,
+					readOnly: false,
+				},
+			],
+			appWorkflowRoleAssignments: [
+				{
+					roleId: 1,
+					roleName: 'Administrator',
+				},
+			],
+			appWorkflowTransitions: [
+				{
+					name: 'Close',
+					primary: true,
+					transitionTo: 'Closed',
+				},
+			],
+			name: 'Review',
+		},
+	],
+};
+
 export const ENTRY = {
-	APP_WORKFLOW: {
-		appWorkflowDefinitionId: 1,
-		appWorkflowStates: [
-			{
-				appWorkflowTransitions: [
-					{
-						name: 'Submit',
-						primary: true,
-						transitionTo: 'Review',
-					},
-				],
-				initial: true,
-				name: 'Created',
-			},
-			{
-				appWorkflowTransitions: [],
-				initial: false,
-				name: 'Closed',
-			},
-		],
-		appWorkflowTasks: [
-			{
-				appWorkflowDataLayoutLinks: [
-					{
-						dataLayoutId: 1,
-						readOnly: false,
-					},
-				],
-				appWorkflowRoleAssignments: [
-					{
-						roleId: 1,
-						roleName: 'Administrator',
-					},
-				],
-				appWorkflowTransitions: [
-					{
-						name: 'Close',
-						primary: true,
-						transitionTo: 'Closed',
-					},
-				],
-				name: 'Review',
-			},
-		],
-	},
+	APP_WORKFLOW,
 	DATA_DEFINITION: {
 		availableLanguageIds: ['en_US'],
 		contentType: 'app-builder',
@@ -188,6 +192,16 @@ export const ENTRY = {
 		},
 		sortField: '',
 	},
+	DATA_RECORD_APPS: (size) => ({
+		items: Array.apply(null, Array(size)).map((_, dataRecordId) => ({
+			appWorkflow: APP_WORKFLOW,
+			dataRecordId,
+		})),
+		lastPage: 1,
+		page: 1,
+		pageSize: size,
+		totalCount: size,
+	}),
 	DATA_RECORDS: (size = 1) => ({
 		items: Array.apply(null, Array(size)).map((_, id) => ({
 			dataRecordCollectionId: id,
@@ -206,14 +220,14 @@ export const ENTRY = {
 };
 
 export const ITEMS = {
-	MANY: (size) => createItems(size),
-	ONE: createItems(1),
-	TWENTY: createItems(20),
+	MANY: ({active, size}) => createItems({active, size}),
+	ONE: (active) => createItems({active, size: 1}),
+	TWENTY: (active) => createItems({active, size: 20}),
 };
 
 export const RESPONSES = {
-	MANY_ITEMS: (size) => {
-		const items = ITEMS.MANY(size);
+	MANY_ITEMS: ({active = true, size}) => {
+		const items = ITEMS.MANY({active, size});
 
 		return {
 			items,
@@ -229,18 +243,26 @@ export const RESPONSES = {
 		pageSize: 20,
 		totalCount: 0,
 	},
-	ONE_ITEM: {
-		items: ITEMS.ONE,
-		lastPage: 1,
-		page: 1,
-		pageSize: 20,
-		totalCount: ITEMS.ONE.length,
+	ONE_ITEM: (active = true) => {
+		const items = ITEMS.ONE(active);
+
+		return {
+			items,
+			lastPage: 1,
+			page: 1,
+			pageSize: 20,
+			totalCount: items.length,
+		};
 	},
-	TWENTY_ONE_ITEMS: {
-		items: ITEMS.TWENTY,
-		lastPage: 2,
-		page: 1,
-		pageSize: 20,
-		totalCount: ITEMS.TWENTY.length + 1,
+	TWENTY_ONE_ITEMS: (active = true) => {
+		const items = ITEMS.TWENTY(active);
+
+		return {
+			items,
+			lastPage: 2,
+			page: 1,
+			pageSize: 20,
+			totalCount: ITEMS.TWENTY.length + 1,
+		};
 	},
 };

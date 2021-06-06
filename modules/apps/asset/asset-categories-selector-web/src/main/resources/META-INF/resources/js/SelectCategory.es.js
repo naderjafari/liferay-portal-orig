@@ -12,12 +12,14 @@
  * details.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
 import {Treeview} from 'frontend-js-components-web';
+import {navigate} from 'frontend-js-web';
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 
 function visit(nodes, callback) {
 	nodes.forEach((node) => {
@@ -29,19 +31,28 @@ function visit(nodes, callback) {
 	});
 }
 
+function getFilter(filterQuery) {
+	if (!filterQuery) {
+		return null;
+	}
+
+	const filterQueryLowerCase = filterQuery.toLowerCase();
+
+	return (node) =>
+		!node.vocabulary &&
+		node.name.toLowerCase().indexOf(filterQueryLowerCase) !== -1;
+}
+
 function SelectCategory({
 	addCategoryURL,
 	itemSelectorSaveEvent,
+	moveCategory,
 	multiSelection,
 	namespace,
 	nodes,
 }) {
 	const flattenedNodes = useMemo(() => {
-		if (
-			nodes.length === 1 &&
-			nodes[0].vocabulary &&
-			nodes[0].children.length > 0
-		) {
+		if (nodes.length === 1 && nodes[0].vocabulary && nodes[0].id !== '0') {
 			return nodes[0].children;
 		}
 
@@ -51,50 +62,6 @@ function SelectCategory({
 	const [filterQuery, setFilterQuery] = useState('');
 
 	const selectedNodesRef = useRef(null);
-
-	const handleQueryChange = useCallback((event) => {
-		const value = event.target.value;
-
-		setFilterQuery(value);
-	}, []);
-
-	const handleAddCategoryClick = useCallback(() => {
-		const dialog = Liferay.Util.getWindow(itemSelectorSaveEvent);
-		const footer = dialog.getToolbar('footer');
-
-		footer.get('boundingBox').one('#addButton').hide();
-
-		footer.get('boundingBox').one('#cancelButton').hide();
-
-		Liferay.Util.navigate(addCategoryURL);
-	}, [addCategoryURL, itemSelectorSaveEvent]);
-
-	useEffect(() => {
-		const dialog = Liferay.Util.getWindow(itemSelectorSaveEvent);
-		const footer = dialog.getToolbar('footer');
-
-		if (!dialog.get('initialTitle')) {
-			dialog.set(
-				'initialTitle',
-				dialog.headerNode.one('.modal-title').text()
-			);
-		}
-
-		footer.get('boundingBox').all('.add-category-toolbar-button').hide();
-
-		footer.get('boundingBox').one('#addButton').show();
-
-		footer.get('boundingBox').one('#cancelButton').show();
-
-		if (
-			dialog.get('initialTitle') !==
-			dialog.headerNode.one('.modal-title').text()
-		) {
-			dialog.headerNode
-				.one('.modal-title')
-				.text(dialog.get('initialTitle'));
-		}
-	}, [itemSelectorSaveEvent]);
 
 	const handleSelectionChange = (selectedNodes) => {
 		const data = {};
@@ -127,7 +94,9 @@ function SelectCategory({
 
 		selectedNodesRef.current = data;
 
-		Liferay.Util.getOpener().Liferay.fire(itemSelectorSaveEvent, {data});
+		const openerWindow = Liferay.Util.getOpener();
+
+		openerWindow.Liferay.fire(itemSelectorSaveEvent, {data});
 	};
 
 	const initialSelectedNodeIds = useMemo(() => {
@@ -144,13 +113,27 @@ function SelectCategory({
 
 	return (
 		<div className="select-category">
-			<form className="select-category-filter" role="search">
+			{moveCategory && (
+				<ClayAlert displayType="info" variant="embedded">
+					{Liferay.Language.get(
+						'categories-can-only-be-moved-to-a-vocabulary-or-a-category-with-the-same-visibility'
+					)}
+				</ClayAlert>
+			)}
+
+			<form
+				className="select-category-filter"
+				onSubmit={(event) => event.preventDefault()}
+				role="search"
+			>
 				<ClayLayout.ContainerFluid className="d-flex">
 					<div className="input-group">
 						<div className="input-group-item">
 							<input
 								className="form-control h-100 input-group-inset input-group-inset-after"
-								onChange={handleQueryChange}
+								onChange={(event) =>
+									setFilterQuery(event.target.value)
+								}
 								placeholder={Liferay.Language.get('search')}
 								type="text"
 							/>
@@ -165,7 +148,9 @@ function SelectCategory({
 						<ClayButton
 							className="btn-monospaced ml-3 nav-btn nav-btn-monospaced"
 							displayType="primary"
-							onClick={handleAddCategoryClick}
+							onClick={() => {
+								navigate(addCategoryURL);
+							}}
 						>
 							<ClayIcon symbol="plus" />
 						</ClayButton>
@@ -179,14 +164,25 @@ function SelectCategory({
 						className="category-tree"
 						id={`${namespace}categoryContainer`}
 					>
-						<Treeview
-							filterQuery={filterQuery}
-							initialSelectedNodeIds={initialSelectedNodeIds}
-							multiSelection={multiSelection}
-							NodeComponent={Treeview.Card}
-							nodes={flattenedNodes}
-							onSelectedNodesChange={handleSelectionChange}
-						/>
+						{flattenedNodes.length > 0 ? (
+							<Treeview
+								NodeComponent={Treeview.Card}
+								filter={getFilter(filterQuery)}
+								initialSelectedNodeIds={initialSelectedNodeIds}
+								multiSelection={multiSelection}
+								nodes={flattenedNodes}
+								onSelectedNodesChange={handleSelectionChange}
+							/>
+						) : (
+							<div className="border-0 pt-0 sheet taglib-empty-result-message">
+								<div className="taglib-empty-result-message-header"></div>
+								<div className="sheet-text text-center">
+									{Liferay.Language.get(
+										'no-categories-were-found'
+									)}
+								</div>
+							</div>
+						)}
 					</div>
 				</ClayLayout.ContainerFluid>
 			</form>
@@ -195,7 +191,8 @@ function SelectCategory({
 }
 
 SelectCategory.propTypes = {
-	addCategoryURL: PropTypes.string.isRequired,
+	addCategoryURL: PropTypes.string,
+	moveCategory: PropTypes.bool,
 };
 
 export default SelectCategory;

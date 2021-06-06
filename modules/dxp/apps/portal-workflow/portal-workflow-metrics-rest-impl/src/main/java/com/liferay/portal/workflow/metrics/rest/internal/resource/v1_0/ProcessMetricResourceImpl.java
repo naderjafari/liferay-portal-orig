@@ -399,7 +399,7 @@ public class ProcessMetricResourceImpl
 			onTimeFilterAggregation, overdueFilterAggregation,
 			_resourceHelper.creatInstanceCountScriptedMetricAggregation(
 				Collections.emptyList(), null, dateEnd, dateStart,
-				Collections.emptyList(), Collections.emptyList()));
+				Collections.emptyList()));
 
 		termsAggregation.addPipelineAggregations(
 			_createBucketSelectorPipelineAggregation());
@@ -617,10 +617,8 @@ public class ProcessMetricResourceImpl
 			(FilterAggregationResult)bucket.getChildAggregationResult(
 				"instanceCountFilter");
 
-		ValueCountAggregationResult valueCountAggregationResult;
-
 		if (filterAggregationResult != null) {
-			valueCountAggregationResult =
+			ValueCountAggregationResult valueCountAggregationResult =
 				(ValueCountAggregationResult)
 					filterAggregationResult.getChildAggregationResult(
 						"instanceCount");

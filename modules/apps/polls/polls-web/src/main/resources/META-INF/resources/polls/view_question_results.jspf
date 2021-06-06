@@ -67,7 +67,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 						<%= numberFormat.format(choiceVotes) %>
 					</td>
 					<td class="table-cell">
-						<div class="progress progress-xs" style="width: <%= votesPixelWidth %>px;">
+						<div class="progress" style="width: <%= votesPixelWidth %>px;">
 							<div aria-valuemax="100" aria-valuemin="0" aria-valuenow="<%= votesPercentWidth %>" class="progress-bar" role="progressbar" style="width: <%= votesPercentWidth %>%;"></div>
 						</div>
 					</td>
@@ -125,12 +125,17 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 		/>
 
 		<%
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "/polls/view_question");
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter("questionId", String.valueOf(question.getQuestionId()));
-		portletURL.setParameter("viewResults", Boolean.TRUE.toString());
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCRenderCommandName(
+			"/polls/view_question"
+		).setRedirect(
+			redirect
+		).setParameter(
+			"questionId", question.getQuestionId()
+		).setParameter(
+			"viewResults", Boolean.TRUE.toString()
+		).build();
 
 		List<String> headerNames = new ArrayList<String>();
 
@@ -140,9 +145,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 
 		SearchContainer<PollsVote> searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, portletURL, headerNames, null);
 
-		int total = PollsVoteLocalServiceUtil.getQuestionVotesCount(question.getQuestionId());
-
-		searchContainer.setTotal(total);
+		searchContainer.setTotal(PollsVoteLocalServiceUtil.getQuestionVotesCount(question.getQuestionId()));
 
 		List<PollsVote> results = PollsVoteLocalServiceUtil.getQuestionVotes(question.getQuestionId(), searchContainer.getStart(), searchContainer.getEnd());
 

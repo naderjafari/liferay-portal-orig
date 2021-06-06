@@ -14,13 +14,17 @@
 
 package com.liferay.site.memberships.web.internal.display.context;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.UserGroupGroupRole;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserGroupGroupRoleLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -32,6 +36,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.util.comparator.RoleNameComparator;
 import com.liferay.portlet.rolesadmin.search.RoleSearch;
 import com.liferay.portlet.rolesadmin.search.RoleSearchTerms;
+import com.liferay.site.memberships.constants.SiteMembershipsPortletKeys;
+import com.liferay.site.memberships.web.internal.util.DepotRolesUtil;
 import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 
 import java.util.List;
@@ -64,8 +70,10 @@ public class UserGroupRolesDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_httpServletRequest, "displayStyle", "icon");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest,
+			SiteMembershipsPortletKeys.SITE_MEMBERSHIPS_ADMIN,
+			"display-style-roles", "icon");
 
 		return _displayStyle;
 	}
@@ -131,14 +139,15 @@ public class UserGroupRolesDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/user_groups_roles.jsp");
-		portletURL.setParameter(
-			"userGroupId", String.valueOf(getUserGroupId()));
-
-		portletURL.setParameter(
-			"assignRoles", String.valueOf(_isAssignRoles()));
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/user_groups_roles.jsp"
+		).setParameter(
+			"assignRoles", _isAssignRoles()
+		).setParameter(
+			"userGroupId", getUserGroupId()
+		).build();
 
 		String displayStyle = getDisplayStyle();
 
@@ -199,10 +208,18 @@ public class UserGroupRolesDisplayContext {
 
 		roleSearch.setOrderByType(getOrderByType());
 
+		int roleType = RoleConstants.TYPE_SITE;
+
+		Group group = GroupLocalServiceUtil.fetchGroup(getGroupId());
+
+		if (group.isDepot()) {
+			roleType = RoleConstants.TYPE_DEPOT;
+		}
+
 		List<Role> roles = RoleLocalServiceUtil.search(
 			themeDisplay.getCompanyId(), searchTerms.getKeywords(),
-			new Integer[] {RoleConstants.TYPE_SITE}, QueryUtil.ALL_POS,
-			QueryUtil.ALL_POS, orderByComparator);
+			new Integer[] {roleType}, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			orderByComparator);
 
 		List<Role> selectedRoles = _getSelectedRoles();
 
@@ -222,8 +239,14 @@ public class UserGroupRolesDisplayContext {
 			Collectors.toList()
 		);
 
-		roles = UsersAdminUtil.filterGroupRoles(
-			themeDisplay.getPermissionChecker(), getGroupId(), roles);
+		if (group.isDepot()) {
+			roles = DepotRolesUtil.filterGroupRoles(
+				themeDisplay.getPermissionChecker(), getGroupId(), roles);
+		}
+		else {
+			roles = UsersAdminUtil.filterGroupRoles(
+				themeDisplay.getPermissionChecker(), getGroupId(), roles);
+		}
 
 		int rolesCount = roles.size();
 

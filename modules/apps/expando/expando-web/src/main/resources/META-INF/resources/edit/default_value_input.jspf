@@ -21,7 +21,9 @@
 		boolean curValue = true;
 
 		if (defaultValue != null) {
-			curValue = ((Boolean)defaultValue).booleanValue();
+			Boolean defaultValueBoolean = (Boolean)defaultValue;
+
+			curValue = defaultValueBoolean.booleanValue();
 		}
 		%>
 
@@ -130,7 +132,7 @@
 		<aui:script require="map-common/js/MapBase.es as MapBase">
 			var geolocationField = {
 				init: function () {
-					Liferay.MapBase.get('<portlet:namespace /><%= name %>', function (map) {
+					Liferay.MapBase.get('<portlet:namespace /><%= name %>', (map) => {
 						map.on(
 							'positionChange',
 							geolocationField.onPositionChange,
@@ -321,7 +323,7 @@
 	}
 
 	function updateElement(formElementIds, action) {
-		formElementIds.forEach(function (formElementId) {
+		formElementIds.forEach((formElementId) => {
 			var formElement = document.getElementById(
 				'<portlet:namespace />' + formElementId
 			);

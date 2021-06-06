@@ -16,11 +16,10 @@ definition {
 			groupName = "Site Name",
 			layoutName = "Staging Test Page");
 
-		Staging.openStagingAdmin(siteURLKey = "site-name");
-
-		Staging.activateStagingCP(
-			pageVersioningEnabled = "true",
-			siteName = "Site Name");
+		JSONStaging.enableLocalStaging(
+			branchingPrivate = "true",
+			branchingPublic = "true",
+			groupName = "Site Name");
 
 		Navigator.openStagingSiteURL(siteName = "Site Name");
 	}
@@ -41,7 +40,8 @@ definition {
 		Staging.addRepeatEvent(
 			frequency = "Daily",
 			scheduleTitleName = "Event Daily Name",
-			siteName = "Site Name");
+			siteName = "Site Name",
+			startOnTomorrow = "true");
 
 		Staging.viewRepeatingEventDetails(
 			endDate = "No End Date",
@@ -53,6 +53,7 @@ definition {
 	test AddPageVariation {
 		property portal.acceptance = "true";
 		property test.assert.warning.exceptions = "true";
+		property test.name.skip.portal.instance = "PGStagingWithVersioning#AddPageVariation";
 		property testray.component.names = "Training";
 
 		Staging.addPageVariationPG(pageVariationName = "Page Variation Name");
@@ -90,6 +91,8 @@ definition {
 
 	@priority = "5"
 	test AddPageWithPageVersioningEnabled {
+		property portal.acceptance = "true";
+
 		SitePages.openPagesAdmin(siteURLKey = "site-name-staging");
 
 		SitePages.addPublicPage(pageName = "Staging Page Versioning");
@@ -98,7 +101,7 @@ definition {
 			pageName = "Staging Page Versioning",
 			siteName = "Site Name");
 
-		Portlet.addPG(portletName = "Hello World");
+		Portlet.addPG(portletName = "IFrame");
 
 		Staging.markAsReadyForPublication();
 
@@ -112,11 +115,13 @@ definition {
 			pageName = "Staging Page Versioning",
 			siteName = "Site Name");
 
-		Portlet.viewSpecificPG(portletName = "Hello World");
+		Portlet.viewSpecificPG(portletName = "IFrame");
 	}
 
 	@priority = "5"
 	test AddSitePagesVariation {
+		property portal.acceptance = "true";
+
 		Staging.addSitePagesVariationPG(sitePagesVariationName = "Site Pages Variation Name");
 
 		Navigator.openStagingSiteURL(siteName = "Site Name");

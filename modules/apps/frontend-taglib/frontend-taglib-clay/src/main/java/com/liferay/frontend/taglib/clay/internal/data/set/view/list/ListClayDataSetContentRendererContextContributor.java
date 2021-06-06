@@ -18,7 +18,9 @@ import com.liferay.frontend.taglib.clay.data.set.ClayDataSetContentRendererConte
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.constants.ClayDataSetConstants;
 import com.liferay.frontend.taglib.clay.data.set.view.list.BaseListClayDataSetDisplayView;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Collections;
 import java.util.Locale;
@@ -30,12 +32,13 @@ import org.osgi.service.component.annotations.Component;
  * @author Marco Leo
  */
 @Component(
-	property = "clay.data.set.content.renderer.name=" + ClayDataSetConstants.CONTENT_RENDERER_LIST,
+	property = "clay.data.set.content.renderer.name=" + ClayDataSetConstants.LIST,
 	service = ClayDataSetContentRendererContextContributor.class
 )
 public class ListClayDataSetContentRendererContextContributor
 	implements ClayDataSetContentRendererContextContributor {
 
+	@Override
 	public Map<String, Object> getContentRendererContext(
 		ClayDataSetDisplayView clayDataSetDisplayView, Locale locale) {
 
@@ -61,7 +64,16 @@ public class ListClayDataSetContentRendererContextContributor
 			).put(
 				"symbol", baseListClayDataSetDisplayView.getSymbol()
 			).put(
-				"title", baseListClayDataSetDisplayView.getTitle()
+				"title",
+				() -> {
+					String title = baseListClayDataSetDisplayView.getTitle();
+
+					if (title.contains(StringPool.PERIOD)) {
+						return StringUtil.split(title, StringPool.PERIOD);
+					}
+
+					return title;
+				}
 			).build()
 		).build();
 	}

@@ -158,10 +158,10 @@ public class MBMessageStagedModelDataHandlerTest
 			stagingGroup.getGroupId(), mbCategory.getCategoryId(),
 			mbThread.getThreadId());
 
-		MBMessage movedMbMessage = (MBMessage)getStagedModel(
+		MBMessage movedMBMessage = (MBMessage)getStagedModel(
 			mbMessage.getUuid(), stagingGroup);
 
-		exportImportStagedModel(movedMbMessage);
+		exportImportStagedModel(movedMBMessage);
 
 		MBMessage importedMBMessage = (MBMessage)getStagedModel(
 			mbMessage.getUuid(), liveGroup);
@@ -379,6 +379,9 @@ public class MBMessageStagedModelDataHandlerTest
 		MBMessage message = (MBMessage)stagedModel;
 		MBMessage importedMessage = (MBMessage)importedStagedModel;
 
+		Assert.assertEquals(
+			message.getExternalReferenceCode(),
+			importedMessage.getExternalReferenceCode());
 		Assert.assertEquals(message.getSubject(), importedMessage.getSubject());
 		Assert.assertEquals(message.getFormat(), importedMessage.getFormat());
 		Assert.assertEquals(

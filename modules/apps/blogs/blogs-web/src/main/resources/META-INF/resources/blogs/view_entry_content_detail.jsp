@@ -89,17 +89,21 @@ BlogsPortletInstanceConfiguration blogsPortletInstanceConfiguration = BlogsPortl
 						>
 							<div class="dropdown dropdown-action">
 								<c:if test="<%= BlogsEntryPermission.contains(permissionChecker, entry, ActionKeys.UPDATE) %>">
-
-									<%
-									PortletURL editEntryURL = PortalUtil.getControlPanelPortletURL(request, themeDisplay.getScopeGroup(), BlogsPortletKeys.BLOGS_ADMIN, 0, themeDisplay.getPlid(), PortletRequest.RENDER_PHASE);
-
-									editEntryURL.setParameter("mvcRenderCommandName", "/blogs/edit_entry");
-									editEntryURL.setParameter("redirect", currentURL);
-									editEntryURL.setParameter("portletResource", portletDisplay.getId());
-									editEntryURL.setParameter("entryId", String.valueOf(entry.getEntryId()));
-									%>
-
-									<a href="<%= editEntryURL.toString() %>">
+									<a
+										href="<%=
+											PortletURLBuilder.create(
+												PortalUtil.getControlPanelPortletURL(request, themeDisplay.getScopeGroup(), BlogsPortletKeys.BLOGS_ADMIN, 0, themeDisplay.getPlid(), PortletRequest.RENDER_PHASE)
+											).setMVCRenderCommandName(
+												"/blogs/edit_entry"
+											).setRedirect(
+												currentURL
+											).setParameter(
+												"entryId", entry.getEntryId()
+											).setParameter(
+												"portletResource", portletDisplay.getId()
+											).buildString()
+										%>"
+									>
 										<span class="hide-accessible"><liferay-ui:message key="edit-entry" /></span>
 
 										<clay:icon
@@ -120,7 +124,7 @@ BlogsPortletInstanceConfiguration blogsPortletInstanceConfiguration = BlogsPortl
 
 						String entryUserURL = StringPool.BLANK;
 
-						if ((entryUser != null) && !entryUser.isDefaultUser()) {
+						if ((entryUser != null) && !entryUser.isDefaultUser() && !user.isDefaultUser()) {
 							entryUserURL = entryUser.getDisplayURL(themeDisplay);
 						}
 						%>

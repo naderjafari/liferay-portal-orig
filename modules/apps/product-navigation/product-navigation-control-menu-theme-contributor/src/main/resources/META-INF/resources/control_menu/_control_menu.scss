@@ -95,27 +95,16 @@ a.control-menu-icon,
 	.control-menu-level-1-heading {
 		color: $gray-900;
 	}
-
-	.toast-animation {
-		.cn,
-		.pm {
-			border-color: $control-menu-level-1-light-color;
-		}
-	}
-
-	.product-menu-toggle:focus,
-	.product-menu-toggle:hover {
-		.cn,
-		.pm {
-			border-color: $control-menu-level-1-light-link-hover-color;
-		}
-	}
 }
 
 .control-menu-level-1-nav {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
+
+	@include media-breakpoint-up(sm) {
+		flex-wrap: nowrap;
+	}
 
 	> li > .control-menu-nav > .control-menu-nav-item {
 		margin-left: 4px;
@@ -219,12 +208,12 @@ a.control-menu-icon,
 	display: inline-flex;
 }
 
-.control-menu-nav-item-content {
+.control-menu-nav-item-content:last-child {
 	display: flex;
 	flex-basis: 0;
 	flex-grow: 1;
 	flex-shrink: 1;
-	min-width: 64px;
+	min-width: 48px;
 	width: 0;
 
 	.clamp-container {
@@ -271,11 +260,14 @@ a.control-menu-icon,
 .tools-control-group {
 	flex: 1;
 	flex-wrap: wrap;
-	min-width: 50px;
 
 	> .control-menu-nav {
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		justify-content: center;
+
+		@include media-breakpoint-up(md) {
+			flex-wrap: wrap;
+		}
 
 		> li > .lfr-portal-tooltip > .control-menu-icon {
 			@extend %control-menu-icon-monospaced;

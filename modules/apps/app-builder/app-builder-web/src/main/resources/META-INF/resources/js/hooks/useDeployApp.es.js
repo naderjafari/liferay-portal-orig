@@ -15,21 +15,21 @@
 import ClayButton from '@clayui/button';
 import ClayList from '@clayui/list';
 import {Context} from '@clayui/modal';
+import {updateItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {concatValues} from 'data-engine-js-components-web/js/utils/utils.es';
 import React, {useContext} from 'react';
 
 import {DEPLOYMENT_ACTION, DEPLOYMENT_TYPES} from '../pages/apps/constants.es';
-import {updateItem} from '../utils/client.es';
-import {concatValues} from '../utils/utils.es';
 
 export default () => {
 	const [{onClose}, dispatch] = useContext(Context);
 
 	const deployApp = (item, undeploy) => {
-		return updateItem(
-			`/o/app-builder/v1.0/apps/${item.id}/${
+		return updateItem({
+			endpoint: `/o/app-builder/v1.0/apps/${item.id}/${
 				undeploy ? 'undeploy' : 'deploy'
-			}`
-		)
+			}`,
+		})
 			.then(() => true)
 			.catch((error) => error);
 	};
@@ -51,7 +51,7 @@ export default () => {
 											<b>
 												{Liferay.Language.get('name')}:
 											</b>{' '}
-											{app.nameText}
+											{app.appName}
 										</span>
 										<span>
 											<b>
@@ -108,7 +108,7 @@ export default () => {
 						</ClayButton.Group>,
 					],
 					header: DEPLOYMENT_ACTION.undeploy,
-					size: 'lg',
+					size: 'md',
 					status: 'warning',
 				},
 				type: 1,

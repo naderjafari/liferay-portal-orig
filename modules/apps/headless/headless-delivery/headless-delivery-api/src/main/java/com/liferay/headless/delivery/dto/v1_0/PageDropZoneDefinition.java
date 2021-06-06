@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageDropZoneDefinition")
+@GraphQLName(
+	description = "Represent a definition of a Page drop zone.",
+	value = "PageDropZoneDefinition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageDropZoneDefinition")
-public class PageDropZoneDefinition {
+public class PageDropZoneDefinition implements Serializable {
 
 	public static PageDropZoneDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(PageDropZoneDefinition.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "The page drop zone's allowed or unallowed fragments."
+	)
 	@Valid
 	public Object getFragmentSettings() {
 		return fragmentSettings;
@@ -76,7 +83,9 @@ public class PageDropZoneDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The page drop zone's allowed or unallowed fragments."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object fragmentSettings;
 
@@ -124,6 +133,7 @@ public class PageDropZoneDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageDropZoneDefinition",
 		name = "x-class-name"
 	)
@@ -159,7 +169,7 @@ public class PageDropZoneDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -198,7 +208,7 @@ public class PageDropZoneDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

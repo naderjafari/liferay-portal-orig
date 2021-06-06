@@ -50,12 +50,17 @@
 </tr>
 <tr>
 	<td>H3_HEADER</td>
-	<td>//h3[@class='header-title']/span</td>
+	<td>//h3[@class='header-title']/span | //span[contains(@class,'title')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>H3_HEADER_2</td>
 	<td>xpath=(//h3[@class='header-title']/span)[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>H4_COMPONENT_TITLE</td>
+	<td>//h4[@class='component-title']/span</td>
 	<td></td>
 </tr>
 <tr>
@@ -76,6 +81,11 @@
 <tr>
 	<td>LOADED</td>
 	<td>//div[@data-qa-id='app-loaded']//span[contains(.,'${key_portletName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>MESSAGE_INFO</td>
+	<td>//div[contains(@class,'portlet-msg-info')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -126,6 +136,11 @@
 <tr>
 	<td>SPECIFIC_ELLIPSIS_ICON</td>
 	<td>//div[@id='main-content']//header[contains(.,'${key_portletName}')]//menu/div[contains(@class,'portlet-options')]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SPECIFIC_FRAGMENTS_AND_WIDGETS</td>
+	<td>//div[contains(@id,'fragment')]//section[contains(@id,'${key_portletName}')]</td>
 	<td></td>
 </tr>
 <tr>

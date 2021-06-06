@@ -10,13 +10,16 @@
  */
 
 import ClayLabel from '@clayui/label';
-import {concatValues} from 'app-builder-web/js/utils/utils.es';
+import classNames from 'classnames';
+import {concatValues} from 'data-engine-js-components-web/js/utils/utils.es';
 import React from 'react';
 
 import '../../../css/WorkflowInfoBar.scss';
 
 export default function WorkflowInfo({
-	assignees = [{}],
+	assignees = [],
+	appVersion,
+	className,
 	completed,
 	hideColumns = [],
 	taskNames = [],
@@ -24,7 +27,7 @@ export default function WorkflowInfo({
 }) {
 	const emptyValue = '--';
 
-	let assignee = assignees[0].name || emptyValue;
+	let assignee = assignees[0]?.name || emptyValue;
 
 	const status = completed ? (
 		<ClayLabel displayType="success">
@@ -38,7 +41,7 @@ export default function WorkflowInfo({
 
 	const stepName = taskNames[0] || emptyValue;
 
-	if (assignees[0].id === -1) {
+	if (assignees[0]?.id === -1) {
 		const {appWorkflowRoleAssignments: roles = []} =
 			tasks.find(({name}) => name === stepName) || {};
 
@@ -46,6 +49,11 @@ export default function WorkflowInfo({
 
 		assignee = roleNames.length ? concatValues(roleNames) : emptyValue;
 	}
+
+	const tooltipProps = {
+		'data-tooltip-align': 'bottom',
+		'data-tooltip-delay': '0',
+	};
 
 	const items = [
 		{
@@ -61,16 +69,29 @@ export default function WorkflowInfo({
 		{
 			label: Liferay.Language.get('assignee'),
 			show: !hideColumns.includes('assignee'),
+			tooltip: {
+				title: assignee,
+				...tooltipProps,
+			},
 			value: assignee,
+		},
+		{
+			label: Liferay.Language.get('version'),
+			show: !hideColumns.includes('status'),
+			tooltip: {
+				title: Liferay.Language.get('app-version'),
+				...tooltipProps,
+			},
+			value: appVersion ?? '1.0',
 		},
 	];
 
 	return (
-		<div className="workflow-info-bar">
+		<div className={classNames('workflow-info-bar', className)}>
 			{items.map(
-				({label, show, value}, index) =>
+				({label, show, tooltip = {}, value}, index) =>
 					show && (
-						<div className="info-item" key={index}>
+						<div className="info-item" key={index} {...tooltip}>
 							<span className="font-weight-bold text-secondary">
 								{`${label}: `}
 							</span>

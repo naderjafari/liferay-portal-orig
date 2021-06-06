@@ -40,16 +40,31 @@ definition {
 		PortletEntry.save();
 	}
 
+	macro addCategoryWithSaveAndAddButton {
+		var key_categoryName = "${categoryName}";
+
+		var key_vocabularyName = "${vocabularyName}";
+
+		Navigator.gotoNavNested(navNested = "${key_vocabularyName}");
+
+		LexiconEntry.gotoAdd();
+
+		PortletEntry.inputTitle(title = "${categoryName}");
+
+		Button.clickNoError(button = "Save and Add a New One");
+
+		AssertTextNotPresent(
+			locator1 = "Categories#CATEGORY_NAME_FIELD",
+			value1 = "${categoryName}");
+
+		Button.clickNoError(button = "Cancel");
+	}
+
 	@summary = "Add a category named '${categoryName}' to the vocabulary named '${vocabularyName}'"
 	macro addCP {
 		var key_categoryName = "${categoryName}";
 
-		if (isSet(vocabularyName)) {
-			var key_vocabularyName = "${vocabularyName}";
-		}
-		else {
-			var key_vocabularyName = "Topic";
-		}
+		var key_vocabularyName = "${vocabularyName}";
 
 		Navigator.gotoNavNested(navNested = "${key_vocabularyName}");
 
@@ -61,7 +76,70 @@ definition {
 			PortletEntry.inputDescription(description = "${categoryDescription}");
 		}
 
+		if (isSet(displayPageTemplateType)) {
+			Panel.expandPanel(panel = "Display Page");
+
+			if ("${displayPageTemplateType}" != "Default") {
+				Select(
+					locator1 = "WCEditWebContent#DISPLAY_PAGE_SELECT",
+					value1 = "${displayPageTemplateType}");
+			}
+
+			Pause(locator1 = "3000");
+
+			AssertSelectedLabel(
+				locator1 = "WCEditWebContent#DISPLAY_PAGE_SELECT",
+				value1 = "${displayPageTemplateType}");
+
+			if ("${displayPageTemplateType}" != "None") {
+				if ("${displayPageTemplateType}" == "Default") {
+					AssertTextEquals(
+						locator1 = "WCEditWebContent#DISPLAY_PAGE_DEFAULT_SELECTION",
+						value1 = "${displayPageName}");
+				}
+				if ("${displayPageTemplateType}" == "Specific") {
+					AssertTextEquals(
+						locator1 = "WCEditWebContent#DISPLAY_PAGE_SPECIFIC_SELECTION",
+						value1 = "No Display Page Template Selected");
+
+					WaitForLiferayEvent.initializeLiferayEventLog();
+
+					Click.javaScriptClick(locator1 = "WCEditWebContent#DISPLAY_PAGE_CHOOSE_BUTTON");
+
+					SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+					LexiconCard.clickCard(card = "${displayPageName}");
+
+					SelectFrameTop();
+
+					AssertTextEquals(
+						locator1 = "WCEditWebContent#DISPLAY_PAGE_SPECIFIC_SELECTION",
+						value1 = "${displayPageName}");
+				}
+			}
+		}
+
 		PortletEntry.save();
+	}
+
+	macro addImageToCategory {
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "${categoryName}");
+
+		Navigator.gotoNavTab(navTab = "Images");
+
+		LexiconEntry.gotoAdd();
+
+		ControlMenu.viewHeaderTitle(headerTitle = "Add Image");
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		Click(locator1 = "Button#SELECT_FILE");
+
+		ItemSelector.uploadFile(uploadFileName = "${imageName}");
+
+		PortletEntry.publish();
 	}
 
 	macro addPropertyCP {
@@ -177,7 +255,9 @@ definition {
 
 		LexiconEntry.selectEntry(key_rowEntry = "${rowEntry}");
 
-		AssertElementPresent(locator1 = "Icon#DELETE_NOT_FOCUSABLE");
+		AssertElementPresent(
+			key_text = "times-circle",
+			locator1 = "Icon#ANY_DISABLED");
 	}
 
 	macro deleteCategoryProperty2CP {
@@ -205,7 +285,54 @@ definition {
 			menuItem = "Edit",
 			rowEntry = "${categoryName}");
 
-		PortletEntry.inputTitle(title = "${categoryNameEdit}");
+		if (isSet(categoryNameEdit)) {
+			PortletEntry.inputTitle(title = "${categoryNameEdit}");
+		}
+
+		if (isSet(displayPageTemplateType)) {
+			Panel.expandPanel(panel = "Display Page");
+
+			Select(
+				locator1 = "WCEditWebContent#DISPLAY_PAGE_SELECT",
+				value1 = "${displayPageTemplateType}");
+
+			Pause(locator1 = "3000");
+
+			AssertSelectedLabel(
+				locator1 = "WCEditWebContent#DISPLAY_PAGE_SELECT",
+				value1 = "${displayPageTemplateType}");
+
+			if ("${displayPageTemplateType}" != "None") {
+				if ("${displayPageTemplateType}" == "Default") {
+					AssertTextEquals(
+						locator1 = "WCEditWebContent#DISPLAY_PAGE_DEFAULT_SELECTION",
+						value1 = "${displayPageName}");
+				}
+				if ("${displayPageTemplateType}" == "Specific") {
+					if (!(isSet(selectedDisplayPageName))) {
+						var selectedDisplayPageName = "No Display Page Template Selected";
+					}
+
+					AssertTextEquals(
+						locator1 = "WCEditWebContent#DISPLAY_PAGE_SPECIFIC_SELECTION",
+						value1 = "${selectedDisplayPageName}");
+
+					WaitForLiferayEvent.initializeLiferayEventLog();
+
+					Click.javaScriptClick(locator1 = "WCEditWebContent#DISPLAY_PAGE_CHOOSE_BUTTON");
+
+					SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+					LexiconCard.clickCard(card = "${displayPageName}");
+
+					SelectFrameTop();
+
+					AssertTextEquals(
+						locator1 = "WCEditWebContent#DISPLAY_PAGE_SPECIFIC_SELECTION",
+						value1 = "${displayPageName}");
+				}
+			}
+		}
 
 		PortletEntry.save();
 	}

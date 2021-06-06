@@ -147,9 +147,7 @@ public class ToolDependencies {
 		UnsecureSAXReaderUtil unsecureSAXReaderUtil =
 			new UnsecureSAXReaderUtil();
 
-		SAXReaderImpl unsecureSAXReaderImpl = new SAXReaderImpl();
-
-		unsecureSAXReaderUtil.setSAXReader(unsecureSAXReaderImpl);
+		unsecureSAXReaderUtil.setSAXReader(new SAXReaderImpl());
 
 		// DefaultModelHintsImpl requires SecureXMLFactoryProviderUtil
 
@@ -192,11 +190,7 @@ public class ToolDependencies {
 
 		ResourceActionsUtil resourceActionsUtil = new ResourceActionsUtil();
 
-		ResourceActionsImpl resourceActionsImpl = new ResourceActionsImpl();
-
-		resourceActionsImpl.afterPropertiesSet();
-
-		resourceActionsUtil.setResourceActions(resourceActionsImpl);
+		resourceActionsUtil.setResourceActions(new ResourceActionsImpl());
 	}
 
 	private static class TestMultiVMPool implements MultiVMPool {
@@ -215,7 +209,7 @@ public class ToolDependencies {
 
 		/**
 		 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-		 *              #getPortalCache(String)}
+		 *             #getPortalCache(String)}
 		 */
 		@Deprecated
 		@Override
@@ -412,7 +406,7 @@ public class ToolDependencies {
 
 		/**
 		 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-		 *              #getPortalCache(String)}
+		 *             #getPortalCache(String)}
 		 */
 		@Deprecated
 		@Override
@@ -526,7 +520,7 @@ public class ToolDependencies {
 
 		/**
 		 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-		 *              #getPortalCache(String)}
+		 *             #getPortalCache(String)}
 		 */
 		@Deprecated
 		@Override

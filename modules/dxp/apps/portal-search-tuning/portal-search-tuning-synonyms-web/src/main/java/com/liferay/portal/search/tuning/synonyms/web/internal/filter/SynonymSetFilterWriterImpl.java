@@ -40,9 +40,8 @@ public class SynonymSetFilterWriterImpl implements SynonymSetFilterWriter {
 			UpdateIndexSettingsIndexRequest updateIndexSettingsIndexRequest =
 				new UpdateIndexSettingsIndexRequest(companyIndexName);
 
-			String settings = buildSettings(filterName, synonymSets);
-
-			updateIndexSettingsIndexRequest.setSettings(settings);
+			updateIndexSettingsIndexRequest.setSettings(
+				buildSettings(filterName, synonymSets));
 
 			searchEngineAdapter.execute(updateIndexSettingsIndexRequest);
 		}
@@ -76,6 +75,8 @@ public class SynonymSetFilterWriterImpl implements SynonymSetFilterWriter {
 
 	protected void openIndex(String indexName) {
 		OpenIndexRequest openIndexRequest = new OpenIndexRequest(indexName);
+
+		openIndexRequest.setWaitForActiveShards(1);
 
 		searchEngineAdapter.execute(openIndexRequest);
 	}

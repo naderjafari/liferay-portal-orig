@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -42,7 +43,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import org.junit.After;
@@ -124,6 +124,10 @@ public class FragmentEntryVersionPersistenceTest {
 
 		FragmentEntryVersion newFragmentEntryVersion = _persistence.create(pk);
 
+		newFragmentEntryVersion.setMvccVersion(RandomTestUtil.nextLong());
+
+		newFragmentEntryVersion.setCtCollectionId(RandomTestUtil.nextLong());
+
 		newFragmentEntryVersion.setVersion(RandomTestUtil.nextInt());
 
 		newFragmentEntryVersion.setUuid(RandomTestUtil.randomString());
@@ -185,6 +189,12 @@ public class FragmentEntryVersionPersistenceTest {
 			_persistence.findByPrimaryKey(
 				newFragmentEntryVersion.getPrimaryKey());
 
+		Assert.assertEquals(
+			existingFragmentEntryVersion.getMvccVersion(),
+			newFragmentEntryVersion.getMvccVersion());
+		Assert.assertEquals(
+			existingFragmentEntryVersion.getCtCollectionId(),
+			newFragmentEntryVersion.getCtCollectionId());
 		Assert.assertEquals(
 			existingFragmentEntryVersion.getFragmentEntryVersionId(),
 			newFragmentEntryVersion.getFragmentEntryVersionId());
@@ -533,10 +543,11 @@ public class FragmentEntryVersionPersistenceTest {
 
 	protected OrderByComparator<FragmentEntryVersion> getOrderByComparator() {
 		return OrderByComparatorFactoryUtil.create(
-			"FragmentEntryVersion", "fragmentEntryVersionId", true, "version",
-			true, "uuid", true, "fragmentEntryId", true, "groupId", true,
-			"companyId", true, "userId", true, "userName", true, "createDate",
-			true, "modifiedDate", true, "fragmentCollectionId", true,
+			"FragmentEntryVersion", "mvccVersion", true, "ctCollectionId", true,
+			"fragmentEntryVersionId", true, "version", true, "uuid", true,
+			"fragmentEntryId", true, "groupId", true, "companyId", true,
+			"userId", true, "userName", true, "createDate", true,
+			"modifiedDate", true, "fragmentCollectionId", true,
 			"fragmentEntryKey", true, "name", true, "cacheable", true,
 			"previewFileEntryId", true, "readOnly", true, "type", true,
 			"lastPublishDate", true, "status", true, "statusByUserId", true,
@@ -757,60 +768,108 @@ public class FragmentEntryVersionPersistenceTest {
 
 		_persistence.clearCache();
 
-		FragmentEntryVersion existingFragmentEntryVersion =
+		_assertOriginalValues(
 			_persistence.findByPrimaryKey(
-				newFragmentEntryVersion.getPrimaryKey());
+				newFragmentEntryVersion.getPrimaryKey()));
+	}
+
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromDatabase()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(true);
+	}
+
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromSession()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(false);
+	}
+
+	private void _testResetOriginalValuesWithDynamicQuery(boolean clearSession)
+		throws Exception {
+
+		FragmentEntryVersion newFragmentEntryVersion =
+			addFragmentEntryVersion();
+
+		if (clearSession) {
+			Session session = _persistence.openSession();
+
+			session.flush();
+
+			session.clear();
+		}
+
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			FragmentEntryVersion.class, _dynamicQueryClassLoader);
+
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"fragmentEntryVersionId",
+				newFragmentEntryVersion.getFragmentEntryVersionId()));
+
+		List<FragmentEntryVersion> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
+
+		_assertOriginalValues(result.get(0));
+	}
+
+	private void _assertOriginalValues(
+		FragmentEntryVersion fragmentEntryVersion) {
 
 		Assert.assertEquals(
-			Long.valueOf(existingFragmentEntryVersion.getFragmentEntryId()),
+			Long.valueOf(fragmentEntryVersion.getFragmentEntryId()),
 			ReflectionTestUtil.<Long>invoke(
-				existingFragmentEntryVersion, "getOriginalFragmentEntryId",
-				new Class<?>[0]));
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "fragmentEntryId"));
 		Assert.assertEquals(
-			Integer.valueOf(existingFragmentEntryVersion.getVersion()),
+			Integer.valueOf(fragmentEntryVersion.getVersion()),
 			ReflectionTestUtil.<Integer>invoke(
-				existingFragmentEntryVersion, "getOriginalVersion",
-				new Class<?>[0]));
-
-		Assert.assertTrue(
-			Objects.equals(
-				existingFragmentEntryVersion.getUuid(),
-				ReflectionTestUtil.invoke(
-					existingFragmentEntryVersion, "getOriginalUuid",
-					new Class<?>[0])));
-		Assert.assertEquals(
-			Long.valueOf(existingFragmentEntryVersion.getGroupId()),
-			ReflectionTestUtil.<Long>invoke(
-				existingFragmentEntryVersion, "getOriginalGroupId",
-				new Class<?>[0]));
-		Assert.assertEquals(
-			Integer.valueOf(existingFragmentEntryVersion.getVersion()),
-			ReflectionTestUtil.<Integer>invoke(
-				existingFragmentEntryVersion, "getOriginalVersion",
-				new Class<?>[0]));
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "version"));
 
 		Assert.assertEquals(
-			Long.valueOf(existingFragmentEntryVersion.getGroupId()),
-			ReflectionTestUtil.<Long>invoke(
-				existingFragmentEntryVersion, "getOriginalGroupId",
-				new Class<?>[0]));
-		Assert.assertTrue(
-			Objects.equals(
-				existingFragmentEntryVersion.getFragmentEntryKey(),
-				ReflectionTestUtil.invoke(
-					existingFragmentEntryVersion, "getOriginalFragmentEntryKey",
-					new Class<?>[0])));
+			fragmentEntryVersion.getUuid(),
+			ReflectionTestUtil.invoke(
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "uuid_"));
 		Assert.assertEquals(
-			Integer.valueOf(existingFragmentEntryVersion.getVersion()),
+			Long.valueOf(fragmentEntryVersion.getGroupId()),
+			ReflectionTestUtil.<Long>invoke(
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "groupId"));
+		Assert.assertEquals(
+			Integer.valueOf(fragmentEntryVersion.getVersion()),
 			ReflectionTestUtil.<Integer>invoke(
-				existingFragmentEntryVersion, "getOriginalVersion",
-				new Class<?>[0]));
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "version"));
+
+		Assert.assertEquals(
+			Long.valueOf(fragmentEntryVersion.getGroupId()),
+			ReflectionTestUtil.<Long>invoke(
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "groupId"));
+		Assert.assertEquals(
+			fragmentEntryVersion.getFragmentEntryKey(),
+			ReflectionTestUtil.invoke(
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "fragmentEntryKey"));
+		Assert.assertEquals(
+			Integer.valueOf(fragmentEntryVersion.getVersion()),
+			ReflectionTestUtil.<Integer>invoke(
+				fragmentEntryVersion, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "version"));
 	}
 
 	protected FragmentEntryVersion addFragmentEntryVersion() throws Exception {
 		long pk = RandomTestUtil.nextLong();
 
 		FragmentEntryVersion fragmentEntryVersion = _persistence.create(pk);
+
+		fragmentEntryVersion.setMvccVersion(RandomTestUtil.nextLong());
+
+		fragmentEntryVersion.setCtCollectionId(RandomTestUtil.nextLong());
 
 		fragmentEntryVersion.setVersion(RandomTestUtil.nextInt());
 

@@ -33,9 +33,7 @@ DiscussionComment rootDiscussionComment = discussion.getRootDiscussionComment();
 
 DiscussionRequestHelper discussionRequestHelper = new DiscussionRequestHelper(request);
 
-DiscussionPermission discussionPermission = CommentManagerUtil.getDiscussionPermission(discussionRequestHelper.getPermissionChecker());
-
-CommentTreeDisplayContext commentTreeDisplayContext = CommentDisplayContextProviderUtil.getCommentTreeDisplayContext(request, response, discussionPermission, discussionComment);
+CommentTreeDisplayContext commentTreeDisplayContext = CommentDisplayContextProviderUtil.getCommentTreeDisplayContext(request, response, CommentManagerUtil.getDiscussionPermission(discussionRequestHelper.getPermissionChecker()), discussionComment);
 
 Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZone);
 %>
@@ -95,18 +93,13 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 									<liferay-util:buffer
 										var="parentCommentUserBuffer"
 									>
-
-										<%
-										User parentMessageUser = parentDiscussionComment.getUser();
-										%>
-
 										<clay:content-row
 											noGutters="x"
 										>
 											<clay:content-col>
 												<liferay-ui:user-portrait
 													cssClass="sticker-lg"
-													user="<%= parentMessageUser %>"
+													user="<%= parentDiscussionComment.getUser() %>"
 												/>
 											</clay:content-col>
 
@@ -129,15 +122,10 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 									</liferay-util:buffer>
 
 									<clay:link
-										ariaLabel='<%= LanguageUtil.format(request, "in-reply-to-x", HtmlUtil.escape(parentDiscussionComment.getUserName()), false) %>'
-										data='<%=
-											HashMapBuilder.put(
-												"inreply-content", parentDiscussionComment.getBody()
-											).put(
-												"inreply-title", parentCommentUserBuffer
-											).build()
-										%>'
-										elementClasses="lfr-discussion-parent-link"
+										aria-label='<%= LanguageUtil.format(request, "in-reply-to-x", HtmlUtil.escape(parentDiscussionComment.getUserName()), false) %>'
+										cssClass="lfr-discussion-parent-link"
+										data-inreply-content="<%= HtmlUtil.escapeAttribute(parentDiscussionComment.getBody()) %>"
+										data-inreply-title="<%= HtmlUtil.escapeAttribute(parentCommentUserBuffer) %>"
 										href='<%= "#" + randomNamespace + "message_" + parentDiscussionComment.getCommentId() %>'
 										icon="redo"
 										label="<%= HtmlUtil.escape(parentDiscussionComment.getUserName()) %>"
@@ -146,7 +134,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 							</div>
 
 							<div class="text-secondary">
-								<span title="<%= dateFormatDateTime.format(createDate) %>"><liferay-ui:message arguments="<%= createDateDescription %>" key="x-ago" translateArguments="<%= false %>" /></span>
+								<span class="lfr-portal-tooltip" title="<%= dateFormatDateTime.format(createDate) %>"><liferay-ui:message arguments="<%= createDateDescription %>" key="x-ago" translateArguments="<%= false %>" /></span>
 
 								<%
 								Date modifiedDate = discussionComment.getModifiedDate();
@@ -154,7 +142,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 								<c:if test="<%= createDate.before(modifiedDate) %>">
 									-
-									<strong title="<%= dateFormatDateTime.format(modifiedDate) %>">
+									<strong class="lfr-portal-tooltip" title="<%= dateFormatDateTime.format(modifiedDate) %>">
 										<liferay-ui:message key="edited" />
 									</strong>
 								</c:if>
@@ -183,6 +171,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 							markupView="lexicon"
 							message="actions"
 							showWhenSingleIcon="<%= true %>"
+							triggerCssClass="lfr-portal-tooltip"
 						>
 							<c:if test="<%= commentTreeDisplayContext.isEditActionControlVisible() %>">
 								<liferay-ui:icon

@@ -12,78 +12,56 @@
  * details.
  */
 
-import {ClayTooltipProvider} from '@clayui/tooltip';
 import React from 'react';
 
-import ellipsize from './../../utils/ellipsize.es';
+import {formatNumber} from './../../utils/numeric.es';
 
 export default ({summary}) => {
-	const formatNumber = (number) => {
-		let formattedNumber = number.toString();
-
-		if (formattedNumber.length > 12) {
-			formattedNumber = ellipsize(number.toString(), 8);
-		}
-
-		return formattedNumber;
-	};
-
 	const getAttributes = (summaryItem) => {
-		const formatedNumber = formatNumber(summaryItem);
-
-		const attributes = {
+		return {
 			className: 'value',
+			title: formatNumber(summaryItem),
 		};
-
-		if (formatedNumber != summaryItem) {
-			attributes['title'] = summaryItem;
-		}
-
-		return attributes;
 	};
 
 	return (
-		<ClayTooltipProvider>
-			<div className="summary">
-				<div className="summary-item">
-					<div className="type">{Liferay.Language.get('sum')}</div>
-					<div
-						{...getAttributes(summary['sum'])}
-						data-tooltip-align="bottom"
-					>
-						{formatNumber(summary['sum'])}
-					</div>
-				</div>
-				<div className="summary-item">
-					<div className="type">
-						{Liferay.Language.get('average')}
-					</div>
-					<div
-						{...getAttributes(summary['average'])}
-						data-tooltip-align="bottom"
-					>
-						{formatNumber(summary['average'])}
-					</div>
-				</div>
-				<div className="summary-item">
-					<div className="type">{Liferay.Language.get('min')}</div>
-					<div
-						{...getAttributes(summary['min'])}
-						data-tooltip-align="bottom"
-					>
-						{formatNumber(summary['min'])}
-					</div>
-				</div>
-				<div className="summary-item">
-					<div className="type">{Liferay.Language.get('max')}</div>
-					<div
-						{...getAttributes(summary['max'])}
-						data-tooltip-align="bottom"
-					>
-						{formatNumber(summary['max'])}
-					</div>
+		<div className="summary">
+			<div className="summary-item">
+				<div className="type">{Liferay.Language.get('sum')}</div>
+				<div
+					{...getAttributes(summary['sum'])}
+					data-tooltip-align="bottom"
+				>
+					{formatNumber(summary['sum'], true)}
 				</div>
 			</div>
-		</ClayTooltipProvider>
+			<div className="summary-item">
+				<div className="type">{Liferay.Language.get('average')}</div>
+				<div
+					{...getAttributes(summary['average'])}
+					data-tooltip-align="bottom"
+				>
+					{formatNumber(summary['average'], true)}
+				</div>
+			</div>
+			<div className="summary-item">
+				<div className="type">{Liferay.Language.get('min')}</div>
+				<div
+					{...getAttributes(summary['min'])}
+					data-tooltip-align="bottom"
+				>
+					{formatNumber(summary['min'], true)}
+				</div>
+			</div>
+			<div className="summary-item">
+				<div className="type">{Liferay.Language.get('max')}</div>
+				<div
+					{...getAttributes(summary['max'])}
+					data-tooltip-align="bottom"
+				>
+					{formatNumber(summary['max'], true)}
+				</div>
+			</div>
+		</div>
 	);
 };

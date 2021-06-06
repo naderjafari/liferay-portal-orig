@@ -33,7 +33,7 @@ definition {
 
 	macro setDescriptionMap {
 		if (isSet(description)) {
-			var descriptionMap = '''{"en_US":"${description}"}''';
+			var descriptionMap = '''{"en_US":"%3Cp%3E${description}%3C%2Fp%3E"}''';
 		}
 		else {
 			var descriptionMap = "{}";
@@ -72,6 +72,7 @@ definition {
 	macro setServiceContext {
 		if (!(isSet(serviceContext))) {
 			var serviceContext = JSONServiceContextUtil.setServiceContext(
+				addGroupPermissions = "true",
 				addGuestPermissions = "true",
 				assetCategoryIds = "${assetCategoryIds}",
 				assetTagNames = "${assetTagNames}",
@@ -79,6 +80,24 @@ definition {
 		}
 
 		return "${serviceContext}";
+	}
+
+	macro setStatus {
+		Variables.assertDefined(parameterList = "${statusKey}");
+
+		if ("${statusKey}" == "APPROVE") {
+			var status = "0";
+		}
+
+		if ("${statusKey}" == "DRAFT") {
+			var status = "2";
+		}
+
+		if ("${statusKey}" == "EXPIRE") {
+			var status = "3";
+		}
+
+		return "${status}";
 	}
 
 	macro setTitleMap {

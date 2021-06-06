@@ -23,10 +23,6 @@ import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.document.library.test.util.DLTestUtil;
-import com.liferay.document.library.util.DLURLHelper;
-import com.liferay.info.display.contributor.InfoDisplayContributor;
-import com.liferay.info.display.contributor.InfoDisplayObjectProvider;
-import com.liferay.info.type.WebImage;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
 import com.liferay.layout.page.template.model.LayoutPageTemplateCollection;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
@@ -34,9 +30,7 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateCollectionServ
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryService;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -46,7 +40,6 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -55,9 +48,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
-import java.text.Format;
-
-import java.util.Map;
+import java.util.Locale;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -90,138 +81,25 @@ public class FileEntryInfoDisplayContributorTest {
 			fileEntry -> {
 				_addAssetDisplayPageEntry(fileEntry);
 
+				Locale locale = LocaleUtil.getDefault();
+
+				String expectedURL = StringBundler.concat(
+					"/", locale.getLanguage(), "/web/",
+					StringUtil.lowerCase(_group.getGroupKey()), "/d/",
+					fileEntry.getFileEntryId());
+
 				ThemeDisplay themeDisplay = new ThemeDisplay();
 
-				themeDisplay.setLocale(LocaleUtil.getDefault());
+				themeDisplay.setLocale(locale);
 				themeDisplay.setScopeGroupId(_group.getGroupId());
 				themeDisplay.setServerName("localhost");
 				themeDisplay.setSiteGroupId(_group.getGroupId());
-
-				String expectedURL = StringBundler.concat(
-					"/web/", StringUtil.lowerCase(_group.getGroupKey()), "/d/",
-					fileEntry.getFileEntryId());
 
 				Assert.assertEquals(
 					expectedURL,
 					_assetDisplayPageFriendlyURLProvider.getFriendlyURL(
 						FileEntry.class.getName(), fileEntry.getFileEntryId(),
 						themeDisplay));
-			});
-	}
-
-	@Test
-	public void testFileEntryInfoDisplayContributor() throws Exception {
-		_withAndWithoutAssetEntry(
-			fileEntry -> {
-				Assert.assertEquals(
-					FileEntry.class.getName(),
-					_infoDisplayContributor.getClassName());
-
-				Assert.assertEquals(
-					"/d/", _infoDisplayContributor.getInfoURLSeparator());
-
-				Assert.assertEquals(
-					"Document",
-					_infoDisplayContributor.getLabel(LocaleUtil.getDefault()));
-
-				Map<String, Object> infoDisplayFieldsValues =
-					_infoDisplayContributor.getInfoDisplayFieldsValues(
-						fileEntry, LocaleUtil.getDefault());
-
-				Assert.assertEquals(
-					fileEntry.getUserName(),
-					infoDisplayFieldsValues.get("authorName"));
-				Assert.assertNull(
-					infoDisplayFieldsValues.get("authorProfileImage"));
-				Assert.assertEquals(
-					null, infoDisplayFieldsValues.get("categories"));
-				Assert.assertEquals(
-					fileEntry.getDescription(),
-					infoDisplayFieldsValues.get("description"));
-				Assert.assertEquals(
-					_dlurlHelper.getDownloadURL(
-						fileEntry, fileEntry.getFileVersion(), null,
-						StringPool.BLANK),
-					infoDisplayFieldsValues.get("downloadURL"));
-				Assert.assertEquals(
-					fileEntry.getFileName(),
-					infoDisplayFieldsValues.get("fileName"));
-				Assert.assertEquals(
-					fileEntry.getMimeType(),
-					infoDisplayFieldsValues.get("mimeType"));
-
-				WebImage previewWebImage =
-					(WebImage)infoDisplayFieldsValues.get("previewImage");
-
-				Assert.assertEquals(StringPool.BLANK, previewWebImage.getUrl());
-
-				Format dateFormatDateTime =
-					FastDateFormatFactoryUtil.getDateTime(
-						LocaleUtil.getDefault());
-
-				Assert.assertEquals(
-					dateFormatDateTime.format(fileEntry.getModifiedDate()),
-					infoDisplayFieldsValues.get("publishDate"));
-
-				Assert.assertEquals(
-					LanguageUtil.formatStorageSize(
-						fileEntry.getSize(), LocaleUtil.getDefault()),
-					infoDisplayFieldsValues.get("size"));
-				Assert.assertEquals(
-					null, infoDisplayFieldsValues.get("tagNames"));
-				Assert.assertEquals(
-					fileEntry.getTitle(), infoDisplayFieldsValues.get("title"));
-				Assert.assertEquals(
-					fileEntry.getVersion(),
-					infoDisplayFieldsValues.get("version"));
-			});
-	}
-
-	@Test
-	public void testInfoDisplayObjectProvider() throws Exception {
-		_withAndWithoutAssetEntry(
-			fileEntry -> {
-				InfoDisplayObjectProvider<?> infoDisplayObjectProvider =
-					_infoDisplayContributor.getInfoDisplayObjectProvider(
-						fileEntry.getFileEntryId());
-
-				Assert.assertEquals(
-					fileEntry.getTitle(),
-					infoDisplayObjectProvider.getTitle(
-						LocaleUtil.getDefault()));
-
-				Assert.assertEquals(
-					fileEntry.getDescription(),
-					infoDisplayObjectProvider.getDescription(
-						LocaleUtil.getDefault()));
-
-				Assert.assertEquals(
-					String.valueOf(fileEntry.getFileEntryId()),
-					infoDisplayObjectProvider.getURLTitle(
-						LocaleUtil.getDefault()));
-
-				Assert.assertEquals(
-					StringPool.BLANK,
-					infoDisplayObjectProvider.getKeywords(
-						LocaleUtil.getDefault()));
-
-				Assert.assertEquals(
-					_portal.getClassNameId(FileEntry.class.getName()),
-					infoDisplayObjectProvider.getClassNameId());
-
-				Assert.assertEquals(
-					fileEntry.getFileEntryId(),
-					infoDisplayObjectProvider.getClassPK());
-
-				Assert.assertEquals(
-					fileEntry.getGroupId(),
-					infoDisplayObjectProvider.getGroupId());
-
-				Assert.assertEquals(
-					0, infoDisplayObjectProvider.getClassTypeId());
-
-				Assert.assertEquals(
-					fileEntry, infoDisplayObjectProvider.getDisplayObject());
 			});
 	}
 
@@ -255,7 +133,7 @@ public class FileEntryInfoDisplayContributorTest {
 	}
 
 	private void _withAndWithoutAssetEntry(
-			UnsafeConsumer<FileEntry, PortalException> testFunction)
+			UnsafeConsumer<FileEntry, Exception> testFunction)
 		throws Exception {
 
 		DLFolder dlFolder = DLTestUtil.addDLFolder(_group.getGroupId());
@@ -286,14 +164,8 @@ public class FileEntryInfoDisplayContributorTest {
 	@Inject
 	private DLAppLocalService _dlAppLocalService;
 
-	@Inject
-	private DLURLHelper _dlurlHelper;
-
 	@DeleteAfterTestRun
 	private Group _group;
-
-	@Inject(filter = "component.name=*.FileEntryInfoDisplayContributor")
-	private InfoDisplayContributor<FileEntry> _infoDisplayContributor;
 
 	@Inject
 	private LayoutPageTemplateCollectionService

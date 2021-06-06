@@ -20,11 +20,13 @@ import com.liferay.portal.search.elasticsearch7.internal.connection.HealthExpect
 import com.liferay.portal.search.elasticsearch7.internal.connection.Index;
 import com.liferay.portal.search.elasticsearch7.internal.connection.IndexCreator;
 import com.liferay.portal.search.elasticsearch7.internal.connection.IndexName;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 
 import org.junit.After;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -33,6 +35,10 @@ import org.junit.rules.TestName;
  * @author André de Oliveira
  */
 public class ClusterUnicastTest {
+
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	public static void assert2ReplicaShards(
 			ElasticsearchClientResolver elasticsearchClientResolver)

@@ -14,10 +14,10 @@
 
 import ClayButton from '@clayui/button';
 import {cleanup, fireEvent, render} from '@testing-library/react';
+import EmptyState from 'data-engine-js-components-web/js/components/table/EmptyState.es';
 import React, {useState} from 'react';
 
-import EmptyState from '../../../../src/main/resources/META-INF/resources/js/components/table/EmptyState.es';
-import DropDownWithSearch from '../../../../src/main/resources/META-INF/resources/js/pages/apps/DropDownWithSearch.es';
+import DropDownWithSearch from '../../../../src/main/resources/META-INF/resources/js/components/dropdown-with-search/DropDownWithSearch.es';
 
 import '@testing-library/jest-dom/extend-expect';
 
@@ -25,7 +25,7 @@ const ITEMS = (size) => {
 	const items = [];
 
 	for (let i = 0; i < size; i++) {
-		items.push({id: i, name: {'en-US': `object ${i}`}});
+		items.push({id: i, name: `object ${i}`});
 	}
 
 	return items;
@@ -49,7 +49,7 @@ const DropDownContainer = () => {
 				errorProps: {
 					children: (
 						<ClayButton displayType="link" onClick={doFetch}>
-							{'retry'}
+							retry
 						</ClayButton>
 					),
 					label: 'unable-to-retrieve-the-objects',
@@ -121,7 +121,7 @@ describe('DropDownWithSearch', () => {
 					errorProps: {
 						children: (
 							<ClayButton displayType="link" onClick={doFetch}>
-								{'retry'}
+								retry
 							</ClayButton>
 						),
 						label: 'unable-to-retrieve-the-objects',
@@ -157,7 +157,7 @@ describe('DropDownWithSearch', () => {
 					errorProps: {
 						children: (
 							<ClayButton displayType="link" onClick={doFetch}>
-								{'retry'}
+								retry
 							</ClayButton>
 						),
 						label: 'unable-to-retrieve-the-objects',
@@ -193,7 +193,7 @@ describe('DropDownWithSearch', () => {
 					errorProps: {
 						children: (
 							<ClayButton displayType="link" onClick={doFetch}>
-								{'retry'}
+								retry
 							</ClayButton>
 						),
 						label: 'unable-to-retrieve-the-objects',

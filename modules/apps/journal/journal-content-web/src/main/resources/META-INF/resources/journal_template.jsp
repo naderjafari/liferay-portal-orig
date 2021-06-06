@@ -38,7 +38,7 @@ String refererPortletName = ParamUtil.getString(request, "refererPortletName");
 	DDMTemplate defaultDDMTemplate = journalContentDisplayContext.getDefaultDDMTemplate();
 
 	if (defaultDDMTemplate != null) {
-		defaultDDMTemplateName = defaultDDMTemplate.getName(locale);
+		defaultDDMTemplateName = HtmlUtil.escape(defaultDDMTemplate.getName(locale));
 	}
 	%>
 
@@ -46,7 +46,7 @@ String refererPortletName = ParamUtil.getString(request, "refererPortletName");
 
 	<aui:input checked="<%= !journalContentDisplayContext.isDefaultTemplate() %>" id='<%= refererPortletName + "ddmTemplateTypeCustom" %>' label="use-a-specific-template" name='<%= refererPortletName + "ddmTemplateType" %>' type="radio" useNamespace="<%= false %>" value="custom" />
 
-	<div id="<%= refererPortletName + "customDDMTemplateContainer" %>">
+	<div id="<%= refererPortletName %>customDDMTemplateContainer">
 		<div class="template-preview-content">
 			<c:choose>
 				<c:when test="<%= journalContentDisplayContext.isDefaultTemplate() %>">
@@ -82,7 +82,9 @@ AssetRenderer<JournalArticle> assetRenderer = assetRendererFactory.getAssetRende
 
 	PortletURL selectDDMTemplateURL = PortletProviderUtil.getPortletURL(renderRequest, className, PortletProvider.Action.BROWSE);
 
-	selectDDMTemplateURL.setParameter("ddmStructureId", String.valueOf(ddmStructure.getStructureId()));
+	if (ddmStructure != null) {
+		selectDDMTemplateURL.setParameter("ddmStructureId", String.valueOf(ddmStructure.getStructureId()));
+	}
 
 	String portletId = PortletProviderUtil.getPortletId(className, PortletProvider.Action.BROWSE);
 
@@ -98,7 +100,7 @@ AssetRenderer<JournalArticle> assetRenderer = assetRendererFactory.getAssetRende
 
 			var instance = this;
 
-			Liferay.Util.openModal({
+			Liferay.Util.openSelectionModal({
 				onSelect: function (selectedItem) {
 					templateKeyInput.setAttribute(
 						'value',
@@ -123,15 +125,15 @@ AssetRenderer<JournalArticle> assetRenderer = assetRendererFactory.getAssetRende
 							method: 'POST',
 						}
 					)
-						.then(function (response) {
+						.then((response) => {
 							return response.text();
 						})
-						.then(function (response) {
+						.then((response) => {
 							templatePreview.plug(A.Plugin.ParseContent);
 
 							templatePreview.setContent(response);
 						})
-						.catch(function () {
+						.catch(() => {
 							templatePreview.html(
 								'<div class="alert alert-danger hidden"><liferay-ui:message key="an-unexpected-error-occurred" /></div>'
 							);
@@ -154,14 +156,14 @@ AssetRenderer<JournalArticle> assetRenderer = assetRendererFactory.getAssetRende
 
 	A.one('#<%= refererPortletName + "ddmTemplateTypeDefault" %>').on(
 		'click',
-		function (event) {
+		(event) => {
 			templateKeyInput.setAttribute('value', '');
 		}
 	);
 
 	A.one('#<%= refererPortletName + "clearddmTemplateButton" %>').on(
 		'click',
-		function (event) {
+		(event) => {
 			templateKeyInput.setAttribute('value', '');
 
 			templatePreview.html(

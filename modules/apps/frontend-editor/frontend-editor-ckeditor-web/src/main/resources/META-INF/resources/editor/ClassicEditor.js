@@ -12,127 +12,166 @@
  * details.
  */
 
-import {useEventListener} from 'frontend-js-react-web';
-import {debounce, isPhone, isTablet} from 'frontend-js-web';
+import {useEventListener} from '@liferay/frontend-js-react-web';
+import {debounce} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Editor} from './Editor';
 
-const getToolbarSet = (toolbarSet) => {
-	if (isPhone()) {
-		toolbarSet = 'phone';
-	}
-	else if (isTablet()) {
-		toolbarSet = 'tablet';
-	}
+const ClassicEditor = React.forwardRef(
+	(
+		{
+			contents = '',
+			editorConfig,
+			initialToolbarSet = 'simple',
+			name,
+			onChange,
+			onChangeMethodName,
+			title,
+			...otherProps
+		},
+		ref
+	) => {
+		const editorRef = useRef();
 
-	return toolbarSet;
-};
+		const [toolbarSet, setToolbarSet] = useState(initialToolbarSet);
 
-const ClassicEditor = ({
-	contents = '',
-	editorConfig,
-	initialToolbarSet,
-	name,
-	onChangeMethodName,
-	title,
-}) => {
-	const editorRef = useRef();
-
-	const [toolbarSet, setToolbarSet] = useState(initialToolbarSet);
-
-	const getConfig = () => {
-		return {
-			toolbar: toolbarSet,
-			...editorConfig,
+		const getConfig = () => {
+			return {
+				toolbar: toolbarSet,
+				...editorConfig,
+			};
 		};
-	};
 
-	const getHTML = useCallback(() => {
-		let data = contents;
+		const getHTML = useCallback(() => {
+			let data = contents;
 
-		const editor = editorRef.current.editor;
+			const editor = editorRef.current.editor;
 
-		if (editor && editor.instanceReady) {
-			data = editor.getData();
+			if (editor && editor.instanceReady) {
+				data = editor.getData();
 
-			if (CKEDITOR.env.gecko && CKEDITOR.tools.trim(data) === '<br />') {
-				data = '';
+				if (
+					CKEDITOR.env.gecko &&
+					CKEDITOR.tools.trim(data) === '<br />'
+				) {
+					data = '';
+				}
+
+				data = data.replace(/(\u200B){7}/, '');
 			}
-		}
 
-		return data;
-	}, [contents]);
+			return data;
+		}, [contents]);
 
-	const onChangeCallback = () => {
-		if (!onChangeMethodName) {
-			return;
-		}
+		const onChangeCallback = () => {
+			if (!onChangeMethodName && !onChange) {
+				return;
+			}
 
-		const editor = editorRef.current.editor;
+			const editor = editorRef.current.editor;
 
-		if (editor.checkDirty()) {
-			window[onChangeMethodName](getHTML());
+			if (editor.checkDirty()) {
+				if (onChangeMethodName) {
+					window[onChangeMethodName](getHTML());
+				}
+				else {
+					onChange(getHTML());
+				}
 
-			editor.resetDirty();
-		}
-	};
-
-	useEffect(() => {
-		setToolbarSet(getToolbarSet(initialToolbarSet));
-	}, [initialToolbarSet]);
-
-	useEffect(() => {
-		window[name] = {
-			getHTML,
-			getText() {
-				return contents;
-			},
+				editor.resetDirty();
+			}
 		};
-	}, [contents, getHTML, name]);
 
-	const onResize = debounce(() => {
-		setToolbarSet(getToolbarSet(initialToolbarSet));
-	}, 200);
+		const editorRefsCallback = useCallback(
+			(element) => {
+				if (ref) {
+					ref.current = element;
+				}
+				editorRef.current = element;
+			},
+			[ref, editorRef]
+		);
 
-	useEventListener('resize', onResize, true, window);
+		useEffect(() => {
+			setToolbarSet(initialToolbarSet);
+		}, [initialToolbarSet]);
 
-	return (
-		<div id={`${name}Container`}>
-			<label className="control-label" htmlFor={name}>
-				{title}
-			</label>
-			<Editor
-				className="lfr-editable"
-				config={getConfig()}
-				onBeforeLoad={(CKEDITOR) => {
-					CKEDITOR.disableAutoInline = true;
-					CKEDITOR.dtd.$removeEmpty.i = 0;
-					CKEDITOR.dtd.$removeEmpty.span = 0;
+		useEffect(() => {
+			window[name] = {
+				getHTML,
+				getText() {
+					return contents;
+				},
+			};
+		}, [contents, getHTML, name]);
 
-					CKEDITOR.on('instanceCreated', ({editor}) => {
-						editor.name = name;
+		const onResize = debounce(() => {
+			setToolbarSet(initialToolbarSet);
+		}, 200);
 
-						editor.on('instanceReady', () => {
-							editor.setData(contents);
-						});
-					});
-				}}
-				onChange={onChangeCallback}
-				ref={editorRef}
-			/>
-		</div>
-	);
-};
+		useEventListener('resize', onResize, true, window);
+
+		return (
+			<div id={`${name}Container`}>
+				{title && (
+					<label className="control-label" htmlFor={name}>
+						{title}
+					</label>
+				)}
+				<Editor
+					className="lfr-editable"
+					config={getConfig()}
+					data={contents}
+					name={name}
+					onBeforeLoad={(CKEDITOR) => {
+						CKEDITOR.disableAutoInline = true;
+						CKEDITOR.dtd.$removeEmpty.i = 0;
+						CKEDITOR.dtd.$removeEmpty.span = 0;
+
+						CKEDITOR.getNextZIndex = function () {
+							return CKEDITOR.dialog._.currentZIndex
+								? CKEDITOR.dialog._.currentZIndex + 10
+								: Liferay.zIndex.WINDOW + 10;
+						};
+					}}
+					onChange={onChangeCallback}
+					onDrop={(event) => {
+						const data = event.data.dataTransfer.getData(
+							'text/html'
+						);
+						const editor = event.editor;
+
+						if (data) {
+							const fragment = CKEDITOR.htmlParser.fragment.fromHtml(
+								data
+							);
+
+							const name = fragment.children[0].name;
+
+							if (name) {
+								return editor.pasteFilter.check(name);
+							}
+						}
+					}}
+					ref={editorRefsCallback}
+					{...otherProps}
+				/>
+			</div>
+		);
+	}
+);
 
 ClassicEditor.propTypes = {
 	contents: PropTypes.string,
 	editorConfig: PropTypes.object,
 	initialToolbarSet: PropTypes.string,
 	name: PropTypes.string,
+	onChange: PropTypes.func,
 	onChangeMethodName: PropTypes.string,
 	title: PropTypes.string,
 };
 
+export {ClassicEditor};
 export default ClassicEditor;

@@ -52,6 +52,8 @@ public class CheckstyleUtil {
 
 	public static final int BATCH_SIZE = 1000;
 
+	public static final String MAX_DIR_LEVEL_KEY = "maxDirLevel";
+
 	public static final String MAX_LINE_LENGTH_KEY = "maxLineLength";
 
 	public static final String SHOW_DEBUG_INFORMATION_KEY =
@@ -85,7 +87,9 @@ public class CheckstyleUtil {
 
 		List<String> checkNames = new ArrayList<>();
 
-		String filterCheckName = sourceFormatterArgs.getCheckName();
+		List<String> filterCheckCategoryNames =
+			sourceFormatterArgs.getCheckCategoryNames();
+		List<String> filterCheckNames = sourceFormatterArgs.getCheckNames();
 
 		for (Configuration checkConfiguration : checkConfigurations) {
 			if (!(checkConfiguration instanceof DefaultConfiguration)) {
@@ -97,8 +101,11 @@ public class CheckstyleUtil {
 			String checkSimpleName = SourceFormatterUtil.getSimpleName(
 				checkName);
 
-			if ((filterCheckName != null) &&
-				!filterCheckName.equals(checkSimpleName)) {
+			if ((!filterCheckCategoryNames.isEmpty() ||
+				 !filterCheckNames.isEmpty()) &&
+				!filterCheckCategoryNames.contains(
+					checkConfiguration.getAttribute("category")) &&
+				!filterCheckNames.contains(checkSimpleName)) {
 
 				treeWalkerConfiguration.removeChild(checkConfiguration);
 
@@ -202,6 +209,10 @@ public class CheckstyleUtil {
 			configurationAttributesJSONObject,
 			new String[][] {
 				{BASE_DIR_NAME_KEY, sourceFormatterArgs.getBaseDirName()},
+				{
+					MAX_DIR_LEVEL_KEY,
+					String.valueOf(sourceFormatterArgs.getMaxDirLevel())
+				},
 				{
 					MAX_LINE_LENGTH_KEY,
 					String.valueOf(sourceFormatterArgs.getMaxLineLength())

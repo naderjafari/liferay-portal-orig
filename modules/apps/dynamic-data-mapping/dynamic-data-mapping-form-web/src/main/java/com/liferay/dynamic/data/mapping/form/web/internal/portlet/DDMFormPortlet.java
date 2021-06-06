@@ -28,6 +28,7 @@ import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalServic
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordVersionLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceService;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceVersionLocalService;
+import com.liferay.dynamic.data.mapping.storage.DDMStorageAdapterTracker;
 import com.liferay.dynamic.data.mapping.util.DDMFormValuesMerger;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -37,6 +38,8 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -104,17 +107,18 @@ public class DDMFormPortlet extends MVCPortlet {
 		catch (Exception exception) {
 			_portal.copyRequestParameters(actionRequest, actionResponse);
 
-			Throwable cause = getRootCause(exception);
+			Throwable throwable = getRootCauseThrowable(exception);
 
 			hideDefaultErrorMessage(actionRequest);
 
-			if (cause instanceof DDMFormValuesValidationException) {
-				if (cause instanceof
+			if (throwable instanceof DDMFormValuesValidationException) {
+				if (throwable instanceof
 						DDMFormValuesValidationException.MustSetValidValue ||
-					cause instanceof
+					throwable instanceof
 						DDMFormValuesValidationException.RequiredValue) {
 
-					SessionErrors.add(actionRequest, cause.getClass(), cause);
+					SessionErrors.add(
+						actionRequest, throwable.getClass(), throwable);
 				}
 				else {
 					SessionErrors.add(
@@ -122,7 +126,8 @@ public class DDMFormPortlet extends MVCPortlet {
 				}
 			}
 			else {
-				SessionErrors.add(actionRequest, cause.getClass(), cause);
+				SessionErrors.add(
+					actionRequest, throwable.getClass(), throwable);
 			}
 
 			ThemeDisplay themeDisplay =
@@ -171,7 +176,7 @@ public class DDMFormPortlet extends MVCPortlet {
 		super.render(renderRequest, renderResponse);
 	}
 
-	protected Throwable getRootCause(Throwable throwable) {
+	protected Throwable getRootCauseThrowable(Throwable throwable) {
 		while (throwable.getCause() != null) {
 			throwable = throwable.getCause();
 		}
@@ -180,7 +185,7 @@ public class DDMFormPortlet extends MVCPortlet {
 	}
 
 	@Override
-	protected boolean isSessionErrorException(Throwable cause) {
+	protected boolean isSessionErrorException(Throwable throwable) {
 		return false;
 	}
 
@@ -221,14 +226,15 @@ public class DDMFormPortlet extends MVCPortlet {
 		throws PortalException {
 
 		DDMFormDisplayContext ddmFormDisplayContext = new DDMFormDisplayContext(
-			renderRequest, renderResponse, _ddmFormFieldTypeServicesTracker,
-			_ddmFormInstanceLocalService, _ddmFormInstanceRecordLocalService,
+			_ddmFormFieldTypeServicesTracker, _ddmFormInstanceLocalService,
+			_ddmFormInstanceRecordLocalService,
 			_ddmFormInstanceRecordVersionLocalService, _ddmFormInstanceService,
 			_ddmFormInstanceVersionLocalService, _ddmFormRenderer,
 			_ddmFormValuesFactory, _ddmFormValuesMerger,
 			_ddmFormWebConfigurationActivator.getDDMFormWebConfiguration(),
-			_groupLocalService, _jsonFactory,
-			_workflowDefinitionLinkLocalService, _portal);
+			_ddmStorageAdapterTracker, _groupLocalService, _jsonFactory,
+			_portal, renderRequest, renderResponse, _roleLocalService,
+			_userLocalService, _workflowDefinitionLinkLocalService);
 
 		renderRequest.setAttribute(
 			WebKeys.PORTLET_DISPLAY_CONTEXT, ddmFormDisplayContext);
@@ -280,6 +286,9 @@ public class DDMFormPortlet extends MVCPortlet {
 		_ddmFormWebConfigurationActivator;
 
 	@Reference
+	private DDMStorageAdapterTracker _ddmStorageAdapterTracker;
+
+	@Reference
 	private GroupLocalService _groupLocalService;
 
 	@Reference
@@ -287,6 +296,12 @@ public class DDMFormPortlet extends MVCPortlet {
 
 	@Reference
 	private Portal _portal;
+
+	@Reference
+	private RoleLocalService _roleLocalService;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 	@Reference
 	private WorkflowDefinitionLinkLocalService

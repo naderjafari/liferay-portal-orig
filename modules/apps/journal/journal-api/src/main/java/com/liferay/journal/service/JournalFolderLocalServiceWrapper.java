@@ -173,6 +173,13 @@ public class JournalFolderLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _journalFolderLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _journalFolderLocalService.dynamicQuery();
 	}
@@ -329,6 +336,19 @@ public class JournalFolderLocalServiceWrapper
 
 		return _journalFolderLocalService.getDDMStructures(
 			groupIds, folderId, restrictionType);
+	}
+
+	@Override
+	public java.util.List<com.liferay.dynamic.data.mapping.model.DDMStructure>
+			getDDMStructures(
+				long[] groupIds, long folderId, int restrictionType,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.dynamic.data.mapping.model.DDMStructure>
+						orderByComparator)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _journalFolderLocalService.getDDMStructures(
+			groupIds, folderId, restrictionType, orderByComparator);
 	}
 
 	@Override

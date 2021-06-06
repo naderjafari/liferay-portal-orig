@@ -63,8 +63,10 @@ import java.util.Map;
  *
  * @author Brian Wing Shun Chan
  * @see JournalArticleServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class JournalArticleServiceSoap {
 
 	/**
@@ -649,7 +651,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -802,7 +805,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -861,7 +865,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -916,7 +921,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -967,7 +973,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -1021,7 +1028,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2085,7 +2093,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2093,7 +2102,7 @@ public class JournalArticleServiceSoap {
 			long companyId, long groupId, Long[] folderIds, long classNameId,
 			String keywords, Double version, String ddmStructureKey,
 			String ddmTemplateKey, java.util.Date displayDateGT,
-			java.util.Date displayDateLT, int status, java.util.Date reviewDate,
+			java.util.Date displayDateLT, java.util.Date reviewDate, int status,
 			int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<com.liferay.journal.model.JournalArticle> orderByComparator)
@@ -2104,7 +2113,7 @@ public class JournalArticleServiceSoap {
 				returnValue = JournalArticleServiceUtil.search(
 					companyId, groupId, ListUtil.toList(folderIds), classNameId,
 					keywords, version, ddmStructureKey, ddmTemplateKey,
-					displayDateGT, displayDateLT, status, reviewDate, start,
+					displayDateGT, displayDateLT, reviewDate, status, start,
 					end, orderByComparator);
 
 			return com.liferay.journal.model.JournalArticleSoap.toSoapModels(
@@ -2175,7 +2184,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2184,7 +2194,7 @@ public class JournalArticleServiceSoap {
 			String articleId, Double version, String title, String description,
 			String content, String ddmStructureKey, String ddmTemplateKey,
 			java.util.Date displayDateGT, java.util.Date displayDateLT,
-			int status, java.util.Date reviewDate, boolean andOperator,
+			java.util.Date reviewDate, int status, boolean andOperator,
 			int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<com.liferay.journal.model.JournalArticle> orderByComparator)
@@ -2196,7 +2206,7 @@ public class JournalArticleServiceSoap {
 					companyId, groupId, ListUtil.toList(folderIds), classNameId,
 					articleId, version, title, description, content,
 					ddmStructureKey, ddmTemplateKey, displayDateGT,
-					displayDateLT, status, reviewDate, andOperator, start, end,
+					displayDateLT, reviewDate, status, andOperator, start, end,
 					orderByComparator);
 
 			return com.liferay.journal.model.JournalArticleSoap.toSoapModels(
@@ -2269,7 +2279,8 @@ public class JournalArticleServiceSoap {
 	 return
 	 * @param end the upper bound of the range of web content articles to
 	 return (not inclusive)
-	 * @param orderByComparator the comparator to order the web content articles
+	 * @param orderByComparator the comparator to order the web content
+	 articles
 	 * @return the range of matching web content articles ordered by the
 	 comparator
 	 */
@@ -2278,7 +2289,7 @@ public class JournalArticleServiceSoap {
 			String articleId, Double version, String title, String description,
 			String content, String[] ddmStructureKeys, String[] ddmTemplateKeys,
 			java.util.Date displayDateGT, java.util.Date displayDateLT,
-			int status, java.util.Date reviewDate, boolean andOperator,
+			java.util.Date reviewDate, int status, boolean andOperator,
 			int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<com.liferay.journal.model.JournalArticle> orderByComparator)
@@ -2290,7 +2301,7 @@ public class JournalArticleServiceSoap {
 					companyId, groupId, ListUtil.toList(folderIds), classNameId,
 					articleId, version, title, description, content,
 					ddmStructureKeys, ddmTemplateKeys, displayDateGT,
-					displayDateLT, status, reviewDate, andOperator, start, end,
+					displayDateLT, reviewDate, status, andOperator, start, end,
 					orderByComparator);
 
 			return com.liferay.journal.model.JournalArticleSoap.toSoapModels(
@@ -2347,14 +2358,14 @@ public class JournalArticleServiceSoap {
 			long companyId, long groupId, Long[] folderIds, long classNameId,
 			String keywords, Double version, String ddmStructureKey,
 			String ddmTemplateKey, java.util.Date displayDateGT,
-			java.util.Date displayDateLT, int status, java.util.Date reviewDate)
+			java.util.Date displayDateLT, java.util.Date reviewDate, int status)
 		throws RemoteException {
 
 		try {
 			int returnValue = JournalArticleServiceUtil.searchCount(
 				companyId, groupId, ListUtil.toList(folderIds), classNameId,
 				keywords, version, ddmStructureKey, ddmTemplateKey,
-				displayDateGT, displayDateLT, status, reviewDate);
+				displayDateGT, displayDateLT, reviewDate, status);
 
 			return returnValue;
 		}
@@ -2416,7 +2427,7 @@ public class JournalArticleServiceSoap {
 			String articleId, Double version, String title, String description,
 			String content, String ddmStructureKey, String ddmTemplateKey,
 			java.util.Date displayDateGT, java.util.Date displayDateLT,
-			int status, java.util.Date reviewDate, boolean andOperator)
+			java.util.Date reviewDate, int status, boolean andOperator)
 		throws RemoteException {
 
 		try {
@@ -2424,7 +2435,7 @@ public class JournalArticleServiceSoap {
 				companyId, groupId, ListUtil.toList(folderIds), classNameId,
 				articleId, version, title, description, content,
 				ddmStructureKey, ddmTemplateKey, displayDateGT, displayDateLT,
-				status, reviewDate, andOperator);
+				reviewDate, status, andOperator);
 
 			return returnValue;
 		}
@@ -2488,7 +2499,7 @@ public class JournalArticleServiceSoap {
 			String articleId, Double version, String title, String description,
 			String content, String[] ddmStructureKeys, String[] ddmTemplateKeys,
 			java.util.Date displayDateGT, java.util.Date displayDateLT,
-			int status, java.util.Date reviewDate, boolean andOperator)
+			java.util.Date reviewDate, int status, boolean andOperator)
 		throws RemoteException {
 
 		try {
@@ -2496,7 +2507,7 @@ public class JournalArticleServiceSoap {
 				companyId, groupId, ListUtil.toList(folderIds), classNameId,
 				articleId, version, title, description, content,
 				ddmStructureKeys, ddmTemplateKeys, displayDateGT, displayDateLT,
-				status, reviewDate, andOperator);
+				reviewDate, status, andOperator);
 
 			return returnValue;
 		}
@@ -2691,38 +2702,6 @@ public class JournalArticleServiceSoap {
 				JournalArticleServiceUtil.updateArticle(
 					groupId, folderId, articleId, version, content,
 					serviceContext);
-
-			return com.liferay.journal.model.JournalArticleSoap.toSoapModel(
-				returnValue);
-		}
-		catch (Exception exception) {
-			_log.error(exception, exception);
-
-			throw new RemoteException(exception.getMessage());
-		}
-	}
-
-	/**
-	 * Updates the web content article matching the group, article ID, and
-	 * version, replacing its content.
-	 *
-	 * @param groupId the primary key of the web content article's group
-	 * @param articleId the primary key of the web content article
-	 * @param version the web content article's version
-	 * @param content the HTML content wrapped in XML. For more information,
-	 see the content example in the {@link #updateArticle(long, long,
-	 String, double, String, ServiceContext)} description.
-	 * @return the updated web content article
-	 * @throws PortalException if a portal exception occurred
-	 */
-	public static com.liferay.journal.model.JournalArticleSoap updateContent(
-			long groupId, String articleId, double version, String content)
-		throws RemoteException {
-
-		try {
-			com.liferay.journal.model.JournalArticle returnValue =
-				JournalArticleServiceUtil.updateContent(
-					groupId, articleId, version, content);
 
 			return com.liferay.journal.model.JournalArticleSoap.toSoapModel(
 				returnValue);

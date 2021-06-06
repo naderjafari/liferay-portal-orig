@@ -18,7 +18,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
 import com.liferay.layout.util.constants.LayoutDataItemTypeConstants;
-import com.liferay.layout.util.structure.ContainerLayoutStructureItem;
+import com.liferay.layout.util.structure.ContainerStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.petra.string.StringPool;
@@ -134,7 +134,7 @@ public class AddItemMVCActionCommandTest {
 			LayoutDataItemTypeConstants.TYPE_CONTAINER,
 			layoutStructureItem.getItemType());
 		Assert.assertTrue(
-			layoutStructureItem instanceof ContainerLayoutStructureItem);
+			layoutStructureItem instanceof ContainerStyledLayoutStructureItem);
 	}
 
 	@Test
@@ -142,7 +142,7 @@ public class AddItemMVCActionCommandTest {
 		MockLiferayPortletActionRequest mockLiferayPortletActionRequest =
 			_getMockLiferayPortletActionRequest();
 
-		_layoutStructure.addContainerLayoutStructureItem(
+		_layoutStructure.addContainerStyledLayoutStructureItem(
 			_layoutStructure.getMainItemId(), 0);
 
 		_layoutPageTemplateStructureLocalService.
@@ -186,7 +186,7 @@ public class AddItemMVCActionCommandTest {
 			LayoutDataItemTypeConstants.TYPE_CONTAINER,
 			layoutStructureItem.getItemType());
 		Assert.assertTrue(
-			layoutStructureItem instanceof ContainerLayoutStructureItem);
+			layoutStructureItem instanceof ContainerStyledLayoutStructureItem);
 	}
 
 	private Layout _addLayout() throws Exception {
@@ -256,7 +256,7 @@ public class AddItemMVCActionCommandTest {
 
 	private LayoutStructure _layoutStructure;
 
-	@Inject(filter = "mvc.command.name=/content_layout/add_item")
+	@Inject(filter = "mvc.command.name=/layout_content_page_editor/add_item")
 	private MVCActionCommand _mvcActionCommand;
 
 }

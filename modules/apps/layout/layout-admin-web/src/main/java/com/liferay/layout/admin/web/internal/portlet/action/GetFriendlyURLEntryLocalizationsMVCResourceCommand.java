@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -54,7 +55,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + LayoutAdminPortletKeys.GROUP_PAGES,
-		"mvc.command.name=/layout/get_friendly_url_entry_localizations"
+		"mvc.command.name=/layout_admin/get_friendly_url_entry_localizations"
 	},
 	service = MVCResourceCommand.class
 )
@@ -104,10 +105,11 @@ public class GetFriendlyURLEntryLocalizationsMVCResourceCommand
 			friendlyURLEntryLocalizationsJSONObject.put(
 				languageId,
 				JSONUtil.put(
-					"current", JSONUtil.put("urlTitle", mainUrlTitle)
+					"current",
+					JSONUtil.put("urlTitle", _http.decodeURL(mainUrlTitle))
 				).put(
 					"history",
-					_getJSONJArray(
+					_getJSONArray(
 						ListUtil.filter(
 							friendlyURLEntryLocalizations,
 							friendlyURLEntryLocalization -> !Objects.equals(
@@ -120,7 +122,7 @@ public class GetFriendlyURLEntryLocalizationsMVCResourceCommand
 		return friendlyURLEntryLocalizationsJSONObject;
 	}
 
-	private <T> JSONArray _getJSONJArray(
+	private <T> JSONArray _getJSONArray(
 		List<T> list, Function<T, JSONSerializable> serialize) {
 
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
@@ -145,7 +147,7 @@ public class GetFriendlyURLEntryLocalizationsMVCResourceCommand
 			Long.valueOf(
 				friendlyEntryLocalization.getFriendlyURLEntryLocalizationId())
 		).put(
-			"urlTitle", friendlyEntryLocalization.getUrlTitle()
+			"urlTitle", _http.decodeURL(friendlyEntryLocalization.getUrlTitle())
 		);
 	}
 
@@ -155,6 +157,9 @@ public class GetFriendlyURLEntryLocalizationsMVCResourceCommand
 
 	@Reference
 	private FriendlyURLEntryLocalService _friendlyURLEntryLocalService;
+
+	@Reference
+	private Http _http;
 
 	@Reference
 	private LayoutFriendlyURLEntryHelper _layoutFriendlyURLEntryHelper;

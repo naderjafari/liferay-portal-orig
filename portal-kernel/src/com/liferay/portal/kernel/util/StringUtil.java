@@ -291,11 +291,7 @@ public class StringUtil {
 			s = s.concat(delimiter);
 		}
 
-		String dtd = delimiter.concat(
-			text
-		).concat(
-			delimiter
-		);
+		String dtd = StringBundler.concat(delimiter, text, delimiter);
 
 		int pos = s.indexOf(dtd);
 
@@ -1116,11 +1112,7 @@ public class StringUtil {
 		String prefix = s.substring(0, offset);
 		String postfix = s.substring(offset);
 
-		return prefix.concat(
-			insert
-		).concat(
-			postfix
-		);
+		return StringBundler.concat(prefix, insert, postfix);
 	}
 
 	/**
@@ -2117,11 +2109,7 @@ public class StringUtil {
 			return null;
 		}
 
-		return quote.concat(
-			s
-		).concat(
-			quote
-		);
+		return StringBundler.concat(quote, s, quote);
 	}
 
 	/**
@@ -2130,11 +2118,22 @@ public class StringUtil {
 	 * @return a randomized string of four lower case, alphabetic characters
 	 */
 	public static String randomId() {
+		return randomId(4);
+	}
+
+	/**
+	 * Returns a randomized string with the length informed and only alphabetic
+	 * characters.
+	 *
+	 * @return a randomized string with the length informed and only alphabetic
+	 *         characters.
+	 */
+	public static String randomId(int length) {
 		Random random = new Random();
 
-		char[] chars = new char[4];
+		char[] chars = new char[length];
 
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < length; i++) {
 			chars[i] = (char)(CharPool.LOWER_CASE_A + random.nextInt(26));
 		}
 
@@ -2200,8 +2199,8 @@ public class StringUtil {
 			while (enumeration.hasMoreElements()) {
 				URL url = enumeration.nextElement();
 
-				try (InputStream is = url.openStream()) {
-					String s = read(is);
+				try (InputStream inputStream = url.openStream()) {
+					String s = read(inputStream);
 
 					if (s != null) {
 						sb.append(s);
@@ -2215,15 +2214,15 @@ public class StringUtil {
 			return s.trim();
 		}
 
-		try (InputStream is = classLoader.getResourceAsStream(name)) {
-			if (is == null) {
+		try (InputStream inputStream = classLoader.getResourceAsStream(name)) {
+			if (inputStream == null) {
 				throw new IOException(
 					StringBundler.concat(
 						"Unable to open resource ", name, " in class loader ",
 						String.valueOf(classLoader)));
 			}
 
-			return read(is);
+			return read(inputStream);
 		}
 	}
 
@@ -2281,7 +2280,7 @@ public class StringUtil {
 			return s;
 		}
 
-		StringBuilder sb = new StringBuilder(s.length());
+		StringBundler sb = new StringBundler(s.length());
 
 		iterate:
 		for (int i = 0; i < s.length(); i++) {
@@ -2377,11 +2376,7 @@ public class StringUtil {
 			s += delimiter;
 		}
 
-		String drd = delimiter.concat(
-			element
-		).concat(
-			delimiter
-		);
+		String drd = StringBundler.concat(delimiter, element, delimiter);
 
 		String rd = element.concat(delimiter);
 
@@ -2907,13 +2902,8 @@ public class StringUtil {
 		int y = s.indexOf(oldSub, fromIndex);
 
 		if (y >= 0) {
-			return s.substring(
-				0, y
-			).concat(
-				newSub
-			).concat(
-				s.substring(y + oldSub.length())
-			);
+			return StringBundler.concat(
+				s.substring(0, y), newSub, s.substring(y + oldSub.length()));
 		}
 
 		return s;
@@ -3017,13 +3007,8 @@ public class StringUtil {
 		int y = s.lastIndexOf(oldSub);
 
 		if (y >= 0) {
-			return s.substring(
-				0, y
-			).concat(
-				newSub
-			).concat(
-				s.substring(y + oldSub.length())
-			);
+			return StringBundler.concat(
+				s.substring(0, y), newSub, s.substring(y + oldSub.length()));
 		}
 
 		return s;

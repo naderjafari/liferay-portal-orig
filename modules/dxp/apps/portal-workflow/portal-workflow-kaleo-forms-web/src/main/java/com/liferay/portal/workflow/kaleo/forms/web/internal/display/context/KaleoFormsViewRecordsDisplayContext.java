@@ -29,6 +29,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.DisplayTerms;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
@@ -104,12 +105,11 @@ public class KaleoFormsViewRecordsDisplayContext {
 	}
 
 	public String getClearResultsURL() throws PortletException {
-		PortletURL clearResultsURL = PortletURLUtil.clone(
-			getPortletURL(), _renderResponse);
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(getPortletURL(), _renderResponse)
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public String getColumnName(DDMFormField formField) {
@@ -279,15 +279,15 @@ public class KaleoFormsViewRecordsDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = PortletURLUtil.getCurrent(
-			_renderRequest, _renderResponse);
-
-		portletURL.setParameter("mvcPath", "/admin/view_kaleo_process.jsp");
-		portletURL.setParameter(
-			"redirect", ParamUtil.getString(_renderRequest, "redirect"));
-		portletURL.setParameter(
-			"kaleoProcessId",
-			String.valueOf(_kaleoProcess.getKaleoProcessId()));
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletURLUtil.getCurrent(_renderRequest, _renderResponse)
+		).setMVCPath(
+			"/admin/view_kaleo_process.jsp"
+		).setRedirect(
+			ParamUtil.getString(_renderRequest, "redirect")
+		).setParameter(
+			"kaleoProcessId", _kaleoProcess.getKaleoProcessId()
+		).build();
 
 		String delta = ParamUtil.getString(_renderRequest, "delta");
 
@@ -327,9 +327,11 @@ public class KaleoFormsViewRecordsDisplayContext {
 			return _searchContainer;
 		}
 
-		PortletURL portletURL = getPortletURL();
-
-		portletURL.setParameter("displayStyle", getDisplayStyle());
+		PortletURL portletURL = PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).build();
 
 		_searchContainer = new SearchContainer<>(
 			_renderRequest, new DisplayTerms(_renderRequest), null,
@@ -371,16 +373,15 @@ public class KaleoFormsViewRecordsDisplayContext {
 	}
 
 	public String getSearchActionURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/admin/view_kaleo_process.jsp");
-		portletURL.setParameter(
-			"redirect", ParamUtil.getString(_renderRequest, "redirect"));
-		portletURL.setParameter(
-			"kaleoProcessId",
-			String.valueOf(_kaleoProcess.getKaleoProcessId()));
-
-		return portletURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/admin/view_kaleo_process.jsp"
+		).setRedirect(
+			ParamUtil.getString(_renderRequest, "redirect")
+		).setParameter(
+			"kaleoProcessId", _kaleoProcess.getKaleoProcessId()
+		).buildString();
 	}
 
 	public String getSearchContainerId() {
@@ -388,15 +389,21 @@ public class KaleoFormsViewRecordsDisplayContext {
 	}
 
 	public String getSortingURL() throws Exception {
-		PortletURL sortingURL = PortletURLUtil.clone(
-			getPortletURL(), _renderResponse);
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(getPortletURL(), _renderResponse)
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = ParamUtil.getString(
+					_renderRequest, "orderByType");
 
-		String orderByType = ParamUtil.getString(_renderRequest, "orderByType");
+				if (orderByType.equals("asc")) {
+					return "desc";
+				}
 
-		sortingURL.setParameter(
-			"orderByType", orderByType.equals("asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+				return "asc";
+			}
+		).buildString();
 	}
 
 	public int getTotalItems() throws Exception {

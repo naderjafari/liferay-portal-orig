@@ -430,11 +430,11 @@
 			},
 			"classPK": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"companyId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"completed": {
 				"store": true,
@@ -460,11 +460,11 @@
 			},
 			"id": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"instanceId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"modifiedDate": {
 				"format": "yyyyMMddHHmmss",
@@ -473,7 +473,62 @@
 			},
 			"processId": {
 				"store": true,
+				"type": "long"
+			},
+			"slaDefinitionIds": {
+				"store": true,
+				"type": "long"
+			},
+			"slaResults": {
+				"properties": {
+					"onTime": {
+						"store": true,
+						"type": "boolean"
+					},
+					"overdueDate": {
+						"format": "yyyyMMddHHmmss",
+						"store": true,
+						"type": "date"
+					},
+					"remainingTime": {
+						"store": true,
+						"type": "long"
+					},
+					"slaDefinitionId": {
+						"store": true,
+						"type": "long"
+					},
+					"status": {
+						"store": true,
+						"type": "keyword"
+					}
+				},
+				"type": "nested"
+			},
+			"slaStatus": {
+				"store": true,
 				"type": "keyword"
+			},
+			"tasks": {
+				"properties": {
+					"assigneeIds": {
+						"store": true,
+						"type": "long"
+					},
+					"assigneeType": {
+						"store": true,
+						"type": "keyword"
+					},
+					"taskId": {
+						"store": true,
+						"type": "long"
+					},
+					"taskName": {
+						"store": true,
+						"type": "keyword"
+					}
+				},
+				"type": "nested"
 			},
 			"uid": {
 				"store": true,
@@ -481,7 +536,7 @@
 			},
 			"userId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"userName": {
 				"store": true,
@@ -510,7 +565,7 @@
 		"properties": {
 			"companyId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"createDate": {
 				"format": "yyyyMMddHHmmss",
@@ -523,7 +578,7 @@
 			},
 			"id": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"initial": {
 				"store": true,
@@ -540,11 +595,11 @@
 			},
 			"nodeId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"processId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"terminal": {
 				"store": true,
@@ -560,7 +615,7 @@
 			},
 			"userId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"version": {
 				"store": true,
@@ -989,7 +1044,7 @@
 			},
 			"companyId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"createDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1006,7 +1061,7 @@
 			},
 			"id": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"modifiedDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1019,7 +1074,7 @@
 			},
 			"processId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"title": {
 				"store": true,
@@ -1032,7 +1087,7 @@
 			},
 			"userId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"version": {
 				"store": true,
@@ -1057,7 +1112,7 @@
 		"properties": {
 			"companyId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"completionDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1078,9 +1133,9 @@
 			},
 			"instanceId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
-			"lastCheckDate": {
+			"modifiedDate": {
 				"format": "yyyyMMddHHmmss",
 				"store": true,
 				"type": "date"
@@ -1096,7 +1151,7 @@
 			},
 			"processId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"remainingTime": {
 				"store": true,
@@ -1104,7 +1159,7 @@
 			},
 			"slaDefinitionId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"status": {
 				"store": true,
@@ -1133,7 +1188,7 @@
 		"properties": {
 			"assigneeIds": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"assigneeType": {
 				"store": true,
@@ -1145,7 +1200,7 @@
 			},
 			"companyId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"completionDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1154,7 +1209,7 @@
 			},
 			"completionUserId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"deleted": {
 				"store": true,
@@ -1171,16 +1226,16 @@
 			},
 			"instanceId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
-			"lastCheckDate": {
+			"modifiedDate": {
 				"format": "yyyyMMddHHmmss",
 				"store": true,
 				"type": "date"
 			},
 			"nodeId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"onTime": {
 				"store": true,
@@ -1188,11 +1243,11 @@
 			},
 			"processId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"slaDefinitionId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"status": {
 				"store": true,
@@ -1200,7 +1255,7 @@
 			},
 			"taskId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"taskName": {
 				"store": true,
@@ -1639,7 +1694,7 @@
 			},
 			"assigneeIds": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"assigneeType": {
 				"store": true,
@@ -1651,11 +1706,11 @@
 			},
 			"classPK": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"companyId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"completed": {
 				"store": true,
@@ -1668,7 +1723,7 @@
 			},
 			"completionUserId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"createDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1685,7 +1740,7 @@
 			},
 			"id": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"instanceCompleted": {
 				"store": true,
@@ -1698,7 +1753,7 @@
 			},
 			"instanceId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"modifiedDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1711,15 +1766,15 @@
 			},
 			"nodeId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"processId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"taskId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"uid": {
 				"store": true,
@@ -1727,7 +1782,7 @@
 			},
 			"userId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"version": {
 				"store": true,
@@ -1752,7 +1807,7 @@
 		"properties": {
 			"companyId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"createDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1765,7 +1820,7 @@
 			},
 			"id": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"modifiedDate": {
 				"format": "yyyyMMddHHmmss",
@@ -1778,15 +1833,15 @@
 			},
 			"nodeId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"processId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"sourceNodeId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"sourceNodeName": {
 				"store": true,
@@ -1794,7 +1849,7 @@
 			},
 			"targetNodeId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"targetNodeName": {
 				"store": true,
@@ -1802,7 +1857,7 @@
 			},
 			"transitionId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			},
 			"uid": {
 				"store": true,
@@ -1810,7 +1865,7 @@
 			},
 			"userId": {
 				"store": true,
-				"type": "keyword"
+				"type": "long"
 			}
 		}
 	}

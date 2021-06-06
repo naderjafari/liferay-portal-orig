@@ -26,6 +26,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * @author Michael Hashimoto
  */
@@ -38,6 +40,24 @@ public class CucumberFeatureFile implements Serializable {
 		_faroDir = faroDir;
 		_cucumberFeatureResult = cucumberFeatureResult;
 		_cucumberScenarioResult = cucumberScenarioResult;
+	}
+
+	public String getCategoryName() {
+		Matcher matcher = _relativePathPattern.matcher(getRelativePath());
+
+		if (!matcher.matches()) {
+			return "";
+		}
+
+		String folderNames = matcher.group(1);
+
+		folderNames = folderNames.replaceAll("\\.", " ");
+
+		folderNames = StringUtils.capitalize(folderNames);
+
+		folderNames = folderNames.replaceAll("\\s*(.+?)[/\\s]*", "$1");
+
+		return folderNames;
 	}
 
 	public File getFile() {
@@ -77,7 +97,8 @@ public class CucumberFeatureFile implements Serializable {
 						process.getInputStream());
 
 				for (String gitGrepResult : gitGrepResults.split("\n")) {
-					Matcher matcher = _pattern.matcher(gitGrepResult);
+					Matcher matcher = _gitGrepResultsPattern.matcher(
+						gitGrepResult);
 
 					if (!matcher.find()) {
 						continue;
@@ -112,8 +133,10 @@ public class CucumberFeatureFile implements Serializable {
 		return _getFeaturePaths(scenarioName.trim());
 	}
 
-	private static final Pattern _pattern = Pattern.compile(
-		"([^\\.]+\\.feature)\\:.*");
+	private static final Pattern _gitGrepResultsPattern = Pattern.compile(
+		"(.+\\.feature)\\:.*");
+	private static final Pattern _relativePathPattern = Pattern.compile(
+		".*/features/(.*)/[^/]+");
 
 	private final CucumberFeatureResult _cucumberFeatureResult;
 	private final CucumberScenarioResult _cucumberScenarioResult;

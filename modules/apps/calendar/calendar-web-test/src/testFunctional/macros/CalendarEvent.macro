@@ -11,6 +11,8 @@ definition {
 
 			Click(locator1 = "CalendarEditEvent#${panelNamePath}_PANEL_COLLAPSED");
 
+			Pause(locator1 = "3000");
+
 			AssertElementPresent(locator1 = "CalendarEditEvent#${panelNamePath}_PANEL_EXPANDED");
 		}
 		else if (IsElementPresent(locator1 = "CalendarEditEvent#${panelNamePath}_PANEL_EXPANDED")) {
@@ -22,6 +24,8 @@ definition {
 				ScrollWebElementIntoView(locator1 = "CalendarEditEvent#${panelNamePath}_PANEL_COLLAPSED");
 
 				Click(locator1 = "CalendarEditEvent#${panelNamePath}_PANEL_COLLAPSED");
+
+				Pause(locator1 = "3000");
 
 				AssertElementPresent(locator1 = "CalendarEditEvent#${panelNamePath}_PANEL_EXPANDED");
 			}
@@ -231,17 +235,9 @@ definition {
 			}
 
 			AssertElementPresent(locator1 = "Calendar#SCHEDULER_EVENT_ALL_DAY_WITH_REMINDER");
-
-			AssertTextEquals(
-				locator1 = "Calendar#SCHEDULER_EVENT_ALL_DAY_TITLE_WITH_REMINDER",
-				value1 = "${eventTitle}");
 		}
 		else {
 			AssertElementPresent(locator1 = "Calendar#SCHEDULER_EVENT_ALL_DAY");
-
-			AssertTextEquals(
-				locator1 = "Calendar#SCHEDULER_EVENT_ALL_DAY_TITLE",
-				value1 = "${eventTitle}");
 		}
 	}
 
@@ -358,6 +354,39 @@ definition {
 		else {
 			Navigator.gotoPage(pageName = "${pageName}");
 		}
+
+		CalendarScheduler._viewRegularEventTitleViaMonthView(
+			endDate = "${endDate}",
+			endDateTime = "${endDateTime}",
+			eventTitle = "${eventTitle}",
+			startDate = "${startDate}",
+			startDateTime = "${startDateTime}");
+	}
+
+	macro addRegularInCustomSite {
+		CalendarEvent.editTitle(eventTitle = "${eventTitle}");
+
+		AssertNotChecked(locator1 = "CalendarEditEvent#ALL_DAY_CHECKBOX");
+
+		AssertNotChecked(locator1 = "CalendarEditEvent#REPEAT_CHECKBOX");
+
+		var endDate = selenium.getElementValue("CalendarEditEvent#END_DATE");
+		var endDateTime = selenium.getElementValue("CalendarEditEvent#END_DATE_TIME");
+		var startDate = selenium.getElementValue("CalendarEditEvent#START_DATE");
+		var startDateTime = selenium.getElementValue("CalendarEditEvent#START_DATE_TIME");
+
+		CalendarEvent.selectCalendar(calendarName = "${calendarName}");
+
+		if ("${optionSet}" == "true") {
+			CalendarEvent._options(
+				optionSetValue = "${optionSetValue}",
+				specificOptionSetValue = "${specificOptionSetValue}");
+		}
+		CalendarEvent.publish();
+
+		Navigator.gotoSitePage(
+			pageName = "${pageName}",
+			siteName = "${siteName}");
 
 		CalendarScheduler._viewRegularEventTitleViaMonthView(
 			endDate = "${endDate}",
@@ -970,7 +999,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "CalendarEditEvent#ARE_YOU_SURE_DIALOG_BOX_BODY",
-			value1 = "You are about to make changes that will only affect your calendar (Test Test).");
+			value1 = "Invited users will be notified.");
 
 		AssertClick(
 			locator1 = "CalendarEditEvent#DO_NOT_CHANGE_THE_EVENT_BUTTON",
@@ -1271,6 +1300,29 @@ definition {
 		}
 	}
 
+	macro tearDownNoCloseMessage {
+		if ("${marketplace}" == "true") {
+			ProductMenu.gotoPortlet(
+				category = "Site Builder",
+				portlet = "Pages");
+
+			SitePages.addPublicPage(pageName = "Marketplace Calendar Testing");
+
+			Navigator.gotoPage(pageName = "Marketplace Calendar Testing");
+
+			Portlet.addPG(
+				i = "${i}",
+				pageName = "Marketplace Calendar Testing",
+				portletName = "Calendar");
+
+			Navigator.gotoPage(pageName = "Marketplace Calendar Testing");
+		}
+
+		CalendarEvent.delete();
+
+		VerifyElementPresent(locator1 = "Message#SUCCESS_DISMISSIBLE");
+	}
+
 	macro view {
 		var eventTitle = "${eventTitle}";
 
@@ -1443,6 +1495,18 @@ definition {
 		}
 
 		SelectFrame(value1 = "relative=top");
+	}
+
+	macro viewDetailsViaMailLink {
+		AssertTextEquals(
+			locator1 = "Portlet#H3_HEADER",
+			value1 = "${eventTitle}");
+
+		AssertElementPresent(locator1 = "CalendarViewEventDetails#START_DATE_FIELD");
+
+		AssertElementPresent(locator1 = "CalendarViewEventDetails#END_DATE_FIELD");
+
+		CalendarEvent.viewApprovedEventRSVPButtons();
 	}
 
 	macro viewEventNotToday {
@@ -1725,7 +1789,6 @@ definition {
 	}
 
 	macro viewSiteRSVPWithUnapprovedWorkflow {
-
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
 		var key_siteCalendarName = "${siteCalendarName}";

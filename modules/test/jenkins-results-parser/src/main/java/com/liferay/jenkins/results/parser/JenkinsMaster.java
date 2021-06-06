@@ -15,12 +15,14 @@
 package com.liferay.jenkins.results.parser;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,48 +30,80 @@ import org.json.JSONObject;
 /**
  * @author Peter Yoo
  */
-public class JenkinsMaster implements Comparable<JenkinsMaster> {
+public class JenkinsMaster implements JenkinsNode<JenkinsMaster> {
 
 	public static final Integer SLAVE_RAM_DEFAULT = 16;
 
-	public JenkinsMaster(String masterName) {
-		if (masterName.contains(".")) {
-			_masterName = masterName.substring(0, masterName.indexOf("."));
-		}
-		else {
-			_masterName = masterName;
+	public static final Integer SLAVES_PER_HOST_DEFAULT = 2;
+
+	public static synchronized JenkinsMaster getInstance(String masterName) {
+		if (!_jenkinsMasters.containsKey(masterName)) {
+			_jenkinsMasters.put(masterName, new JenkinsMaster(masterName));
 		}
 
+		return _jenkinsMasters.get(masterName);
+	}
+
+	public static Integer getSlaveRAMMinimumDefault() {
 		try {
-			Properties properties =
-				JenkinsResultsParserUtil.getBuildProperties();
+			String propertyValue = JenkinsResultsParserUtil.getBuildProperty(
+				"slave.ram.minimum.default");
 
-			_masterURL = properties.getProperty(
-				JenkinsResultsParserUtil.combine(
-					"jenkins.local.url[", _masterName, "]"));
-
-			Integer slaveRAM = SLAVE_RAM_DEFAULT;
-
-			String slaveRAMString = JenkinsResultsParserUtil.getProperty(
-				properties,
-				JenkinsResultsParserUtil.combine(
-					"master.property(", _masterName, "/slave.ram)"));
-
-			if ((slaveRAMString != null) && slaveRAMString.matches("\\d+")) {
-				slaveRAM = Integer.valueOf(slaveRAMString);
+			if (propertyValue == null) {
+				return SLAVE_RAM_DEFAULT;
 			}
 
-			_slaveRAM = slaveRAM;
+			return Integer.valueOf(propertyValue);
 		}
 		catch (Exception exception) {
-			throw new RuntimeException(
-				"Unable to determine URL for master " + _masterName, exception);
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("Unable to get property '");
+			sb.append("slave.ram.minimum.default");
+			sb.append("', defaulting to '");
+			sb.append(SLAVE_RAM_DEFAULT);
+			sb.append("'");
+
+			System.out.println(sb.toString());
+
+			exception.printStackTrace();
+
+			return SLAVE_RAM_DEFAULT;
+		}
+	}
+
+	public static Integer getSlavesPerHostDefault() {
+		try {
+			String propertyValue = JenkinsResultsParserUtil.getBuildProperty(
+				"slaves.per.host.default");
+
+			if (propertyValue == null) {
+				return SLAVES_PER_HOST_DEFAULT;
+			}
+
+			return Integer.valueOf(propertyValue);
+		}
+		catch (Exception exception) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("Unable to get property '");
+			sb.append("slaves.per.host.default");
+			sb.append("', defaulting to '");
+			sb.append(SLAVES_PER_HOST_DEFAULT);
+			sb.append("'");
+
+			System.out.println(sb.toString());
+
+			exception.printStackTrace();
+
+			return SLAVES_PER_HOST_DEFAULT;
 		}
 	}
 
 	public synchronized void addRecentBatch(int batchSize) {
 		_batchSizes.put(
-			System.currentTimeMillis() + maxRecentBatchAge, batchSize);
+			JenkinsResultsParserUtil.getCurrentTimeMillis() + maxRecentBatchAge,
+			batchSize);
 
 		getAvailableSlavesCount();
 	}
@@ -110,7 +144,8 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 	}
 
 	public int getAvailableSlavesCount() {
-		return getIdleSlavesCount() - _queueCount - _getRecentBatchSizesTotal();
+		return getIdleJenkinsSlavesCount() - _queueCount -
+			_getRecentBatchSizesTotal();
 	}
 
 	public float getAverageQueueLength() {
@@ -118,7 +153,11 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 			getOnlineJenkinsSlavesCount();
 	}
 
-	public int getIdleSlavesCount() {
+	public List<String> getBuildURLs() {
+		return new ArrayList<>(_buildURLs);
+	}
+
+	public int getIdleJenkinsSlavesCount() {
 		int idleSlavesCount = 0;
 
 		for (JenkinsSlave jenkinsSlave : _jenkinsSlavesMap.values()) {
@@ -134,6 +173,11 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 		return idleSlavesCount;
 	}
 
+	@Override
+	public JenkinsMaster getJenkinsMaster() {
+		return this;
+	}
+
 	public JenkinsSlave getJenkinsSlave(String jenkinsSlaveName) {
 		if (_jenkinsSlavesMap.isEmpty()) {
 			update();
@@ -142,8 +186,41 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 		return _jenkinsSlavesMap.get(jenkinsSlaveName);
 	}
 
+	public List<String> getJenkinsSlaveNames() {
+		List<JenkinsSlave> jenkinsSlaves = getJenkinsSlaves();
+
+		List<String> jenkinsSlaveNames = new ArrayList<>(jenkinsSlaves.size());
+
+		for (JenkinsSlave jenkinsSlave : jenkinsSlaves) {
+			jenkinsSlaveNames.add(jenkinsSlave.getName());
+		}
+
+		return jenkinsSlaveNames;
+	}
+
+	public List<JenkinsSlave> getJenkinsSlaves() {
+		if (_jenkinsSlavesMap.isEmpty()) {
+			update();
+		}
+
+		return new ArrayList<>(_jenkinsSlavesMap.values());
+	}
+
+	@Override
 	public String getName() {
 		return _masterName;
+	}
+
+	public int getOfflineJenkinsSlavesCount() {
+		int offlineJenkinsSlavesCount = 0;
+
+		for (JenkinsSlave jenkinsSlave : _jenkinsSlavesMap.values()) {
+			if (jenkinsSlave.isOffline()) {
+				offlineJenkinsSlavesCount++;
+			}
+		}
+
+		return offlineJenkinsSlavesCount;
 	}
 
 	public List<JenkinsSlave> getOnlineJenkinsSlaves() {
@@ -170,8 +247,16 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 		return onlineJenkinsSlavesCount;
 	}
 
+	public Map<String, JSONObject> getQueuedBuildURLs() {
+		return new HashMap<>(_queuedBuildURLs);
+	}
+
 	public Integer getSlaveRAM() {
 		return _slaveRAM;
+	}
+
+	public Integer getSlavesPerHost() {
+		return _slavesPerHost;
 	}
 
 	public String getURL() {
@@ -192,21 +277,35 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 			String.valueOf(_reportedAvailableSlavesCount), "}");
 	}
 
-	public void update() {
-		JSONObject computerJSONObject = null;
-		JSONObject queueJSONObject = null;
+	public synchronized void update() {
+		update(true);
+	}
+
+	public synchronized void update(boolean minimal) {
+		JSONObject computerAPIJSONObject = null;
+		JSONObject queueAPIJSONObject = null;
 
 		try {
-			computerJSONObject = JenkinsResultsParserUtil.toJSONObject(
+			computerAPIJSONObject = JenkinsResultsParserUtil.toJSONObject(
 				JenkinsResultsParserUtil.getLocalURL(
 					JenkinsResultsParserUtil.combine(
 						_masterURL,
 						"/computer/api/json?tree=computer[displayName,",
-						"idle,offline]")),
+						"executors[currentExecutable[url]],idle,offline]")),
 				false, 5000);
-			queueJSONObject = JenkinsResultsParserUtil.toJSONObject(
+
+			String queueAPIQuery = "tree=items[task[name,url],url,why]";
+
+			if (!minimal) {
+				queueAPIQuery =
+					"tree=items[actions[parameters[name,value]]," +
+						"inQueueSince,task[name,url],url,why]";
+			}
+
+			queueAPIJSONObject = JenkinsResultsParserUtil.toJSONObject(
 				JenkinsResultsParserUtil.getLocalURL(
-					_masterURL + "/queue/api/json?tree=items[task[name],why]"),
+					JenkinsResultsParserUtil.combine(
+						_masterURL, "/queue/api/json?" + queueAPIQuery)),
 				false, 5000);
 		}
 		catch (Exception exception) {
@@ -219,14 +318,15 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 
 		_available = true;
 
-		JSONArray computerJSONArray = computerJSONObject.getJSONArray(
+		List<String> buildURLs = new ArrayList<>();
+
+		JSONArray computerJSONArray = computerAPIJSONObject.getJSONArray(
 			"computer");
 
 		for (int i = 0; i < computerJSONArray.length(); i++) {
-			JSONObject curComputerJSONObject = computerJSONArray.getJSONObject(
-				i);
+			JSONObject computerJSONObject = computerJSONArray.getJSONObject(i);
 
-			String jenkinsSlaveName = curComputerJSONObject.getString(
+			String jenkinsSlaveName = computerJSONObject.getString(
 				"displayName");
 
 			if (jenkinsSlaveName.equals("master")) {
@@ -236,30 +336,65 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 			JenkinsSlave jenkinsSlave = _jenkinsSlavesMap.get(jenkinsSlaveName);
 
 			if (jenkinsSlave != null) {
-				jenkinsSlave.update(curComputerJSONObject);
+				jenkinsSlave.update(computerJSONObject);
 			}
 			else {
-				jenkinsSlave = new JenkinsSlave(this, curComputerJSONObject);
+				jenkinsSlave = new JenkinsSlave(this, computerJSONObject);
 
 				_jenkinsSlavesMap.put(jenkinsSlave.getName(), jenkinsSlave);
 			}
+
+			String computerClassName = computerJSONObject.getString("_class");
+
+			if (computerClassName.contains("hudson.slaves.SlaveComputer")) {
+				JSONArray executorsJSONArray = computerJSONObject.getJSONArray(
+					"executors");
+
+				for (int j = 0; j < executorsJSONArray.length(); j++) {
+					JSONObject executorJSONObject =
+						executorsJSONArray.getJSONObject(j);
+
+					if (executorJSONObject.has("currentExecutable") &&
+						(executorJSONObject.get("currentExecutable") !=
+							JSONObject.NULL)) {
+
+						JSONObject currentExecutableJSONObject =
+							executorJSONObject.getJSONObject(
+								"currentExecutable");
+
+						if (currentExecutableJSONObject.has("url")) {
+							buildURLs.add(
+								currentExecutableJSONObject.getString("url"));
+						}
+					}
+				}
+			}
 		}
+
+		_buildURLs.clear();
+
+		_buildURLs.addAll(buildURLs);
 
 		_queueCount = 0;
 
-		if (!queueJSONObject.has("items")) {
+		if (!queueAPIJSONObject.has("items")) {
 			return;
 		}
 
-		JSONArray itemsJSONArray = queueJSONObject.getJSONArray("items");
+		Map<String, JSONObject> queuedBuildURLs = new HashMap<>();
+
+		JSONArray itemsJSONArray = queueAPIJSONObject.getJSONArray("items");
 
 		for (int i = 0; i < itemsJSONArray.length(); i++) {
 			JSONObject itemJSONObject = itemsJSONArray.getJSONObject(i);
 
-			if (itemJSONObject.has("task")) {
-				JSONObject taskJSONObject = itemJSONObject.getJSONObject(
-					"task");
+			JSONObject taskJSONObject = null;
 
+			if (itemJSONObject.has("task")) {
+				taskJSONObject = itemJSONObject.getJSONObject("task");
+			}
+
+			if (taskJSONObject != null) {
 				String taskName = taskJSONObject.getString("name");
 
 				if (taskName.equals("verification-node")) {
@@ -276,16 +411,76 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 
 					continue;
 				}
+
+				if (itemJSONObject.has("url")) {
+					queuedBuildURLs.put(
+						getURL() + "/" + itemJSONObject.getString("url"),
+						itemJSONObject);
+				}
 			}
 
 			_queueCount++;
 		}
+
+		_queuedBuildURLs.clear();
+
+		_queuedBuildURLs.putAll(queuedBuildURLs);
 	}
 
 	protected static long maxRecentBatchAge = 120 * 1000;
 
+	private JenkinsMaster(String masterName) {
+		if (masterName.contains(".")) {
+			_masterName = masterName.substring(0, masterName.indexOf("."));
+		}
+		else {
+			_masterName = masterName;
+		}
+
+		try {
+			Properties properties =
+				JenkinsResultsParserUtil.getBuildProperties();
+
+			_masterURL = properties.getProperty(
+				JenkinsResultsParserUtil.combine(
+					"jenkins.local.url[", _masterName, "]"));
+
+			Integer slaveRAM = getSlaveRAMMinimumDefault();
+
+			String slaveRAMString = JenkinsResultsParserUtil.getProperty(
+				properties,
+				JenkinsResultsParserUtil.combine(
+					"master.property(", _masterName, "/slave.ram)"));
+
+			if ((slaveRAMString != null) && slaveRAMString.matches("\\d+")) {
+				slaveRAM = Integer.valueOf(slaveRAMString);
+			}
+
+			_slaveRAM = slaveRAM;
+
+			Integer slavesPerHost = getSlavesPerHostDefault();
+
+			String slavesPerHostString = JenkinsResultsParserUtil.getProperty(
+				properties,
+				JenkinsResultsParserUtil.combine(
+					"master.property(", _masterName, "/slaves.per.host)"));
+
+			if ((slavesPerHostString != null) &&
+				slavesPerHostString.matches("\\d+")) {
+
+				slavesPerHost = Integer.valueOf(slavesPerHostString);
+			}
+
+			_slavesPerHost = slavesPerHost;
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(
+				"Unable to determine URL for master " + _masterName, exception);
+		}
+	}
+
 	private synchronized int _getRecentBatchSizesTotal() {
-		long currentTimestamp = System.currentTimeMillis();
+		long currentTimestamp = JenkinsResultsParserUtil.getCurrentTimeMillis();
 		int recentBatchSizesTotal = 0;
 
 		List<Long> expiredTimestamps = new ArrayList<>(_batchSizes.size());
@@ -309,13 +504,21 @@ public class JenkinsMaster implements Comparable<JenkinsMaster> {
 		return recentBatchSizesTotal;
 	}
 
+	private static final Map<String, JenkinsMaster> _jenkinsMasters =
+		Collections.synchronizedMap(new HashMap<String, JenkinsMaster>());
+
 	private boolean _available;
 	private final Map<Long, Integer> _batchSizes = new TreeMap<>();
-	private final Map<String, JenkinsSlave> _jenkinsSlavesMap = new HashMap<>();
+	private final List<String> _buildURLs = new CopyOnWriteArrayList<>();
+	private final Map<String, JenkinsSlave> _jenkinsSlavesMap =
+		Collections.synchronizedMap(new HashMap<String, JenkinsSlave>());
 	private final String _masterName;
 	private final String _masterURL;
 	private int _queueCount;
+	private final Map<String, JSONObject> _queuedBuildURLs =
+		Collections.synchronizedMap(new HashMap<String, JSONObject>());
 	private int _reportedAvailableSlavesCount;
 	private final Integer _slaveRAM;
+	private final Integer _slavesPerHost;
 
 }

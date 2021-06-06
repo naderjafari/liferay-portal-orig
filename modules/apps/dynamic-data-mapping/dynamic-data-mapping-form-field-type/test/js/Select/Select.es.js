@@ -20,7 +20,7 @@ import {
 	render,
 	waitForElement,
 } from '@testing-library/react';
-import {PageProvider} from 'dynamic-data-mapping-form-renderer';
+import {PageProvider} from 'data-engine-js-components-web';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -28,6 +28,19 @@ import Select from '../../../src/main/resources/META-INF/resources/Select/Select
 
 const spritemap = 'icons.svg';
 
+const createOptions = (length) => {
+	const options = [];
+
+	for (let counter = 1; counter <= length; counter++) {
+		options.push({
+			label: 'label' + counter,
+			name: 'name' + counter,
+			value: 'item' + counter,
+		});
+	}
+
+	return options;
+};
 const SelectWithProvider = (props) => (
 	<PageProvider value={{editingLanguageId: 'en_US'}}>
 		<Select {...props} />
@@ -62,6 +75,58 @@ describe('Select', () => {
 	beforeEach(() => {
 		jest.useFakeTimers();
 		fetch.mockResponse(JSON.stringify({}));
+	});
+
+	it('does not render and empty option', () => {
+		const option = {
+			checked: false,
+			disabled: false,
+			id: 'id',
+			inline: false,
+			label: 'label',
+			name: 'name',
+			showLabel: true,
+			value: 'item',
+		};
+
+		const {container} = render(
+			<SelectWithProvider
+				options={[option]}
+				showEmptyOption={false}
+				spritemap={spritemap}
+			/>
+		);
+
+		const dropDownItem = container.querySelector(
+			'.dropdown-menu .dropdown-item'
+		);
+
+		expect(dropDownItem.innerHTML).toBe(option.label);
+	});
+
+	it('does not show an empty option when the search input is available', async () => {
+		const handleFieldEdited = jest.fn();
+
+		const {container} = render(
+			<SelectWithProvider
+				dataSourceType="manual"
+				multiple={false}
+				onChange={handleFieldEdited}
+				options={createOptions(12)}
+				showEmptyOption={false}
+				spritemap={spritemap}
+			/>
+		);
+
+		const dropdownTrigger = container.querySelector(
+			'.form-builder-select-field.input-group-container'
+		);
+
+		fireEvent.click(dropdownTrigger);
+
+		const emptyOption = container.querySelector('[label=choose-an-option]');
+
+		expect(emptyOption).toBeNull();
 	});
 
 	it('is not editable', () => {
@@ -100,6 +165,33 @@ describe('Select', () => {
 		});
 
 		expect(container).toMatchSnapshot();
+	});
+
+	it('renders an empty option', () => {
+		const {container} = render(
+			<SelectWithProvider
+				options={[
+					{
+						checked: false,
+						disabled: false,
+						id: 'id',
+						inline: false,
+						label: 'label',
+						name: 'name',
+						showLabel: true,
+						value: 'item',
+					},
+				]}
+				showEmptyOption={true}
+				spritemap={spritemap}
+			/>
+		);
+
+		const dropDownItem = container.querySelector(
+			'.dropdown-menu .dropdown-item'
+		);
+
+		expect(dropDownItem.innerHTML).toBe('choose-an-option');
 	});
 
 	it('renders options', () => {
@@ -277,16 +369,7 @@ describe('Select', () => {
 			<SelectWithProvider
 				dataSourceType="manual"
 				onChange={handleFieldEdited}
-				options={[
-					{
-						label: 'label',
-						value: 'item',
-					},
-					{
-						label: 'label2',
-						value: 'item2',
-					},
-				]}
+				options={createOptions(2)}
 				spritemap={spritemap}
 			/>
 		);
@@ -326,43 +409,7 @@ describe('Select', () => {
 				dataSourceType="manual"
 				multiple={true}
 				onChange={handleFieldEdited}
-				options={[
-					{
-						label: 'label1',
-						name: 'name1',
-						value: 'item1',
-					},
-					{
-						label: 'label2',
-						name: 'name2',
-						value: 'item2',
-					},
-					{
-						label: 'label3',
-						name: 'name3',
-						value: 'item3',
-					},
-					{
-						label: 'label4',
-						name: 'name4',
-						value: 'item4',
-					},
-					{
-						label: 'label5',
-						name: 'name5',
-						value: 'item5',
-					},
-					{
-						label: 'label6',
-						name: 'name6',
-						value: 'item6',
-					},
-					{
-						label: 'label7',
-						name: 'name7',
-						value: 'item7',
-					},
-				]}
+				options={createOptions(7)}
 				spritemap={spritemap}
 			/>
 		);
@@ -391,5 +438,143 @@ describe('Select', () => {
 			'item7',
 		]);
 		expect(container).toMatchSnapshot();
+	});
+
+	it('shows an empty option when the search input is available', async () => {
+		const handleFieldEdited = jest.fn();
+
+		const {container} = render(
+			<SelectWithProvider
+				dataSourceType="manual"
+				multiple={false}
+				onChange={handleFieldEdited}
+				options={createOptions(12)}
+				showEmptyOption={true}
+				spritemap={spritemap}
+			/>
+		);
+
+		const dropdownTrigger = container.querySelector(
+			'.form-builder-select-field.input-group-container'
+		);
+
+		fireEvent.click(dropdownTrigger);
+
+		const emptyOption = container.querySelector('[label=choose-an-option]');
+
+		expect(emptyOption).not.toBeNull();
+	});
+
+	it('shows a search input when the number of options is more than the maximum allowed', async () => {
+		const handleFieldEdited = jest.fn();
+
+		const {container} = render(
+			<SelectWithProvider
+				dataSourceType="manual"
+				multiple={true}
+				onChange={handleFieldEdited}
+				options={createOptions(12)}
+				spritemap={spritemap}
+			/>
+		);
+
+		const dropdownTrigger = container.querySelector(
+			'.form-builder-select-field.input-group-container'
+		);
+
+		fireEvent.click(dropdownTrigger);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		expect(container).toMatchSnapshot();
+	});
+
+	it('filters according to the input and calls onChange callback when an item is selected using search', async () => {
+		const handleFieldEdited = jest.fn();
+
+		const {container, getByTestId} = render(
+			<SelectWithProvider
+				dataSourceType="manual"
+				multiple={true}
+				onChange={handleFieldEdited}
+				options={createOptions(12)}
+				spritemap={spritemap}
+			/>
+		);
+
+		const dropdownTrigger = container.querySelector(
+			'.form-builder-select-field.input-group-container'
+		);
+
+		fireEvent.click(dropdownTrigger);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const input = container.querySelector('input');
+
+		fireEvent.change(input, {
+			target: {
+				value: 'label1',
+			},
+		});
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		expect(container).toMatchSnapshot();
+
+		const labelItem = await waitForElement(() =>
+			getByTestId('labelItem-item11')
+		);
+
+		fireEvent.click(labelItem);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		expect(handleFieldEdited).toHaveBeenCalledWith(expect.any(Object), [
+			'item11',
+		]);
+	});
+
+	it('adjusts dropdown menu position during scroll', async () => {
+		const {container} = render(
+			<SelectWithProvider
+				dataSourceType="manual"
+				options={createOptions(12)}
+				spritemap={spritemap}
+			/>
+		);
+
+		const dropdownTrigger = container.querySelector(
+			'.form-builder-select-field.input-group-container'
+		);
+
+		jest.spyOn(dropdownTrigger, 'getBoundingClientRect').mockImplementation(
+			() => {
+				return {
+					height: 40,
+					top: 50,
+				};
+			}
+		);
+
+		window.pageYOffset = 100;
+
+		fireEvent.scroll(container);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const dropdownMenu = container.querySelector('.ddm-select-dropdown');
+
+		expect(dropdownMenu.style).toHaveProperty('top', '190px');
 	});
 });

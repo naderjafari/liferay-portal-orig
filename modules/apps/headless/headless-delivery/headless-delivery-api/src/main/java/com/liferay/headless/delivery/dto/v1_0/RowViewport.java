@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -44,17 +46,20 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("RowViewport")
+@GraphQLName(description = "Represents a row viewport.", value = "RowViewport")
 @JsonFilter("Liferay.Vulcan")
-@Schema(requiredProperties = {"id", "rowViewportDefinition"})
+@Schema(
+	description = "Represents a row viewport.",
+	requiredProperties = {"id", "rowViewportDefinition"}
+)
 @XmlRootElement(name = "RowViewport")
-public class RowViewport {
+public class RowViewport implements Serializable {
 
 	public static RowViewport toDTO(String json) {
 		return ObjectMapperUtil.readValue(RowViewport.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The row vieport's ID.")
 	public String getId() {
 		return id;
 	}
@@ -76,12 +81,12 @@ public class RowViewport {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The row vieport's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	@NotEmpty
 	protected String id;
 
-	@Schema
+	@Schema(description = "The definition of the row vieport.")
 	@Valid
 	public RowViewportDefinition getRowViewportDefinition() {
 		return rowViewportDefinition;
@@ -109,7 +114,7 @@ public class RowViewport {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The definition of the row vieport.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	@NotNull
 	protected RowViewportDefinition rowViewportDefinition;
@@ -171,6 +176,7 @@ public class RowViewport {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.RowViewport",
 		name = "x-class-name"
 	)
@@ -206,7 +212,7 @@ public class RowViewport {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -245,7 +251,7 @@ public class RowViewport {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

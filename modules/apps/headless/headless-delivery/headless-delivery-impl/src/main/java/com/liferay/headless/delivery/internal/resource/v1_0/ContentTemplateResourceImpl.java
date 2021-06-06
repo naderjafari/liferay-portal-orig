@@ -26,12 +26,14 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.odata.entity.EntityModel;
+import com.liferay.portal.vulcan.aggregation.Aggregation;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
@@ -56,6 +58,16 @@ public class ContentTemplateResourceImpl
 	extends BaseContentTemplateResourceImpl {
 
 	@Override
+	public Page<ContentTemplate> getAssetLibraryContentTemplatesPage(
+			Long assetLibraryId, String search, Aggregation aggregation,
+			Filter filter, Pagination pagination, Sort[] sorts)
+		throws Exception {
+
+		return getSiteContentTemplatesPage(
+			assetLibraryId, search, aggregation, filter, pagination, sorts);
+	}
+
+	@Override
 	public ContentTemplate getContentTemplate(
 			Long siteId, String contentTemplateId)
 		throws Exception {
@@ -65,8 +77,8 @@ public class ContentTemplateResourceImpl
 			contentTemplateId);
 
 		return ContentTemplateUtil.toContentTemplate(
-			ddmTemplate, _getDtoConverterContext(ddmTemplate), _portal,
-			_userLocalService);
+			ddmTemplate, _getDtoConverterContext(ddmTemplate),
+			groupLocalService, _portal, _userLocalService);
 	}
 
 	@Override
@@ -76,15 +88,15 @@ public class ContentTemplateResourceImpl
 
 	@Override
 	public Page<ContentTemplate> getSiteContentTemplatesPage(
-			Long siteId, String search, Filter filter, Pagination pagination,
-			Sort[] sorts)
+			Long siteId, String search, Aggregation aggregation, Filter filter,
+			Pagination pagination, Sort[] sorts)
 		throws Exception {
 
 		return SearchUtil.search(
 			Collections.singletonMap(
 				"get",
 				addAction(
-					"MANAGE_LAYOUTS", "getSiteContentTemplatesPage",
+					ActionKeys.MANAGE_LAYOUTS, "getSiteContentTemplatesPage",
 					Group.class.getName(), siteId)),
 			booleanQuery -> {
 			},
@@ -92,6 +104,7 @@ public class ContentTemplateResourceImpl
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
 			searchContext -> {
+				searchContext.addVulcanAggregation(aggregation);
 				searchContext.setAttribute(
 					Field.STATUS, WorkflowConstants.STATUS_APPROVED);
 				searchContext.setAttribute(
@@ -107,8 +120,8 @@ public class ContentTemplateResourceImpl
 					GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK)));
 
 				return ContentTemplateUtil.toContentTemplate(
-					ddmTemplate, _getDtoConverterContext(ddmTemplate), _portal,
-					_userLocalService);
+					ddmTemplate, _getDtoConverterContext(ddmTemplate),
+					groupLocalService, _portal, _userLocalService);
 			});
 	}
 
@@ -120,8 +133,8 @@ public class ContentTemplateResourceImpl
 			Collections.singletonMap(
 				"get",
 				addAction(
-					"VIEW", ddmTemplate.getTemplateId(), "getContentTemplate",
-					ddmTemplate.getUserId(),
+					ActionKeys.VIEW, ddmTemplate.getTemplateId(),
+					"getContentTemplate", ddmTemplate.getUserId(),
 					DDMTemplate.class.getName() + "-" +
 						JournalArticle.class.getName(),
 					ddmTemplate.getGroupId())),

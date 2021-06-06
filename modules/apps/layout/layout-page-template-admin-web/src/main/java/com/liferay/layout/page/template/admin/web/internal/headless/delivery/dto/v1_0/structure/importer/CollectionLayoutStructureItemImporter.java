@@ -22,7 +22,7 @@ import com.liferay.info.list.provider.InfoListProvider;
 import com.liferay.info.list.provider.InfoListProviderTracker;
 import com.liferay.info.list.provider.item.selector.criterion.InfoListProviderItemSelectorReturnType;
 import com.liferay.item.selector.criteria.InfoListItemSelectorReturnType;
-import com.liferay.layout.util.structure.CollectionLayoutStructureItem;
+import com.liferay.layout.util.structure.CollectionStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.petra.reflect.GenericUtil;
@@ -33,9 +33,9 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -58,10 +58,11 @@ public class CollectionLayoutStructureItemImporter
 			Set<String> warningMessages)
 		throws Exception {
 
-		CollectionLayoutStructureItem collectionLayoutStructureItem =
-			(CollectionLayoutStructureItem)
-				layoutStructure.addCollectionLayoutStructureItem(
-					parentItemId, position);
+		CollectionStyledLayoutStructureItem
+			collectionStyledLayoutStructureItem =
+				(CollectionStyledLayoutStructureItem)
+					layoutStructure.addCollectionStyledLayoutStructureItem(
+						parentItemId, position);
 
 		Map<String, Object> definitionMap = getDefinitionMap(
 			pageElement.getDefinition());
@@ -71,23 +72,49 @@ public class CollectionLayoutStructureItemImporter
 				(Map<String, Object>)definitionMap.get("collectionConfig");
 
 			if (collectionConfig != null) {
-				collectionLayoutStructureItem.setCollectionJSONObject(
+				collectionStyledLayoutStructureItem.setCollectionJSONObject(
 					_getCollectionConfigAsJSONObject(collectionConfig));
 			}
 
-			collectionLayoutStructureItem.setListItemStyle(
+			collectionStyledLayoutStructureItem.setListItemStyle(
 				(String)definitionMap.get("listItemStyle"));
-			collectionLayoutStructureItem.setListStyle(
+			collectionStyledLayoutStructureItem.setListStyle(
 				(String)definitionMap.get("listStyle"));
-			collectionLayoutStructureItem.setNumberOfColumns(
+			collectionStyledLayoutStructureItem.setNumberOfColumns(
 				(Integer)definitionMap.get("numberOfColumns"));
-			collectionLayoutStructureItem.setNumberOfItems(
+			collectionStyledLayoutStructureItem.setNumberOfItems(
 				(Integer)definitionMap.get("numberOfItems"));
-			collectionLayoutStructureItem.setTemplateKey(
+			collectionStyledLayoutStructureItem.setTemplateKey(
 				(String)definitionMap.get("templateKey"));
+
+			Map<String, Object> fragmentStyleMap =
+				(Map<String, Object>)definitionMap.get("fragmentStyle");
+
+			if (fragmentStyleMap != null) {
+				JSONObject jsonObject = JSONUtil.put(
+					"styles", toStylesJSONObject(fragmentStyleMap));
+
+				collectionStyledLayoutStructureItem.updateItemConfig(
+					jsonObject);
+			}
+
+			if (definitionMap.containsKey("fragmentViewports")) {
+				List<Map<String, Object>> fragmentViewports =
+					(List<Map<String, Object>>)definitionMap.get(
+						"fragmentViewports");
+
+				for (Map<String, Object> fragmentViewport : fragmentViewports) {
+					JSONObject jsonObject = JSONUtil.put(
+						(String)fragmentViewport.get("id"),
+						toFragmentViewportStylesJSONObject(fragmentViewport));
+
+					collectionStyledLayoutStructureItem.updateItemConfig(
+						jsonObject);
+				}
+			}
 		}
 
-		return collectionLayoutStructureItem;
+		return collectionStyledLayoutStructureItem;
 	}
 
 	@Override
@@ -145,8 +172,7 @@ public class CollectionLayoutStructureItemImporter
 		}
 
 		return JSONUtil.put(
-			"classNameId",
-			_portal.getClassNameId(AssetListEntry.class.getName())
+			"classNameId", portal.getClassNameId(AssetListEntry.class.getName())
 		).put(
 			"classPK", String.valueOf(classPK)
 		).put(
@@ -215,8 +241,5 @@ public class CollectionLayoutStructureItemImporter
 
 	@Reference
 	private InfoListProviderTracker _infoListProviderTracker;
-
-	@Reference
-	private Portal _portal;
 
 }

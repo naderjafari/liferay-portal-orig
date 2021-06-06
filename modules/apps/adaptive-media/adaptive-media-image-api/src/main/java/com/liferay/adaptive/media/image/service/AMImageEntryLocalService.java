@@ -62,7 +62,7 @@ public interface AMImageEntryLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link AMImageEntryLocalServiceUtil} to access the am image entry local service. Add custom service methods to <code>com.liferay.adaptive.media.image.service.impl.AMImageEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.adaptive.media.image.service.impl.AMImageEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the am image entry local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link AMImageEntryLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -191,6 +191,9 @@ public interface AMImageEntryLocalService
 	public <T> T dslQuery(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
 
 	/**
@@ -300,6 +303,16 @@ public interface AMImageEntryLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<AMImageEntry> getAMImageEntries(int start, int end);
+
+	/**
+	 * Returns the list of adaptive media image entries generated for the
+	 * file version.
+	 *
+	 * @param fileVersionId the primary key of the file version
+	 * @return the list of adaptive media image entries in the file version
+	 */
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AMImageEntry> getAMImageEntries(long fileVersionId);
 
 	/**
 	 * Returns all the am image entries matching the UUID and company.

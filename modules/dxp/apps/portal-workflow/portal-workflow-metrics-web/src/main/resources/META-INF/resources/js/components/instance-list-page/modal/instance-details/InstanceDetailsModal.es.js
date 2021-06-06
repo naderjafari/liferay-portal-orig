@@ -16,36 +16,28 @@ import React, {useContext, useMemo, useState} from 'react';
 
 import PromisesResolver from '../../../../shared/components/promises-resolver/PromisesResolver.es';
 import {useFetch} from '../../../../shared/hooks/useFetch.es';
+import {getSLAStatusIconInfo} from '../../../../shared/util/util.es';
 import {InstanceListContext} from '../../InstanceListPageProvider.es';
 import {ModalContext} from '../ModalProvider.es';
-import {Body} from './InstanceDetailsModalBody.es';
+import Body from './InstanceDetailsModalBody.es';
 
-const Header = ({completed, id = '', slaResults = [], slaStatus}) => {
-	const iconClasses = {
-		Empty: 'hr',
-		Overdue: 'exclamation-circle',
-	};
-
-	const iconColors = {
-		Empty: 'text-info',
-		Overdue: 'text-danger',
-	};
-
-	slaStatus = !slaResults.length ? 'Empty' : slaStatus;
-	slaStatus = completed ? 'Completed' : slaStatus;
-
-	const iconClass = iconClasses[slaStatus] || 'check-circle';
-	const iconColor = iconColors[slaStatus] || 'text-success';
+function Header({completed, id = '', slaStatus}) {
+	const slaStatusIcon = getSLAStatusIconInfo(slaStatus);
 
 	return (
-		<ClayModal.Header data-testid="instanceDetailsHeader">
+		<ClayModal.Header>
 			<PromisesResolver.Resolved>
-				<div
-					className="font-weight-medium"
-					data-testid="instanceDetailsTitle"
-				>
-					<span className={`modal-title-indicator ${iconColor}`}>
-						<ClayIcon data-testid="iconTitle" symbol={iconClass} />
+				<div className="font-weight-medium">
+					<span
+						className={`mr-2 sticker ${
+							completed
+								? 'text-secondary bg-muted'
+								: `${slaStatusIcon?.textColor} ${slaStatusIcon?.bgColor}`
+						}`}
+					>
+						<span className="inline-item">
+							<ClayIcon symbol={slaStatusIcon?.name} />
+						</span>
 					</span>
 
 					{`${Liferay.Language.get('item')} #${id}`}
@@ -53,20 +45,15 @@ const Header = ({completed, id = '', slaResults = [], slaStatus}) => {
 			</PromisesResolver.Resolved>
 		</ClayModal.Header>
 	);
-};
+}
 
-const InstanceDetailsModal = () => {
+function InstanceDetailsModal() {
 	const [retry, setRetry] = useState(0);
 	const {instanceId, setInstanceId} = useContext(InstanceListContext);
-	const {processId, setVisibleModal, visibleModal} = useContext(ModalContext);
-
-	const url = useMemo(
-		() => `/processes/${processId}/instances/${instanceId}`,
-		[instanceId, processId]
-	);
+	const {closeModal, processId, visibleModal} = useContext(ModalContext);
 
 	const {data, fetchData} = useFetch({
-		url,
+		url: `/processes/${processId}/instances/${instanceId}`,
 	});
 
 	const promises = useMemo(() => {
@@ -79,8 +66,8 @@ const InstanceDetailsModal = () => {
 
 	const {observer} = useModal({
 		onClose: () => {
+			closeModal();
 			setInstanceId();
-			setVisibleModal('');
 		},
 	});
 
@@ -99,7 +86,7 @@ const InstanceDetailsModal = () => {
 	) : (
 		<></>
 	);
-};
+}
 
 InstanceDetailsModal.Body = Body;
 InstanceDetailsModal.Header = Header;

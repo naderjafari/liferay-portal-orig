@@ -26,15 +26,16 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 )
 @Meta.OCD(
 	id = "com.liferay.asset.categories.configuration.AssetCategoriesCompanyConfiguration",
-	localization = "content/Language", name = "categorization"
+	localization = "content/Language",
+	name = "categorization-configuration-name"
 )
 public interface AssetCategoriesCompanyConfiguration {
 
 	@Meta.AD(
-		deflt = "https://help.liferay.com/hc/en-us/articles/360028820492-Defining-Categories-for-Content",
-		description = "link-url-description", name = "link-url",
-		required = false
+		deflt = "https://learn.liferay.com/dxp/7.x/en/content-authoring-and-management/tags-and-categories/defining-categories-and-vocabularies-for-content.html",
+		description = "link-to-documentation-url-description",
+		name = "link-to-documentation-url", required = false
 	)
-	public String linkURL();
+	public String linkToDocumentationURL();
 
 }

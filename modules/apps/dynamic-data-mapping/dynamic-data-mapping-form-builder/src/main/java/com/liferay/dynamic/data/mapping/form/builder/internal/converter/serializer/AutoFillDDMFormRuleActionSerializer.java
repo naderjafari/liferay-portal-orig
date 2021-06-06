@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Leonardo Barros
@@ -41,14 +42,38 @@ public class AutoFillDDMFormRuleActionSerializer
 	public String serialize(
 		SPIDDMFormRuleSerializerContext spiDDMFormRuleSerializerContext) {
 
+		Map<String, String> inputParametersMapper =
+			_autoFillDDMFormRuleAction.getInputParametersMapper();
+
+		for (Map.Entry<String, String> inputParameterMapper :
+				inputParametersMapper.entrySet()) {
+
+			if (Objects.equals(
+					inputParameterMapper.getValue(), StringPool.BLANK)) {
+
+				return null;
+			}
+		}
+
+		Map<String, String> outputParametersMapper =
+			_autoFillDDMFormRuleAction.getOutputParametersMapper();
+
+		for (Map.Entry<String, String> outputParameterMapper :
+				outputParametersMapper.entrySet()) {
+
+			if (Objects.equals(
+					outputParameterMapper.getValue(), StringPool.BLANK)) {
+
+				return null;
+			}
+		}
+
 		return String.format(
 			_FUNCTION_CALL_TERNARY_EXPRESSION_FORMAT, "call",
 			StringUtil.quote(
 				_autoFillDDMFormRuleAction.getDDMDataProviderInstanceUUID()),
-			convertAutoFillInputParameters(
-				_autoFillDDMFormRuleAction.getInputParametersMapper()),
-			convertAutoFillOutputParameters(
-				_autoFillDDMFormRuleAction.getOutputParametersMapper()));
+			convertAutoFillInputParameters(inputParametersMapper),
+			convertAutoFillOutputParameters(outputParametersMapper));
 	}
 
 	protected String convertAutoFillInputParameters(

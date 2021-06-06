@@ -105,6 +105,8 @@ public class KaleoWorkflowModelConverterImpl
 		}
 
 		defaultWorkflowDefinition.setContent(content);
+		defaultWorkflowDefinition.setCreateDate(
+			kaleoDefinition.getCreateDate());
 		defaultWorkflowDefinition.setDescription(
 			kaleoDefinition.getDescription());
 		defaultWorkflowDefinition.setModifiedDate(
@@ -134,6 +136,8 @@ public class KaleoWorkflowModelConverterImpl
 
 			defaultWorkflowDefinition.setActive(kaleoDefinition.isActive());
 			defaultWorkflowDefinition.setScope(kaleoDefinition.getScope());
+			defaultWorkflowDefinition.setWorkflowDefinitionId(
+				kaleoDefinition.getKaleoDefinitionId());
 		}
 		catch (PortalException portalException) {
 			if (_log.isWarnEnabled()) {
@@ -150,7 +154,9 @@ public class KaleoWorkflowModelConverterImpl
 		if (Validator.isNull(content)) {
 			try {
 				content = _definitionExporter.export(
-					kaleoDefinitionVersion.getKaleoDefinitionVersionId());
+					kaleoDefinitionVersion.getCompanyId(),
+					kaleoDefinitionVersion.getName(),
+					getVersion(kaleoDefinitionVersion.getVersion()));
 
 				kaleoDefinitionVersion.setContent(content);
 
@@ -167,7 +173,8 @@ public class KaleoWorkflowModelConverterImpl
 		}
 
 		defaultWorkflowDefinition.setContent(content);
-
+		defaultWorkflowDefinition.setCreateDate(
+			kaleoDefinitionVersion.getCreateDate());
 		defaultWorkflowDefinition.setDescription(
 			kaleoDefinitionVersion.getDescription());
 		defaultWorkflowDefinition.setModifiedDate(

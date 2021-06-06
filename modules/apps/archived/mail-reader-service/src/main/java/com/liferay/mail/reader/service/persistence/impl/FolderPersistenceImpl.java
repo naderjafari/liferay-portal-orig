@@ -23,6 +23,7 @@ import com.liferay.mail.reader.service.persistence.FolderPersistence;
 import com.liferay.mail.reader.service.persistence.impl.constants.MailPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
+import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -33,10 +34,13 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -51,9 +55,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -69,7 +76,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Brian Wing Shun Chan
  * @generated
  */
-@Component(service = FolderPersistence.class)
+@Component(service = {FolderPersistence.class, BasePersistence.class})
 public class FolderPersistenceImpl
 	extends BasePersistenceImpl<Folder> implements FolderPersistence {
 
@@ -184,8 +191,7 @@ public class FolderPersistenceImpl
 		List<Folder> list = null;
 
 		if (useFinderCache) {
-			list = (List<Folder>)finderCache.getResult(
-				finderPath, finderArgs, this);
+			list = (List<Folder>)finderCache.getResult(finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (Folder folder : list) {
@@ -540,7 +546,7 @@ public class FolderPersistenceImpl
 
 		Object[] finderArgs = new Object[] {accountId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -655,8 +661,7 @@ public class FolderPersistenceImpl
 		Object result = null;
 
 		if (useFinderCache) {
-			result = finderCache.getResult(
-				_finderPathFetchByA_F, finderArgs, this);
+			result = finderCache.getResult(_finderPathFetchByA_F, finderArgs);
 		}
 
 		if (result instanceof Folder) {
@@ -782,7 +787,7 @@ public class FolderPersistenceImpl
 
 		Object[] finderArgs = new Object[] {accountId, fullName};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -864,8 +869,6 @@ public class FolderPersistenceImpl
 		finderCache.putResult(
 			_finderPathFetchByA_F,
 			new Object[] {folder.getAccountId(), folder.getFullName()}, folder);
-
-		folder.resetOriginalValues();
 	}
 
 	/**
@@ -881,9 +884,6 @@ public class FolderPersistenceImpl
 
 				cacheResult(folder);
 			}
-			else {
-				folder.resetOriginalValues();
-			}
 		}
 	}
 
@@ -898,9 +898,7 @@ public class FolderPersistenceImpl
 	public void clearCache() {
 		entityCache.clearCache(FolderImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FolderImpl.class);
 	}
 
 	/**
@@ -912,31 +910,19 @@ public class FolderPersistenceImpl
 	 */
 	@Override
 	public void clearCache(Folder folder) {
-		entityCache.removeResult(FolderImpl.class, folder.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache((FolderModelImpl)folder, true);
+		entityCache.removeResult(FolderImpl.class, folder);
 	}
 
 	@Override
 	public void clearCache(List<Folder> folders) {
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (Folder folder : folders) {
-			entityCache.removeResult(FolderImpl.class, folder.getPrimaryKey());
-
-			clearUniqueFindersCache((FolderModelImpl)folder, true);
+			entityCache.removeResult(FolderImpl.class, folder);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FolderImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
 			entityCache.removeResult(FolderImpl.class, primaryKey);
@@ -948,35 +934,8 @@ public class FolderPersistenceImpl
 			folderModelImpl.getAccountId(), folderModelImpl.getFullName()
 		};
 
-		finderCache.putResult(
-			_finderPathCountByA_F, args, Long.valueOf(1), false);
-		finderCache.putResult(
-			_finderPathFetchByA_F, args, folderModelImpl, false);
-	}
-
-	protected void clearUniqueFindersCache(
-		FolderModelImpl folderModelImpl, boolean clearCurrent) {
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				folderModelImpl.getAccountId(), folderModelImpl.getFullName()
-			};
-
-			finderCache.removeResult(_finderPathCountByA_F, args);
-			finderCache.removeResult(_finderPathFetchByA_F, args);
-		}
-
-		if ((folderModelImpl.getColumnBitmask() &
-			 _finderPathFetchByA_F.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				folderModelImpl.getOriginalAccountId(),
-				folderModelImpl.getOriginalFullName()
-			};
-
-			finderCache.removeResult(_finderPathCountByA_F, args);
-			finderCache.removeResult(_finderPathFetchByA_F, args);
-		}
+		finderCache.putResult(_finderPathCountByA_F, args, Long.valueOf(1));
+		finderCache.putResult(_finderPathFetchByA_F, args, folderModelImpl);
 	}
 
 	/**
@@ -1102,23 +1061,23 @@ public class FolderPersistenceImpl
 		ServiceContext serviceContext =
 			ServiceContextThreadLocal.getServiceContext();
 
-		Date now = new Date();
+		Date date = new Date();
 
 		if (isNew && (folder.getCreateDate() == null)) {
 			if (serviceContext == null) {
-				folder.setCreateDate(now);
+				folder.setCreateDate(date);
 			}
 			else {
-				folder.setCreateDate(serviceContext.getCreateDate(now));
+				folder.setCreateDate(serviceContext.getCreateDate(date));
 			}
 		}
 
 		if (!folderModelImpl.hasSetModifiedDate()) {
 			if (serviceContext == null) {
-				folder.setModifiedDate(now);
+				folder.setModifiedDate(date);
 			}
 			else {
-				folder.setModifiedDate(serviceContext.getModifiedDate(now));
+				folder.setModifiedDate(serviceContext.getModifiedDate(date));
 			}
 		}
 
@@ -1127,10 +1086,8 @@ public class FolderPersistenceImpl
 		try {
 			session = openSession();
 
-			if (folder.isNew()) {
+			if (isNew) {
 				session.save(folder);
-
-				folder.setNew(false);
 			}
 			else {
 				folder = (Folder)session.merge(folder);
@@ -1143,45 +1100,13 @@ public class FolderPersistenceImpl
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		entityCache.putResult(FolderImpl.class, folderModelImpl, false, true);
+
+		cacheUniqueFindersCache(folderModelImpl);
 
 		if (isNew) {
-			Object[] args = new Object[] {folderModelImpl.getAccountId()};
-
-			finderCache.removeResult(_finderPathCountByAccountId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByAccountId, args);
-
-			finderCache.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
+			folder.setNew(false);
 		}
-		else {
-			if ((folderModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByAccountId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					folderModelImpl.getOriginalAccountId()
-				};
-
-				finderCache.removeResult(_finderPathCountByAccountId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByAccountId, args);
-
-				args = new Object[] {folderModelImpl.getAccountId()};
-
-				finderCache.removeResult(_finderPathCountByAccountId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByAccountId, args);
-			}
-		}
-
-		entityCache.putResult(
-			FolderImpl.class, folder.getPrimaryKey(), folder, false);
-
-		clearUniqueFindersCache(folderModelImpl, false);
-		cacheUniqueFindersCache(folderModelImpl);
 
 		folder.resetOriginalValues();
 
@@ -1318,8 +1243,7 @@ public class FolderPersistenceImpl
 		List<Folder> list = null;
 
 		if (useFinderCache) {
-			list = (List<Folder>)finderCache.getResult(
-				finderPath, finderArgs, this);
+			list = (List<Folder>)finderCache.getResult(finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -1389,7 +1313,7 @@ public class FolderPersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -1439,54 +1363,59 @@ public class FolderPersistenceImpl
 	 * Initializes the folder persistence.
 	 */
 	@Activate
-	public void activate() {
+	public void activate(BundleContext bundleContext) {
+		_bundleContext = bundleContext;
+
+		_argumentsResolverServiceRegistration = _bundleContext.registerService(
+			ArgumentsResolver.class, new FolderModelArgumentsResolver(),
+			new HashMapDictionary<>());
+
 		_finderPathWithPaginationFindAll = new FinderPath(
-			FolderImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			FolderImpl.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByAccountId = new FinderPath(
-			FolderImpl.class, FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
-			"findByAccountId",
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByAccountId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"accountId"}, true);
 
 		_finderPathWithoutPaginationFindByAccountId = new FinderPath(
-			FolderImpl.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"findByAccountId", new String[] {Long.class.getName()},
-			FolderModelImpl.ACCOUNTID_COLUMN_BITMASK |
-			FolderModelImpl.FULLNAME_COLUMN_BITMASK);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByAccountId",
+			new String[] {Long.class.getName()}, new String[] {"accountId"},
+			true);
 
 		_finderPathCountByAccountId = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByAccountId", new String[] {Long.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByAccountId",
+			new String[] {Long.class.getName()}, new String[] {"accountId"},
+			false);
 
 		_finderPathFetchByA_F = new FinderPath(
-			FolderImpl.class, FINDER_CLASS_NAME_ENTITY, "fetchByA_F",
+			FINDER_CLASS_NAME_ENTITY, "fetchByA_F",
 			new String[] {Long.class.getName(), String.class.getName()},
-			FolderModelImpl.ACCOUNTID_COLUMN_BITMASK |
-			FolderModelImpl.FULLNAME_COLUMN_BITMASK);
+			new String[] {"accountId", "fullName"}, true);
 
 		_finderPathCountByA_F = new FinderPath(
-			Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByA_F",
-			new String[] {Long.class.getName(), String.class.getName()});
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByA_F",
+			new String[] {Long.class.getName(), String.class.getName()},
+			new String[] {"accountId", "fullName"}, false);
 	}
 
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(FolderImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+
+		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -1514,6 +1443,8 @@ public class FolderPersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
+
+	private BundleContext _bundleContext;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -1544,13 +1475,114 @@ public class FolderPersistenceImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		FolderPersistenceImpl.class);
 
-	static {
-		try {
-			Class.forName(MailPersistenceConstants.class.getName());
+	@Override
+	protected FinderCache getFinderCache() {
+		return finderCache;
+	}
+
+	private ServiceRegistration<ArgumentsResolver>
+		_argumentsResolverServiceRegistration;
+
+	private static class FolderModelArgumentsResolver
+		implements ArgumentsResolver {
+
+		@Override
+		public Object[] getArguments(
+			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
+			boolean original) {
+
+			String[] columnNames = finderPath.getColumnNames();
+
+			if ((columnNames == null) || (columnNames.length == 0)) {
+				if (baseModel.isNew()) {
+					return FINDER_ARGS_EMPTY;
+				}
+
+				return null;
+			}
+
+			FolderModelImpl folderModelImpl = (FolderModelImpl)baseModel;
+
+			long columnBitmask = folderModelImpl.getColumnBitmask();
+
+			if (!checkColumn || (columnBitmask == 0)) {
+				return _getValue(folderModelImpl, columnNames, original);
+			}
+
+			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
+				finderPath);
+
+			if (finderPathColumnBitmask == null) {
+				finderPathColumnBitmask = 0L;
+
+				for (String columnName : columnNames) {
+					finderPathColumnBitmask |= folderModelImpl.getColumnBitmask(
+						columnName);
+				}
+
+				if (finderPath.isBaseModelResult() &&
+					(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION ==
+						finderPath.getCacheName())) {
+
+					finderPathColumnBitmask |= _ORDER_BY_COLUMNS_BITMASK;
+				}
+
+				_finderPathColumnBitmasksCache.put(
+					finderPath, finderPathColumnBitmask);
+			}
+
+			if ((columnBitmask & finderPathColumnBitmask) != 0) {
+				return _getValue(folderModelImpl, columnNames, original);
+			}
+
+			return null;
 		}
-		catch (ClassNotFoundException classNotFoundException) {
-			throw new ExceptionInInitializerError(classNotFoundException);
+
+		@Override
+		public String getClassName() {
+			return FolderImpl.class.getName();
 		}
+
+		@Override
+		public String getTableName() {
+			return FolderTable.INSTANCE.getTableName();
+		}
+
+		private static Object[] _getValue(
+			FolderModelImpl folderModelImpl, String[] columnNames,
+			boolean original) {
+
+			Object[] arguments = new Object[columnNames.length];
+
+			for (int i = 0; i < arguments.length; i++) {
+				String columnName = columnNames[i];
+
+				if (original) {
+					arguments[i] = folderModelImpl.getColumnOriginalValue(
+						columnName);
+				}
+				else {
+					arguments[i] = folderModelImpl.getColumnValue(columnName);
+				}
+			}
+
+			return arguments;
+		}
+
+		private static final Map<FinderPath, Long>
+			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
+
+		private static final long _ORDER_BY_COLUMNS_BITMASK;
+
+		static {
+			long orderByColumnsBitmask = 0;
+
+			orderByColumnsBitmask |= FolderModelImpl.getColumnBitmask(
+				"fullName");
+
+			_ORDER_BY_COLUMNS_BITMASK = orderByColumnsBitmask;
+		}
+
 	}
 
 }

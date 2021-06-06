@@ -57,8 +57,10 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see CTCollectionServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class CTCollectionServiceSoap {
 
 	public static com.liferay.change.tracking.model.CTCollectionSoap
@@ -116,6 +118,21 @@ public class CTCollectionServiceSoap {
 		}
 	}
 
+	public static void discardCTEntries(
+			long ctCollectionId, long modelClassNameId, long modelClassPK)
+		throws RemoteException {
+
+		try {
+			CTCollectionServiceUtil.discardCTEntries(
+				ctCollectionId, modelClassNameId, modelClassPK);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
 	public static void discardCTEntry(
 			long ctCollectionId, long modelClassNameId, long modelClassPK)
 		throws RemoteException {
@@ -133,7 +150,7 @@ public class CTCollectionServiceSoap {
 
 	public static com.liferay.change.tracking.model.CTCollectionSoap[]
 			getCTCollections(
-				long companyId, int status, int start, int end,
+				long companyId, int[] statuses, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
 					<com.liferay.change.tracking.model.CTCollection>
 						orderByComparator)
@@ -142,7 +159,7 @@ public class CTCollectionServiceSoap {
 		try {
 			java.util.List<com.liferay.change.tracking.model.CTCollection>
 				returnValue = CTCollectionServiceUtil.getCTCollections(
-					companyId, status, start, end, orderByComparator);
+					companyId, statuses, start, end, orderByComparator);
 
 			return com.liferay.change.tracking.model.CTCollectionSoap.
 				toSoapModels(returnValue);
@@ -156,7 +173,8 @@ public class CTCollectionServiceSoap {
 
 	public static com.liferay.change.tracking.model.CTCollectionSoap[]
 			getCTCollections(
-				long companyId, int status, String keywords, int start, int end,
+				long companyId, int[] statuses, String keywords, int start,
+				int end,
 				com.liferay.portal.kernel.util.OrderByComparator
 					<com.liferay.change.tracking.model.CTCollection>
 						orderByComparator)
@@ -165,7 +183,8 @@ public class CTCollectionServiceSoap {
 		try {
 			java.util.List<com.liferay.change.tracking.model.CTCollection>
 				returnValue = CTCollectionServiceUtil.getCTCollections(
-					companyId, status, keywords, start, end, orderByComparator);
+					companyId, statuses, keywords, start, end,
+					orderByComparator);
 
 			return com.liferay.change.tracking.model.CTCollectionSoap.
 				toSoapModels(returnValue);
@@ -178,12 +197,12 @@ public class CTCollectionServiceSoap {
 	}
 
 	public static int getCTCollectionsCount(
-			long companyId, int status, String keywords)
+			long companyId, int[] statuses, String keywords)
 		throws RemoteException {
 
 		try {
 			int returnValue = CTCollectionServiceUtil.getCTCollectionsCount(
-				companyId, status, keywords);
+				companyId, statuses, keywords);
 
 			return returnValue;
 		}

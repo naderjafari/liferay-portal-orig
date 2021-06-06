@@ -21,25 +21,26 @@ import com.liferay.dynamic.data.mapping.model.UnlocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.MapUtil;
 
-import java.util.Locale;
+import java.util.Optional;
 
 /**
  * @author Marcellus Tavares
  */
 public class DefaultDDMFormValuesFactory {
 
-	public DefaultDDMFormValuesFactory(DDMForm ddmForm, Locale locale) {
+	public DefaultDDMFormValuesFactory(DDMForm ddmForm) {
 		_ddmForm = ddmForm;
-		_locale = locale;
 	}
 
 	public DDMFormValues create() {
 		DDMFormValues ddmFormValues = new DDMFormValues(_ddmForm);
 
-		ddmFormValues.addAvailableLocale(_locale);
-		ddmFormValues.setDefaultLocale(_locale);
+		ddmFormValues.setAvailableLocales(_ddmForm.getAvailableLocales());
+		ddmFormValues.setDefaultLocale(_ddmForm.getDefaultLocale());
 
 		for (DDMFormField ddmFormField : _ddmForm.getDDMFormFields()) {
 			DDMFormFieldValue ddmFormFieldValue =
@@ -56,11 +57,9 @@ public class DefaultDDMFormValuesFactory {
 
 		DDMFormFieldValue ddmFormFieldValue = new DDMFormFieldValue();
 
+		ddmFormFieldValue.setFieldReference(ddmFormField.getFieldReference());
 		ddmFormFieldValue.setName(ddmFormField.getName());
-
-		Value value = createDefaultValue(ddmFormField);
-
-		ddmFormFieldValue.setValue(value);
+		ddmFormFieldValue.setValue(createDefaultValue(ddmFormField));
 
 		for (DDMFormField nestedDDMFormField :
 				ddmFormField.getNestedDDMFormFields()) {
@@ -72,28 +71,38 @@ public class DefaultDDMFormValuesFactory {
 		return ddmFormFieldValue;
 	}
 
-	protected Value createDefaultLocalizedValue(String defaultValueString) {
-		Value value = new LocalizedValue(_locale);
+	protected LocalizedValue createDefaultLocalizedValue(
+		String defaultValueString) {
 
-		value.addString(_locale, defaultValueString);
+		LocalizedValue value = new LocalizedValue(_ddmForm.getDefaultLocale());
+
+		value.addString(_ddmForm.getDefaultLocale(), defaultValueString);
 
 		return value;
 	}
 
 	protected Value createDefaultValue(DDMFormField ddmFormField) {
-		LocalizedValue predefinedValue = ddmFormField.getPredefinedValue();
+		LocalizedValue defaultValue = ddmFormField.getPredefinedValue();
 
-		String defaultValueString = GetterUtil.getString(
-			predefinedValue.getString(_locale));
+		if ((defaultValue == null) ||
+			MapUtil.isEmpty(defaultValue.getValues())) {
 
-		if (ddmFormField.isLocalizable()) {
-			return createDefaultLocalizedValue(defaultValueString);
+			defaultValue = Optional.ofNullable(
+				(LocalizedValue)ddmFormField.getProperty("initialValue")
+			).orElse(
+				createDefaultLocalizedValue(StringPool.BLANK)
+			);
 		}
 
-		return new UnlocalizedValue(defaultValueString);
+		if (ddmFormField.isLocalizable()) {
+			return defaultValue;
+		}
+
+		return new UnlocalizedValue(
+			GetterUtil.getString(
+				defaultValue.getString(_ddmForm.getDefaultLocale())));
 	}
 
 	private final DDMForm _ddmForm;
-	private final Locale _locale;
 
 }

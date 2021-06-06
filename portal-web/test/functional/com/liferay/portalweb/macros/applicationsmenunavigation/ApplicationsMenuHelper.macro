@@ -1,5 +1,9 @@
 definition {
 
+	macro assertNoApplicationsMenu {
+		AssertElementNotPresent(locator1 = "ApplicationsMenu#APPLICATIONS_MENU");
+	}
+
 	macro closeApplicationsMenu {
 		if (IsElementPresent(locator1 = "ApplicationsMenu#APPLICATIONS_MENU")) {
 			Click(locator1 = "ApplicationsMenu#TOGGLE");
@@ -9,11 +13,10 @@ definition {
 	}
 
 	macro gotoPortlet {
-		AssertClick(
+		Click(
 			key_category = "${category}",
 			key_portlet = "${portlet}",
-			locator1 = "ApplicationsMenu#PORTLET",
-			value1 = "${portlet}");
+			locator1 = "ApplicationsMenu#PORTLET");
 	}
 
 	macro openApplicationsMenu {

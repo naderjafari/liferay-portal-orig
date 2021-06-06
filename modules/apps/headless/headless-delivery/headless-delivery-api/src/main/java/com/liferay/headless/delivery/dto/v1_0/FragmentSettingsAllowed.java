@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentSettingsAllowed")
+@GraphQLName(
+	description = "Represents the settings of allowed fragments in a page dropzone.",
+	value = "FragmentSettingsAllowed"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentSettingsAllowed")
-public class FragmentSettingsAllowed {
+public class FragmentSettingsAllowed implements Serializable {
 
 	public static FragmentSettingsAllowed toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentSettingsAllowed.class, json);
 	}
 
-	@Schema
+	@Schema(description = "A list of allowed fragments.")
 	@Valid
 	public Fragment[] getAllowedFragments() {
 		return allowedFragments;
@@ -76,7 +81,7 @@ public class FragmentSettingsAllowed {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A list of allowed fragments.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Fragment[] allowedFragments;
 
@@ -134,6 +139,7 @@ public class FragmentSettingsAllowed {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentSettingsAllowed",
 		name = "x-class-name"
 	)
@@ -169,7 +175,7 @@ public class FragmentSettingsAllowed {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -208,7 +214,7 @@ public class FragmentSettingsAllowed {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

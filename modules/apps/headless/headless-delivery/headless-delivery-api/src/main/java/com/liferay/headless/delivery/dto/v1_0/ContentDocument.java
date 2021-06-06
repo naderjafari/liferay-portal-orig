@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentDocument")
+@GraphQLName(
+	description = "Represents a document (binary data and metadata) associated with structured content. Properties follow the [Media Object](https://schema.org/MediaObject) specification.",
+	value = "ContentDocument"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentDocument")
-public class ContentDocument {
+public class ContentDocument implements Serializable {
 
 	public static ContentDocument toDTO(String json) {
 		return ObjectMapperUtil.readValue(ContentDocument.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -77,11 +84,13 @@ public class ContentDocument {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
-	@Schema
+	@Schema(description = "The type of content.")
 	public String getContentType() {
 		return contentType;
 	}
@@ -105,7 +114,7 @@ public class ContentDocument {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The type of content.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentType;
 
@@ -137,7 +146,9 @@ public class ContentDocument {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentUrl;
 
-	@Schema
+	@Schema(
+		description = "optional field with the content of the document in Base64, can be embedded with nestedFields"
+	)
 	public String getContentValue() {
 		return contentValue;
 	}
@@ -161,7 +172,9 @@ public class ContentDocument {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "optional field with the content of the document in Base64, can be embedded with nestedFields"
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String contentValue;
 
@@ -496,6 +509,7 @@ public class ContentDocument {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentDocument",
 		name = "x-class-name"
 	)
@@ -531,7 +545,7 @@ public class ContentDocument {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -570,7 +584,7 @@ public class ContentDocument {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

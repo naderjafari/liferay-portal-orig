@@ -128,11 +128,7 @@ definition {
 		}
 
 		if ("${kbArticleAddViaSource}" == "true") {
-			Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
-
-			Type(
-				locator1 = "CKEditor#BODY_FIELD_SOURCE_ON",
-				value1 = "${kbArticleContentSource}");
+			CKEditor.addSourceContent(content = "${kbArticleContentSource}");
 		}
 		else if ("${kbArticleAddViaTemplate}" == "true") {
 			CKEditor.addContent(kbArticleContentEdit = "${kbArticleContent}");
@@ -146,11 +142,34 @@ definition {
 
 			Click.pauseClickAt(locator1 = "CKEditor#CONTENT_VIDEO_IMAGE");
 
-			Type(
-				locator1 = "CKEditor#VIDEO_URL",
-				value1 = "${embedVideo}");
+			if ("${navTab}" == "Documents and Media") {
+				ItemSelector.addVideoFromDM(
+					depotName = "${depotName}",
+					navTab = "${navTab}",
+					videoShortcutPreview = "${videoShortcutPreview}",
+					videoShortcutTitle = "${videoShortcutTitle}");
 
-			Click(locator1 = "CKEditor#VIDEO_OK");
+				if (isSet(viewInternalVideoPreview)) {
+					SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
+					Pause(locator1 = "5000");
+
+					DMDocument.viewInternalVideoPreview(videoName = "${videoName}");
+				}
+			}
+			else if (isSet(videoURL)) {
+				ItemSelector.addVideo(
+					extractedVideoShortcutTitle = "${extractedVideoShortcutTitle}",
+					videoShortcutDescription = "${videoShortcutDescription}",
+					videoShortcutPreview = "${videoShortcutPreview}",
+					videoShortcutTitle = "${videoShortcutTitle}",
+					videoURL = "${videoURL}");
+			}
+			else {
+				ItemSelector.addVideoFromURL(
+					navTab = "${navTab}",
+					videoSourceURL = "${embedVideo}");
+			}
 		}
 
 		if (isSet(kbArticleAttachment)) {
@@ -409,20 +428,17 @@ definition {
 			locator1 = "Button#SELECT",
 			value1 = "Select");
 
-		SelectFrame(value1 = "relative=top");
-
 		if (isSet(kbFolderName)) {
-			SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 			AssertClick(
 				key_kbFolderName = "${kbFolderName}",
 				locator1 = "KnowledgeBaseSelectParent#FOLDER_TITLE_LINK",
 				value1 = "${kbFolderName}");
-
-			SelectFrame(value1 = "relative=top");
 		}
-
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+		else {
+			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+		}
 
 		Click(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -485,9 +501,7 @@ definition {
 			locator1 = "Button#SELECT",
 			value1 = "Select");
 
-		SelectFrame(value1 = "relative=top");
-
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			key_kbFolderName = "${kbFolderName}",
@@ -891,6 +905,16 @@ definition {
 			value1 = "Select");
 	}
 
+	macro openToAddKBArticle {
+		var baseURL = "${baseURL}";
+
+		if (contains("${baseURL}", "{baseURL}")) {
+			var baseURL = PropsUtil.get("portal.url");
+		}
+
+		Open(locator1 = "${baseURL}/group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_knowledge_base_web_portlet_AdminPortlet&_com_liferay_knowledge_base_web_portlet_AdminPortlet_mvcPath=%2Fadmin%2Fedit_article.jsp");
+	}
+
 	macro selectAllCP {
 		PortletEntry.selectAll();
 
@@ -918,7 +942,7 @@ definition {
 	}
 
 	macro selectParentArticleCP {
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		Click(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -937,7 +961,7 @@ definition {
 	}
 
 	macro selectParentViaKBDisplayPG {
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		Click(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -968,9 +992,7 @@ definition {
 			locator1 = "Button#SELECT",
 			value1 = "Select");
 
-		SelectFrame(value1 = "relative=top");
-
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -1160,15 +1182,31 @@ definition {
 		if (isSet(embedVideo)) {
 			Pause(locator1 = "5000");
 
-			AssertElementPresent(
-				key_service = "youtube",
-				locator1 = "BlogsEntry#CONTENT_VIDEO");
+			if ("${service}" == "twitch") {
+				AssertVisible(
+					key_service = "${service}",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
 
-			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#EMBEDDED_VIDEO_IFRAME");
+			else if ("${service}" == "facebook") {
+				AssertVisible(
+					key_service = "${service}",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
 
-			AssertElementPresent(
-				key_service = "youtube",
-				locator1 = "CKEditor#VIDEO_BUTTON_PLAY");
+			else if ("${internalVideo}" == "true") {
+				DMDocument.viewInternalVideoPreview(videoName = "${videoName}");
+			}
+
+			else {
+				AssertElementPresent(
+					key_service = "youtube",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+
+				SelectFrame.selectFrameNoLoading(locator1 = "IFrame#EMBEDDED_VIDEO_IFRAME");
+
+				AssertElementPresent(locator1 = "CKEditor#VIDEO_BUTTON_PLAY");
+			}
 		}
 
 		if (isSet(kbChildArticleTitle)) {

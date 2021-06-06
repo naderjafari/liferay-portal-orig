@@ -28,9 +28,9 @@ import com.liferay.portal.search.query.Query;
 import com.liferay.portal.search.sort.Sort;
 import com.liferay.portal.search.sort.SortOrder;
 import com.liferay.portal.search.sort.Sorts;
+import com.liferay.portal.search.tuning.synonyms.index.name.SynonymSetIndexName;
 import com.liferay.portal.search.tuning.synonyms.web.internal.display.context.SynonymSetDisplayContext;
 import com.liferay.portal.search.tuning.synonyms.web.internal.index.SynonymSetFields;
-import com.liferay.portal.search.tuning.synonyms.web.internal.index.name.SynonymSetIndexName;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,9 +53,10 @@ public class SearchSynonymSetRequest {
 		_httpServletRequest = httpServletRequest;
 		_queries = queries;
 		_sorts = sorts;
-		_searchContext = SearchContextFactory.getInstance(httpServletRequest);
 		_searchContainer = searchContainer;
 		_searchEngineAdapter = searchEngineAdapter;
+
+		_searchContext = SearchContextFactory.getInstance(httpServletRequest);
 	}
 
 	public SearchSynonymSetResponse search() {

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE service-builder PUBLIC "-//Liferay//DTD Service Builder 7.3.0//EN" "http://www.liferay.com/dtd/liferay-service-builder_7_3_0.dtd">
+<!DOCTYPE service-builder PUBLIC "-//Liferay//DTD Service Builder 7.4.0//EN" "http://www.liferay.com/dtd/liferay-service-builder_7_4_0.dtd">
 
 <service-builder auto-import-default-references="false" auto-namespace-tables="false" dependency-injector="ds" package-path="com.liferay.oauth2.provider">
 	<namespace>OAuthTwo</namespace>
@@ -33,6 +33,8 @@
 		<column name="name" type="String" />
 		<column name="privacyPolicyURL" type="String" />
 		<column name="redirectURIs" type="String" />
+		<column name="rememberDevice" type="boolean" />
+		<column name="trustedApplication" type="boolean" />
 
 		<!-- Finder methods -->
 
@@ -104,6 +106,7 @@
 		<column name="refreshTokenContentHash" type="long" />
 		<column name="refreshTokenCreateDate" type="Date" />
 		<column name="refreshTokenExpirationDate" type="Date" />
+		<column name="rememberDeviceContent" type="String" />
 
 		<!-- Relationships -->
 
@@ -124,6 +127,11 @@
 		<finder name="RefreshTokenContentHash" return-type="Collection">
 			<finder-column name="companyId" />
 			<finder-column name="refreshTokenContentHash" />
+		</finder>
+		<finder name="U_O_R" return-type="Collection">
+			<finder-column name="userId"></finder-column>
+			<finder-column name="oAuth2ApplicationId"></finder-column>
+			<finder-column name="rememberDeviceContent"></finder-column>
 		</finder>
 
 		<!-- References -->

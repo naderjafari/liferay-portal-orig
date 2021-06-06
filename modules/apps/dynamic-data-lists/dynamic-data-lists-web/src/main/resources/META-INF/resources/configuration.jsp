@@ -65,17 +65,13 @@ String orderByType = ParamUtil.getString(request, "orderByType", "asc");
 						</span>
 					</div>
 
-					<%
-					int searchTotal = DDLRecordSetServiceUtil.searchCount(company.getCompanyId(), scopeGroupId, keywords, DDLRecordSetConstants.SCOPE_DYNAMIC_DATA_LISTS);
-					%>
-
 					<aui:fieldset>
 						<div class="lfr-ddl-content">
 							<clay:sheet>
 								<liferay-ui:search-container
 									emptyResultsMessage="no-lists-were-found"
 									iteratorURL="<%= configurationRenderURL %>"
-									total="<%= searchTotal %>"
+									total="<%= DDLRecordSetServiceUtil.searchCount(company.getCompanyId(), scopeGroupId, keywords, DDLRecordSetConstants.SCOPE_DYNAMIC_DATA_LISTS) %>"
 								>
 									<div class="form-search input-append">
 										<liferay-ui:input-search
@@ -250,7 +246,7 @@ String orderByType = ParamUtil.getString(request, "orderByType", "asc");
 	var submitButton = A.one('#<portlet:namespace />fm_submit');
 
 	if (submitButton) {
-		submitButton.on('click', function (event) {
+		submitButton.on('click', (event) => {
 			if (form) {
 				form.submit();
 			}

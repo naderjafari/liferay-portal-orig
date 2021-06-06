@@ -10,38 +10,43 @@
  */
 
 import PropTypes from 'prop-types';
-import React, {useContext} from 'react';
+import React from 'react';
 
-import {StoreContext} from '../context/store';
 import BasicInformation from './BasicInformation';
 import Chart from './Chart';
 import TotalCount from './TotalCount';
 import TrafficSources from './TrafficSources';
+import Translation from './Translation';
 
 export default function Main({
-	authorName,
+	author,
+	canonicalURL,
 	chartDataProviders,
-	defaultTimeRange,
-	defaultTimeSpanOption,
-	languageTag,
+	onSelectedLanguageClick,
 	onTrafficSourceClick,
 	pagePublishDate,
 	pageTitle,
 	timeSpanOptions,
 	totalReadsDataProvider,
 	totalViewsDataProvider,
-	trafficSources,
+	trafficSourcesDataProvider,
+	viewURLs,
 }) {
-	const [{readsEnabled}] = useContext(StoreContext);
-
 	return (
-		<>
+		<div className="c-p-3">
 			<BasicInformation
-				authorName={authorName}
-				languageTag={languageTag}
+				author={author}
+				canonicalURL={canonicalURL}
 				publishDate={pagePublishDate}
 				title={pageTitle}
 			/>
+
+			<div className="mt-4">
+				<Translation
+					onSelectedLanguageClick={onSelectedLanguageClick}
+					viewURLs={viewURLs}
+				/>
+			</div>
 
 			<h5 className="mt-3 sheet-subtitle">
 				{Liferay.Language.get('engagement')}
@@ -57,7 +62,7 @@ export default function Main({
 				)}
 			/>
 
-			{readsEnabled && (
+			{totalReadsDataProvider && (
 				<TotalCount
 					dataProvider={totalReadsDataProvider}
 					label={Liferay.Util.sub(
@@ -72,32 +77,25 @@ export default function Main({
 
 			<Chart
 				dataProviders={chartDataProviders}
-				defaultTimeRange={defaultTimeRange}
-				defaultTimeSpanOption={defaultTimeSpanOption}
-				languageTag={languageTag}
 				publishDate={pagePublishDate}
 				timeSpanOptions={timeSpanOptions}
 			/>
 
-			{trafficSources.length > 0 && (
-				<TrafficSources
-					languageTag={languageTag}
-					onTrafficSourceClick={onTrafficSourceClick}
-					trafficSources={trafficSources}
-				/>
-			)}
-		</>
+			<TrafficSources
+				dataProvider={trafficSourcesDataProvider}
+				onTrafficSourceClick={onTrafficSourceClick}
+			/>
+		</div>
 	);
 }
 
-Main.proptypes = {
-	authorName: PropTypes.string.isRequired,
+Main.propTypes = {
+	author: PropTypes.object.isRequired,
+	canonicalURL: PropTypes.string.isRequired,
 	chartDataProviders: PropTypes.arrayOf(PropTypes.func.isRequired).isRequired,
-	defaultTimeRange: PropTypes.object.isRequired,
-	defaultTimeSpanOption: PropTypes.string.isRequired,
-	languageTag: PropTypes.string.isRequired,
+	onSelectedLanguageClick: PropTypes.func.isRequired,
 	onTrafficSourceClick: PropTypes.func.isRequired,
-	pagePublishDate: PropTypes.number.isRequired,
+	pagePublishDate: PropTypes.string.isRequired,
 	pageTitle: PropTypes.string.isRequired,
 	timeSpanOptions: PropTypes.arrayOf(
 		PropTypes.shape({
@@ -107,5 +105,14 @@ Main.proptypes = {
 	).isRequired,
 	totalReadsDataProvider: PropTypes.func.isRequired,
 	totalViewsDataProvider: PropTypes.func.isRequired,
-	trafficSources: PropTypes.array.isRequired,
+	trafficSourcesDataProvider: PropTypes.func.isRequired,
+	viewURLs: PropTypes.arrayOf(
+		PropTypes.shape({
+			default: PropTypes.bool.isRequired,
+			languageId: PropTypes.string.isRequired,
+			languageLabel: PropTypes.string.isRequired,
+			selected: PropTypes.bool.isRequired,
+			viewURL: PropTypes.string.isRequired,
+		})
+	).isRequired,
 };

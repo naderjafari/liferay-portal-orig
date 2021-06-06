@@ -11,7 +11,7 @@
 
 import ClayIcon from '@clayui/icon';
 import getCN from 'classnames';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {useFilter} from '../../hooks/useFilter.es';
 import {useRouter} from '../../hooks/useRouter.es';
@@ -44,11 +44,12 @@ const Filter = ({
 	position = 'left',
 	prefixKey = '',
 	preventClick,
+	show = true,
 	withoutRouteParams,
-	...otherProps
 }) => {
 	const {dispatchFilter} = useFilter({withoutRouteParams});
 	const [expanded, setExpanded] = useState(false);
+	const [filteredItems, setFilteredItems] = useState([]);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [changed, setChanged] = useState(false);
 
@@ -56,33 +57,22 @@ const Filter = ({
 	const routerProps = useRouter();
 	const wrapperRef = useRef();
 
-	const classes = useMemo(
-		() => ({
-			children: getCN(
-				'custom dropdown-menu',
-				children && 'show',
-				position && `dropdown-menu-${position}`
-			),
-			custom: getCN('btn dropdown-toggle nav-link', buttonClassName),
-			dropdown: getCN('dropdown nav-item', elementClasses),
-			menu: getCN(
-				'dropdown-menu',
-				expanded && 'show',
-				position && `dropdown-menu-${position}`
-			),
-		}),
-		[buttonClassName, children, elementClasses, expanded, position]
-	);
+	const classes = {
+		children: getCN(
+			'custom dropdown-menu',
+			children && 'show',
+			position && `dropdown-menu-${position}`
+		),
+		custom: getCN('btn dropdown-toggle nav-link', buttonClassName),
+		dropdown: getCN('dropdown nav-item', elementClasses),
+		menu: getCN(
+			'dropdown-menu',
+			expanded && 'show',
+			position && `dropdown-menu-${position}`
+		),
+	};
 
-	const filteredItems = useMemo(() => {
-		return searchTerm
-			? items.filter((item) =>
-					item[labelPropertyName]
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase())
-			  )
-			: items;
-	}, [items, labelPropertyName, searchTerm]);
+	const getSelectedItems = (items) => items.filter((item) => item.active);
 
 	const applyFilterChanges = useCallback(() => {
 		if (!withoutRouteParams) {
@@ -104,8 +94,6 @@ const Filter = ({
 		setExpanded(false);
 		setSearchTerm('');
 	};
-
-	const getSelectedItems = (items) => items.filter((item) => item.active);
 
 	const onClick = (item) => (onClickFilter ? onClickFilter(item) : true);
 
@@ -183,56 +171,61 @@ const Filter = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [applyFilterChanges, expanded, changed]);
 
+	useEffect(() => {
+		setFilteredItems(
+			searchTerm
+				? items.filter((item) =>
+						item[labelPropertyName]
+							.toLowerCase()
+							.includes(searchTerm.toLowerCase())
+				  )
+				: items
+		);
+	}, [items, labelPropertyName, searchTerm]);
+
 	return (
-		<li
-			className={classes.dropdown}
-			data-testid="filterComponent"
-			ref={wrapperRef}
-			{...otherProps}
-		>
-			<button
-				className={classes.custom}
-				disabled={disabled}
-				onClick={() => {
-					setExpanded(!expanded);
-				}}
-			>
-				<span
-					className="mr-2 navbar-text-truncate"
-					data-testid="filterName"
-				>
-					{name}
-				</span>
-
-				<ClayIcon symbol="caret-bottom" />
-			</button>
-
-			<div className={classes.menu} role="menu">
-				<FilterSearch
-					filteredItems={filteredItems}
-					onChange={({target}) => {
-						setSearchTerm(target.value);
+		show && (
+			<li className={classes.dropdown} ref={wrapperRef}>
+				<button
+					className={classes.custom}
+					disabled={disabled}
+					onClick={() => {
+						setExpanded(!expanded);
 					}}
-					searchTerm={searchTerm}
-					totalCount={items.length}
 				>
-					<ul className="list-unstyled">
-						{filteredItems.map((item, index) => (
-							<FilterItem
-								{...item}
-								hideControl={hideControl}
-								key={index}
-								labelPropertyName={labelPropertyName}
-								multiple={multiple}
-								onClick={() => onSelect(item)}
-							/>
-						))}
-					</ul>
-				</FilterSearch>
-			</div>
+					<span className="mr-2 navbar-text-truncate">{name}</span>
 
-			<div className={classes.children}>{children}</div>
-		</li>
+					<ClayIcon symbol="caret-bottom" />
+				</button>
+
+				<div className={classes.menu} role="menu">
+					<FilterSearch
+						filteredItems={filteredItems}
+						onChange={({target}) => {
+							setSearchTerm(target.value);
+						}}
+						searchTerm={searchTerm}
+						totalCount={items.length}
+					>
+						<ul className="list-unstyled">
+							{filteredItems.map((item, index) => (
+								<FilterItem
+									{...item}
+									hideControl={hideControl}
+									key={index}
+									labelPropertyName={labelPropertyName}
+									multiple={multiple}
+									onClick={() => onSelect(item)}
+									preventClick={preventClick}
+								/>
+							))}
+						</ul>
+					</FilterSearch>
+				</div>
+
+				<div className={classes.children}>{children}</div>
+			</li>
+		)
 	);
 };
 export default Filter;

@@ -36,11 +36,17 @@ definition {
 	}
 
 	macro addViaSiteCP {
-		Panel.expandPanel(panel = "Categorization");
+		Click(
+			key_itemName = "Assets",
+			locator1 = "ListGroupItem#ITEM_TEXT");
+
+		Navigator.gotoNavTab(navTab = "Categorization");
 
 		AssetCategorization.addTag(tagName = "${tagName}");
 
 		PortletEntry.save();
+
+		Navigator.gotoBack();
 	}
 
 	macro addWithNullTitleCP {

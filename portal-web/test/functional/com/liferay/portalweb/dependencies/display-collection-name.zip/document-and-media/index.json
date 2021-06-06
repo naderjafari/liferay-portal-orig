@@ -3,7 +3,7 @@
 		{
 			"fields": [
 				{
-					"label": "DM Title",
+					"label": "Content",
 					"name": "itemSelectorName",
 					"type": "itemSelector",
 					"typeOptions": {

@@ -14,8 +14,6 @@
 
 package com.liferay.headless.admin.user.internal.dto.v1_0.converter;
 
-import static com.liferay.portal.vulcan.util.TransformUtil.transformToArray;
-
 import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.headless.admin.user.dto.v1_0.EmailAddress;
@@ -32,7 +30,6 @@ import com.liferay.headless.admin.user.internal.dto.v1_0.util.EmailAddressUtil;
 import com.liferay.headless.admin.user.internal.dto.v1_0.util.PhoneUtil;
 import com.liferay.headless.admin.user.internal.dto.v1_0.util.PostalAddressUtil;
 import com.liferay.headless.admin.user.internal.dto.v1_0.util.WebUrlUtil;
-import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Country;
 import com.liferay.portal.kernel.model.ListType;
@@ -51,9 +48,9 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
+import com.liferay.portal.vulcan.util.TransformUtil;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -188,25 +185,25 @@ public class OrganizationResourceDTOConverter
 				organizationContactInformation =
 					new OrganizationContactInformation() {
 						{
-							emailAddresses = transformToArray(
+							emailAddresses = TransformUtil.transformToArray(
 								_emailAddressService.getEmailAddresses(
 									organization.getModelClassName(),
 									organization.getOrganizationId()),
 								EmailAddressUtil::toEmailAddress,
 								EmailAddress.class);
-							postalAddresses = transformToArray(
+							postalAddresses = TransformUtil.transformToArray(
 								organization.getAddresses(),
 								address -> PostalAddressUtil.toPostalAddress(
 									dtoConverterContext.isAcceptAllLanguages(),
 									address, organization.getCompanyId(),
 									dtoConverterContext.getLocale()),
 								PostalAddress.class);
-							telephones = transformToArray(
+							telephones = TransformUtil.transformToArray(
 								_phoneService.getPhones(
 									organization.getModelClassName(),
 									organization.getOrganizationId()),
 								PhoneUtil::toPhone, Phone.class);
-							webUrls = transformToArray(
+							webUrls = TransformUtil.transformToArray(
 								_websiteService.getWebsites(
 									organization.getModelClassName(),
 									organization.getOrganizationId()),
@@ -215,7 +212,7 @@ public class OrganizationResourceDTOConverter
 					};
 				parentOrganization = organizationResourceDTOConverter.toDTO(
 					dtoConverterContext, organization.getParentOrganization());
-				services = transformToArray(
+				services = TransformUtil.transformToArray(
 					_orgLaborService.getOrgLabors(
 						organization.getOrganizationId()),
 					OrganizationResourceDTOConverter.this::_toService,
@@ -227,12 +224,7 @@ public class OrganizationResourceDTOConverter
 							return null;
 						}
 
-						return StringBundler.concat(
-							_portal.getPathImage(),
-							"/organization_logo?img_id=",
-							organization.getLogoId(), "&t=",
-							WebServerServletTokenUtil.getToken(
-								organization.getLogoId()));
+						return organization.getLogoURL();
 					});
 			}
 		};

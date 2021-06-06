@@ -14,16 +14,17 @@
 
 package com.liferay.content.dashboard.web.internal.model;
 
-import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -31,12 +32,10 @@ import org.junit.Test;
  */
 public class AssetVocabularyMetricTest {
 
-	@BeforeClass
-	public static void setUpClass() {
-		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
-
-		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
-	}
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testGetVocabularyNames() {
@@ -86,6 +85,40 @@ public class AssetVocabularyMetricTest {
 
 		Assert.assertEquals(
 			Collections.singletonList(assetVocabularyMetric.getName()),
+			assetVocabularyMetric.getVocabularyNames());
+	}
+
+	@Test
+	public void testGetVocabularyNamesWithEmptyFirstAssetCategoryMetricAndNonemptySecondAssetCategoryMetric() {
+		AssetVocabularyMetric childAssetVocabularyMetric1 =
+			new AssetVocabularyMetric(
+				RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+				Collections.emptyList());
+
+		AssetVocabularyMetric childAssetVocabularyMetric2 =
+			new AssetVocabularyMetric(
+				RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+				Collections.singletonList(
+					new AssetCategoryMetric(
+						RandomTestUtil.randomString(),
+						RandomTestUtil.randomString(),
+						RandomTestUtil.randomLong())));
+
+		AssetVocabularyMetric assetVocabularyMetric = new AssetVocabularyMetric(
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			Arrays.asList(
+				new AssetCategoryMetric(
+					childAssetVocabularyMetric1, RandomTestUtil.randomString(),
+					RandomTestUtil.randomString(), RandomTestUtil.randomLong()),
+				new AssetCategoryMetric(
+					childAssetVocabularyMetric2, RandomTestUtil.randomString(),
+					RandomTestUtil.randomString(),
+					RandomTestUtil.randomLong())));
+
+		Assert.assertEquals(
+			Arrays.asList(
+				assetVocabularyMetric.getName(),
+				childAssetVocabularyMetric2.getName()),
 			assetVocabularyMetric.getVocabularyNames());
 	}
 

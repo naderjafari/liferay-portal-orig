@@ -17,6 +17,7 @@ package com.liferay.change.tracking.internal.reference;
 import com.liferay.change.tracking.spi.reference.TableReferenceDefinition;
 import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.sql.dsl.Table;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
@@ -44,19 +45,27 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 @Component(immediate = true, service = TableReferenceDefinitionManager.class)
 public class TableReferenceDefinitionManager {
 
-	public long getClassNameId(Table<?> table) {
+	public long getClassNameId(String tableName) {
+		_ensureOpened();
+
 		TableReferenceInfo<?> tableReferenceInfo = _tableReferenceInfos.get(
-			table);
+			tableName);
 
 		if (tableReferenceInfo == null) {
 			throw new IllegalStateException(
-				"No table reference definition for " + table);
+				"No table reference definition for " + tableName);
 		}
 
-		return _getClassNameId(tableReferenceInfo);
+		return tableReferenceInfo.getClassNameId();
+	}
+
+	public long getClassNameId(Table<?> table) {
+		return getClassNameId(table.getTableName());
 	}
 
 	public Map<Long, TableReferenceInfo<?>> getCombinedTableReferenceInfos() {
+		_ensureOpened();
+
 		Map<Long, TableReferenceInfo<?>> combinedTableReferenceInfos =
 			_combinedTableReferenceInfos;
 
@@ -71,7 +80,7 @@ public class TableReferenceDefinitionManager {
 					_tableReferenceInfos.values()) {
 
 				combinedTableReferenceInfos.put(
-					_getClassNameId(tableReferenceInfo),
+					tableReferenceInfo.getClassNameId(),
 					_getCombinedTableReferenceInfo(tableReferenceInfo));
 			}
 
@@ -84,6 +93,53 @@ public class TableReferenceDefinitionManager {
 		return combinedTableReferenceInfos;
 	}
 
+	public boolean isChildModelOptional(
+		long childModelClassNameId, long parentModelClassNameId) {
+
+		Map<Long, TableReferenceInfo<?>> combinedTableReferenceInfos =
+			getCombinedTableReferenceInfos();
+
+		TableReferenceInfo<?> parentTableReferenceInfo =
+			combinedTableReferenceInfos.get(parentModelClassNameId);
+
+		if (parentTableReferenceInfo == null) {
+			throw new IllegalArgumentException(
+				"{parentModelClassNameId=" + parentModelClassNameId + "}");
+		}
+
+		TableReferenceInfo<?> childTableReferenceInfo =
+			combinedTableReferenceInfos.get(childModelClassNameId);
+
+		if (childTableReferenceInfo == null) {
+			throw new IllegalArgumentException(
+				"{childModelClassNameId=" + childModelClassNameId + "}");
+		}
+
+		Map<Table<?>, List<TableJoinHolder>> childTableJoinHoldersMap =
+			parentTableReferenceInfo.getChildTableJoinHoldersMap();
+
+		TableReferenceDefinition<?> childTableReferenceDefinition =
+			childTableReferenceInfo.getTableReferenceDefinition();
+
+		List<TableJoinHolder> tableJoinHolders = childTableJoinHoldersMap.get(
+			childTableReferenceDefinition.getTable());
+
+		if (tableJoinHolders == null) {
+			throw new IllegalArgumentException(
+				StringBundler.concat(
+					"{childModelClassNameId=", childModelClassNameId,
+					", parentModelClassNameId=", parentModelClassNameId, "}"));
+		}
+
+		for (TableJoinHolder tableJoinHolder : tableJoinHolders) {
+			if (!tableJoinHolder.isReversed()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	@Activate
 	protected void activate(BundleContext bundleContext) {
 		_serviceTracker = new ServiceTracker<>(
@@ -92,8 +148,6 @@ public class TableReferenceDefinitionManager {
 				(Class<?>)TableReferenceDefinition.class,
 			new TableReferenceDefinitionServiceTrackerCustomizer(
 				bundleContext));
-
-		_serviceTracker.open();
 	}
 
 	@Deactivate
@@ -115,15 +169,20 @@ public class TableReferenceDefinitionManager {
 		return copy;
 	}
 
-	private long _getClassNameId(TableReferenceInfo<?> tableReferenceInfo) {
-		TableReferenceDefinition<?> tableReferenceDefinition =
-			tableReferenceInfo.getTableReferenceDefinition();
+	private void _ensureOpened() {
+		if (_opened) {
+			return;
+		}
 
-		BasePersistence<?> basePersistence =
-			tableReferenceDefinition.getBasePersistence();
+		synchronized (this) {
+			if (_opened) {
+				return;
+			}
 
-		return _classNameLocalService.getClassNameId(
-			basePersistence.getModelClass());
+			_serviceTracker.open();
+
+			_opened = true;
+		}
 	}
 
 	private <T extends Table<T>> TableReferenceInfo<T>
@@ -145,10 +204,6 @@ public class TableReferenceDefinitionManager {
 
 		for (TableReferenceInfo<?> currentTableReferenceInfo :
 				_tableReferenceInfos.values()) {
-
-			if (tableReferenceInfo == currentTableReferenceInfo) {
-				continue;
-			}
 
 			TableReferenceDefinition<?> currentTableReferenceDefinition =
 				currentTableReferenceInfo.getTableReferenceDefinition();
@@ -197,8 +252,9 @@ public class TableReferenceDefinitionManager {
 		}
 
 		return new TableReferenceInfo<>(
-			tableReferenceDefinition, combinedParentTableJoinHoldersMap,
-			combinedChildTableJoinHoldersMap);
+			combinedChildTableJoinHoldersMap,
+			tableReferenceInfo.getClassNameId(),
+			combinedParentTableJoinHoldersMap, tableReferenceDefinition);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -209,8 +265,9 @@ public class TableReferenceDefinitionManager {
 
 	private volatile Map<Long, TableReferenceInfo<?>>
 		_combinedTableReferenceInfos;
+	private volatile boolean _opened;
 	private ServiceTracker<?, ?> _serviceTracker;
-	private final Map<Table<?>, TableReferenceInfo<?>> _tableReferenceInfos =
+	private final Map<String, TableReferenceInfo<?>> _tableReferenceInfos =
 		new ConcurrentHashMap<>();
 
 	private class TableReferenceDefinitionServiceTrackerCustomizer
@@ -238,12 +295,13 @@ public class TableReferenceDefinitionManager {
 			ServiceReference<TableReferenceDefinition<?>> serviceReference,
 			TableReferenceInfo<?> tableReferenceInfo) {
 
-			synchronized (TableReferenceDefinitionManager.this) {
-				TableReferenceDefinition<?> tableReferenceDefinition =
-					tableReferenceInfo.getTableReferenceDefinition();
+			TableReferenceDefinition<?> tableReferenceDefinition =
+				tableReferenceInfo.getTableReferenceDefinition();
 
-				_tableReferenceInfos.remove(
-					tableReferenceDefinition.getTable());
+			Table<?> table = tableReferenceDefinition.getTable();
+
+			synchronized (TableReferenceDefinitionManager.this) {
+				_tableReferenceInfos.remove(table.getTableName());
 
 				_combinedTableReferenceInfos = null;
 			}
@@ -272,13 +330,21 @@ public class TableReferenceDefinitionManager {
 				return null;
 			}
 
+			BasePersistence<?> basePersistence =
+				tableReferenceDefinition.getBasePersistence();
+
+			long classNameId = _classNameLocalService.getClassNameId(
+				basePersistence.getModelClass());
+
 			TableReferenceInfo<T> tableReferenceInfo =
 				TableReferenceInfoFactory.create(
-					tableReferenceDefinition, primaryKeyColumn);
+					classNameId, primaryKeyColumn, tableReferenceDefinition);
+
+			Table<?> table = tableReferenceDefinition.getTable();
 
 			synchronized (TableReferenceDefinitionManager.this) {
 				_tableReferenceInfos.put(
-					tableReferenceDefinition.getTable(), tableReferenceInfo);
+					table.getTableName(), tableReferenceInfo);
 
 				_combinedTableReferenceInfos = null;
 			}

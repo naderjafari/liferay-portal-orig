@@ -84,10 +84,29 @@ public abstract class BaseDataListViewResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
+	 * curl -X 'DELETE' 'http://localhost:8080/o/data-engine/v2.0/data-definitions/{dataDefinitionId}/data-list-views'  -u 'test@liferay.com:test'
+	 */
+	@DELETE
+	@Override
+	@Parameters(
+		value = {@Parameter(in = ParameterIn.PATH, name = "dataDefinitionId")}
+	)
+	@Path("/data-definitions/{dataDefinitionId}/data-list-views")
+	@Produces({"application/json", "application/xml"})
+	@Tags(value = {@Tag(name = "DataListView")})
+	public void deleteDataListViewsDataDefinition(
+			@NotNull @Parameter(hidden = true) @PathParam("dataDefinitionId")
+				Long dataDefinitionId)
+		throws Exception {
+	}
+
+	/**
+	 * Invoke this method with the command line:
+	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/data-engine/v2.0/data-definitions/{dataDefinitionId}/data-list-views'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Parameters(
 		value = {
 			@Parameter(in = ParameterIn.PATH, name = "dataDefinitionId"),
@@ -115,13 +134,13 @@ public abstract class BaseDataListViewResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/data-engine/v2.0/data-definitions/{dataDefinitionId}/data-list-views' -d $'{"appliedFilters": ___, "dataDefinitionId": ___, "dateCreated": ___, "dateModified": ___, "fieldNames": ___, "id": ___, "name": ___, "siteId": ___, "sortField": ___, "userId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes({"application/json", "application/xml"})
-	@POST
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "dataDefinitionId")}
 	)
 	@Path("/data-definitions/{dataDefinitionId}/data-list-views")
+	@POST
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "DataListView")})
 	public DataListView postDataDefinitionDataListView(
@@ -138,9 +157,8 @@ public abstract class BaseDataListViewResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/data-engine/v2.0/data-definitions/{dataDefinitionId}/data-list-views/batch'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes("application/json")
-	@POST
+	@Override
 	@Parameters(
 		value = {
 			@Parameter(in = ParameterIn.PATH, name = "dataDefinitionId"),
@@ -148,6 +166,7 @@ public abstract class BaseDataListViewResourceImpl
 		}
 	)
 	@Path("/data-definitions/{dataDefinitionId}/data-list-views/batch")
+	@POST
 	@Produces("application/json")
 	@Tags(value = {@Tag(name = "DataListView")})
 	public Response postDataDefinitionDataListViewBatch(
@@ -179,8 +198,8 @@ public abstract class BaseDataListViewResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/data-engine/v2.0/data-list-views/{dataListViewId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@DELETE
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "dataListViewId")}
 	)
@@ -198,9 +217,9 @@ public abstract class BaseDataListViewResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/data-engine/v2.0/data-list-views/batch'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes("application/json")
 	@DELETE
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
 	)
@@ -234,8 +253,8 @@ public abstract class BaseDataListViewResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/data-engine/v2.0/data-list-views/{dataListViewId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "dataListViewId")}
 	)
@@ -255,14 +274,14 @@ public abstract class BaseDataListViewResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/data-engine/v2.0/data-list-views/{dataListViewId}' -d $'{"appliedFilters": ___, "dataDefinitionId": ___, "dateCreated": ___, "dateModified": ___, "fieldNames": ___, "id": ___, "name": ___, "siteId": ___, "sortField": ___, "userId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes({"application/json", "application/xml"})
-	@PUT
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "dataListViewId")}
 	)
 	@Path("/data-list-views/{dataListViewId}")
 	@Produces({"application/json", "application/xml"})
+	@PUT
 	@Tags(value = {@Tag(name = "DataListView")})
 	public DataListView putDataListView(
 			@NotNull @Parameter(hidden = true) @PathParam("dataListViewId") Long
@@ -278,14 +297,14 @@ public abstract class BaseDataListViewResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/data-engine/v2.0/data-list-views/batch'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes("application/json")
-	@PUT
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
 	)
 	@Path("/data-list-views/batch")
 	@Produces("application/json")
+	@PUT
 	@Tags(value = {@Tag(name = "DataListView")})
 	public Response putDataListViewBatch(
 			@Parameter(hidden = true) @QueryParam("callbackURL") String
@@ -318,7 +337,7 @@ public abstract class BaseDataListViewResourceImpl
 
 		for (DataListView dataListView : dataListViews) {
 			postDataDefinitionDataListView(
-				Long.valueOf((String)parameters.get("dataDefinitionId")),
+				Long.parseLong((String)parameters.get("dataDefinitionId")),
 				dataListView);
 		}
 	}
@@ -356,7 +375,7 @@ public abstract class BaseDataListViewResourceImpl
 		throws Exception {
 
 		return getDataDefinitionDataListViewsPage(
-			(Long)parameters.get("dataDefinitionId"),
+			Long.parseLong((String)parameters.get("dataDefinitionId")),
 			(String)parameters.get("keywords"), pagination, sorts);
 	}
 
@@ -391,7 +410,7 @@ public abstract class BaseDataListViewResourceImpl
 		for (DataListView dataListView : dataListViews) {
 			putDataListView(
 				dataListView.getId() != null ? dataListView.getId() :
-				(Long)parameters.get("dataListViewId"),
+					Long.parseLong((String)parameters.get("dataListViewId")),
 				dataListView);
 		}
 	}
@@ -426,6 +445,14 @@ public abstract class BaseDataListViewResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

@@ -20,9 +20,6 @@ String csvExport = "enabled-with-warning";
 if (Validator.isNotNull(ddlDisplayContext.getCSVExport())) {
 	csvExport = ddlDisplayContext.getCSVExport();
 }
-
-boolean csvExportEnabled = !StringUtil.equals("disabled", csvExport);
-boolean showCSVWarning = StringUtil.equals("enabled-with-warning", csvExport);
 %>
 
 <div class="hide" id="<portlet:namespace />exportList">
@@ -39,7 +36,7 @@ boolean showCSVWarning = StringUtil.equals("enabled-with-warning", csvExport);
 	/>
 
 	<aui:select label="file-extension" name="fileExtension">
-		<c:if test="<%= csvExportEnabled %>">
+		<c:if test='<%= !StringUtil.equals("disabled", csvExport) %>'>
 			<aui:option value="csv">CSV</aui:option>
 		</c:if>
 
@@ -67,7 +64,10 @@ boolean showCSVWarning = StringUtil.equals("enabled-with-warning", csvExport);
 				'<portlet:namespace />csvWarning'
 			);
 
-			if (fileExtensionSelect.value === 'csv' && <%= showCSVWarning %>) {
+			if (
+				fileExtensionSelect.value === 'csv' &&
+				<%= StringUtil.equals("enabled-with-warning", csvExport) %>
+			) {
 				csvWarning.classList.remove('hide');
 				csvWarning.removeAttribute('hidden');
 				csvWarning.style.display = '';
@@ -106,7 +106,7 @@ boolean showCSVWarning = StringUtil.equals("enabled-with-warning", csvExport);
 						);
 
 						Liferay.Util.fetch(url, {body: formData, method: 'POST'})
-							.then(function (response) {
+							.then((response) => {
 								var filenamePattern = /filename=\"(.*)\"/;
 								var match = filenamePattern.exec(
 									response.headers.get('content-disposition')
@@ -116,7 +116,7 @@ boolean showCSVWarning = StringUtil.equals("enabled-with-warning", csvExport);
 								}
 								return response.blob();
 							})
-							.then(function (blob) {
+							.then((blob) => {
 								var link = document.createElement('a');
 								link.setAttribute(
 									'href',
@@ -129,12 +129,11 @@ boolean showCSVWarning = StringUtil.equals("enabled-with-warning", csvExport);
 
 								Liferay.fire('closeModal');
 							})
-							.catch(function (error) {
+							.catch((error) => {
 								Liferay.Util.openToast({
 									message: Liferay.Language.get(
 										'an-unexpected-system-error-occurred'
 									),
-									title: Liferay.Language.get('error'),
 									type: 'danger',
 								});
 							});

@@ -44,6 +44,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -207,6 +209,10 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 			jsonObject.put("deleted", Boolean.TRUE);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			String errorMessage = themeDisplay.translate(
 				"an-unexpected-error-occurred-while-deleting-the-file");
 
@@ -335,6 +341,9 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 								resourceResponse));
 					}
 					catch (ServletException servletException) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(servletException, servletException);
+						}
 					}
 				}
 
@@ -573,21 +582,21 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 				WebKeys.UPLOAD_EXCEPTION);
 
 		if (uploadException != null) {
-			Throwable cause = uploadException.getCause();
+			Throwable throwable = uploadException.getCause();
 
 			if (uploadException.isExceededFileSizeLimit()) {
-				throw new FileSizeException(cause);
+				throw new FileSizeException(throwable);
 			}
 
 			if (uploadException.isExceededLiferayFileItemSizeLimit()) {
-				throw new LiferayFileItemException(cause);
+				throw new LiferayFileItemException(throwable);
 			}
 
 			if (uploadException.isExceededUploadRequestSizeLimit()) {
-				throw new UploadRequestSizeException(cause);
+				throw new UploadRequestSizeException(throwable);
 			}
 
-			throw new PortalException(cause);
+			throw new PortalException(throwable);
 		}
 	}
 
@@ -646,20 +655,20 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 	}
 
 	@Override
-	protected boolean isSessionErrorException(Throwable cause) {
-		if (cause instanceof AssetCategoryException ||
-			cause instanceof AssetTagException ||
-			cause instanceof FileNameException ||
-			cause instanceof FileSizeException ||
-			cause instanceof KBArticleContentException ||
-			cause instanceof KBArticlePriorityException ||
-			cause instanceof KBArticleTitleException ||
-			cause instanceof KBCommentContentException ||
-			cause instanceof NoSuchArticleException ||
-			cause instanceof NoSuchCommentException ||
-			cause instanceof NoSuchFileException ||
-			cause instanceof PrincipalException ||
-			super.isSessionErrorException(cause)) {
+	protected boolean isSessionErrorException(Throwable throwable) {
+		if (throwable instanceof AssetCategoryException ||
+			throwable instanceof AssetTagException ||
+			throwable instanceof FileNameException ||
+			throwable instanceof FileSizeException ||
+			throwable instanceof KBArticleContentException ||
+			throwable instanceof KBArticlePriorityException ||
+			throwable instanceof KBArticleTitleException ||
+			throwable instanceof KBCommentContentException ||
+			throwable instanceof NoSuchArticleException ||
+			throwable instanceof NoSuchCommentException ||
+			throwable instanceof NoSuchFileException ||
+			throwable instanceof PrincipalException ||
+			super.isSessionErrorException(throwable)) {
 
 			return true;
 		}
@@ -725,5 +734,7 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 	protected KBTemplateService kbTemplateService;
 	protected Portal portal;
 	protected UploadResponseHandler uploadResponseHandler;
+
+	private static final Log _log = LogFactoryUtil.getLog(BaseKBPortlet.class);
 
 }

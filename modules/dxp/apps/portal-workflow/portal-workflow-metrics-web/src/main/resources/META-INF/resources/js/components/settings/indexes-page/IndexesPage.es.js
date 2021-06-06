@@ -14,16 +14,16 @@ import React, {useMemo} from 'react';
 
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
 import {useFetch} from '../../../shared/hooks/useFetch.es';
-import {Body} from './IndexesPageBody.es';
+import Body from './IndexesPageBody.es';
 
-const IndexesPage = () => {
+function IndexesPage() {
 	const {data, fetchData} = useFetch({url: '/indexes'});
 
 	const promises = useMemo(() => [fetchData()], [fetchData]);
 
 	return (
 		<ClayLayout.ContainerFluid>
-			<h3 className="font-weight-semi-bold my-4" data-testid="pageTitle">
+			<h3 className="font-weight-semi-bold my-4">
 				{Liferay.Language.get('workflow-index-actions')}
 			</h3>
 
@@ -32,7 +32,7 @@ const IndexesPage = () => {
 			</PromisesResolver>
 		</ClayLayout.ContainerFluid>
 	);
-};
+}
 
 IndexesPage.Body = Body;
 

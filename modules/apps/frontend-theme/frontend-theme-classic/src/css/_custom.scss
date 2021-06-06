@@ -4,12 +4,10 @@
 @import 'components/info-panel';
 @import 'components/navbars';
 @import 'components/sidebar';
-@import 'components/splitter';
 @import 'components/table';
 @import 'components/widget';
 @import 'portlet/portlet';
 @import 'portlet/portlet_decorators';
-@import 'portlet/portlet_hello_world';
 
 @import 'custom_properties';
 
@@ -84,16 +82,6 @@ body {
 					display: none;
 				}
 			}
-		}
-	}
-}
-
-#content.container-fluid {
-	padding: 0;
-
-	.row {
-		.col-md-12 {
-			padding: 0;
 		}
 	}
 }

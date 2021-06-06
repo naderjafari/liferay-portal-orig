@@ -46,8 +46,27 @@ String infoListProviderClassName = infoListProviderItemsDisplayContext.getInfoLi
 
 				<liferay-ui:search-container-column-text
 					name="title"
-					value="<%= HtmlUtil.escape(String.valueOf(titleInfoFieldValue.getValue(locale))) %>"
-				/>
+				>
+
+					<%
+					String displayPageURL = StringPool.BLANK;
+
+					if (infoListProviderItemsDisplayContext.isShowActions()) {
+						displayPageURL = listItemsActionDropdownItems.getViewDisplayPageURL(AssetEntry.class.getName(), result);
+					}
+					%>
+
+					<c:choose>
+						<c:when test="<%= Validator.isNull(displayPageURL) %>">
+							<%= HtmlUtil.escape(String.valueOf(titleInfoFieldValue.getValue(locale))) %>
+						</c:when>
+						<c:otherwise>
+							<aui:a href="<%= displayPageURL %>" target="_top">
+								<%= HtmlUtil.escape(String.valueOf(titleInfoFieldValue.getValue(locale))) %>
+							</aui:a>
+						</c:otherwise>
+					</c:choose>
+				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
 					name="type"
@@ -84,8 +103,8 @@ String infoListProviderClassName = infoListProviderItemsDisplayContext.getInfoLi
 				<c:if test="<%= infoListProviderItemsDisplayContext.isShowActions() %>">
 					<liferay-ui:search-container-column-text>
 						<clay:dropdown-actions
-							defaultEventHandler="<%= AssetListWebKeys.LIST_ITEMS_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
 							dropdownItems="<%= listItemsActionDropdownItems.getActionDropdownItems(infoListProviderClassName, result) %>"
+							propsTransformer="js/ListItemsDropdownPropsTransformer"
 						/>
 					</liferay-ui:search-container-column-text>
 				</c:if>
@@ -99,6 +118,5 @@ String infoListProviderClassName = infoListProviderItemsDisplayContext.getInfoLi
 </clay:container-fluid>
 
 <liferay-frontend:component
-	componentId="<%= AssetListWebKeys.LIST_ITEMS_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
-	module="js/ListItemsDropdownDefaultEventHandler.es"
+	module="js/TopLinkEventHandler.es"
 />

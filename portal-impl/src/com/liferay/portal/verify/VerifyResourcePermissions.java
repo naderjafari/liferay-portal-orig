@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+import com.liferay.portal.kernel.upgrade.BaseUpgradeCallable;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.verify.model.VerifiableResourcedModel;
 import com.liferay.portal.util.PortalInstances;
@@ -37,7 +38,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author     Raymond Augé
@@ -56,20 +59,23 @@ public class VerifyResourcePermissions extends VerifyProcess {
 			Role role = RoleLocalServiceUtil.getRole(
 				companyId, RoleConstants.OWNER);
 
-			List<VerifyResourcedModelCallable> verifyResourcedModelCallables =
-				new ArrayList<>(verifiableResourcedModels.length);
+			List<VerifyResourcedModelUpgradeCallable>
+				verifyResourcedModelUpgradeCallables = new ArrayList<>(
+					verifiableResourcedModels.length);
 
 			for (VerifiableResourcedModel verifiableResourcedModel :
 					verifiableResourcedModels) {
 
-				VerifyResourcedModelCallable verifyResourcedModelCallable =
-					new VerifyResourcedModelCallable(
-						role, verifiableResourcedModel);
+				VerifyResourcedModelUpgradeCallable
+					verifyResourcedModelUpgradeCallable =
+						new VerifyResourcedModelUpgradeCallable(
+							role, verifiableResourcedModel);
 
-				verifyResourcedModelCallables.add(verifyResourcedModelCallable);
+				verifyResourcedModelUpgradeCallables.add(
+					verifyResourcedModelUpgradeCallable);
 			}
 
-			doVerify(verifyResourcedModelCallables);
+			doVerify(verifyResourcedModelUpgradeCallables);
 		}
 	}
 
@@ -131,32 +137,6 @@ public class VerifyResourcePermissions extends VerifyProcess {
 	}
 
 	private void _verifyResourcedModel(
-			long companyId, String modelName, long primKey, Role role,
-			long ownerId, int cur, int total)
-		throws Exception {
-
-		if (_log.isInfoEnabled() && ((cur % 100) == 0)) {
-			_log.info(
-				StringBundler.concat(
-					"Processed ", cur, " of ", total,
-					" resource permissions for company = ", companyId,
-					" and model ", modelName));
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug(
-				StringBundler.concat(
-					"No resource found for {", companyId, ", ", modelName, ", ",
-					ResourceConstants.SCOPE_INDIVIDUAL, ", ", primKey, ", ",
-					role.getRoleId(), "}"));
-		}
-
-		ResourceLocalServiceUtil.addResources(
-			companyId, 0, ownerId, modelName, String.valueOf(primKey), false,
-			false, false);
-	}
-
-	private void _verifyResourcedModel(
 			Role role, VerifiableResourcedModel verifiableResourcedModel)
 		throws Exception {
 
@@ -164,14 +144,14 @@ public class VerifyResourcePermissions extends VerifyProcess {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(
 				verifiableResourcedModel.getTableName());
-			Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(
+			Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				_getVerifyResourcedModelSQL(
 					true, verifiableResourcedModel, role));
-			ResultSet rs = ps.executeQuery()) {
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-			if (rs.next()) {
-				total = rs.getInt(1);
+			if (resultSet.next()) {
+				total = resultSet.getInt(1);
 			}
 		}
 
@@ -181,22 +161,37 @@ public class VerifyResourcePermissions extends VerifyProcess {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(
 				verifiableResourcedModel.getTableName());
-			Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(
+			Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				_getVerifyResourcedModelSQL(
 					false, verifiableResourcedModel, role));
-			ResultSet rs = ps.executeQuery()) {
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-			for (int i = 1; rs.next(); i++) {
-				long primKey = rs.getLong(
-					verifiableResourcedModel.getPrimaryKeyColumnName());
-				long userId = rs.getLong(
-					verifiableResourcedModel.getUserIdColumnName());
+			List<Future<Void>> futures = new ArrayList<>(total);
 
-				_verifyResourcedModel(
-					role.getCompanyId(),
-					verifiableResourcedModel.getModelName(), primKey, role,
-					userId, i, total);
+			ExecutorService executorService = Executors.newWorkStealingPool();
+
+			try {
+				for (int i = 1; resultSet.next(); i++) {
+					long primKey = resultSet.getLong(
+						verifiableResourcedModel.getPrimaryKeyColumnName());
+					long userId = resultSet.getLong(
+						verifiableResourcedModel.getUserIdColumnName());
+
+					futures.add(
+						executorService.submit(
+							new AddResourcesUpgradeCallable(
+								role.getCompanyId(),
+								verifiableResourcedModel.getModelName(),
+								primKey, role.getRoleId(), userId, i, total)));
+				}
+
+				for (Future<Void> future : futures) {
+					future.get();
+				}
+			}
+			finally {
+				executorService.shutdown();
 			}
 		}
 	}
@@ -204,16 +199,78 @@ public class VerifyResourcePermissions extends VerifyProcess {
 	private static final Log _log = LogFactoryUtil.getLog(
 		VerifyResourcePermissions.class);
 
-	private class VerifyResourcedModelCallable implements Callable<Void> {
+	private class AddResourcesUpgradeCallable
+		extends BaseUpgradeCallable<Void> {
 
 		@Override
-		public Void call() throws Exception {
+		protected Void doCall() throws Exception {
+			if (_log.isInfoEnabled() && ((_cur % 100) == 0)) {
+				_log.info(
+					StringBundler.concat(
+						"Processed ", _cur, " of ", _total,
+						" resource permissions for company ", _companyId,
+						" and model ", _modelName));
+			}
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					StringBundler.concat(
+						"No resource found for {", _companyId, ", ", _modelName,
+						", ", ResourceConstants.SCOPE_INDIVIDUAL, ", ",
+						_primKey, ", ", _roleId, "}"));
+			}
+
+			try {
+				ResourceLocalServiceUtil.addResources(
+					_companyId, 0, _ownerId, _modelName,
+					String.valueOf(_primKey), false, false, false);
+			}
+			catch (Exception exception) {
+				_log.error(
+					StringBundler.concat(
+						"Unable to add resource for {", _companyId, ", ",
+						_modelName, ", ", ResourceConstants.SCOPE_INDIVIDUAL,
+						", ", _primKey, ", ", _roleId, "}"),
+					exception);
+			}
+
+			return null;
+		}
+
+		private AddResourcesUpgradeCallable(
+			long companyId, String modelName, long primKey, long roleId,
+			long ownerId, int cur, int total) {
+
+			_companyId = companyId;
+			_modelName = modelName;
+			_primKey = primKey;
+			_roleId = roleId;
+			_ownerId = ownerId;
+			_cur = cur;
+			_total = total;
+		}
+
+		private final long _companyId;
+		private final long _cur;
+		private final String _modelName;
+		private final long _ownerId;
+		private final long _primKey;
+		private final long _roleId;
+		private final long _total;
+
+	}
+
+	private class VerifyResourcedModelUpgradeCallable
+		extends BaseUpgradeCallable<Void> {
+
+		@Override
+		protected Void doCall() throws Exception {
 			_verifyResourcedModel(_role, _verifiableResourcedModel);
 
 			return null;
 		}
 
-		private VerifyResourcedModelCallable(
+		private VerifyResourcedModelUpgradeCallable(
 			Role role, VerifiableResourcedModel verifiableResourcedModel) {
 
 			_role = role;

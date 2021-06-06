@@ -42,6 +42,7 @@ import com.liferay.portal.kernel.xmlrpc.Fault;
 import com.liferay.portal.kernel.xmlrpc.XmlRpc;
 import com.liferay.portal.kernel.xmlrpc.XmlRpcConstants;
 import com.liferay.portal.kernel.xmlrpc.XmlRpcUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.registry.collections.ServiceTrackerMap;
 
 import java.io.IOException;
@@ -54,6 +55,8 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Matchers;
@@ -65,6 +68,11 @@ import org.mockito.MockitoAnnotations;
  * @author André de Oliveira
  */
 public class PingbackMethodImplTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -447,14 +455,14 @@ public class PingbackMethodImplTest {
 		InetAddress publicIpAddress = InetAddress.getByAddress(
 			new byte[] {1, 2, 3, 4});
 
-		URI sourceUri = new URI(_SOURCE_URI);
+		URI sourceURI = new URI(_SOURCE_URI);
 
 		Mockito.doReturn(
 			publicIpAddress
 		).when(
 			_inetAddressLookup
 		).getInetAddressByName(
-			Mockito.eq(sourceUri.getHost())
+			Mockito.eq(sourceURI.getHost())
 		);
 
 		for (InetAddress localAddress : _localAddresses) {

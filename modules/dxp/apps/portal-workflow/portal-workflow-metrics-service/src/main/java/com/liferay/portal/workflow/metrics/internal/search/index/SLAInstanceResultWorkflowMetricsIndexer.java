@@ -14,8 +14,15 @@
 
 package com.liferay.portal.workflow.metrics.internal.search.index;
 
+import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.util.PortalRunMode;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.document.Document;
 import com.liferay.portal.search.document.DocumentBuilder;
+import com.liferay.portal.search.engine.adapter.document.UpdateByQueryDocumentRequest;
+import com.liferay.portal.search.query.BooleanQuery;
+import com.liferay.portal.search.script.ScriptBuilder;
+import com.liferay.portal.search.script.ScriptType;
 import com.liferay.portal.workflow.metrics.internal.sla.processor.WorkflowMetricsSLAInstanceResult;
 import com.liferay.portal.workflow.metrics.sla.processor.WorkflowMetricsSLAStatus;
 
@@ -71,14 +78,14 @@ public class SLAInstanceResultWorkflowMetricsIndexer
 			"instanceId", workflowMetricsSLAInstanceResult.getInstanceId()
 		);
 
-		if (workflowMetricsSLAInstanceResult.getLastCheckLocalDateTime() !=
+		if (workflowMetricsSLAInstanceResult.getModifiedLocalDateTime() !=
 				null) {
 
 			documentBuilder.setDate(
-				"lastCheckDate",
+				"modifiedDate",
 				formatLocalDateTime(
 					workflowMetricsSLAInstanceResult.
-						getLastCheckLocalDateTime()));
+						getModifiedLocalDateTime()));
 		}
 
 		documentBuilder.setValue(
@@ -123,6 +130,54 @@ public class SLAInstanceResultWorkflowMetricsIndexer
 	}
 
 	@Override
+	public void deleteDocuments(
+		long companyId, long processId, long slaDefinitionId) {
+
+		super.deleteDocuments(companyId, processId, slaDefinitionId);
+
+		BooleanQuery booleanQuery = queries.booleanQuery();
+
+		BooleanQuery filterBooleanQuery = queries.booleanQuery();
+
+		filterBooleanQuery.addMustNotQueryClauses(
+			queries.term("instanceCompleted", Boolean.TRUE));
+
+		filterBooleanQuery.addMustQueryClauses(
+			queries.term("completed", false),
+			queries.term("processId", processId),
+			queries.nested(
+				"slaResults",
+				queries.term("slaResults.slaDefinitionId", slaDefinitionId)));
+
+		booleanQuery.addFilterQueryClauses(filterBooleanQuery);
+
+		ScriptBuilder scriptBuilder = scripts.builder();
+
+		UpdateByQueryDocumentRequest updateByQueryDocumentRequest =
+			new UpdateByQueryDocumentRequest(
+				booleanQuery,
+				scriptBuilder.idOrCode(
+					StringUtil.read(
+						getClass(),
+						"dependencies/workflow-metrics-delete-sla-result-" +
+							"script.painless")
+				).language(
+					"painless"
+				).putParameter(
+					"slaDefinitionId", slaDefinitionId
+				).scriptType(
+					ScriptType.INLINE
+				).build(),
+				_instanceWorkflowMetricsIndex.getIndexName(companyId));
+
+		if (PortalRunMode.isTestMode()) {
+			updateByQueryDocumentRequest.setRefresh(true);
+		}
+
+		searchEngineAdapter.execute(updateByQueryDocumentRequest);
+	}
+
+	@Override
 	public String getIndexName(long companyId) {
 		return _slaInstanceResultWorkflowMetricsIndex.getIndexName(companyId);
 	}
@@ -131,6 +186,12 @@ public class SLAInstanceResultWorkflowMetricsIndexer
 	public String getIndexType() {
 		return _slaInstanceResultWorkflowMetricsIndex.getIndexType();
 	}
+
+	@Reference(target = "(workflow.metrics.index.entity.name=instance)")
+	private WorkflowMetricsIndex _instanceWorkflowMetricsIndex;
+
+	@Reference
+	private JSONFactory _jsonFactory;
 
 	@Reference(
 		target = "(workflow.metrics.index.entity.name=sla-instance-result)"

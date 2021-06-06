@@ -460,6 +460,13 @@ components:
                         The segment's criteria.
                     readOnly: true
                     type: string
+                criteriaValue:
+                    additionalProperties:
+                        type: object
+                    description:
+                        The segment's criteria in JSON.
+                    readOnly: true
+                    type: object
                 dateCreated:
                     description:
                         The segment's creation date.
@@ -804,7 +811,7 @@ components:
 info:
     description:
         "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID
-        'com.liferay.headless.admin.user.client', and version '2.0.2'."
+        'com.liferay.headless.admin.user.client', and version '4.0.2'."
     license:
         name: "Apache 2.0"
         url: "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -1256,6 +1263,55 @@ paths:
                     description:
                         ""
             tags: ["UserAccount"]
+    "/organizations/{organizationId}/user-accounts/by-email-address/{emailAddress}":
+        delete:
+            # @review
+            description:
+                Removes a user from an organization by their email address
+            operationId: deleteUserAccountByEmailAddress
+            parameters:
+                - in: path
+                  name: organizationId
+                  required: true
+                  schema:
+                      type: string
+                - in: path
+                  name: emailAddress
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["Organization"]
+        post:
+            # @review
+            description:
+                Assigns a user to an organization by their email address
+            operationId: postUserAccountByEmailAddress
+            parameters:
+                - in: path
+                  name: organizationId
+                  required: true
+                  schema:
+                      type: string
+                - in: path
+                  name: emailAddress
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+                    description:
+                        ""
+            tags: ["Organization"]
     "/organizations/{organizationId}/web-urls":
         get:
             description:
@@ -1932,8 +1988,8 @@ paths:
         patch:
             # @review
             description:
-                Updates the user account with information sent in the request body. Only the provided fields
-                are updated.
+                Updates the user account with information sent in the request body. Only the provided fields are
+                updated.
             operationId: patchUserAccount
             parameters:
                 - in: path

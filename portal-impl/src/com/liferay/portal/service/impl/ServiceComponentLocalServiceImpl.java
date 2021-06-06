@@ -155,6 +155,26 @@ public class ServiceComponentLocalServiceImpl
 			previousBuildNumber = serviceComponent.getBuildNumber();
 
 			if (previousBuildNumber < buildNumber) {
+				List<ServiceComponent> currentServiceComponents =
+					serviceComponentPersistence.findByBuildNamespace(
+						buildNamespace, 0, 1);
+
+				ServiceComponent currentServiceComponent =
+					currentServiceComponents.get(0);
+
+				long currentBuildNumber =
+					currentServiceComponent.getBuildNumber();
+
+				if (currentBuildNumber > previousBuildNumber) {
+					serviceComponent = currentServiceComponent;
+
+					previousBuildNumber = currentBuildNumber;
+
+					_serviceComponents.put(buildNamespace, serviceComponent);
+				}
+			}
+
+			if (previousBuildNumber < buildNumber) {
 				previousServiceComponent = serviceComponent;
 
 				long serviceComponentId = counterLocalService.increment();
@@ -320,7 +340,8 @@ public class ServiceComponentLocalServiceImpl
 			if (_log.isInfoEnabled()) {
 				_log.info(
 					"No optional file META-INF/portlet-model-hints-ext.xml " +
-						"found");
+						"found",
+					exception);
 			}
 		}
 
@@ -393,7 +414,8 @@ public class ServiceComponentLocalServiceImpl
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
-					"Unable to instantiate " + upgradeTableListenerClassName);
+					"Unable to instantiate " + upgradeTableListenerClassName,
+					exception);
 			}
 
 			return null;

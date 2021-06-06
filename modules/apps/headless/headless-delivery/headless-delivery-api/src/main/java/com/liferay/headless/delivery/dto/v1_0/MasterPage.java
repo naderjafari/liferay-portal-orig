@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,16 +42,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("MasterPage")
+@GraphQLName(
+	description = "Represents a page with common elements (header, footer, ...) used for all or several pages of a site.",
+	value = "MasterPage"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "MasterPage")
-public class MasterPage {
+public class MasterPage implements Serializable {
 
 	public static MasterPage toDTO(String json) {
 		return ObjectMapperUtil.readValue(MasterPage.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The master page's key.")
 	public String getKey() {
 		return key;
 	}
@@ -71,11 +76,11 @@ public class MasterPage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The master page's key.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String key;
 
-	@Schema
+	@Schema(description = "The master page's name.")
 	public String getName() {
 		return name;
 	}
@@ -97,7 +102,7 @@ public class MasterPage {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The master page's name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String name;
 
@@ -162,6 +167,7 @@ public class MasterPage {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.MasterPage",
 		name = "x-class-name"
 	)
@@ -197,7 +203,7 @@ public class MasterPage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -236,7 +242,7 @@ public class MasterPage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

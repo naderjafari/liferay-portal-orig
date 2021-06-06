@@ -22,7 +22,6 @@ SelectSegmentsEntryDisplayContext selectSegmentsEntryDisplayContext = (SelectSeg
 
 <clay:management-toolbar
 	clearResultsURL="<%= selectSegmentsEntryDisplayContext.getClearResultsURL() %>"
-	componentId="selectSegmentsEntryManagementToolbar"
 	disabled="<%= selectSegmentsEntryDisplayContext.isDisabledManagementBar() %>"
 	filterDropdownItems="<%= selectSegmentsEntryDisplayContext.getFilterItemsDropdownItems() %>"
 	itemsTotal="<%= selectSegmentsEntryDisplayContext.getTotalItems() %>"
@@ -34,7 +33,7 @@ SelectSegmentsEntryDisplayContext selectSegmentsEntryDisplayContext = (SelectSeg
 	sortingURL="<%= selectSegmentsEntryDisplayContext.getSortingURL() %>"
 />
 
-<aui:form cssClass="container-fluid-1280" name="selectSegmentsEntryFm">
+<aui:form cssClass="container-fluid container-fluid-max-xl" name="selectSegmentsEntryFm">
 	<liferay-ui:search-container
 		id="<%= selectSegmentsEntryDisplayContext.getSearchContainerId() %>"
 		searchContainer="<%= selectSegmentsEntryDisplayContext.getSearchContainer() %>"
@@ -51,16 +50,17 @@ SelectSegmentsEntryDisplayContext selectSegmentsEntryDisplayContext = (SelectSeg
 			>
 				<c:choose>
 					<c:when test="<%= !ArrayUtil.contains(selectSegmentsEntryDisplayContext.getSelectedSegmentsEntryIds(), segmentsEntry.getSegmentsEntryId()) %>">
-
-						<%
-						Map<String, Object> data = HashMapBuilder.<String, Object>put(
-							"entityid", segmentsEntry.getSegmentsEntryId()
-						).put(
-							"entityname", segmentsEntry.getName(locale)
-						).build();
-						%>
-
-						<aui:a cssClass="selector-button" data="<%= data %>" href="javascript:;">
+						<aui:a
+							cssClass="selector-button"
+							data='<%=
+								HashMapBuilder.<String, Object>put(
+									"entityid", segmentsEntry.getSegmentsEntryId()
+								).put(
+									"entityname", segmentsEntry.getName(locale)
+								).build()
+							%>'
+							href="javascript:;"
+						>
 							<%= HtmlUtil.escape(segmentsEntry.getName(locale)) %>
 						</aui:a>
 					</c:when>
@@ -88,10 +88,3 @@ SelectSegmentsEntryDisplayContext selectSegmentsEntryDisplayContext = (SelectSeg
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script>
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />selectSegmentsEntryFm',
-		'<%= HtmlUtil.escapeJS(selectSegmentsEntryDisplayContext.getEventName()) %>'
-	);
-</aui:script>

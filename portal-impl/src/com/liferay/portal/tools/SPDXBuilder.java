@@ -14,6 +14,7 @@
 
 package com.liferay.portal.tools;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.petra.xml.Dom4jUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -249,9 +250,8 @@ public class SPDXBuilder {
 			for (Node fileNameNode : fileNameNodes) {
 				Element libraryElement = fileNameNode.getParent();
 
-				String key = _getKey("portal", libraryElement);
-
-				libraryElementMap.put(key, libraryElement);
+				libraryElementMap.put(
+					_getKey("portal", libraryElement), libraryElement);
 			}
 		}
 
@@ -279,9 +279,8 @@ public class SPDXBuilder {
 				packageElement, licenseOverrideProperties);
 
 			for (Element libraryElement : libraryElements) {
-				String key = _getKey("spdx", libraryElement);
-
-				libraryElementMap.put(key, libraryElement);
+				libraryElementMap.put(
+					_getKey("spdx", libraryElement), libraryElement);
 			}
 		}
 
@@ -309,7 +308,7 @@ public class SPDXBuilder {
 	}
 
 	private String _getKey(String type, Element libraryElement) {
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler(5);
 
 		sb.append(StringUtil.upperCase(type));
 		sb.append(StringPool.COLON);
@@ -396,7 +395,7 @@ public class SPDXBuilder {
 
 	@SuppressWarnings("unchecked")
 	private String _toCSV(Document document) {
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler();
 
 		sb.append("File Name,Version,Project,License,Comments");
 

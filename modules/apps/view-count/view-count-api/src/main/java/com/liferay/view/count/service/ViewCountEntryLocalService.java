@@ -65,7 +65,7 @@ public interface ViewCountEntryLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link ViewCountEntryLocalServiceUtil} to access the view count entry local service. Add custom service methods to <code>com.liferay.view.count.service.impl.ViewCountEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.view.count.service.impl.ViewCountEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the view count entry local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link ViewCountEntryLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -137,6 +137,9 @@ public interface ViewCountEntryLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -278,6 +281,12 @@ public interface ViewCountEntryLocalService
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void incrementViewCount(
 		long companyId, long classNameId, long classPK, int increment);
+
+	@Transactional(enabled = false)
+	public boolean isViewCountEnabled();
+
+	@Transactional(enabled = false)
+	public boolean isViewCountEnabled(long classNameId);
 
 	/**
 	 * Updates the view count entry in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.

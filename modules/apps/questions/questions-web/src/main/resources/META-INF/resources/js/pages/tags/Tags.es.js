@@ -12,136 +12,275 @@
  * details.
  */
 
-import {useQuery} from '@apollo/client';
 import {ClayButtonWithIcon} from '@clayui/button';
-import {ClayInput} from '@clayui/form';
+import ClayEmptyState from '@clayui/empty-state';
+import {ClayInput, ClaySelect} from '@clayui/form';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
+import {useManualQuery} from 'graphql-hooks';
 import React, {useContext, useEffect, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../../AppContext.es';
+import Alert from '../../components/Alert.es';
 import Link from '../../components/Link.es';
 import PaginatedList from '../../components/PaginatedList.es';
 import useQueryParams from '../../hooks/useQueryParams.es';
-import {getTagsQuery} from '../../utils/client.es';
+import {
+	getTagsOrderByDateCreatedQuery,
+	getTagsOrderByNumberOfUsagesQuery,
+} from '../../utils/client.es';
 import lang from '../../utils/lang.es';
-import {historyPushWithSlug, useDebounceCallback} from '../../utils/utils.es';
+import {
+	dateToInternationalHuman,
+	historyPushWithSlug,
+	useDebounceCallback,
+} from '../../utils/utils.es';
 
-export default withRouter(
-	({
-		history,
-		location,
-		match: {
-			params: {sectionTitle},
+function getOrderByOptions() {
+	return [
+		{
+			label: Liferay.Language.get('latest-created'),
+			value: 'latest-created',
 		},
-	}) => {
-		const context = useContext(AppContext);
+		{
+			label: Liferay.Language.get('number-of-usages'),
+			value: 'number-of-usages',
+		},
+	];
+}
 
-		const [page, setPage] = useState(1);
-		const [pageSize, setPageSize] = useState(20);
-		const [search, setSearch] = useState('');
+export default withRouter(({history, location}) => {
+	const context = useContext(AppContext);
 
-		const {data, loading} = useQuery(getTagsQuery, {
-			variables: {page, pageSize, search, siteKey: context.siteKey},
-		});
+	const [error, setError] = useState({});
+	const [searchBoxValue, setSearchBoxValue] = useState('');
+	const [loading, setLoading] = useState(true);
+	const [orderBy, setOrderBy] = useState('number-of-usages');
+	const [page, setPage] = useState(null);
+	const [pageSize, setPageSize] = useState(null);
+	const [search, setSearch] = useState(null);
+	const [tags, setTags] = useState([]);
 
-		const queryParams = useQueryParams(location);
+	const [tagsByDate] = useManualQuery(getTagsOrderByDateCreatedQuery, {
+		variables: {page, pageSize, search, siteKey: context.siteKey},
+	});
 
-		useEffect(() => {
-			setPage(+queryParams.get('page') || 1);
-		}, [queryParams]);
+	const [tagsByRank] = useManualQuery(getTagsOrderByNumberOfUsagesQuery, {
+		variables: {page, pageSize, search, siteKey: context.siteKey},
+	});
 
-		useEffect(() => {
-			setPageSize(+queryParams.get('pagesize') || 20);
-		}, [queryParams]);
+	useEffect(() => {
+		if (!page || !pageSize || search == null) {
+			return;
+		}
 
-		const historyPushParser = historyPushWithSlug(history.push);
+		const fn =
+			orderBy === 'latest-created'
+				? tagsByDate().then(({data, loading}) => ({
+						data: data.keywords,
+						loading,
+				  }))
+				: tagsByRank().then(({data, loading}) => ({
+						data: data.keywordsRanked,
+						loading,
+				  }));
+		fn.then(({data, loading}) => {
+			setTags(data || []);
+			setLoading(loading);
+			setSearchBoxValue(search);
+		}).catch((_) => setError({message: 'Loading Tags', title: 'Error'}));
+	}, [
+		orderBy,
+		page,
+		pageSize,
+		search,
+		context.siteKey,
+		tagsByDate,
+		tagsByRank,
+	]);
 
-		const changePage = (page, pageSize) => {
-			historyPushParser(
-				`/questions/${context.section}/tags?page=${page}&pagesize=${pageSize}`
-			);
-		};
+	const queryParams = useQueryParams(location);
 
-		const [debounceCallback] = useDebounceCallback((search) => {
-			setSearch(search);
-		}, 500);
+	useEffect(() => {
+		document.title = 'Tags';
+	}, []);
 
-		return (
-			<>
-				<div className="container">
-					<div className="row">
-						<div className="col-md-4 offset-md-8">
-							<ClayInput.Group className="c-mt-3">
-								<ClayInput.GroupItem>
-									<ClayInput
-										className="bg-transparent form-control input-group-inset input-group-inset-after"
-										disabled={
-											!search &&
-											data &&
-											data.keywordsRanked &&
-											!data.keywordsRanked.items.length
-										}
-										onChange={(event) =>
-											debounceCallback(event.target.value)
-										}
-										placeholder={Liferay.Language.get(
-											'search'
-										)}
-										type="text"
-									/>
+	useEffect(() => {
+		setPage(+queryParams.get('page') || 1);
+	}, [queryParams]);
 
-									<ClayInput.GroupInsetItem
-										after
-										className="bg-transparent"
-										tag="span"
-									>
-										{loading && (
-											<ClayLoadingIndicator small />
-										)}
-										{!loading && (
+	useEffect(() => {
+		setPageSize(+queryParams.get('pagesize') || 20);
+	}, [queryParams]);
+
+	useEffect(() => {
+		setSearch(queryParams.get('search') || '');
+	}, [queryParams]);
+
+	const historyPushParser = historyPushWithSlug(history.push);
+
+	function buildURL(search, page, pageSize) {
+		let url = (context.historyRouterBasePath || '#') + '/tags?';
+
+		if (search) {
+			url += `search=${search}&`;
+		}
+
+		url += `page=${page}&pagesize=${pageSize}`;
+
+		return url;
+	}
+
+	const orderByOptions = getOrderByOptions();
+
+	const [debounceCallback] = useDebounceCallback((needHashtag, search) => {
+		setLoading(true);
+		historyPushParser(buildURL(search, 1, pageSize));
+	}, 500);
+
+	const hrefConstructor = (page) => buildURL(search, page, pageSize);
+
+	return (
+		<>
+			<div className="container">
+				<div className="d-flex flex-row">
+					<div className="d-flex flex-column flex-grow-1">
+						<ClayInput.Group className="c-mt-3 justify-content-end">
+							<ClayInput.GroupItem shrink>
+								<label
+									className="align-items-center d-inline-flex m-0 text-secondary"
+									htmlFor="tagsOrderBy"
+								>
+									{Liferay.Language.get('order-by')}
+								</label>
+							</ClayInput.GroupItem>
+
+							<ClayInput.GroupItem shrink>
+								<ClaySelect
+									className="bg-transparent border-0"
+									disabled={loading}
+									id="tagsOrderBy"
+									onChange={(event) => {
+										setLoading(true);
+										setOrderBy(event.target.value);
+									}}
+									value={orderBy}
+								>
+									{orderByOptions.map((option) => (
+										<ClaySelect.Option
+											key={option.value}
+											label={option.label}
+											value={option.value}
+										/>
+									))}
+								</ClaySelect>
+							</ClayInput.GroupItem>
+						</ClayInput.Group>
+					</div>
+
+					<div className="d-flex flex-column flex-grow-0">
+						<ClayInput.Group className="c-mt-3">
+							<ClayInput.GroupItem>
+								<ClayInput
+									className="bg-transparent form-control input-group-inset input-group-inset-after"
+									disabled={
+										!search &&
+										tags &&
+										tags.items &&
+										!tags.items.length
+									}
+									onChange={(event) => {
+										setSearchBoxValue(event.target.value);
+										debounceCallback(
+											false,
+											event.target.value
+										);
+									}}
+									placeholder={Liferay.Language.get('search')}
+									type="text"
+									value={searchBoxValue}
+								/>
+
+								<ClayInput.GroupInsetItem
+									after
+									className="bg-transparent"
+									tag="span"
+								>
+									{loading && <ClayLoadingIndicator small />}
+									{!loading &&
+										((!!search && (
+											<ClayButtonWithIcon
+												displayType="unstyled"
+												onClick={() => {
+													debounceCallback(false, '');
+												}}
+												symbol="times-circle"
+												type="submit"
+											/>
+										)) || (
 											<ClayButtonWithIcon
 												displayType="unstyled"
 												symbol="search"
-												type="submit"
+												type="search"
 											/>
-										)}
-									</ClayInput.GroupInsetItem>
-								</ClayInput.GroupItem>
-							</ClayInput.Group>
-						</div>
+										))}
+								</ClayInput.GroupInsetItem>
+							</ClayInput.GroupItem>
+						</ClayInput.Group>
 					</div>
+				</div>
 
-					<div className="c-mt-3 row">
-						<PaginatedList
-							activeDelta={pageSize}
-							activePage={page}
-							changeDelta={(pageSize) =>
-								changePage(page, pageSize)
-							}
-							changePage={(page) => changePage(page, pageSize)}
-							data={data && data.keywordsRanked}
-							loading={loading}
-						>
-							{(tag) => (
-								<div
-									className="col-md-3 question-tags"
-									key={tag.id}
+				<div className="c-mt-3 row">
+					<PaginatedList
+						activeDelta={pageSize}
+						activePage={page}
+						changeDelta={setPageSize}
+						data={tags}
+						emptyState={
+							<ClayEmptyState
+								className="empty-state-icon"
+								title={Liferay.Language.get(
+									'there-are-no-results'
+								)}
+							/>
+						}
+						hrefConstructor={hrefConstructor}
+						loading={loading}
+					>
+						{(tag) => (
+							<div
+								className="col-md-3 question-tags"
+								key={tag.id}
+							>
+								<Link
+									title={tag.name}
+									to={`/questions/tag/${tag.name}`}
 								>
-									<Link
-										title={tag.name}
-										to={`/questions/${sectionTitle}/tag/${tag.name}`}
-									>
-										<div className="card card-interactive card-interactive-primary card-type-template template-card-horizontal">
-											<div className="card-body">
-												<div className="card-row">
-													<div className="autofit-col autofit-col-expand">
-														<div className="autofit-section">
-															<div className="card-title">
-																<span className="text-truncate">
-																	{tag.name}
-																</span>
+									<div className="card card-interactive card-interactive-primary card-type-template template-card-horizontal">
+										<div className="card-body">
+											<div className="card-row">
+												<div className="autofit-col autofit-col-expand">
+													<div className="autofit-section">
+														<div className="card-title">
+															<span className="text-truncate">
+																{tag.name}
+															</span>
+														</div>
+														{orderBy ===
+														'latest-created' ? (
+															<div>
+																{lang.sub(
+																	Liferay.Language.get(
+																		'created-on'
+																	),
+																	[
+																		dateToInternationalHuman(
+																			tag.dateCreated
+																		),
+																	]
+																)}
 															</div>
+														) : (
 															<div>
 																{lang.sub(
 																	Liferay.Language.get(
@@ -152,18 +291,20 @@ export default withRouter(
 																	]
 																)}
 															</div>
-														</div>
+														)}
 													</div>
 												</div>
 											</div>
 										</div>
-									</Link>
-								</div>
-							)}
-						</PaginatedList>
-					</div>
+									</div>
+								</Link>
+							</div>
+						)}
+					</PaginatedList>
+
+					<Alert info={error} />
 				</div>
-			</>
-		);
-	}
-);
+			</div>
+		</>
+	);
+});

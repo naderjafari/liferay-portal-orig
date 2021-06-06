@@ -12,21 +12,29 @@
  * details.
  */
 
-import ClayIcon from '@clayui/icon';
+import ClayButton from '@clayui/button';
 import ClayLayout from '@clayui/layout';
-import ClayLink from '@clayui/link';
+import {
+	addItem,
+	updateItem,
+} from 'data-engine-js-components-web/js/utils/client.es';
+import {
+	errorToast,
+	successToast,
+} from 'data-engine-js-components-web/js/utils/toast.es';
 import React, {useContext, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../../../AppContext.es';
-import Button from '../../../components/button/Button.es';
-import {addItem, updateItem} from '../../../utils/client.es';
-import {errorToast, successToast} from '../../../utils/toast.es';
+import {normalizeNames} from '../../../utils/normalizers.es';
+import {isProductMenuValid} from '../utils.es';
 import EditAppContext from './EditAppContext.es';
 
 export default withRouter(
 	({
 		currentStep,
+		defaultLanguageId,
+		editingLanguageId,
 		history,
 		match: {
 			params: {dataDefinitionId},
@@ -46,7 +54,7 @@ export default withRouter(
 			dataLayoutId,
 			dataListViewId,
 			id: appId,
-			name: {en_US: appName},
+			name,
 		} = app;
 
 		const getStandaloneLink = (appId) => {
@@ -54,26 +62,20 @@ export default withRouter(
 				(deployment) => deployment.type === 'standalone'
 			);
 
-			if (!isStandalone) {
-				return <></>;
-			}
-
-			const url = getStandaloneURL(appId);
-
-			return (
-				<ClayLink href={url} target="_blank">
-					{`${Liferay.Language.get('open-standalone-app')}.`}{' '}
-					<ClayIcon symbol="shortcut" />
-				</ClayLink>
-			);
+			return isStandalone
+				? `<a href="${getStandaloneURL(
+						appId
+				  )}" target="_blank">${Liferay.Language.get(
+						'open-standalone-app'
+				  )}. ${Liferay.Util.getLexiconIconTpl('shortcut')}</a>`
+				: '';
 		};
 
 		const onSuccess = (appId) => {
 			successToast(
-				<>
-					{Liferay.Language.get('the-app-was-deployed-successfully')}{' '}
-					{getStandaloneLink(appId)}
-				</>
+				`${Liferay.Language.get(
+					'the-app-was-deployed-successfully'
+				)} ${getStandaloneLink(appId)}`
 			);
 
 			setDeploying(false);
@@ -92,8 +94,24 @@ export default withRouter(
 		const onDeploy = () => {
 			setDeploying(true);
 
+			if (!name[defaultLanguageId]) {
+				name[defaultLanguageId] = name[editingLanguageId];
+			}
+
+			const data = {
+				...app,
+				name: normalizeNames({
+					allowEmptyKeys: false,
+					defaultName: Liferay.Language.get('untitled-app'),
+					localizableValue: name,
+				}),
+			};
+
 			if (appId) {
-				updateItem(`/o/app-builder/v1.0/apps/${appId}`, app)
+				updateItem({
+					endpoint: `/o/app-builder/v1.0/apps/${appId}`,
+					item: data,
+				})
 					.then(() => onSuccess(appId))
 					.then(onCancel)
 					.catch(onError);
@@ -101,7 +119,7 @@ export default withRouter(
 			else {
 				addItem(
 					`/o/app-builder/v1.0/data-definitions/${dataDefinitionId}/apps`,
-					app
+					data
 				)
 					.then((app) => onSuccess(app.id))
 					.then(onCancel)
@@ -113,13 +131,13 @@ export default withRouter(
 			<div className="bg-transparent card-footer">
 				<ClayLayout.ContentRow>
 					<ClayLayout.Col md="4">
-						<Button displayType="secondary" onClick={onCancel}>
+						<ClayButton displayType="secondary" onClick={onCancel}>
 							{Liferay.Language.get('cancel')}
-						</Button>
+						</ClayButton>
 					</ClayLayout.Col>
 					<ClayLayout.Col className="offset-md-4 text-right" md="4">
 						{currentStep > 0 && (
-							<Button
+							<ClayButton
 								className="mr-3"
 								displayType="secondary"
 								onClick={() =>
@@ -127,10 +145,10 @@ export default withRouter(
 								}
 							>
 								{Liferay.Language.get('previous')}
-							</Button>
+							</ClayButton>
 						)}
-						{currentStep < 2 && (
-							<Button
+						{currentStep < 3 && (
+							<ClayButton
 								disabled={
 									(currentStep === 0 && !dataLayoutId) ||
 									(currentStep === 1 && !dataListViewId)
@@ -141,14 +159,15 @@ export default withRouter(
 								}
 							>
 								{Liferay.Language.get('next')}
-							</Button>
+							</ClayButton>
 						)}
-						{currentStep === 2 && (
-							<Button
+						{currentStep === 3 && (
+							<ClayButton
 								disabled={
 									appDeployments.length === 0 ||
-									!appName ||
-									isDeploying
+									!name[editingLanguageId]?.trim() ||
+									isDeploying ||
+									!isProductMenuValid(app)
 								}
 								displayType="primary"
 								onClick={onDeploy}
@@ -156,7 +175,7 @@ export default withRouter(
 								{app.id
 									? Liferay.Language.get('save')
 									: Liferay.Language.get('deploy')}
-							</Button>
+							</ClayButton>
 						)}
 					</ClayLayout.Col>
 				</ClayLayout.ContentRow>

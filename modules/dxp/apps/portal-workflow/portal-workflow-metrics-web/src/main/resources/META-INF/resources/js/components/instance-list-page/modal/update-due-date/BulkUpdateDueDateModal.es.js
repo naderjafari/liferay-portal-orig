@@ -10,7 +10,7 @@
  */
 
 import {useModal} from '@clayui/modal';
-import React, {useCallback, useContext, useMemo, useState} from 'react';
+import React, {useCallback, useContext, useState} from 'react';
 
 import ModalWithSteps from '../../../../shared/components/modal-with-steps/ModalWithSteps.es';
 import {useToaster} from '../../../../shared/components/toaster/hooks/useToaster.es';
@@ -21,13 +21,13 @@ import SelectTasksStep from '../shared/select-tasks-step/SelectTasksStep.es';
 import {useFetchTasks} from '../shared/select-tasks-step/hooks/useFetchTasks.es';
 import UpdateDueDateStep from './UpdateDueDateStep.es';
 
-const BulkUpdateDueDateModal = () => {
+export default function BulkUpdateDueDateModal() {
 	const {setSelectAll, setSelectedItems} = useContext(InstanceListContext);
 	const {
+		closeModal,
 		selectTasks: {selectAll, tasks},
 		setSelectTasks,
 		setUpdateDueDate,
-		setVisibleModal,
 		updateDueDate: {comment, dueDate},
 		visibleModal,
 	} = useContext(ModalContext);
@@ -45,28 +45,26 @@ const BulkUpdateDueDateModal = () => {
 		});
 	}, [setUpdateDueDate]);
 
+	const onCloseModal = (refetch) => {
+		clearContext();
+		clearFilters();
+		closeModal(refetch);
+		setSelectTasks({selectAll: false, tasks: []});
+		setCurrentStep('selectTasks');
+		setErrorToast(false);
+	};
+
 	const {observer, onClose} = useModal({
-		onClose: () => {
-			clearContext();
-			clearFilters();
-			setSelectTasks({selectAll: false, tasks: []});
-			setVisibleModal('');
-			setCurrentStep('selectTasks');
-			setErrorToast(false);
-		},
+		onClose: onCloseModal,
 	});
 
-	const body = useMemo(() => {
-		if (dueDate) {
-			return tasks.map(({id: workflowTaskId}) => ({
+	const body = dueDate
+		? tasks.map(({id: workflowTaskId}) => ({
 				comment,
 				dueDate,
 				workflowTaskId,
-			}));
-		}
-
-		return [];
-	}, [comment, dueDate, tasks]);
+		  }))
+		: [];
 
 	const {patchData} = usePatch({
 		admin: true,
@@ -75,37 +73,34 @@ const BulkUpdateDueDateModal = () => {
 	});
 
 	const handleDone = useCallback(() => {
-		if (dueDate) {
-			setUpdating(true);
+		setUpdating(true);
 
-			patchData()
-				.then(() => {
-					onClose();
-					setUpdating(false);
+		patchData()
+			.then(() => {
+				setUpdating(false);
 
-					toaster.success(
-						tasks.length > 1
-							? Liferay.Language.get(
-									'the-due-dates-for-these-tasks-have-been-updated'
-							  )
-							: Liferay.Language.get(
-									'the-due-date-for-this-task-has-been-updated'
-							  )
-					);
+				toaster.success(
+					tasks.length > 1
+						? Liferay.Language.get(
+								'the-due-dates-for-these-tasks-have-been-updated'
+						  )
+						: Liferay.Language.get(
+								'the-due-date-for-this-task-has-been-updated'
+						  )
+				);
 
-					setSelectedItems([]);
-					setSelectAll(false);
-				})
-				.catch(() => {
-					setUpdating(false);
+				onCloseModal(true);
+				setSelectedItems([]);
+				setSelectAll(false);
+			})
+			.catch(({response}) => {
+				const errorMessage = `${Liferay.Language.get(
+					'your-request-has-failed'
+				)} ${Liferay.Language.get('select-done-to-retry')}`;
 
-					setErrorToast(
-						`${Liferay.Language.get(
-							'your-request-has-failed'
-						)} ${Liferay.Language.get('select-done-to-retry')}`
-					);
-				});
-		}
+				setErrorToast(response?.data.title ?? errorMessage);
+				setUpdating(false);
+			});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [patchData, tasks]);
 
@@ -137,75 +132,54 @@ const BulkUpdateDueDateModal = () => {
 		setErrorToast(false);
 	}, [clearContext]);
 
-	const getStep = useCallback(
-		(step) => {
-			const steps = {
-				selectDueDate: {
-					cancelBtn: {
-						disabled: updating,
-						handle: onClose,
-					},
-					component: UpdateDueDateStep,
-					nextBtn: {
-						disabled: !dueDate || updating,
-						handle: handleDone,
-						text: Liferay.Language.get('done'),
-					},
-					order: 2,
-					previousBtn: {
-						disabled: updating,
-						handle: handlePrevious,
-					},
-					props: {
-						className: 'fixed-height modal-metrics-content',
-					},
-					subtitle: Liferay.Language.get('update-due-date'),
-					title: Liferay.Language.get('update-tasks-due-dates'),
-				},
-				selectTasks: {
-					cancelBtn: {
-						disabled: fetching,
-						handle: onClose,
-					},
-					component: SelectTasksStep,
-					nextBtn: {
-						disabled: tasks.length === 0 || fetching,
-						handle: handleNext,
-						text: Liferay.Language.get('next'),
-					},
-					order: 1,
-					previousBtn: false,
-					props: {setErrorToast},
-					subtitle: Liferay.Language.get('select-tasks'),
-					title: Liferay.Language.get('select-tasks-to-update'),
-				},
-			};
-
-			return steps[step];
+	const steps = {
+		selectDueDate: {
+			cancelBtn: {
+				disabled: updating,
+				handle: onClose,
+			},
+			component: UpdateDueDateStep,
+			nextBtn: {
+				disabled: !dueDate || updating,
+				handle: handleDone,
+				text: Liferay.Language.get('done'),
+			},
+			order: 2,
+			previousBtn: {
+				disabled: updating,
+				handle: handlePrevious,
+			},
+			props: {
+				className: 'fixed-height modal-metrics-content',
+			},
+			subtitle: Liferay.Language.get('update-due-date'),
+			title: Liferay.Language.get('update-tasks-due-dates'),
 		},
-		[
-			dueDate,
-			fetching,
-			handleDone,
-			handleNext,
-			handlePrevious,
-			onClose,
-			updating,
-			tasks.length,
-		]
-	);
-
-	const step = useMemo(() => getStep(currentStep), [currentStep, getStep]);
+		selectTasks: {
+			cancelBtn: {
+				disabled: fetching,
+				handle: onClose,
+			},
+			component: SelectTasksStep,
+			nextBtn: {
+				disabled: tasks.length === 0 || fetching,
+				handle: handleNext,
+				text: Liferay.Language.get('next'),
+			},
+			order: 1,
+			previousBtn: false,
+			props: {setErrorToast},
+			subtitle: Liferay.Language.get('select-tasks'),
+			title: Liferay.Language.get('select-tasks-to-update'),
+		},
+	};
 
 	return (
 		<ModalWithSteps
-			dataTestId="bulkUpdateDueDateModal"
 			error={errorToast}
 			observer={observer}
-			step={step}
+			step={steps[currentStep]}
 			visible={visibleModal === 'bulkUpdateDueDate'}
 		/>
 	);
-};
-
-export default BulkUpdateDueDateModal;
+}

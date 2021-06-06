@@ -22,7 +22,7 @@ import org.json.JSONObject;
 /**
  * @author Michael Hashimoto
  */
-public class JenkinsSlave implements Comparable<JenkinsSlave> {
+public class JenkinsSlave implements JenkinsNode<JenkinsSlave> {
 
 	public JenkinsSlave() {
 		this(
@@ -43,27 +43,17 @@ public class JenkinsSlave implements Comparable<JenkinsSlave> {
 					"hostname ", hostname));
 		}
 
-		_jenkinsMaster = new JenkinsMaster(jenkinsMasterName);
+		_jenkinsMaster = JenkinsMaster.getInstance(jenkinsMasterName);
 
-		String jenkinsSlaveJSONObjectURL = JenkinsResultsParserUtil.getLocalURL(
-			JenkinsResultsParserUtil.combine(
-				_jenkinsMaster.getURL(), "/computer/", hostname,
-				"/api/json?tree=displayName,", "idle,offline"));
-
-		JSONObject jenkinsSlaveJSONObject = null;
-
-		try {
-			jenkinsSlaveJSONObject = JenkinsResultsParserUtil.toJSONObject(
-				jenkinsSlaveJSONObjectURL, false);
+		if (hostname.equals(jenkinsMasterName)) {
+			_name = "master";
 		}
-		catch (IOException ioException) {
-			throw new RuntimeException(
-				"Unable to retrieve Jenkins slave node JSON object from " +
-					jenkinsSlaveJSONObjectURL,
-				ioException);
+		else {
+			_name = hostname;
 		}
 
-		_name = jenkinsSlaveJSONObject.getString("displayName");
+		JSONObject jenkinsSlaveJSONObject = JenkinsAPIUtil.getAPIJSONObject(
+			getComputerURL(), "displayName,idle,offline");
 
 		update(jenkinsSlaveJSONObject);
 	}
@@ -88,21 +78,20 @@ public class JenkinsSlave implements Comparable<JenkinsSlave> {
 		return super.equals(object);
 	}
 
+	public String getComputerURL() {
+		String name = getName();
+
+		if (name.equals("master")) {
+			name = "(" + name + ")";
+		}
+
+		return JenkinsResultsParserUtil.combine(
+			_jenkinsMaster.getURL(), "/computer/", name);
+	}
+
 	public Build getCurrentBuild() {
-		JSONObject jsonObject = null;
-
-		String jsonObjectURL = JenkinsResultsParserUtil.combine(
-			_jenkinsMaster.getURL(), "computer/", getName(),
-			"/api/json?tree=executors[currentExecutable[url]]");
-
-		try {
-			jsonObject = JenkinsResultsParserUtil.toJSONObject(
-				jsonObjectURL, false);
-		}
-		catch (IOException ioException) {
-			throw new RuntimeException(
-				"Unable to determine current build", ioException);
-		}
+		JSONObject jsonObject = JenkinsAPIUtil.getAPIJSONObject(
+			getComputerURL(), "executors[currentExecutable[url]]");
 
 		JSONArray jsonArray = jsonObject.getJSONArray("executors");
 
@@ -120,12 +109,21 @@ public class JenkinsSlave implements Comparable<JenkinsSlave> {
 		return BuildFactory.newBuild(buildURL, null);
 	}
 
+	@Override
 	public JenkinsMaster getJenkinsMaster() {
 		return _jenkinsMaster;
 	}
 
+	@Override
 	public String getName() {
 		return _name;
+	}
+
+	@Override
+	public int hashCode() {
+		String hashCodeString = _jenkinsMaster.getName() + "_" + _name;
+
+		return hashCodeString.hashCode();
 	}
 
 	public boolean isIdle() {
@@ -161,6 +159,7 @@ public class JenkinsSlave implements Comparable<JenkinsSlave> {
 		JenkinsMaster jenkinsMaster, JSONObject jenkinsSlaveJSONObject) {
 
 		_jenkinsMaster = jenkinsMaster;
+
 		_name = jenkinsSlaveJSONObject.getString("displayName");
 
 		update(jenkinsSlaveJSONObject);

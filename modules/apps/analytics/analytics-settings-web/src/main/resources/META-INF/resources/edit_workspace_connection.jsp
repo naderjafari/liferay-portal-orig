@@ -27,6 +27,7 @@ long totalContactsSelected = 0;
 
 if (analyticsConfiguration != null) {
 	syncedGroupIds = analyticsConfiguration.syncedGroupIds();
+
 	token = analyticsConfiguration.token();
 
 	if (!Validator.isBlank(token)) {
@@ -37,7 +38,7 @@ if (analyticsConfiguration != null) {
 		totalContactsSelected = analyticsUsersManager.getCompanyUsersCount(themeDisplay.getCompanyId());
 	}
 	else {
-		String[] syncedOrganizationIds = analyticsConfiguration.syncedOrganizationIds();
+		String[] syncedOrganizationIds = GetterUtil.getStringValues(analyticsConfiguration.syncedOrganizationIds());
 
 		long[] syncedOrganizationIdsLong = new long[syncedOrganizationIds.length];
 
@@ -45,7 +46,7 @@ if (analyticsConfiguration != null) {
 			syncedOrganizationIdsLong[i] = GetterUtil.getLong(syncedOrganizationIds[i]);
 		}
 
-		String[] syncedUserGroupIds = analyticsConfiguration.syncedUserGroupIds();
+		String[] syncedUserGroupIds = GetterUtil.getStringValues(analyticsConfiguration.syncedUserGroupIds());
 
 		long[] syncedUserGroupIdsLong = new long[syncedUserGroupIds.length];
 
@@ -57,6 +58,19 @@ if (analyticsConfiguration != null) {
 	}
 }
 %>
+
+<c:if test='<%= SessionErrors.contains(renderRequest, "unableToNotifyAnalyticsCloud") %>'>
+	<aui:script>
+		Liferay.Util.openToast({
+			message: '<liferay-ui:message key="unable-to-notify-analytics-cloud" />',
+			title: Liferay.Language.get('warning'),
+			toastProps: {
+				autoClose: 5000,
+			},
+			type: 'warning',
+		});
+	</aui:script>
+</c:if>
 
 <portlet:actionURL name="/analytics_settings/edit_workspace_connection" var="editWorkspaceConnectionURL" />
 
@@ -93,13 +107,14 @@ if (analyticsConfiguration != null) {
 
 			<aui:button-row cssClass="mt-2">
 				<c:if test="<%= connected %>">
-					<a class="btn btn-primary mr-2" href="<%= analyticsConfiguration.liferayAnalyticsURL() %>" target="_blank">
-						<span class="lfr-btn-label"><liferay-ui:message key="go-to-workspace" /></span>
+					<a class="btn btn-primary mr-2" href="<%= analyticsConfiguration.liferayAnalyticsURL() %>" rel="noopener noreferrer" target="_blank">
+						<liferay-ui:message key="go-to-workspace" />
 
-						<liferay-ui:icon
-							icon="shortcut"
-							markupView="lexicon"
-						/>
+						<span class="inline-item inline-item-after">
+							<clay:icon
+								symbol="shortcut"
+							/>
+						</span>
 					</a>
 				</c:if>
 
@@ -107,31 +122,6 @@ if (analyticsConfiguration != null) {
 			</aui:button-row>
 		</aui:fieldset>
 	</aui:form>
-
-	<aui:fieldset>
-		<label class="control-label">
-			<liferay-ui:message key="synced-contacts" />
-		</label>
-
-		<div class="form-text">
-			<liferay-ui:message key="synced-contacts-help" />
-		</div>
-
-		<small>
-			<strong>
-				<liferay-ui:message arguments="<%= totalContactsSelected %>" key="total-contacts-selected-x" />
-			</strong>
-		</small>
-
-		<aui:button-row>
-			<liferay-portlet:renderURL varImpl="selectContactsURL">
-				<portlet:param name="mvcRenderCommandName" value="/view_configuration_screen" />
-				<portlet:param name="configurationScreenKey" value="synced-contacts" />
-			</liferay-portlet:renderURL>
-
-			<aui:button disabled="<%= !connected %>" href="<%= selectContactsURL.toString() %>" primary="<%= true %>" value="select-contacts" />
-		</aui:button-row>
-	</aui:fieldset>
 
 	<aui:fieldset>
 		<label class="control-label">
@@ -150,11 +140,36 @@ if (analyticsConfiguration != null) {
 
 		<aui:button-row>
 			<liferay-portlet:renderURL varImpl="selectSitesURL">
-				<portlet:param name="mvcRenderCommandName" value="/view_configuration_screen" />
-				<portlet:param name="configurationScreenKey" value="synced-sites" />
+				<portlet:param name="mvcRenderCommandName" value="/configuration_admin/view_configuration_screen" />
+				<portlet:param name="configurationScreenKey" value="1-synced-sites" />
 			</liferay-portlet:renderURL>
 
 			<aui:button disabled="<%= !connected %>" href="<%= selectSitesURL.toString() %>" primary="<%= true %>" value="select-sites" />
+		</aui:button-row>
+	</aui:fieldset>
+
+	<aui:fieldset>
+		<label class="control-label">
+			<liferay-ui:message key="synced-contacts" />
+		</label>
+
+		<div class="form-text">
+			<liferay-ui:message key="synced-contacts-help" />
+		</div>
+
+		<small>
+			<strong>
+				<liferay-ui:message arguments="<%= totalContactsSelected %>" key="total-contacts-selected-x" />
+			</strong>
+		</small>
+
+		<aui:button-row>
+			<liferay-portlet:renderURL varImpl="selectContactDataURL">
+				<portlet:param name="mvcRenderCommandName" value="/configuration_admin/view_configuration_screen" />
+				<portlet:param name="configurationScreenKey" value="2-synced-contact-data" />
+			</liferay-portlet:renderURL>
+
+			<aui:button disabled="<%= !connected %>" href="<%= selectContactDataURL.toString() %>" primary="<%= true %>" value="select-contacts" />
 		</aui:button-row>
 	</aui:fieldset>
 </clay:sheet>

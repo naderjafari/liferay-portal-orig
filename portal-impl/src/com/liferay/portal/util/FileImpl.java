@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.Digester;
 import com.liferay.portal.kernel.util.DigesterUtil;
 import com.liferay.portal.kernel.util.FileComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PwdGenerator;
 import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -205,6 +206,10 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 				oldContent = read(source);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
+
 				return;
 			}
 
@@ -214,6 +219,9 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 				newContent = read(destination);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 
 			if ((oldContent == null) || !oldContent.equals(newContent)) {
@@ -329,6 +337,9 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 				exists = file.exists();
 			}
 			catch (SecurityException securityException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(securityException, securityException);
+				}
 
 				// We may have the permission to delete a specific file without
 				// having the permission to check if the file exists
@@ -458,26 +469,28 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 				}
 			}
 		}
-		catch (Throwable t) {
-			Throwable throwable = ExceptionUtils.getRootCause(t);
+		catch (Throwable throwable) {
+			Throwable rootCauseThrowable = ExceptionUtils.getRootCause(
+				throwable);
 
-			if (throwable instanceof EncryptedDocumentException ||
-				throwable instanceof UnsupportedZipFeatureException) {
+			if (rootCauseThrowable instanceof EncryptedDocumentException ||
+				rootCauseThrowable instanceof UnsupportedZipFeatureException) {
 
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Unable to extract text from an encrypted file " +
 							fileName,
-						t);
+						throwable);
 				}
 			}
-			else if (t instanceof TikaException) {
+			else if (throwable instanceof TikaException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to extract text from " + fileName, t);
+					_log.warn(
+						"Unable to extract text from " + fileName, throwable);
 				}
 			}
 			else {
-				_log.error(t, t);
+				_log.error(throwable, throwable);
 			}
 		}
 
@@ -530,11 +543,9 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 		String[] includedFiles = directoryScanner.getIncludedFiles();
 
 		for (int i = 0; i < includedFiles.length; i++) {
-			includedFiles[i] = directory.concat(
-				StringPool.SLASH
-			).concat(
-				replaceSeparator(includedFiles[i])
-			);
+			includedFiles[i] = StringBundler.concat(
+				directory, StringPool.SLASH,
+				replaceSeparator(includedFiles[i]));
 		}
 
 		return includedFiles;
@@ -703,6 +714,10 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			return true;
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return false;
 		}
 	}
@@ -801,6 +816,10 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			}
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return false;
 		}
 
@@ -919,6 +938,9 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			}
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
 		}
 
 		return list;
@@ -930,6 +952,10 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			return toList(new FileReader(fileName));
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return new ArrayList<>();
 		}
 	}
@@ -942,6 +968,9 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			properties.load(fileInputStream);
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
 		}
 
 		return properties;
@@ -953,6 +982,10 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			return toProperties(new FileInputStream(fileName));
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return new Properties();
 		}
 	}
@@ -1112,6 +1145,9 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			mkdirs(parentFile);
 		}
 		catch (SecurityException securityException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(securityException, securityException);
+			}
 
 			// We may have the permission to write a specific file without
 			// having the permission to check if the parent file exists
@@ -1121,7 +1157,7 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 
 	private static String _parseToString(
 			Tika tika, TikaInputStream tikaInputStream)
-		throws IOException, SAXException, TikaException {
+		throws IOException, TikaException {
 
 		UniversalEncodingDetector universalEncodingDetector =
 			new UniversalEncodingDetector();
@@ -1151,8 +1187,6 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 
 			ParseContext parseContext = new ParseContext();
 
-			parseContext.set(Parser.class, parser);
-
 			parseContext.set(
 				EmbeddedDocumentExtractor.class,
 				new ParsingEmbeddedDocumentExtractor(parseContext) {
@@ -1175,10 +1209,17 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 					}
 
 				});
+			parseContext.set(Parser.class, parser);
 
 			parser.parse(
 				tikaInputStream, new BodyContentHandler(writeOutContentHandler),
 				metadata, parseContext);
+		}
+		catch (SAXException saxException) {
+			if (!writeOutContentHandler.isWriteLimitReached(saxException)) {
+				throw new TikaException(
+					saxException.getMessage(), saxException);
+			}
 		}
 		finally {
 			tikaInputStream.close();
@@ -1211,10 +1252,12 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 	};
 
 	private static final String[] _SAFE_FILE_NAME_2 = {
-		PropsValues.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_AMPERSAND,
-		PropsValues.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_CLOSE_PARENTHESIS,
-		PropsValues.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_OPEN_PARENTHESIS,
-		PropsValues.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_SEMICOLON
+		PropsUtil.get(PropsKeys.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_AMPERSAND),
+		PropsUtil.get(
+			PropsKeys.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_CLOSE_PARENTHESIS),
+		PropsUtil.get(
+			PropsKeys.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_OPEN_PARENTHESIS),
+		PropsUtil.get(PropsKeys.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_SEMICOLON)
 	};
 
 	private static final Log _log = LogFactoryUtil.getLog(FileImpl.class);

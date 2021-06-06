@@ -20,9 +20,9 @@ import {HTML5Backend} from 'react-dnd-html5-backend';
 
 import {CollectionItemWithControls} from '../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items';
 import Collection from '../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items/Collection';
+import {StoreAPIContextProvider} from '../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 import CollectionService from '../../../../src/main/resources/META-INF/resources/page_editor/app/services/CollectionService';
-import {StoreAPIContextProvider} from '../../../../src/main/resources/META-INF/resources/page_editor/app/store';
-import {DragAndDropContextProvider} from '../../../../src/main/resources/META-INF/resources/page_editor/app/utils/useDragAndDrop';
+import {DragAndDropContextProvider} from '../../../../src/main/resources/META-INF/resources/page_editor/app/utils/drag-and-drop/useDragAndDrop';
 
 jest.mock(
 	'../../../../src/main/resources/META-INF/resources/page_editor/app/services/CollectionService',
@@ -43,13 +43,14 @@ function renderCollection(itemConfig = {}) {
 			UPDATE: true,
 			UPDATE_LAYOUT_CONTENT: true,
 		},
-		segmentsExperienceId: 0,
 	};
 
 	const defaultConfig = {
 		numberOfColumns: 1,
 		numberOfItems: 5,
 	};
+
+	const collectionItemChildren = [];
 
 	return render(
 		<DndProvider backend={HTML5Backend}>
@@ -75,7 +76,9 @@ function renderCollection(itemConfig = {}) {
 								type: 'collection-item',
 							}}
 							layoutData={{}}
-						></CollectionItemWithControls>
+						>
+							{collectionItemChildren}
+						</CollectionItemWithControls>
 					</Collection>
 				</DragAndDropContextProvider>
 			</StoreAPIContextProvider>

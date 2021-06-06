@@ -24,6 +24,7 @@ import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.processor.FragmentEntryProcessor;
 import com.liferay.fragment.processor.FragmentEntryProcessorContext;
 import com.liferay.fragment.processor.PortletRegistry;
+import com.liferay.info.item.InfoItemFieldValues;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -32,18 +33,18 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -93,13 +94,12 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 
 			sb.append("></lfr-editable>");
 
-			JSONObject jsonObject = JSONUtil.put(
-				"content", sb.toString()
-			).put(
-				"name", "lfr-editable:" + editableElementParser.getKey()
-			);
-
-			jsonArray.put(jsonObject);
+			jsonArray.put(
+				JSONUtil.put(
+					"content", sb.toString()
+				).put(
+					"name", "lfr-editable:" + editableElementParser.getKey()
+				));
 		}
 
 		return jsonArray;
@@ -147,7 +147,7 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 
 		Document document = _getDocument(html);
 
-		Map<Long, Map<String, Object>> infoDisplaysFieldValues =
+		Map<Long, InfoItemFieldValues> infoDisplaysFieldValues =
 			new HashMap<>();
 
 		for (Element element :
@@ -194,6 +194,29 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 							value, fragmentEntryProcessorContext.getLocale(),
 							null);
 
+					if (mappedValueConfigJSONObject.has("alt")) {
+						String alt = mappedValueConfigJSONObject.getString(
+							"alt", StringPool.BLANK);
+
+						alt = _fragmentEntryProcessorHelper.processTemplate(
+							alt, fragmentEntryProcessorContext);
+
+						mappedValueConfigJSONObject.put("alt", alt);
+					}
+
+					if (mappedValueConfigJSONObject.has("fileEntryId")) {
+						String fileEntryId =
+							mappedValueConfigJSONObject.getString(
+								"fileEntryId", StringPool.BLANK);
+
+						fileEntryId = StringUtil.trim(
+							_fragmentEntryProcessorHelper.processTemplate(
+								fileEntryId, fragmentEntryProcessorContext));
+
+						mappedValueConfigJSONObject.put(
+							"fileEntryId", fileEntryId);
+					}
+
 					value = StringUtil.replace(
 						editableElementParser.getFieldTemplate(), "field_name",
 						value);
@@ -206,7 +229,7 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 						editableValueJSONObject)) {
 
 				Object fieldValue =
-					_fragmentEntryProcessorHelper.getMappedValue(
+					_fragmentEntryProcessorHelper.getMappedInfoItemFieldValue(
 						editableValueJSONObject, infoDisplaysFieldValues,
 						fragmentEntryProcessorContext);
 
@@ -259,21 +282,28 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 					fragmentEntryProcessorContext.getLocale());
 			}
 
-			if (Objects.equals(
+			JSONObject configJSONObject = JSONUtil.merge(
+				editableValueJSONObject.getJSONObject("config"),
+				mappedValueConfigJSONObject);
+
+			JSONObject localizedJSONObject = configJSONObject.getJSONObject(
+				LocaleUtil.toLanguageId(
+					fragmentEntryProcessorContext.getLocale()));
+
+			String mapperType = configJSONObject.getString(
+				"mapperType", element.attr("type"));
+
+			if ((localizedJSONObject != null) &&
+				(localizedJSONObject.length() > 0)) {
+
+				configJSONObject = localizedJSONObject;
+			}
+
+			editableElementParser.replace(element, value, configJSONObject);
+
+			if (!Objects.equals(
 					fragmentEntryProcessorContext.getMode(),
 					FragmentEntryLinkConstants.EDIT)) {
-
-				editableElementParser.replace(element, value);
-			}
-			else {
-				JSONObject configJSONObject = JSONUtil.merge(
-					editableValueJSONObject.getJSONObject("config"),
-					mappedValueConfigJSONObject);
-
-				editableElementParser.replace(element, value, configJSONObject);
-
-				String mapperType = configJSONObject.getString(
-					"mapperType", element.attr("type"));
 
 				if (Validator.isNull(mapperType)) {
 					mapperType = element.attr("data-lfr-editable-type");
@@ -369,9 +399,16 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 	public void validateFragmentEntryHTML(String html, String configuration)
 		throws PortalException {
 
-		_validateAttributes(html);
-		_validateDuplicatedIds(html);
-		_validateEditableElements(html);
+		Document document = _getDocument(html);
+
+		_validateAttributes(document);
+
+		Elements elements = document.select(
+			"lfr-editable,*[data-lfr-editable-id]");
+
+		_validateDuplicatedIds(elements);
+
+		_validateEditableElements(elements);
 	}
 
 	private JSONObject _getDefaultEditableValuesJSONObject(String html) {
@@ -456,10 +493,8 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 				StringUtil.merge(_REQUIRED_ATTRIBUTE_NAMES)));
 	}
 
-	private void _validateAttributes(String html)
+	private void _validateAttributes(Document document)
 		throws FragmentEntryContentException {
-
-		Document document = _getDocument(html);
 
 		for (Element element : document.getElementsByTag("lfr-editable")) {
 			for (String attributeName : _REQUIRED_ATTRIBUTE_NAMES) {
@@ -480,29 +515,18 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 		}
 	}
 
-	private void _validateDuplicatedIds(String html)
+	private void _validateDuplicatedIds(Elements elements)
 		throws FragmentEntryContentException {
 
-		Document document = _getDocument(html);
+		Set<String> ids = new HashSet<>();
 
-		Elements elements = document.select(
-			"lfr-editable,*[data-lfr-editable-id]");
+		for (Element element : elements) {
+			if (ids.add(
+					EditableFragmentEntryProcessorUtil.getElementId(element))) {
 
-		Stream<Element> uniqueNodesStream = elements.stream();
+				continue;
+			}
 
-		Map<String, Long> idsMap = uniqueNodesStream.collect(
-			Collectors.groupingBy(
-				element -> EditableFragmentEntryProcessorUtil.getElementId(
-					element),
-				Collectors.counting()));
-
-		Collection<String> ids = idsMap.keySet();
-
-		Stream<String> idsStream = ids.stream();
-
-		idsStream = idsStream.filter(id -> idsMap.get(id) > 1);
-
-		if (idsStream.count() > 0) {
 			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 				"content.Language", getClass());
 
@@ -513,14 +537,10 @@ public class EditableFragmentEntryProcessor implements FragmentEntryProcessor {
 		}
 	}
 
-	private void _validateEditableElements(String html)
+	private void _validateEditableElements(Elements elements)
 		throws FragmentEntryContentException {
 
-		Document document = _getDocument(html);
-
-		for (Element element :
-				document.select("lfr-editable,*[data-lfr-editable-id]")) {
-
+		for (Element element : elements) {
 			EditableElementParser editableElementParser =
 				_getEditableElementParser(element);
 

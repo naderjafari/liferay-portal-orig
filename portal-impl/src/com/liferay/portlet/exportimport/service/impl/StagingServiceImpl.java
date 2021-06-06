@@ -24,10 +24,12 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepositoryUtil;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portlet.exportimport.service.base.StagingServiceBaseImpl;
@@ -103,6 +105,41 @@ public class StagingServiceImpl extends StagingServiceBaseImpl {
 			ExportImportThreadLocal.setStagingInProcessOnRemoteLive(
 				stagingInProcessOnLive);
 		}
+	}
+
+	@Override
+	public void enableLocalStaging(
+			long groupId, boolean branchingPublic, boolean branchingPrivate,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		Group liveGroup = groupLocalService.getGroup(groupId);
+
+		GroupPermissionUtil.check(
+			getPermissionChecker(), groupId, ActionKeys.MANAGE_STAGING);
+
+		stagingLocalService.enableLocalStaging(
+			getUserId(), liveGroup, branchingPublic, branchingPrivate,
+			serviceContext);
+	}
+
+	@Override
+	public void enableRemoteStaging(
+			long groupId, boolean branchingPublic, boolean branchingPrivate,
+			String remoteAddress, int remotePort, String remotePathContext,
+			boolean secureConnection, long remoteGroupId,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		Group stagingGroup = groupLocalService.getGroup(groupId);
+
+		GroupPermissionUtil.check(
+			getPermissionChecker(), groupId, ActionKeys.MANAGE_STAGING);
+
+		stagingLocalService.enableRemoteStaging(
+			getUserId(), stagingGroup, branchingPublic, branchingPrivate,
+			remoteAddress, remotePort, remotePathContext, secureConnection,
+			remoteGroupId, serviceContext);
 	}
 
 	@Override

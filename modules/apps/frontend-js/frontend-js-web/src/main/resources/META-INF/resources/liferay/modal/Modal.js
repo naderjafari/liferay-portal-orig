@@ -15,90 +15,14 @@
 import ClayButton from '@clayui/button';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClayModal, {useModal} from '@clayui/modal';
+import {render} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {render} from 'frontend-js-react-web';
-import dom from 'metal-dom';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import './Modal.scss';
+import delegate from '../delegate/delegate.es';
 import navigate from '../util/navigate.es';
-
-const openModal = (props) => {
-	if (
-		props &&
-		props.url &&
-		props.bodyHTML &&
-		process.env.NODE_ENV === 'development'
-	) {
-		console.warn(
-			'url and bodyHTML props are both set. bodyHTML will be ignored. Please use one or another.'
-		);
-	}
-
-	// Mount in detached node; Clay will take care of appending to `document.body`.
-	// See: https://github.com/liferay/clay/blob/master/packages/clay-shared/src/Portal.tsx
-
-	render(Modal, props, document.createElement('div'));
-};
-
-const openPortletModal = ({
-	iframeBodyCssClass,
-	portletSelector,
-	subTitle,
-	title,
-	url,
-}) => {
-	const portlet = document.querySelector(portletSelector);
-
-	if (portlet && url) {
-		const titleElement =
-			portlet.querySelector('.portlet-title') ||
-			portlet.querySelector('.portlet-title-default');
-
-		if (titleElement) {
-			if (portlet.querySelector('#cpPortletTitle')) {
-				const titleTextElement = titleElement.querySelector(
-					'.portlet-title-text'
-				);
-
-				if (titleTextElement) {
-					title = `${titleTextElement.outerHTML} - ${title}`;
-				}
-			}
-			else {
-				title = `${titleElement.textContent} - ${title}`;
-			}
-		}
-
-		let headerHTML;
-
-		if (subTitle) {
-			headerHTML = `${title}<div class="portlet-configuration-subtitle small"><span class="portlet-configuration-subtitle-text">${subTitle}</span></div>`;
-		}
-
-		openModal({
-			headerHTML,
-			iframeBodyCssClass,
-			title,
-			url,
-		});
-	}
-};
-
-/**
- * A utility with API that matches Liferay.Portlet.openWindow. The purpose of
- * this utility is backwards compatibility.
- * @deprecated As of Athanasius (7.3.x), replaced by Liferay.Portlet.openModal
- */
-const openPortletWindow = ({bodyCssClass, portlet, uri, ...otherProps}) => {
-	openPortletModal({
-		iframeBodyCssClass: bodyCssClass,
-		portletSelector: portlet,
-		url: uri,
-		...otherProps,
-	});
-};
 
 const Modal = ({
 	bodyHTML,
@@ -111,40 +35,37 @@ const Modal = ({
 	iframeProps = {},
 	onClose,
 	onOpen,
-	onSelect,
-	selectEventName,
-	selectedData,
 	size,
 	title,
 	url,
+	zIndex,
 }) => {
 	const [loading, setLoading] = useState(true);
 	const [visible, setVisible] = useState(true);
 
 	const eventHandlersRef = useRef([]);
 
+	const processClose = useCallback(() => {
+		setVisible(false);
+
+		document.body.classList.remove('modal-open');
+
+		const eventHandlers = eventHandlersRef.current;
+
+		eventHandlers.forEach((eventHandler) => {
+			eventHandler.detach();
+		});
+
+		eventHandlers.splice(0, eventHandlers.length);
+
+		if (onClose) {
+			onClose();
+		}
+	}, [eventHandlersRef, onClose]);
+
 	const {observer} = useModal({
 		onClose: () => processClose(),
 	});
-
-	const disableSelectedItems = ({container}) => {
-		if (!selectedData) {
-			return;
-		}
-
-		const selectedDataSet = new Set(selectedData);
-
-		const itemElements = container.querySelectorAll('.selector-button');
-
-		itemElements.forEach((itemElement) => {
-			const itemId =
-				itemElement.dataset.entityid || itemElement.dataset.entityname;
-
-			if (selectedDataSet.has(itemId)) {
-				itemElement.disabled = true;
-			}
-		});
-	};
 
 	const onButtonClick = ({formId, onClick, type}) => {
 		if (type === 'cancel') {
@@ -179,27 +100,9 @@ const Modal = ({
 		}
 
 		if (onClick) {
-			onClick();
+			onClick({processClose});
 		}
 	};
-
-	const processClose = useCallback(() => {
-		setVisible(false);
-
-		document.body.classList.remove('modal-open');
-
-		const eventHandlers = eventHandlersRef.current;
-
-		eventHandlers.forEach((eventHandler) => {
-			eventHandler.detach();
-		});
-
-		eventHandlers.splice(0, eventHandlers.length);
-
-		if (onClose) {
-			onClose();
-		}
-	}, [eventHandlersRef, onClose]);
 
 	const Body = ({html}) => {
 		const bodyRef = useRef();
@@ -209,14 +112,12 @@ const Modal = ({
 				.createRange()
 				.createContextualFragment(html);
 
-			disableSelectedItems({container: fragment});
-
 			bodyRef.current.innerHTML = '';
 
 			bodyRef.current.appendChild(fragment);
 
 			if (onOpen) {
-				onOpen();
+				onOpen({container: fragment, processClose});
 			}
 		}, [html]);
 
@@ -225,19 +126,6 @@ const Modal = ({
 
 	useEffect(() => {
 		const eventHandlers = eventHandlersRef.current;
-
-		if (onSelect && selectEventName) {
-			const selectEventHandler = Liferay.on(
-				selectEventName,
-				(selectedItem) => {
-					processClose();
-
-					onSelect(selectedItem);
-				}
-			);
-
-			eventHandlers.push(selectEventHandler);
-		}
 
 		if (customEvents) {
 			customEvents.forEach((customEvent) => {
@@ -275,16 +163,7 @@ const Modal = ({
 
 			eventHandlers.splice(0, eventHandlers.length);
 		};
-	}, [
-		customEvents,
-		eventHandlersRef,
-		id,
-		onClose,
-		onOpen,
-		onSelect,
-		processClose,
-		selectEventName,
-	]);
+	}, [customEvents, eventHandlersRef, id, onClose, onOpen, processClose]);
 
 	return (
 		<>
@@ -294,6 +173,7 @@ const Modal = ({
 					id={id}
 					observer={observer}
 					size={url && !size ? 'full-screen' : size}
+					zIndex={zIndex}
 				>
 					<ClayModal.Header>
 						{headerHTML ? (
@@ -318,7 +198,6 @@ const Modal = ({
 							<>
 								{loading && <ClayLoadingIndicator />}
 								<Iframe
-									disableSelectedItems={disableSelectedItems}
 									iframeBodyCssClass={iframeBodyCssClass}
 									iframeProps={{
 										id: id && `${id}_iframe_`,
@@ -368,6 +247,241 @@ const Modal = ({
 	);
 };
 
+const openModal = (props) => {
+	if (
+		props &&
+		props.url &&
+		props.bodyHTML &&
+		process.env.NODE_ENV === 'development'
+	) {
+		console.warn(
+			'url and bodyHTML props are both set. bodyHTML will be ignored. Please use one or another.'
+		);
+	}
+
+	// Mount in detached node; Clay will take care of appending to `document.body`.
+	// See: https://github.com/liferay/clay/blob/master/packages/clay-shared/src/Portal.tsx
+
+	render(Modal, props, document.createElement('div'));
+};
+
+const openPortletModal = ({
+	iframeBodyCssClass,
+	onClose,
+	portletSelector,
+	subTitle,
+	title,
+	url,
+}) => {
+	const portlet = document.querySelector(portletSelector);
+
+	if (portlet && url) {
+		const titleElement =
+			portlet.querySelector('.portlet-title') ||
+			portlet.querySelector('.portlet-title-default');
+
+		if (titleElement) {
+			if (portlet.querySelector('#cpPortletTitle')) {
+				const titleTextElement = titleElement.querySelector(
+					'.portlet-title-text'
+				);
+
+				if (titleTextElement) {
+					title = `${titleTextElement.outerHTML} - ${title}`;
+				}
+			}
+			else {
+				title = `${titleElement.textContent} - ${title}`;
+			}
+		}
+
+		let headerHTML;
+
+		if (subTitle) {
+			headerHTML = `${title}<div class="portlet-configuration-subtitle small"><span class="portlet-configuration-subtitle-text">${subTitle}</span></div>`;
+		}
+
+		openModal({
+			headerHTML,
+			iframeBodyCssClass,
+			onClose,
+			title,
+			url,
+		});
+	}
+};
+
+/**
+ * A utility with API that matches Liferay.Portlet.openWindow. The purpose of
+ * this utility is backwards compatibility.
+ * @deprecated As of Athanasius (7.3.x), replaced by Liferay.Portlet.openModal
+ */
+const openPortletWindow = ({bodyCssClass, portlet, uri, ...otherProps}) => {
+	openPortletModal({
+		iframeBodyCssClass: bodyCssClass,
+		portletSelector: portlet,
+		url: uri,
+		...otherProps,
+	});
+};
+
+const openSelectionModal = ({
+	buttonAddLabel = Liferay.Language.get('add'),
+	buttonCancelLabel = Liferay.Language.get('cancel'),
+	customSelectEvent = false,
+	height,
+	id,
+	multiple = false,
+	onClose,
+	onSelect,
+	selectEventName,
+	selectedData,
+	size,
+	title,
+	url,
+	zIndex,
+}) => {
+	const eventHandlers = [];
+	let iframeWindowObj;
+	let processCloseFn;
+	let selectedItem;
+
+	const select = () => {
+		if (multiple && !selectedItem) {
+			const searchContainer = iframeWindowObj.document.querySelector(
+				'.searchcontainer'
+			);
+
+			if (searchContainer) {
+				iframeWindowObj.Liferay.componentReady(searchContainer.id).then(
+					(searchContainer) => {
+						const allSelectedElements = searchContainer.select.getAllSelectedElements();
+
+						const allSelectedNodes = allSelectedElements.getDOMNodes();
+
+						onSelect(
+							allSelectedNodes.map((node) => {
+								let item = {};
+
+								if (node.value) {
+									item.value = node.value;
+								}
+
+								const row = node.closest('tr, li');
+
+								if (row && Object.keys(row.dataset).length) {
+									item = {...item, ...row.dataset};
+								}
+
+								return item;
+							})
+						);
+
+						processCloseFn();
+					}
+				);
+			}
+		}
+		else {
+			onSelect(selectedItem);
+
+			processCloseFn();
+		}
+	};
+
+	openModal({
+		buttons: multiple
+			? [
+					{
+						displayType: 'secondary',
+						label: buttonCancelLabel,
+						type: 'cancel',
+					},
+					{
+						label: buttonAddLabel,
+						onClick: select,
+					},
+			  ]
+			: null,
+		height,
+		id: id || selectEventName,
+		onClose: () => {
+			eventHandlers.forEach((eventHandler) => {
+				eventHandler.detach();
+			});
+
+			eventHandlers.splice(0, eventHandlers.length);
+
+			if (onClose) {
+				onClose();
+			}
+		},
+		onOpen: ({iframeWindow, processClose}) => {
+			iframeWindowObj = iframeWindow;
+			processCloseFn = processClose;
+
+			const iframeBody = iframeWindow.document.body;
+
+			const itemElements = iframeBody.querySelectorAll(
+				'.selector-button'
+			);
+
+			if (selectedData) {
+				const selectedDataSet = new Set(selectedData);
+
+				itemElements.forEach((itemElement) => {
+					const itemId =
+						itemElement.dataset.entityid ||
+						itemElement.dataset.entityname;
+
+					if (selectedDataSet.has(itemId)) {
+						itemElement.disabled = true;
+						itemElement.classList.add('disabled');
+					}
+					else {
+						itemElement.disabled = false;
+						itemElement.classList.remove('disabled');
+					}
+				});
+			}
+
+			if (selectEventName) {
+				const selectEventHandler = Liferay.on(
+					selectEventName,
+					(event) => {
+						selectedItem = event.data || event;
+
+						if (!multiple) {
+							select();
+						}
+					}
+				);
+
+				eventHandlers.push(selectEventHandler);
+
+				if (!customSelectEvent) {
+					iframeBody.addEventListener('click', (event) => {
+						const delegateTarget = event.target?.closest(
+							'.selector-button'
+						);
+
+						if (delegateTarget) {
+							Liferay.fire(
+								selectEventName,
+								delegateTarget.dataset
+							);
+						}
+					});
+				}
+			}
+		},
+		size,
+		title,
+		url,
+		zIndex,
+	});
+};
+
 const CSS_CLASS_IFRAME_BODY = 'dialog-iframe-popup';
 
 class Iframe extends React.Component {
@@ -388,17 +502,7 @@ class Iframe extends React.Component {
 
 		iframeURL.searchParams.set(`_${namespace}_bodyCssClass`, bodyCssClass);
 
-		this.state = {loading: true, src: iframeURL.toString()};
-	}
-
-	componentDidUpdate(prevProps, prevState) {
-		if (!this.state.loading && prevState.loading) {
-			Liferay.fire('modalIframeLoaded', {src: this.state.src});
-
-			if (this.props.onOpen) {
-				this.props.onOpen();
-			}
-		}
+		this.state = {src: iframeURL.toString()};
 	}
 
 	componentWillUnmount() {
@@ -407,14 +511,14 @@ class Iframe extends React.Component {
 		}
 
 		if (this.delegateHandler) {
-			this.delegateHandler.removeListener();
+			this.delegateHandler.dispose();
 		}
 	}
 
 	onLoadHandler = () => {
 		const iframeWindow = this.iframeRef.current.contentWindow;
 
-		this.delegateHandler = dom.delegate(
+		this.delegateHandler = delegate(
 			iframeWindow.document,
 			'click',
 			'.btn-cancel,.lfr-hide-dialog',
@@ -434,28 +538,26 @@ class Iframe extends React.Component {
 			);
 		}
 
-		this.props.disableSelectedItems({
-			container: iframeWindow.document.body,
-		});
-
 		this.props.updateLoading(false);
-
-		this.setState({loading: false});
 
 		iframeWindow.onunload = () => {
 			this.props.updateLoading(true);
-
-			this.setState({loading: true});
 		};
+
+		Liferay.fire('modalIframeLoaded', {src: this.state.src});
+
+		if (this.props.onOpen) {
+			this.props.onOpen({
+				iframeWindow,
+				processClose: this.props.processClose,
+			});
+		}
 	};
 
 	render() {
 		return (
 			<iframe
 				{...this.props.iframeProps}
-				className={classNames({
-					hide: this.state.loading,
-				})}
 				onLoad={this.onLoadHandler}
 				ref={this.iframeRef}
 				src={this.state.src}
@@ -494,12 +596,15 @@ Modal.propTypes = {
 	iframeProps: PropTypes.object,
 	onClose: PropTypes.func,
 	onOpen: PropTypes.func,
-	onSelect: PropTypes.func,
-	selectEventName: PropTypes.string,
-	selectedData: PropTypes.array,
-	size: PropTypes.oneOf(['full-screen', 'lg', 'sm']),
+	size: PropTypes.oneOf(['full-screen', 'lg', 'md', 'sm']),
 	title: PropTypes.string,
 	url: PropTypes.string,
 };
 
-export {Modal, openModal, openPortletModal, openPortletWindow};
+export {
+	Modal,
+	openModal,
+	openPortletModal,
+	openPortletWindow,
+	openSelectionModal,
+};

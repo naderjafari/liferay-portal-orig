@@ -23,7 +23,6 @@ const Layout = ({
 	getItemChildrenURL,
 	initialBreadcrumbEntries,
 	initialLayoutColumns,
-	languageDirection,
 	languageId,
 	moveItemURL,
 	namespace,
@@ -119,8 +118,12 @@ const Layout = ({
 	const saveData = (movedItems, parentItemId) => {
 		const formData = new FormData();
 
-		const [, mainColumn] = layoutColumns;
-		const activeItem = mainColumn.find((item) => item.active);
+		const activeItems = layoutColumns.reduce(
+			(acc, column) => [...acc, ...column.filter((item) => item.active)],
+			[]
+		);
+
+		const activeItem = activeItems[activeItems.length - 1];
 
 		formData.append(`${namespace}plids`, JSON.stringify(movedItems));
 		formData.append(`${namespace}parentPlid`, parentItemId);
@@ -138,7 +141,6 @@ const Layout = ({
 				if (errorMessage) {
 					openToast({
 						message: errorMessage,
-						title: Liferay.Language.get('error'),
 						type: 'danger',
 					});
 				}
@@ -175,7 +177,7 @@ const Layout = ({
 				onColumnsChange={updateBreadcrumbs}
 				onItemMove={saveData}
 				onItemStayHover={getItemChildren}
-				rtl={languageDirection[languageId] === 'rtl'}
+				rtl={Liferay.Language.direction[languageId] === 'rtl'}
 				searchContainer={searchContainerElement}
 			/>
 		</div>
@@ -187,7 +189,6 @@ export default function ({
 	props: {
 		breadcrumbEntries,
 		getItemChildrenURL,
-		languageDirection,
 		languageId,
 		layoutColumns,
 		moveItemURL,
@@ -199,7 +200,6 @@ export default function ({
 			getItemChildrenURL={getItemChildrenURL}
 			initialBreadcrumbEntries={breadcrumbEntries}
 			initialLayoutColumns={layoutColumns}
-			languageDirection={languageDirection}
 			languageId={languageId}
 			moveItemURL={moveItemURL}
 			namespace={namespace}

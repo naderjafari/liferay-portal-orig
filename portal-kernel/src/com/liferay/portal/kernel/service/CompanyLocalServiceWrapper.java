@@ -46,10 +46,10 @@ public class CompanyLocalServiceWrapper
 	}
 
 	/**
-	 * Adds a company.
+	 * Adds a company with the primary key.
 	 *
-	 * @param companyId the primary key of the company (<code>null</code> or
-	 <code>0</code> to generate it automatically)
+	 * @param companyId the primary key of the company (optionally <code>null</code> or
+	 <code>0</code> to generate a key automatically)
 	 * @param webId the the company's web domain
 	 * @param virtualHostname the company's virtual host name
 	 * @param mx the company's mail domain
@@ -59,7 +59,6 @@ public class CompanyLocalServiceWrapper
 	 <code>0</code>)
 	 * @param active whether the company is active
 	 * @return the company
-	 * @review
 	 */
 	@Override
 	public com.liferay.portal.kernel.model.Company addCompany(
@@ -238,6 +237,13 @@ public class CompanyLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _companyLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _companyLocalService.dynamicQuery();
 	}
@@ -359,6 +365,44 @@ public class CompanyLocalServiceWrapper
 		java.lang.String virtualHostname) {
 
 		return _companyLocalService.fetchCompanyByVirtualHost(virtualHostname);
+	}
+
+	@Override
+	public <E extends java.lang.Exception> void forEachCompany(
+			com.liferay.petra.function.UnsafeConsumer
+				<com.liferay.portal.kernel.model.Company, E> unsafeConsumer)
+		throws E {
+
+		_companyLocalService.forEachCompany(unsafeConsumer);
+	}
+
+	@Override
+	public <E extends java.lang.Exception> void forEachCompany(
+			com.liferay.petra.function.UnsafeConsumer
+				<com.liferay.portal.kernel.model.Company, E> unsafeConsumer,
+			java.util.List<com.liferay.portal.kernel.model.Company> companies)
+		throws E {
+
+		_companyLocalService.forEachCompany(unsafeConsumer, companies);
+	}
+
+	@Override
+	public <E extends java.lang.Exception> void forEachCompanyId(
+			com.liferay.petra.function.UnsafeConsumer<java.lang.Long, E>
+				unsafeConsumer)
+		throws E {
+
+		_companyLocalService.forEachCompanyId(unsafeConsumer);
+	}
+
+	@Override
+	public <E extends java.lang.Exception> void forEachCompanyId(
+			com.liferay.petra.function.UnsafeConsumer<java.lang.Long, E>
+				unsafeConsumer,
+			long[] companyIds)
+		throws E {
+
+		_companyLocalService.forEachCompanyId(unsafeConsumer, companyIds);
 	}
 
 	@Override

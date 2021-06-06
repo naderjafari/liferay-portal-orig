@@ -18,14 +18,14 @@ import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
 import {CollectionWithControls} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 
 const renderCollection = ({
 	isActive = true,
@@ -82,12 +82,6 @@ describe('CollectionWithControls', () => {
 		const {getByText} = renderCollection();
 
 		expect(getByText('no-collection-selected-yet')).toBeInTheDocument();
-	});
-
-	it('hides FloatingToolbar if item is not active', async () => {
-		const {queryByTitle} = renderCollection({isActive: false});
-
-		expect(queryByTitle('collection-display-configuration')).toBe(null);
 	});
 
 	it('removes all buttons if user has no permissions', () => {

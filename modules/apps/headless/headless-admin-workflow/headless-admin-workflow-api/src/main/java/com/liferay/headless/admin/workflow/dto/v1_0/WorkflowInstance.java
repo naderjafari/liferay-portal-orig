@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,10 +48,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WorkflowInstance")
+@GraphQLName(
+	description = "Represents an instance to be executed in a workflow.",
+	value = "WorkflowInstance"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WorkflowInstance")
-public class WorkflowInstance {
+public class WorkflowInstance implements Serializable {
 
 	public static WorkflowInstance toDTO(String json) {
 		return ObjectMapperUtil.readValue(WorkflowInstance.class, json);
@@ -203,6 +208,34 @@ public class WorkflowInstance {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected ObjectReviewed objectReviewed;
 
+	@Schema(description = "The instance's current state.")
+	public String getState() {
+		return state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	@JsonIgnore
+	public void setState(
+		UnsafeSupplier<String, Exception> stateUnsafeSupplier) {
+
+		try {
+			state = stateUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The instance's current state.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String state;
+
 	@Schema(description = "The name of the instance's workflow definition.")
 	public String getWorkflowDefinitionName() {
 		return workflowDefinitionName;
@@ -352,6 +385,20 @@ public class WorkflowInstance {
 			sb.append(String.valueOf(objectReviewed));
 		}
 
+		if (state != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"state\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(state));
+
+			sb.append("\"");
+		}
+
 		if (workflowDefinitionName != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -386,6 +433,7 @@ public class WorkflowInstance {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.WorkflowInstance",
 		name = "x-class-name"
 	)
@@ -421,7 +469,7 @@ public class WorkflowInstance {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -460,7 +508,7 @@ public class WorkflowInstance {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

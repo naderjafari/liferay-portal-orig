@@ -14,6 +14,9 @@
 
 package com.liferay.jenkins.results.parser;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author Michael Hashimoto
  */
@@ -28,6 +31,11 @@ public class QAWebsitesTopLevelBuild
 	}
 
 	@Override
+	public String getBaseGitRepositoryName() {
+		return "liferay-qa-websites-ee";
+	}
+
+	@Override
 	public BranchInformation getPortalBaseBranchInformation() {
 		return null;
 	}
@@ -35,6 +43,13 @@ public class QAWebsitesTopLevelBuild
 	@Override
 	public BranchInformation getPortalBranchInformation() {
 		return _portalMasterBranchInformation;
+	}
+
+	@Override
+	public List<String> getProjectNames() {
+		String projectNames = getParameterValue("PROJECT_NAMES");
+
+		return Arrays.asList(projectNames.split(","));
 	}
 
 	@Override

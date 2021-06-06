@@ -36,21 +36,28 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.BaseModelListener;
+import com.liferay.portal.kernel.model.Contact;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.ShardedModel;
+import com.liferay.portal.kernel.model.Team;
 import com.liferay.portal.kernel.model.TreeModel;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.CompanyService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.nio.charset.Charset;
 
@@ -58,16 +65,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
+import org.osgi.annotation.versioning.ProviderType;
 import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Rachael Koestartyo
  */
+@ProviderType
 public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 	extends BaseModelListener<T> implements EntityModelListener<T> {
 
@@ -75,15 +86,29 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 	public void addAnalyticsMessage(
 		String eventType, List<String> includeAttributeNames, T model) {
 
-		if (isExcluded(model)) {
+		String modelClassName = model.getModelClassName();
+
+		if (modelClassName.equals(Contact.class.getName())) {
+			Contact contact = (Contact)model;
+
+			if (isUserExcluded(
+					userLocalService.fetchUser(contact.getClassPK()))) {
+
+				return;
+			}
+		}
+		else if (modelClassName.equals(User.class.getName())) {
+			if (isUserExcluded((User)model)) {
+				return;
+			}
+		}
+		else if (isExcluded(model)) {
 			return;
 		}
 
 		JSONObject jsonObject = serialize(model, includeAttributeNames);
 
 		ShardedModel shardedModel = (ShardedModel)model;
-
-		String modelClassName = model.getModelClassName();
 
 		if (modelClassName.equals(ExpandoRow.class.getName())) {
 			ExpandoRow expandoRow = (ExpandoRow)model;
@@ -153,7 +178,10 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 			return;
 		}
 
-		addAnalyticsMessage("add", getAttributeNames(), model);
+		ShardedModel shardedModel = (ShardedModel)model;
+
+		addAnalyticsMessage(
+			"add", getAttributeNames(shardedModel.getCompanyId()), model);
 	}
 
 	@Override
@@ -186,16 +214,20 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 			return;
 		}
 
+		ShardedModel shardedModel = (ShardedModel)model;
+
 		try {
 			List<String> modifiedAttributeNames = _getModifiedAttributeNames(
-				getAttributeNames(), model,
+				getAttributeNames(shardedModel.getCompanyId()), model,
 				getModel((long)model.getPrimaryKeyObj()));
 
 			if (modifiedAttributeNames.isEmpty()) {
 				return;
 			}
 
-			addAnalyticsMessage("update", getAttributeNames(), model);
+			addAnalyticsMessage(
+				"update", getAttributeNames(shardedModel.getCompanyId()),
+				model);
 		}
 		catch (Exception exception) {
 			throw new ModelListenerException(exception);
@@ -214,7 +246,7 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 		actionableDynamicQuery.setCompanyId(companyId);
 		actionableDynamicQuery.setPerformActionMethod(
 			(T model) -> addAnalyticsMessage(
-				"add", getAttributeNames(), model));
+				"add", getAttributeNames(companyId), model));
 
 		actionableDynamicQuery.performActions();
 	}
@@ -231,8 +263,36 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 
 	protected abstract String getPrimaryKeyName();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getUserAttributeNames(long)}
+	 */
+	@Deprecated
 	protected List<String> getUserAttributeNames() {
-		return _userAttributeNames;
+		return null;
+	}
+
+	protected List<String> getUserAttributeNames(long companyId) {
+		AnalyticsConfiguration analyticsConfiguration =
+			analyticsConfigurationTracker.getAnalyticsConfiguration(companyId);
+
+		if (ArrayUtil.isEmpty(analyticsConfiguration.syncedUserFieldNames())) {
+			return _userAttributeNames;
+		}
+
+		List<String> attributeNames = new ArrayList<>();
+
+		attributeNames.add("expando");
+		attributeNames.add("memberships");
+
+		for (String name : _userAttributeNames) {
+			if (ArrayUtil.contains(
+					analyticsConfiguration.syncedUserFieldNames(), name)) {
+
+				attributeNames.add(name);
+			}
+		}
+
+		return attributeNames;
 	}
 
 	protected boolean isCustomField(String className, long tableId) {
@@ -274,10 +334,12 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 	}
 
 	protected boolean isUserExcluded(User user) {
-		if ((user == null) || !user.isActive() ||
+		if ((user == null) ||
 			Objects.equals(
 				user.getScreenName(),
-				AnalyticsSecurityConstants.SCREEN_NAME_ANALYTICS_ADMIN)) {
+				AnalyticsSecurityConstants.SCREEN_NAME_ANALYTICS_ADMIN) ||
+			Objects.equals(
+				user.getStatus(), WorkflowConstants.STATUS_INACTIVE)) {
 
 			return true;
 		}
@@ -332,11 +394,89 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 		Map<String, Object> modelAttributes = baseModel.getModelAttributes();
 
 		for (String includeAttributeName : includeAttributeNames) {
-			if (includeAttributeName.equals("expando")) {
-				jsonObject.put(
-					"expando",
-					AnalyticsExpandoBridgeUtil.getAttributes(
-						baseModel.getExpandoBridge()));
+			if (includeAttributeName.equals("associations") &&
+				StringUtil.equals(
+					baseModel.getModelClassName(), User.class.getName())) {
+
+				Map<String, long[]> memberships = new HashMap<>();
+
+				User user = (User)baseModel;
+
+				try {
+					List<Group> groups = user.getSiteGroups();
+
+					Stream<Group> stream = groups.stream();
+
+					long[] membershipIds = stream.mapToLong(
+						Group::getGroupId
+					).toArray();
+
+					if (membershipIds.length != 0) {
+						memberships.put(Group.class.getName(), membershipIds);
+					}
+				}
+				catch (Exception exception) {
+					_log.error(exception, exception);
+				}
+
+				try {
+					long[] membershipIds = user.getOrganizationIds();
+
+					if (membershipIds.length != 0) {
+						memberships.put(
+							Organization.class.getName(), membershipIds);
+					}
+				}
+				catch (Exception exception) {
+					_log.error(exception, exception);
+				}
+
+				long[] membershipIds = user.getRoleIds();
+
+				if (membershipIds.length != 0) {
+					memberships.put(Role.class.getName(), membershipIds);
+				}
+
+				membershipIds = user.getTeamIds();
+
+				if (membershipIds.length != 0) {
+					memberships.put(Team.class.getName(), membershipIds);
+				}
+
+				membershipIds = user.getUserGroupIds();
+
+				if (membershipIds.length != 0) {
+					memberships.put(UserGroup.class.getName(), membershipIds);
+				}
+
+				jsonObject.put("memberships", memberships);
+
+				continue;
+			}
+			else if (includeAttributeName.equals("expando")) {
+				if (StringUtil.equals(
+						baseModel.getModelClassName(), User.class.getName())) {
+
+					ShardedModel shardedModel = (ShardedModel)baseModel;
+
+					AnalyticsConfiguration analyticsConfiguration =
+						analyticsConfigurationTracker.getAnalyticsConfiguration(
+							shardedModel.getCompanyId());
+
+					jsonObject.put(
+						"expando",
+						AnalyticsExpandoBridgeUtil.getAttributes(
+							baseModel.getExpandoBridge(),
+							ListUtil.fromArray(
+								analyticsConfiguration.
+									syncedUserFieldNames())));
+				}
+				else {
+					jsonObject.put(
+						"expando",
+						AnalyticsExpandoBridgeUtil.getAttributes(
+							baseModel.getExpandoBridge(), null));
+				}
 
 				continue;
 			}
@@ -377,7 +517,9 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 			}
 		}
 
-		jsonObject.put(getPrimaryKeyName(), baseModel.getPrimaryKeyObj());
+		if (modelAttributes.containsKey(getPrimaryKeyName())) {
+			jsonObject.put(getPrimaryKeyName(), baseModel.getPrimaryKeyObj());
+		}
 
 		return jsonObject;
 	}
@@ -552,8 +694,32 @@ public abstract class BaseEntityModelListener<T extends BaseModel<T>>
 
 			User user = userLocalService.fetchUser((long)associationClassPK);
 
-			if (isUserExcluded(user)) {
+			if (!eventType.equals("deleteAssociation") &&
+				isUserExcluded(user)) {
+
 				return;
+			}
+
+			if (!eventType.equals("deleteAssociation")) {
+				List<String> userAttributeNames = getUserAttributeNames(
+					user.getCompanyId());
+
+				userAttributeNames.add("associations");
+				userAttributeNames.add("userId");
+
+				addAnalyticsMessage("update", userAttributeNames, (T)user);
+
+				if (user.fetchContact() != null) {
+					AnalyticsConfiguration analyticsConfiguration =
+						analyticsConfigurationTracker.getAnalyticsConfiguration(
+							user.getCompanyId());
+
+					addAnalyticsMessage(
+						"update",
+						Arrays.asList(
+							analyticsConfiguration.syncedContactFieldNames()),
+						(T)user.fetchContact());
+				}
 			}
 
 			Map<String, Object> modelAttributes = model.getModelAttributes();

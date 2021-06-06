@@ -24,7 +24,9 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.RandomUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -95,18 +97,22 @@ public class OptionsDDMFormFieldContextHelper {
 	}
 
 	protected List<Object> createDefaultOptions() {
-		List<Object> options = new ArrayList<>();
-
 		String defaultOptionLabel = getDefaultOptionLabel();
 
-		options.add(createOption(defaultOptionLabel, defaultOptionLabel));
+		String defaultOptionValue = getDefaultOptionValue(defaultOptionLabel);
 
-		return options;
+		return ListUtil.fromArray(
+			createOption(
+				defaultOptionLabel, defaultOptionValue, defaultOptionValue));
 	}
 
-	protected Map<String, String> createOption(String label, String value) {
+	protected Map<String, String> createOption(
+		String label, String reference, String value) {
+
 		return HashMapBuilder.put(
 			"label", label
+		).put(
+			"reference", reference
 		).put(
 			"value", value
 		).build();
@@ -119,7 +125,9 @@ public class OptionsDDMFormFieldContextHelper {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
 
 			Map<String, String> option = createOption(
-				jsonObject.getString("label"), jsonObject.getString("value"));
+				jsonObject.getString("label"),
+				jsonObject.getString("reference"),
+				jsonObject.getString("value"));
 
 			options.add(option);
 		}
@@ -134,12 +142,23 @@ public class OptionsDDMFormFieldContextHelper {
 		return LanguageUtil.get(resourceBundle, "option");
 	}
 
+	protected String getDefaultOptionValue(String defaultOptionValue) {
+		for (int i = 0; i < _DEFAULT_OPTION_VALUE_RANDOM_NUMBERS_LENGTH; i++) {
+			defaultOptionValue = defaultOptionValue.concat(
+				String.valueOf(RandomUtil.nextInt(10)));
+		}
+
+		return defaultOptionValue;
+	}
+
 	protected ResourceBundle getResourceBundle(Locale locale) {
 		Class<?> clazz = getClass();
 
 		return ResourceBundleUtil.getBundle(
 			"content.Language", locale, clazz.getClassLoader());
 	}
+
+	private static final int _DEFAULT_OPTION_VALUE_RANDOM_NUMBERS_LENGTH = 8;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		OptionsDDMFormFieldContextHelper.class);

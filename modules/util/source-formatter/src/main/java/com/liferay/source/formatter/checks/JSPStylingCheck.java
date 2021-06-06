@@ -31,6 +31,8 @@ public class JSPStylingCheck extends BaseStylingCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
+		content = _combineJavaSourceBlocks(content);
+
 		content = _formatLineBreak(fileName, content);
 
 		content = _fixEmptyJavaSourceTag(content);
@@ -58,12 +60,36 @@ public class JSPStylingCheck extends BaseStylingCheck {
 		content = content.replaceAll(
 			"((['\"])<%= ((?<!%>).)*?)\\\\(\".+?)\\\\(\".*?%>\\2)", "$1$4$5");
 
+		Matcher matcher = _portletNamespacePattern.matcher(content);
+
+		while (matcher.find()) {
+			String s = matcher.group(2);
+
+			if (s.endsWith(StringPool.CLOSE_PARENTHESIS) &&
+				(getLevel(s) == 0)) {
+
+				return StringUtil.insert(
+					content, StringPool.SEMICOLON, matcher.end() - 1);
+			}
+		}
+
 		return formatStyling(content);
 	}
 
 	@Override
 	protected boolean isJavaSource(String content, int pos) {
 		return JSPSourceUtil.isJavaSource(content, pos, true);
+	}
+
+	private String _combineJavaSourceBlocks(String content) {
+		Matcher matcher = _adjacentJavaBlocksPattern.matcher(content);
+
+		if (matcher.find()) {
+			return StringUtil.replaceFirst(
+				content, matcher.group(), "\n\n", matcher.start() - 1);
+		}
+
+		return content;
 	}
 
 	private String _fixEmptyJavaSourceTag(String content) {
@@ -140,9 +166,19 @@ public class JSPStylingCheck extends BaseStylingCheck {
 
 		matcher = _incorrectLineBreakPattern3.matcher(content);
 
+		while (matcher.find()) {
+			addMessage(
+				fileName, "There should be a line break after '<%='",
+				getLineNumber(content, matcher.start()));
+		}
+
+		matcher = _incorrectLineBreakPattern4.matcher(content);
+
 		return matcher.replaceAll("$1\n\t$2$4\n$2$5");
 	}
 
+	private static final Pattern _adjacentJavaBlocksPattern = Pattern.compile(
+		"\n\t*%>\n+\t*<%\n");
 	private static final Pattern _emptyJavaSourceTagPattern = Pattern.compile(
 		"\n\t*<%\\!?\n+\t*%>(\n|\\Z)");
 	private static final Pattern _incorrectClosingTagPattern = Pattern.compile(
@@ -152,8 +188,12 @@ public class JSPStylingCheck extends BaseStylingCheck {
 	private static final Pattern _incorrectLineBreakPattern2 = Pattern.compile(
 		"=(\n\\s*).*;\n");
 	private static final Pattern _incorrectLineBreakPattern3 = Pattern.compile(
+		"<%= *\\S((?!%>).)*\n");
+	private static final Pattern _incorrectLineBreakPattern4 = Pattern.compile(
 		"(\n(\t*)<(\\w+)>)(<\\w+>.*)(</\\3>\n)");
 	private static final Pattern _incorrectSingleLineJavaSourcePattern =
 		Pattern.compile("(\t*)(<% (.*) %>)\n");
+	private static final Pattern _portletNamespacePattern = Pattern.compile(
+		"=([\"'])<portlet:namespace />(\\w+\\(.*?)\\1");
 
 }

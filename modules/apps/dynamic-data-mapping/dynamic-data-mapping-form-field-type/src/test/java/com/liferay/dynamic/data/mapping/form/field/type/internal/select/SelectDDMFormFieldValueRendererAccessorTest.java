@@ -25,12 +25,12 @@ import com.liferay.dynamic.data.mapping.test.util.DDMFormValuesTestUtil;
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.util.HtmlImpl;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -38,10 +38,10 @@ import org.junit.Test;
  */
 public class SelectDDMFormFieldValueRendererAccessorTest {
 
-	@Before
-	public void setUp() {
-		_setUpHtmlUtil();
-	}
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testRenderMultipleValues() throws Exception {
@@ -64,11 +64,13 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 		DDMFormValues ddmFormValues = DDMFormValuesTestUtil.createDDMFormValues(
 			ddmForm);
 
-		JSONArray optionsValues = createOptionsValuesJSONArray(numberOfOptions);
+		JSONArray optionsValuesJSONArray = createOptionsValuesJSONArray(
+			numberOfOptions);
 
 		DDMFormFieldValue ddmFormFieldValue =
 			DDMFormValuesTestUtil.createDDMFormFieldValue(
-				"Select", new UnlocalizedValue(optionsValues.toString()));
+				"Select",
+				new UnlocalizedValue(optionsValuesJSONArray.toString()));
 
 		ddmFormValues.addDDMFormFieldValue(ddmFormFieldValue);
 
@@ -102,11 +104,13 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 		DDMFormValues ddmFormValues = DDMFormValuesTestUtil.createDDMFormValues(
 			ddmForm);
 
-		JSONArray optionsValues = createOptionsValuesJSONArray(numberOfOptions);
+		JSONArray optionsValuesJSONArray = createOptionsValuesJSONArray(
+			numberOfOptions);
 
 		DDMFormFieldValue ddmFormFieldValue =
 			DDMFormValuesTestUtil.createDDMFormFieldValue(
-				"Select", new UnlocalizedValue(optionsValues.toString()));
+				"Select",
+				new UnlocalizedValue(optionsValuesJSONArray.toString()));
 
 		ddmFormValues.addDDMFormFieldValue(ddmFormFieldValue);
 
@@ -164,12 +168,6 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 			createSelectDDMFormFieldValueAccessor();
 
 		return selectDDMFormFieldValueRenderer;
-	}
-
-	private void _setUpHtmlUtil() {
-		HtmlUtil htmlUtil = new HtmlUtil();
-
-		htmlUtil.setHtml(new HtmlImpl());
 	}
 
 	private final JSONFactory _jsonFactory = new JSONFactoryImpl();

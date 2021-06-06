@@ -80,8 +80,8 @@ public abstract class BaseDataDefinitionFieldLinkResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/data-engine/v2.0/data-definitions/{dataDefinitionId}/data-definition-field-links'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Parameters(
 		value = {
 			@Parameter(in = ParameterIn.PATH, name = "dataDefinitionId"),
@@ -94,7 +94,8 @@ public abstract class BaseDataDefinitionFieldLinkResourceImpl
 	public Page<DataDefinitionFieldLink>
 			getDataDefinitionDataDefinitionFieldLinkPage(
 				@NotNull @Parameter(hidden = true)
-				@PathParam("dataDefinitionId") Long dataDefinitionId,
+				@PathParam("dataDefinitionId")
+				Long dataDefinitionId,
 				@Parameter(hidden = true) @QueryParam("fieldName") String
 					fieldName)
 		throws Exception {
@@ -203,6 +204,14 @@ public abstract class BaseDataDefinitionFieldLinkResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

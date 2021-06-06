@@ -1,12 +1,12 @@
 definition {
 
-	@description = "Configures Liferay SAML as the IdP and Liferay SAML as the SP."
+	@description = "Configures Liferay SAML as the IdP"
 	macro configureLiferaySAMLAsIdP {
 
 		// Configure IdP (Identity Provider) on specific Portal URL or default to current URL
 
 		if (isSet(idpURL)) {
-			User.loginPG(
+			User.firstLoginUI(
 				password = "test",
 				specificURL = "${idpURL}",
 				userEmailAddress = "test@liferay.com");
@@ -44,13 +44,26 @@ definition {
 		SAMLPortlet.configureIdentityProvider();
 	}
 
+	@description = "Configures Liferay SAML as the SP."
 	macro configureLiferaySAMLAsSP {
-		User.loginPG(
-			password = "test",
-			specificURL = "${spURL}",
-			userEmailAddress = "test@liferay.com");
+		if (isSet(userEmailAddress)) {
+			User.firstLoginUI(
+				password = "test",
+				specificURL = "${spURL}",
+				userEmailAddress = "${userEmailAddress}");
+		}
+		else {
+			User.firstLoginUI(
+				password = "test",
+				specificURL = "${spURL}",
+				userEmailAddress = "test@liferay.com");
+		}
+
+		takeScreenshot();
 
 		Navigator.openSpecificURL(url = "${spURL}");
+
+		takeScreenshot();
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Security",
@@ -79,14 +92,17 @@ definition {
 			idpEntityID = "samlidp",
 			idpKeepAliveURL = "${idpKeepAliveURL}",
 			idpURL = "http://localhost:8080",
+			index = "${index}",
 			nameIdentifierAttributeName = "${nameIdentifierAttributeName}",
 			nameIdentifierFormat = "${nameIdentifierFormat}",
 			spAttributes = "${spAttributes}",
 			spEntityID = "${samlEntityID}",
 			spKeepAliveURL = "${spKeepAliveURL}",
-			spURL = "${spURL}");
+			spURL = "${spURL}",
+			userResolution = "${userResolution}");
 	}
 
+	@description = "Connect SP and IdP."
 	macro connectSPAndIdP {
 
 		// Add a configured IdP connection to an SP
@@ -94,7 +110,7 @@ definition {
 		Navigator.openSpecificURL(url = "${spURL}");
 
 		if (IsElementNotPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
-			User.loginPG(
+			User.firstLoginUI(
 				password = "test",
 				specificURL = "${spURL}",
 				userEmailAddress = "test@liferay.com");
@@ -113,7 +129,9 @@ definition {
 			idpKeepAliveURL = "${idpKeepAliveURL}",
 			idpMetadataURL = "${idpURL}/c/portal/saml/metadata",
 			idpNameID = "${idpEntityID}",
-			nameIdentifierFormat = "${nameIdentifierFormat}");
+			index = "${index}",
+			nameIdentifierFormat = "${nameIdentifierFormat}",
+			userResolution = "${userResolution}");
 
 		SAMLNavigation.gotoGeneral();
 
@@ -126,7 +144,7 @@ definition {
 		Navigator.openSpecificURL(url = "${idpURL}");
 
 		if (IsElementNotPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
-			User.loginPG(
+			User.firstLoginUI(
 				password = "test",
 				specificURL = "${idpURL}",
 				userEmailAddress = "test@liferay.com");
@@ -151,21 +169,19 @@ definition {
 
 	@description = "Sign into portal by executing a IdP initiated SSO login. The IdP will redirect to the SP. If the same users with the same email address are present on both instances, it will authenticate and show the SP. SAML can authenticate across major portal versions, that is, the IdP can be Portal 6.1 EE GA3 and the SP can be Portal 6.2. EE GA1. For testing purposes, it is obvious if the authentication succeeds or fails if the IdP and SP are different portal versions."
 	macro executeIdPInitiatedSSO {
-
 		if ("${autoLogin}" == "true") {
 			Open.openNoError(locator1 = "${idpInitiatedSSOURL}");
 
 			AssertElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE");
 		}
 		else {
-			User.loginPG(
+			User.firstLoginUI(
 				password = "${password}",
-				samlEnabled = "true",
 				specificURL = "${idpInitiatedSSOURL}",
 				userEmailAddress = "${userEmailAddress}");
 		}
 
-		Pause(locator1 = "2000");
+		Pause(locator1 = "1000");
 
 		AssertLocation.assertPartialLocation(value1 = "${spURL}");
 	}
@@ -173,23 +189,28 @@ definition {
 	@description = "Sign into portal by executing a SP initiated SSO login. In the SP, click on the Sign In button to."
 	macro executeSPInitiatedSSO {
 		if ("${autoLogin}" == "true") {
-			Navigator.openSpecificURL(url = "${specificURL}");
+			Navigator.openSpecificURL(url = "${spURL}");
 
 			AssertElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE");
 		}
 		else {
-			User.loginPG(
-				idpName = "${idpName}",
+			User.firstLoginUI(
 				password = "test",
-				rememberMeChecked = "${rememberMeChecked}",
-				samlMultiIdPs = "${samlMultiIdPs}",
-				specificURL = "${specificURL}",
+				specificURL = "${spURL}",
 				userEmailAddress = "test@liferay.com");
 		}
 
-		Pause(locator1 = "2000");
+		Pause(locator1 = "1000");
 
-		AssertLocation.assertPartialLocation(value1 = "${specificURL}");
+		AssertLocation.assertPartialLocation(value1 = "${spURL}");
+	}
+
+	macro waitForSLO {
+		var key_title = "Signing Out from Services";
+
+		WaitForElementPresent(locator1 = "Header#H3_TITLE");
+
+		Pause(locator1 = "5000");
 	}
 
 }

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ObjectReviewed")
+@GraphQLName(
+	description = "Represents the resource modified by the current workflow.",
+	value = "ObjectReviewed"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ObjectReviewed")
-public class ObjectReviewed {
+public class ObjectReviewed implements Serializable {
 
 	public static ObjectReviewed toDTO(String json) {
 		return ObjectMapperUtil.readValue(ObjectReviewed.class, json);
@@ -244,6 +249,7 @@ public class ObjectReviewed {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.ObjectReviewed",
 		name = "x-class-name"
 	)
@@ -279,7 +285,7 @@ public class ObjectReviewed {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -318,7 +324,7 @@ public class ObjectReviewed {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

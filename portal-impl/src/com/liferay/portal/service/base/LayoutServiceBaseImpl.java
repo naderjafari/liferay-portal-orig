@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiService;
 import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.service.LayoutService;
+import com.liferay.portal.kernel.service.LayoutServiceUtil;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
 import com.liferay.portal.kernel.service.persistence.GroupFinder;
 import com.liferay.portal.kernel.service.persistence.GroupPersistence;
@@ -40,6 +41,7 @@ import com.liferay.portal.kernel.service.persistence.LayoutPrototypePersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutSetPersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutSetPrototypePersistence;
 import com.liferay.portal.kernel.service.persistence.PluginSettingPersistence;
+import com.liferay.portal.kernel.service.persistence.PortalPreferenceValuePersistence;
 import com.liferay.portal.kernel.service.persistence.PortalPreferencesPersistence;
 import com.liferay.portal.kernel.service.persistence.PortletPreferencesFinder;
 import com.liferay.portal.kernel.service.persistence.PortletPreferencesPersistence;
@@ -52,6 +54,8 @@ import com.liferay.portal.kernel.service.persistence.UserPersistence;
 import com.liferay.portal.kernel.service.persistence.WorkflowDefinitionLinkPersistence;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.ratings.kernel.service.persistence.RatingsStatsPersistence;
+
+import java.lang.reflect.Field;
 
 import javax.sql.DataSource;
 
@@ -72,7 +76,7 @@ public abstract class LayoutServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>LayoutService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.LayoutServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>LayoutService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>LayoutServiceUtil</code>.
 	 */
 
 	/**
@@ -951,6 +955,53 @@ public abstract class LayoutServiceBaseImpl
 	}
 
 	/**
+	 * Returns the portal preference value local service.
+	 *
+	 * @return the portal preference value local service
+	 */
+	public com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+		getPortalPreferenceValueLocalService() {
+
+		return portalPreferenceValueLocalService;
+	}
+
+	/**
+	 * Sets the portal preference value local service.
+	 *
+	 * @param portalPreferenceValueLocalService the portal preference value local service
+	 */
+	public void setPortalPreferenceValueLocalService(
+		com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+			portalPreferenceValueLocalService) {
+
+		this.portalPreferenceValueLocalService =
+			portalPreferenceValueLocalService;
+	}
+
+	/**
+	 * Returns the portal preference value persistence.
+	 *
+	 * @return the portal preference value persistence
+	 */
+	public PortalPreferenceValuePersistence
+		getPortalPreferenceValuePersistence() {
+
+		return portalPreferenceValuePersistence;
+	}
+
+	/**
+	 * Sets the portal preference value persistence.
+	 *
+	 * @param portalPreferenceValuePersistence the portal preference value persistence
+	 */
+	public void setPortalPreferenceValuePersistence(
+		PortalPreferenceValuePersistence portalPreferenceValuePersistence) {
+
+		this.portalPreferenceValuePersistence =
+			portalPreferenceValuePersistence;
+	}
+
+	/**
 	 * Returns the portal preferences local service.
 	 *
 	 * @return the portal preferences local service
@@ -1397,9 +1448,11 @@ public abstract class LayoutServiceBaseImpl
 	}
 
 	public void afterPropertiesSet() {
+		_setServiceUtilService(layoutService);
 	}
 
 	public void destroy() {
+		_setServiceUtilService(null);
 	}
 
 	/**
@@ -1441,6 +1494,19 @@ public abstract class LayoutServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setServiceUtilService(LayoutService layoutService) {
+		try {
+			Field field = LayoutServiceUtil.class.getDeclaredField("_service");
+
+			field.setAccessible(true);
+
+			field.set(null, layoutService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 
@@ -1632,6 +1698,16 @@ public abstract class LayoutServiceBaseImpl
 
 	@BeanReference(type = PluginSettingPersistence.class)
 	protected PluginSettingPersistence pluginSettingPersistence;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.PortalPreferenceValueLocalService.class
+	)
+	protected
+		com.liferay.portal.kernel.service.PortalPreferenceValueLocalService
+			portalPreferenceValueLocalService;
+
+	@BeanReference(type = PortalPreferenceValuePersistence.class)
+	protected PortalPreferenceValuePersistence portalPreferenceValuePersistence;
 
 	@BeanReference(
 		type = com.liferay.portal.kernel.service.PortalPreferencesLocalService.class

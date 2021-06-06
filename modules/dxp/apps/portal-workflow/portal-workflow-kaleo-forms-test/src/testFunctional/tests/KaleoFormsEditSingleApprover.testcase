@@ -1,10 +1,11 @@
-@component-name = "portal-forms-and-workflow-ee"
+@component-name = "portal-workflow-ee"
 definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property test.run.environment = "EE";
 	property testray.main.component.name = "Kaleo Forms Admin";
+
 	var kfFieldSetName = "New Kaleo Field Set";
 	var workflowAssetType = "Process";
 
@@ -19,14 +20,6 @@ definition {
 			category = "Content &amp; Data",
 			portlet = "Kaleo Forms Admin");
 
-		KaleoFormsAdmin.addProcess();
-
-		KaleoFormsAdmin.addProcessDetails(
-			kfProcessDescription = "Kaleo Forms Process Description",
-			kfProcessName = "Kaleo Forms Process");
-
-		KaleoFormsAdmin.next();
-
 		KaleoFormsAdmin.addFieldSet(
 			kfFieldSetName = "${kfFieldSetName}",
 			kfProcessName = "Kaleo Forms Process");
@@ -37,6 +30,14 @@ definition {
 			fieldName = "Text");
 
 		KaleoFormsAdmin.saveFieldSet();
+
+		KaleoFormsAdmin.addProcess();
+
+		KaleoFormsAdmin.addProcessDetails(
+			kfProcessDescription = "Kaleo Forms Process Description",
+			kfProcessName = "Kaleo Forms Process");
+
+		KaleoFormsAdmin.next();
 
 		KaleoFormsAdmin.chooseFieldSet(
 			kfFieldSetName = "${kfFieldSetName}",
@@ -142,9 +143,10 @@ definition {
 			panel = "Control Panel",
 			portlet = "Roles");
 
-		Role.assignRegRoleCP(
-			roleTitle = "Administrator",
-			userScreenName = "creator");
+		Role.addAssignee(
+			assigneeName = "creator",
+			assigneeType = "Users",
+			roleTitle = "Administrator");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
@@ -171,18 +173,20 @@ definition {
 			panel = "Control Panel",
 			portlet = "Roles");
 
-		Role.assignRegRoleCP(
-			roleTitle = "Administrator",
-			userScreenName = "reviewer");
+		Role.addAssignee(
+			assigneeName = "reviewer",
+			assigneeType = "Users",
+			roleTitle = "Administrator");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Roles");
 
-		Role.assignRegRoleCP(
-			roleTitle = "Reviewer Name",
-			userScreenName = "reviewer");
+		Role.addAssignee(
+			assigneeName = "reviewer",
+			assigneeType = "Users",
+			roleTitle = "Reviewer Name");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
@@ -209,18 +213,20 @@ definition {
 			panel = "Control Panel",
 			portlet = "Roles");
 
-		Role.assignRegRoleCP(
-			roleTitle = "Administrator",
-			userScreenName = "updater");
+		Role.addAssignee(
+			assigneeName = "updater",
+			assigneeType = "Users",
+			roleTitle = "Administrator");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Roles");
 
-		Role.assignRegRoleCP(
-			roleTitle = "Updater Name",
-			userScreenName = "updater");
+		Role.addAssignee(
+			assigneeName = "updater",
+			assigneeType = "Users",
+			roleTitle = "Updater Name");
 
 		Navigator.openURL();
 
@@ -406,7 +412,6 @@ definition {
 	@priority = "3"
 	test ViewApprovedProcessNotificationWithComments {
 		property test.name.skip.portal.instance = "KaleoFormsEditSingleApprover#ViewApprovedProcessNotificationWithComments";
-		property portal.upstream = "quarantine";
 
 		Navigator.openURL();
 

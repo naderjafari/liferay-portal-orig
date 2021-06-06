@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +45,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("PortraitMobile")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PortraitMobile")
-public class PortraitMobile {
+public class PortraitMobile implements Serializable {
 
 	public static PortraitMobile toDTO(String json) {
 		return ObjectMapperUtil.readValue(PortraitMobile.class, json);
@@ -200,6 +202,7 @@ public class PortraitMobile {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PortraitMobile",
 		name = "x-class-name"
 	)
@@ -235,7 +238,7 @@ public class PortraitMobile {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -274,7 +277,7 @@ public class PortraitMobile {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

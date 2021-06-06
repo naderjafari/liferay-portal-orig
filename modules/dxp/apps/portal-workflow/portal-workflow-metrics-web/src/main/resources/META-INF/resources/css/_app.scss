@@ -53,6 +53,10 @@ $font-weight-semi-bold: 600;
 	}
 }
 
+.container-nav {
+	margin-top: 30px;
+}
+
 .control-menu-level-1-nav .dropdown-menu-header .dropdown-item {
 	color: #6b6c7e;
 }
@@ -68,6 +72,10 @@ $font-weight-semi-bold: 600;
 
 .management-bar .navbar-text {
 	color: #6b6c7e;
+}
+
+.nav-underline .nav-link:focus {
+	box-shadow: none;
 }
 
 .step-of-bar {
@@ -97,6 +105,12 @@ $font-weight-semi-bold: 600;
 				display: none;
 			}
 		}
+	}
+}
+
+.modal-content {
+	.modal-body {
+		max-height: 80vh;
 	}
 }
 
@@ -207,5 +221,27 @@ $font-weight-semi-bold: 600;
 
 	.table-hover tbody tr:hover {
 		background-color: #fff;
+	}
+}
+
+.workflow-tooltip {
+	svg {
+		color: #a7a9bc;
+		font-size: 16px;
+	}
+
+	&:hover svg {
+		color: #272833;
+	}
+}
+
+@media screen and (max-width: 530px) {
+	.panel .dashboard-panel-header .autofit-row .management-bar {
+		.navbar-nav {
+			flex-direction: column;
+			li {
+				margin-bottom: 8px;
+			}
+		}
 	}
 }

@@ -26,9 +26,16 @@ import com.liferay.blogs.model.BlogsEntry;
 import com.liferay.blogs.service.BlogsEntryLocalServiceUtil;
 import com.liferay.blogs.test.util.BlogsTestUtil;
 import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.message.boards.constants.MBMessageConstants;
+import com.liferay.message.boards.model.MBMessage;
+import com.liferay.message.boards.model.MBMessageDisplay;
+import com.liferay.message.boards.model.MBThread;
 import com.liferay.message.boards.service.MBMessageLocalServiceUtil;
+import com.liferay.message.boards.test.util.MBTestUtil;
+import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.dao.orm.QueryDefinition;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -53,14 +60,18 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
+import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.test.mail.MailServiceTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.SynchronousMailTestRule;
 import com.liferay.subscription.service.SubscriptionLocalServiceUtil;
 
 import java.io.InputStream;
@@ -69,6 +80,7 @@ import java.lang.reflect.Method;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Dictionary;
 import java.util.List;
 
 import org.junit.Assert;
@@ -93,7 +105,8 @@ public class BlogsEntryLocalServiceTest {
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), SynchronousMailTestRule.INSTANCE);
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -202,6 +215,30 @@ public class BlogsEntryLocalServiceTest {
 	}
 
 	@Test
+	public void testAddDraftEntryWithDuplicateURLTitle() throws Exception {
+		String urlTitle = RandomTestUtil.randomString();
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group, _user.getUserId());
+
+		BlogsEntryLocalServiceUtil.addEntry(
+			_user.getUserId(), RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), urlTitle,
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			new Date(), false, false, null, null, null, null, serviceContext);
+
+		serviceContext.setWorkflowAction(WorkflowConstants.ACTION_SAVE_DRAFT);
+
+		BlogsEntry entry = BlogsEntryLocalServiceUtil.addEntry(
+			_user.getUserId(), RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), urlTitle,
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			new Date(), false, false, null, null, null, null, serviceContext);
+
+		Assert.assertNotEquals(urlTitle, entry.getUrlTitle());
+	}
+
+	@Test
 	public void testAddDraftEntryWithNullTitle() throws Exception {
 		int initialCount = BlogsEntryLocalServiceUtil.getGroupEntriesCount(
 			_group.getGroupId(), _statusAnyQueryDefinition);
@@ -299,6 +336,29 @@ public class BlogsEntryLocalServiceTest {
 			_group.getGroupId(), _statusApprovedQueryDefinition);
 
 		Assert.assertEquals(initialCount + 1, actualCount);
+	}
+
+	@Test
+	public void testAddEntrySubscribesCreatorWhenSubscribeBlogsEntryCreatorToCommentsEnabled()
+		throws Exception {
+
+		_creatorUser = UserTestUtil.addUser();
+
+		_withSubscribeBlogsEntryCreatorToCommentsEnabled(
+			() -> {
+				ServiceContext serviceContext =
+					ServiceContextTestUtil.getServiceContext(
+						_group.getGroupId(), _creatorUser.getUserId());
+
+				BlogsEntry blogsEntry = BlogsEntryLocalServiceUtil.addEntry(
+					_creatorUser.getUserId(), RandomTestUtil.randomString(),
+					RandomTestUtil.randomString(), serviceContext);
+
+				_addMBMessage(
+					TestPropsValues.getUserId(), serviceContext, blogsEntry);
+
+				Assert.assertEquals(1, MailServiceTestUtil.getInboxSize());
+			});
 	}
 
 	@Test(expected = EntryUrlTitleException.class)
@@ -932,6 +992,36 @@ public class BlogsEntryLocalServiceTest {
 	}
 
 	@Test
+	public void testUpdateDraftEntryWithDuplicateURLTitle() throws Exception {
+		String urlTitle = RandomTestUtil.randomString();
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group, _user.getUserId());
+
+		BlogsEntryLocalServiceUtil.addEntry(
+			_user.getUserId(), RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), urlTitle,
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			new Date(), false, false, null, null, null, null, serviceContext);
+
+		serviceContext.setWorkflowAction(WorkflowConstants.ACTION_SAVE_DRAFT);
+
+		BlogsEntry entry = BlogsEntryLocalServiceUtil.addEntry(
+			_user.getUserId(), RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), urlTitle,
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			new Date(), false, false, null, null, null, null, serviceContext);
+
+		entry = BlogsEntryLocalServiceUtil.updateEntry(
+			_user.getUserId(), entry.getEntryId(), entry.getTitle(),
+			entry.getSubtitle(), urlTitle, entry.getDescription(),
+			entry.getContent(), entry.getDisplayDate(), false, false, null,
+			null, null, null, serviceContext);
+
+		Assert.assertNotEquals(urlTitle, entry.getUrlTitle());
+	}
+
+	@Test
 	public void testUpdateEntryResources() throws Exception {
 		BlogsEntry entry = addEntry(false);
 
@@ -1363,7 +1453,31 @@ public class BlogsEntryLocalServiceTest {
 		Assert.assertEquals(initialCount + 1, actualCount);
 	}
 
-	private static String _repeat(String string, int times) {
+	private MBMessage _addMBMessage(
+			long userId, ServiceContext serviceContext, BlogsEntry entry)
+		throws Exception {
+
+		MBMessageDisplay mbMessageDisplay =
+			MBMessageLocalServiceUtil.getDiscussionMessageDisplay(
+				TestPropsValues.getUserId(), _group.getGroupId(),
+				BlogsEntry.class.getName(), entry.getEntryId(),
+				WorkflowConstants.STATUS_APPROVED);
+
+		MBThread mbThread = mbMessageDisplay.getThread();
+
+		MBTestUtil.populateNotificationsServiceContext(
+			serviceContext, Constants.ADD);
+
+		return MBMessageLocalServiceUtil.addDiscussionMessage(
+			userId, RandomTestUtil.randomString(), _group.getGroupId(),
+			BlogsEntry.class.getName(), entry.getEntryId(),
+			mbThread.getThreadId(),
+			MBMessageConstants.DEFAULT_PARENT_MESSAGE_ID,
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			serviceContext);
+	}
+
+	private String _repeat(String string, int times) {
 		StringBundler sb = new StringBundler(times);
 
 		for (int i = 0; i < times; i++) {
@@ -1373,7 +1487,29 @@ public class BlogsEntryLocalServiceTest {
 		return sb.toString();
 	}
 
+	private void _withSubscribeBlogsEntryCreatorToCommentsEnabled(
+			UnsafeRunnable<Exception> unsafeRunnable)
+		throws Exception {
+
+		Dictionary<String, Object> dictionary =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"subscribeBlogsEntryCreatorToComments", true
+			).build();
+
+		try (ConfigurationTemporarySwapper configurationTemporarySwapper =
+				new ConfigurationTemporarySwapper(
+					"com.liferay.blogs.configuration." +
+						"BlogsGroupServiceConfiguration",
+					dictionary)) {
+
+			unsafeRunnable.run();
+		}
+	}
+
 	private static Method _getUrlTitleMethod;
+
+	@DeleteAfterTestRun
+	private User _creatorUser;
 
 	@DeleteAfterTestRun
 	private Group _group;

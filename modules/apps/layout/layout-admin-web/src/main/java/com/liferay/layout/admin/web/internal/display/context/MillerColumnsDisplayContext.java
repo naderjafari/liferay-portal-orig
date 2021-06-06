@@ -15,6 +15,7 @@
 package com.liferay.layout.admin.web.internal.display.context;
 
 import com.liferay.exportimport.kernel.staging.LayoutStagingUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -37,7 +38,6 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -47,14 +47,9 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.util.LayoutTypeControllerTracker;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-
-import javax.portlet.ActionRequest;
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -78,12 +73,11 @@ public class MillerColumnsDisplayContext {
 	}
 
 	public String getLayoutChildrenURL() {
-		PortletURL itemChildrenURL = _liferayPortletResponse.createActionURL();
-
-		itemChildrenURL.setParameter(
-			ActionRequest.ACTION_NAME, "/layout/get_layout_children");
-
-		return itemChildrenURL.toString();
+		return PortletURLBuilder.createActionURL(
+			_liferayPortletResponse
+		).setActionName(
+			"/layout_admin/get_layout_children"
+		).buildString();
 	}
 
 	public JSONArray getLayoutColumnsJSONArray() throws Exception {
@@ -140,8 +134,6 @@ public class MillerColumnsDisplayContext {
 				"breadcrumbEntries", _getBreadcrumbEntriesJSONArray()
 			).put(
 				"getItemChildrenURL", getLayoutChildrenURL()
-			).put(
-				"languageDirection", _getLanguageDirection()
 			).put(
 				"languageId", _themeDisplay.getLanguageId()
 			).put(
@@ -225,24 +217,25 @@ public class MillerColumnsDisplayContext {
 				"states", _getLayoutStatesJSONArray(layout)
 			).put(
 				"title", layout.getName(_themeDisplay.getLocale())
-			);
-
-			PortletURL portletURL = _layoutsAdminDisplayContext.getPortletURL();
-
-			portletURL.setParameter(
-				"selPlid", String.valueOf(layout.getPlid()));
-			portletURL.setParameter(
-				"layoutSetBranchId",
-				String.valueOf(
-					_layoutsAdminDisplayContext.getActiveLayoutSetBranchId()));
-			portletURL.setParameter(
-				"privateLayout", String.valueOf(layout.isPrivateLayout()));
-
-			layoutJSONObject.put(
-				"url", portletURL.toString()
 			).put(
-				"viewUrl", _layoutsAdminDisplayContext.getViewLayoutURL(layout)
+				"url",
+				PortletURLBuilder.create(
+					_layoutsAdminDisplayContext.getPortletURL()
+				).setParameter(
+					"layoutSetBranchId",
+					_layoutsAdminDisplayContext.getActiveLayoutSetBranchId()
+				).setParameter(
+					"privateLayout", layout.isPrivateLayout()
+				).setParameter(
+					"selPlid", layout.getPlid()
+				).buildString()
 			);
+
+			if (_layoutsAdminDisplayContext.isShowViewLayoutAction(layout)) {
+				layoutJSONObject.put(
+					"viewUrl",
+					_layoutsAdminDisplayContext.getViewLayoutURL(layout));
+			}
 
 			layoutsJSONArray.put(layoutJSONObject);
 		}
@@ -324,41 +317,6 @@ public class MillerColumnsDisplayContext {
 		return breadcrumbEntriesJSONArray;
 	}
 
-	private JSONObject _getFirstLayoutColumn(
-			boolean privatePages, boolean active)
-		throws Exception {
-
-		String key = "public-pages";
-
-		if (privatePages) {
-			key = "private-pages";
-		}
-
-		JSONObject pagesJSONObject = JSONUtil.put(
-			"actions", _getFirstLayoutColumnActionsJSONArray(privatePages)
-		).put(
-			"active", active
-		).put(
-			"hasChild", true
-		).put(
-			"id", LayoutConstants.DEFAULT_PLID
-		).put(
-			"key", key
-		).put(
-			"title", _layoutsAdminDisplayContext.getTitle(privatePages)
-		);
-
-		PortletURL pagesURL = _layoutsAdminDisplayContext.getPortletURL();
-
-		pagesURL.setParameter(
-			"selPlid", String.valueOf(LayoutConstants.DEFAULT_PLID));
-		pagesURL.setParameter("privateLayout", String.valueOf(privatePages));
-
-		pagesJSONObject.put("url", pagesURL.toString());
-
-		return pagesJSONObject;
-	}
-
 	private JSONArray _getFirstLayoutColumnActionsJSONArray(
 			boolean privatePages)
 		throws Exception {
@@ -413,7 +371,8 @@ public class MillerColumnsDisplayContext {
 				active = false;
 			}
 
-			firstColumnJSONArray.put(_getFirstLayoutColumn(false, active));
+			firstColumnJSONArray.put(
+				_getFirstLayoutColumnJSONObject(false, active));
 		}
 
 		if (LayoutLocalServiceUtil.hasLayouts(
@@ -429,25 +388,48 @@ public class MillerColumnsDisplayContext {
 				active = false;
 			}
 
-			firstColumnJSONArray.put(_getFirstLayoutColumn(true, active));
+			firstColumnJSONArray.put(
+				_getFirstLayoutColumnJSONObject(true, active));
 		}
 
 		return firstColumnJSONArray;
 	}
 
-	private Map<String, String> _getLanguageDirection() {
-		Map<String, String> languageDirection = new HashMap<>();
+	private JSONObject _getFirstLayoutColumnJSONObject(
+			boolean privatePages, boolean active)
+		throws Exception {
 
-		for (Locale curLocale :
-				LanguageUtil.getAvailableLocales(
-					_themeDisplay.getScopeGroupId())) {
+		String key = "public-pages";
 
-			languageDirection.put(
-				LocaleUtil.toLanguageId(curLocale),
-				LanguageUtil.get(curLocale, "lang.dir"));
+		if (privatePages) {
+			key = "private-pages";
 		}
 
-		return languageDirection;
+		JSONObject pagesJSONObject = JSONUtil.put(
+			"actions", _getFirstLayoutColumnActionsJSONArray(privatePages)
+		).put(
+			"active", active
+		).put(
+			"hasChild", true
+		).put(
+			"id", LayoutConstants.DEFAULT_PLID
+		).put(
+			"key", key
+		).put(
+			"title", _layoutsAdminDisplayContext.getTitle(privatePages)
+		);
+
+		pagesJSONObject.put(
+			"url",
+			PortletURLBuilder.create(
+				_layoutsAdminDisplayContext.getPortletURL()
+			).setParameter(
+				"privateLayout", privatePages
+			).setParameter(
+				"selPlid", LayoutConstants.DEFAULT_PLID
+			).buildString());
+
+		return pagesJSONObject;
 	}
 
 	private JSONArray _getLayoutActionsJSONArray(Layout layout)
@@ -649,6 +631,8 @@ public class MillerColumnsDisplayContext {
 		if (_layoutsAdminDisplayContext.isShowDeleteAction(layout)) {
 			jsonArray.put(
 				JSONUtil.put(
+					"hasChildren", layout.hasChildren()
+				).put(
 					"id", "delete"
 				).put(
 					"label", LanguageUtil.get(_httpServletRequest, "delete")
@@ -704,16 +688,15 @@ public class MillerColumnsDisplayContext {
 				LanguageUtil.get(_httpServletRequest, layoutSetBranch.getName())
 			);
 
-			PortletURL portletURL = _layoutsAdminDisplayContext.getPortletURL();
-
-			portletURL.setParameter(
-				"layoutSetBranchId",
-				String.valueOf(layoutSetBranch.getLayoutSetBranchId()));
-			portletURL.setParameter(
-				"privateLayout",
-				String.valueOf(layoutSetBranch.isPrivateLayout()));
-
-			jsonObject.put("url", portletURL.toString());
+			jsonObject.put(
+				"url",
+				PortletURLBuilder.create(
+					_layoutsAdminDisplayContext.getPortletURL()
+				).setParameter(
+					"layoutSetBranchId", layoutSetBranch.getLayoutSetBranchId()
+				).setParameter(
+					"privateLayout", layoutSetBranch.isPrivateLayout()
+				).buildString());
 
 			jsonArray.put(jsonObject);
 		}

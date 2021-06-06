@@ -4,6 +4,7 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Blogs";
+
 	var pageName = "Blogs Page";
 
 	setUp {
@@ -49,31 +50,40 @@ definition {
 		}
 	}
 
+	@description = "This checks that the default abstract (appends to 400 characters) can display properly in the UI."
 	@priority = "4"
-	test AddBlogsEntryWithHTML {
-		JSONBlog.addEntry(
-			entryContent = "<b>Bold Type</b> <i>Italics</i>",
-			entrySubtitle = "Blogs Entry Subtitle",
+	@refactordone
+	test CanAddAbstractDisplayingFirst400Characters {
+		property test.name.skip.portal.instance = "BlogsUsecase#CanAddAbstractDisplayingFirst400Characters";
+
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+
+		Blogs.addWithDefaultAbstract(
+			entryAbstractDescription = "Blogs Entry Custom Abstract",
+			entryContent = "Liferay Portal provides an excellent platform for building web applications, websites, and portals, but it can additionally be used for a new category of web applications called social applications. The definition is simple: a social application is a web application that additionally leverages social identity, data, and features or services. In the left figure, the light blue squares represent a definition of a standard web application while the darker blue squares show the addition of social aspects.",
 			entryTitle = "Blogs Entry Title");
 
 		Navigator.gotoPage(pageName = "Blogs Page");
 
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Bold Type Italics",
+		BlogsEntry.viewAbstractDisplay(
+			entryAbstractDescription = "Liferay Portal provides an excellent platform for building web applications, websites, and portals, but it can additionally be used for a new category of web applications called social applications. The definition is simple: a social application is a web application that additionally leverages social identity, data, and features or services. In the left figure, the light blue squares represent...",
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
+
+		BlogsNavigator.gotoEntryWithAbstractPG(
+			entryAbstractDescription = "Liferay Portal provides an excellent platform for building web applications, websites, and portals, but it can additionally be used for a new category of web applications called social applications. The definition is simple: a social application is a web application that additionally leverages social identity, data, and features or services. In the left figure, the light blue squares represent...",
 			entryTitle = "Blogs Entry Title");
 
 		BlogsEntry.viewEntryPG(
-			entryContentBold = "Bold Type",
-			entryContentItalics = "Italics",
-			entrySubtitle = "Blogs Entry Subtitle",
+			entryContent = "Liferay Portal provides an excellent platform for building web applications, websites, and portals, but it can additionally be used for a new category of web applications called social applications. The definition is simple: a social application is a web application that additionally leverages social identity, data, and features or services. In the left figure, the light blue squares represent a definition of a standard web application while the darker blue squares show the addition of social aspects.",
 			entryTitle = "Blogs Entry Title");
 	}
 
+	@description = "This test checks that an inline image can be added to a blog."
 	@priority = "4"
-	test AddBlogsEntryWithInlineImage {
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
-
-		BlogsNavigator.gotoAddEntry();
+	@refactorneeded
+	test CanAddEntryWithInlineImage {
+		BlogsNavigator.openToAddEntry(siteURLKey = "guest");
 
 		BlogsEntry.addTitle(entryTitle = "Blogs Entry Title");
 
@@ -82,15 +92,12 @@ definition {
 			navTab = "Upload Image",
 			uploadFileName = "Document_1.jpg");
 
-		Pause(locator1 = "3000");
-
 		PortletEntry.publish();
 
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
 		BlogsEntry.viewEntryPG(
 			entryContent = "Blogs Entry Content",
@@ -99,11 +106,40 @@ definition {
 		BlogsEntry.viewInlineImage(uploadFileName = "Document_1");
 	}
 
+	@description = "This test checks that HTML is rendered in the blog content field."
+	@priority = "4"
+	@refactordone
+	test CanAddHTMLToContentField {
+		JSONBlog.addEntry(
+			entryContent = "<b>Bold Type</b> <i>Italics</i>",
+			entrySubtitle = "Blogs Entry Subtitle",
+			entryTitle = "Blogs Entry Title");
+
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
+
+		BlogsEntry.viewEntryPG(
+			entryContentBold = "Bold Type",
+			entryContentItalics = "Italics",
+			entrySubtitle = "Blogs Entry Subtitle",
+			entryTitle = "Blogs Entry Title");
+	}
+
+	@description = "This test checks that blog entry can be added with special charaters."
 	@priority = "5"
-	test AddBlogsEntryWithSpecialCharacters {
-		Blogs.addEntry(
+	@refactordone
+	test CanAddWithSpecialCharacters {
+		BlogsNavigator.openToAddEntry(
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
+
+		BlogsEntry.addEntryContent(
 			entryContent = '''Blogs Entry Content `~!@#$%^&*(){}[],.<>/?|''',
 			entryTitle = '''Blogs Entry Title `~!@#$%^&*(){}[],.<>/?|''');
+
+		PortletEntry.publish();
 
 		Navigator.gotoPage(pageName = "Blogs Page");
 
@@ -116,205 +152,234 @@ definition {
 			entryTitle = '''Blogs Entry Title `~!@#$%^&*(){}[],.<>/?|''');
 	}
 
+	@description = "This checks that a user can change the publish date for a scheduled entry to the present and publish it."
 	@priority = "4"
-	test AllowMultiplePortletConfigurationsPerSite {
-		JSONGroup.addGroup(groupName = "Site Name");
+	@refactorneeded
+	test CanChangeAScheduledEntryToThePresentAndPublish {
+		property test.name.skip.portal.instance = "BlogsUsecase#CanChangeAScheduledEntryToThePresentAndPublish";
 
-		SitePages.openPagesAdmin(siteURLKey = "Site Name");
+		BlogsNavigator.openToAddEntry(
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
-		JSONLayout.addPublicLayout(
-			groupName = "Site Name",
-			layoutName = "Site Page 1");
-
-		JSONLayout.addWidgetToPublicLayout(
-			column = "1",
-			groupName = "Site Name",
-			layoutName = "Site Page 1",
-			widgetName = "Blogs");
-
-		JSONLayout.addPublicLayout(
-			groupName = "Site Name",
-			layoutName = "Site Page 2");
-
-		JSONLayout.addWidgetToPublicLayout(
-			column = "1",
-			groupName = "Site Name",
-			layoutName = "Site Page 2",
-			widgetName = "Blogs");
-
-		Navigator.gotoSitePage(
-			pageName = "Site Page 1",
-			siteName = "Site Name");
-
-		Portlet.gotoPortletOptions(portletOption = "Configuration");
-
-		BlogsConfiguration.selectConfigurationIFrame();
-
-		BlogsConfiguration.selectMaximumItemstoDisplay(maximumItemsToDisplay = "60");
-
-		BlogsConfiguration.uncheckComments();
-
-		BlogsConfiguration.uncheckRelatedAssets();
-
-		Button.clickSave();
-
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "site-name");
-
-		Portlet.gotoPortletOptions(portletOption = "Configuration");
-
-		BlogsConfiguration.selectConfigurationIFrame();
-
-		BlogsConfiguration.gotoRSS();
-
-		BlogsConfiguration.uncheckRSSSubscriptionCheckbox();
-
-		Button.clickSave();
-
-		Navigator.gotoSitePage(
-			pageName = "Site Page 2",
-			siteName = "Site Name");
-
-		Portlet.gotoPortletOptions(portletOption = "Configuration");
-
-		BlogsConfiguration.selectConfigurationIFrame();
-
-		BlogsConfiguration.viewDefaultConfiguration();
-
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
-
-		Portlet.gotoPortletOptions(portletOption = "Configuration");
-
-		BlogsConfiguration.selectConfigurationIFrame();
-
-		BlogsConfiguration.gotoRSS();
-
-		BlogsConfiguration.viewDefaultConfigurationRSS();
-	}
-
-	@priority = "3"
-	test ChangeBlogsEntryCoverImage {
-		for (var entryCount : list "1,2") {
-			JSONDocument.addFileWithUploadedFile(
-				dmDocumentDescription = "DM Document Description",
-				dmDocumentTitle = "Document_${entryCount}.jpg",
-				groupName = "Guest",
-				mimeType = "image/jpeg",
-				sourceFileName = "Document_${entryCount}.jpg");
-		}
-
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
-
-		Blogs.addEntryWithUploadedCoverImage(
-			coverImageName = "Document_3",
+		BlogsEntry.addEntryContent(
 			entryContent = "Blogs Entry Content",
-			entrySubtitle = "Blogs Entry Subtitle",
-			entryTitle = "Blogs Entry Title",
-			navTab = "Documents and Media",
-			uploadFileName = "Document_3.jpg");
+			entryTitle = "Blogs Entry Title");
 
-		Button.clickPublish();
+		Panel.expandPanel(panel = "Configuration");
 
-		Pause(locator1 = "10000");
-
-		BlogsNavigator.gotoEntryCP(entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewEntryCP(
-			entryContent = "Blogs Entry Content",
-			entrySubtitle = "Blogs Entry Subtitle",
-			entryTitle = "Blogs Entry Title",
-			uploadFileName = "Document_3");
-
-		BlogsNavigator.gotoBrowseImage();
-
-		ItemSelector.searchDMImages(imageFileName = "Document_1");
-
-		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
-
-		var key_imageFileName = "Document_1.jpg";
-
-		Click(locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
-
-		SelectFrameTop(value1 = "relative=top");
+		BlogsEntry.editDisplayDateYear();
 
 		PortletEntry.publish();
 
-		BlogsNavigator.gotoEntryCP(entryTitle = "Blogs Entry Title");
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		BlogsEntry.viewEntryCP(
+		Navigator.gotoNavItem(navItem = "Not Published (1)");
+
+		BlogsNavigator.gotoEditPG(entryTitle = "Blogs Entry Title");
+
+		Panel.expandPanel(panel = "Configuration");
+
+		BlogsEntry.editDisplayDate(displayTimeMinute = "00");
+
+		PortletEntry.publish();
+
+		PortletEntry.viewNoNavItemLink();
+
+		BlogsEntry.viewEntryPG(
 			entryContent = "Blogs Entry Content",
-			entrySubtitle = "Blogs Entry Subtitle",
-			entryTitle = "Blogs Entry Title",
-			uploadFileName = "Document_1");
+			entryTitle = "Blogs Entry Title");
 	}
 
+	@description = "This test covers LPS-127212 and LPS-128781. This ensures that a blog title can be imported to a site when a duplicate title already exists."
 	@priority = "4"
-	test DeleteBlogsEntry {
+	@refactorneeded
+	test CanImportBlogWhenDuplicateTitleExists {
+		JSONGroup.addGroup(groupName = "Target Site Name");
+
+		JSONBlog.addEntry(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title",
+			groupName = "Target Site Name");
+
+		JSONBlog.addEntry(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title",
+			groupName = "Target Site Name");
+
+		JSONGroup.addGroup(groupName = "Source Site Name");
+
+		JSONBlog.addEntry(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title",
+			groupName = "Source Site Name");
+
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "source-site-name");
+
+		LAR.exportPortlet(larFileName = "Blogs.portlet.lar");
+
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "target-site-name");
+
+		LAR.importPortlet(larFileName = "Blogs.portlet.lar");
+
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "target-site-name");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "table");
+
+		for (var i : list "1,2,3") {
+			AssertTextEquals(
+				key_rowNumber = "${i}",
+				locator1 = "ContentRow#ENTRY_CONTENT_ROW_NUMBER_TD_2",
+				value1 = "Blogs Entry Title");
+		}
+	}
+
+	@description = "This checks that a blog entry with a comment can be imported with no data loss."
+	@priority = "4"
+	@refactorneeded
+	test CanImportEntryWithComment {
 		JSONBlog.addEntry(
 			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
 
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
-		BlogsNavigator.moveToRecycleBinCP(
-			assetType = "Blogs Entry",
-			entryTitle = "Blogs Entry Title");
+		Comments.addPG(entryComment = "Blogs Entry Comment");
 
-		RecycleBin.openRecycleBinAdmin(siteURLKey = "guest");
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		RecycleBin.deleteCP(
-			assetName = "Blogs Entry Title",
-			assetType = "Blogs Entry");
+		LAR.exportPortlet(larFileName = "Blogs.portlet.lar");
 
-		RecycleBin.openRecycleBinAdmin(siteURLKey = "guest");
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		RecycleBin.viewDefaultCP(assetName = "Blogs Entry Title");
+		BlogsEntry.tearDownCP();
 
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		BlogsEntry.viewDefaultCP(entryTitle = "Blogs Entry Title");
-	}
+		LAR.importPortlet(larFileName = "Blogs.portlet.lar");
 
-	@priority = "4"
-	test DeleteDraftBlogsEntry {
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
-		Blogs.addDraft(
+		BlogsEntry.viewPG(
 			entryContent = "Blogs Entry Content",
-			entrySubtitle = "Blogs Entry Subtitle",
 			entryTitle = "Blogs Entry Title");
+
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
+
+		Comments.viewPG(
+			commentCount = "1",
+			entryComment = "Blogs Entry Comment",
+			userFullName = "Test Test");
+	}
+
+	@description = "This checks that a custom blog abstracted can be viewed from the site page."
+	@priority = "4"
+	@refactordone
+	test CanViewCustomAbstractOnSitePage {
+		property test.name.skip.portal.instance = "BlogsUsecase#CanViewCustomAbstractOnSitePage";
 
 		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
 
-		LexiconEntry.changeDisplayStyle(displayStyle = "list");
-
-		BlogsEntry.moveToRecycleBinDraftCP(
-			assetType = "Blogs Entry",
+		Blogs.addWithCustomAbstract(
+			entryAbstractDescription = "Blogs Entry Custom Abstract",
+			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
 
-		RecycleBin.openRecycleBinAdmin(siteURLKey = "guest");
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		RecycleBin.deleteCP(
-			assetName = "Blogs Entry Title",
-			assetType = "Blogs Entry");
+		BlogsEntry.viewAbstractDisplay(
+			entryAbstractDescription = "Blogs Entry Custom Abstract",
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
 
-		RecycleBin.openRecycleBinAdmin(siteURLKey = "guest");
+		BlogsNavigator.gotoEntryWithAbstractPG(
+			entryAbstractDescription = "Blogs Entry Custom Abstract",
+			entryTitle = "Blogs Entry Title");
 
-		RecycleBin.viewDefaultCP(assetName = "Blogs Entry Title");
+		BlogsEntry.viewEntryPG(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
+	}
 
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+	@description = "This test covers LPS-102033. It ensures that the comment only appears under the respective Blog Entry."
+	@priority = "3"
+	@refactorneeded
+	test CommentsAreViewableInAP {
+		JSONLayout.deletePublicLayout(
+			groupName = "Guest",
+			layoutName = "Blogs Page");
 
-		BlogsEntry.viewDefaultCP(entryTitle = "Blogs Entry Title");
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Asset Publisher Page");
+
+		JSONLayout.addWidgetToPublicLayout(
+			column = "1",
+			groupName = "Guest",
+			layoutName = "Asset Publisher Page",
+			widgetName = "Asset Publisher");
+
+		JSONBlog.addEntry(
+			entryContent = "Blogs Entry Content 1",
+			entryTitle = "Blogs Entry Title 1");
+
+		JSONBlog.addEntry(
+			entryContent = "Blogs Entry Content 2",
+			entryTitle = "Blogs Entry Title 2");
+
+		Navigator.gotoPage(pageName = "Asset Publisher Page");
+
+		AssetPublisherPortlet.configureDisplaySettings(displaySettings = "Comments");
+
+		Navigator.gotoPage(pageName = "Asset Publisher Page");
+
+		Comments.addPG(entryComment = "Blogs Entry Title 2 Comment");
+
+		Navigator.gotoPage(pageName = "Asset Publisher Page");
+
+		BlogsEntry.viewEntryViaAPPG(
+			assetTitle = "Blogs Entry Title 1",
+			entryContent = "Blogs Entry Content 1",
+			entryTitle = "Blogs Entry Title 1");
+
+		Comments.viewNoPG(
+			entryComment = "Blogs Entry Title 2 Comment",
+			userFullName = "Test Test");
+
+		Navigator.gotoPage(pageName = "Asset Publisher Page");
+
+		BlogsEntry.viewEntryViaAPPG(
+			assetTitle = "Blogs Entry Title 2",
+			entryContent = "Blogs Entry Content 2",
+			entryTitle = "Blogs Entry Title 2");
+
+		Comments.viewPG(
+			commentCount = "1",
+			entryComment = "Blogs Entry Title 2 Comment",
+			userFullName = "Test Test");
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DemoTrackbackURL {
 		property custom.properties = "blogs.trackback.enabled=true";
 		property dummy.socket.proxy.disabled = "true";
 		property test.name.skip.portal.instance = "BlogsUsecase#DemoTrackbackURL";
 
-		Blogs.addEntry(
+		JSONBlog.addEntry(
 			entryContent = "Blogs Entry1 Content",
 			entryTitle = "Blogs Entry1 Title");
+
+		Navigator.gotoPage(pageName = "Blogs Page");
 
 		BlogsEntry.addWithTrackbackURLPG(
 			entryContent = "Blogs Entry1 Content",
@@ -323,11 +388,10 @@ definition {
 			entryTitle2 = "Blogs Entry2 Title",
 			pageName = "Blogs Page");
 
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry1 Content",
-			entryTitle = "Blogs Entry1 Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry1 Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
 		Comments.viewPG(
 			commentCount = "1",
@@ -342,40 +406,33 @@ definition {
 			entryContent = "Blogs Entry2 Content",
 			entryTitle = "Blogs Entry2 Title");
 
-		ApplicationsMenu.gotoPortlet(
-			category = "System",
-			panel = "Control Panel",
-			portlet = "Virtual Instances");
-
-		PortalInstances.addCP(
-			mailDomain = "www.able.com",
-			virtualHost = "www.able.com",
-			webId = "www.able.com");
+		HeadlessPortalInstanceAPI.addPortalInstance(
+			domain = "www.able.com",
+			portalInstanceId = "www.able.com",
+			virtualHost = "www.able.com");
 
 		User.firstLoginPG(
 			password = "test",
 			userEmailAddress = "test@www.able.com",
 			virtualHostsURL = "http://www.able.com:8080");
 
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			portlet = "Pages");
+		SitePages.openPagesAdmin(
+			baseURL = "http://www.able.com:8080",
+			siteURLKey = "guest");
 
-		SitePages.addPublicPage(
-			pageName = "Blogs Page",
-			sitePageType = "Widget Page");
-
-		SitePages.configurePage(
-			columnName = "1 Column",
-			pageName = "Blogs Page",
-			privacy = "Public Pages",
-			sitePageType = "Widget Page");
+		SitePages.addPublicPage(pageName = "Blogs Page");
 
 		Navigator.gotoSpecificURLPage(
 			pageName = "Blogs Page",
 			url = "http://www.able.com:8080");
 
-		Portlet.addPG(portletName = "Blogs");
+		Portlet.addPG(
+			pageName = "Blogs Page",
+			portletName = "Blogs");
+
+		Navigator.gotoSpecificURLPage(
+			pageName = "Blogs Page",
+			url = "http://www.able.com:8080");
 
 		Blogs.addEntry(
 			entryContent = "Blogs Entry3 Content",
@@ -504,266 +561,69 @@ definition {
 			entryTitle = "Blogs Entry6 Title");
 	}
 
-	@priority = "4"
-	test ImportBlogsCommentLAR {
-		Blogs.addEntry(
+	@description = "This test covers LPS-102199. This ensures that the user can search for a pending blog entry."
+	@priority = "3"
+	@refactorneeded
+	test SearchForPendingBlogsEntry {
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Site Administration",
+			portlet = "Workflow");
+
+		Workflow.configureWorkflow(
+			workflowDefinition = "Single Approver",
+			workflowResourceValue = "Blogs Entry");
+
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+
+		Blogs.addWithWorkflow(
 			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Comments.addPG(entryComment = "Blogs Entry Comment");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Comments.viewPG(
-			commentCount = "1",
-			entryComment = "Blogs Entry Comment",
-			userFullName = "Test Test");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		LAR.exportPortlet(larFileName = "Blogs.portlet.lar");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsEntry.tearDownCP();
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		LAR.importPortlet(larFileName = "Blogs.portlet.lar");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Comments.viewPG(
-			commentCount = "1",
-			entryComment = "Blogs Entry Comment",
-			userFullName = "Test Test");
-	}
-
-	@priority = "5"
-	test RestoreBlogsEntry {
-		JSONBlog.addEntry(
-			entryContent = "Blogs Entry Content",
+			entrySubtitle = "Subtitle",
 			entryTitle = "Blogs Entry Title");
 
 		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
 
-		BlogsNavigator.moveToRecycleBinCP(
-			assetType = "Blogs Entry",
+		BlogsEntry.viewWithWorkflowCP(
+			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
 
-		RecycleBin.openRecycleBinAdmin(siteURLKey = "guest");
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
-		RecycleBin.restoreCP(
-			assetName = "Blogs Entry Title",
-			assetRestoreLocation = "Blogs",
-			assetType = "Blogs Entry");
-
-		RecycleBin.openRecycleBinAdmin(siteURLKey = "guest");
-
-		RecycleBin.viewDefaultCP(assetName = "Blogs Entry Title");
-
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
-
-		BlogsNavigator.gotoEntryCP(entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewEntryCP(
+		BlogsEntry.searchCP(
 			entryContent = "Blogs Entry Content",
+			entrySearchTerm = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
 	}
 
+	@description = "This test covers LPS-128451. It ensures that a blog entry can be published normally with xss code injected title."
 	@priority = "4"
-	test ViewBlogsEntriesAsGuestViaAP {
-		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntriesAsGuestViaAP";
-
-		Portlet.deletePG(portletName = "Blogs");
-
-		Portlet.addPG(portletName = "Asset Publisher");
-
-		AssetPublisherPortlet.configureAssetLinkBehaviorPG(assetLinkBehavior = "Show Full Content");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		Portlet.addPG(portletName = "Blogs");
+	@refactordone
+	test TitleWillNotExecuteXSS {
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
 
 		Blogs.addEntry(
 			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Refresh();
-
-		Blogs.addEntry(
-			entryContent = "Blogs Entry Content 2",
-			entryTitle = "Blogs Entry Title 2");
-
-		BlogsEntry.removeViewPermissionsPG(
-			entryTitle = "Blogs Entry Title 2",
-			roleTitle = "Guest");
-
-		User.logoutPG();
+			entrySubtitle = '''"><img src=xss onerror=alert(1)>''',
+			entryTitle = '''"><img src=xss onerror=alert(1)>''',
+			injectCode = "true");
 
 		Navigator.gotoPage(pageName = "Blogs Page");
 
 		BlogsNavigator.gotoEntryPG(
 			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewNoPG(entryTitle = "Blogs Entry Title 2");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsEntry.viewEntryViaAPPG(
-			assetTitle = "Blogs Entry Title",
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewNoEntryViaAPPG(
-			assetTitle = "Blogs Entry Title 2",
-			entryContent = "Blogs Entry Content 2",
-			entryTitle = "Blogs Entry Title 2");
-	}
-
-	@priority = "4"
-	test ViewBlogsEntryAsPublishedAfterFutureDisplayDateEditing {
-		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntryAsPublishedAfterFutureDisplayDateEditing";
-
-		BlogsNavigator.gotoAddEntry();
-
-		BlogsEntry.addEntryContent(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Panel.expandPanel(panel = "Configuration");
-
-		BlogsEntry.editDisplayDateYear();
-
-		PortletEntry.publish();
-
-		Navigator.gotoNavItem(navItem = "Not Published (1)");
-
-		BlogsNavigator.gotoEditPG(entryTitle = "Blogs Entry Title");
-
-		Panel.expandPanel(panel = "Configuration");
-
-		BlogsEntry.editDisplayDate(displayTimeMinute = "00");
-
-		PortletEntry.publish();
-
-		PortletEntry.viewNoNavItemLink();
+			entryTitle = '''"><img src=xss onerror=alert(1)>''');
 
 		BlogsEntry.viewEntryPG(
 			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+			entrySubtitle = '''"><img src=xss onerror=alert(1)>''',
+			entryTitle = '''"><img src=xss onerror=alert(1)>''');
 	}
 
 	@priority = "3"
-	test ViewBlogsEntryAsPublishedViaAP {
-		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntryAsPublishedViaAP";
-
-		JSONLayout.addPublicLayout(
-			groupName = "Guest",
-			layoutName = "Asset Publisher Page");
-
-		JSONLayout.addWidgetToPublicLayout(
-			column = "1",
-			groupName = "Guest",
-			layoutName = "Asset Publisher Page",
-			widgetName = "Asset Publisher");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		AssetPublisherPortlet.configureAssetLinkBehaviorPG(assetLinkBehavior = "Show Full Content");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		Blogs.addViaAP(
-			entryContent = "Blogs Entry Content",
-			entrySubtitle = "Blogs Entry Subtitle",
-			entryTitle = "Blogs Entry Title");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		BlogsEntry.viewEntryViaAPPG(
-			assetTitle = "Blogs Entry Title",
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEditPG(entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.editEntryContent(
-			entryContent = "Blogs Entry Content",
-			entryContentEdit = "Blogs Entry Content Edit",
-			entrySubtitle = "",
-			entrySubtitleEdit = "Blogs Entry Subtitle Edit",
-			entryTitle = "Blogs Entry Title",
-			entryTitleEdit = "Blogs Entry Title Edit");
-
-		BlogsEntry.saveAsDraft();
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		BlogsEntry.viewNoEntryViaAPPG(
-			assetTitle = "Blogs Entry Title",
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
-
-		Blogs.publishDraftCP(
-			entryContent = "Blogs Entry Content Edit",
-			entrySubtitle = "Blogs Entry Subtitle Edit",
-			entryTitle = "Blogs Entry Title Edit");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		BlogsEntry.viewEntryViaAPPG(
-			assetTitle = "Blogs Entry Title Edit",
-			entryContent = "Blogs Entry Content Edit",
-			entryTitle = "Blogs Entry Title Edit");
-	}
-
-	@priority = "3"
+	@refactorneeded
 	test ViewBlogsEntryFriendlyURLViaBlogsPortletAndRecentBloggers {
 		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntryFriendlyURLViaBlogsPortletAndRecentBloggers";
+
 		var portalURL = PropsUtil.get("portal.url");
 		var entryAuthor = "Test Test";
 		var entryContent = "Blogs Entry Content";
@@ -808,6 +668,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewBlogsEntryOnMultiplePagesWithDefaultAndPageScope {
 		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntryOnMultiplePagesWithDefaultAndPageScope";
 
@@ -884,11 +745,10 @@ definition {
 			portletName = "Blogs",
 			scope = "Blogs Page2");
 
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
 		BlogsEntry.viewPG(
 			entryContent = "Blogs Entry Content",
@@ -896,6 +756,7 @@ definition {
 	}
 
 	@priority = "3"
+	@refactorneeded
 	test ViewBlogsEntryWithCoverImageFromDMFolders {
 		JSONLayout.addPublicLayout(
 			groupName = "Guest",
@@ -906,6 +767,10 @@ definition {
 			groupName = "Guest",
 			layoutName = "Documents and Media Page",
 			widgetName = "Documents and Media");
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMDocument.enableActionsMenuOnPortlet();
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -967,90 +832,27 @@ definition {
 			imageFileName = "Document_2.jpg",
 			navTab = "Documents and Media");
 
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry1 Content",
-			entryTitle = "Blogs Entry1 Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry1 Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
 		AssertElementPresent(
 			key_uploadFileName = "Document_1",
 			locator1 = "BlogsEntry#ENTRY_COVER_IMAGE");
 
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry2 Content",
-			entryTitle = "Blogs Entry2 Title");
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry2 Title",
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
 		AssertElementPresent(
 			key_uploadFileName = "Document_2",
 			locator1 = "BlogsEntry#ENTRY_COVER_IMAGE");
 	}
 
-	@priority = "3"
-	test ViewBlogsEntryWithCoverImageUploadedToDM {
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
-
-		Blogs.addEntryWithUploadedCoverImage(
-			coverImageName = "Document_1",
-			entryContent = "Blogs Entry Content",
-			entrySubtitle = "Blogs Entry Subtitle",
-			entryTitle = "Blogs Entry Title",
-			navTab = "Documents and Media",
-			uploadFileName = "Document_1.jpg");
-
-		Pause(locator1 = "1000");
-
-		Button.clickPublish();
-
-		Pause(locator1 = "10000");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
-
-		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_1.jpg");
-
-		DMDocument.viewCP(dmDocumentTitle = "Document_1.jpg");
-	}
-
 	@priority = "4"
-	test ViewBlogsEntryWithCustomAbstract {
-		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntryWithCustomAbstract";
-
-		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
-
-		Blogs.addWithCustomAbstract(
-			entryAbstractDescription = "Blogs Entry Custom Abstract",
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsEntry.viewAbstractDisplay(
-			entryAbstractDescription = "Blogs Entry Custom Abstract",
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsNavigator.gotoEntryWithAbstractPG(
-			entryAbstractDescription = "Blogs Entry Custom Abstract",
-			entryTitle = "Blogs Entry Title");
-
-		BlogsEntry.viewEntryPG(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-	}
-
-	@priority = "4"
+	@refactorneeded
 	test ViewBlogsEntryWithDefaultAbstract {
 		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntryWithDefaultAbstract";
 
@@ -1077,19 +879,73 @@ definition {
 			entryTitle = "Blogs Entry Title");
 	}
 
+	@description = "This test covers LPS-106613. It ensures that the custom abstract can be added and edited."
+	@priority = "4"
+	@refactorneeded
+	test ViewBlogsEntryWithEditedCustomAbstract {
+		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntryWithCustomAbstract";
+
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+
+		Blogs.addWithCustomAbstract(
+			entryAbstractDescription = "Blogs Entry Custom Abstract",
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
+
+		Navigator.gotoPage(pageName = "Blogs Page");
+
+		BlogsEntry.viewAbstractDisplay(
+			entryAbstractDescription = "Blogs Entry Custom Abstract",
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
+
+		BlogsNavigator.gotoEntryWithAbstractPG(
+			entryAbstractDescription = "Blogs Entry Custom Abstract",
+			entryTitle = "Blogs Entry Title");
+
+		BlogsEntry.viewEntryPG(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
+
+		BlogsNavigator.openBlogsAdmin(siteURLKey = "guest");
+
+		BlogsNavigator.gotoEditCP(entryTitle = "Blogs Entry Title");
+
+		Panel.expandPanel(panel = "Configuration");
+
+		BlogsEntry.addCustomAbstract(entryAbstractDescription = "Blogs Entry Custom AbstractEdit");
+
+		Type(
+			key_editor = "content",
+			locator1 = "AlloyEditor#EDITOR",
+			value1 = "Blogs Entry Content Edit");
+
+		PortletEntry.publish();
+
+		Navigator.gotoPage(pageName = "Blogs Page");
+
+		BlogsEntry.viewAbstractDisplay(
+			entryAbstractDescription = "Blogs Entry Custom AbstractEdit",
+			entryContent = "Blogs Entry Content Edit",
+			entryTitle = "Blogs Entry Title");
+	}
+
 	@priority = "3"
+	@refactorneeded
 	test ViewBlogsEntryWithFutureDisplayDateViaBlogsAggregator {
 		JSONLayout.addPublicLayout(
 			groupName = "Guest",
 			layoutName = "Blogs Aggregator Page");
 
-		Navigator.gotoPage(pageName = "Blogs Aggregator Page");
+		JSONLayout.addWidgetToPublicLayout(
+			column = "1",
+			groupName = "Guest",
+			layoutName = "Blogs Aggregator Page",
+			widgetName = "Blogs Aggregator");
 
-		Portlet.addPG(portletName = "Blogs Aggregator");
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		BlogsNavigator.gotoAddEntry();
+		BlogsNavigator.openToAddEntry(
+			layoutName = "Blogs Page",
+			siteURLKey = "guest");
 
 		BlogsEntry.addEntryContent(
 			entryContent = "Blogs Entry Content",
@@ -1100,6 +956,8 @@ definition {
 		BlogsEntry.scheduleBlogEntry();
 
 		PortletEntry.publish();
+
+		Navigator.gotoPage(pageName = "Blogs Page");
 
 		Navigator.gotoNavItem(navItem = "Not Published (1)");
 
@@ -1175,131 +1033,22 @@ definition {
 			entryTitle = "Blogs Entry Title");
 	}
 
-	@priority = "3"
-	test ViewBlogsEntryWithSpecialCharactersOnPrivateVirtualHost {
-		property test.name.skip.portal.instance = "BlogsUsecase#ViewBlogsEntriesWithSpecialCharactersOnPublicAndPrivateVirtualHostPages";
-
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			portlet = "Settings");
-
-		Site.addVirtualHostsURLCP(
-			privatePageVirtualHostURL = "www.baker.com",
-			privateVirtualHosts = "true");
-
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			portlet = "Pages");
-
-		SitePages.addPrivatePage(pageName = "Private Blogs Page");
-
-		Navigator.openSpecificURL(url = "http://www.baker.com:8080/group/guest");
-
-		User.loginPG(
-			password = "test",
-			specificURL = "http://www.baker.com:8080/group/guest",
-			userEmailAddress = "test@liferay.com");
-
-		Navigator.openSpecificURL(url = "http://www.baker.com:8080/private-blogs-page");
-
-		Portlet.addPG(portletName = "Blogs");
-
-		Blogs.addEntry(
-			entryContent = '''Blogs Entry Content `~!@#$%^&*(){}[],.<>/?|''',
-			entryTitle = '''Blogs Entry Title `~!@#$%^&*(){}[],.<>/?|''');
-
-		BlogsNavigator.gotoEntryPG(
-			entryContent = '''Blogs Entry Content `~!@#$%^&*(){}[],.<>/?|''',
-			entryTitle = '''Blogs Entry Title `~!@#$%^&*(){}[],.<>/?|''');
-
-		BlogsEntry.viewPG(
-			entryContent = '''Blogs Entry Content `~!@#$%^&*(){}[],.<>/?|''',
-			entryTitle = '''Blogs Entry Title `~!@#$%^&*(){}[],.<>/?|''');
-	}
-
 	@priority = "4"
-	test ViewNoBlogsDraftDisplaysInAP {
-		JSONLayout.addPublicLayout(
-			groupName = "Guest",
-			layoutName = "Asset Publisher Page");
-
+	@refactorneeded
+	test ViewParentOrganizationViaSelectOrganizationInBlogsConfiguration {
 		JSONLayout.addWidgetToPublicLayout(
 			column = "1",
 			groupName = "Guest",
-			layoutName = "Asset Publisher Page",
-			widgetName = "Asset Publisher");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		AssetPublisherPortlet.configureAssetLinkBehaviorPG(assetLinkBehavior = "Show Full Content");
-
-		JSONBlog.addEntry(
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		BlogsEntry.viewEntryViaAPPG(
-			assetTitle = "Blogs Entry Title",
-			entryContent = "Blogs Entry Content",
-			entryTitle = "Blogs Entry Title");
+			layoutName = "Blogs Page",
+			widgetName = "Blogs Aggregator");
 
 		Navigator.gotoPage(pageName = "Blogs Page");
-
-		Blogs.editDraftPG(
-			entryContent = "Blogs Entry Content",
-			entryContentEdit = "Blogs Entry Content Draft",
-			entryTitle = "Blogs Entry Title",
-			entryTitleEdit = "Blogs Entry Title Draft");
-
-		Click(locator1 = "Icon#BACK");
-
-		Navigator.gotoNavItem(navItem = "Not Published (1)");
-
-		BlogsEntry.viewPG(
-			entryContent = "Blogs Entry Content Draft",
-			entryTitle = "Blogs Entry Title Draft");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		AssetPublisherPortlet.viewManualNoAssetsMessagePG();
-
-		Navigator.gotoPage(pageName = "Blogs Page");
-
-		Navigator.gotoNavItem(navItem = "Not Published (1)");
-
-		Blogs.editEntryPG(
-			entryContent = "Blogs Entry Content Draft",
-			entryContentEdit = "Blogs Entry Content Edit",
-			entryTitle = "Blogs Entry Title Draft",
-			entryTitleEdit = "Blogs Entry Title Edit");
-
-		Navigator.gotoPage(pageName = "Asset Publisher Page");
-
-		BlogsEntry.viewEntryViaAPPG(
-			assetTitle = "Blogs Entry Title Edit",
-			entryContent = "Blogs Entry Content Edit",
-			entryTitle = "Blogs Entry Title Edit");
-
-		BlogsEntry.viewNoEntryViaAPPG(
-			assetTitle = "Blogs Entry Title Draft",
-			entryContent = "Blogs Entry Content Draft",
-			entryTitle = "Blogs Entry Title Draft");
-	}
-
-	@priority = "4"
-	test ViewParentOrganizationViaSelectOrganizationInBlogsConfiguration {
-		Portlet.addPG(portletName = "Blogs Aggregator");
 
 		Portlet.gotoPortletOptions(
 			portletName = "Blogs Aggregator",
 			portletOption = "Configuration");
 
-		var key_portletName = "Blogs Aggregator";
-
-		AssertTextPresent(
-			locator1 = "Portlet#TITLE",
-			value1 = "Blogs Aggregator");
+		Portlet.viewTitle(portletName = "Blogs Aggregator");
 
 		SelectFrame(locator1 = "IFrame#CONFIGURATION");
 
@@ -1309,31 +1058,17 @@ definition {
 			locator1 = "Button#SELECT",
 			value1 = "Select");
 
-		SelectFrame(value1 = "relative=top");
-
-		SelectFrame(locator1 = "UsersAndOrganizationsSelectOrganization#SELECT_ORGANIZATION_IFRAME");
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 		AssertElementPresent(locator1 = "Message#EMPTY_INFO");
 
 		IFrame.closeFrame();
 
-		Click(locator1 = "Icon#TIMES");
-
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		for (var orgName : list "Organization1 Name,Organization2 Name,Organization3 Name") {
-			Organization.addCP(
-				orgName = "${orgName}",
-				orgType = "Organization");
-
-			ApplicationsMenu.gotoPortlet(
-				category = "Users",
-				panel = "Control Panel",
-				portlet = "Users and Organizations");
+		for (var orgName : list "1,2,3") {
+			JSONOrganization.addOrganization(organizationName = "Organization${orgName} Name");
 		}
+
+		User.openUsersAdmin();
 
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 

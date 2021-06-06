@@ -24,14 +24,14 @@ import com.liferay.osgi.util.ServiceTrackerFactory;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.security.access.control.AccessControlUtil;
 import com.liferay.portal.kernel.security.auth.AccessControlContext;
 import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierResult;
 import com.liferay.portal.kernel.security.service.access.policy.ServiceAccessPolicy;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import java.util.ArrayList;
@@ -176,6 +176,9 @@ public class LiferayOAuth2OSGiFeature implements Feature {
 				serviceRegistration.unregister();
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 		}
 
@@ -201,10 +204,10 @@ public class LiferayOAuth2OSGiFeature implements Feature {
 
 		_serviceTrackers.add(serviceTracker);
 
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put(
-			OAuth2ProviderScopeConstants.OSGI_JAXRS_NAME, osgiJaxRsName);
+		Dictionary<String, Object> properties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				OAuth2ProviderScopeConstants.OSGI_JAXRS_NAME, osgiJaxRsName
+			).build();
 
 		_serviceRegistrations.add(
 			_bundleContext.registerService(
@@ -248,7 +251,7 @@ public class LiferayOAuth2OSGiFeature implements Feature {
 		new ArrayList<>();
 
 	private class ApplicationDescriptorsImpl
-		implements ScopeDescriptor, ApplicationDescriptor {
+		implements ApplicationDescriptor, ScopeDescriptor {
 
 		public ApplicationDescriptorsImpl(
 			ServiceTracker<?, ResourceBundleLoader> serviceTracker,

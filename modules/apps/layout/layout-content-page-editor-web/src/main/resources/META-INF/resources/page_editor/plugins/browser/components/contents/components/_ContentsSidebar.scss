@@ -1,0 +1,68 @@
+@import 'atlas-variables';
+
+.page-editor {
+	&__contents__page-content {
+		border-top: solid thin $secondary-l2;
+
+		&--mapped-item-hovered {
+			background-color: fade_out($purple, 0.9);
+			transition: background-color ease 0.3s;
+		}
+	}
+
+	&__page-contents {
+		padding: 0 16px;
+
+		.sheet-subtitle {
+			border: 0;
+			color: $gray-600;
+			font-size: 0.688rem;
+			margin-bottom: 2px;
+		}
+
+		&__page-content {
+			font-size: 0.75rem;
+			margin-bottom: 4px;
+			padding: 8px 0 8px 12px;
+
+			&:hover {
+				button.text-secondary {
+					opacity: 1;
+
+					&:hover:not(:disabled) .lexicon-icon {
+						color: $gray-900;
+						transition: color ease 0.3s;
+					}
+				}
+			}
+
+			&--mapped-item-hovered {
+				background-color: $gray-100;
+				border-radius: 4px;
+				transition: background-color ease 0.3s;
+			}
+
+			button.text-secondary {
+				opacity: 0;
+			}
+
+			.dropdown .lexicon-icon {
+				margin-top: 1px;
+			}
+
+			.lexicon-icon {
+				font-size: 0.875rem;
+				min-width: 1rem;
+			}
+		}
+
+		&__content-filter {
+			margin-bottom: 20px;
+
+			&__help {
+				color: $gray-600;
+				font-size: 0.75rem;
+			}
+		}
+	}
+}

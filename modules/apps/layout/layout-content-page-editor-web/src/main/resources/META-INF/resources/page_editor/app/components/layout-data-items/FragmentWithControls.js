@@ -12,82 +12,133 @@
  * details.
  */
 
-import React, {useMemo} from 'react';
+import classNames from 'classnames';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import useSetRef from '../../../core/hooks/useSetRef';
+import {getLayoutDataItemPropTypes} from '../../../prop-types/index';
+import {FREEMARKER_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/freemarkerFragmentEntryProcessor';
 import {
-	LayoutDataPropTypes,
-	getLayoutDataItemPropTypes,
-} from '../../../prop-types/index';
-import {FRAGMENT_CONFIGURATION_ROLES} from '../../config/constants/fragmentConfigurationRoles';
-import {LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS} from '../../config/constants/layoutDataFloatingToolbarButtons';
-import selectCanUpdateItemConfiguration from '../../selectors/selectCanUpdateItemConfiguration';
-import selectShowFloatingToolbar from '../../selectors/selectShowFloatingToolbar';
-import {useSelector, useSelectorCallback} from '../../store/index';
-import {useIsActive} from '../Controls';
+	useHoveredItemId,
+	useHoveredItemType,
+} from '../../contexts/ControlsContext';
+import {useSelector} from '../../contexts/StoreContext';
+import {getFrontendTokenValue} from '../../utils/getFrontendTokenValue';
+import {getResponsiveConfig} from '../../utils/getResponsiveConfig';
+import {isValidSpacingOption} from '../../utils/isValidSpacingOption';
 import Topper from '../Topper';
-import FloatingToolbar from '../floating-toolbar/FloatingToolbar';
 import FragmentContent from '../fragment-content/FragmentContent';
+import FragmentContentInteractionsFilter from '../fragment-content/FragmentContentInteractionsFilter';
+import FragmentContentProcessor from '../fragment-content/FragmentContentProcessor';
+import getAllPortals from './getAllPortals';
+import isHovered from './isHovered';
 
-const FragmentWithControls = React.forwardRef(({item, layoutData}, ref) => {
-	const canUpdateItemConfiguration = useSelector(
-		selectCanUpdateItemConfiguration
+const FIELD_TYPES = ['itemSelector', 'collectionSelector'];
+
+const FragmentWithControls = React.forwardRef(({item}, ref) => {
+	const fragmentEntryLinks = useSelector((state) => state.fragmentEntryLinks);
+	const hoveredItemType = useHoveredItemType();
+	const hoveredItemId = useHoveredItemId();
+	const [hovered, setHovered] = useState(false);
+	const selectedViewportSize = useSelector(
+		(state) => state.selectedViewportSize
 	);
-	const fragmentEntryLink = useSelectorCallback(
-		(state) => state.fragmentEntryLinks[item.config.fragmentEntryLinkId],
-		[item.config.fragmentEntryLinkId]
-	);
-	const isActive = useIsActive();
+
+	const getPortals = useCallback((element) => getAllPortals(element), []);
+	const itemConfig = getResponsiveConfig(item.config, selectedViewportSize);
 	const [setRef, itemElement] = useSetRef(ref);
-	const showFloatingToolbar = useSelector(selectShowFloatingToolbar);
 
-	const floatingToolbarButtons = useMemo(() => {
-		const buttons = [];
+	const editableValues = useMemo(() => {
+		const fieldNames = [];
+		const fragment = fragmentEntryLinks[item.config.fragmentEntryLinkId];
 
-		const fieldSets = fragmentEntryLink.configuration?.fieldSets;
+		if (fragment) {
+			fragment.configuration?.fieldSets?.forEach((fieldSet) => {
+				fieldSet.fields.forEach((field) => {
+					if (FIELD_TYPES.includes(field.type)) {
+						fieldNames.push(field.name);
+					}
+				});
+			});
 
-		const stylesFieldSets = fieldSets?.filter(
-			(fieldSet) =>
-				fieldSet.configurationRole ===
-				FRAGMENT_CONFIGURATION_ROLES.style
-		);
+			const filteredFieldNames = fieldNames.filter(
+				(fieldName) =>
+					fragment.editableValues[
+						FREEMARKER_FRAGMENT_ENTRY_PROCESSOR
+					][fieldName].classPK
+			);
 
-		const configFieldSets = fieldSets?.filter(
-			(fieldSet) =>
-				fieldSet.configurationRole !==
-				FRAGMENT_CONFIGURATION_ROLES.style
-		);
-
-		if (canUpdateItemConfiguration && stylesFieldSets?.length) {
-			buttons.push(LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.fragmentStyles);
-		}
-
-		if (canUpdateItemConfiguration && configFieldSets?.length) {
-			buttons.push(
-				LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.fragmentConfiguration
+			return filteredFieldNames.map(
+				(fieldName) =>
+					fragment.editableValues[
+						FREEMARKER_FRAGMENT_ENTRY_PROCESSOR
+					][fieldName] || {}
 			);
 		}
+	}, [item, fragmentEntryLinks]);
 
-		return buttons;
-	}, [canUpdateItemConfiguration, fragmentEntryLink.configuration]);
+	useEffect(() => {
+		if (editableValues.length) {
+			const someEditableIsHovered = editableValues.some((editableValue) =>
+				isHovered({
+					editableValue,
+					hoveredItemId,
+					hoveredItemType,
+				})
+			);
+
+			setHovered(someEditableIsHovered);
+		}
+	}, [hoveredItemType, hoveredItemId, editableValues]);
+
+	const {
+		marginBottom,
+		marginLeft,
+		marginRight,
+		marginTop,
+		maxWidth,
+		minWidth,
+		shadow,
+		width,
+	} = itemConfig.styles;
+
+	const style = {};
+
+	style.boxShadow = getFrontendTokenValue(shadow);
+	style.maxWidth = maxWidth;
+	style.minWidth = minWidth;
+	style.width = width;
 
 	return (
-		<Topper item={item} itemElement={itemElement} layoutData={layoutData}>
-			<>
-				{isActive(item.itemId) && showFloatingToolbar && (
-					<FloatingToolbar
-						buttons={floatingToolbarButtons}
-						item={item}
-						itemElement={itemElement}
-					/>
-				)}
-
+		<Topper
+			className={classNames({
+				[`mb-${marginBottom}`]: isValidSpacingOption(marginBottom),
+				[`ml-${marginLeft}`]: isValidSpacingOption(marginLeft),
+				[`mr-${marginRight}`]: isValidSpacingOption(marginRight),
+				[`mt-${marginTop}`]: isValidSpacingOption(marginTop),
+				'page-editor__topper--hovered': hovered,
+			})}
+			item={item}
+			itemElement={itemElement}
+			style={style}
+		>
+			<FragmentContentInteractionsFilter
+				fragmentEntryLinkId={item.config.fragmentEntryLinkId}
+				itemId={item.itemId}
+			>
 				<FragmentContent
 					elementRef={setRef}
-					fragmentEntryLinkId={fragmentEntryLink.fragmentEntryLinkId}
+					fragmentEntryLinkId={item.config.fragmentEntryLinkId}
+					getPortals={getPortals}
+					item={item}
+					withinTopper
+				/>
+
+				<FragmentContentProcessor
+					fragmentEntryLinkId={item.config.fragmentEntryLinkId}
 					itemId={item.itemId}
 				/>
-			</>
+			</FragmentContentInteractionsFilter>
 		</Topper>
 	);
 });
@@ -96,7 +147,6 @@ FragmentWithControls.displayName = 'FragmentWithControls';
 
 FragmentWithControls.propTypes = {
 	item: getLayoutDataItemPropTypes().isRequired,
-	layoutData: LayoutDataPropTypes.isRequired,
 };
 
 export default FragmentWithControls;

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,16 +48,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Comment")
+@GraphQLName(
+	description = "Represents a comment. See [Comment](https://www.schema.org/Comment) for more details.",
+	value = "Comment"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Comment")
-public class Comment {
+public class Comment implements Serializable {
 
 	public static Comment toDTO(String json) {
 		return ObjectMapperUtil.readValue(Comment.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -81,7 +88,9 @@ public class Comment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -224,7 +233,7 @@ public class Comment {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Integer numberOfComments;
 
-	@Schema
+	@Schema(description = "the ID of the comment's parent, if it exists.")
 	public Long getParentCommentId() {
 		return parentCommentId;
 	}
@@ -248,7 +257,7 @@ public class Comment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "the ID of the comment's parent, if it exists.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long parentCommentId;
 
@@ -406,6 +415,7 @@ public class Comment {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Comment",
 		name = "x-class-name"
 	)
@@ -441,7 +451,7 @@ public class Comment {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -480,7 +490,7 @@ public class Comment {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

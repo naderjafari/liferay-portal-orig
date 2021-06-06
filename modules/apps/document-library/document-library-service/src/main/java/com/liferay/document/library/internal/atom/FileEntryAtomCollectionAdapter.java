@@ -217,11 +217,10 @@ public class FileEntryAtomCollectionAdapter
 		ByteArrayInputStream contentByteArrayInputStream =
 			new ByteArrayInputStream(contentDecoded);
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		return _dlAppService.addFileEntry(
-			repositoryId, folderId, title, mimeType, title, summary, null,
-			contentByteArrayInputStream, contentDecoded.length, serviceContext);
+			null, repositoryId, folderId, title, mimeType, title, summary, null,
+			contentByteArrayInputStream, contentDecoded.length, null, null,
+			new ServiceContext());
 	}
 
 	@Override
@@ -256,11 +255,10 @@ public class FileEntryAtomCollectionAdapter
 		ByteArrayInputStream contentByteArrayInputStream =
 			new ByteArrayInputStream(content);
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		return _dlAppService.addFileEntry(
-			repositoryId, folderId, title, mimeType, title, description, null,
-			contentByteArrayInputStream, content.length, serviceContext);
+			null, repositoryId, folderId, title, mimeType, title, description,
+			null, contentByteArrayInputStream, content.length, null, null,
+			new ServiceContext());
 	}
 
 	@Override
@@ -280,12 +278,10 @@ public class FileEntryAtomCollectionAdapter
 		ByteArrayInputStream contentByteArrayInputStream =
 			new ByteArrayInputStream(contentDecoded);
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		_dlAppService.updateFileEntry(
 			fileEntry.getFileEntryId(), title, mimeType, title, summary, null,
 			DLVersionNumberIncrease.MAJOR, contentByteArrayInputStream,
-			contentDecoded.length, serviceContext);
+			contentDecoded.length, null, null, new ServiceContext());
 	}
 
 	@Override
@@ -307,12 +303,10 @@ public class FileEntryAtomCollectionAdapter
 		ByteArrayInputStream contentByteArrayInputStream =
 			new ByteArrayInputStream(content);
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		_dlAppService.updateFileEntry(
 			fileEntry.getFileEntryId(), slug, mimeType, title, description,
 			null, DLVersionNumberIncrease.MAJOR, contentByteArrayInputStream,
-			content.length, serviceContext);
+			content.length, null, null, new ServiceContext());
 	}
 
 	@Reference(unbind = "-")

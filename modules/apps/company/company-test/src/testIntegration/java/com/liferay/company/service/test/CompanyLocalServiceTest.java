@@ -32,6 +32,9 @@ import com.liferay.portal.kernel.exception.NoSuchAccountException;
 import com.liferay.portal.kernel.exception.NoSuchPasswordPolicyException;
 import com.liferay.portal.kernel.exception.NoSuchVirtualHostException;
 import com.liferay.portal.kernel.exception.RequiredCompanyException;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Account;
 import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.Company;
@@ -74,9 +77,13 @@ import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
+import com.liferay.portal.kernel.util.PrefsPropsUtil;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.test.rule.SybaseDump;
@@ -94,6 +101,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -280,8 +288,8 @@ public class CompanyLocalServiceTest {
 		serviceContext.setUserId(userId);
 
 		DLAppLocalServiceUtil.addFileEntry(
-			userId, guestGroup.getGroupId(), 0, "test.xml", "text/xml",
-			"test.xml", "", "", "test".getBytes(), serviceContext);
+			null, userId, guestGroup.getGroupId(), 0, "test.xml", "text/xml",
+			"test.xml", "", "", "test".getBytes(), null, null, serviceContext);
 
 		CompanyLocalServiceUtil.deleteCompany(companyId);
 	}
@@ -770,6 +778,103 @@ public class CompanyLocalServiceTest {
 	}
 
 	@Test
+	public void testGetCompanyByVirtualHost() throws Exception {
+		String virtualHostName = "::1";
+
+		Company company = CompanyLocalServiceUtil.addCompany(
+			null, virtualHostName, virtualHostName, "test.com", false, 0, true);
+
+		Assert.assertEquals(
+			company,
+			CompanyLocalServiceUtil.getCompanyByVirtualHost(virtualHostName));
+		Assert.assertEquals(
+			company,
+			CompanyLocalServiceUtil.getCompanyByVirtualHost("0:0:0:0:0:0:0:1"));
+
+		CompanyLocalServiceUtil.deleteCompany(company);
+	}
+
+	@Test
+	public void testUpdateCompanyLocales() throws Exception {
+		long companyId = CompanyThreadLocal.getCompanyId();
+
+		try {
+			Company company = addCompany();
+
+			CompanyThreadLocal.setCompanyId(company.getCompanyId());
+
+			String languageId = "ca_ES";
+			TimeZone timeZone = company.getTimeZone();
+
+			CompanyLocalServiceUtil.updateDisplay(
+				company.getCompanyId(), languageId, timeZone.getID());
+
+			UnicodeProperties unicodeProperties = new UnicodeProperties();
+
+			unicodeProperties.put(PropsKeys.LOCALES, languageId);
+
+			CompanyLocalServiceUtil.updatePreferences(
+				company.getCompanyId(), unicodeProperties);
+
+			Assert.assertEquals(
+				Collections.singleton(LocaleUtil.fromLanguageId(languageId)),
+				LanguageUtil.getAvailableLocales());
+		}
+		finally {
+			CompanyThreadLocal.setCompanyId(companyId);
+		}
+	}
+
+	@Test
+	public void testUpdateCompanyLocalesUpdateGroupLocales() throws Exception {
+		Company company = addCompany();
+
+		String[] companyLanguageIds = PrefsPropsUtil.getStringArray(
+			company.getCompanyId(), PropsKeys.LOCALES, StringPool.COMMA,
+			PropsValues.LOCALES_ENABLED);
+
+		User user = UserTestUtil.getAdminUser(company.getCompanyId());
+
+		Group group = GroupTestUtil.addGroup(
+			company.getCompanyId(), user.getUserId(),
+			GroupConstants.DEFAULT_PARENT_GROUP_ID);
+
+		group = GroupTestUtil.updateDisplaySettings(
+			group.getGroupId(),
+			ListUtil.fromArray(LocaleUtil.fromLanguageIds(companyLanguageIds)),
+			LocaleUtil.getDefault());
+
+		UnicodeProperties groupTypeSettingsUnicodeProperties =
+			group.getTypeSettingsProperties();
+
+		Assert.assertEquals(
+			StringUtil.merge(companyLanguageIds),
+			groupTypeSettingsUnicodeProperties.getProperty(PropsKeys.LOCALES));
+
+		UnicodeProperties unicodeProperties = new UnicodeProperties();
+
+		String languageIds = "ca_ES,en_US";
+
+		unicodeProperties.put(PropsKeys.LOCALES, languageIds);
+
+		CompanyLocalServiceUtil.updatePreferences(
+			company.getCompanyId(), unicodeProperties);
+
+		Assert.assertEquals(
+			languageIds,
+			PrefsPropsUtil.getString(
+				company.getCompanyId(), PropsKeys.LOCALES));
+
+		group = GroupLocalServiceUtil.getGroup(group.getGroupId());
+
+		groupTypeSettingsUnicodeProperties = group.getTypeSettingsProperties();
+
+		Assert.assertEquals(
+			languageIds,
+			groupTypeSettingsUnicodeProperties.getProperty(PropsKeys.LOCALES));
+	}
+
+	@Test
 	public void testUpdateDisplay() throws Exception {
 		Company company = addCompany();
 
@@ -841,7 +946,12 @@ public class CompanyLocalServiceTest {
 
 	@Test
 	public void testUpdateValidVirtualHostnames() throws Exception {
-		testUpdateVirtualHostnames(new String[] {"abc.com"}, false);
+		testUpdateVirtualHostnames(
+			new String[] {
+				"abc.com", "255.0.0.0", "0:0:0:0:0:0:0:1", "::1",
+				"0000:0000:0000:0000:0000:0000:0000:0001"
+			},
+			false);
 	}
 
 	protected Company addCompany() throws Exception {
@@ -911,6 +1021,10 @@ public class CompanyLocalServiceTest {
 				Assert.assertFalse(expectFailure);
 			}
 			catch (AccountNameException accountNameException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(accountNameException, accountNameException);
+				}
+
 				Assert.assertTrue(expectFailure);
 			}
 		}
@@ -953,6 +1067,10 @@ public class CompanyLocalServiceTest {
 			}
 		}
 		catch (CompanyMxException companyMxException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(companyMxException, companyMxException);
+			}
+
 			Assert.assertFalse(valid);
 			Assert.assertTrue(mailMxUpdate);
 		}
@@ -978,6 +1096,12 @@ public class CompanyLocalServiceTest {
 				Assert.assertFalse(expectFailure);
 			}
 			catch (CompanyVirtualHostException companyVirtualHostException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						companyVirtualHostException,
+						companyVirtualHostException);
+				}
+
 				Assert.assertTrue(expectFailure);
 			}
 		}
@@ -1023,6 +1147,9 @@ public class CompanyLocalServiceTest {
 
 		return list;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		CompanyLocalServiceTest.class);
 
 	private static final TransactionConfig _transactionConfig;
 

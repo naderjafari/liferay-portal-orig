@@ -65,7 +65,9 @@ import com.liferay.petra.sql.dsl.spi.query.SetOperationType;
 import com.liferay.petra.sql.dsl.spi.query.Where;
 import com.liferay.petra.sql.dsl.spi.query.sort.DefaultOrderByExpression;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.sql.Clob;
 import java.sql.Types;
@@ -77,6 +79,7 @@ import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -85,50 +88,54 @@ import org.junit.Test;
 public class SQLDSLTest {
 
 	@ClassRule
-	public static final CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor() {
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new CodeCoverageAssertor() {
 
-			@Override
-			public void appendAssertClasses(List<Class<?>> assertClasses) {
-				assertClasses.clear();
+				@Override
+				public void appendAssertClasses(List<Class<?>> assertClasses) {
+					assertClasses.clear();
 
-				assertClasses.add(AggregateExpression.class);
-				assertClasses.add(BaseASTNode.class);
-				assertClasses.add(BaseTable.class);
-				assertClasses.add(CaseWhenThen.class);
-				assertClasses.add(DefaultAlias.class);
-				assertClasses.add(DefaultASTNodeListener.class);
-				assertClasses.add(DefaultColumn.class);
-				assertClasses.add(DefaultColumnAlias.class);
-				assertClasses.add(DefaultOrderByExpression.class);
-				assertClasses.add(DefaultPredicate.class);
-				assertClasses.add(DSLFunction.class);
-				assertClasses.add(DSLFunctionType.class);
-				assertClasses.add(DSLFunctionFactoryUtil.class);
-				assertClasses.add(DSLQueryFactoryUtil.class);
-				assertClasses.add(ElseEnd.class);
-				assertClasses.add(From.class);
-				assertClasses.add(GroupBy.class);
-				assertClasses.add(Having.class);
-				assertClasses.add(Join.class);
-				assertClasses.add(JoinType.class);
-				assertClasses.add(Limit.class);
-				assertClasses.add(NullExpression.class);
-				assertClasses.add(Operand.class);
-				assertClasses.add(OrderBy.class);
-				assertClasses.add(QueryExpression.class);
-				assertClasses.add(QueryTable.class);
-				assertClasses.add(Scalar.class);
-				assertClasses.add(ScalarList.class);
-				assertClasses.add(Select.class);
-				assertClasses.add(SetOperation.class);
-				assertClasses.add(SetOperationType.class);
-				assertClasses.add(TableStar.class);
-				assertClasses.add(WhenThen.class);
-				assertClasses.add(Where.class);
-			}
+					assertClasses.add(AggregateExpression.class);
+					assertClasses.add(BaseASTNode.class);
+					assertClasses.add(BaseTable.class);
+					assertClasses.add(CaseWhenThen.class);
+					assertClasses.add(DefaultAlias.class);
+					assertClasses.add(DefaultASTNodeListener.class);
+					assertClasses.add(DefaultColumn.class);
+					assertClasses.add(DefaultColumnAlias.class);
+					assertClasses.add(DefaultOrderByExpression.class);
+					assertClasses.add(DefaultPredicate.class);
+					assertClasses.add(DSLFunction.class);
+					assertClasses.add(DSLFunctionType.class);
+					assertClasses.add(DSLFunctionFactoryUtil.class);
+					assertClasses.add(DSLQueryFactoryUtil.class);
+					assertClasses.add(ElseEnd.class);
+					assertClasses.add(From.class);
+					assertClasses.add(GroupBy.class);
+					assertClasses.add(Having.class);
+					assertClasses.add(Join.class);
+					assertClasses.add(JoinType.class);
+					assertClasses.add(Limit.class);
+					assertClasses.add(NullExpression.class);
+					assertClasses.add(Operand.class);
+					assertClasses.add(OrderBy.class);
+					assertClasses.add(Predicate.class);
+					assertClasses.add(QueryExpression.class);
+					assertClasses.add(QueryTable.class);
+					assertClasses.add(Scalar.class);
+					assertClasses.add(ScalarList.class);
+					assertClasses.add(Select.class);
+					assertClasses.add(SetOperation.class);
+					assertClasses.add(SetOperationType.class);
+					assertClasses.add(TableStar.class);
+					assertClasses.add(WhenThen.class);
+					assertClasses.add(Where.class);
+				}
 
-		};
+			},
+			LiferayUnitTestRule.INSTANCE);
 
 	@Test
 	public void testAggregateExpression() {
@@ -187,26 +194,26 @@ public class SQLDSLTest {
 
 		Assert.assertSame(fromStep, from.getChild());
 
-		OrderBy orderBy = new OrderBy(
+		OrderBy orderBy1 = new OrderBy(
 			from,
 			new OrderByExpression[] {
 				MainExampleTable.INSTANCE.mainExampleId.ascending()
 			});
 
-		Assert.assertSame(from, orderBy.getChild());
+		Assert.assertSame(from, orderBy1.getChild());
 
 		Assert.assertEquals(
 			"select * from MainExample order by MainExample.mainExampleId asc",
-			orderBy.toString());
+			orderBy1.toString());
 
 		JoinStep joinStep = from.innerJoinON(
 			ReferenceExampleTable.INSTANCE,
 			ReferenceExampleTable.INSTANCE.mainExampleId.eq(
 				MainExampleTable.INSTANCE.mainExampleId));
 
-		OrderBy orderBy2 = orderBy.withNewChild(joinStep);
+		OrderBy orderBy2 = orderBy1.withNewChild(joinStep);
 
-		Assert.assertNotSame(orderBy, orderBy2);
+		Assert.assertNotSame(orderBy1, orderBy2);
 
 		Assert.assertEquals(
 			"select * from MainExample inner join ReferenceExample on " +
@@ -856,6 +863,30 @@ public class SQLDSLTest {
 			"select MainExample.name columnAlias from MainExample order by " +
 				"columnAlias asc",
 			dslQuery.toString());
+	}
+
+	@Test
+	public void testPredicate() {
+		Predicate predicate = MainExampleTable.INSTANCE.name.eq("test");
+
+		Assert.assertNull(Predicate.and(null, null));
+		Assert.assertSame(predicate, Predicate.and(predicate, null));
+		Assert.assertSame(predicate, Predicate.and(null, predicate));
+		Assert.assertEquals(
+			String.valueOf(predicate.and(predicate)),
+			String.valueOf(Predicate.and(predicate, predicate)));
+
+		Assert.assertNull(Predicate.or(null, null));
+		Assert.assertSame(predicate, Predicate.or(predicate, null));
+		Assert.assertSame(predicate, Predicate.or(null, predicate));
+		Assert.assertEquals(
+			String.valueOf(predicate.or(predicate)),
+			String.valueOf(Predicate.or(predicate, predicate)));
+
+		Assert.assertNull(Predicate.withParentheses(null));
+		Assert.assertEquals(
+			String.valueOf(predicate.withParentheses()),
+			String.valueOf(Predicate.withParentheses(predicate)));
 	}
 
 	@Test

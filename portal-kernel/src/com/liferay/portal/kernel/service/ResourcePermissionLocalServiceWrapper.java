@@ -354,6 +354,13 @@ public class ResourcePermissionLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _resourcePermissionLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _resourcePermissionLocalService.dynamicQuery();
 	}
@@ -509,6 +516,14 @@ public class ResourcePermissionLocalServiceWrapper
 
 		return _resourcePermissionLocalService.
 			getIndexableActionableDynamicQuery();
+	}
+
+	@Override
+	public java.util.Map<String, java.util.List<ResourcePermission>>
+		getIndividualPortletResourcePermissions(long companyId) {
+
+		return _resourcePermissionLocalService.
+			getIndividualPortletResourcePermissions(companyId);
 	}
 
 	/**

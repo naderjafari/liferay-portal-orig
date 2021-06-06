@@ -71,7 +71,7 @@ import org.osgi.service.component.annotations.Reference;
 	property = {
 		"javax.portlet.name=" + OAuth2ProviderPortletKeys.OAUTH2_AUTHORIZE,
 		"mvc.command.name=/",
-		"mvc.command.name=/authorize/view_authorization_request"
+		"mvc.command.name=/oauth2_provider/view_authorization_request"
 	},
 	service = MVCRenderCommand.class
 )
@@ -82,9 +82,6 @@ public class ViewAuthorizationRequestMVCRenderCommand
 	public String render(
 			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws PortletException {
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
 
 		HttpServletRequest httpServletRequest =
 			_portal.getOriginalServletRequest(
@@ -108,6 +105,9 @@ public class ViewAuthorizationRequestMVCRenderCommand
 
 			return "/authorize/error.jsp";
 		}
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 
 		String clientId = oAuth2Parameters.get("client_id");
 

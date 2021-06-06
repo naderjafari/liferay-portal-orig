@@ -56,8 +56,8 @@ public abstract class BaseStatusResourceImpl implements StatusResource {
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/bulk/v1.0/status'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Path("/status")
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "Status")})
@@ -95,6 +95,14 @@ public abstract class BaseStatusResourceImpl implements StatusResource {
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

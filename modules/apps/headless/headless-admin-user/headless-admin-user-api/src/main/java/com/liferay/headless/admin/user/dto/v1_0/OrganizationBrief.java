@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("OrganizationBrief")
+@GraphQLName(
+	description = "Represents an organization's basic information, to be embedded in other resources. This resource's ID can be used to query the organization's complete information.",
+	value = "OrganizationBrief"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "OrganizationBrief")
-public class OrganizationBrief {
+public class OrganizationBrief implements Serializable {
 
 	public static OrganizationBrief toDTO(String json) {
 		return ObjectMapperUtil.readValue(OrganizationBrief.class, json);
@@ -158,6 +163,7 @@ public class OrganizationBrief {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.OrganizationBrief",
 		name = "x-class-name"
 	)
@@ -193,7 +199,7 @@ public class OrganizationBrief {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -232,7 +238,7 @@ public class OrganizationBrief {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

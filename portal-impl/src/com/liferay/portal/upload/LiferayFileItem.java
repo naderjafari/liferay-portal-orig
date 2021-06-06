@@ -71,6 +71,10 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 				getInputStream(), getFileName());
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return ContentTypes.APPLICATION_OCTET_STREAM;
 		}
 	}
@@ -252,7 +256,7 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		return tempFile;
 	}
 
-	private static String _getUniqueId() {
+	private String _getUniqueId() {
 		int current = 0;
 
 		synchronized (LiferayFileItem.class) {
@@ -262,7 +266,7 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		String id = String.valueOf(current);
 
 		if (current < 100000000) {
-			id = ("00000000" + id).substring(id.length());
+			return "00000000".substring(id.length()) + id;
 		}
 
 		return id;

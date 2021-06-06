@@ -421,6 +421,9 @@ components:
             description:
                 https://www.schema.org/SLA
             properties:
+                dateModified:
+                    format: date-time
+                    type: string
                 dateOverdue:
                     format: date-time
                     type: string
@@ -435,7 +438,7 @@ components:
                     format: int64
                     type: integer
                 status:
-                    enum: [Paused, Running, Stopped]
+                    enum: [NEW, PAUSED, RUNNING, STOPPED]
                     type: string
             type: object
         Task:
@@ -558,7 +561,7 @@ components:
 info:
     description:
         "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID
-        'com.liferay.portal.workflow.metrics.rest.client', and version '1.0.7'."
+        'com.liferay.portal.workflow.metrics.rest.client', and version '3.0.3'."
     license:
         name: "Apache 2.0"
         url: "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -601,6 +604,25 @@ paths:
                                 items:
                                     $ref: "#/components/schemas/Index"
                                 type: array
+                    description:
+                        ""
+            tags: ["Index"]
+    "/indexes/refresh":
+        patch:
+            operationId: patchIndexesRefresh
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Index"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/Index"
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
                     description:
                         ""
             tags: ["Index"]
@@ -908,10 +930,6 @@ paths:
                           type: integer
                       type: array
                 - in: query
-                  name: completed
-                  schema:
-                      type: boolean
-                - in: query
                   name: dateEnd
                   schema:
                       format: date-time
@@ -929,6 +947,13 @@ paths:
                           type: string
                       type: array
                 - in: query
+                  name: statuses
+                  schema:
+                      items:
+                          enum: [Completed, Pending]
+                          type: string
+                      type: array
+                - in: query
                   name: taskNames
                   schema:
                       items:
@@ -942,6 +967,10 @@ paths:
                   name: pageSize
                   schema:
                       type: integer
+                - in: query
+                  name: sort
+                  schema:
+                      type: string
             responses:
                 200:
                     content:
@@ -1101,6 +1130,28 @@ paths:
                     description:
                         ""
             tags: ["Instance"]
+    "/processes/{processId}/last-sla-result":
+        get:
+            operationId: getProcessLastSLAResult
+            parameters:
+                - in: path
+                  name: processId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SLAResult"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/SLAResult"
+                    description:
+                        ""
+            tags: ["SLAResult"]
     "/processes/{processId}/metrics":
         get:
             operationId: getProcessMetric

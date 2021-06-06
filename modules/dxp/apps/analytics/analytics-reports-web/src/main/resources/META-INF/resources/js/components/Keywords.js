@@ -14,11 +14,10 @@ import ClayDropDown from '@clayui/drop-down';
 import {ClaySelect} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayList from '@clayui/list';
-import {ClayTooltipProvider} from '@clayui/tooltip';
 import PropTypes from 'prop-types';
 import React, {useContext, useMemo, useState} from 'react';
 
-import {StoreContext} from '../context/store';
+import {StoreStateContext} from '../context/StoreContext';
 import {numberFormat} from '../utils/numberFormat';
 import Hint from './Hint';
 
@@ -28,14 +27,14 @@ const KEYWORD_VALUE_TYPE = [
 	{label: Liferay.Language.get('position'), name: 'position'},
 ];
 
-export default function Keywords({currentPage, languageTag}) {
+export default function Keywords({currentPage}) {
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
 	const [keywordValueType, setKeywordValueType] = useState(
 		KEYWORD_VALUE_TYPE[0]
 	);
 
-	const [{publishedToday}] = useContext(StoreContext);
+	const {languageTag, publishedToday} = useContext(StoreStateContext);
 
 	const countries = useMemo(() => {
 		const dataKeys = new Set();
@@ -180,21 +179,19 @@ export default function Keywords({currentPage, languageTag}) {
 								<ClayList.Item flex key={keyword}>
 									<ClayList.ItemField expand>
 										<ClayList.ItemText>
-											<ClayTooltipProvider>
-												<span
-													className="text-truncate-inline"
-													data-tooltip-align="top"
-													title={keyword}
-												>
-													<span className="text-truncate">
-														{keyword}
-													</span>
+											<span
+												className="text-truncate-inline"
+												data-tooltip-align="top"
+												title={keyword}
+											>
+												<span className="text-secondary text-truncate">
+													{keyword}
 												</span>
-											</ClayTooltipProvider>
+											</span>
 										</ClayList.ItemText>
 									</ClayList.ItemField>
 									<ClayList.ItemField expand>
-										<span className="align-self-end">
+										<span className="align-self-end font-weight-semi-bold text-dark">
 											{numberFormat(
 												languageTag,
 												keywordValueType.name ===
@@ -229,7 +226,6 @@ export default function Keywords({currentPage, languageTag}) {
 	);
 }
 
-Keywords.proptypes = {
+Keywords.propTypes = {
 	currentPage: PropTypes.object.isRequired,
-	languageTag: PropTypes.string.isRequired,
 };

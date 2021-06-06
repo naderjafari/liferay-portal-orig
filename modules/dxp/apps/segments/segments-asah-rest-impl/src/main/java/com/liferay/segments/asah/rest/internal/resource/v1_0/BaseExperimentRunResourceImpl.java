@@ -71,7 +71,7 @@ import javax.ws.rs.core.UriInfo;
 @Generated("")
 @Path("/v1.0")
 public abstract class BaseExperimentRunResourceImpl
-	implements ExperimentRunResource, EntityModelResource,
+	implements EntityModelResource, ExperimentRunResource,
 			   VulcanBatchEngineTaskItemDelegate<ExperimentRun> {
 
 	/**
@@ -79,13 +79,13 @@ public abstract class BaseExperimentRunResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/segments-asah/v1.0/experiments/{experimentId}/run' -d $'{"confidenceLevel": ___, "experimentVariants": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes({"application/json", "application/xml"})
-	@POST
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "experimentId")}
 	)
 	@Path("/experiments/{experimentId}/run")
+	@POST
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "ExperimentRun")})
 	public ExperimentRun postExperimentRun(
@@ -195,6 +195,14 @@ public abstract class BaseExperimentRunResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

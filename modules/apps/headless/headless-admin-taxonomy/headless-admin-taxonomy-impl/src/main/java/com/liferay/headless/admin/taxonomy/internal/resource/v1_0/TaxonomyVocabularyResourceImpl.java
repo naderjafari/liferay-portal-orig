@@ -26,7 +26,7 @@ import com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyVocabulary;
 import com.liferay.headless.admin.taxonomy.internal.dto.v1_0.util.CreatorUtil;
 import com.liferay.headless.admin.taxonomy.internal.odata.entity.v1_0.VocabularyEntityModel;
 import com.liferay.headless.admin.taxonomy.resource.v1_0.TaxonomyVocabularyResource;
-import com.liferay.headless.common.spi.service.context.ServiceContextUtil;
+import com.liferay.headless.common.spi.service.context.ServiceContextRequestUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
@@ -50,8 +51,10 @@ import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.ContentLanguageUtil;
+import com.liferay.portal.vulcan.util.GroupUtil;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 import com.liferay.portal.vulcan.util.SearchUtil;
+import com.liferay.portlet.asset.service.permission.AssetCategoriesPermission;
 import com.liferay.portlet.asset.util.AssetVocabularySettingsHelper;
 
 import java.util.Arrays;
@@ -93,6 +96,16 @@ public class TaxonomyVocabularyResourceImpl
 	}
 
 	@Override
+	public Page<TaxonomyVocabulary> getAssetLibraryTaxonomyVocabulariesPage(
+			Long assetLibraryId, String search, Filter filter,
+			Pagination pagination, Sort[] sorts)
+		throws Exception {
+
+		return getSiteTaxonomyVocabulariesPage(
+			assetLibraryId, search, filter, pagination, sorts);
+	}
+
+	@Override
 	public EntityModel getEntityModel(MultivaluedMap multivaluedMap) {
 		return _entityModel;
 	}
@@ -104,16 +117,16 @@ public class TaxonomyVocabularyResourceImpl
 		throws Exception {
 
 		return SearchUtil.search(
-			HashMapBuilder.<String, Map<String, String>>put(
+			HashMapBuilder.put(
 				"create",
 				addAction(
-					"ADD_VOCABULARY", "postSiteTaxonomyVocabulary",
-					"com.liferay.asset.categories", siteId)
+					ActionKeys.ADD_VOCABULARY, "postSiteTaxonomyVocabulary",
+					AssetCategoriesPermission.RESOURCE_NAME, siteId)
 			).put(
 				"get",
 				addAction(
-					"VIEW", "getSiteTaxonomyVocabulariesPage",
-					"com.liferay.asset.categories", siteId)
+					ActionKeys.VIEW, "getSiteTaxonomyVocabulariesPage",
+					AssetCategoriesPermission.RESOURCE_NAME, siteId)
 			).build(),
 			booleanQuery -> {
 			},
@@ -196,6 +209,14 @@ public class TaxonomyVocabularyResourceImpl
 	}
 
 	@Override
+	public TaxonomyVocabulary postAssetLibraryTaxonomyVocabulary(
+			Long assetLibraryId, TaxonomyVocabulary taxonomyVocabulary)
+		throws Exception {
+
+		return postSiteTaxonomyVocabulary(assetLibraryId, taxonomyVocabulary);
+	}
+
+	@Override
 	public TaxonomyVocabulary postSiteTaxonomyVocabulary(
 			Long siteId, TaxonomyVocabulary taxonomyVocabulary)
 		throws Exception {
@@ -216,8 +237,9 @@ public class TaxonomyVocabularyResourceImpl
 			_assetVocabularyService.addVocabulary(
 				siteId, null, titleMap, descriptionMap,
 				_getSettings(taxonomyVocabulary.getAssetTypes(), siteId),
-				ServiceContextUtil.createServiceContext(
-					siteId, taxonomyVocabulary.getViewableByAsString())));
+				ServiceContextRequestUtil.createServiceContext(
+					siteId, contextHttpServletRequest,
+					taxonomyVocabulary.getViewableByAsString())));
 	}
 
 	@Override
@@ -250,6 +272,24 @@ public class TaxonomyVocabularyResourceImpl
 					taxonomyVocabulary.getAssetTypes(),
 					assetVocabulary.getGroupId()),
 				new ServiceContext()));
+	}
+
+	@Override
+	protected Long getPermissionCheckerGroupId(Object id) throws Exception {
+		AssetVocabulary assetVocabulary = _assetVocabularyService.getVocabulary(
+			(Long)id);
+
+		return assetVocabulary.getGroupId();
+	}
+
+	@Override
+	protected String getPermissionCheckerPortletName(Object id) {
+		return AssetCategoriesPermission.RESOURCE_NAME;
+	}
+
+	@Override
+	protected String getPermissionCheckerResourceName(Object id) {
+		return AssetVocabulary.class.getName();
 	}
 
 	private AssetType _getAssetType(
@@ -483,27 +523,35 @@ public class TaxonomyVocabularyResourceImpl
 	}
 
 	private TaxonomyVocabulary _toTaxonomyVocabulary(
-			AssetVocabulary assetVocabulary)
-		throws Exception {
+		AssetVocabulary assetVocabulary) {
+
+		Group group = groupLocalService.fetchGroup(
+			assetVocabulary.getGroupId());
 
 		return new TaxonomyVocabulary() {
 			{
-				actions = HashMapBuilder.<String, Map<String, String>>put(
+				actions = HashMapBuilder.put(
 					"delete",
 					addAction(
-						"DELETE", assetVocabulary, "deleteTaxonomyVocabulary")
+						ActionKeys.DELETE, assetVocabulary,
+						"deleteTaxonomyVocabulary")
 				).put(
 					"get",
-					addAction("VIEW", assetVocabulary, "getTaxonomyVocabulary")
+					addAction(
+						ActionKeys.VIEW, assetVocabulary,
+						"getTaxonomyVocabulary")
 				).put(
 					"replace",
 					addAction(
-						"UPDATE", assetVocabulary, "putTaxonomyVocabulary")
+						ActionKeys.UPDATE, assetVocabulary,
+						"putTaxonomyVocabulary")
 				).put(
 					"update",
 					addAction(
-						"UPDATE", assetVocabulary, "patchTaxonomyVocabulary")
+						ActionKeys.UPDATE, assetVocabulary,
+						"patchTaxonomyVocabulary")
 				).build();
+				assetLibraryKey = GroupUtil.getAssetLibraryKey(group);
 				assetTypes = _getAssetTypes(
 					new AssetVocabularySettingsHelper(
 						assetVocabulary.getSettings()),
@@ -533,8 +581,7 @@ public class TaxonomyVocabularyResourceImpl
 				).orElse(
 					0
 				);
-
-				siteId = assetVocabulary.getGroupId();
+				siteId = GroupUtil.getSiteId(group);
 			}
 		};
 	}

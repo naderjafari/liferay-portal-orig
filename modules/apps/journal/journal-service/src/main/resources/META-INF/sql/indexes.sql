@@ -1,7 +1,5 @@
 create index IX_F1C2B662 on JournalArticle (DDMStructureKey[$COLUMN_LENGTH:75$], ctCollectionId);
 create index IX_A01DB92F on JournalArticle (DDMTemplateKey[$COLUMN_LENGTH:75$], ctCollectionId);
-create index IX_1C4302D3 on JournalArticle (classNameId, DDMTemplateKey[$COLUMN_LENGTH:75$], ctCollectionId);
-create index IX_CB14A5FE on JournalArticle (classNameId, expirationDate, status, ctCollectionId);
 create index IX_AAF3B581 on JournalArticle (companyId, ctCollectionId);
 create index IX_6D9F9567 on JournalArticle (companyId, status, ctCollectionId);
 create index IX_F12AB4A3 on JournalArticle (companyId, version, ctCollectionId);
@@ -39,8 +37,7 @@ create unique index IX_4D5E99B9 on JournalArticle (uuid_[$COLUMN_LENGTH:75$], gr
 
 create index IX_E69312A1 on JournalArticleLocalization (articlePK, ctCollectionId);
 create unique index IX_5593D868 on JournalArticleLocalization (articlePK, languageId[$COLUMN_LENGTH:75$], ctCollectionId);
-create unique index IX_9B44D13C on JournalArticleLocalization (companyId, articlePK, languageId[$COLUMN_LENGTH:75$], ctCollectionId);
-create unique index IX_97DC9F36 on JournalArticleLocalization (companyId, articlePK, title[$COLUMN_LENGTH:400$], languageId[$COLUMN_LENGTH:75$], ctCollectionId);
+create index IX_F1F3A975 on JournalArticleLocalization (companyId, articlePK, ctCollectionId);
 create index IX_429AC23C on JournalArticleLocalization (ctCollectionId);
 
 create index IX_B332E3F1 on JournalArticleResource (ctCollectionId);

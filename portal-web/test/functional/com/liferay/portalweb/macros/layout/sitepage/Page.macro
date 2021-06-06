@@ -2,7 +2,7 @@ definition {
 
 	macro _addPageTypeEmbedded {
 		Type(
-			locator1 = "SitePagesEditPage#PAGE_TYPE_EMBEDDED_URL_FIELD",
+			locator1 = "TextInput#URL",
 			value1 = "${pageTypeURL}");
 
 		AssertTextEquals.assertPartialText(
@@ -80,34 +80,16 @@ definition {
 		if ("${locale}" == "zh") {
 			var zhAlternate = '''" hreflang="zh-CN" rel="alternate" />''';
 
-			var hrefURL = selenium.getAttribute("//link[contains(@rel,'alternate')][contains(@hreflang,'zh-CN')]@href");
-
-			var hrefURLNoPortalURL = StringUtil.replace("${hrefURL}", "${portalURL}/zh", "");
-
-			var pageSource = StringUtil.add("${HTML}", "${portalURL}/zh${zhAlternate}","");
-
-			var pageSourceAlternate = StringUtil.add("${HTML}", "${portalURL}/zh/web/guest${zhAlternate}","");
+			var pageSource = StringUtil.add("${HTML}", "${portalURL}/zh/web/guest${zhAlternate}","");
 		}
 
 		else if ("${locale}" == "es") {
 			var esAlternate = '''" hreflang="es-ES" rel="alternate" />''';
 
-			var hrefURL = selenium.getAttribute("//link[contains(@rel,'alternate')][contains(@hreflang,'es-ES')]@href");
-
-			var hrefURLNoPortalURL = StringUtil.replace("${hrefURL}", "${portalURL}/es", "");
-
-			var pageSource = StringUtil.add("${HTML}", "${portalURL}/es${esAlternate}","");
-
-			var pageSourceAlternate = StringUtil.add("${HTML}", "${portalURL}/es/web/guest${esAlternate}","");
+			var pageSource = StringUtil.add("${HTML}", "${portalURL}/es/web/guest${esAlternate}","");
 		}
-		echo("${hrefURL}");
 
-		if ("${hrefURLNoPortalURL}" == "/web/guest") {
-			AssertHTMLSourceTextPresent(value1 = "${pageSourceAlternate}");
-		}
-		else {
-			AssertHTMLSourceTextPresent(value1 = "${pageSource}");
-		}
+		AssertHTMLSourceTextPresent(value1 = "${pageSource}");
 	}
 
 	macro assertCannotDeleteOnlyPage {
@@ -122,49 +104,29 @@ definition {
 		var HTML = '''<link data-senna-track="temporary" href="''';
 		var HTML2 = '''" rel="canonical" />''';
 
-		if (isSet(pageName)) {
-			var pageNameURL = StringUtil.lowerCase("${pageName}");
-
-			var pageNameURL = StringUtil.replace("${pageNameURL}", " ", "-");
-
-			var hrefURL = selenium.getAttribute("//link[contains(@rel,'canonical')]@href");
-
-			var hrefURLNoPageName = StringUtil.replace("${hrefURL}", "/${pageNameURL}", "");
-
-			var hrefURLNoPortalURL = StringUtil.replace("${hrefURLNoPageName}", "${portalURL}", "");
-
-			var pageSource = StringUtil.add("${HTML}", "${portalURL}/${pageNameURL}${HTML2}","");
-
-			var pageSourceAlternate = StringUtil.add("${HTML}", "${portalURL}/web/guest/${pageNameURL}${HTML2}","");
+		if (isSet(customCanonicalURL)) {
+			var portalURL = "${customCanonicalURL}";
 		}
 
 		else if (isSet(locale)) {
-			var hrefURL = selenium.getAttribute("//link[contains(@rel,'canonical')]@href");
+			var portalURL = "${portalURL}/${locale}/web/guest";
+		}
+		else {
+			var portalURL = "${portalURL}/web/guest";
+		}
 
-			var hrefURLNoPortalURL = StringUtil.replace("${hrefURL}", "${portalURL}/${locale}", "");
+		if (isSet(pageName)) {
+			var pageName = StringUtil.lowerCase("${pageName}");
+			var pageNameURL = StringUtil.replace("${pageName}", " ", "-");
 
-			var pageSource = StringUtil.add("${HTML}", "${portalURL}/${locale}${HTML2}","");
-
-			var pageSourceAlternate = StringUtil.add("${HTML}", "${portalURL}/${locale}/web/guest${HTML2}","");
+			var pageSource = StringUtil.add("${HTML}", "${portalURL}/${pageNameURL}${HTML2}","");
 		}
 
 		else {
-			var hrefURL = selenium.getAttribute("//link[contains(@rel,'canonical')]@href");
-
-			var hrefURLNoPortalURL = StringUtil.replace("${hrefURL}", "${portalURL}", "");
-
 			var pageSource = StringUtil.add("${HTML}", "${portalURL}${HTML2}","");
+		}
 
-			var pageSourceAlternate = StringUtil.add("${HTML}", "${portalURL}/web/guest${HTML2}","");
-		}
-		echo("${hrefURL}");
-
-		if ("${hrefURLNoPortalURL}" == "/web/guest") {
-			AssertHTMLSourceTextPresent(value1 = "${pageSourceAlternate}");
-		}
-		else {
-			AssertHTMLSourceTextPresent(value1 = "${pageSource}");
-		}
+		AssertHTMLSourceTextPresent(value1 = "${pageSource}");
 	}
 
 	macro assertNodePortPG {
@@ -190,13 +152,9 @@ definition {
 
 		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
-		var key_cardText = "${themeName}";
+		LexiconCard.viewCardTitle(card = "${themeName}");
 
-		AssertTextPresent(
-			locator1 = "Card#SPECIFIC_LARGE_TEXT",
-			value1 = "${key_cardText}");
-
-		Click(locator1 = "Card#SPECIFIC_LARGE_TEXT");
+		LexiconCard.clickCardTitle(card = "${themeName}");
 
 		SelectFrameTop(value1 = "relative=top");
 
@@ -220,25 +178,43 @@ definition {
 	macro changeSinglePageTheme {
 		ContentPages.clickPencil();
 
-		Click.clickNoMouseOver(
-			key_tabName = "${tabName}",
-			locator1 = "PageEditor#FRAGMENT_SIDEBAR_TAB_BUTTON");
+		PageEditor.gotoTab(tabName = "Page Design Options");
+
+		Click(locator1 = "PageEditor#MORE_LINK");
 
 		Click(locator1 = "SitePagesEditPage#REGULAR_UNIQUE_LOOK_AND_FEEL");
 
 		Click(locator1 = "SitePagesEditPage#CHANGE_CURRENT_THEME_BUTTON");
 
-		SelectFrame(locator1 = "IFrame#DIALOG");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
-		var key_cardText = "${themeName}";
+		LexiconCard.viewCardTitle(card = "${themeName}");
 
-		AssertTextPresent(
-			locator1 = "Card#SPECIFIC_LARGE_TEXT",
-			value1 = "${key_cardText}");
-
-		Click(locator1 = "Card#SPECIFIC_LARGE_TEXT");
+		LexiconCard.clickCardTitle(card = "${themeName}");
 
 		SelectFrameTop(value1 = "relative=top");
+
+		PortletEntry.save();
+	}
+
+	macro configureCanonicalURL {
+		var checkboxName = "Use Custom Canonical URL";
+
+		if (IsNotChecked(locator1 = "Checkbox#ANY_CHECKBOX")) {
+			Click(locator1 = "Checkbox#ANY_CHECKBOX");
+
+			AssertTextEquals(
+				locator1 = "Message#INFO",
+				value1 = "Info:Due to the customization of the canonical URL, depending on the platform this page is shared, the Open Graph metadata shown might not be the one configured in this page.");
+		}
+
+		if (isSet(locale)) {
+			PortletEntry.changeLocale(locale = "${locale}");
+		}
+
+		Type(
+			locator1 = "TextInput#CUSTOM_CANONICAL_URL",
+			value1 = "${customCanonicalURL}");
 
 		PortletEntry.save();
 	}
@@ -308,7 +284,7 @@ definition {
 			value1 = "${HTMLTitle}");
 
 		Type.typeClickAt(
-			locator1 = "TextArea#SEO_META_TAGS_DESCRIPTION",
+			locator1 = "TextInput#SEO_META_TAGS_DESCRIPTION",
 			value1 = "${metaTagsDescription}");
 
 		Type.typeClickAt(
@@ -365,7 +341,9 @@ definition {
 
 		ClickNoError(locator1 = "Home#PAGE");
 
-		MouseOver(locator1 = "Home#PAGE");
+		MouseOver(locator1 = "Home#SITE_NAME");
+
+		MouseOver(locator1 = "NavigationMenusWidget#CHILD_TOGGLE");
 
 		AssertVisible(
 			key_childPageName = "${childPageName}",
@@ -374,6 +352,12 @@ definition {
 		Click(
 			key_childPageName = "${childPageName}",
 			locator1 = "Home#PAGE_CHILD_PAGE");
+	}
+
+	macro gotoCollectionEntryEllipsisItem {
+		LexiconTable.clickEllipsisItem(
+			item = "${item}",
+			tableEntry = "${tableEntry}");
 	}
 
 	macro gotoFriendlyURLHistory {
@@ -483,6 +467,55 @@ definition {
 		Alert.viewSuccessMessage();
 	}
 
+	macro selectFilterInCollectionCategoryFilter {
+		if (isSet(columnNumber)) {
+			Click.clickNoWaitForVisible(
+				key_columnNumber = "${columnNumber}",
+				key_elementHeader = "//p[normalize-space(text())='${title}']//following-sibling::div//button[contains(@class,'dropdown-toggle')]",
+				key_position = "1",
+				locator1 = "PageEditor#GRID_COLUMN_NESTED_ELEMENT");
+		}
+		else {
+			Click(
+				key_title = "${title}",
+				locator1 = "Fragment#COLLECTION_CATEGORY_FILTER_DROPDOWN_TOGGLE");
+		}
+
+		if (isSet(multipleSelection)) {
+			for (var categoryName : list "${categoryNameList}") {
+				Check.checkNotVisible(
+					key_checkboxName = "${categoryName}",
+					locator1 = "MenuItem#ANY_CHECKBOX");
+
+				Pause(locator1 = "3000");
+
+				AssertChecked.assertCheckedNotVisible(
+					key_checkboxName = "${categoryName}",
+					locator1 = "MenuItem#ANY_CHECKBOX");
+			}
+
+			Button.clickApply();
+		}
+		else {
+			DropdownMenuItem.click(menuItem = "${filterName}");
+		}
+
+		if (isSet(columnNumber)) {
+			AssertTextEquals(
+				key_columnNumber = "${columnNumber}",
+				key_elementHeader = "//p[normalize-space(text())='${title}']//following-sibling::div//button[contains(@class,'dropdown-toggle')]",
+				key_position = "1",
+				locator1 = "PageEditor#GRID_COLUMN_NESTED_ELEMENT",
+				value1 = "${selectedName}");
+		}
+		else {
+			AssertTextEquals(
+				key_title = "${title}",
+				locator1 = "Fragment#COLLECTION_CATEGORY_FILTER_DROPDOWN_TOGGLE",
+				value1 = "${selectedName}");
+		}
+	}
+
 	macro selectMobileDeviceFamily {
 		WaitForLiferayEvent.initializeLiferayEventLog();
 
@@ -520,7 +553,7 @@ definition {
 
 			MenuItem.clickNoError(menuItem = "Delete");
 
-			AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
+			AssertConfirm(value1 = "Are you sure you want to delete this page?");
 		}
 
 		AssertElementNotPresent(
@@ -643,6 +676,25 @@ definition {
 			value1 = "${childPageName}");
 	}
 
+	macro viewCollectionItem {
+		if (isSet(key_rowNumber)) {
+			AssertTextEquals.assertPartialText(
+				locator1 = "ContentRow#ENTRY_CONTENT_ROW_NUMBER",
+				value1 = "${itemName}");
+		}
+		else {
+			AssertTextEquals.assertPartialText(
+				locator1 = "ContentRow#ENTRY_CONTENT_ROW_1",
+				value1 = "${itemName}");
+		}
+	}
+
+	macro viewCurrentPage {
+		AssertVisible(
+			key_pageName = "${pageName}",
+			locator1 = "Home#PAGE_ACTIVE");
+	}
+
 	macro viewCurrentTheme {
 		ProductMenu.gotoPortlet(
 			category = "Site Builder",
@@ -706,41 +758,13 @@ definition {
 
 		var key_pageName = "${pageName}";
 
-		if ("${siteTemplate}" == "Community") {
-			AssertTextEquals(
-				locator1 = "Home#PAGE_TEMPLATE_1",
-				value1 = "${pageName}");
+		AssertTextEquals(
+			locator1 = "Home#PAGE_TEMPLATE_1",
+			value1 = "${pageName}");
 
-			AssertTextEquals(
-				locator1 = "Home#PAGE_TEMPLATE_2",
-				value1 = "Wiki");
-		}
-		else if ("${siteTemplate}" == "Intranet") {
-			AssertTextEquals(
-				locator1 = "Home#PAGE_TEMPLATE_1",
-				value1 = "${pageName}");
-
-			AssertTextEquals(
-				locator1 = "Home#PAGE_TEMPLATE_2",
-				value1 = "Documents and Media");
-		}
-		else if ("${siteTemplate}" == "Zoe Healthcare Theme") {
-			AssertElementPresent(locator1 = "Home#SITE_NAME_LOGO");
-
-			AssertElementPresent(locator1 = "Home#PAGE_TEMPLATE_1");
-
-			AssertElementPresent(locator1 = "Home#PAGE_TEMPLATE_2");
-
-			AssertElementPresent(locator1 = "Home#PAGE_TEMPLATE_3");
-
-			AssertElementPresent(locator1 = "Home#PAGE_TEMPLATE_4");
-
-			AssertElementPresent(locator1 = "Home#PAGE_TEMPLATE_5");
-
-			AssertElementPresent(locator1 = "Home#PAGE_TEMPLATE_6");
-
-			AssertElementPresent(locator1 = "Home#PAGE_TEMPLATE_7");
-		}
+		AssertVisible(
+			key_siteName = "${siteName}",
+			locator1 = "NavBar#GO_TO_HOME_PAGE_LINK");
 	}
 
 	macro viewEmbeddedPagePG {
@@ -816,7 +840,9 @@ definition {
 
 		PortletEntry.selectAll();
 
-		AssertElementPresent(locator1 = "xpath=(//button[(@title = 'Delete') and (@disabled = 'disabled')])");
+		AssertElementPresent(
+			key_text = "times-circle",
+			locator1 = "Icon#ANY_DISABLED");
 	}
 
 	macro viewNoOldFriendlyURL {
@@ -919,7 +945,7 @@ definition {
 			value1 = "${HTMLTitle}");
 
 		AssertTextEquals(
-			locator1 = "TextArea#SEO_META_TAGS_DESCRIPTION",
+			locator1 = "TextInput#SEO_META_TAGS_DESCRIPTION",
 			value1 = "${metaTagsDescription}");
 
 		AssertTextEquals(
@@ -999,15 +1025,11 @@ definition {
 	}
 
 	macro viewPageTemplateTypeNotPresent {
-		AssertElementNotPresent(
-			key_cardText = "${pageTemplateName}",
-			locator1 = "Card#SPECIFIC_LARGE_TEXT");
+		LexiconCard.viewCardNotPresent(card = "${pageTemplateName}");
 	}
 
 	macro viewPageTemplateTypePresent {
-		AssertElementPresent(
-			key_cardText = "${pageTemplateName}",
-			locator1 = "Card#SPECIFIC_LARGE_TEXT");
+		LexiconCard.viewCardPresent(card = "${pageTemplateName}");
 	}
 
 	macro viewPanelPortletListCP {
@@ -1030,7 +1052,6 @@ definition {
 		AssertElementPresent(locator1 = "SitePages#DETAILS_PAGE_TYPE_PANEL_COMPONENT_TREE_EXPANDED");
 
 		for (var portletName : list "${portletNameList}") {
-
 			if ("${portletName}" == "Portal Directory") {
 				var key_componentOrPortletName ="Directory";
 			}
@@ -1121,7 +1142,11 @@ definition {
 		if (isSet(truncatedHTMLTitle)) {
 			ProductMenuHelper.closeProductMenu();
 
+			takeScreenshot();
+
 			if (isSet(openGraph)) {
+				ScrollWebElementIntoView(locator1 = "Button#SAVE");
+
 				SikuliAssertElementPresent(locator1 = "SitePagesEditPage#PREVIEW_TITLE_ELLIPSES_OG");
 			}
 			else {
@@ -1162,9 +1187,8 @@ definition {
 			value1 = "0px");
 
 		var sideNavWidth = Css.getCssValue(
-			cssClassSelector = ".sidenav-menu",
-			cssProperty = "width"
-		);
+			attribute = "width",
+			element = "//div[contains(@class,'product-menu-open')]");
 
 		AssertCssValue(
 			locator1 = "Home#SITE_WRAPPER",

@@ -58,8 +58,10 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see DLFileEntryServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class DLFileEntryServiceSoap {
 
 	public static com.liferay.document.library.kernel.model.DLFileVersionSoap
@@ -476,6 +478,45 @@ public class DLFileEntryServiceSoap {
 		try {
 			com.liferay.document.library.kernel.model.DLFileEntry returnValue =
 				DLFileEntryServiceUtil.getFileEntry(groupId, folderId, title);
+
+			return com.liferay.document.library.kernel.model.DLFileEntrySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static com.liferay.document.library.kernel.model.DLFileEntrySoap
+			getFileEntryByExternalReferenceCode(
+				long groupId, String externalReferenceCode)
+		throws RemoteException {
+
+		try {
+			com.liferay.document.library.kernel.model.DLFileEntry returnValue =
+				DLFileEntryServiceUtil.getFileEntryByExternalReferenceCode(
+					groupId, externalReferenceCode);
+
+			return com.liferay.document.library.kernel.model.DLFileEntrySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static com.liferay.document.library.kernel.model.DLFileEntrySoap
+			getFileEntryByFileName(long groupId, long folderId, String fileName)
+		throws RemoteException {
+
+		try {
+			com.liferay.document.library.kernel.model.DLFileEntry returnValue =
+				DLFileEntryServiceUtil.getFileEntryByFileName(
+					groupId, folderId, fileName);
 
 			return com.liferay.document.library.kernel.model.DLFileEntrySoap.
 				toSoapModel(returnValue);

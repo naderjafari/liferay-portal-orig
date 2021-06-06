@@ -24,6 +24,7 @@ import com.liferay.item.selector.criteria.InfoListItemSelectorReturnType;
 import com.liferay.layout.list.retriever.ClassedModelListObjectReference;
 import com.liferay.layout.list.retriever.LayoutListRetriever;
 import com.liferay.layout.list.retriever.LayoutListRetrieverContext;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 
 import java.util.ArrayList;
@@ -56,11 +57,17 @@ public class AssetEntryListLayoutListRetriever
 			return Collections.emptyList();
 		}
 
-		Optional<long[]> segmentsExperienceIdsOptional =
-			layoutListRetrieverContext.getSegmentsExperienceIdsOptional();
+		Optional<long[]> segmentsEntryIdsOptional =
+			layoutListRetrieverContext.getSegmentsEntryIdsOptional();
 
-		long[] segmentsExperienceIds = segmentsExperienceIdsOptional.orElse(
+		long[] segmentsEntryIds = segmentsEntryIdsOptional.orElse(
 			new long[] {0});
+
+		Optional<long[][]> assetCategoryIdsOptional =
+			layoutListRetrieverContext.getAssetCategoryIdsOptional();
+
+		long[][] assetCategoryIds = assetCategoryIdsOptional.orElse(
+			new long[0][]);
 
 		Optional<Pagination> paginationOptional =
 			layoutListRetrieverContext.getPaginationOptional();
@@ -70,8 +77,8 @@ public class AssetEntryListLayoutListRetriever
 
 		List<AssetEntry> assetEntries =
 			_assetListAssetEntryProvider.getAssetEntries(
-				assetListEntry, segmentsExperienceIds[0], pagination.getStart(),
-				pagination.getEnd());
+				assetListEntry, segmentsEntryIds, assetCategoryIds,
+				StringPool.BLANK, pagination.getStart(), pagination.getEnd());
 
 		if (Objects.equals(
 				AssetEntry.class.getName(),
@@ -96,14 +103,21 @@ public class AssetEntryListLayoutListRetriever
 			return 0;
 		}
 
-		Optional<long[]> segmentsExperienceIdsOptional =
-			layoutListRetrieverContext.getSegmentsExperienceIdsOptional();
+		Optional<long[]> segmentsEntryIdsOptional =
+			layoutListRetrieverContext.getSegmentsEntryIdsOptional();
 
-		long[] segmentsExperienceIds = segmentsExperienceIdsOptional.orElse(
+		long[] segmentsEntryIds = segmentsEntryIdsOptional.orElse(
 			new long[] {0});
 
+		Optional<long[][]> assetCategoryIdsOptional =
+			layoutListRetrieverContext.getAssetCategoryIdsOptional();
+
+		long[][] assetCategoryIds = assetCategoryIdsOptional.orElse(
+			new long[0][]);
+
 		return _assetListAssetEntryProvider.getAssetEntriesCount(
-			assetListEntry, segmentsExperienceIds[0]);
+			assetListEntry, segmentsEntryIds, assetCategoryIds,
+			StringPool.BLANK);
 	}
 
 	private List<Object> _toAssetObjects(List<AssetEntry> assetEntries) {

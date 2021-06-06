@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,17 +48,52 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentStructure")
+@GraphQLName(
+	description = "Represents the content structure that backs structured content. This defines which form fields are available and the possible types and values.",
+	value = "ContentStructure"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentStructure")
-public class ContentStructure {
+public class ContentStructure implements Serializable {
 
 	public static ContentStructure toDTO(String json) {
 		return ObjectMapperUtil.readValue(ContentStructure.class, json);
 	}
 
 	@Schema(
-		description = "The list of languages the structure has a translation for."
+		description = "The key of the asset library to which the content structure is scoped."
+	)
+	public String getAssetLibraryKey() {
+		return assetLibraryKey;
+	}
+
+	public void setAssetLibraryKey(String assetLibraryKey) {
+		this.assetLibraryKey = assetLibraryKey;
+	}
+
+	@JsonIgnore
+	public void setAssetLibraryKey(
+		UnsafeSupplier<String, Exception> assetLibraryKeyUnsafeSupplier) {
+
+		try {
+			assetLibraryKey = assetLibraryKeyUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The key of the asset library to which the content structure is scoped."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String assetLibraryKey;
+
+	@Schema(
+		description = "The list of languages the content structure has a translation for."
 	)
 	public String[] getAvailableLanguages() {
 		return availableLanguages;
@@ -82,7 +119,7 @@ public class ContentStructure {
 	}
 
 	@GraphQLField(
-		description = "The list of languages the structure has a translation for."
+		description = "The list of languages the content structure has a translation for."
 	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String[] availableLanguages;
@@ -236,7 +273,7 @@ public class ContentStructure {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String description;
 
-	@Schema
+	@Schema(description = "The localized content structure's description.")
 	@Valid
 	public Map<String, String> getDescription_i18n() {
 		return description_i18n;
@@ -262,7 +299,9 @@ public class ContentStructure {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The localized content structure's description."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> description_i18n;
 
@@ -318,7 +357,7 @@ public class ContentStructure {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String name;
 
-	@Schema
+	@Schema(description = "The localized content structure's names.")
 	@Valid
 	public Map<String, String> getName_i18n() {
 		return name_i18n;
@@ -344,7 +383,7 @@ public class ContentStructure {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized content structure's names.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> name_i18n;
 
@@ -409,6 +448,20 @@ public class ContentStructure {
 
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+		if (assetLibraryKey != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"assetLibraryKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(assetLibraryKey));
+
+			sb.append("\"");
+		}
 
 		if (availableLanguages != null) {
 			if (sb.length() > 1) {
@@ -566,6 +619,7 @@ public class ContentStructure {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentStructure",
 		name = "x-class-name"
 	)
@@ -601,7 +655,7 @@ public class ContentStructure {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -640,7 +694,7 @@ public class ContentStructure {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

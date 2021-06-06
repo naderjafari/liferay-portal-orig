@@ -9,16 +9,19 @@
  * distribution rights of the Software.
  */
 
-import {sub} from 'app-builder-web/js/utils/lang.es';
+import {sub} from 'data-engine-js-components-web/js/utils/lang.es';
 
-import {getFormViewFields, validateSelectedFormViews} from './utils.es';
+import {populateFormViewFields, validateSelectedFormViews} from './utils.es';
 
 export const ADD_STEP = 'ADD_STEP';
 export const ADD_STEP_ACTION = 'ADD_STEP_ACTION';
 export const ADD_STEP_FORM_VIEW = 'ADD_STEP_FORM_VIEW';
+export const REMOVE_STEP_EMPTY_FORM_VIEWS = 'REMOVE_STEP_EMPTY_FORM_VIEWS';
+export const REMOVE_STEP = 'REMOVE_STEP';
 export const REMOVE_STEP_ACTION = 'REMOVE_STEP_ACTION';
 export const REMOVE_STEP_FORM_VIEW = 'REMOVE_STEP_FORM_VIEW';
 export const UPDATE_CONFIG = 'UPDATE_CONFIG';
+export const UPDATE_DATA_DEFINITION_FIELDS = 'UPDATE_DATA_DEFINITION_FIELDS';
 export const UPDATE_DATA_OBJECT = 'UPDATE_DATA_OBJECT';
 export const UPDATE_FORM_VIEW = 'UPDATE_FORM_VIEW';
 export const UPDATE_LIST_ITEMS = 'UPDATE_LIST_ITEMS';
@@ -30,6 +33,7 @@ export const UPDATE_STEP_INDEX = 'UPDATE_STEP_INDEX';
 export const UPDATE_TABLE_VIEW = 'UPDATE_TABLE_VIEW';
 
 export const getInitialConfig = () => {
+	const defaultLanguageId = themeDisplay.getLanguageId();
 	const initialSteps = [
 		{
 			appWorkflowTransitions: [
@@ -47,7 +51,11 @@ export const getInitialConfig = () => {
 
 	return {
 		currentStep: initialSteps[0],
-		dataObject: {},
+		dataObject: {
+			availableLanguageIds: [defaultLanguageId],
+			defaultLanguageId,
+		},
+		draftConfig: {},
 		formView: {},
 		listItems: {
 			assigneeRoles: [],
@@ -103,19 +111,26 @@ export default (state, action) => {
 			};
 
 			if (stepIndex > 1) {
+				previousStep.appWorkflowDataLayoutLinks = previousStep.appWorkflowDataLayoutLinks.filter(
+					({dataLayoutId}) => dataLayoutId !== undefined
+				);
+
 				currentStep.appWorkflowDataLayoutLinks = previousStep.appWorkflowDataLayoutLinks.map(
 					(dataLayout) => ({
 						...dataLayout,
 						readOnly: true,
 					})
 				);
-
-				previousStep.appWorkflowTransitions.forEach((action) => {
-					if (action.primary) {
-						action.transitionTo = currentStep.name;
-					}
-				});
+				currentStep.errors.formViews = {
+					...previousStep.errors.formViews,
+				};
 			}
+
+			previousStep.appWorkflowTransitions.forEach((action) => {
+				if (action.primary) {
+					action.transitionTo = currentStep.name;
+				}
+			});
 
 			if (nextStep) {
 				nextStep.appWorkflowTransitions.forEach((action) => {
@@ -152,10 +167,64 @@ export default (state, action) => {
 
 			return {...state};
 		}
+		case REMOVE_STEP: {
+			let currentStep;
+			const workflowSteps = [...state.steps];
+			const previousStep = workflowSteps[action.stepIndex - 1];
+			const nextStep = workflowSteps[action.stepIndex + 1];
+
+			previousStep.appWorkflowTransitions[0].transitionTo = nextStep.name;
+
+			if (nextStep?.appWorkflowTransitions?.length > 1) {
+				if (action.stepIndex > 1) {
+					nextStep.appWorkflowTransitions.forEach((transition) => {
+						if (!transition.primary) {
+							transition.transitionTo = previousStep.name;
+						}
+					});
+				}
+				else {
+					nextStep.appWorkflowTransitions.forEach(
+						(transition, index) => {
+							if (!transition.primary) {
+								nextStep.appWorkflowTransitions.splice(
+									index,
+									1
+								);
+							}
+						}
+					);
+				}
+			}
+
+			if (state.stepIndex === action.stepIndex) {
+				currentStep = previousStep;
+			}
+
+			workflowSteps.splice(action.stepIndex, 1);
+
+			return {
+				...state,
+				currentStep,
+				stepIndex: state.stepIndex - 1,
+				steps: [...workflowSteps],
+			};
+		}
 		case REMOVE_STEP_ACTION: {
 			state.steps[state.stepIndex].appWorkflowTransitions.pop();
 
 			return {...state, currentStep: state.steps[state.stepIndex]};
+		}
+		case REMOVE_STEP_EMPTY_FORM_VIEWS: {
+			state.steps[
+				action.stepIndex
+			].appWorkflowDataLayoutLinks = state.steps[
+				action.stepIndex
+			].appWorkflowDataLayoutLinks?.filter(
+				({dataLayoutId}) => dataLayoutId !== undefined
+			);
+
+			return {...state};
 		}
 		case REMOVE_STEP_FORM_VIEW: {
 			const currentStep = state.steps[state.stepIndex];
@@ -171,12 +240,37 @@ export default (state, action) => {
 			return {
 				...state,
 				...action.config,
+				draftConfig: JSON.parse(JSON.stringify(action.config)),
+			};
+		}
+		case UPDATE_DATA_DEFINITION_FIELDS: {
+			return {
+				...state,
+				dataObject: {
+					...state.dataObject,
+					dataDefinitionFields: action.dataDefinitionFields,
+				},
 			};
 		}
 		case UPDATE_DATA_OBJECT: {
+			state.steps.forEach((step) => {
+				if (step.appWorkflowDataLayoutLinks) {
+					step.appWorkflowDataLayoutLinks = [];
+				}
+
+				if (step?.errors?.formViews) {
+					step.errors.formViews = {
+						duplicatedFields: [],
+						errorIndexes: [],
+					};
+				}
+			});
+
 			return {
 				...state,
 				dataObject: action.dataObject,
+				formView: {},
+				tableView: {},
 			};
 		}
 		case UPDATE_FORM_VIEW: {
@@ -185,10 +279,7 @@ export default (state, action) => {
 			const initialStep = workflowSteps.shift();
 			const finalStep = workflowSteps.pop();
 
-			const formView = {
-				...action.formView,
-				fields: getFormViewFields(action.formView),
-			};
+			const formView = populateFormViewFields(action.formView);
 
 			workflowSteps.forEach((step) => {
 				if (step.appWorkflowDataLayoutLinks.length === 0) {
@@ -216,19 +307,28 @@ export default (state, action) => {
 			};
 		}
 		case UPDATE_STEP: {
-			const {step, stepIndex} = {...action};
+			const {step: currentStep, stepIndex} = {...action};
 
 			if (stepIndex > 0) {
-				state.steps[
-					stepIndex - 1
-				].appWorkflowTransitions[0].transitionTo = step.name;
+				const previousStep = state.steps?.[stepIndex - 1];
+				const nextStep = state.steps?.[stepIndex + 1];
+
+				if (previousStep?.appWorkflowTransitions?.[0]) {
+					previousStep.appWorkflowTransitions[0].transitionTo =
+						currentStep.name;
+				}
+
+				if (nextStep?.appWorkflowTransitions?.[1]) {
+					nextStep.appWorkflowTransitions[1].transitionTo =
+						currentStep.name;
+				}
 			}
 
-			state.steps[stepIndex] = step;
+			state.steps[stepIndex] = currentStep;
 
 			return {
 				...state,
-				currentStep: step,
+				currentStep,
 			};
 		}
 		case UPDATE_STEP_ACTION: {
@@ -252,8 +352,8 @@ export default (state, action) => {
 
 			formViews[action.index] = {
 				...formViews[action.index],
+				...populateFormViewFields(action.formView),
 				dataLayoutId: action.formView.id,
-				fields: getFormViewFields(action.formView),
 				name: action.formView.name,
 			};
 

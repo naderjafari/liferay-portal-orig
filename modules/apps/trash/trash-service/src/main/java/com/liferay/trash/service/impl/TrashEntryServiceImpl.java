@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.trash.constants.TrashActionKeys;
 import com.liferay.trash.constants.TrashEntryConstants;
+import com.liferay.trash.exception.RestoreEntryException;
 import com.liferay.trash.model.TrashEntry;
 import com.liferay.trash.model.TrashEntryList;
 import com.liferay.trash.model.TrashEntrySoap;
@@ -219,8 +220,8 @@ public class TrashEntryServiceImpl extends TrashEntryServiceBaseImpl {
 	 * @param  start the lower bound of the range of trash entries to return
 	 * @param  end the upper bound of the range of trash entries to return (not
 	 *         inclusive)
-	 * @param  orderByComparator the comparator to order the trash entries (optionally
-	 *         <code>null</code>)
+	 * @param  orderByComparator the comparator to order the trash entries
+	 *         (optionally <code>null</code>)
 	 * @return the range of matching trash entries ordered by comparator
 	 *         <code>orderByComparator</code>
 	 */
@@ -251,8 +252,8 @@ public class TrashEntryServiceImpl extends TrashEntryServiceBaseImpl {
 	 * @param  start the lower bound of the range of trash entries to return
 	 * @param  end the upper bound of the range of trash entries to return (not
 	 *         inclusive)
-	 * @param  orderByComparator the comparator to order the trash entries (optionally
-	 *         <code>null</code>)
+	 * @param  orderByComparator the comparator to order the trash entries
+	 *         (optionally <code>null</code>)
 	 * @return the range of matching trash entries ordered by comparator
 	 *         <code>orderByComparator</code>
 	 */
@@ -440,12 +441,17 @@ public class TrashEntryServiceImpl extends TrashEntryServiceBaseImpl {
 			long entryId, long overrideClassPK, String name)
 		throws PortalException {
 
-		PermissionChecker permissionChecker = getPermissionChecker();
-
 		TrashEntry entry = trashEntryPersistence.findByPrimaryKey(entryId);
 
 		TrashHandler trashHandler = TrashHandlerRegistryUtil.getTrashHandler(
 			entry.getClassName());
+
+		if (!trashHandler.isRestorable(entry.getClassPK())) {
+			throw new RestoreEntryException(
+				RestoreEntryException.NOT_RESTORABLE);
+		}
+
+		PermissionChecker permissionChecker = getPermissionChecker();
 
 		if (!trashHandler.hasTrashPermission(
 				permissionChecker, 0, entry.getClassPK(),

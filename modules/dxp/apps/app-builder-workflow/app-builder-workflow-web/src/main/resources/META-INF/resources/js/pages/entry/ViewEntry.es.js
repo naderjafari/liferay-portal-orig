@@ -9,35 +9,73 @@
  * distribution rights of the Software.
  */
 
+import {ClayButtonWithIcon} from '@clayui/button';
+import {usePrevious, useTimeout} from '@liferay/frontend-js-react-web';
 import {AppContext} from 'app-builder-web/js/AppContext.es';
 import ControlMenu from 'app-builder-web/js/components/control-menu/ControlMenu.es';
-import {Loading} from 'app-builder-web/js/components/loading/Loading.es';
-import useDataLayout from 'app-builder-web/js/hooks/useDataLayout.es';
-import useQuery from 'app-builder-web/js/hooks/useQuery.es';
+import useDataDefinition from 'app-builder-web/js/hooks/useDataDefinition.es';
 import {ViewDataLayoutPageValues} from 'app-builder-web/js/pages/entry/ViewEntry.es';
 import ViewEntryUpperToolbar from 'app-builder-web/js/pages/entry/ViewEntryUpperToolbar.es';
-import {getItem} from 'app-builder-web/js/utils/client.es';
-import {errorToast} from 'app-builder-web/js/utils/toast.es';
-import {isEqualObjects} from 'app-builder-web/js/utils/utils.es';
-import {usePrevious} from 'frontend-js-react-web';
+import {getLocalizedUserPreferenceValue} from 'app-builder-web/js/utils/lang.es';
+import Loading from 'data-engine-js-components-web/js/components/loading/Loading.es';
+import useQuery from 'data-engine-js-components-web/js/hooks/useQuery.es';
+import {
+	addItem,
+	getItem,
+} from 'data-engine-js-components-web/js/utils/client.es';
+import {errorToast} from 'data-engine-js-components-web/js/utils/toast.es';
+import {isEqualObjects} from 'data-engine-js-components-web/js/utils/utils.es';
 import React, {useContext, useEffect, useState} from 'react';
 
 import WorkflowInfoBar from '../../components/workflow-info-bar/WorkflowInfoBar.es';
-import useAppWorkflow from '../../hooks/useAppWorkflow.es';
+import useDataLayouts from '../../hooks/useDataLayouts.es';
+import ReassignEntryModal from './ReassignEntryModal.es';
+import ActivitySection from './activity/ActivitySection.es';
 
 export default function ViewEntry({
 	history,
 	match: {
-		params: {entryIndex},
+		params: {entryId, entryIndex},
 	},
 }) {
-	const {appId, dataDefinitionId, dataLayoutId} = useContext(AppContext);
-	const {appWorkflowDefinitionId, appWorkflowTasks} = useAppWorkflow(appId);
 	const {
-		dataDefinition,
-		dataLayout: {dataLayoutPages},
-		isLoading,
-	} = useDataLayout(dataLayoutId, dataDefinitionId);
+		appId,
+		dataDefinitionId,
+		dataLayoutId,
+		dataListViewId,
+		userLanguageId,
+	} = useContext(AppContext);
+	const [dataLayoutIds, setDataLayoutIds] = useState([]);
+	const [isModalVisible, setModalVisible] = useState(false);
+
+	const getDataLayoutIds = ({completed, taskNames = [], tasks}) => {
+		const initialIds = [];
+
+		if (!completed) {
+			tasks = tasks.filter(({name}) => taskNames.includes(name));
+		}
+		else {
+			initialIds.push(Number(dataLayoutId));
+		}
+
+		return tasks.reduce(
+			(dataLayoutIds, {appWorkflowDataLayoutLinks}) => [
+				...dataLayoutIds,
+				...appWorkflowDataLayoutLinks?.reduce(
+					(stepDataLayoutIds, {dataLayoutId}) =>
+						dataLayoutIds.includes(dataLayoutId)
+							? stepDataLayoutIds
+							: [...stepDataLayoutIds, dataLayoutId],
+					[]
+				),
+			],
+			initialIds
+		);
+	};
+
+	const dataDefinition = useDataDefinition({dataDefinitionId});
+	const dataLayouts = useDataLayouts(dataLayoutIds);
+	const delay = useTimeout();
 
 	const [
 		{dataRecord, isFetching, page, totalCount, workflowInfo},
@@ -61,68 +99,170 @@ export default function ViewEntry({
 	const previousQuery = usePrevious(query);
 	const previousIndex = usePrevious(entryIndex);
 
-	const doFetch = (appWorkflowDefinitionId) => {
-		if (appWorkflowDefinitionId) {
-			getItem(
-				`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}/data-records`,
-				{...query, page: entryIndex, pageSize: 1}
-			)
-				.then(({items = [], ...response}) => {
-					if (items.length > 0) {
-						const state = {
-							dataRecord: items.pop(),
-							isFetching: false,
-							workflowInfo: null,
-							...response,
-						};
+	const dataEngineAddItem = (state, dataRecordIds, newAssignee) => {
+		addItem(
+			`/o/app-builder-workflow/v1.0/apps/${appId}/app-workflows/data-record-links`,
+			{dataRecordIds}
+		)
+			.then(({items}) => {
+				if (items.length) {
+					const {
+						appWorkflow: {
+							appVersion,
+							appWorkflowDefinitionId,
+							appWorkflowTasks: tasks,
+						},
+					} = items.pop();
+					let retryCount = 0;
 
-						return getItem(
+					const getWorkflowInfo = () => {
+						getItem(
 							`/o/portal-workflow-metrics/v1.0/processes/${appWorkflowDefinitionId}/instances`,
-							{classPKs: [state.dataRecord.id]}
-						)
-							.then((workflowResponse) => {
-								if (workflowResponse.totalCount > 0) {
-									state.workflowInfo = {
-										...workflowResponse.items.pop(),
-										tasks: appWorkflowTasks,
-									};
+							{classPKs: dataRecordIds}
+						).then(({items}) => {
+							if (items.length) {
+								const {id, ...instance} = items.pop();
+
+								const [assignee] = instance.assignees || [];
+
+								if (
+									newAssignee &&
+									newAssignee?.id !== assignee?.id &&
+									retryCount <= 5
+								) {
+									retryCount++;
+
+									return delay(getWorkflowInfo, 1000);
 								}
 
-								setState((prevState) => ({
-									...prevState,
-									...state,
-								}));
-							})
-							.catch(() => {
-								setState((prevState) => ({
-									...prevState,
-									...state,
-								}));
-							});
-					}
-				})
-				.catch(() => {
+								const assignedToUser =
+									Number(themeDisplay.getUserId()) ===
+									assignee?.id;
+
+								state.workflowInfo = {
+									...instance,
+									appVersion,
+									assignees: [newAssignee || assignee],
+									canReassign:
+										assignedToUser || assignee?.reviewer,
+									instanceId: id,
+									tasks,
+								};
+
+								setDataLayoutIds(
+									getDataLayoutIds(state.workflowInfo)
+								);
+							}
+
+							setState((prevState) => ({
+								...prevState,
+								...state,
+							}));
+						});
+					};
+
+					getWorkflowInfo();
+				}
+				else {
+					setDataLayoutIds([Number(dataLayoutId)]);
 					setState((prevState) => ({
 						...prevState,
-						isFetching: false,
+						...state,
 					}));
+				}
+			})
+			.catch(() => {
+				setState((prevState) => ({
+					...prevState,
+					...state,
+				}));
+			});
+	};
 
-					errorToast();
-				});
+	const doFetch = async ({newAssignee} = {}) => {
+		setState({
+			dataRecord: {},
+			isFetching: true,
+			page: 1,
+			totalCount: 0,
+			workflowInfo: null,
+		});
+
+		try {
+			let state = {
+				dataRecord: {},
+				isFetching: false,
+				workflowInfo: null,
+			};
+
+			if (entryIndex) {
+				const {
+					items = [],
+					...response
+				} = await getItem(
+					`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}/data-records`,
+					{...query, dataListViewId, page: entryIndex, pageSize: 1}
+				);
+
+				if (items.length) {
+					state = {
+						...state,
+						dataRecord: items.pop(),
+						...response,
+					};
+
+					const dataRecordIds = [state.dataRecord.id];
+					dataEngineAddItem(state, dataRecordIds, newAssignee);
+				}
+			}
+
+			if (entryId) {
+				const dataRecordObject = await getItem(
+					`/o/data-engine/v2.0/data-records/${entryId}`
+				);
+
+				state = {
+					...state,
+					dataRecord: dataRecordObject,
+				};
+
+				const dataRecordIds = [state.dataRecord.id];
+				dataEngineAddItem(state, dataRecordIds, newAssignee);
+			}
+		}
+		catch (error) {
+			setState((prevState) => ({
+				...prevState,
+				isFetching: false,
+			}));
+
+			errorToast();
 		}
 	};
 
 	useEffect(() => {
-		if (!isEqualObjects(query, previousQuery) || !previousIndex) {
-			doFetch(appWorkflowDefinitionId);
+		if (entryId) {
+			doFetch();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	useEffect(() => {
+		if (
+			(!isEqualObjects(query, previousQuery) || !previousIndex) &&
+			!entryId
+		) {
+			doFetch();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [entryIndex, query]);
 
-	useEffect(() => {
-		doFetch(appWorkflowDefinitionId);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [appWorkflowDefinitionId]);
+	const showButtons = {
+		update:
+			workflowInfo?.completed === false &&
+			workflowInfo?.assignees?.[0]?.id ===
+				Number(themeDisplay.getUserId()),
+	};
 
 	return (
 		<div className="view-entry">
@@ -132,33 +272,90 @@ export default function ViewEntry({
 			/>
 
 			<ViewEntryUpperToolbar
+				additionalButtons={
+					workflowInfo?.canReassign && (
+						<ClayButtonWithIcon
+							className="mr-2"
+							data-tooltip-align="bottom"
+							data-tooltip-delay="200"
+							displayType="secondary"
+							onClick={() => setModalVisible(true)}
+							small
+							symbol="change"
+							title={Liferay.Language.get('assign-to')}
+						/>
+					)
+				}
 				dataRecordId={dataRecordId}
 				page={page}
+				showButtons={showButtons}
+				showNavigationControls={!entryId}
 				totalCount={totalCount}
 			>
 				{workflowInfo && <WorkflowInfoBar {...workflowInfo} />}
 			</ViewEntryUpperToolbar>
 
-			<Loading isLoading={isLoading || isFetching}>
+			<Loading isLoading={isFetching}>
 				<div className="container">
 					<div className="justify-content-center row">
 						<div className="col-lg-8">
-							{dataLayoutPages &&
-								dataRecordValues &&
-								dataLayoutPages.map((dataLayoutPage, index) => (
-									<div className="sheet" key={index}>
-										<ViewDataLayoutPageValues
-											dataDefinition={dataDefinition}
-											dataLayoutPage={dataLayoutPage}
-											dataRecordValues={dataRecordValues}
-											key={index}
-										/>
-									</div>
-								))}
+							{dataRecordValues &&
+								dataLayouts.map(
+									({dataLayoutPages = [], ...dataLayout}) => (
+										<div
+											className="data-layout-item"
+											key={dataLayout.id}
+										>
+											<h3>
+												{getLocalizedUserPreferenceValue(
+													dataLayout.name,
+													userLanguageId,
+													dataDefinition.defaultLanguageId
+												)}
+											</h3>
+
+											{dataLayoutPages.map(
+												(dataLayoutPage, index) => (
+													<div
+														className="sheet"
+														key={index}
+													>
+														<ViewDataLayoutPageValues
+															dataDefinition={
+																dataDefinition
+															}
+															dataLayoutPage={
+																dataLayoutPage
+															}
+															dataRecordValues={
+																dataRecordValues
+															}
+															key={index}
+														/>
+													</div>
+												)
+											)}
+										</div>
+									)
+								)}
+
+							{workflowInfo?.instanceId && (
+								<ActivitySection
+									workflowInstanceId={workflowInfo.instanceId}
+								/>
+							)}
 						</div>
 					</div>
 				</div>
 			</Loading>
+
+			{isModalVisible && (
+				<ReassignEntryModal
+					entry={workflowInfo}
+					onCloseModal={() => setModalVisible(false)}
+					refetch={() => doFetch()}
+				/>
+			)}
 		</div>
 	);
 }

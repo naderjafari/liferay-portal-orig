@@ -110,7 +110,7 @@ if (organization != null) {
 				<label class="control-label"></label>
 
 				<liferay-ui:logo-selector
-					currentLogoURL='<%= themeDisplay.getPathImage() + "/organization_logo?img_id=" + logoId + "&t=" + WebServerServletTokenUtil.getToken(logoId) %>'
+					currentLogoURL="<%= organization.getLogoURL() %>"
 					defaultLogo="<%= logoId == 0 %>"
 					defaultLogoURL='<%= themeDisplay.getPathImage() + "/organization_logo?img_id=0" %>'
 					logoDisplaySelector=".organization-logo"
@@ -148,7 +148,7 @@ if (organization != null) {
 		var typeSelect = document.getElementById('<portlet:namespace />type');
 
 		if (typeSelect) {
-			typeSelect.addEventListener('change', function (event) {
+			typeSelect.addEventListener('change', (event) => {
 				var countryDiv = document.getElementById(
 					'<portlet:namespace />countryDiv'
 				);

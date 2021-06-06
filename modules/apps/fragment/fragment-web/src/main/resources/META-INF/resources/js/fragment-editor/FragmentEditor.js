@@ -14,7 +14,7 @@
 
 import ClayIcon from '@clayui/icon';
 import ClayTabs from '@clayui/tabs';
-import {useIsMounted, usePrevious} from 'frontend-js-react-web';
+import {useIsMounted, usePrevious} from '@liferay/frontend-js-react-web';
 import {cancelDebounce, debounce, fetch, openToast} from 'frontend-js-web';
 import React, {useCallback, useEffect, useState} from 'react';
 
@@ -58,23 +58,32 @@ const FragmentEditor = ({
 	const [html, setHtml] = useState(initialHTML);
 	const [js, setJs] = useState(initialJS);
 
+	const previousConfiguration =
+		usePrevious(configuration) || initialConfiguration;
+	const previousCss = usePrevious(css) || initialCSS;
+	const previousHtml = usePrevious(html) || initialHTML;
+	const previousJs = usePrevious(js) || initialJS;
+
 	const isMounted = useIsMounted();
 
 	const contentHasChanged = useCallback(() => {
 		return (
-			initialConfiguration !== configuration ||
-			initialCSS !== css ||
-			initialHTML !== html ||
-			initialJS !== js
+			previousConfiguration !== configuration ||
+			previousCss !== css ||
+			previousHtml !== html ||
+			previousJs !== js ||
+			cacheable !== isCacheable
 		);
 	}, [
+		cacheable,
 		configuration,
 		css,
 		html,
-		initialCSS,
-		initialConfiguration,
-		initialHTML,
-		initialJS,
+		previousCss,
+		previousConfiguration,
+		previousHtml,
+		previousJs,
+		isCacheable,
 		js,
 	]);
 
@@ -112,12 +121,12 @@ const FragmentEditor = ({
 
 				openToast({
 					message,
-					title: Liferay.Language.get('error'),
 					type: 'danger',
 				});
 			});
 	};
 
+	/* eslint-disable-next-line react-hooks/exhaustive-deps */
 	const saveDraft = useCallback(
 		debounce(() => {
 			setChangesStatus(CHANGES_STATUS.saving);
@@ -164,12 +173,11 @@ const FragmentEditor = ({
 
 					openToast({
 						message,
-						title: Liferay.Language.get('error'),
 						type: 'danger',
 					});
 				});
 		}, 500),
-		[configuration, css, html, js]
+		[configuration, css, html, isCacheable, js]
 	);
 
 	const previousSaveDraft = usePrevious(saveDraft);
@@ -190,9 +198,9 @@ const FragmentEditor = ({
 	return (
 		<div className="fragment-editor-container">
 			<div className="fragment-editor__toolbar nav-bar-container">
-				<div className="navbar navbar-default pb-2 pt-2">
-					<div className="container">
-						<div className="navbar navbar-collapse-absolute navbar-expand-md navbar-underline navigation-bar navigation-bar-light">
+				<div className="navbar navbar-expand navbar-underline navigation-bar navigation-bar-light">
+					<div className="container-fluid container-fluid-max-xl">
+						<div className="navbar-nav">
 							<ClayTabs modern>
 								<ClayTabs.Item
 									active={activeTabKeyValue === 0}

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("BackgroundImage")
+@GraphQLName(
+	description = "Deprecated as of Athanasius (7.3.x), replaced by backgroundFragmentImage",
+	value = "BackgroundImage"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "BackgroundImage")
-public class BackgroundImage {
+public class BackgroundImage implements Serializable {
 
 	public static BackgroundImage toDTO(String json) {
 		return ObjectMapperUtil.readValue(BackgroundImage.class, json);
@@ -199,6 +204,7 @@ public class BackgroundImage {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.BackgroundImage",
 		name = "x-class-name"
 	)
@@ -234,7 +240,7 @@ public class BackgroundImage {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -273,7 +279,7 @@ public class BackgroundImage {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

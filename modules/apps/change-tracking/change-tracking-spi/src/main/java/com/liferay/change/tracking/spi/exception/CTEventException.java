@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 
 /**
  * @author Shuyang Zhou
+ * @see    com.liferay.change.tracking.spi.listener.CTEventListener
  */
 public class CTEventException extends PortalException {
 
@@ -28,12 +29,12 @@ public class CTEventException extends PortalException {
 		super(msg);
 	}
 
-	public CTEventException(String msg, Throwable cause) {
-		super(msg, cause);
+	public CTEventException(String msg, Throwable throwable) {
+		super(msg, throwable);
 	}
 
-	public CTEventException(Throwable cause) {
-		super(cause);
+	public CTEventException(Throwable throwable) {
+		super(throwable);
 	}
 
 }

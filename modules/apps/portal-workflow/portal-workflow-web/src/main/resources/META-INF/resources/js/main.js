@@ -163,13 +163,11 @@ AUI.add(
 				for (var index in elementsList) {
 					var element = elementsList[parseInt(index, 10)];
 
-					var hidden = element.getAttribute('hidden');
-
-					if (hidden) {
-						element.removeAttribute('hidden');
+					if (element.classList.contains('d-none')) {
+						element.classList.remove('d-none');
 					}
 					else {
-						element.setAttribute('hidden', true);
+						element.classList.add('d-none');
 					}
 				}
 			},
@@ -243,9 +241,9 @@ AUI.add(
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -303,9 +301,9 @@ AUI.add(
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -357,9 +355,9 @@ AUI.add(
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -394,7 +392,6 @@ AUI.add(
 				Liferay.Util.openToast({
 					container: document.querySelector('.portlet-column'),
 					message: successMessage,
-					title: Liferay.Language.get('success'),
 					type: 'success',
 				});
 			},
@@ -420,7 +417,6 @@ AUI.add(
 				Liferay.Util.openToast({
 					container: document.querySelector('.lfr-alert-container'),
 					message: successMessage,
-					messageType: 'html',
 				});
 			},
 

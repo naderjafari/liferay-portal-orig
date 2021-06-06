@@ -14,22 +14,51 @@
 
 import ClayForm, {ClaySelectWithOption} from '@clayui/form';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 
-import useControlledState from '../../../core/hooks/useControlledState';
+import {useStyleBook} from '../../../plugins/page-design-options/hooks/useStyleBook';
 import {ConfigurationFieldPropTypes} from '../../../prop-types/index';
 import {useId} from '../../utils/useId';
 
-export const SelectField = ({disabled, field, onValueSelect, value}) => {
+export const SelectField = ({
+	className,
+	disabled,
+	field,
+	onValueSelect,
+	value,
+}) => {
 	const inputId = useId();
-	const [firstOption = {}] = field.typeOptions.validValues;
+	const {tokenValues} = useStyleBook();
 
-	const [nextValue, setNextValue] = useControlledState(
+	const validValues = field.typeOptions
+		? field.typeOptions.validValues
+		: field.validValues;
+
+	const [firstOption = {}] = validValues;
+
+	const [nextValue, setNextValue] = useState(
 		value || field.defaultValue || firstOption.value
 	);
 
+	const getFrontendTokenOption = (option) => {
+		const token = tokenValues[option.frontendTokenName];
+
+		if (!token) {
+			return option;
+		}
+
+		return {
+			label: token.label,
+			value: option.frontendTokenName,
+		};
+	};
+
+	useEffect(() => {
+		setNextValue((prevValue) => value || prevValue);
+	}, [value]);
+
 	return (
-		<ClayForm.Group small>
+		<ClayForm.Group className={className} small>
 			<label htmlFor={inputId}>{field.label}</label>
 
 			<ClaySelectWithOption
@@ -43,7 +72,11 @@ export const SelectField = ({disabled, field, onValueSelect, value}) => {
 					setNextValue(nextValue);
 					onValueSelect(field.name, nextValue);
 				}}
-				options={field.typeOptions.validValues}
+				options={validValues.map((validValue) =>
+					validValue.frontendTokenName
+						? getFrontendTokenOption(validValue)
+						: validValue
+				)}
 				value={nextValue}
 			/>
 		</ClayForm.Group>
@@ -51,6 +84,7 @@ export const SelectField = ({disabled, field, onValueSelect, value}) => {
 };
 
 SelectField.propTypes = {
+	className: PropTypes.string,
 	disabled: PropTypes.bool,
 
 	field: PropTypes.shape({
@@ -62,7 +96,13 @@ SelectField.propTypes = {
 					value: PropTypes.string.isRequired,
 				})
 			).isRequired,
-		}).isRequired,
+		}),
+		validValues: PropTypes.arrayOf(
+			PropTypes.shape({
+				label: PropTypes.string.isRequired,
+				value: PropTypes.string.isRequired,
+			})
+		),
 	}),
 
 	onValueSelect: PropTypes.func.isRequired,

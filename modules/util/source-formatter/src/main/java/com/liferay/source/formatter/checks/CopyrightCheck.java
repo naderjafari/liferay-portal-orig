@@ -16,9 +16,10 @@ package com.liferay.source.formatter.checks;
 
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.File;
@@ -40,16 +41,20 @@ public class CopyrightCheck extends BaseFileCheck {
 			return content;
 		}
 
-		if (isModulesApp(absolutePath, true)) {
-			String commercialCopyright = _getCommercialCopyright();
+		String commercialCopyright = _getCommercialCopyright();
 
-			if (Validator.isNotNull(commercialCopyright)) {
+		if (Validator.isNotNull(commercialCopyright)) {
+			if (isModulesApp(absolutePath, true)) {
 				if (content.contains(copyright)) {
 					content = StringUtil.replace(
 						content, copyright, commercialCopyright);
 				}
 
 				copyright = commercialCopyright;
+			}
+			else if (content.contains(commercialCopyright)) {
+				content = StringUtil.replace(
+					content, commercialCopyright, copyright);
 			}
 		}
 
@@ -111,6 +116,10 @@ public class CopyrightCheck extends BaseFileCheck {
 					"dependencies/copyright-commercial.txt"));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			_commercialCopyright = StringPool.BLANK;
 		}
 
@@ -127,8 +136,7 @@ public class CopyrightCheck extends BaseFileCheck {
 		String copyRightFileName = getAttributeValue(
 			_COPYRIGHT_FILE_NAME_KEY, "copyright.txt", absolutePath);
 
-		_copyright = getContent(
-			copyRightFileName, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		_copyright = getContent(copyRightFileName, getMaxDirLevel());
 
 		if (Validator.isNotNull(_copyright)) {
 			return _copyright;
@@ -143,6 +151,10 @@ public class CopyrightCheck extends BaseFileCheck {
 				classLoader.getResourceAsStream("dependencies/copyright.txt"));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			_copyright = StringPool.BLANK;
 		}
 
@@ -171,6 +183,8 @@ public class CopyrightCheck extends BaseFileCheck {
 	}
 
 	private static final String _COPYRIGHT_FILE_NAME_KEY = "copyrightFileName";
+
+	private static final Log _log = LogFactoryUtil.getLog(CopyrightCheck.class);
 
 	private String _commercialCopyright;
 	private String _copyright;

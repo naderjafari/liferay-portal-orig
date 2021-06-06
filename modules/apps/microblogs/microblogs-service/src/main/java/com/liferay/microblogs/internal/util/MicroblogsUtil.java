@@ -18,13 +18,13 @@ import com.liferay.microblogs.constants.MicroblogsEntryConstants;
 import com.liferay.microblogs.constants.MicroblogsPortletKeys;
 import com.liferay.microblogs.model.MicroblogsEntry;
 import com.liferay.microblogs.service.MicroblogsEntryLocalServiceUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -75,42 +75,6 @@ public class MicroblogsUtil {
 		}
 
 		return hashtags;
-	}
-
-	public static JSONArray getJSONRecipients(
-			long userId, ThemeDisplay themeDisplay)
-		throws PortalException {
-
-		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
-
-		List<User> users = UserLocalServiceUtil.getSocialUsers(
-			userId, SocialRelationConstants.TYPE_BI_CONNECTION,
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			new UserFirstNameComparator(true));
-
-		for (User user : users) {
-			if (user.isDefaultUser() || (userId == user.getUserId())) {
-				continue;
-			}
-
-			JSONObject userJSONObject = JSONUtil.put(
-				"emailAddress", user.getEmailAddress()
-			).put(
-				"fullName", user.getFullName()
-			).put(
-				"jobTitle", user.getJobTitle()
-			).put(
-				"portraitURL", user.getPortraitURL(themeDisplay)
-			).put(
-				"screenName", user.getScreenName()
-			).put(
-				"userId", user.getUserId()
-			);
-
-			jsonArray.put(userJSONObject);
-		}
-
-		return jsonArray;
 	}
 
 	public static int getNotificationType(
@@ -181,6 +145,41 @@ public class MicroblogsUtil {
 		content = replaceUserTags(content, serviceContext);
 
 		return content;
+	}
+
+	public static JSONArray getRecipientsJSONArray(
+			long userId, ThemeDisplay themeDisplay)
+		throws PortalException {
+
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		List<User> users = UserLocalServiceUtil.getSocialUsers(
+			userId, SocialRelationConstants.TYPE_BI_CONNECTION,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			new UserFirstNameComparator(true));
+
+		for (User user : users) {
+			if (user.isDefaultUser() || (userId == user.getUserId())) {
+				continue;
+			}
+
+			jsonArray.put(
+				JSONUtil.put(
+					"emailAddress", user.getEmailAddress()
+				).put(
+					"fullName", user.getFullName()
+				).put(
+					"jobTitle", user.getJobTitle()
+				).put(
+					"portraitURL", user.getPortraitURL(themeDisplay)
+				).put(
+					"screenName", user.getScreenName()
+				).put(
+					"userId", user.getUserId()
+				));
+		}
+
+		return jsonArray;
 	}
 
 	public static long getRootMicroblogsEntryId(
@@ -336,7 +335,7 @@ public class MicroblogsUtil {
 		while (matcher.find()) {
 			String result = matcher.group();
 
-			StringBuilder sb = new StringBuilder(6);
+			StringBundler sb = new StringBundler(6);
 
 			sb.append("<span class=\"hashtag\">#</span>");
 			sb.append("<a class=\"hashtag-link\" href=\"");
@@ -359,6 +358,9 @@ public class MicroblogsUtil {
 					portletURL.setWindowState(LiferayWindowState.NORMAL);
 				}
 				catch (WindowStateException windowStateException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(windowStateException, windowStateException);
+					}
 				}
 			}
 			else {
@@ -372,6 +374,9 @@ public class MicroblogsUtil {
 					portletURL.setWindowState(WindowState.MAXIMIZED);
 				}
 				catch (WindowStateException windowStateException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(windowStateException, windowStateException);
+					}
 				}
 			}
 
@@ -407,7 +412,7 @@ public class MicroblogsUtil {
 			String result = matcher.group();
 
 			try {
-				StringBuilder sb = new StringBuilder(5);
+				StringBundler sb = new StringBundler(5);
 
 				sb.append("<a href=\"");
 

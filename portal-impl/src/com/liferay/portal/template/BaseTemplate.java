@@ -113,6 +113,10 @@ public abstract class BaseTemplate implements Template {
 		return context.isEmpty();
 	}
 
+	public boolean isRestricted() {
+		return _restricted;
+	}
+
 	@Override
 	public Set<String> keySet() {
 		return context.keySet();
@@ -249,11 +253,9 @@ public abstract class BaseTemplate implements Template {
 	protected String getTemplateResourceUUID(
 		TemplateResource templateResource) {
 
-		return TemplateConstants.TEMPLATE_RESOURCE_UUID_PREFIX.concat(
-			StringPool.POUND
-		).concat(
-			templateResource.getTemplateId()
-		);
+		return StringBundler.concat(
+			TemplateConstants.TEMPLATE_RESOURCE_UUID_PREFIX, StringPool.POUND,
+			templateResource.getTemplateId());
 	}
 
 	protected abstract void handleException(

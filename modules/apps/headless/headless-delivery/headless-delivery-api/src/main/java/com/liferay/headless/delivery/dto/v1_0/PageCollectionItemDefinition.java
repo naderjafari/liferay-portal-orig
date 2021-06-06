@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,17 +44,20 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageCollectionItemDefinition")
+@GraphQLName(
+	description = "Represents a definition of a Page Collection Item.",
+	value = "PageCollectionItemDefinition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageCollectionItemDefinition")
-public class PageCollectionItemDefinition {
+public class PageCollectionItemDefinition implements Serializable {
 
 	public static PageCollectionItemDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(
 			PageCollectionItemDefinition.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The page collection item's configuration.")
 	@Valid
 	public Object getCollectionItemConfig() {
 		return collectionItemConfig;
@@ -77,7 +82,7 @@ public class PageCollectionItemDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page collection item's configuration.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object collectionItemConfig;
 
@@ -126,6 +131,7 @@ public class PageCollectionItemDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageCollectionItemDefinition",
 		name = "x-class-name"
 	)
@@ -161,7 +167,7 @@ public class PageCollectionItemDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -200,7 +206,7 @@ public class PageCollectionItemDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

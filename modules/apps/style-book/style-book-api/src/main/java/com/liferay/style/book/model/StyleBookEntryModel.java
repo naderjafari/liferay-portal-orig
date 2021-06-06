@@ -16,8 +16,11 @@ package com.liferay.style.book.model;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
 import com.liferay.portal.kernel.model.BaseModel;
+import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.ShardedModel;
+import com.liferay.portal.kernel.model.StagedAuditedModel;
+import com.liferay.portal.kernel.model.change.tracking.CTModel;
 import com.liferay.portal.kernel.model.version.VersionedModel;
 
 import java.util.Date;
@@ -37,7 +40,8 @@ import org.osgi.annotation.versioning.ProviderType;
  */
 @ProviderType
 public interface StyleBookEntryModel
-	extends BaseModel<StyleBookEntry>, MVCCModel, ShardedModel,
+	extends BaseModel<StyleBookEntry>, CTModel<StyleBookEntry>, GroupedModel,
+			MVCCModel, ShardedModel, StagedAuditedModel,
 			VersionedModel<StyleBookEntryVersion> {
 
 	/*
@@ -79,6 +83,39 @@ public interface StyleBookEntryModel
 	public void setMvccVersion(long mvccVersion);
 
 	/**
+	 * Returns the ct collection ID of this style book entry.
+	 *
+	 * @return the ct collection ID of this style book entry
+	 */
+	@Override
+	public long getCtCollectionId();
+
+	/**
+	 * Sets the ct collection ID of this style book entry.
+	 *
+	 * @param ctCollectionId the ct collection ID of this style book entry
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId);
+
+	/**
+	 * Returns the uuid of this style book entry.
+	 *
+	 * @return the uuid of this style book entry
+	 */
+	@AutoEscape
+	@Override
+	public String getUuid();
+
+	/**
+	 * Sets the uuid of this style book entry.
+	 *
+	 * @param uuid the uuid of this style book entry
+	 */
+	@Override
+	public void setUuid(String uuid);
+
+	/**
 	 * Returns the head ID of this style book entry.
 	 *
 	 * @return the head ID of this style book entry
@@ -113,6 +150,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @return the group ID of this style book entry
 	 */
+	@Override
 	public long getGroupId();
 
 	/**
@@ -120,6 +158,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @param groupId the group ID of this style book entry
 	 */
+	@Override
 	public void setGroupId(long groupId);
 
 	/**
@@ -143,6 +182,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @return the user ID of this style book entry
 	 */
+	@Override
 	public long getUserId();
 
 	/**
@@ -150,6 +190,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @param userId the user ID of this style book entry
 	 */
+	@Override
 	public void setUserId(long userId);
 
 	/**
@@ -157,6 +198,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @return the user uuid of this style book entry
 	 */
+	@Override
 	public String getUserUuid();
 
 	/**
@@ -164,6 +206,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @param userUuid the user uuid of this style book entry
 	 */
+	@Override
 	public void setUserUuid(String userUuid);
 
 	/**
@@ -172,6 +215,7 @@ public interface StyleBookEntryModel
 	 * @return the user name of this style book entry
 	 */
 	@AutoEscape
+	@Override
 	public String getUserName();
 
 	/**
@@ -179,6 +223,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @param userName the user name of this style book entry
 	 */
+	@Override
 	public void setUserName(String userName);
 
 	/**
@@ -186,6 +231,7 @@ public interface StyleBookEntryModel
 	 *
 	 * @return the create date of this style book entry
 	 */
+	@Override
 	public Date getCreateDate();
 
 	/**
@@ -193,7 +239,24 @@ public interface StyleBookEntryModel
 	 *
 	 * @param createDate the create date of this style book entry
 	 */
+	@Override
 	public void setCreateDate(Date createDate);
+
+	/**
+	 * Returns the modified date of this style book entry.
+	 *
+	 * @return the modified date of this style book entry
+	 */
+	@Override
+	public Date getModifiedDate();
+
+	/**
+	 * Sets the modified date of this style book entry.
+	 *
+	 * @param modifiedDate the modified date of this style book entry
+	 */
+	@Override
+	public void setModifiedDate(Date modifiedDate);
 
 	/**
 	 * Returns the default style book entry of this style book entry.
@@ -215,6 +278,21 @@ public interface StyleBookEntryModel
 	 * @param defaultStyleBookEntry the default style book entry of this style book entry
 	 */
 	public void setDefaultStyleBookEntry(boolean defaultStyleBookEntry);
+
+	/**
+	 * Returns the frontend tokens values of this style book entry.
+	 *
+	 * @return the frontend tokens values of this style book entry
+	 */
+	@AutoEscape
+	public String getFrontendTokensValues();
+
+	/**
+	 * Sets the frontend tokens values of this style book entry.
+	 *
+	 * @param frontendTokensValues the frontend tokens values of this style book entry
+	 */
+	public void setFrontendTokensValues(String frontendTokensValues);
 
 	/**
 	 * Returns the name of this style book entry.
@@ -259,20 +337,5 @@ public interface StyleBookEntryModel
 	 * @param styleBookEntryKey the style book entry key of this style book entry
 	 */
 	public void setStyleBookEntryKey(String styleBookEntryKey);
-
-	/**
-	 * Returns the tokens values of this style book entry.
-	 *
-	 * @return the tokens values of this style book entry
-	 */
-	@AutoEscape
-	public String getTokensValues();
-
-	/**
-	 * Sets the tokens values of this style book entry.
-	 *
-	 * @param tokensValues the tokens values of this style book entry
-	 */
-	public void setTokensValues(String tokensValues);
 
 }

@@ -14,7 +14,6 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
 import com.liferay.source.formatter.util.FileUtil;
 
@@ -75,7 +74,7 @@ public class JavaConfigurationCategoryCheck extends BaseFileCheck {
 		final List<String> categoryKeys = new ArrayList<>();
 
 		File configurationCategoriesDir = getFile(
-			_CONFIGURATION_CATEGORIES_DIR_NAME, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+			_CONFIGURATION_CATEGORIES_DIR_NAME, getMaxDirLevel());
 
 		if (configurationCategoriesDir == null) {
 			_categoryKeys = categoryKeys;
@@ -103,7 +102,15 @@ public class JavaConfigurationCategoryCheck extends BaseFileCheck {
 
 					String content = FileUtil.read(file);
 
-					Matcher matcher = _categoryKeyPattern.matcher(content);
+					Matcher matcher = _categoryKeyPattern1.matcher(content);
+
+					if (matcher.find()) {
+						categoryKeys.add(matcher.group(1));
+
+						return FileVisitResult.CONTINUE;
+					}
+
+					matcher = _categoryKeyPattern2.matcher(content);
 
 					if (matcher.find()) {
 						categoryKeys.add(matcher.group(1));
@@ -123,8 +130,10 @@ public class JavaConfigurationCategoryCheck extends BaseFileCheck {
 		"modules/apps/configuration-admin/configuration-admin-web/src/main" +
 			"/java/com/liferay/configuration/admin/web/internal/category";
 
-	private static final Pattern _categoryKeyPattern = Pattern.compile(
+	private static final Pattern _categoryKeyPattern1 = Pattern.compile(
 		"String\\s+_CATEGORY_KEY\\s+=\\s+\"(\\w+)\"");
+	private static final Pattern _categoryKeyPattern2 = Pattern.compile(
+		"String\\s+getCategoryKey\\(\\)\\s+\\{\\s+return\\s+\"(\\w+)\"");
 	private static final Pattern _categoryNamePattern = Pattern.compile(
 		"\n@ExtendedObjectClassDefinition\\(\\s*category\\s+=\\s+\"(\\w+)\"");
 

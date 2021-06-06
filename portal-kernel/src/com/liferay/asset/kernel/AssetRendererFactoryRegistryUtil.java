@@ -137,7 +137,7 @@ public class AssetRendererFactoryRegistryUtil {
 					(Class<?>)AssetRendererFactory.class,
 				assetRendererFactory);
 
-		_serviceRegistrations.put(assetRendererFactory, serviceRegistration);
+		_serviceRegistrationMap.put(assetRendererFactory, serviceRegistration);
 	}
 
 	public static void register(
@@ -154,7 +154,7 @@ public class AssetRendererFactoryRegistryUtil {
 		AssetRendererFactory<?> assetRendererFactory) {
 
 		ServiceRegistration<AssetRendererFactory<?>> serviceRegistration =
-			_serviceRegistrations.remove(assetRendererFactory);
+			_serviceRegistrationMap.remove(assetRendererFactory);
 
 		if (serviceRegistration != null) {
 			serviceRegistration.unregister();
@@ -207,7 +207,7 @@ public class AssetRendererFactoryRegistryUtil {
 	private AssetRendererFactoryRegistryUtil() {
 	}
 
-	private static ServiceTrackerMap<String, AssetRendererFactory<?>>
+	private static final ServiceTrackerMap<String, AssetRendererFactory<?>>
 		_classNameAssetRenderFactoriesServiceTrackerMap =
 			ServiceTrackerCollections.openSingleValueMap(
 				(Class<AssetRendererFactory<?>>)
@@ -224,9 +224,9 @@ public class AssetRendererFactoryRegistryUtil {
 				_getServiceReferenceComparator());
 
 	private static final ServiceRegistrationMap<AssetRendererFactory<?>>
-		_serviceRegistrations = new ServiceRegistrationMapImpl<>();
+		_serviceRegistrationMap = new ServiceRegistrationMapImpl<>();
 
-	private static ServiceTrackerMap<String, AssetRendererFactory<?>>
+	private static final ServiceTrackerMap<String, AssetRendererFactory<?>>
 		_typeAssetRenderFactoriesServiceTrackerMap =
 			ServiceTrackerCollections.openSingleValueMap(
 				(Class<AssetRendererFactory<?>>)

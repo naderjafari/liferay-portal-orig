@@ -19,9 +19,11 @@ import com.liferay.portal.kernel.exception.ResourceActionsException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.xml.Document;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -35,8 +37,7 @@ import org.osgi.annotation.versioning.ProviderType;
 public interface ResourceActions {
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * 				#check(String)}
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #check(String)}
 	 */
 	@Deprecated
 	public void check(Portlet portlet);
@@ -167,15 +168,79 @@ public interface ResourceActions {
 
 	public boolean isRootModelResource(String modelResource);
 
+	public void populateModelResources(
+			ClassLoader classLoader, String... sources)
+		throws ResourceActionsException;
+
+	public void populateModelResources(Document document)
+		throws ResourceActionsException;
+
+	public void populatePortletResource(
+			Portlet portlet, ClassLoader classLoader, String... sources)
+		throws ResourceActionsException;
+
+	public void populatePortletResources(
+			ClassLoader classLoader, String... sources)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public void read(ClassLoader classLoader, String source)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public void read(ClassLoader classLoader, String... sources)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public void read(Document document, Set<String> resourceNames)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public void read(
 			String servletContextName, ClassLoader classLoader, String source)
 		throws ResourceActionsException;
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public void read(
 			String servletContextName, ClassLoader classLoader,
 			String... sources)
 		throws ResourceActionsException;
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public void read(
+			String servletContextName, Document document,
+			Set<String> resourceNames)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public void readAndCheck(ClassLoader classLoader, String... sources)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public void readAndCheck(
 			String servletContextName, ClassLoader classLoader,
 			String... sources)

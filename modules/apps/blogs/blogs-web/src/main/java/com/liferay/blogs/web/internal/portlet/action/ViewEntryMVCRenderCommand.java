@@ -20,6 +20,7 @@ import com.liferay.blogs.exception.NoSuchEntryException;
 import com.liferay.blogs.model.BlogsEntry;
 import com.liferay.friendly.url.model.FriendlyURLEntry;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.constants.MVCRenderConstants;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -70,9 +71,6 @@ public class ViewEntryMVCRenderCommand implements MVCRenderCommand {
 		}
 
 		try {
-			boolean redirectToLastFriendlyURL = ParamUtil.getBoolean(
-				renderRequest, "redirectToLastFriendlyURL", true);
-
 			BlogsEntry entry = ActionUtil.getEntry(renderRequest);
 
 			ThemeDisplay themeDisplay =
@@ -96,17 +94,20 @@ public class ViewEntryMVCRenderCommand implements MVCRenderCommand {
 				_friendlyURLEntryLocalService.getMainFriendlyURLEntry(
 					BlogsEntry.class, entry.getEntryId());
 
+			boolean redirectToLastFriendlyURL = ParamUtil.getBoolean(
+				renderRequest, "redirectToLastFriendlyURL", true);
 			String urlTitle = ParamUtil.getString(renderRequest, "urlTitle");
 
 			if (redirectToLastFriendlyURL && Validator.isNotNull(urlTitle) &&
 				!urlTitle.equals(mainFriendlyURLEntry.getUrlTitle())) {
 
-				PortletURL portletURL = renderResponse.createRenderURL();
-
-				portletURL.setParameter(
-					"mvcRenderCommandName", "/blogs/view_entry");
-				portletURL.setParameter(
-					"urlTitle", mainFriendlyURLEntry.getUrlTitle());
+				PortletURL portletURL = PortletURLBuilder.createRenderURL(
+					renderResponse
+				).setMVCRenderCommandName(
+					"/blogs/view_entry"
+				).setParameter(
+					"urlTitle", mainFriendlyURLEntry.getUrlTitle()
+				).build();
 
 				HttpServletResponse httpServletResponse =
 					_portal.getHttpServletResponse(renderResponse);

@@ -43,9 +43,7 @@ public class JavaMultiPlusConcatCheck extends BaseJavaTermCheck {
 			String fileContent)
 		throws IOException {
 
-		if (isExcludedPath(RUN_OUTSIDE_PORTAL_EXCLUDES, absolutePath) ||
-			isModulesApp(absolutePath, true)) {
-
+		if (isExcludedPath(RUN_OUTSIDE_PORTAL_EXCLUDES, absolutePath)) {
 			return javaTerm.getContent();
 		}
 
@@ -239,8 +237,9 @@ public class JavaMultiPlusConcatCheck extends BaseJavaTermCheck {
 		String buildGradleContent = getBuildGradleContent(absolutePath);
 
 		if ((buildGradleContent != null) &&
-			(buildGradleContent.contains(
-				"name: \"com.liferay.petra.string\"") ||
+			(buildGradleContent.contains(":core:petra:petra-string") ||
+			 buildGradleContent.contains(
+				 "name: \"com.liferay.petra.string\"") ||
 			 buildGradleContent.contains(
 				 "name: \"com.liferay.portal.kernel\""))) {
 

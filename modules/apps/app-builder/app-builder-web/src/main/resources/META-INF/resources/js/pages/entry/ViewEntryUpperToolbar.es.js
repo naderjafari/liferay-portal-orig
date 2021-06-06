@@ -14,40 +14,49 @@
 
 import {ClayButtonWithIcon} from '@clayui/button';
 import ClayButtonGroup from '@clayui/button/lib/Group';
-import {ClayTooltipProvider} from '@clayui/tooltip';
+import {confirmDelete} from 'data-engine-js-components-web/js/utils/client.es';
+import {sub} from 'data-engine-js-components-web/js/utils/lang.es';
 import React, {useContext} from 'react';
 import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../../AppContext.es';
 import UpperToolbar from '../../components/upper-toolbar/UpperToolbar.es';
 import usePermissions from '../../hooks/usePermissions.es';
-import {confirmDelete} from '../../utils/client.es';
-import {sub} from '../../utils/lang.es';
-import {successToast} from '../../utils/toast.es';
 import {navigateToEditPage} from './utils.es';
 
 function ViewEntryUpperToolbar({
+	additionalButtons,
 	children,
 	dataRecordId,
 	history,
 	page,
+	showButtons,
+	showNavigationControls = true,
 	totalCount,
 }) {
-	const {appDeploymentType, basePortletURL, showFormView} = useContext(
-		AppContext
-	);
+	const {
+		appDeploymentType,
+		basePortletURL,
+		showFormView,
+		userLanguageId,
+	} = useContext(AppContext);
 	const permissions = usePermissions();
 
 	const changeEntryIndex = (entryIndex) => {
-		history.push(`/entries/${entryIndex}?${window.location.search}`);
+		const {hash} = window.location;
+		const newHash = hash.substr(hash.indexOf('?') + 1);
+		const baseURL = `/entries/${entryIndex}`;
+
+		history.push(`${baseURL}?${newHash}`);
 	};
 
 	const onDelete = () => {
-		confirmDelete('/o/data-engine/v2.0/data-records/')({
+		confirmDelete('/o/data-engine/v2.0/data-records/', {
+			successMessage: Liferay.Language.get('an-entry-was-deleted'),
+		})({
 			id: dataRecordId,
 		}).then((confirmed) => {
 			if (confirmed) {
-				successToast(Liferay.Language.get('an-entry-was-deleted'));
 				history.push('/');
 			}
 		});
@@ -56,6 +65,7 @@ function ViewEntryUpperToolbar({
 	const onEdit = () => {
 		navigateToEditPage(basePortletURL, {
 			dataRecordId,
+			languageId: userLanguageId,
 			redirect: location.href,
 		});
 	};
@@ -70,80 +80,87 @@ function ViewEntryUpperToolbar({
 		changeEntryIndex(prevIndex);
 	};
 
+	const showDeleteButton = showButtons?.delete ?? true;
+	const showUpdateButton = showButtons?.update ?? true;
+
 	return (
 		<UpperToolbar className={appDeploymentType}>
-			<UpperToolbar.Item className="ml-2 text-left">
-				<label>
-					{totalCount > 0 &&
-						sub(Liferay.Language.get('x-of-x-entries'), [
-							page,
-							totalCount,
-						])}
-				</label>
-			</UpperToolbar.Item>
+			{showNavigationControls && (
+				<UpperToolbar.Item className="ml-2 text-left">
+					<label>
+						{totalCount > 0 &&
+							sub(
+								totalCount == 1
+									? Liferay.Language.get('x-of-x-entry')
+									: Liferay.Language.get('x-of-x-entries'),
+								[page, totalCount]
+							)}
+					</label>
+				</UpperToolbar.Item>
+			)}
 
 			<UpperToolbar.Item expand>{children}</UpperToolbar.Item>
 
-			<UpperToolbar.Group>
-				<ClayTooltipProvider>
-					<ClayButtonGroup>
-						<ClayButtonWithIcon
-							data-tooltip-align="bottom"
-							data-tooltip-delay="200"
-							disabled={page === 1}
-							displayType="secondary"
-							onClick={onPrev}
-							small
-							symbol="angle-left"
-							title={Liferay.Language.get('previous-entry')}
-						/>
-
-						<ClayButtonWithIcon
-							data-tooltip-align="bottom"
-							data-tooltip-delay="200"
-							disabled={page === totalCount}
-							displayType="secondary"
-							onClick={onNext}
-							small
-							symbol="angle-right"
-							title={Liferay.Language.get('next-entry')}
-						/>
-					</ClayButtonGroup>
-				</ClayTooltipProvider>
-			</UpperToolbar.Group>
-
-			{showFormView && (
-				<UpperToolbar.Group>
-					{permissions.delete && (
-						<ClayTooltipProvider>
+			{showNavigationControls && (
+				<>
+					<UpperToolbar.Group>
+						<ClayButtonGroup>
 							<ClayButtonWithIcon
-								className="ml-2"
 								data-tooltip-align="bottom"
 								data-tooltip-delay="200"
+								disabled={page === 1}
 								displayType="secondary"
-								onClick={onDelete}
+								onClick={onPrev}
 								small
-								symbol="trash"
-								title={Liferay.Language.get('delete')}
+								symbol="angle-left"
+								title={Liferay.Language.get('previous-entry')}
 							/>
-						</ClayTooltipProvider>
-					)}
 
-					{permissions.update && (
-						<ClayTooltipProvider>
 							<ClayButtonWithIcon
-								className="mx-2"
 								data-tooltip-align="bottom"
 								data-tooltip-delay="200"
+								disabled={page === totalCount}
 								displayType="secondary"
-								onClick={onEdit}
+								onClick={onNext}
 								small
-								symbol="pencil"
-								title={Liferay.Language.get('edit')}
+								symbol="angle-right"
+								title={Liferay.Language.get('next-entry')}
 							/>
-						</ClayTooltipProvider>
+						</ClayButtonGroup>
+					</UpperToolbar.Group>
+
+					{showFormView && (
+						<UpperToolbar.Group>
+							{permissions.delete && showDeleteButton && (
+								<ClayButtonWithIcon
+									className="mr-2"
+									data-tooltip-align="bottom"
+									data-tooltip-delay="200"
+									displayType="secondary"
+									onClick={onDelete}
+									small
+									symbol="trash"
+									title={Liferay.Language.get('delete')}
+								/>
+							)}
+
+							{permissions.update && showUpdateButton && (
+								<ClayButtonWithIcon
+									className="mr-2"
+									data-tooltip-align="bottom"
+									data-tooltip-delay="200"
+									displayType="secondary"
+									onClick={onEdit}
+									small
+									symbol="pencil"
+									title={Liferay.Language.get('edit')}
+								/>
+							)}
+
+							{additionalButtons}
+						</UpperToolbar.Group>
 					)}
-				</UpperToolbar.Group>
+				</>
 			)}
 		</UpperToolbar>
 	);

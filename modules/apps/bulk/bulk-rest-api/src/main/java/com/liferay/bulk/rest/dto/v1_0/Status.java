@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +45,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("Status")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Status")
-public class Status {
+public class Status implements Serializable {
 
 	public static Status toDTO(String json) {
 		return ObjectMapperUtil.readValue(Status.class, json);
@@ -120,6 +122,7 @@ public class Status {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.bulk.rest.dto.v1_0.Status",
 		name = "x-class-name"
 	)
@@ -155,7 +158,7 @@ public class Status {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -194,7 +197,7 @@ public class Status {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

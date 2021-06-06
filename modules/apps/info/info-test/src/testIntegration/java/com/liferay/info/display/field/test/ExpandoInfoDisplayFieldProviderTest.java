@@ -61,7 +61,7 @@ public class ExpandoInfoDisplayFieldProviderTest {
 
 	@ClassRule
 	@Rule
-	public static final LiferayIntegrationTestRule testRule =
+	public static final LiferayIntegrationTestRule liferayIntegrationTestRule =
 		new LiferayIntegrationTestRule();
 
 	@Before
@@ -216,9 +216,8 @@ public class ExpandoInfoDisplayFieldProviderTest {
 			_expandoTable, "test-string-array",
 			ExpandoColumnConstants.STRING_ARRAY);
 
-		String[] values = {"test-value-1", "test-value-2"};
-
-		ExpandoValue expandoValue = _addExpandoValue(expandoColumn, values);
+		ExpandoValue expandoValue = _addExpandoValue(
+			expandoColumn, new String[] {"test-value-1", "test-value-2"});
 
 		Map<String, Object> infoDisplayFieldsValues =
 			_expandoInfoDisplayFieldProvider.

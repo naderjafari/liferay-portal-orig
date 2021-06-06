@@ -14,7 +14,7 @@
  */
 --%>
 
-<span class="collapse-icon" data-qa-id="productMenuSiteAdministrationPanelCategory">
+<span data-qa-id="productMenuSiteAdministrationPanelCategory">
 	<clay:content-row
 		verticalAlign="center"
 	>
@@ -37,7 +37,7 @@
 			expand="<%= true %>"
 		>
 			<div class="depot-type">
-				<liferay-ui:message key='<%= (group.getType() == GroupConstants.TYPE_DEPOT) ? "asset-library" : "site" %>' />
+				<liferay-ui:message key='<%= group.isDepot() ? "asset-library" : "site" %>' />
 			</div>
 
 			<div class="lfr-portal-tooltip site-name text-truncate" title="<%= HtmlUtil.escape(siteAdministrationPanelCategoryDisplayContext.getGroupName()) %>">
@@ -70,5 +70,11 @@
 				</clay:sticker>
 			</clay:content-col>
 		</c:if>
+
+		<clay:content-col
+			cssClass="autofit-col-end"
+		>
+			<aui:icon cssClass="d-inline-block d-md-none icon-monospaced sidenav-close" image="times" markupView="lexicon" url="javascript:;" />
+		</clay:content-col>
 	</clay:content-row>
 </span>

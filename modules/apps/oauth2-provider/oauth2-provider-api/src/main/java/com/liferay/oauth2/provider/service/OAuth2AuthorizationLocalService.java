@@ -63,7 +63,7 @@ public interface OAuth2AuthorizationLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link OAuth2AuthorizationLocalServiceUtil} to access the o auth2 authorization local service. Add custom service methods to <code>com.liferay.oauth2.provider.service.impl.OAuth2AuthorizationLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.oauth2.provider.service.impl.OAuth2AuthorizationLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the o auth2 authorization local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link OAuth2AuthorizationLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -188,6 +188,9 @@ public interface OAuth2AuthorizationLocalService
 	public <T> T dslQuery(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
 
 	/**
@@ -264,6 +267,10 @@ public interface OAuth2AuthorizationLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public OAuth2Authorization fetchOAuth2AuthorizationByRefreshTokenContent(
 		String refreshTokenContent);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public OAuth2Authorization fetchOAuth2AuthorizationByRememberDeviceContent(
+		long userId, long oAuth2ApplicationId, String rememberDeviceContent);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
@@ -401,5 +408,8 @@ public interface OAuth2AuthorizationLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public OAuth2Authorization updateOAuth2Authorization(
 		OAuth2Authorization oAuth2Authorization);
+
+	public OAuth2Authorization updateRememberDeviceContent(
+		String refreshTokenContent, String rememberDeviceContent);
 
 }

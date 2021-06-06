@@ -14,21 +14,22 @@
 
 package com.liferay.blogs.web.internal.info.item.provider;
 
-import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.info.item.provider.AssetEntryInfoItemFieldSetProvider;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.blogs.model.BlogsEntry;
 import com.liferay.blogs.web.internal.info.item.BlogsEntryInfoItemFields;
 import com.liferay.expando.info.item.provider.ExpandoInfoItemFieldSetProvider;
 import com.liferay.info.field.InfoFieldSet;
-import com.liferay.info.field.InfoFieldSetEntry;
 import com.liferay.info.form.InfoForm;
 import com.liferay.info.item.field.reader.InfoItemFieldReaderFieldSetProvider;
 import com.liferay.info.item.provider.InfoItemFormProvider;
+import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Locale;
+import java.util.Set;
 
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
@@ -68,41 +69,108 @@ public class BlogsEntryInfoItemFormProvider
 		}
 	}
 
-	private Collection<InfoFieldSetEntry> _getBlogsEntryInfoFieldSetEntries() {
-		return Arrays.asList(
-			BlogsEntryInfoItemFields.titleInfoField,
-			BlogsEntryInfoItemFields.subtitleInfoField,
-			BlogsEntryInfoItemFields.descriptionInfoField,
-			BlogsEntryInfoItemFields.smallImageInfoField,
-			BlogsEntryInfoItemFields.coverImageInfoField,
-			BlogsEntryInfoItemFields.coverImageCaptionInfoField,
-			BlogsEntryInfoItemFields.authorNameInfoField,
-			BlogsEntryInfoItemFields.authorProfileImageInfoField,
-			BlogsEntryInfoItemFields.publishDateInfoField,
-			BlogsEntryInfoItemFields.displayPageUrlInfoField,
-			BlogsEntryInfoItemFields.contentInfoField);
+	@Override
+	public InfoForm getInfoForm(String formVariationKey, long groupId) {
+		return _getInfoForm(
+			_assetEntryInfoItemFieldSetProvider.getInfoFieldSet(
+				BlogsEntry.class.getName(), 0, groupId));
+	}
+
+	private InfoFieldSet _getBasicInformationInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.titleInfoField
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.authorNameInfoField
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.authorProfileImageInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(
+				"com.liferay.journal.lang", "basic-information")
+		).name(
+			"basic-information"
+		).build();
+	}
+
+	private InfoFieldSet _getConfigurationInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.descriptionInfoField
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.smallImageInfoField
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.displayDateInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(getClass(), "configuration")
+		).name(
+			"configuration"
+		).build();
+	}
+
+	private InfoFieldSet _getContentInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.subtitleInfoField
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.coverImageInfoField
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.coverImageCaptionInfoField
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.contentInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(getClass(), "content")
+		).name(
+			"content"
+		).build();
+	}
+
+	private InfoFieldSet _getDisplayPageInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			BlogsEntryInfoItemFields.displayPageURLInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(getClass(), "configuration")
+		).name(
+			"configuration"
+		).build();
 	}
 
 	private InfoForm _getInfoForm(InfoFieldSet assetEntryInfoFieldSet) {
+		Set<Locale> availableLocales = LanguageUtil.getAvailableLocales();
+
+		InfoLocalizedValue.Builder infoLocalizedValueBuilder =
+			InfoLocalizedValue.builder();
+
+		for (Locale locale : availableLocales) {
+			infoLocalizedValueBuilder.value(
+				locale,
+				ResourceActionsUtil.getModelResource(
+					locale, BlogsEntry.class.getName()));
+		}
+
 		return InfoForm.builder(
-		).infoFieldSetEntries(
-			_getBlogsEntryInfoFieldSetEntries()
 		).infoFieldSetEntry(
-			_infoItemFieldReaderFieldSetProvider.getInfoFieldSet(
-				BlogsEntry.class.getName())
+			_getBasicInformationInfoFieldSet()
 		).infoFieldSetEntry(
-			assetEntryInfoFieldSet
+			_getContentInfoFieldSet()
 		).infoFieldSetEntry(
 			_expandoInfoItemFieldSetProvider.getInfoFieldSet(
 				BlogsEntry.class.getName())
+		).infoFieldSetEntry(
+			_getDisplayPageInfoFieldSet()
+		).infoFieldSetEntry(
+			_getConfigurationInfoFieldSet()
+		).infoFieldSetEntry(
+			assetEntryInfoFieldSet
+		).infoFieldSetEntry(
+			_infoItemFieldReaderFieldSetProvider.getInfoFieldSet(
+				BlogsEntry.class.getName())
+		).labelInfoLocalizedValue(
+			infoLocalizedValueBuilder.build()
 		).name(
 			BlogsEntry.class.getName()
 		).build();
 	}
-
-	@Reference
-	private AssetDisplayPageFriendlyURLProvider
-		_assetDisplayPageFriendlyURLProvider;
 
 	@Reference
 	private AssetEntryInfoItemFieldSetProvider

@@ -23,6 +23,8 @@ import {updateLanguageId} from '../actions/index';
 import {BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR} from '../config/constants/backgroundImageFragmentEntryProcessor';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../config/constants/editableFragmentEntryProcessor';
 import {TRANSLATION_STATUS_TYPE} from '../config/constants/translationStatusType';
+import {useSelector} from '../contexts/StoreContext';
+import getLanguages from '../utils/getLanguages';
 
 const getEditableValues = (fragmentEntryLinks) =>
 	Object.values(fragmentEntryLinks)
@@ -104,7 +106,7 @@ const TranslationItem = ({
 			) : (
 				<span>{languageLabel}</span>
 			)}
-			<span className="dropdown-item-indicator-end">
+			<span className="dropdown-item-indicator-end page-editor__translation__label-wrapper">
 				<div
 					className={classNames(
 						'page-editor__translation__label label',
@@ -127,47 +129,64 @@ export default function Translation({
 	dispatch,
 	fragmentEntryLinks,
 	languageId,
-	showNotTranslated = true,
+	segmentsExperienceId,
 }) {
 	const [active, setActive] = useState(false);
 	const editableValues = useMemo(
 		() => getEditableValues(fragmentEntryLinks),
 		[fragmentEntryLinks]
 	);
-	const languageValues = useMemo(() => {
-		const availableLanguagesMut = {...availableLanguages};
 
-		const defaultLanguage = availableLanguages[defaultLanguageId];
+	const availableSegmentsExperiences = useSelector(
+		(state) => state.availableSegmentsExperiences
+	);
+
+	const languages = getLanguages(
+		availableLanguages,
+		availableSegmentsExperiences,
+		segmentsExperienceId
+	);
+
+	const languageValues = useMemo(() => {
+		const availableLanguagesMut = {...languages};
+
+		const defaultLanguage = languages[defaultLanguageId];
 
 		delete availableLanguagesMut[defaultLanguageId];
 
 		return Object.keys({
 			[defaultLanguageId]: defaultLanguage,
 			...availableLanguagesMut,
-		})
-			.filter(
-				(languageId) =>
-					showNotTranslated ||
-					editableValues.filter(
-						(editableValue) =>
-							isTranslated(editableValue, languageId) ||
-							languageId === defaultLanguageId
-					).length > 0
-			)
-			.map((languageId) => ({
-				languageId,
-				values: editableValues.filter((editableValue) =>
-					isTranslated(editableValue, languageId)
-				),
-			}));
-	}, [
-		availableLanguages,
-		defaultLanguageId,
-		editableValues,
-		showNotTranslated,
-	]);
+		}).map((languageId) => ({
+			languageId,
+			values: editableValues.filter((editableValue) =>
+				isTranslated(editableValue, languageId)
+			),
+		}));
+	}, [defaultLanguageId, editableValues, languages]);
 
-	const {languageIcon, languageLabel} = availableLanguages[languageId];
+	const selectedExperienceLanguage = (
+		defaultLanguageId,
+		languageId,
+		languages
+	) => {
+		if (!languages[languageId]) {
+			dispatch(
+				updateLanguageId({
+					languageId: defaultLanguageId,
+				})
+			);
+
+			return languages[defaultLanguageId];
+		}
+
+		return languages[languageId];
+	};
+
+	const {
+		languageIcon,
+		w3cLanguageId: languageLabel,
+	} = selectedExperienceLanguage(defaultLanguageId, languageId, languages);
 
 	return (
 		<ClayDropDown
@@ -180,6 +199,7 @@ export default function Translation({
 			onActiveChange={setActive}
 			trigger={
 				<ClayButton
+					aria-pressed={active}
 					className="btn-monospaced"
 					displayType="secondary"
 					small
@@ -197,12 +217,11 @@ export default function Translation({
 						key={language.languageId}
 						language={language}
 						languageIcon={
-							availableLanguages[language.languageId].languageIcon
+							languages[language.languageId].languageIcon
 						}
 						languageId={languageId}
 						languageLabel={
-							availableLanguages[language.languageId]
-								.languageLabel
+							languages[language.languageId].w3cLanguageId
 						}
 						onClick={() => {
 							dispatch(
@@ -223,12 +242,16 @@ export default function Translation({
 Translation.propTypes = {
 	availableLanguages: PropTypes.objectOf(
 		PropTypes.shape({
+			default: PropTypes.bool,
+			displayName: PropTypes.string,
 			languageIcon: PropTypes.string.isRequired,
-			languageLabel: PropTypes.string.isRequired,
+			languageId: PropTypes.string,
+			w3cLanguageId: PropTypes.string.isRequired,
 		})
 	).isRequired,
 	defaultLanguageId: PropTypes.string.isRequired,
 	dispatch: PropTypes.func.isRequired,
 	fragmentEntryLinks: PropTypes.object.isRequired,
 	languageId: PropTypes.string.isRequired,
+	segmentsExperienceId: PropTypes.string,
 };

@@ -48,7 +48,7 @@ const EditFormView = (props) => {
 		dataLayoutBuilder,
 		dataLayoutId,
 		newCustomObject,
-		showTranslationManager,
+		popUpWindow,
 	} = parseProps(props);
 	const {basePortletURL} = useContext(AppContext);
 
@@ -58,27 +58,35 @@ const EditFormView = (props) => {
 		backURL = basePortletURL;
 	}
 
+	let WrapperComponent = ({children}) => children;
+
+	if (document.querySelector('.change-tracking-indicator')) {
+		WrapperComponent = ({children}) => (
+			<div className="menu-indicator-enabled">{children}</div>
+		);
+	}
+
 	return (
 		<DndProvider backend={HTML5Backend}>
-			<FormViewContextProvider
-				dataDefinitionId={dataDefinitionId}
-				dataLayoutBuilder={dataLayoutBuilder}
-				dataLayoutId={dataLayoutId}
-			>
-				<FormViewControlMenu
-					backURL={backURL}
-					dataLayoutId={dataLayoutId}
-				/>
+			<FormViewContextProvider dataLayoutBuilder={dataLayoutBuilder}>
+				<WrapperComponent>
+					<FormViewControlMenu
+						backURL={backURL}
+						dataLayoutId={dataLayoutId}
+					/>
 
-				<FormViewUpperToolbar
-					newCustomObject={newCustomObject}
-					showTranslationManager={showTranslationManager}
-				/>
+					<FormViewUpperToolbar
+						newCustomObject={newCustomObject}
+						popUpWindow={popUpWindow}
+					/>
 
-				{createPortal(
-					<CustomObjectSidebar />,
-					document.querySelector(`#${customObjectSidebarElementId}`)
-				)}
+					{createPortal(
+						<CustomObjectSidebar />,
+						document.querySelector(
+							`#${customObjectSidebarElementId}`
+						)
+					)}
+				</WrapperComponent>
 			</FormViewContextProvider>
 		</DndProvider>
 	);

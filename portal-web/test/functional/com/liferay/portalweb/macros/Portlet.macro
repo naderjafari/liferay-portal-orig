@@ -49,8 +49,6 @@ definition {
 		while (!((IsElementPresent(locator1 = "Home#PORTLET")) || ("${i}" == "3"))) {
 			var i = ${i} + 1;
 
-			Pause(locator1 = "30000");
-
 			echo("The PORTLET could not be found. Refreshing the page. Attempt number ${i}...");
 
 			Refresh();
@@ -83,15 +81,17 @@ definition {
 
 		Navigator.gotoNavTab(navTab = "Widgets");
 
-		Pause(locator1 = "5000");
+		Pause(locator1 = "3000");
 
-		Type.sendKeysApplicationSearch(
+		Type(
 			locator1 = "NavBar#APPLICATION_SEARCH_FIELD",
 			value1 = "${portletName}");
 
 		Portlet._clickAddPortlet(portletName = "${portletName}");
 
 		var key_portletName = "${portletName}";
+
+		LiferayEvent.waitForPortletReady();
 
 		AssertElementPresent(locator1 = "Portlet#LOADED");
 	}
@@ -145,14 +145,7 @@ definition {
 	macro clickPortletPlusIconPG {
 		var browserType = PropsUtil.get("browser.type");
 		var key_portletName = "${portletName}";
-
-		if ("${browserType}" == "internetexplorer") {
-			Click.javaScriptClick(locator1 = "Portlet#ICON_PLUS_SIGN");
-
-			AssertVisible(locator1 = "Portlet#ICON_PLUS_SIGN");
-		}
-
-		else if ("${browserType}" == "safari") {
+		if ("${browserType}" == "safari") {
 			Click.javaScriptClick(locator1 = "Portlet#ICON_PLUS_SIGN");
 
 			AssertVisible(locator1 = "Portlet#ICON_PLUS_SIGN");
@@ -253,6 +246,7 @@ definition {
 
 	macro expandTree {
 		while (IsElementPresent(locator1 = "Treeview#NODE_COLLAPSED")) {
+			Pause(locator1 = "3000");
 			Click(locator1 = "Treeview#NODE_COLLAPSED");
 		}
 
@@ -264,13 +258,7 @@ definition {
 			var key_portletName = "${portletName}";
 			var browserType = PropsUtil.get("browser.type");
 
-			if ("${browserType}" == "internetexplorer") {
-				Click.javaScriptClick(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
-
-				AssertVisible(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
-			}
-
-			else if ("${browserType}" == "safari") {
+			if ("${browserType}" == "safari") {
 				Click.javaScriptClick(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
 
 				AssertVisible(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
@@ -282,7 +270,13 @@ definition {
 				Click(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
 			}
 			else {
-				MouseOver.mouseOverNotVisible(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
+				MouseOver.mouseOverInvisible(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
+
+				while (IsNotVisible(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON")) {
+					Pause(locator1 = "3000");
+
+					MouseOver.mouseOverInvisible(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
+				}
 
 				Click.waitForMenuToggleJSClick(locator1 = "Portlet#SPECIFIC_BORDERLESS_ELLIPSIS_ICON");
 			}
@@ -311,7 +305,7 @@ definition {
 
 		SelectFrameTop();
 
-		Click(locator1 = "Icon#CLOSE");
+		Click(locator1 = "Modal#CLOSE_BUTTON");
 
 		WaitForElementNotPresent(locator1 = "IFrame#MODAL_BODY");
 	}
@@ -366,7 +360,14 @@ definition {
 
 	@summary = "Start the current Liferay Portal instance."
 	macro startServer {
-		if ("${deleteLiferayHome}" == "false") {
+		var appServerType = PropsUtil.get("app.server.type");
+
+		if ("${commerceEnabled}" == "false") {
+			AntCommand(
+				locator1 = "build-test.xml",
+				value1 = "start-app-server -Dcommerce.enabled=false -Ddelete.liferay.home=false");
+		}
+		else if ("${deleteLiferayHome}" == "false") {
 			AntCommand(
 				locator1 = "build-test.xml",
 				value1 = "start-app-server -Ddelete.liferay.home=false");
@@ -376,10 +377,29 @@ definition {
 				locator1 = "build-test.xml",
 				value1 = "start-app-server -Dkeep.cached.app.server.data=true");
 		}
+		else if ("${keepOSGiState}" == "true") {
+			AntCommand(
+				locator1 = "build-test.xml",
+				value1 = "start-app-server -Dkeep.osgi.state=true");
+		}
 		else {
 			AntCommand(
 				locator1 = "build-test.xml",
 				value1 = "start-app-server");
+		}
+
+		if (!(isSet(userEmailAddress))) {
+			var userEmailAddress = "test@liferay.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		if (("${appServerType}" == "jboss") || ("${appServerType}" == "wildfly")) {
+			User.loginPG(
+				password = "${password}",
+				userEmailAddress = "${userEmailAddress}");
 		}
 	}
 
@@ -417,7 +437,7 @@ definition {
 
 		Pause(locator1 = "5000");
 
-		Type.sendKeysApplicationSearch(
+		Type(
 			locator1 = "NavBar#APPLICATION_SEARCH_FIELD",
 			value1 = "${portletName}");
 

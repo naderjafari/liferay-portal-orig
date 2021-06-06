@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("AppWorkflowState")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "AppWorkflowState")
-public class AppWorkflowState {
+public class AppWorkflowState implements Serializable {
 
 	public static AppWorkflowState toDTO(String json) {
 		return ObjectMapperUtil.readValue(AppWorkflowState.class, json);
@@ -214,6 +216,7 @@ public class AppWorkflowState {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflowState",
 		name = "x-class-name"
 	)
@@ -249,7 +252,7 @@ public class AppWorkflowState {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -288,7 +291,7 @@ public class AppWorkflowState {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

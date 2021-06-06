@@ -15,12 +15,14 @@
 import ClayEmptyState from '@clayui/empty-state';
 import {ClayCheckbox} from '@clayui/form';
 import ClayLayout from '@clayui/layout';
+import {useEventListener} from '@liferay/frontend-js-react-web';
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useState} from 'react';
 import {
 	Bar,
 	BarChart,
 	CartesianGrid,
+	Cell,
 	Legend,
 	Text,
 	Tooltip,
@@ -28,12 +30,23 @@ import {
 	YAxis,
 } from 'recharts';
 
-import {BAR_CHART, COLORS} from '../utils/constants';
+import {BAR_CHART, COLORS, DEFAULT_COLOR} from '../utils/constants';
 import {shortenNumber} from '../utils/shortenNumber';
 
-export default function AuditBarChart({rtl, vocabularies}) {
+const handleKeydown = (event) => {
+	const resetBarsCategoryFiltersURL = new URLSearchParams(
+		window.location.href
+	).get('resetBarsCategoryFiltersURL');
+
+	if (event.key === 'Escape' && resetBarsCategoryFiltersURL) {
+		Liferay.Util.navigate(decodeURIComponent(resetBarsCategoryFiltersURL));
+	}
+};
+
+export default function AuditBarChart({namespace, rtl, vocabularies}) {
 	const auditBarChartData = useMemo(() => {
 		const dataKeys = new Set();
+		var maxValue = 0;
 
 		const bars = vocabularies.reduce((acc, category) => {
 			if (!category.categories) {
@@ -56,19 +69,35 @@ export default function AuditBarChart({rtl, vocabularies}) {
 			return acc.concat(newBar);
 		}, []);
 
+		const noneBarIndex = bars.findIndex((bar) => bar.dataKey === 'none');
+
+		if (noneBarIndex !== -1) {
+			const noneBar = bars.splice(noneBarIndex, 1)[0];
+
+			bars.push(noneBar);
+		}
+
 		const data = vocabularies.map((category) => {
 			if (!category.categories) {
+				if (Number(category.value) > maxValue) {
+					maxValue = Number(category.value);
+				}
+
 				return category;
 			}
 
 			return category.categories.reduce(
 				(acc, {key, value}) => {
+					if (Number(value) > maxValue) {
+						maxValue = Number(value);
+					}
+
 					return {
 						...acc,
 						[key]: value,
 					};
 				},
-				{name: category.name}
+				{key: category.key, name: category.name}
 			);
 		});
 
@@ -76,7 +105,10 @@ export default function AuditBarChart({rtl, vocabularies}) {
 			(acc, {dataKey}, index) => ({
 				colors: {
 					...acc.colors,
-					[dataKey]: COLORS[index % COLORS.length],
+					[dataKey]:
+						dataKey === 'none'
+							? DEFAULT_COLOR
+							: COLORS[index % COLORS.length],
 				},
 				legendCheckboxes: {
 					...acc.legendCheckboxes,
@@ -86,10 +118,10 @@ export default function AuditBarChart({rtl, vocabularies}) {
 			{colors: {}, legendCheckboxes: {}}
 		);
 
-		return {bars, colors, data, legendCheckboxes};
+		return {bars, colors, data, legendCheckboxes, maxValue};
 	}, [vocabularies]);
 
-	const {bars, colors, data, legendCheckboxes} = auditBarChartData;
+	const {bars, colors, data, legendCheckboxes, maxValue} = auditBarChartData;
 
 	const [checkboxes, setCheckbox] = useState(legendCheckboxes);
 
@@ -173,7 +205,10 @@ export default function AuditBarChart({rtl, vocabularies}) {
 
 	const axisNames = {
 		x: vocabularies[0]?.vocabularyName,
-		y: showLegend && vocabularies[0]?.categories?.[0]?.vocabularyName,
+		y:
+			showLegend &&
+			vocabularies.find(({categories}) => categories)?.categories[0]
+				.vocabularyName,
 	};
 
 	const noCheckboxesChecked = Object.keys(checkboxes).every(
@@ -181,6 +216,41 @@ export default function AuditBarChart({rtl, vocabularies}) {
 	);
 
 	const [tooltip, setTooltip] = useState(null);
+
+	const onBarClick = (assetCategoryIds) => {
+		if (assetCategoryIds.length) {
+			const params = new URLSearchParams(window.location.search);
+
+			let uri = window.location.href;
+
+			if (!params.get('resetBarsCategoryFiltersURL')) {
+				uri = Liferay.Util.addParams(
+					'resetBarsCategoryFiltersURL=' + encodeURIComponent(uri),
+					uri
+				);
+			}
+
+			params.getAll(namespace + 'assetCategoryId').forEach((category) => {
+				uri = uri.replace(
+					namespace + 'assetCategoryId=' + category,
+					''
+				);
+			});
+
+			assetCategoryIds.forEach((assetCategoryId) => {
+				if (assetCategoryId !== 'none') {
+					uri = Liferay.Util.addParams(
+						namespace + 'assetCategoryId=' + assetCategoryId,
+						uri
+					);
+				}
+			});
+
+			Liferay.Util.navigate(uri);
+		}
+	};
+
+	useEventListener('keydown', handleKeydown, true, document);
 
 	return (
 		<>
@@ -229,10 +299,12 @@ export default function AuditBarChart({rtl, vocabularies}) {
 						tickLine={false}
 					/>
 					<YAxis
+						allowDataOverflow={true}
 						allowDecimals={false}
 						axisLine={{
 							stroke: BAR_CHART.stroke,
 						}}
+						domain={[0, maxValue]}
 						orientation={rtl ? 'right' : 'left'}
 						tick={<CustomYAxisTick rtl={rtl} />}
 						tickLine={false}
@@ -254,32 +326,77 @@ export default function AuditBarChart({rtl, vocabularies}) {
 											: 0
 									}
 									dataKey={bar.dataKey}
-									fill={colors[bar.dataKey]}
 									hide={checkboxes[bar.dataKey] !== true}
 									key={index}
 									legendType="square"
 									name={bar.name}
+									onClick={(props) =>
+										onBarClick([
+											props.payload.key,
+											bar.dataKey,
+										])
+									}
 									onMouseOut={() => {
 										setTooltip(null);
 									}}
-									onMouseOver={() => {
-										setTooltip(bar.dataKey);
+									onMouseOver={(props) => {
+										setTooltip({
+											dataKey: bar.dataKey,
+											name: props.name,
+										});
 									}}
-								/>
+									style={{cursor: 'pointer'}}
+								>
+									{data.map((entry, index) => (
+										<Cell
+											fill={colors[bar.dataKey]}
+											key={`cell-${index}`}
+											opacity={
+												!tooltip
+													? 1
+													: tooltip.dataKey ===
+															bar.dataKey &&
+													  entry.name ===
+															tooltip.name
+													? 1
+													: 0.4
+											}
+										/>
+									))}
+								</Bar>
 							);
 						})}
 					{!bars.length && (
 						<Bar
 							barSize={BAR_CHART.barHeight}
 							dataKey="value"
-							fill={COLORS[0]}
+							onClick={(props) => onBarClick([props.payload.key])}
 							onMouseOut={() => {
 								setTooltip(null);
 							}}
-							onMouseOver={() => {
-								setTooltip('value');
+							onMouseOver={(props) => {
+								setTooltip({
+									dataKey: 'value',
+									name: props.name,
+								});
 							}}
-						/>
+							style={{cursor: 'pointer'}}
+						>
+							{data.map((entry, index) => (
+								<Cell
+									fill={COLORS[0]}
+									key={`cell-${index}`}
+									opacity={
+										!tooltip
+											? 1
+											: tooltip.dataKey === 'value' &&
+											  entry.name === tooltip.name
+											? 1
+											: 0.4
+									}
+								/>
+							))}
+						</Bar>
 					)}
 				</BarChart>
 			</div>
@@ -294,8 +411,8 @@ function CustomTooltip(props) {
 		return null;
 	}
 
-	for (var i = 0; i <= payload.length; i++) {
-		if (payload[i].dataKey === tooltip) {
+	for (var i = 0; i < payload.length; i++) {
+		if (payload[i].dataKey === tooltip.dataKey) {
 			return (
 				<ClayLayout.ContentRow
 					className="bg-white custom-tooltip p-1 rounded small text-secondary"
@@ -354,6 +471,7 @@ function CustomYAxisTick(props) {
 }
 
 AuditBarChart.propTypes = {
+	namespace: PropTypes.string.isRequired,
 	rtl: PropTypes.bool.isRequired,
 	vocabularies: PropTypes.array.isRequired,
 };

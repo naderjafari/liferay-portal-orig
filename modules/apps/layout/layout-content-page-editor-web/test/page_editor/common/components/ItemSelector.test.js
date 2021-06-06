@@ -16,9 +16,9 @@ import '@testing-library/jest-dom/extend-expect';
 import {cleanup, fireEvent, render} from '@testing-library/react';
 import React from 'react';
 
-import {StoreAPIContextProvider} from '../../../../src/main/resources/META-INF/resources/page_editor/app/store/index';
+import {StoreAPIContextProvider} from '../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 import ItemSelector from '../../../../src/main/resources/META-INF/resources/page_editor/common/components/ItemSelector';
-import {openInfoItemSelector} from '../../../../src/main/resources/META-INF/resources/page_editor/core/openInfoItemSelector';
+import {openItemSelector} from '../../../../src/main/resources/META-INF/resources/page_editor/core/openItemSelector';
 
 jest.mock(
 	'../../../../src/main/resources/META-INF/resources/page_editor/app/config',
@@ -31,9 +31,9 @@ jest.mock(
 );
 
 jest.mock(
-	'../../../../src/main/resources/META-INF/resources/page_editor/core/openInfoItemSelector',
+	'../../../../src/main/resources/META-INF/resources/page_editor/core/openItemSelector',
 	() => ({
-		openInfoItemSelector: jest.fn(() => {}),
+		openItemSelector: jest.fn(() => {}),
 	})
 );
 
@@ -42,12 +42,19 @@ function renderItemSelector({mappedInfoItems = [], selectedItemTitle = ''}) {
 		mappedInfoItems,
 	};
 
+	Liferay.Util.sub.mockImplementation((langKey, args) =>
+		langKey.replace('x', args)
+	);
+
 	return render(
 		<StoreAPIContextProvider dispatch={() => {}} getState={() => state}>
 			<ItemSelector
 				label="itemSelectorLabel"
 				onItemSelect={() => {}}
-				selectedItemTitle={selectedItemTitle}
+				selectedItem={
+					selectedItemTitle ? {title: selectedItemTitle} : null
+				}
+				transformValueCallback={() => {}}
 			/>
 		</StoreAPIContextProvider>
 	);
@@ -57,13 +64,35 @@ describe('ItemSelector', () => {
 	afterEach(() => {
 		cleanup();
 
-		openInfoItemSelector.mockClear();
+		openItemSelector.mockClear();
 	});
 
 	it('renders correctly', () => {
 		const {getByText} = renderItemSelector({});
 
 		expect(getByText('itemSelectorLabel')).toBeInTheDocument();
+	});
+
+	it('renders the placeholder correctly', () => {
+		const {getByPlaceholderText} = renderItemSelector({});
+
+		expect(
+			getByPlaceholderText('select-itemSelectorLabel')
+		).toBeInTheDocument();
+	});
+
+	it('renders the aria label button correctly when no item is selected', () => {
+		const {getByLabelText} = renderItemSelector({});
+
+		expect(getByLabelText('select-itemSelectorLabel')).toBeInTheDocument();
+	});
+
+	it('renders the aria label button correctly when an item is selected', () => {
+		const selectedItemTitle = 'itemTitle';
+
+		const {getByLabelText} = renderItemSelector({selectedItemTitle});
+
+		expect(getByLabelText('change-itemSelectorLabel')).toBeInTheDocument();
 	});
 
 	it('shows selected item title correctly when receiving it in props', () => {
@@ -84,15 +113,15 @@ describe('ItemSelector', () => {
 		expect(getByLabelText('itemSelectorLabel')).toBeEmpty();
 	});
 
-	it('calls openInfoItemSelector when there are not mapping items and plus button is clicked', () => {
+	it('calls openItemSelector when there are not mapping items and plus button is clicked', () => {
 		const {getByLabelText} = renderItemSelector({});
 
-		fireEvent.click(getByLabelText('select-content-button'));
+		fireEvent.click(getByLabelText('select-itemSelectorLabel'));
 
-		expect(openInfoItemSelector).toBeCalled();
+		expect(openItemSelector).toBeCalled();
 	});
 
-	it('shows recent items dropdown instead of calling openInfoItemSelector when there are mapping items', () => {
+	it('shows recent items dropdown instead of calling openItemSelector when there are mapping items', () => {
 		const mappedInfoItems = [
 			{classNameId: '001', classPK: '002', title: 'Mapped Item Title'},
 		];
@@ -101,10 +130,22 @@ describe('ItemSelector', () => {
 			mappedInfoItems,
 		});
 
-		fireEvent.click(getByLabelText('select-content-button'));
+		fireEvent.click(getByLabelText('select-itemSelectorLabel'));
 
 		expect(getByText('Mapped Item Title')).toBeInTheDocument();
 
-		expect(openInfoItemSelector).not.toBeCalled();
+		expect(openItemSelector).not.toBeCalled();
+	});
+
+	it('removes selected item correctly when clear button is clicked', () => {
+		const selectedItemTitle = 'itemTitle';
+
+		const {getByLabelText, getByText} = renderItemSelector({
+			selectedItemTitle,
+		});
+
+		fireEvent.click(getByText('remove-itemSelectorLabel'));
+
+		expect(getByLabelText('itemSelectorLabel')).toBeEmpty();
 	});
 });

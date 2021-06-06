@@ -55,18 +55,18 @@ public class FileEntryAMImageFileEntryItemSelectorReturnTypeResolver
 		throws Exception {
 
 		JSONObject fileEntryJSONObject = JSONUtil.put(
-			"fileEntryId", fileEntry.getFileEntryId());
+			"fileEntryId", String.valueOf(fileEntry.getFileEntryId()));
 
 		String previewURL = null;
 
 		if (fileEntry.getGroupId() == fileEntry.getRepositoryId()) {
-			previewURL = _dlURLHelper.getImagePreviewURL(
+			previewURL = _dlURLHelper.getPreviewURL(
 				fileEntry, fileEntry.getFileVersion(), themeDisplay,
 				StringPool.BLANK, false, false);
 		}
 		else {
 			previewURL = _portletFileRepository.getPortletFileEntryURL(
-				themeDisplay, fileEntry, "&imagePreview=1", false);
+				themeDisplay, fileEntry, StringPool.BLANK, false);
 		}
 
 		fileEntryJSONObject.put("url", previewURL);

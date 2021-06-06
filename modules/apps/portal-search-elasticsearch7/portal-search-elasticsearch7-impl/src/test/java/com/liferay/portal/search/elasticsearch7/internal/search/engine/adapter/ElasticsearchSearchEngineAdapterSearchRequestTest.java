@@ -34,6 +34,7 @@ import com.liferay.portal.search.engine.adapter.search.SuggestSearchRequest;
 import com.liferay.portal.search.engine.adapter.search.SuggestSearchResponse;
 import com.liferay.portal.search.engine.adapter.search.SuggestSearchResult;
 import com.liferay.portal.search.test.util.indexing.DocumentFixture;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.IOException;
 
@@ -58,12 +59,17 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
  * @author Michael C. Han
  */
 public class ElasticsearchSearchEngineAdapterSearchRequestTest {
+
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -125,10 +131,10 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		SuggestSearchRequest suggestSearchRequest = new SuggestSearchRequest(
 			_INDEX_NAME);
 
-		Suggester suggester = new CompletionSuggester(
+		Suggester suggester1 = new CompletionSuggester(
 			"completion", "keywordSuggestion", "sear");
 
-		suggestSearchRequest.addSuggester(suggester);
+		suggestSearchRequest.addSuggester(suggester1);
 
 		Suggester suggester2 = new CompletionSuggester(
 			"completion2", "keywordSuggestion", "messa");

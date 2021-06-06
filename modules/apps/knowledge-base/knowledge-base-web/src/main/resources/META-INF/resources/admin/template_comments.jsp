@@ -108,11 +108,8 @@ boolean helpful = BeanParamUtil.getBoolean(kbComment, request, "helpful", true);
 
 					<%
 					for (KBComment curKBComment : (List<KBComment>)searchContainer.getResults()) {
-					%>
-
-						<%
 						request.setAttribute("template_comment.jsp-kb_comment", curKBComment);
-						%>
+					%>
 
 						<liferay-util:include page="/admin/template_comment.jsp" servletContext="<%= application %>" />
 
@@ -132,7 +129,7 @@ boolean helpful = BeanParamUtil.getBoolean(kbComment, request, "helpful", true);
 		</aui:form>
 	</div>
 
-	<aui:script>
+	<script>
 		function <portlet:namespace />deleteKBComment(kbCommentId) {
 			var form = document.getElementById('<portlet:namespace />fm');
 
@@ -163,5 +160,5 @@ boolean helpful = BeanParamUtil.getBoolean(kbComment, request, "helpful", true);
 				);
 			}
 		}
-	</aui:script>
+	</script>
 </c:if>

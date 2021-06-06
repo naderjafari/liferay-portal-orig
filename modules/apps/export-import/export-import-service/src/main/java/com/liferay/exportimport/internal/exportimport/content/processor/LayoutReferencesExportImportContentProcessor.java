@@ -55,7 +55,8 @@ import com.liferay.portal.util.PropsValues;
 import com.liferay.staging.StagingGroupHelper;
 
 import java.net.InetAddress;
-import java.net.URL;
+import java.net.URI;
+import java.net.UnknownHostException;
 
 import java.util.Locale;
 import java.util.Map;
@@ -250,7 +251,10 @@ public class LayoutReferencesExportImportContentProcessor
 
 				char c = content.charAt(beginPos + offset);
 
-				if ((c == CharPool.APOSTROPHE) || (c == CharPool.QUOTE)) {
+				if (c == CharPool.BACK_SLASH) {
+					offset = 7;
+				}
+				else if ((c == CharPool.APOSTROPHE) || (c == CharPool.QUOTE)) {
 					offset++;
 				}
 			}
@@ -260,9 +264,16 @@ public class LayoutReferencesExportImportContentProcessor
 				offset = 2;
 			}
 
-			endPos = StringUtil.indexOfAny(
-				content, _LAYOUT_REFERENCE_STOP_CHARS, beginPos + offset,
-				endPos);
+			if (content.startsWith("href=", beginPos)) {
+				endPos = StringUtil.indexOfAny(
+					content, _URL_REFERENCE_STOP_CHARS, beginPos + offset,
+					endPos);
+			}
+			else {
+				endPos = StringUtil.indexOfAny(
+					content, _LAYOUT_REFERENCE_STOP_CHARS, beginPos + offset,
+					endPos);
+			}
 
 			if (endPos == -1) {
 				continue;
@@ -763,6 +774,7 @@ public class LayoutReferencesExportImportContentProcessor
 
 		Group group = _groupLocalService.getGroup(groupId);
 
+		String[] friendlyURLSeparators = {"/-/", "/b/", "/d/", "/w/"};
 		String[] patterns = {"href=", "[[", "{{"};
 
 		int beginPos = -1;
@@ -785,7 +797,10 @@ public class LayoutReferencesExportImportContentProcessor
 
 				char c = content.charAt(beginPos + offset);
 
-				if ((c == CharPool.APOSTROPHE) || (c == CharPool.QUOTE)) {
+				if (c == CharPool.BACK_SLASH) {
+					offset = 7;
+				}
+				else if ((c == CharPool.APOSTROPHE) || (c == CharPool.QUOTE)) {
 					offset++;
 				}
 			}
@@ -795,9 +810,16 @@ public class LayoutReferencesExportImportContentProcessor
 				offset = 2;
 			}
 
-			endPos = StringUtil.indexOfAny(
-				content, _LAYOUT_REFERENCE_STOP_CHARS, beginPos + offset,
-				endPos);
+			if (content.startsWith("href=", beginPos)) {
+				endPos = StringUtil.indexOfAny(
+					content, _URL_REFERENCE_STOP_CHARS, beginPos + offset,
+					endPos);
+			}
+			else {
+				endPos = StringUtil.indexOfAny(
+					content, _LAYOUT_REFERENCE_STOP_CHARS, beginPos + offset,
+					endPos);
+			}
 
 			if (endPos == -1) {
 				continue;
@@ -812,7 +834,7 @@ public class LayoutReferencesExportImportContentProcessor
 				continue;
 			}
 
-			endPos = url.indexOf(Portal.FRIENDLY_URL_SEPARATOR);
+			endPos = StringUtil.indexOfAny(url, friendlyURLSeparators);
 
 			if (endPos != -1) {
 				url = url.substring(0, endPos);
@@ -992,20 +1014,29 @@ public class LayoutReferencesExportImportContentProcessor
 		throws PortalException {
 
 		try {
-			URL urlObject = new URL(url);
+			URI uri = _http.getURI(url);
 
-			if (InetAddressUtil.isLocalInetAddress(
-					InetAddress.getByName(urlObject.getHost()))) {
+			if ((uri != null) &&
+				InetAddressUtil.isLocalInetAddress(
+					InetAddress.getByName(uri.getHost()))) {
 
 				StringBundler sb = new StringBundler(5);
 
-				sb.append(urlObject.getProtocol());
+				sb.append(uri.getScheme());
 				sb.append("://");
-				sb.append(urlObject.getHost());
+				sb.append(uri.getHost());
 				sb.append(StringPool.COLON);
-				sb.append(urlObject.getPort());
+				sb.append(uri.getPort());
 
 				return sb.toString();
+			}
+		}
+		catch (UnknownHostException unknownHostException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(unknownHostException, unknownHostException);
+			}
+			else if (_log.isWarnEnabled()) {
+				_log.warn(unknownHostException.getMessage());
 			}
 		}
 		catch (Exception exception) {
@@ -1105,6 +1136,12 @@ public class LayoutReferencesExportImportContentProcessor
 
 	private static final String _TEMPLATE_NAME_PREFIX = "template";
 
+	private static final char[] _URL_REFERENCE_STOP_CHARS = {
+		CharPool.APOSTROPHE, CharPool.BACK_SLASH, CharPool.CLOSE_BRACKET,
+		CharPool.GREATER_THAN, CharPool.PIPE, CharPool.POUND, CharPool.QUESTION,
+		CharPool.QUOTE, CharPool.SPACE
+	};
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutReferencesExportImportContentProcessor.class);
 
@@ -1112,7 +1149,8 @@ public class LayoutReferencesExportImportContentProcessor
 	private CompanyLocalService _companyLocalService;
 
 	private ConfigurationProvider _configurationProvider;
-	private ExportImportServiceConfiguration _exportImportServiceConfiguration;
+	private volatile ExportImportServiceConfiguration
+		_exportImportServiceConfiguration;
 
 	@Reference
 	private GroupLocalService _groupLocalService;

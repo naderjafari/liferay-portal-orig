@@ -145,6 +145,13 @@ public class ReleaseLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _releaseLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _releaseLocalService.dynamicQuery();
 	}
@@ -362,6 +369,24 @@ public class ReleaseLocalServiceWrapper
 		return _releaseLocalService.updateRelease(release);
 	}
 
+	@Override
+	public void updateRelease(
+			java.lang.String servletContextName,
+			java.util.List<com.liferay.portal.kernel.upgrade.UpgradeProcess>
+				upgradeProcesses,
+			int buildNumber, int previousBuildNumber)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		_releaseLocalService.updateRelease(
+			servletContextName, upgradeProcesses, buildNumber,
+			previousBuildNumber);
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 #updateRelease(String, List, int, int)}
+	 */
+	@Deprecated
 	@Override
 	public void updateRelease(
 			java.lang.String servletContextName,

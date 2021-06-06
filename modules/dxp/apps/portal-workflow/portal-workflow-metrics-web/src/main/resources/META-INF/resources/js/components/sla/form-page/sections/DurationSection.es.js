@@ -10,7 +10,7 @@
  */
 
 import ClayLayout from '@clayui/layout';
-import React, {useCallback, useContext, useMemo} from 'react';
+import React, {useCallback, useContext} from 'react';
 import MaskedInput from 'react-text-mask';
 import createNumberMask from 'text-mask-addons/dist/createNumberMask';
 
@@ -26,7 +26,7 @@ import {
 import {SLAFormContext} from '../SLAFormPageProvider.es';
 import {validateDuration, validateHours} from '../util/slaFormUtil.es';
 
-const DurationSection = ({onChangeHandler}) => {
+export default function DurationSection({onChangeHandler}) {
 	const {
 		calendars,
 		defaultCalendar,
@@ -35,16 +35,12 @@ const DurationSection = ({onChangeHandler}) => {
 		sla: {calendarKey = defaultCalendar.key, days, hours},
 	} = useContext(SLAFormContext);
 
-	const daysMask = useMemo(
-		() =>
-			createNumberMask({
-				allowLeadingZeroes: true,
-				includeThousandsSeparator: false,
-				integerLimit: 4,
-				prefix: '',
-			}),
-		[]
-	);
+	const daysMask = createNumberMask({
+		allowLeadingZeroes: true,
+		includeThousandsSeparator: false,
+		integerLimit: 4,
+		prefix: '',
+	});
 
 	const onDurationChanged = useCallback(
 		(newDays) => {
@@ -85,13 +81,12 @@ const DurationSection = ({onChangeHandler}) => {
 		<>
 			<h3 className="sheet-subtitle">
 				<FieldLabel
-					data-testid="duration"
 					required
 					text={Liferay.Language.get('duration').toUpperCase()}
 				/>
 			</h3>
 
-			<div className="sheet-text" data-testid="durationDescription">
+			<div className="sheet-text">
 				{calendars.length > 1
 					? Liferay.Language.get(
 							'define-the-sla-duration-and-calendar-format'
@@ -109,7 +104,6 @@ const DurationSection = ({onChangeHandler}) => {
 						error={errors[DURATION]}
 						htmlFor="slaDurationDays"
 						label={Liferay.Language.get('days')}
-						testid="daysField"
 					>
 						<MaskedInput
 							className="form-control"
@@ -126,7 +120,6 @@ const DurationSection = ({onChangeHandler}) => {
 				<ClayLayout.Col sm="3">
 					<FormGroupWithStatus
 						className="form-group"
-						data-testid="hoursField"
 						error={errors[DURATION] || errors[HOURS]}
 						htmlFor="slaDurationHours"
 						label={Liferay.Language.get('hours')}
@@ -174,6 +167,4 @@ const DurationSection = ({onChangeHandler}) => {
 			</ClayLayout.Row>
 		</>
 	);
-};
-
-export {DurationSection};
+}

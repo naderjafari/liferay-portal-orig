@@ -17,6 +17,8 @@ package com.liferay.account.rest.client.dto.v1_0;
 import com.liferay.account.rest.client.function.UnsafeSupplier;
 import com.liferay.account.rest.client.serdes.v1_0.AccountUserSerDes;
 
+import java.io.Serializable;
+
 import java.util.Objects;
 
 import javax.annotation.Generated;
@@ -26,7 +28,7 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class AccountUser implements Cloneable {
+public class AccountUser implements Cloneable, Serializable {
 
 	public static AccountUser toDTO(String json) {
 		return AccountUserSerDes.toDTO(json);
@@ -52,6 +54,27 @@ public class AccountUser implements Cloneable {
 	}
 
 	protected String emailAddress;
+
+	public String getExternalReferenceCode() {
+		return externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		this.externalReferenceCode = externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(
+		UnsafeSupplier<String, Exception> externalReferenceCodeUnsafeSupplier) {
+
+		try {
+			externalReferenceCode = externalReferenceCodeUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String externalReferenceCode;
 
 	public String getFirstName() {
 		return firstName;

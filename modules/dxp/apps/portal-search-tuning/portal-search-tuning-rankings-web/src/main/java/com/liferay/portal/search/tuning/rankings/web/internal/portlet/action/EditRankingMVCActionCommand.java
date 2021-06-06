@@ -14,8 +14,8 @@
 
 package com.liferay.portal.search.tuning.rankings.web.internal.portlet.action;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
@@ -60,7 +60,6 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -72,7 +71,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ResultRankingsPortletKeys.RESULT_RANKINGS,
-		"mvc.command.name=/results_ranking/edit"
+		"mvc.command.name=/result_rankings/edit_ranking"
 	},
 	service = MVCActionCommand.class
 )
@@ -128,17 +127,15 @@ public class EditRankingMVCActionCommand extends BaseMVCActionCommand {
 			sendRedirect(actionRequest, actionResponse, redirect);
 		}
 		catch (Exception exception) {
-			LiferayPortletResponse liferayPortletResponse =
-				portal.getLiferayPortletResponse(actionResponse);
-
-			PortletURL renderURL = liferayPortletResponse.createRenderURL();
-
-			renderURL.setParameter(
-				"mvcRenderCommandName", "addResultsRankingEntry");
-			renderURL.setParameter(
-				"redirect", editRankingMVCActionRequest.getRedirect());
-
-			actionRequest.setAttribute(WebKeys.REDIRECT, renderURL.toString());
+			actionRequest.setAttribute(
+				WebKeys.REDIRECT,
+				PortletURLBuilder.createRenderURL(
+					portal.getLiferayPortletResponse(actionResponse)
+				).setMVCRenderCommandName(
+					"/result_rankings/add_results_rankings"
+				).setRedirect(
+					editRankingMVCActionRequest.getRedirect()
+				).buildString());
 
 			SessionErrors.add(actionRequest, exception.getClass());
 
@@ -279,8 +276,7 @@ public class EditRankingMVCActionCommand extends BaseMVCActionCommand {
 
 		RankingIndexName rankingIndexName =
 			rankingIndexNameBuilder.getRankingIndexName(
-				indexNameBuilder.getIndexName(
-					portal.getCompanyId(actionRequest)));
+				portal.getCompanyId(actionRequest));
 
 		Optional<Ranking> optional = rankingIndexReader.fetchOptional(
 			rankingIndexName, id);
@@ -339,8 +335,7 @@ public class EditRankingMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	protected RankingIndexName getRankingIndexName() {
-		return rankingIndexNameBuilder.getRankingIndexName(
-			_getCompanyIndexName());
+		return rankingIndexNameBuilder.getRankingIndexName(_companyId);
 	}
 
 	protected String getSaveAndContinueRedirect(
@@ -355,7 +350,7 @@ public class EditRankingMVCActionCommand extends BaseMVCActionCommand {
 			PortletRequest.RENDER_PHASE);
 
 		portletURL.setParameter(
-			"mvcRenderCommandName", "editResultsRankingEntry");
+			"mvcRenderCommandName", "/result_rankings/edit_results_rankings");
 		portletURL.setParameter(Constants.CMD, Constants.UPDATE, false);
 		portletURL.setParameter("redirect", redirect, false);
 		portletURL.setParameter("resultsRankingUid", ranking.getId(), false);
@@ -387,7 +382,8 @@ public class EditRankingMVCActionCommand extends BaseMVCActionCommand {
 				SessionErrors.add(actionRequest, Exception.class);
 
 				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editResultsRankingEntry");
+					"mvcRenderCommandName",
+					"/result_rankings/edit_results_rankings");
 			}
 			else {
 				SessionErrors.add(actionRequest, Exception.class);
@@ -414,25 +410,6 @@ public class EditRankingMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	protected RankingIndexWriter rankingIndexWriter;
-
-	private static List<String> _update(
-		List<String> strings, String[] addStrings, String[] removeStrings) {
-
-		List<String> newStrings;
-
-		if (ListUtil.isEmpty(strings)) {
-			newStrings = Arrays.asList(addStrings);
-		}
-		else {
-			newStrings = new ArrayList<>(strings);
-
-			Collections.addAll(newStrings, addStrings);
-		}
-
-		newStrings.removeAll(Arrays.asList(removeStrings));
-
-		return newStrings;
-	}
 
 	private boolean _detectedDuplicateQueryStrings(
 		Ranking ranking, Collection<String> queryStrings) {
@@ -603,6 +580,25 @@ public class EditRankingMVCActionCommand extends BaseMVCActionCommand {
 
 	private String _stripUpdateSpecial(String string) {
 		return string.substring(_UPDATE_SPECIAL.length());
+	}
+
+	private List<String> _update(
+		List<String> strings, String[] addStrings, String[] removeStrings) {
+
+		List<String> newStrings;
+
+		if (ListUtil.isEmpty(strings)) {
+			newStrings = Arrays.asList(addStrings);
+		}
+		else {
+			newStrings = new ArrayList<>(strings);
+
+			Collections.addAll(newStrings, addStrings);
+		}
+
+		newStrings.removeAll(Arrays.asList(removeStrings));
+
+		return newStrings;
 	}
 
 	private static final String _UPDATE_SPECIAL = StringPool.GREATER_THAN;

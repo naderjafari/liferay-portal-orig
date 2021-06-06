@@ -22,12 +22,15 @@ import com.liferay.portal.search.groupby.GroupByRequest;
 import com.liferay.portal.search.groupby.GroupByResponse;
 import com.liferay.portal.search.test.util.groupby.BaseGroupByTestCase;
 import com.liferay.portal.search.test.util.indexing.IndexingFixture;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -35,6 +38,11 @@ import org.junit.Test;
  * @author Tibor Lipusz
  */
 public class GroupByTest extends BaseGroupByTestCase {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testGroupByDocsSizeDefault() throws Exception {
@@ -154,37 +162,42 @@ public class GroupByTest extends BaseGroupByTestCase {
 		indexDuplicates("three", 3);
 		indexDuplicates("two", 2);
 
-		List<String> groupFieldOrderedResults = new ArrayList<>();
-
-		groupFieldOrderedResults.add("three|3|3");
-		groupFieldOrderedResults.add("two|2|2");
-
-		List<String> sortFieldOrderedResults = new ArrayList<>();
-
-		sortFieldOrderedResults.add("1|2|2");
-		sortFieldOrderedResults.add("2|2|2");
-		sortFieldOrderedResults.add("3|1|1");
-
 		Map<String, List<String>> orderedResultsMap =
 			HashMapBuilder.<String, List<String>>put(
-				GROUP_FIELD, groupFieldOrderedResults
+				GROUP_FIELD,
+				() -> {
+					List<String> groupFieldOrderedResults = new ArrayList<>();
+
+					groupFieldOrderedResults.add("three|3|3");
+					groupFieldOrderedResults.add("two|2|2");
+
+					return groupFieldOrderedResults;
+				}
 			).put(
-				SORT_FIELD, sortFieldOrderedResults
+				SORT_FIELD,
+				() -> {
+					List<String> sortFieldOrderedResults = new ArrayList<>();
+
+					sortFieldOrderedResults.add("1|2|2");
+					sortFieldOrderedResults.add("2|2|2");
+					sortFieldOrderedResults.add("3|1|1");
+
+					return sortFieldOrderedResults;
+				}
 			).build();
 
 		assertSearch(
 			indexingTestHelper -> {
 				indexingTestHelper.defineRequest(
 					searchRequestBuilder -> {
-						GroupByRequest groupByRequest =
+						GroupByRequest groupByRequest1 =
 							groupByRequestFactory.getGroupByRequest(
 								GROUP_FIELD);
-
 						GroupByRequest groupByRequest2 =
 							groupByRequestFactory.getGroupByRequest(SORT_FIELD);
 
 						searchRequestBuilder.groupByRequests(
-							groupByRequest, groupByRequest2);
+							groupByRequest1, groupByRequest2);
 					});
 
 				indexingTestHelper.search();

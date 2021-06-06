@@ -114,7 +114,9 @@ public abstract class BaseNodeMetricResourceTestCase {
 
 		NodeMetricResource.Builder builder = NodeMetricResource.builder();
 
-		nodeMetricResource = builder.locale(
+		nodeMetricResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -204,7 +206,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 		Long irrelevantProcessId =
 			testGetProcessNodeMetricsPage_getIrrelevantProcessId();
 
-		if ((irrelevantProcessId != null)) {
+		if (irrelevantProcessId != null) {
 			NodeMetric irrelevantNodeMetric =
 				testGetProcessNodeMetricsPage_addNodeMetric(
 					irrelevantProcessId, randomIrrelevantNodeMetric());
@@ -470,7 +472,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 		}
 	}
 
-	protected void assertValid(NodeMetric nodeMetric) {
+	protected void assertValid(NodeMetric nodeMetric) throws Exception {
 		boolean valid = true;
 
 		for (String additionalAssertFieldName :
@@ -573,7 +575,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.portal.workflow.metrics.rest.dto.v1_0.
 						NodeMetric.class)) {
 
@@ -608,7 +610,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -741,9 +743,22 @@ public abstract class BaseNodeMetricResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -939,12 +954,12 @@ public abstract class BaseNodeMetricResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -954,10 +969,10 @@ public abstract class BaseNodeMetricResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

@@ -1,5 +1,18 @@
 definition {
 
+	macro clearSearchResult {
+		Click(locator1 = "Link#CLEAR");
+
+		AssertElementNotPresent(locator1 = "Search#SEARCH_INFO");
+	}
+
+	macro gotoResultAssetViaTitle {
+		AssertClick(
+			key_searchAssetTitle = "${searchAssetTitle}",
+			locator1 = "SearchResults#ASSET_ENTRY_TABLE_TITLE",
+			value1 = "${searchAssetTitle}");
+	}
+
 	macro openSearchAdmin {
 		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_portal_search_admin_web_portlet_SearchAdminPortlet");
 	}
@@ -17,7 +30,9 @@ definition {
 			locator1 = "TextInput#SEARCH",
 			value1 = "\RETURN");
 
-		WaitForLiferayEvent.initializeLiferayEventLog();
+		if (!(isSet(modal))) {
+			WaitForLiferayEvent.initializeLiferayEventLog();
+		}
 	}
 
 	macro searchPG {
@@ -43,9 +58,8 @@ definition {
 	}
 
 	macro viewResultAssetTitle {
-		var key_searchAssetTitle = "${searchAssetTitle}";
-
 		AssertTextEquals(
+			key_searchAssetTitle = "${searchAssetTitle}",
 			locator1 = "SearchResults#ASSET_ENTRY_TABLE_TITLE",
 			value1 = "${searchAssetTitle}");
 	}

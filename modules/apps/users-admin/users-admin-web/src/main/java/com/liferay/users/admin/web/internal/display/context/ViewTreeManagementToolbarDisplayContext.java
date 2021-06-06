@@ -22,6 +22,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -181,12 +182,13 @@ public class ViewTreeManagementToolbarDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-		clearResultsURL.setParameter("navigation", (String)null);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).setNavigation(
+			(String)null
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() throws PortalException {
@@ -214,21 +216,22 @@ public class ViewTreeManagementToolbarDisplayContext {
 
 				if (hasAddOrganizationPermission()) {
 					for (String organizationType :
-							OrganizationLocalServiceUtil.getTypes()) {
+							OrganizationLocalServiceUtil.getChildrenTypes(
+								_organization.getType())) {
 
 						PortletURL addOrganizationTypeURL =
-							_renderResponse.createRenderURL();
-
-						addOrganizationTypeURL.setParameter(
-							"mvcRenderCommandName",
-							"/users_admin/edit_organization");
-						addOrganizationTypeURL.setParameter(
-							"redirect", currentURL.toString());
-						addOrganizationTypeURL.setParameter(
-							"parentOrganizationSearchContainerPrimaryKeys",
-							String.valueOf(_organization.getOrganizationId()));
-						addOrganizationTypeURL.setParameter(
-							"type", organizationType);
+							PortletURLBuilder.createRenderURL(
+								_renderResponse
+							).setMVCRenderCommandName(
+								"/users_admin/edit_organization"
+							).setBackURL(
+								currentURL.toString()
+							).setParameter(
+								"parentOrganizationSearchContainerPrimaryKeys",
+								_organization.getOrganizationId()
+							).setParameter(
+								"type", organizationType
+							).build();
 
 						addDropdownItem(
 							dropdownItem -> {
@@ -268,8 +271,7 @@ public class ViewTreeManagementToolbarDisplayContext {
 				dropdownGroupItem.setDropdownItems(
 					_getFilterNavigationDropdownItems());
 				dropdownGroupItem.setLabel(
-					LanguageUtil.get(
-						_httpServletRequest, "filter-by-navigation"));
+					LanguageUtil.get(_httpServletRequest, "filter-by-status"));
 			}
 		).addGroup(
 			dropdownGroupItem -> {
@@ -286,11 +288,13 @@ public class ViewTreeManagementToolbarDisplayContext {
 		return LabelItemListBuilder.add(
 			() -> !navigation.equals("all"),
 			labelItem -> {
-				PortletURL removeLabelURL = getPortletURL();
-
-				removeLabelURL.setParameter("navigation", (String)null);
-
-				labelItem.putData("removeLabelURL", removeLabelURL.toString());
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						getPortletURL()
+					).setNavigation(
+						(String)null
+					).buildString());
 
 				labelItem.setCloseable(true);
 
@@ -339,24 +343,23 @@ public class ViewTreeManagementToolbarDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "/users_admin/view");
-		portletURL.setParameter(
-			"organizationId",
-			String.valueOf(_organization.getOrganizationId()));
-
-		String toolbarItem = GetterUtil.getString(
-			_httpServletRequest.getAttribute("view.jsp-toolbarItem"));
-
-		portletURL.setParameter("toolbarItem", toolbarItem);
-
-		String usersListView = GetterUtil.getString(
-			_httpServletRequest.getAttribute("view.jsp-usersListView"));
-
-		portletURL.setParameter("usersListView", usersListView);
-
-		portletURL.setParameter("displayStyle", _displayStyle);
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/users_admin/view"
+		).setParameter(
+			"displayStyle", _displayStyle
+		).setParameter(
+			"organizationId", _organization.getOrganizationId()
+		).setParameter(
+			"toolbarItem",
+			GetterUtil.getString(
+				_httpServletRequest.getAttribute("view.jsp-toolbarItem"))
+		).setParameter(
+			"usersListView",
+			GetterUtil.getString(
+				_httpServletRequest.getAttribute("view.jsp-usersListView"))
+		).build();
 
 		String[] keywords = ParamUtil.getStringValues(
 			_httpServletRequest, "keywords");
@@ -425,17 +428,15 @@ public class ViewTreeManagementToolbarDisplayContext {
 					_organization.getOrganizationId(), getKeywords(), status,
 					null);
 
-			Sort[] sorts = {
-				new Sort("name", orderByType.equals("desc")),
-				new Sort("lastName", orderByType.equals("desc"))
-			};
-
 			Hits hits =
 				OrganizationLocalServiceUtil.searchOrganizationsAndUsers(
 					themeDisplay.getCompanyId(),
 					_organization.getOrganizationId(), getKeywords(), status,
 					null, searchContainer.getStart(), searchContainer.getEnd(),
-					sorts);
+					new Sort[] {
+						new Sort("name", orderByType.equals("desc")),
+						new Sort("lastName", orderByType.equals("desc"))
+					});
 
 			results = new ArrayList<>(hits.getLength());
 
@@ -478,13 +479,12 @@ public class ViewTreeManagementToolbarDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = getPortletURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public List<ViewTypeItem> getViewTypeItems() {

@@ -60,8 +60,18 @@
 </tr>
 <!--ENTRY_CONTENT_ENTRY-->
 <tr>
+	<td>ENTRY_CONTENT_ENTRY_ANY</td>
+	<td>//*[@data-qa-id='row'][contains(.,'${key_rowEntry}')]//td[contains(.,'${key_rowAny}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ENTRY_CONTENT_ENTRY_CHECKBOX</td>
 	<td>//*[@data-qa-id='row'][contains(@*,'${key_rowEntry}') or contains(.,'${key_rowEntry}')]//input[@title='Select']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ENTRY_CONTENT_ENTRY_CHOOSE</td>
+	<td>//*[@data-qa-id='row'][contains(.,'${key_rowEntry}')]//span[contains(.,'Choose')]</td>
 	<td></td>
 </tr>
 <tr>

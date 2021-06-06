@@ -211,6 +211,13 @@ public class AMImageEntryLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _amImageEntryLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _amImageEntryLocalService.dynamicQuery();
 	}
@@ -363,6 +370,20 @@ public class AMImageEntryLocalServiceWrapper
 		getAMImageEntries(int start, int end) {
 
 		return _amImageEntryLocalService.getAMImageEntries(start, end);
+	}
+
+	/**
+	 * Returns the list of adaptive media image entries generated for the
+	 * file version.
+	 *
+	 * @param fileVersionId the primary key of the file version
+	 * @return the list of adaptive media image entries in the file version
+	 */
+	@Override
+	public java.util.List<com.liferay.adaptive.media.image.model.AMImageEntry>
+		getAMImageEntries(long fileVersionId) {
+
+		return _amImageEntryLocalService.getAMImageEntries(fileVersionId);
 	}
 
 	/**

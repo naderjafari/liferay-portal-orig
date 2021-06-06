@@ -22,9 +22,11 @@ long classPK = ParamUtil.getLong(request, "classPK");
 
 String displayStyle = ParamUtil.getString(request, "displayStyle", "list");
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("groupId", String.valueOf(groupId));
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setParameter(
+	"groupId", String.valueOf(groupId)
+).build();
 
 RuleGroupSearch ruleGroupSearch = new RuleGroupSearch(liferayPortletRequest, PortletURLUtil.clone(portletURL, renderResponse));
 
@@ -48,15 +50,10 @@ ruleGroupSearch.setResults(mdrRuleGroups);
 	includeCheckBox="<%= true %>"
 	searchContainerId="deviceFamilies"
 >
-
-	<%
-	PortletURL displayStyleURL = PortletURLUtil.clone(portletURL, renderResponse);
-	%>
-
 	<liferay-frontend:management-bar-buttons>
 		<liferay-frontend:management-bar-display-buttons
 			displayViews='<%= new String[] {"icon", "descriptive", "list"} %>'
-			portletURL="<%= displayStyleURL %>"
+			portletURL="<%= PortletURLUtil.clone(portletURL, renderResponse) %>"
 			selectedDisplayStyle="<%= displayStyle %>"
 		/>
 
@@ -87,9 +84,11 @@ ruleGroupSearch.setResults(mdrRuleGroups);
 	</liferay-frontend:management-bar-buttons>
 
 	<%
-	PortletURL iteratorURL = PortletURLUtil.clone(portletURL, renderResponse);
-
-	iteratorURL.setParameter("displayStyle", displayStyle);
+	PortletURL iteratorURL = PortletURLBuilder.create(
+		PortletURLUtil.clone(portletURL, renderResponse)
+	).setParameter(
+		"displayStyle", displayStyle
+	).build();
 	%>
 
 	<liferay-frontend:management-bar-filters>
@@ -130,7 +129,7 @@ ruleGroupSearch.setResults(mdrRuleGroups);
 	<portlet:param name="mvcRenderCommandName" value="/mobile_device_rules/edit_rule_group" />
 </portlet:actionURL>
 
-<aui:form action="<%= editRuleGroupURL %>" cssClass="container-fluid-1280" method="post" name="fm">
+<aui:form action="<%= editRuleGroupURL %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="fm">
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.DELETE %>" />
 	<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
 	<aui:input name="ruleGroupIds" type="hidden" />
@@ -151,20 +150,20 @@ ruleGroupSearch.setResults(mdrRuleGroups);
 			Group group = GroupLocalServiceUtil.getGroup(ruleGroup.getGroupId());
 
 			String rowHREF = null;
-
-			if (MDRRuleGroupPermission.contains(permissionChecker, ruleGroup.getRuleGroupId(), ActionKeys.VIEW) && MDRPermission.contains(permissionChecker, groupId, ActionKeys.ADD_RULE_GROUP)) {
 			%>
 
+			<c:if test="<%= MDRRuleGroupPermission.contains(permissionChecker, ruleGroup.getRuleGroupId(), ActionKeys.VIEW) && MDRPermission.contains(permissionChecker, groupId, ActionKeys.ADD_RULE_GROUP) %>">
 				<portlet:renderURL var="editRulesURL">
 					<portlet:param name="mvcPath" value="/view_rules.jsp" />
 					<portlet:param name="ruleGroupId" value="<%= String.valueOf(ruleGroup.getRuleGroupId()) %>" />
 					<portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" />
 				</portlet:renderURL>
 
-			<%
+				<%
 				rowHREF = editRulesURL;
-			}
-			%>
+				%>
+
+			</c:if>
 
 			<c:choose>
 				<c:when test='<%= displayStyle.equals("descriptive") %>'>
@@ -197,11 +196,6 @@ ruleGroupSearch.setResults(mdrRuleGroups);
 					/>
 				</c:when>
 				<c:when test='<%= displayStyle.equals("icon") %>'>
-
-					<%
-					row.setCssClass("entry-card lfr-asset-item");
-					%>
-
 					<liferay-ui:search-container-column-text>
 						<liferay-frontend:icon-vertical-card
 							actionJsp="/rule_group_actions.jsp"
@@ -240,18 +234,15 @@ ruleGroupSearch.setResults(mdrRuleGroups);
 		);
 
 		if (deleteSelectedDeviceFamiliesButton) {
-			deleteSelectedDeviceFamiliesButton.addEventListener(
-				'click',
-				function () {
-					if (
-						confirm(
-							'<%= UnicodeLanguageUtil.get(resourceBundle, "are-you-sure-you-want-to-delete-this") %>'
-						)
-					) {
-						submitForm(document.<portlet:namespace />fm);
-					}
+			deleteSelectedDeviceFamiliesButton.addEventListener('click', () => {
+				if (
+					confirm(
+						'<%= UnicodeLanguageUtil.get(resourceBundle, "are-you-sure-you-want-to-delete-this") %>'
+					)
+				) {
+					submitForm(document.<portlet:namespace />fm);
 				}
-			);
+			});
 		}
 	})();
 </script>

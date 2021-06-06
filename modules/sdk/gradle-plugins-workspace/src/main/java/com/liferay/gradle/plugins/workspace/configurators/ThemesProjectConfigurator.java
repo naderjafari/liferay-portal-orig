@@ -21,6 +21,7 @@ import com.liferay.gradle.plugins.theme.builder.ThemeBuilderPlugin;
 import com.liferay.gradle.plugins.workspace.ProjectConfigurator;
 import com.liferay.gradle.plugins.workspace.WorkspaceExtension;
 import com.liferay.gradle.plugins.workspace.WorkspacePlugin;
+import com.liferay.gradle.plugins.workspace.internal.LiferayThemeGulpPlugin;
 import com.liferay.gradle.plugins.workspace.internal.util.GradleUtil;
 
 import groovy.json.JsonSlurper;
@@ -87,6 +88,8 @@ public class ThemesProjectConfigurator extends BaseProjectConfigurator {
 		else {
 			GradleUtil.applyPlugin(project, LiferayThemePlugin.class);
 
+			LiferayThemeGulpPlugin.INSTANCE.apply(project);
+
 			configureLiferay(project, workspaceExtension);
 
 			final Task assembleTask = GradleUtil.getTask(
@@ -94,7 +97,7 @@ public class ThemesProjectConfigurator extends BaseProjectConfigurator {
 
 			_configureRootTaskDistBundle(assembleTask);
 
-			_configureTaskGulpBuild(project);
+			_configureTaskGulpBuild(project, workspaceExtension);
 
 			Callable<ConfigurableFileCollection> warSourcePath =
 				new Callable<ConfigurableFileCollection>() {
@@ -141,9 +144,7 @@ public class ThemesProjectConfigurator extends BaseProjectConfigurator {
 						Path dirPath, BasicFileAttributes basicFileAttributes)
 					throws IOException {
 
-					Path dirNamePath = dirPath.getFileName();
-
-					String dirName = dirNamePath.toString();
+					String dirName = String.valueOf(dirPath.getFileName());
 
 					if (isExcludedDirName(dirName)) {
 						return FileVisitResult.SKIP_SUBTREE;
@@ -231,7 +232,12 @@ public class ThemesProjectConfigurator extends BaseProjectConfigurator {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void _configureTaskGulpBuild(Project project) {
+	private void _configureTaskGulpBuild(
+		Project project, WorkspaceExtension workspaceExtension) {
+
+		ExecuteGulpTask executeGulpTask = (ExecuteGulpTask)GradleUtil.getTask(
+			project, "gulpBuild");
+
 		File packageJsonFile = project.file("package.json");
 
 		Map<String, Object> packageJsonMap = _getPackageJsonMap(
@@ -244,10 +250,18 @@ public class ThemesProjectConfigurator extends BaseProjectConfigurator {
 			String buildScript = scriptsMap.get("build");
 
 			if ((buildScript != null) && !buildScript.equals("")) {
-				ExecuteGulpTask executeGulpTask =
-					(ExecuteGulpTask)GradleUtil.getTask(project, "gulpBuild");
-
 				executeGulpTask.setEnabled(false);
+			}
+		}
+		else {
+			String nodePackageManager =
+				workspaceExtension.getNodePackageManager();
+
+			if (nodePackageManager.equals("yarn")) {
+				Project rootProject = project.getRootProject();
+
+				executeGulpTask.setScriptFile(
+					rootProject.file("node_modules/gulp/bin/gulp.js"));
 			}
 		}
 	}

@@ -35,6 +35,7 @@ import com.liferay.portal.search.elasticsearch7.internal.configuration.Elasticse
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchInstancePaths;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchInstanceSettingsBuilder;
 import com.liferay.portal.search.elasticsearch7.internal.connection.HttpPortRange;
+import com.liferay.portal.search.elasticsearch7.internal.index.constants.SidecarVersionConstants;
 import com.liferay.portal.search.elasticsearch7.internal.util.ResourceUtil;
 import com.liferay.portal.search.elasticsearch7.settings.SettingsContributor;
 
@@ -78,15 +79,18 @@ public class Sidecar {
 		ElasticsearchInstancePaths elasticsearchInstancePaths,
 		ProcessExecutor processExecutor,
 		ProcessExecutorPaths processExecutorPaths,
-		Collection<SettingsContributor> settingsContributors) {
+		Collection<SettingsContributor> settingsContributors,
+		SidecarManager sidecarManager) {
 
 		_clusterExecutor = clusterExecutor;
-		_dataHomePath = elasticsearchInstancePaths.getDataPath();
 		_elasticsearchConfigurationWrapper = elasticsearchConfigurationWrapper;
 		_elasticsearchInstancePaths = elasticsearchInstancePaths;
 		_processExecutor = processExecutor;
 		_processExecutorPaths = processExecutorPaths;
 		_settingsContributors = settingsContributors;
+		_sidecarManager = sidecarManager;
+
+		_dataHomePath = elasticsearchInstancePaths.getDataPath();
 		_sidecarHomePath = elasticsearchInstancePaths.getHomePath();
 	}
 
@@ -95,8 +99,8 @@ public class Sidecar {
 	}
 
 	public void start() {
-		if (_log.isInfoEnabled()) {
-			_log.info("Starting sidecar Elasticsearch");
+		if (_log.isDebugEnabled()) {
+			_log.debug("Sidecar Elasticsearch starting");
 		}
 
 		_installElasticsearchIfNeeded();
@@ -104,8 +108,8 @@ public class Sidecar {
 		ProcessChannel<Serializable> processChannel =
 			executeSidecarMainProcess();
 
-		FutureListener<Serializable> futureListener =
-			new RestartFutureListener();
+		FutureListener<Serializable> futureListener = new RestartFutureListener(
+			_sidecarManager);
 
 		addFutureListener(processChannel, futureListener);
 
@@ -114,7 +118,7 @@ public class Sidecar {
 		if (_log.isInfoEnabled()) {
 			_log.info(
 				StringBundler.concat(
-					"Sidecar Elasticsearch ", getNodeName(), " is at ",
+					"Sidecar Elasticsearch ", getNodeName(), " started at ",
 					address));
 		}
 
@@ -155,7 +159,8 @@ public class Sidecar {
 							"because it did not shut down in ",
 							_elasticsearchConfigurationWrapper.
 								sidecarShutdownTimeout(),
-							" ms"));
+							" ms"),
+						exception);
 				}
 
 				noticeableFuture.cancel(true);
@@ -405,13 +410,42 @@ public class Sidecar {
 		).build();
 	}
 
+	private Distribution _getElasticsearchDistribution() {
+		String versionNumber = ResourceUtil.getResourceAsString(
+			getClass(), SidecarVersionConstants.SIDECAR_VERSION_FILE_NAME);
+
+		if (versionNumber.equals("7.3.0")) {
+			return new Elasticsearch730Distribution();
+		}
+
+		if (versionNumber.equals("7.7.0")) {
+			return new Elasticsearch770Distribution();
+		}
+
+		if (versionNumber.equals("7.9.0")) {
+			return new Elasticsearch790Distribution();
+		}
+
+		throw new IllegalArgumentException(
+			"Unsupported Elasticsearch version: " + versionNumber);
+	}
+
 	private List<String> _getJVMArguments(URL bundleURL) {
 		List<String> arguments = new ArrayList<>();
 
 		for (String jvmOption :
 				_elasticsearchConfigurationWrapper.sidecarJVMOptions()) {
 
-			arguments.add(jvmOption);
+			if (jvmOption.contains("|")) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						jvmOption + " is not a valid format for the JVM " +
+							"options and will be ignored");
+				}
+			}
+			else {
+				arguments.add(jvmOption);
+			}
 		}
 
 		if (_elasticsearchConfigurationWrapper.sidecarDebug()) {
@@ -537,8 +571,8 @@ public class Sidecar {
 
 		sb.setStringAt(StringPool.CLOSE_CURLY_BRACE, sb.index() - 1);
 
-		if (_log.isInfoEnabled()) {
-			_log.info(sb.toString());
+		if (_log.isDebugEnabled()) {
+			_log.debug(sb.toString());
 		}
 
 		return arguments.toArray(new String[0]);
@@ -549,7 +583,7 @@ public class Sidecar {
 		).distributablesDirectoryPath(
 			_elasticsearchInstancePaths.getWorkPath()
 		).distribution(
-			new Elasticsearch730Distribution()
+			_getElasticsearchDistribution()
 		).installationDirectoryPath(
 			_sidecarHomePath
 		).build(
@@ -570,10 +604,15 @@ public class Sidecar {
 	private FutureListener<Serializable> _restartFutureListener;
 	private final Collection<SettingsContributor> _settingsContributors;
 	private final Path _sidecarHomePath;
+	private SidecarManager _sidecarManager;
 	private Path _sidecarTempDirPath;
 
 	private static class RestartFutureListener
 		implements FutureListener<Serializable> {
+
+		public RestartFutureListener(SidecarManager sidecarManager) {
+			_sidecarManager = sidecarManager;
+		}
 
 		@Override
 		public void complete(Future<Serializable> future) {
@@ -587,14 +626,16 @@ public class Sidecar {
 				}
 			}
 
-			SidecarComponentUtil.disableSidecarManager();
+			if (_sidecarManager.isStartupSuccessful()) {
+				if (_log.isInfoEnabled()) {
+					_log.info("Restarting sidecar Elasticsearch process");
+				}
 
-			if (_log.isInfoEnabled()) {
-				_log.info("Restarting sidecar Elasticsearch process");
+				_sidecarManager.applyConfigurations();
 			}
-
-			SidecarComponentUtil.enableSidecarManager();
 		}
+
+		private SidecarManager _sidecarManager;
 
 	}
 

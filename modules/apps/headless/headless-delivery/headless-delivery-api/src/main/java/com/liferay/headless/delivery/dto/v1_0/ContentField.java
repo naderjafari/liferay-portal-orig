@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentField")
+@GraphQLName(
+	description = "Represents the value of each field in structured content. Fields can contain different information types (e.g., documents, geolocation, etc.).",
+	value = "ContentField"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentField")
-public class ContentField {
+public class ContentField implements Serializable {
 
 	public static ContentField toDTO(String json) {
 		return ObjectMapperUtil.readValue(ContentField.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The field's value.")
 	@Valid
 	public ContentFieldValue getContentFieldValue() {
 		return contentFieldValue;
@@ -77,11 +82,11 @@ public class ContentField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The field's value.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected ContentFieldValue contentFieldValue;
 
-	@Schema
+	@Schema(description = "The localized field's values.")
 	@Valid
 	public Map<String, ContentFieldValue> getContentFieldValue_i18n() {
 		return contentFieldValue_i18n;
@@ -109,7 +114,7 @@ public class ContentField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized field's values.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, ContentFieldValue> contentFieldValue_i18n;
 
@@ -201,7 +206,7 @@ public class ContentField {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String label;
 
-	@Schema
+	@Schema(description = "The localized field's labels.")
 	@Valid
 	public Map<String, String> getLabel_i18n() {
 		return label_i18n;
@@ -227,7 +232,7 @@ public class ContentField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized field's labels.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> label_i18n;
 
@@ -476,6 +481,7 @@ public class ContentField {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentField",
 		name = "x-class-name"
 	)
@@ -511,7 +517,7 @@ public class ContentField {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -550,7 +556,7 @@ public class ContentField {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

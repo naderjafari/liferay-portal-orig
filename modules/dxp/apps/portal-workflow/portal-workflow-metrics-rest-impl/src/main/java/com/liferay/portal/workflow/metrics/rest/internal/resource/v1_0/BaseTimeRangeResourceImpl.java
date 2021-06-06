@@ -65,7 +65,7 @@ import javax.ws.rs.core.UriInfo;
 @Generated("")
 @Path("/v1.0")
 public abstract class BaseTimeRangeResourceImpl
-	implements TimeRangeResource, EntityModelResource,
+	implements EntityModelResource, TimeRangeResource,
 			   VulcanBatchEngineTaskItemDelegate<TimeRange> {
 
 	/**
@@ -73,8 +73,8 @@ public abstract class BaseTimeRangeResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/portal-workflow-metrics/v1.0/time-ranges'  -u 'test@liferay.com:test'
 	 */
-	@Override
 	@GET
+	@Override
 	@Path("/time-ranges")
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "TimeRange")})
@@ -180,6 +180,14 @@ public abstract class BaseTimeRangeResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

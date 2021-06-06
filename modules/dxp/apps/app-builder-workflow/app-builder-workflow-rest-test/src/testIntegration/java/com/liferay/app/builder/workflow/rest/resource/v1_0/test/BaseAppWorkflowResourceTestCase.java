@@ -42,6 +42,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.test.rule.Inject;
@@ -106,7 +107,9 @@ public abstract class BaseAppWorkflowResourceTestCase {
 
 		AppWorkflowResource.Builder builder = AppWorkflowResource.builder();
 
-		appWorkflowResource = builder.locale(
+		appWorkflowResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -176,11 +179,25 @@ public abstract class BaseAppWorkflowResourceTestCase {
 
 		AppWorkflow appWorkflow = randomAppWorkflow();
 
+		appWorkflow.setAppVersion(regex);
+
 		String json = AppWorkflowSerDes.toJSON(appWorkflow);
 
 		Assert.assertFalse(json.contains(regex));
 
 		appWorkflow = AppWorkflowSerDes.toDTO(json);
+
+		Assert.assertEquals(regex, appWorkflow.getAppVersion());
+	}
+
+	@Test
+	public void testDeleteAppWorkflow() throws Exception {
+		Assert.assertTrue(false);
+	}
+
+	@Test
+	public void testGraphQLDeleteAppWorkflow() throws Exception {
+		Assert.assertTrue(false);
 	}
 
 	@Test
@@ -272,7 +289,7 @@ public abstract class BaseAppWorkflowResourceTestCase {
 		}
 	}
 
-	protected void assertValid(AppWorkflow appWorkflow) {
+	protected void assertValid(AppWorkflow appWorkflow) throws Exception {
 		boolean valid = true;
 
 		for (String additionalAssertFieldName :
@@ -280,6 +297,14 @@ public abstract class BaseAppWorkflowResourceTestCase {
 
 			if (Objects.equals("appId", additionalAssertFieldName)) {
 				if (appWorkflow.getAppId() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("appVersion", additionalAssertFieldName)) {
+				if (appWorkflow.getAppVersion() == null) {
 					valid = false;
 				}
 
@@ -347,7 +372,7 @@ public abstract class BaseAppWorkflowResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflow.
 						class)) {
 
@@ -382,7 +407,7 @@ public abstract class BaseAppWorkflowResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -409,6 +434,17 @@ public abstract class BaseAppWorkflowResourceTestCase {
 			if (Objects.equals("appId", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						appWorkflow1.getAppId(), appWorkflow2.getAppId())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("appVersion", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						appWorkflow1.getAppVersion(),
+						appWorkflow2.getAppVersion())) {
 
 					return false;
 				}
@@ -480,9 +516,22 @@ public abstract class BaseAppWorkflowResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -538,6 +587,14 @@ public abstract class BaseAppWorkflowResourceTestCase {
 		if (entityFieldName.equals("appId")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("appVersion")) {
+			sb.append("'");
+			sb.append(String.valueOf(appWorkflow.getAppVersion()));
+			sb.append("'");
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("appWorkflowDefinitionId")) {
@@ -600,6 +657,8 @@ public abstract class BaseAppWorkflowResourceTestCase {
 		return new AppWorkflow() {
 			{
 				appId = RandomTestUtil.randomLong();
+				appVersion = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 				appWorkflowDefinitionId = RandomTestUtil.randomLong();
 			}
 		};
@@ -659,12 +718,12 @@ public abstract class BaseAppWorkflowResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -674,10 +733,10 @@ public abstract class BaseAppWorkflowResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

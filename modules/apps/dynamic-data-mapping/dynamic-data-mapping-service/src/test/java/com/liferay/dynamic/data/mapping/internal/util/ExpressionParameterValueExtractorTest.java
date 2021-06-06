@@ -14,10 +14,15 @@
 
 package com.liferay.dynamic.data.mapping.internal.util;
 
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
+
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -25,11 +30,16 @@ import org.junit.Test;
  */
 public class ExpressionParameterValueExtractorTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Test
 	public void testExtractParameterValues() {
 		_assertParameterValueArray(
 			_extractParameterValues("equals(Country, \"US\")"),
-			Arrays.asList("Country", "\"US\""));
+			Collections.singletonList("Country"));
 
 		_assertParameterValueArray(
 			_extractParameterValues("equals(sum(1,1), 2)"),

@@ -31,6 +31,7 @@ import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.storage.constants.FieldConstants;
+import com.liferay.dynamic.data.mapping.util.NumberUtil;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationException;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationException.MustNotSetValue;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationException.MustSetValidAvailableLocales;
@@ -40,11 +41,12 @@ import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationExcepti
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationException.MustSetValidValuesSize;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationException.RequiredValue;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidator;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -53,16 +55,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Marcellus Tavares
@@ -89,22 +89,16 @@ public class DDMFormValuesValidatorImpl implements DDMFormValuesValidator {
 			ddmForm.getDDMFormFieldsMap(false));
 	}
 
-	@Reference(
-		cardinality = ReferenceCardinality.MULTIPLE,
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY
-	)
-	protected void addDDMFormFieldValueValidator(
-		DDMFormFieldValueValidator ddmFormFieldValueValidator,
-		Map<String, Object> properties) {
+	@Activate
+	protected void activate(BundleContext bundleContext) {
+		_serviceTrackerMap = ServiceTrackerMapFactory.openSingleValueMap(
+			bundleContext, DDMFormFieldValueValidator.class,
+			"ddm.form.field.type.name");
+	}
 
-		String type = MapUtil.getString(properties, "ddm.form.field.type.name");
-
-		if (Validator.isNull(type)) {
-			return;
-		}
-
-		_ddmFormFieldValueValidators.put(type, ddmFormFieldValueValidator);
+	@Deactivate
+	protected void deactivate() {
+		_serviceTrackerMap.close();
 	}
 
 	protected boolean evaluateValidationExpression(
@@ -148,9 +142,17 @@ public class DDMFormValuesValidatorImpl implements DDMFormValuesValidator {
 					GetterUtil.getBoolean(value.getString(locale)));
 			}
 			else if (dataType.equals(FieldConstants.DOUBLE)) {
-				ddmExpression.setVariable(
-					ddmFormFieldName,
-					GetterUtil.getDouble(value.getString(locale)));
+				String valueString = value.getString(locale);
+
+				if (NumberUtil.hasDecimalSeparator(valueString)) {
+					ddmExpression.setVariable(
+						ddmFormFieldName,
+						GetterUtil.getDouble(valueString, locale));
+				}
+				else {
+					ddmExpression.setVariable(
+						ddmFormFieldName, GetterUtil.getInteger(valueString));
+				}
 			}
 			else if (dataType.equals(FieldConstants.INTEGER)) {
 				ddmExpression.setVariable(
@@ -201,7 +203,7 @@ public class DDMFormValuesValidatorImpl implements DDMFormValuesValidator {
 		throws DDMFormValuesValidationException {
 
 		DDMFormFieldValueValidator ddmFormFieldValueValidator =
-			_ddmFormFieldValueValidators.get(ddmFormField.getType());
+			_serviceTrackerMap.getService(ddmFormField.getType());
 
 		if (ddmFormFieldValueValidator == null) {
 			return;
@@ -241,15 +243,6 @@ public class DDMFormValuesValidatorImpl implements DDMFormValuesValidator {
 		return stream.allMatch(
 			locale -> ddmFormFieldValueAccessor.isEmpty(
 				ddmFormFieldValue, locale));
-	}
-
-	protected void removeDDMFormFieldValueValidator(
-		DDMFormFieldValueValidator ddmFormFieldValueValidator,
-		Map<String, Objects> properties) {
-
-		String type = MapUtil.getString(properties, "ddm.form.field.type.name");
-
-		_ddmFormFieldValueValidators.remove(type);
 	}
 
 	@Reference(unbind = "-")
@@ -323,14 +316,12 @@ public class DDMFormValuesValidatorImpl implements DDMFormValuesValidator {
 			return;
 		}
 
-		for (Locale locale : value.getAvailableLocales()) {
-			boolean valid = evaluateValidationExpression(
-				ddmFormField.getDataType(), ddmFormField.getName(),
-				ddmFormFieldValidation, locale, value);
+		boolean valid = evaluateValidationExpression(
+			ddmFormField.getDataType(), ddmFormField.getName(),
+			ddmFormFieldValidation, value.getDefaultLocale(), value);
 
-			if (!valid) {
-				throw new MustSetValidValue(ddmFormField.getName());
-			}
+		if (!valid) {
+			throw new MustSetValidValue(ddmFormField.getName());
 		}
 	}
 
@@ -425,11 +416,11 @@ public class DDMFormValuesValidatorImpl implements DDMFormValuesValidator {
 
 	private DDMExpressionFactory _ddmExpressionFactory;
 	private DDMFormFieldTypeServicesTracker _ddmFormFieldTypeServicesTracker;
-	private final Map<String, DDMFormFieldValueValidator>
-		_ddmFormFieldValueValidators = new ConcurrentHashMap<>();
 	private final DDMFormFieldValueAccessor<String>
 		_defaultDDMFormFieldValueAccessor =
 			new DefaultDDMFormFieldValueAccessor();
 	private JSONFactory _jsonFactory;
+	private ServiceTrackerMap<String, DDMFormFieldValueValidator>
+		_serviceTrackerMap;
 
 }

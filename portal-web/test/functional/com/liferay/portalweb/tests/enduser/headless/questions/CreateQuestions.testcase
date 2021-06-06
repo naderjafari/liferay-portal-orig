@@ -10,7 +10,15 @@ definition {
 
 		User.firstLoginPG();
 
-		Navigator.openURL();
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Questions Page");
+
+		JSONLayout.addWidgetToPublicLayout(
+			column = "2",
+			groupName = "Guest",
+			layoutName = "Questions Page",
+			widgetName = "Questions");
 	}
 
 	tearDown {
@@ -32,19 +40,21 @@ definition {
 
 	@description = "Validate if the user can create a question category"
 	@priority = "5"
-	test AddQuestionCategory {
+	@refactordone
+	@uitest
+	test CanAddQuestionCategory {
 		property portal.acceptance = "true";
 
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Message Boards");
+		JSONMBMessage.addCategory(
+			categoryDescription = "Question Description",
+			categoryName = "question AddQuestionCategory",
+			userEmailAddress = "test@liferay.com");
 
-		Questions.createSomethingInMessageBoards(
-			displayStyleOption = "Question",
-			menuItem = "Category",
-			nameField = "question AddQuestionCategory");
+		Navigator.gotoPage(pageName = "Questions Page");
 
-		Alert.viewSuccessMessage();
+		Questions.gotoCategory(categoryName = "question AddQuestionCategory");
+
+		Questions.viewTopicDefault();
 	}
 
 }

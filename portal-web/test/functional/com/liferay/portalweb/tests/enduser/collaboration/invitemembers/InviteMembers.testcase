@@ -40,6 +40,7 @@ definition {
 
 	@description = "This test is skipping portal instance setup due to LPS-75168"
 	@priority = "4"
+	@refactorneeded
 	test ViewNewSiteMember {
 		property test.name.skip.portal.instance = "InviteMembers#ViewNewSiteMember";
 
@@ -66,7 +67,7 @@ definition {
 			category = "People",
 			portlet = "Memberships");
 
-		AssertElementNotPresent(locator1 = "Card#SPECIFIC_TEXT");
+		LexiconCard.viewCardNotPresent(card = "userfn userln");
 
 		Navigator.gotoSitePage(
 			pageName = "Site Page 1",

@@ -12,8 +12,8 @@
  * details.
  */
 
+import {useEventListener} from '@liferay/frontend-js-react-web';
 import {Editor} from 'frontend-editor-ckeditor-web';
-import {useEventListener} from 'frontend-js-react-web';
 import {isPhone, isTablet} from 'frontend-js-web';
 import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 
@@ -72,14 +72,18 @@ const QuestionsEditor = ({
 
 	const [toolbarSet, setToolbarSet] = useState(initialToolbarSet);
 
-	const config = useMemo(
-		() => ({
+	const config = useMemo(() => {
+		const CKEditorConfig = getCKEditorConfig();
+		if (editorConfig.readOnly) {
+			CKEditorConfig.toolbar.pop('Source');
+		}
+
+		return {
 			toolbar: toolbarSet,
-			...getCKEditorConfig(),
+			...CKEditorConfig,
 			...editorConfig,
-		}),
-		[editorConfig, toolbarSet]
-	);
+		};
+	}, [editorConfig, toolbarSet]);
 
 	useEffect(() => {
 		setToolbarSet(getToolbarSet(initialToolbarSet));
@@ -140,12 +144,10 @@ const QuestionsEditor = ({
 						CKEDITOR.dtd.$removeEmpty.span = 0;
 
 						CKEDITOR.on('instanceCreated', ({editor}) => {
-							editor.name = name;
-
 							if (context.imageBrowseURL) {
 								editor.config.filebrowserImageBrowseUrl = context.imageBrowseURL.replace(
 									'EDITOR_NAME_',
-									name
+									editor.name
 								);
 							}
 

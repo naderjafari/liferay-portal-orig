@@ -39,8 +39,10 @@ definition {
 
 	@priority = "5"
 	test ConfigureAutocompleteWithTextField {
-		property test.name.skip.portal.instance = "FormsDataProvider#ConfigureAutocompleteWithTextField";
 		property portal.acceptance = "true";
+		property portal.upstream = "true";
+		property test.name.skip.portal.instance = "FormsDataProvider#ConfigureAutocompleteWithTextField";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		Navigator.openURL();
@@ -81,7 +83,9 @@ definition {
 
 		Form.editDescription();
 
-		Form.addTextField(fieldPositionNumber = "1");
+		Form.addTextField(fieldPositionNumber = "0");
+
+		var fieldNameTextFieldAuto = FormFields.getFieldName();
 
 		Form.editFieldLabelMetal(fieldValue = "Text Field With Autocomplete");
 
@@ -107,7 +111,7 @@ definition {
 			menuItem = "Edit",
 			rowEntry = "Created Form Name");
 
-		FormsAdminNavigator.gotoEditField(fieldName = "Text Field With Autocomplete");
+		FormsAdminNavigator.gotoEditField(fieldName = "${fieldNameTextFieldAuto}");
 
 		Form.gotoAutocompleteTab();
 
@@ -142,7 +146,7 @@ definition {
 		FormPortlet.waitFormRenderer(text = "Submit");
 
 		FormFields.editTextWithDataProvider(
-			fieldName = "TextFieldWithAutocomplete",
+			fieldName = "${fieldNameTextFieldAuto}",
 			fieldValue = "Bra");
 
 		FormFields.selectAutoCompleteOption(autocompleteOption = "Brazil");
@@ -169,7 +173,7 @@ definition {
 
 		FormsAdminNavigator.gotoEditFormByName();
 
-		FormsAdminNavigator.gotoEditField(fieldName = "Text Field With Autocomplete");
+		FormsAdminNavigator.gotoEditField(fieldName = "${fieldNameTextFieldAuto}");
 
 		Form.gotoAutocompleteTab();
 
@@ -194,7 +198,7 @@ definition {
 		FormPortlet.waitFormRenderer(text = "Submit");
 
 		FormFields.editText(
-			fieldName = "TextFieldWithAutocomplete",
+			fieldName = "${fieldNameTextFieldAuto}",
 			fieldValue = "Br");
 
 		AssertElementNotPresent(
@@ -204,8 +208,10 @@ definition {
 
 	@priority = "5"
 	test ConfigureWithSelectField {
-		property test.name.skip.portal.instance = "FormsDataProvider#ConfigureWithSelectField";
 		property portal.acceptance = "true";
+		property portal.upstream = "true";
+		property test.name.skip.portal.instance = "FormsDataProvider#ConfigureWithSelectField";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		Navigator.openURL();
@@ -243,8 +249,10 @@ definition {
 		Form.editDescription();
 
 		Form.gotoAddField(
-			fieldPositionNumber = "1",
+			fieldPositionNumber = "0",
 			fieldType = "Select from List");
+
+		var fieldNameDataProvider = FormFields.getFieldName();
 
 		Form.editFieldLabelMetal(fieldValue = "Data Provider Select Field");
 
@@ -280,10 +288,10 @@ definition {
 
 		FormFields.viewSelectLabel(
 			fieldLabel = "Data Provider Select Field",
-			fieldName = "DataProviderSelectField");
+			fieldName = "${fieldNameDataProvider}");
 
 		FormFields.selectSelectOption(
-			fieldName = "Select Field",
+			fieldName = "${fieldNameDataProvider}",
 			selectOption = "United States");
 
 		FormPortlet.submitSuccessfully();
@@ -304,8 +312,10 @@ definition {
 	@description = "This is a use case for LPS-75682."
 	@priority = "5"
 	test ViewDataRetrievedForGuestUser {
-		property test.name.skip.portal.instance = "FormsDataProvider#ViewDataRetrievedForGuestUser";
 		property portal.acceptance = "true";
+		property portal.upstream = "true";
+		property test.name.skip.portal.instance = "FormsDataProvider#ViewDataRetrievedForGuestUser";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		Navigator.openURL();
@@ -345,8 +355,10 @@ definition {
 		Form.editDescription();
 
 		Form.gotoAddField(
-			fieldPositionNumber = "1",
+			fieldPositionNumber = "0",
 			fieldType = "Select from List");
+
+		var fieldNameCountries = FormFields.getFieldName();
 
 		Form.editFieldLabelMetal(fieldValue = "Countries");
 
@@ -377,7 +389,7 @@ definition {
 		Navigator.openSpecificURL(url = "${publishedFormPublicURL}");
 
 		FormFields.viewSelectOptionsList(
-			fieldName = "Countries",
+			fieldName = "${fieldNameCountries}",
 			selectOption = "Afghanistan");
 
 		User.logoutPG();
@@ -385,7 +397,7 @@ definition {
 		Navigator.openSpecificURL(url = "${publishedFormPublicURL}");
 
 		FormFields.viewSelectOptionsList(
-			fieldName = "Countries",
+			fieldName = "${fieldNameCountries}",
 			selectOption = "Afghanistan");
 
 		User.loginUserPG();

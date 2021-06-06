@@ -14,9 +14,12 @@
 
 package com.liferay.trash.web.internal.portlet.configuration.icon;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.configuration.icon.BasePortletConfigurationIcon;
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIcon;
@@ -62,29 +65,32 @@ public class RestoreTrashPortletConfigurationIcon
 				_portal.getLiferayPortletRequest(portletRequest),
 				_portal.getLiferayPortletResponse(portletResponse));
 
-			TrashHandler trashHandler = trashDisplayContext.getTrashHandler();
-
 			long classPK = trashDisplayContext.getClassPK();
 
-			PortletURL moveURL = _portal.getControlPanelPortletURL(
-				portletRequest, TrashPortletKeys.TRASH,
-				PortletRequest.RENDER_PHASE);
-
-			moveURL.setParameter("mvcPath", "/view_container_model.jsp");
-			moveURL.setParameter(
-				"redirect", trashDisplayContext.getViewContentRedirectURL());
-			moveURL.setParameter(
-				"classNameId",
-				String.valueOf(trashDisplayContext.getClassNameId()));
-			moveURL.setParameter("classPK", String.valueOf(classPK));
-
-			moveURL.setParameter(
+			PortletURL moveURL = PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					portletRequest, TrashPortletKeys.TRASH,
+					PortletRequest.RENDER_PHASE)
+			).setMVCPath(
+				"/view_container_model.jsp"
+			).setRedirect(
+				trashDisplayContext.getViewContentRedirectURL()
+			).setParameter(
+				"classNameId", trashDisplayContext.getClassNameId()
+			).setParameter(
+				"classPK", classPK
+			).setParameter(
 				"containerModelClassNameId",
-				String.valueOf(
-					_portal.getClassNameId(
-						trashHandler.getContainerModelClassName(classPK))));
+				() -> {
+					TrashHandler trashHandler =
+						trashDisplayContext.getTrashHandler();
 
-			moveURL.setWindowState(LiferayWindowState.POP_UP);
+					return _portal.getClassNameId(
+						trashHandler.getContainerModelClassName(classPK));
+				}
+			).setWindowState(
+				LiferayWindowState.POP_UP
+			).build();
 
 			StringBundler sb = new StringBundler(4);
 
@@ -96,6 +102,9 @@ public class RestoreTrashPortletConfigurationIcon
 			return sb.toString();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return StringPool.BLANK;
@@ -145,12 +154,19 @@ public class RestoreTrashPortletConfigurationIcon
 				}
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
+
 				return false;
 			}
 		}
 
 		return true;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		RestoreTrashPortletConfigurationIcon.class);
 
 	@Reference
 	private Portal _portal;

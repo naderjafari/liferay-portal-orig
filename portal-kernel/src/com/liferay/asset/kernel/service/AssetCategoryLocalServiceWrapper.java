@@ -52,34 +52,6 @@ public class AssetCategoryLocalServiceWrapper
 	}
 
 	@Override
-	public void addAssetEntryAssetCategories(
-		long entryId, java.util.List<AssetCategory> assetCategories) {
-
-		_assetCategoryLocalService.addAssetEntryAssetCategories(
-			entryId, assetCategories);
-	}
-
-	@Override
-	public void addAssetEntryAssetCategories(long entryId, long[] categoryIds) {
-		_assetCategoryLocalService.addAssetEntryAssetCategories(
-			entryId, categoryIds);
-	}
-
-	@Override
-	public void addAssetEntryAssetCategory(
-		long entryId, AssetCategory assetCategory) {
-
-		_assetCategoryLocalService.addAssetEntryAssetCategory(
-			entryId, assetCategory);
-	}
-
-	@Override
-	public void addAssetEntryAssetCategory(long entryId, long categoryId) {
-		_assetCategoryLocalService.addAssetEntryAssetCategory(
-			entryId, categoryId);
-	}
-
-	@Override
 	public AssetCategory addCategory(
 			long userId, long groupId, long parentCategoryId,
 			java.util.Map<java.util.Locale, String> titleMap,
@@ -122,11 +94,6 @@ public class AssetCategoryLocalServiceWrapper
 
 		_assetCategoryLocalService.addCategoryResources(
 			category, modelPermissions);
-	}
-
-	@Override
-	public void clearAssetEntryAssetCategories(long entryId) {
-		_assetCategoryLocalService.clearAssetEntryAssetCategories(entryId);
 	}
 
 	/**
@@ -182,36 +149,6 @@ public class AssetCategoryLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _assetCategoryLocalService.deleteAssetCategory(categoryId);
-	}
-
-	@Override
-	public void deleteAssetEntryAssetCategories(
-		long entryId, java.util.List<AssetCategory> assetCategories) {
-
-		_assetCategoryLocalService.deleteAssetEntryAssetCategories(
-			entryId, assetCategories);
-	}
-
-	@Override
-	public void deleteAssetEntryAssetCategories(
-		long entryId, long[] categoryIds) {
-
-		_assetCategoryLocalService.deleteAssetEntryAssetCategories(
-			entryId, categoryIds);
-	}
-
-	@Override
-	public void deleteAssetEntryAssetCategory(
-		long entryId, AssetCategory assetCategory) {
-
-		_assetCategoryLocalService.deleteAssetEntryAssetCategory(
-			entryId, assetCategory);
-	}
-
-	@Override
-	public void deleteAssetEntryAssetCategory(long entryId, long categoryId) {
-		_assetCategoryLocalService.deleteAssetEntryAssetCategory(
-			entryId, categoryId);
 	}
 
 	@Override
@@ -272,6 +209,13 @@ public class AssetCategoryLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _assetCategoryLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _assetCategoryLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -377,6 +321,19 @@ public class AssetCategoryLocalServiceWrapper
 	 * @param externalReferenceCode the asset category's external reference code
 	 * @return the matching asset category, or <code>null</code> if a matching asset category could not be found
 	 */
+	@Override
+	public AssetCategory fetchAssetCategoryByExternalReferenceCode(
+		long companyId, String externalReferenceCode) {
+
+		return _assetCategoryLocalService.
+			fetchAssetCategoryByExternalReferenceCode(
+				companyId, externalReferenceCode);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #fetchAssetCategoryByExternalReferenceCode(long, String)}
+	 */
+	@Deprecated
 	@Override
 	public AssetCategory fetchAssetCategoryByReferenceCode(
 		long companyId, String externalReferenceCode) {
@@ -498,6 +455,24 @@ public class AssetCategoryLocalServiceWrapper
 	}
 
 	/**
+	 * Returns the asset category with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the asset category's external reference code
+	 * @return the matching asset category
+	 * @throws PortalException if a matching asset category could not be found
+	 */
+	@Override
+	public AssetCategory getAssetCategoryByExternalReferenceCode(
+			long companyId, String externalReferenceCode)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetCategoryLocalService.
+			getAssetCategoryByExternalReferenceCode(
+				companyId, externalReferenceCode);
+	}
+
+	/**
 	 * Returns the asset category matching the UUID and group.
 	 *
 	 * @param uuid the asset category's UUID
@@ -512,48 +487,6 @@ public class AssetCategoryLocalServiceWrapper
 
 		return _assetCategoryLocalService.getAssetCategoryByUuidAndGroupId(
 			uuid, groupId);
-	}
-
-	@Override
-	public java.util.List<AssetCategory> getAssetEntryAssetCategories(
-		long entryId) {
-
-		return _assetCategoryLocalService.getAssetEntryAssetCategories(entryId);
-	}
-
-	@Override
-	public java.util.List<AssetCategory> getAssetEntryAssetCategories(
-		long entryId, int start, int end) {
-
-		return _assetCategoryLocalService.getAssetEntryAssetCategories(
-			entryId, start, end);
-	}
-
-	@Override
-	public java.util.List<AssetCategory> getAssetEntryAssetCategories(
-		long entryId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator<AssetCategory>
-			orderByComparator) {
-
-		return _assetCategoryLocalService.getAssetEntryAssetCategories(
-			entryId, start, end, orderByComparator);
-	}
-
-	@Override
-	public int getAssetEntryAssetCategoriesCount(long entryId) {
-		return _assetCategoryLocalService.getAssetEntryAssetCategoriesCount(
-			entryId);
-	}
-
-	/**
-	 * Returns the entryIds of the asset entries associated with the asset category.
-	 *
-	 * @param categoryId the categoryId of the asset category
-	 * @return long[] the entryIds of asset entries associated with the asset category
-	 */
-	@Override
-	public long[] getAssetEntryPrimaryKeys(long categoryId) {
-		return _assetCategoryLocalService.getAssetEntryPrimaryKeys(categoryId);
 	}
 
 	@Override
@@ -748,17 +681,6 @@ public class AssetCategoryLocalServiceWrapper
 	}
 
 	@Override
-	public boolean hasAssetEntryAssetCategories(long entryId) {
-		return _assetCategoryLocalService.hasAssetEntryAssetCategories(entryId);
-	}
-
-	@Override
-	public boolean hasAssetEntryAssetCategory(long entryId, long categoryId) {
-		return _assetCategoryLocalService.hasAssetEntryAssetCategory(
-			entryId, categoryId);
-	}
-
-	@Override
 	public AssetCategory mergeCategories(long fromCategoryId, long toCategoryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
@@ -831,12 +753,6 @@ public class AssetCategoryLocalServiceWrapper
 		return _assetCategoryLocalService.searchCategories(
 			companyId, groupIds, title, vocabularyIds, parentCategoryIds, start,
 			end, sort);
-	}
-
-	@Override
-	public void setAssetEntryAssetCategories(long entryId, long[] categoryIds) {
-		_assetCategoryLocalService.setAssetEntryAssetCategories(
-			entryId, categoryIds);
 	}
 
 	/**

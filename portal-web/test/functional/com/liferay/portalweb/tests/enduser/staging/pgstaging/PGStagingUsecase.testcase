@@ -21,8 +21,6 @@ definition {
 			JSONUser.tearDownNonAdminUsers();
 
 			JSONOrganization.deleteOrganizationByName(organizationName = "Staging Organization Name");
-
-			Role.tearDownCP();
 		}
 	}
 
@@ -118,9 +116,7 @@ definition {
 			roleTitle = "Organization Administrator",
 			userEmailAddress = "usereaoa@liferay.com");
 
-		Staging.openStagingAdmin(siteURLKey = "staging-organization-name");
-
-		Staging.activateStagingCP(siteName = "Staging Organization Name");
+		JSONStaging.enableLocalStaging(groupName = "Staging Organization Name");
 
 		Workflow.openWorkflowAdmin(siteURLKey = "staging-organization-name-staging");
 
@@ -138,7 +134,7 @@ definition {
 			pageName = "Staging Test Page",
 			portletName = "Blogs");
 
-		User.logoutUserPG();
+		User.logoutPG();
 
 		SitePages.openPagesAdmin(siteURLKey = "Staging Organization Name");
 
@@ -156,7 +152,7 @@ definition {
 
 		Staging.publishToLive();
 
-		User.logoutUserPG();
+		User.logoutPG();
 
 		Navigator.openSiteURL(siteName = "Staging Organization Name");
 
@@ -174,7 +170,7 @@ definition {
 			entryContent = "Blogs Entry Content",
 			entryTitle = "Blogs Entry Title");
 
-		User.logoutUserPG();
+		User.logoutPG();
 
 		SitePages.openPagesAdmin(siteURLKey = "Staging Organization Name");
 
@@ -198,7 +194,7 @@ definition {
 			workflowAssetType = "Blogs Entry",
 			workflowTask = "Review");
 
-		User.logoutUserPG();
+		User.logoutPG();
 
 		SitePages.openPagesAdmin(siteURLKey = "Staging Organization Name");
 
@@ -216,7 +212,7 @@ definition {
 
 		Staging.publishToLive();
 
-		User.logoutUserPG();
+		User.logoutPG();
 
 		Navigator.openSiteURL(siteName = "Staging Organization Name");
 

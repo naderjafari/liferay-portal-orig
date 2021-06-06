@@ -141,18 +141,15 @@ module.framework.properties.osgi.console=11312</echo>
 			<if>
 				<not>
 					<or>
-						<equals arg1="${browser.type}" arg2="android" />
-						<equals arg1="${browser.type}" arg2="androidchrome" />
 						<equals arg1="${browser.type}" arg2="chrome" />
 						<equals arg1="${browser.type}" arg2="edge" />
 						<equals arg1="${browser.type}" arg2="firefox" />
 						<equals arg1="${browser.type}" arg2="internetexplorer" />
-						<equals arg1="${browser.type}" arg2="iossafari" />
 						<equals arg1="${browser.type}" arg2="safari" />
 					</or>
 				</not>
 				<then>
-					<fail>Please set "browser.type" to one of the following:${line.separator}android, androidchrome, chrome, edge, firefox, internetexplorer, iossafari, or safari.</fail>
+					<fail>Please set "browser.type" to one of the following:${line.separator}chrome, edge, firefox, internetexplorer, or safari.</fail>
 				</then>
 			</if>
 
@@ -256,13 +253,15 @@ module.framework.properties.osgi.console=11312</echo>
 
 			<echo file="${script.sh.file}"><![CDATA[@{script}]]></echo>
 
+			<get-operating-system-property property.name="operating.system.docker.shell.path" />
+
 			<execute>
 				<![CDATA[
 					docker exec @{container} mkdir -p /tmp
 
 					docker cp ${script.sh.file} @{container}:/tmp/script.sh
 
-					docker exec @{container} /bin/bash /tmp/script.sh
+					docker exec @{container} ${operating.system.docker.shell.path} /tmp/script.sh
 
 					docker exec @{container} rm -f /tmp/script.sh
 				]]>
@@ -305,6 +304,11 @@ jdbc.default.driverClassName=${database.driver}
 jdbc.default.url=${database.url}
 jdbc.default.username=${database.username}
 jdbc.default.password=${database.password}
+
+jdbc.counter.driverClassName=${database.driver}
+jdbc.counter.url=${database.url}
+jdbc.counter.username=${database.username}
+jdbc.counter.password=${database.password}
 
 // HikariCP
 
@@ -366,6 +370,99 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 		</sequential>
 	</macrodef>
 
+	<macrodef name="get-browser-property">
+		<attribute name="property.name" />
+
+		<sequential>
+			<check-config />
+
+			<var name="property.name" unset="true" />
+			<var name="@{property.name}" unset="true" />
+
+			<property name="property.name" value="@{property.name}" />
+
+			<beanshell>
+				<![CDATA[
+					String propertyName = project.getProperty("property.name");
+
+					StringBuilder sb = new StringBuilder();
+
+					sb.append("browser.");
+					sb.append(project.getProperty("browser.type"));
+					sb.append(".");
+					sb.append(propertyName.substring(8));
+
+					propertyValue = project.getProperty(sb.toString());
+
+					if (propertyValue != null) {
+						project.setProperty(propertyName, propertyValue);
+					}
+				]]>
+			</beanshell>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="get-commerce-license-product-name">
+		<sequential>
+			<get-testcase-property property.name="commerce.license.file" />
+
+			<if>
+				<not>
+					<isset property="commerce.license.file" />
+				</not>
+				<then>
+					<var name="commerce.license.file" value="portal-commerce-license.xml" />
+				</then>
+			</if>
+
+			<var name="commerce.license.product.name" unset="true" />
+
+			<if>
+				<equals arg1="${commerce.license.file}" arg2="commerce-binary-license-developer.li" />
+				<then>
+					<property name="commerce.license.product.name" value="Liferay Commerce Subscription Development" />
+				</then>
+				<elseif>
+					<available file="${liferay.home}/deploy/${commerce.license.file}" />
+					<then>
+						<loadfile
+							property="commerce.license.content"
+							srcfile="${liferay.home}/deploy/${commerce.license.file}"
+						/>
+
+						<propertyregex
+							casesensitive="false"
+							input="${commerce.license.content}"
+							property="commerce.license.product.name"
+							regexp="&lt;product-name&gt;(.*?)&lt;/product-name&gt;"
+							select="\1"
+						/>
+					</then>
+				</elseif>
+				<elseif>
+					<available file="${liferay.home}/osgi/modules/${commerce.license.file}" />
+					<then>
+						<loadfile
+							property="commerce.license.content"
+							srcfile="${liferay.home}/osgi/modules/${commerce.license.file}"
+						/>
+
+						<propertyregex
+							casesensitive="false"
+							input="${commerce.license.content}"
+							property="commerce.license.product.name"
+							regexp="&lt;product-name&gt;(.*?)&lt;/product-name&gt;"
+							select="\1"
+						/>
+					</then>
+				</elseif>
+				<else>
+					<echo>Unable to find commerce license file at ${liferay.home}/deploy/${commerce.license.file} or ${liferay.home}/osgi/modules/${commerce.license.file}.</echo>
+				</else>
+			</if>
+		</sequential>
+	</macrodef>
+
 	<macrodef name="get-database-property">
 		<attribute name="property.name" />
 
@@ -390,7 +487,9 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 
 					propertyValue = project.getProperty(sb.toString());
 
-					project.setProperty(propertyName, propertyValue);
+					if (propertyValue != null) {
+						project.setProperty(propertyName, propertyValue);
+					}
 				]]>
 			</beanshell>
 		</sequential>
@@ -405,6 +504,47 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 			<condition else="" property="database.socks.non.proxy.hosts" value="-DsocksNonProxyHosts=${database.host}">
 				<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
 			</condition>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="get-dxp-license-product-name">
+		<sequential>
+			<get-testcase-property property.name="dxp.license.file" />
+
+			<if>
+				<not>
+					<isset property="dxp.license.file" />
+				</not>
+				<then>
+					<var name="dxp.license.file" value="license.xml" />
+				</then>
+			</if>
+
+			<var name="dxp.license.product.name" unset="true" />
+
+			<if>
+				<or>
+					<equals arg1="${dxp.license.file}" arg2="dxp-license-dummy.xml" />
+					<equals arg1="${dxp.license.file}" arg2="dxp-binary-license-developer.li" />
+				</or>
+				<then>
+					<property name="dxp.license.product.name" value="Portal Development" />
+				</then>
+				<else>
+					<loadfile
+						property="dxp.license.content"
+						srcfile="${liferay.home}/osgi/modules/${dxp.license.file}"
+					/>
+
+					<propertyregex
+						casesensitive="false"
+						input="${dxp.license.content}"
+						property="dxp.license.product.name"
+						regexp="&lt;product-name&gt;(.*?)&lt;/product-name&gt;"
+						select="\1"
+					/>
+				</else>
+			</if>
 		</sequential>
 	</macrodef>
 
@@ -425,21 +565,17 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 
 					<beanshell>
 						<![CDATA[
-							import java.util.regex.Matcher;
-							import java.util.regex.Pattern;
-
 							String patchFileZipURL = project.getProperty("patch.file.zip.url");
+							String patchFileZipURLRegex = "https?://.*/liferay-fix-pack-(de|dxp)-(\\d+)-\\d{4}[^/]*.zip";
+
 							String patchRequirements = project.getProperty("patch.requirements");
+							String patchRequirementsRegex = "(de|dxp)-(\\d+)(-\\d{4})?";
 
-							Pattern pattern = Pattern.compile("https?://.*/liferay-fix-pack-de-(\\d+)-\\d{4}[^/]*.zip");
-
-							Matcher matcher = pattern.matcher(patchFileZipURL);
-
-							if (matcher.find()) {
-								project.setProperty("fixpack.version", matcher.group(1));
+							if ((patchFileZipURL != null) && patchFileZipURL.matches(patchFileZipURLRegex)) {
+								project.setProperty("fixpack.version", patchFileZipURL.replaceAll(patchFileZipURLRegex, "$2"));
 							}
-							else if ((patchRequirements != null) && patchRequirements.startsWith("de-")) {
-								project.setProperty("fixpack.version", patchRequirements.substring(3));
+							else if ((patchRequirements != null) && patchRequirements.matches(patchRequirementsRegex)) {
+								project.setProperty("fixpack.version", patchRequirements.replaceAll(patchRequirementsRegex, "$2"));
 							}
 						]]>
 					</beanshell>
@@ -622,53 +758,43 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 		</sequential>
 	</macrodef>
 
-	<macrodef name="get-jstack-output">
-		<attribute name="process.name" />
-
+	<macrodef name="get-mac-address">
 		<sequential>
-			<var name="jstack.output" unset="true" />
-
-			<execute>
-				<![CDATA[
-					jps > jps_output
-				]]>
-			</execute>
-
-			<local name="jps.output" />
-
-			<loadfile
-				property="jps.output"
-				srcfile="jps_output"
-			/>
-
 			<if>
-				<contains string="${jps.output}" substring="@{process.name}" />
+				<isset property="mac.address" />
 				<then>
-					<local name="bootstrap.pid" />
-
-					<propertyregex
-						input="${jps.output}"
-						override="true"
-						property="bootstrap.pid"
-						regexp="(|[\S\s]*\n)([0-9]+) @{process.name}[\S\s]*"
-						replace="\2"
-					/>
-
-					<execute>
-						<![CDATA[
-							jstack -l ${bootstrap.pid} > jstack_output
-						]]>
-					</execute>
-
-					<loadfile
-						property="jstack.output"
-						srcfile="jstack_output"
-					/>
+					<var name="mac.address" value="${mac.address}" />
 				</then>
+				<elseif>
+					<os family="unix" />
+					<then>
+						<if>
+							<isset property="env.JENKINS_HOME" />
+							<then>
+								<exec executable="/bin/bash" os="${os.unix}" outputproperty="mac.address">
+									<arg value="-c" />
+									<arg value="ifconfig eth0 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'" />
+								</exec>
+							</then>
+							<elseif>
+								<isset property="network.interface" />
+								<then>
+									<exec executable="/bin/bash" os="${os.unix}" outputproperty="mac.address">
+										<arg value="-c" />
+										<arg value="ifconfig ${network.interface} | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'" />
+									</exec>
+								</then>
+							</elseif>
+							<else>
+								<fail message="${network.interface} must be set if running get-mac-address locally" />
+							</else>
+						</if>
+					</then>
+				</elseif>
+				<else>
+					<fail message="Support for running get-mac-address on Windows not yet added" />
+				</else>
 			</if>
-
-			<delete file="jps_output" />
-			<delete file="jstack_output" />
 		</sequential>
 	</macrodef>
 
@@ -764,7 +890,9 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 
 					propertyValue = project.getProperty(sb.toString());
 
-					project.setProperty(propertyName, propertyValue);
+					if (propertyValue != null) {
+						project.setProperty(propertyName, propertyValue);
+					}
 				]]>
 			</beanshell>
 		</sequential>
@@ -794,7 +922,35 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 				src="${tstamp.value}.zip"
 			/>
 
-			<xmlproperty file="${tstamp.value}-dir/fixpack_documentation.xml" />
+			<if>
+				<available file="${tstamp.value}-dir/fixpack_documentation.xml" />
+				<then>
+					<xmlproperty file="${tstamp.value}-dir/fixpack_documentation.xml" />
+				</then>
+				<elseif>
+					<available file="${tstamp.value}-dir/fixpack_documentation.json" />
+					<then>
+						<local name="json.content" />
+
+						<loadfile
+							property="json.content"
+							srcFile="${tstamp.value}-dir/fixpack_documentation.json"
+						/>
+
+						<script language="javascript">
+							var json = project.getProperty("json.content");
+
+							var fixpackDocumentation = JSON.parse(json);
+
+							var patchRequirements = fixpackDocumentation["patch"]["requirements"];
+
+							if (patchRequirements != null) {
+								project.setProperty("patch.requirements", patchRequirements);
+							}
+						</script>
+					</then>
+				</elseif>
+			</if>
 
 			<antelope:stringutil property="patch.requirements" string="${patch.requirements}">
 				<antelope:replace regex="!" replacement="" />
@@ -854,7 +1010,7 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 				override="true"
 				property="poshi.java.jdk.opts"
 				regexp="(-Xmx)(\d*\w*)"
-				replace="\12048m"
+				replace="\14096m"
 			/>
 
 			<propertyregex
@@ -907,6 +1063,109 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 					<var name="poshi.test.name" value="${poshi.class.name}" />
 				</else>
 			</if>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="get-test-case-properties-content">
+		<attribute default="batch-jdk8" name="test.batch.name" />
+
+		<sequential>
+			<var name="test.case.properties.content" unset="true" />
+
+			<local name="test.batch.name" />
+
+			<property name="test.batch.name" value="@{test.batch.name}" />
+
+			<beanshell>
+				<![CDATA[
+					import com.liferay.jenkins.results.parser.Job;
+					import com.liferay.jenkins.results.parser.JobFactory;
+					import com.liferay.jenkins.results.parser.test.clazz.group.BatchTestClassGroup;
+					import com.liferay.jenkins.results.parser.test.clazz.group.SegmentTestClassGroup;
+					import com.liferay.jenkins.results.parser.test.clazz.group.TestClassGroupFactory;
+
+					public String getBranchName() {
+						String branchName = project.getProperty("env.TEST_PORTAL_BRANCH_NAME");
+
+						if ((branchName == null) || branchName.isEmpty()) {
+							branchName = project.getProperty("liferay.portal.branch");
+						}
+
+						return branchName;
+					}
+
+					public Job.BuildProfile getBuildProfile() {
+						String buildProfile = project.getProperty("build.profile");
+
+						if ((buildProfile != null) && buildProfile.equals("dxp")) {
+							return Job.BuildProfile.DXP;
+						}
+
+						return Job.BuildProfile.PORTAL;
+					}
+
+					public String getRepositoryName() {
+						String repositoryName = project.getProperty("env.REPOSITORY_NAME");
+
+						if ((repositoryName != null) && !repositoryName.isEmpty()) {
+							return repositoryName;
+						}
+
+						String branchName = getBranchName();
+
+						if (branchName.equals("master")) {
+							return "liferay-portal";
+						}
+
+						return "liferay-portal-ee";
+					}
+
+					public int getSegmentID() {
+						String jobVariant = project.getProperty("env.JOB_VARIANT");
+
+						String jobVariantRegex = "[^/]+/(\\d+)";
+
+						if ((jobVariant == null) || (!jobVariant.matches(jobVariantRegex))) {
+							return 0;
+						}
+
+						return Integer.valueOf(jobVariant.replaceAll(jobVariantRegex, "$1"));
+					}
+
+					public String getTestSuite() {
+						String testSuite = project.getProperty("env.CI_TEST_SUITE");
+
+						if ((testSuite == null) || testSuite.isEmpty()) {
+							testSuite = "default";
+						}
+
+						return testSuite;
+					}
+
+					public String getTopLevelJobName() {
+						String topLevelJobName = project.getProperty("env.TOP_LEVEL_JOB_NAME");
+
+						if ((topLevelJobName == null) || topLevelJobName.isEmpty()) {
+							topLevelJobName = "default";
+						}
+
+						return topLevelJobName;
+					}
+
+					Job job = JobFactory.newJob(getTopLevelJobName(), getTestSuite(), getBranchName(), getRepositoryName(), getBuildProfile());
+
+					BatchTestClassGroup batchTestClassGroup = TestClassGroupFactory.newBatchTestClassGroup(project.getProperty("test.batch.name"), job);
+
+					if (job.isSegmentEnabled()) {
+						SegmentTestClassGroup segmentTestClassGroup = batchTestClassGroup.getSegmentTestClassGroup(getSegmentID());
+
+						project.setProperty("test.case.properties.content", segmentTestClassGroup.getTestCasePropertiesContent());
+					}
+					else {
+						project.setProperty("test.case.properties.content", batchTestClassGroup.getTestCasePropertiesContent());
+					}
+				]]>
+			</beanshell>
 		</sequential>
 	</macrodef>
 
@@ -1099,6 +1358,8 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 
 	<macrodef name="get-test-url">
 		<sequential>
+			<get-browser-property property.name="browser.docker.image" />
+			<get-operating-system-property property.name="operating.system.docker.image" />
 			<get-testcase-property property.name="analytics.cloud.enabled" />
 			<get-testcase-property property.name="testcase.url" />
 
@@ -1122,31 +1383,11 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 					</then>
 				</elseif>
 				<elseif>
-					<and>
-						<not>
-							<and>
-								<equals arg1="${operating.system.type}" arg2="centos" />
-								<equals arg1="${operating.system.centos.version}" arg2="7" />
-							</and>
-						</not>
-						<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
-					</and>
+					<isset property="operating.system.docker.image" />
 					<then>
 						<get-operating-system-property property.name="operating.system.host" />
 
 						<var name="test.url" value="http://${operating.system.host}:8080" />
-					</then>
-				</elseif>
-				<elseif>
-					<or>
-						<equals arg1="${browser.type}" arg2="android" />
-						<equals arg1="${browser.type}" arg2="androidchrome" />
-						<equals arg1="${browser.type}" arg2="iossafari" />
-					</or>
-					<then>
-						<get-ip-address />
-
-						<var name="test.url" value="http://${ip.address}:8080" />
 					</then>
 				</elseif>
 				<elseif>
@@ -1156,7 +1397,10 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 					</then>
 				</elseif>
 				<elseif>
-					<contains string="${test.class}" substring="," />
+					<or>
+						<contains string="${test.class}" substring="," />
+						<isset property="browser.docker.image" />
+					</or>
 					<then>
 						<if>
 							<os family="unix" />
@@ -1308,7 +1552,6 @@ jdbc.counter.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 					<execute dir="@{patching.tool.dir}" failonerror="true">
 						patching-tool${file.suffix.bat} auto-discovery
 						patching-tool${file.suffix.bat} install -force
-						patching-tool${file.suffix.bat} update-plugins
 					</execute>
 				</then>
 				<else>
@@ -1319,10 +1562,15 @@ war.path=${app.server.portal.dir}/</echo>
 
 					<execute dir="@{patching.tool.dir}" failonerror="true">
 						patching-tool${file.suffix.bat} install -force
-						patching-tool${file.suffix.bat} update-plugins
 					</execute>
 				</else>
 			</if>
+
+			<execute>
+				<![CDATA[
+					tail -n 100 "${patching.tool.dir}/logs/patching-tool.log"
+				]]>
+			</execute>
 		</sequential>
 	</macrodef>
 
@@ -1336,19 +1584,16 @@ war.path=${app.server.portal.dir}/</echo>
 			<get-patch-requirements patch.file.zip.url="@{patch.file.zip.url}" />
 
 			<if>
-				<not>
-					<equals arg1="${patch.requirements}" arg2="" />
-				</not>
+				<and>
+					<not>
+						<equals arg1="${patch.requirements}" arg2="" />
+					</not>
+					<not>
+						<contains string="${patch.requirements}" substring="base-" />
+					</not>
+				</and>
 				<then>
-					<local name="patch.build.version" />
 					<local name="patch.portal.version" />
-
-					<propertyregex
-						input="@{patch.file.zip.url}"
-						property="patch.build.version"
-						regexp=".+\/liferay-(hotfix|.*security)-.+-(\d)(\d)(\d\d).zip"
-						replace="\2\3\4"
-					/>
 
 					<propertyregex
 						input="@{patch.file.zip.url}"
@@ -1357,9 +1602,30 @@ war.path=${app.server.portal.dir}/</echo>
 						replace="\2.\3.\4"
 					/>
 
+					<local name="fixpack.build.name" />
+
+					<if>
+						<matches pattern=".*-\d{4}" string="${patch.requirements}" />
+						<then>
+							<property name="fixpack.build.name" value="${patch.requirements}" />
+						</then>
+						<else>
+							<local name="patch.build.version" />
+
+							<propertyregex
+								input="@{patch.file.zip.url}"
+								property="patch.build.version"
+								regexp=".+\/liferay-(hotfix|.*security)-.+-(\d)(\d)(\d\d).zip"
+								replace="\2\3\4"
+							/>
+
+							<property name="fixpack.build.name" value="${patch.requirements}-${patch.build.version}" />
+						</else>
+					</if>
+
 					<mirrors-get
 						dest="@{patching.tool.dir}/patches"
-						src="http://files.liferay.com/private/ee/fix-packs/${patch.portal.version}/dxp/liferay-fix-pack-${patch.requirements}-${patch.build.version}.zip"
+						src="http://files.liferay.com/private/ee/fix-packs/${patch.portal.version}/dxp/liferay-fix-pack-${fixpack.build.name}.zip"
 					/>
 				</then>
 			</if>
@@ -1374,31 +1640,6 @@ war.path=${app.server.portal.dir}/</echo>
 			<propertyfile file="${project.dir}/.gradle/gradle.properties">
 				<entry key="sdk.dir" value="${sdk.dir}" />
 			</propertyfile>
-
-			<if>
-				<contains string="${env.CI_TEST_SUITE}" substring="poshi" />
-				<then>
-					<propertycopy from="test.poshi.runner.local.release[${env.CI_TEST_SUITE}]" name="test.poshi.runner.local.release" override="true" />
-				</then>
-			</if>
-
-			<if>
-				<equals arg1="${test.poshi.runner.local.release}" arg2="true" />
-				<then>
-					<if>
-						<not>
-							<available file="tools/sdk" />
-						</not>
-						<then>
-							<antcall inheritAll="false" target="setup-sdk" />
-
-							<antcall inheritAll="false" target="setup-yarn" />
-						</then>
-					</if>
-
-					<gradle-execute dir="${test.poshi.runner.src.dir}" task="deploy" />
-				</then>
-			</if>
 
 			<if>
 				<isset property="env.JENKINS_HOME" />
@@ -1428,7 +1669,6 @@ war.path=${app.server.portal.dir}/</echo>
 
 					<gradle-execute failonerror="@{failonerror}" gradlejvmargs="${poshi.gradle.jvm.args}" stacktrace="false" task="@{task}">
 						<arg value="--build-file=portal-web/build-test.gradle" />
-						<arg value="-Plocal=${test.poshi.runner.local.release}" />
 						<arg value="-PposhiRunnerExtProperties=${test.ext.properties.file}" />
 						<arg value="-Ptmp.maven.repository.dir=../.m2-tmp" />
 						<env key="ANT_OPTS" value="${poshi.java.jdk.opts}" />
@@ -1438,7 +1678,6 @@ war.path=${app.server.portal.dir}/</echo>
 				<else>
 					<gradle-execute failonerror="@{failonerror}" stacktrace="false" task="@{task}">
 						<arg value="--build-file=portal-web/build-test.gradle" />
-						<arg value="-Plocal=${test.poshi.runner.local.release}" />
 						<arg value="-PposhiRunnerExtProperties=${test.ext.properties.file}" />
 						<arg value="-Ptmp.maven.repository.dir=../.m2-tmp" />
 					</gradle-execute>
@@ -1624,11 +1863,39 @@ war.path=${app.server.portal.dir}/</echo>
 		</sequential>
 	</macrodef>
 
+	<macrodef name="prepare-aws-s3-configuration">
+		<sequential>
+			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.store.s3.configuration.S3StoreConfiguration.config">
+cacheDirCleanUpExpunge=&quot;7&quot;
+ntlmProxyDomain=&quot;&quot;
+proxyAuthType=&quot;none&quot;
+httpClientMaxConnections=&quot;50&quot;
+secretKey=&quot;${aws.s3.secret.access.key}&quot;
+httpClientMaxErrorRetry=&quot;5&quot;
+accessKey=&quot;${aws.s3.access.key.id}&quot;
+cacheDirCleanUpFrequency=&quot;100&quot;
+connectionTimeout=&quot;10000&quot;
+multipartUploadThreshold=&quot;10485760&quot;
+bucketName=&quot;lfr-qa-poshi-test-${aws.bucket.id}&quot;
+minimumUploadPartSize=&quot;5242880&quot;
+proxyPassword=&quot;&quot;
+maxPoolSize=&quot;20&quot;
+proxyUsername=&quot;&quot;
+proxyPort=&quot;12345&quot;
+s3Region=&quot;us-west-1&quot;
+proxyHost=&quot;&quot;
+ntlmProxyWorkstation=&quot;&quot;
+corePoolSize=&quot;7&quot;
+s3StorageClass=&quot;STANDARD&quot;
+s3Endpoint=&quot;s3.us-west-1.amazonaws.com&quot;</echo>
+		</sequential>
+	</macrodef>
+
 	<macrodef name="prepare-blacklist-configuration">
 		<sequential>
 			<var name="blacklistBundleSymbolicNames" value="[&quot;com.liferay.portal.mobile.device.detection.fiftyonedegrees.api&quot;,&quot;com.liferay.portal.mobile.device.detection.fiftyonedegrees.enterprise&quot;,&quot;com.liferay.portal.mobile.device.detection.fiftyonedegrees.enterprise.test.data&quot;,&quot;com.liferay.portal.mobile.device.detection.fiftyonedegrees&quot;]" />
 
-			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.bundle.blacklist.internal.BundleBlacklistConfiguration.config">blacklistBundleSymbolicNames=${blacklistBundleSymbolicNames}</echo>
+			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.bundle.blacklist.internal.configuration.BundleBlacklistConfiguration.config">blacklistBundleSymbolicNames=${blacklistBundleSymbolicNames}</echo>
 		</sequential>
 	</macrodef>
 
@@ -1748,10 +2015,7 @@ sendPasswordCaptchaEnabled=&quot;false&quot;</echo>
 			<get-database-property property.name="database.username" />
 
 			<if>
-				<and>
-					<equals arg1="${app.server.type}" arg2="tomcat" />
-					<equals arg1="${database.type}" arg2="mysql" />
-				</and>
+				<equals arg1="${app.server.type}" arg2="tomcat" />
 				<then>
 					<if>
 						<not>
@@ -1783,37 +2047,67 @@ sendPasswordCaptchaEnabled=&quot;false&quot;</echo>
 							/>
 						</not>
 						<then>
-							<replace
-								file="${app.server.dir}/conf/server.xml"
-							>
-								<replacetoken><![CDATA[<GlobalNamingResources>]]></replacetoken>
-								<replacevalue expandproperties="true">
-									<![CDATA[
-										<GlobalNamingResources>
-											<Resource
-												auth="Container"
-												description="Global Address Database"
-												driverClassName="${database.driver}"
-												maxActive="40"
-												maxIdle="20"
-												maxWait="1000"
-												name="jdbc/LiferayPool"
-												password="${database.password}"
-												type="javax.sql.DataSource"
-												url="jdbc:mysql://${database.host}/${database.schema}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;serverTimezone=GMT&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true"
-												username="${database.username}"
-											/>
-									]]>
-								</replacevalue>
-							</replace>
+							<if>
+								<equals arg1="${database.type}" arg2="mysql" />
+								<then>
+									<replace
+										file="${app.server.dir}/conf/server.xml"
+									>
+										<replacetoken><![CDATA[<GlobalNamingResources>]]></replacetoken>
+										<replacevalue expandproperties="true">
+											<![CDATA[
+												<GlobalNamingResources>
+													<Resource
+														auth="Container"
+														description="Global Address Database"
+														driverClassName="${database.driver}"
+														maxActive="40"
+														maxIdle="20"
+														maxWait="1000"
+														name="jdbc/LiferayPool"
+														password="${database.password}"
+														type="javax.sql.DataSource"
+														url="jdbc:mysql://${database.host}/${database.schema}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;serverTimezone=GMT&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true"
+														username="${database.username}"
+													/>
+											]]>
+										</replacevalue>
+									</replace>
+								</then>
+								<elseif>
+									<equals arg1="${database.type}" arg2="mariadb" />
+									<then>
+										<replace
+											file="${app.server.dir}/conf/server.xml"
+										>
+											<replacetoken><![CDATA[<GlobalNamingResources>]]></replacetoken>
+											<replacevalue expandproperties="true">
+												<![CDATA[
+													<GlobalNamingResources>
+														<Resource
+															auth="Container"
+															description="Global Address Database"
+															driverClassName="${database.driver}"
+															maxActive="40"
+															maxIdle="20"
+															maxWait="1000"
+															name="jdbc/LiferayPool"
+															password="${database.password}"
+															type="javax.sql.DataSource"
+															url="jdbc:mariadb://${database.host}/${database.schema}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false"
+															username="${database.username}"
+														/>
+												]]>
+											</replacevalue>
+										</replace>
+									</then>
+								</elseif>
+							</if>
 						</then>
 					</if>
 				</then>
 				<elseif>
-					<and>
-						<equals arg1="${app.server.type}" arg2="wildfly" />
-						<equals arg1="${database.type}" arg2="mariadb" />
-					</and>
+					<equals arg1="${app.server.type}" arg2="wildfly" />
 					<then>
 						<if>
 							<not>
@@ -1823,24 +2117,91 @@ sendPasswordCaptchaEnabled=&quot;false&quot;</echo>
 								/>
 							</not>
 							<then>
-								<replace
-									file="${app.server.dir}/standalone/configuration/standalone.xml"
-								>
-									<replacetoken><![CDATA[<datasources>]]></replacetoken>
-									<replacevalue expandproperties="true">
-										<![CDATA[
-											<datasources>
-        										<datasource jndi-name="java:/jdbc/LiferayPool" pool-name="LiferayPool" enabled="true" jta="true" use-java-context="true" use-ccm="true">
-            										<connection-url>jdbc:mariadb://${database.host}/${database.schema}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false</connection-url>
-            										<driver>mariadb</driver>
-            										<security>
-                										<user-name>${database.username}</user-name>
-                										<password>${database.password}</password>
-            										</security>
-        										</datasource>
-										]]>
-									</replacevalue>
-								</replace>
+								<if>
+									<equals arg1="${database.type}" arg2="mysql" />
+									<then>
+										<copy
+											file="${app.server.lib.portal.dir}/${jdbc.mysql.driver}"
+											tofile="${app.server.lib.global.dir}/${jdbc.mysql.driver}"
+										/>
+
+										<replace
+											file="${app.server.lib.global.dir}/module.xml"
+										>
+											<replacetoken><![CDATA[<module name="com.liferay.portal" xmlns="urn:jboss:module:1.0">]]></replacetoken>
+											<replacevalue>
+												<![CDATA[
+													<module name="com.liferay.portal" xmlns="urn:jboss:module:1.0">
+														<resources>
+															<resource-root path="mysql.jar" />
+														</resources>
+												]]>
+											</replacevalue>
+										</replace>
+
+										<replace
+											file="${app.server.dir}/standalone/configuration/standalone.xml"
+										>
+											<replacetoken><![CDATA[<datasources>]]></replacetoken>
+											<replacevalue expandproperties="true">
+												<![CDATA[
+													<datasources>
+														<datasource jndi-name="java:/jdbc/LiferayPool" pool-name="LiferayPool" enabled="true" jta="true" use-java-context="true" use-ccm="true">
+															<connection-url>jdbc:mysql://${database.host}/${database.schema}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;serverTimezone=GMT&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true</connection-url>
+															<driver>${database.type}</driver>
+															<security>
+																<user-name>${database.username}</user-name>
+																<password>${database.password}</password>
+															</security>
+														</datasource>
+												]]>
+											</replacevalue>
+										</replace>
+									</then>
+									<elseif>
+										<equals arg1="${database.type}" arg2="mariadb" />
+										<then>
+											<copy
+												file="${app.server.lib.portal.dir}/${jdbc.mariadb.driver}"
+												tofile="${app.server.lib.global.dir}/${jdbc.mariadb.driver}"
+											/>
+
+											<replace
+												file="${app.server.lib.global.dir}/module.xml"
+											>
+												<replacetoken><![CDATA[<module name="com.liferay.portal" xmlns="urn:jboss:module:1.0">]]></replacetoken>
+												<replacevalue>
+													<![CDATA[
+														<module name="com.liferay.portal" xmlns="urn:jboss:module:1.0">
+															<resources>
+																<resource-root path="mysql.jar" />
+															</resources>
+													]]>
+												</replacevalue>
+											</replace>
+
+											<replace
+												file="${app.server.dir}/standalone/configuration/standalone.xml"
+											>
+												<replacetoken><![CDATA[<datasources>]]></replacetoken>
+												<replacevalue expandproperties="true">
+													<![CDATA[
+														<datasources>
+															<datasource jndi-name="java:/jdbc/LiferayPool" pool-name="LiferayPool" enabled="true" jta="true" use-java-context="true" use-ccm="true">
+																<connection-url>jdbc:mariadb://${database.host}/${database.schema}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false</connection-url>
+																<driver>${database.type}</driver>
+																<security>
+																	<user-name>${database.username}</user-name>
+																	<password>${database.password}</password>
+																</security>
+															</datasource>
+													]]>
+												</replacevalue>
+											</replace>
+										</then>
+									</elseif>
+								</if>
+
 								<replace
 									file="${app.server.dir}/standalone/configuration/standalone.xml"
 								>
@@ -1848,7 +2209,7 @@ sendPasswordCaptchaEnabled=&quot;false&quot;</echo>
 									<replacevalue expandproperties="true">
 										<![CDATA[
 											<drivers>
-            									<driver name="mariadb" module="com.liferay.portal">
+            									<driver name="${database.type}" module="com.liferay.portal">
                 									<driver-class>${database.driver}</driver-class>
             									</driver>
 										]]>
@@ -1870,6 +2231,11 @@ sendPasswordCaptchaEnabled=&quot;false&quot;</echo>
 						<equals arg1="${database.type}" arg2="mysql" />
 					</and>
 					<then>
+						<copy
+							file="${app.server.lib.portal.dir}/${jdbc.mysql.driver}"
+							tofile="${app.server.lib.global.dir}/${jdbc.mysql.driver}"
+						/>
+
 						<echo file="${app.server.weblogic.instance.dir}/config/jdbc/Liferay_Data_Source-jdbc.xml">
 							<![CDATA[
 								<?xml version='1.0' encoding='UTF-8'?>
@@ -1924,6 +2290,11 @@ sendPasswordCaptchaEnabled=&quot;false&quot;</echo>
 						<equals arg1="${database.type}" arg2="mysql" />
 					</and>
 					<then>
+						<copy
+							file="${app.server.lib.portal.dir}/${jdbc.mysql.driver}"
+							tofile="${app.server.lib.global.dir}/${jdbc.mysql.driver}"
+						/>
+
 						<replace
 							file="${app.server.websphere.instance.dir}/config/cells/liferay-cell/resources.xml"
 						>
@@ -1955,10 +2326,7 @@ sendPasswordCaptchaEnabled=&quot;false&quot;</echo>
 
 	<macrodef name="prepare-database-upgrade-configuration">
 		<sequential>
-			<delete file="${liferay.home}/osgi/configs/com.liferay.portal.search.configuration.IndexStatusManagerConfiguration.cfg" />
 			<delete file="${liferay.home}/tools/portal-tools-db-upgrade-client/logs/upgrade.log" />
-
-			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.search.configuration.IndexStatusManagerConfiguration.cfg">indexReadOnly=true</echo>
 
 			<if>
 				<equals arg1="${app.server.type}" arg2="jboss" />
@@ -2043,13 +2411,29 @@ jdbc.default.password=${database.password}</echo>
 					<stop-edge-driver />
 
 					<mirrors-get
-						dest="tools/selenium/MicrosoftWebDriver.exe"
-						src="http://www.microsoft.com/en-us/download/webdriver/2.0/MicrosoftWebDriver.exe"
+						dest="tools/selenium/edgedriver.zip"
+						src="${selenium.edge.driver.zip.url}"
 					/>
+
+					<unzip
+						dest="tools/selenium"
+						src="tools/selenium/edgedriver.zip"
+					>
+						<globmapper
+							from="*/${selenium.edge.driver.executable}"
+							to="${selenium.edge.driver.executable}"
+						/>
+						<patternset>
+							<include name="${selenium.edge.driver.executable}" />
+							<exclude name="*/*" />
+						</patternset>
+					</unzip>
 				</then>
 				<else>
 					<if>
-						<equals arg1="${selenium.remote.driver.enabled}" arg2="false" />
+						<not>
+							<isset property="selenium.remote.driver.url" />
+						</not>
 						<then>
 							<fail message="Operating system is not supported." />
 						</then>
@@ -2121,23 +2505,23 @@ jdbc.default.password=${database.password}</echo>
 			<if>
 				<os family="windows" />
 				<then>
-					<property name="selenium.ie.driver.zip" value="IEDriverServer_Win32_${selenium.ie.driver.version}.0.zip" />
+					<stop-ie-driver />
 
 					<mirrors-get
-						dest="tools/selenium/${selenium.ie.driver.zip}"
-						src="http://selenium-release.storage.googleapis.com/${selenium.ie.driver.version}/${selenium.ie.driver.zip}"
+						dest="tools/selenium/iedriver.zip"
+						src="${selenium.ie.driver.zip.url}"
 					/>
-
-					<stop-ie-driver />
 
 					<unzip
 						dest="tools/selenium"
-						src="tools/selenium/${selenium.ie.driver.zip}"
+						src="tools/selenium/iedriver.zip"
 					/>
 				</then>
 				<else>
 					<if>
-						<equals arg1="${selenium.remote.driver.enabled}" arg2="false" />
+						<not>
+							<isset property="selenium.remote.driver.url" />
+						</not>
 						<then>
 							<fail message="Operating system is not supported." />
 						</then>
@@ -2196,7 +2580,7 @@ jdbc.default.password=${database.password}</echo>
 						<then>
 							<local name="regex" />
 
-							<property name="regex" value="\s*&lt;resource-root path=&quot;@{petra.jar.file}&quot;\s/&gt;[\n\r]" />
+							<property name="regex" value="\s*&lt;resource-root path=&quot;@{petra.jar.file}&quot;\s/&gt;" />
 
 							<replaceregexp
 								file="${module.configuration.path}"
@@ -2207,6 +2591,14 @@ jdbc.default.password=${database.password}</echo>
 					</if>
 				</sequential>
 			</for>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="prepare-liferay-online-properties">
+		<sequential>
+			<echo append="true" file="portal-impl/src/portal-ext.properties">
+include-and-override=portal-liferay-online.properties
+include-and-override=portal-liferay-online-limit.properties</echo>
 		</sequential>
 	</macrodef>
 
@@ -2286,13 +2678,64 @@ jdbc.default.password=${database.password}</echo>
 
 	<macrodef name="prepare-portal-elasticsearch-osgi-configuration">
 		<sequential>
-			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config">logExceptionsOnly=B"false"${line.separator}sidecarShutdownTimeout=L"20000"${line.separator}sidecarHttpPort="AUTO"</echo>
+			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config">logExceptionsOnly=B"false"${line.separator}sidecarShutdownTimeout=L"20000"${line.separator}sidecarHttpPort="AUTO"${line.separator}sidecarJVMOptions=["-Xms256m","-Xmx512m"]</echo>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="prepare-portal-licenses">
+		<sequential>
+			<get-testcase-property property.name="dxp.license.file" />
+
+			<if>
+				<isset property="dxp.license.file" />
+				<then>
+					<swap-dxp-license dxp.license.file="${dxp.license.file}" />
+				</then>
+			</if>
+
+			<get-testcase-property property.name="commerce.enabled" />
+			<get-testcase-property property.name="commerce.license.file" />
+
+			<if>
+				<equals arg1="${commerce.enabled}" arg2="false" />
+				<then>
+					<move
+						file="${liferay.home}/deploy/portal-commerce-license.xml"
+						tofile="${liferay.home}/portal-commerce-license.xml"
+					/>
+				</then>
+				<elseif>
+					<isset property="commerce.license.file" />
+					<then>
+						<swap-commerce-license commerce.license.file="${commerce.license.file}" />
+					</then>
+				</elseif>
+			</if>
+
+			<get-testcase-property property.name="deploy.lcs.token.file" />
+
+			<if>
+				<equals arg1="${deploy.lcs.token.file}" arg2="true" />
+				<then>
+					<delete failonerror="false" file="${liferay.home}/deploy/license.xml" verbose="true" />
+
+					<antcall target="deploy-lcs-environment-token" />
+				</then>
+			</if>
+
+			<antcall target="deploy-license-xml-to-osgi-directory" />
 		</sequential>
 	</macrodef>
 
 	<macrodef name="prepare-portal-search-osgi-configuration">
 		<sequential>
-			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.search.internal.index.IndexStatusManagerInternalConfiguration.config">suppressIndexReadOnly=B"true"</echo>
+			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.search.internal.index.configuration.IndexStatusManagerInternalConfiguration.config">suppressIndexReadOnly=B"true"</echo>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="prepare-portal-template-freemarker-osgi-configuration">
+		<sequential>
+			<echo file="${liferay.home}/osgi/configs/com.liferay.portal.template.freemarker.configuration.FreeMarkerEngineConfiguration.config">asyncRenderTimeout=L"7200000"${line.separator}loopCountThreshold=I"2147483647"</echo>
 		</sequential>
 	</macrodef>
 
@@ -2670,6 +3113,8 @@ tell application "Safari" to quit
 
 			<antcall target="deploy-license-xml" />
 
+			<antcall target="deploy-commerce-license-xml" />
+
 			<if>
 				<matches pattern="https?://" string="${test.build.plugins.war.zip.url}" />
 				<then>
@@ -2763,6 +3208,7 @@ tell application "Safari" to quit
 	</macrodef>
 
 	<macrodef name="print-file">
+		<attribute default="-1" name="file.line.count" />
 		<attribute name="file.name" />
 
 		<sequential>
@@ -2772,34 +3218,119 @@ tell application "Safari" to quit
 			<echo>##</echo>
 			<echo></echo>
 
-			<loadfile
-				property="file.content"
-				srcFile="@{file.name}"
-			/>
+			<beanshell>
+				<![CDATA[
+					import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 
-			<echo>${file.content}</echo>
+					public int getFileLineCount() {
+						String fileLineCount = "@{file.line.count}";
+
+						if (fileLineCount.matches("\\d+")) {
+							return Integer.parseInt(fileLineCount);
+						}
+
+						return -1;
+					}
+
+					File file = new File("@{file.name}");
+
+					if (!file.exists()) {
+						return;
+					}
+
+					String fileContent = JenkinsResultsParserUtil.read(file);
+
+					String[] fileLines = fileContent.split("\n");
+
+					int fileLineCount = getFileLineCount();
+
+					for (int i = 0; i < fileLines.length; i++) {
+						if ((fileLineCount != -1) && (fileLineCount <= i)) {
+							break;
+						}
+
+						System.out.println(fileLines[i]);
+					}
+
+					System.out.println();
+				]]>
+			</beanshell>
 
 			<var name="file.content" unset="true" />
+		</sequential>
+	</macrodef>
+
+	<macrodef name="print-files">
+		<attribute name="dir" />
+		<attribute default="" name="exclude" />
+		<attribute name="include" />
+
+		<sequential>
+			<for param="file.name">
+				<fileset
+					dir="@{dir}"
+					excludes="@{exclude}"
+					includes="@{include}"
+				/>
+				<sequential>
+					<echo></echo>
+					<echo>##</echo>
+					<echo>## @{file.name}</echo>
+					<echo>##</echo>
+					<echo></echo>
+
+					<loadfile
+						property="file.content"
+						srcFile="@{file.name}"
+					/>
+
+					<echo>${file.content}</echo>
+
+					<var name="file.content" unset="true" />
+				</sequential>
+			</for>
 		</sequential>
 	</macrodef>
 
 	<macrodef name="print-gc-logs">
 		<attribute name="tomcat.gc.log" />
 		<attribute name="tsant.gc.log" />
+
 		<sequential>
 			<if>
 				<available file="/tmp/ant-gc.log" />
 				<then>
-					<loadfile
-						property="ant-gc-log"
-						srcFile="/tmp/ant-gc.log"
-					/>
+					<if>
+						<and>
+							<isset property="env.BUILD_DIR" />
+							<isset property="env.BUILD_USER_CONTENT_URL" />
+						</and>
+						<then>
+							<mkdir dir="${env.BUILD_DIR}/gc" />
 
-					<echo>
-Ant GC log:
+							<resourcecount property="ant.gc.count">
+								<multirootfileset
+									basedirs="${env.BUILD_DIR}/gc"
+									erroronmissingdir="false"
+									includes="ant-gc-*.log"
+								/>
+							</resourcecount>
 
-${ant-gc-log}
-					</echo>
+							<property name="ant.gc.file.name" value="ant-gc-${ant.gc.count}.log" />
+
+							<echo>${env.BUILD_USER_CONTENT_URL}/gc/${ant.gc.file.name}</echo>
+
+							<copy
+								file="/tmp/ant-gc.log"
+								tofile="${env.BUILD_DIR}/gc/${ant.gc.file.name}"
+							/>
+
+							<print-file file.name="${env.BUILD_DIR}/gc/${ant.gc.file.name}" file.line.count="10" />
+						</then>
+						<else>
+							<print-file file.name="/tmp/ant-gc.log" />
+						</else>
+					</if>
 				</then>
 				<else>
 					<echo>Unable to read /tmp/ant-gc.log</echo>
@@ -2809,16 +3340,37 @@ ${ant-gc-log}
 			<if if:true="@{tomcat.gc.log}">
 				<available file="/tmp/tomcat-gc.log" />
 				<then>
-					<loadfile
-						property="tomcat-gc-log"
-						srcFile="/tmp/tomcat-gc.log"
-					/>
+					<if>
+						<and>
+							<isset property="env.BUILD_DIR" />
+							<isset property="env.BUILD_USER_CONTENT_URL" />
+						</and>
+						<then>
+							<mkdir dir="${env.BUILD_DIR}/gc" />
 
-					<echo>
-Tomcat GC log:
+							<resourcecount property="tomcat.gc.count">
+								<multirootfileset
+									basedirs="${env.BUILD_DIR}/gc"
+									erroronmissingdir="false"
+									includes="tomcat-gc-*.log"
+								/>
+							</resourcecount>
 
-${tomcat-gc-log}
-					</echo>
+							<property name="tomcat.gc.file.name" value="tomcat-gc-${tomcat.gc.count}.log" />
+
+							<echo>${env.BUILD_USER_CONTENT_URL}/gc/${tomcat.gc.file.name}</echo>
+
+							<copy
+								file="/tmp/tomcat-gc.log"
+								tofile="${env.BUILD_DIR}/gc/${tomcat.gc.file.name}"
+							/>
+
+							<print-file file.name="${env.BUILD_DIR}/gc/${tomcat.gc.file.name}" file.line.count="10" />
+						</then>
+						<else>
+							<print-file file.name="/tmp/tomcat-gc.log" />
+						</else>
+					</if>
 				</then>
 				<else>
 					<echo>Unable to read /tmp/tomcat-gc.log</echo>
@@ -2828,15 +3380,37 @@ ${tomcat-gc-log}
 			<if if:true="@{tsant.gc.log}">
 				<available file="/tmp/tsant-gc.log" />
 				<then>
-					<loadfile
-						property="tsant-gc-log"
-						srcFile="/tmp/tsant-gc.log"
-					/>
+					<if>
+						<and>
+							<isset property="env.BUILD_DIR" />
+							<isset property="env.BUILD_USER_CONTENT_URL" />
+						</and>
+						<then>
+							<mkdir dir="${env.BUILD_DIR}/gc" />
 
-					<echo>
-	Tsant GC log:
+							<resourcecount property="tsant.gc.count">
+								<multirootfileset
+									basedirs="${env.BUILD_DIR}/gc"
+									erroronmissingdir="false"
+									includes="tsant-gc-*.log"
+								/>
+							</resourcecount>
 
-	${tsant-gc-log}</echo>
+							<property name="tsant.gc.file.name" value="tsant-gc-${tsant.gc.count}.log" />
+
+							<echo>${env.BUILD_USER_CONTENT_URL}/gc/${tsant.gc.file.name}</echo>
+
+							<copy
+								file="/tmp/tsant-gc.log"
+								tofile="${env.BUILD_DIR}/gc/${tsant.gc.file.name}"
+							/>
+
+							<print-file file.name="${env.BUILD_DIR}/gc/${tsant.gc.file.name}" file.line.count="10" />
+						</then>
+						<else>
+							<print-file file.name="/tmp/tsant-gc.log" />
+						</else>
+					</if>
 				</then>
 				<else>
 					<echo>Unable to read /tmp/tsant-gc.log</echo>
@@ -2845,74 +3419,97 @@ ${tomcat-gc-log}
 		</sequential>
 	</macrodef>
 
-	<macrodef name="print-search-indices">
+	<macrodef name="print-jstack-logs">
+		<attribute name="process.name" />
+
 		<sequential>
-			<get-testcase-property property.name="solr.enabled" />
-			<propertycopy from="search.engine[${env.CI_TEST_SUITE}]" name="suite.search.engine" silent="true" />
+			<execute>
+				<![CDATA[
+					jps > jps_output
+				]]>
+			</execute>
+
+			<local name="jps.output" />
+
+			<loadfile
+				property="jps.output"
+				srcfile="jps_output"
+			/>
 
 			<if>
-				<or>
-					<equals arg1="${solr.enabled}" arg2="true" />
-					<equals arg1="${suite.search.engine}" arg2="solr" />
-				</or>
+				<contains string="${jps.output}" substring="@{process.name}" />
 				<then>
-					<ant antfile="build-test-solr.xml" target="print-solr-indices" />
+					<local name="process.pid" />
+
+					<propertyregex
+						input="${jps.output}"
+						override="true"
+						property="process.pid"
+						regexp="(|[\S\s]*\n)([0-9]+) @{process.name}[\S\s]*"
+						replace="\2"
+					/>
+
+					<local name="process.log.file" />
+
+					<property name="process.log.file" value="/tmp/@{process.name}__${process.pid}.log" />
+
+					<execute>
+						<![CDATA[
+							jstack -l ${process.pid} > ${process.log.file}
+						]]>
+					</execute>
+
+					<if>
+						<and>
+							<isset property="env.BUILD_DIR" />
+							<isset property="env.BUILD_USER_CONTENT_URL" />
+						</and>
+						<then>
+							<mkdir dir="${env.BUILD_DIR}/jstacks" />
+
+							<local name="process.log.file.name" />
+
+							<basename file="${process.log.file}" property="process.log.file.name" />
+
+							<copy
+								file="${process.log.file}"
+								tofile="${env.BUILD_DIR}/jstacks/${process.log.file.name}"
+							/>
+
+							<echo>${env.BUILD_USER_CONTENT_URL}/jstacks/${process.log.file.name}</echo>
+
+							<print-file file.name="${env.BUILD_DIR}/jstacks/${process.log.file.name}" file.line.count="10" />
+						</then>
+						<else>
+							<print-file file.name="${process.log.file}" />
+						</else>
+					</if>
+
+					<delete file="${process.log.file}" />
 				</then>
-				<else>
-					<ant antfile="build-test-elasticsearch7.xml" target="print-elasticsearch-indices" />
-				</else>
 			</if>
+
+			<delete file="jps_output" />
 		</sequential>
 	</macrodef>
 
-	<macrodef name="record-git-commit-plugins">
+	<macrodef name="print-search-indices">
 		<sequential>
-			<beanshell>
-				<![CDATA[
-					File pluginsDir = null;
+			<get-testcase-property property.name="remote.elasticsearch.enabled" />
 
-					String lpPluginsDirName = project.getProperty("lp.plugins.dir");
+			<condition else="9201" property="elasticsearch.port" value="9200">
+				<equals arg1="${remote.elasticsearch.enabled}" arg2="true" />
+			</condition>
 
-					if ((lpPluginsDirName == null) || lpPluginsDirName.equals("")) {
-						File projectDir = new File(project.getProperty("project.dir"));
+			<ant antfile="build-test-elasticsearch7.xml" target="print-elasticsearch-indices">
+				<property name="elasticsearch.port" value="${elasticsearch.port}" />
+			</ant>
 
-						String projectDirName = projectDir.getName();
+			<get-testcase-property property.name="elasticsearch.ccr.enabled" />
 
-						String pluginsDirName = "liferay-plugins" + projectDirName.substring("liferay-portal".length());
-
-						pluginsDir = new File(projectDir.getParent(), pluginsDirName);
-					}
-					else {
-						if (lpPluginsDirName.contains("${basedir.name}")) {
-							lpPluginsDirName = lpPluginsDirName.substring(0, lpPluginsDirName.lastIndexOf("/"));
-						}
-
-						pluginsDir = new File(lpPluginsDirName);
-					}
-
-					project.setProperty("git.plugins.dir", pluginsDir.toString());
-				]]>
-			</beanshell>
-
-			<exec dir="${git.plugins.dir}" executable="git" outputproperty="git.commit.plugins.rev.parse">
-				<arg line="rev-parse HEAD" />
-			</exec>
-
-			<echo>Recording ${git.plugins.dir} with ${git.commit.plugins.rev.parse}.</echo>
-
-			<var name="git.plugins.dir" unset="true" />
-
-			<echo file="git-commit-plugins">${git.commit.plugins.rev.parse}</echo>
-
-			<if>
-				<isset property="env.JENKINS_HOME" />
-				<then>
-					<copy
-						file="git-commit-plugins"
-						todir="${env.JENKINS_HOME}/userContent/jobs/${env.JOB_NAME}/builds/${env.BUILD_NUMBER}"
-					/>
-				</then>
-			</if>
+			<ant antfile="build-test-elasticsearch7.xml" if:true="${elasticsearch.ccr.enabled}" target="print-elasticsearch-indices">
+				<property name="elasticsearch.port" value="9202" />
+			</ant>
 		</sequential>
 	</macrodef>
 
@@ -2940,79 +3537,9 @@ ${tomcat-gc-log}
 		<sequential>
 			<fail message="Please set the property ${test.batch.name}." unless="test.batch.name" />
 
-			<local name="portal.branch.name" />
+			<get-test-case-properties-content test.batch.name="${test.batch.name}" />
 
-			<condition else="${git.working.branch.name}" property="portal.branch.name" value="${env.TEST_PORTAL_BRANCH_NAME}">
-				<isset property="env.TEST_PORTAL_BRANCH_NAME" />
-			</condition>
-
-			<local name="top.level.job.name" />
-
-			<condition else="default" property="top.level.job.name" value="${env.TOP_LEVEL_JOB_NAME}">
-				<isset property="env.TOP_LEVEL_JOB_NAME" />
-			</condition>
-
-			<beanshell>
-				<![CDATA[
-					import com.liferay.jenkins.results.parser.Job;
-					import com.liferay.jenkins.results.parser.JobFactory;
-					import com.liferay.jenkins.results.parser.test.clazz.group.AxisTestClassGroup;
-					import com.liferay.jenkins.results.parser.test.clazz.group.BatchTestClassGroup;
-					import com.liferay.jenkins.results.parser.test.clazz.group.TestClassGroupFactory;
-
-					Job job = JobFactory.newJob(project.getProperty("top.level.job.name"), project.getProperty("env.CI_TEST_SUITE"), project.getProperty("portal.branch.name"), project.getProperty("env.REPOSITORY_NAME"));
-
-					BatchTestClassGroup.BuildProfile buildProfile = BatchTestClassGroup.BuildProfile.PORTAL;
-
-					String testPortalBuildProfile = project.getProperty("build.profile");
-
-					if ((testPortalBuildProfile != null) && testPortalBuildProfile.equals("dxp")) {
-						buildProfile = BatchTestClassGroup.BuildProfile.DXP;
-					}
-
-					BatchTestClassGroup batchTestClassGroup = TestClassGroupFactory.newBatchTestClassGroup(project.getProperty("test.batch.name"), buildProfile, job);
-
-					int axisCount = batchTestClassGroup.getAxisCount();
-
-					StringBuilder sb = new StringBuilder();
-
-					for (i = 0; i < axisCount; i++) {
-						AxisTestClassGroup axisTestClassGroup = batchTestClassGroup.getAxisTestClassGroup(i);
-
-						List testClassGroup = axisTestClassGroup.getTestClassFiles();
-
-						sb.append("TEST_CLASS_GROUP_");
-						sb.append(i);
-						sb.append("=");
-
-						for (File testClass : testClassGroup) {
-							sb.append(testClass.toPath());
-							sb.append(",");
-						}
-
-						if (!testClassGroup.isEmpty()) {
-							sb.setLength(sb.length() - 1);
-						}
-
-						sb.append("\n\n");
-					}
-
-					sb.append("TEST_CLASS_GROUPS=");
-
-					for (int i = 0; i < axisCount; i++) {
-						sb.append(i);
-						sb.append(" ");
-					}
-
-					if (axisCount > 0) {
-						sb.setLength(sb.length() - 1);
-					}
-
-					project.setProperty("test.class.file.names.properties.content", sb.toString());
-				]]>
-			</beanshell>
-
-			<echo file="test.class.file.names.properties">${test.class.file.names.properties.content}</echo>
+			<echo file="test.class.file.names.properties">${test.case.properties.content}</echo>
 
 			<print-file file.name="test.class.file.names.properties" />
 		</sequential>
@@ -3043,18 +3570,20 @@ ${tomcat-gc-log}
 					import com.liferay.jenkins.results.parser.test.clazz.group.NPMTestBatchTestClassGroup;
 					import com.liferay.jenkins.results.parser.test.clazz.group.TestClassGroupFactory;
 
-					try {
-						Job job = JobFactory.newJob(project.getProperty("top.level.job.name"));
-
-						BatchTestClassGroup.BuildProfile buildProfile = BatchTestClassGroup.BuildProfile.PORTAL;
-
+					public Job.BuildProfile getBuildProfile() {
 						String testPortalBuildProfile = project.getProperty("build.profile");
 
 						if ((testPortalBuildProfile != null) && testPortalBuildProfile.equals("dxp")) {
-							buildProfile = BatchTestClassGroup.BuildProfile.DXP;
+							return Job.BuildProfile.DXP;
 						}
 
-						BatchTestClassGroup batchTestClassGroup = TestClassGroupFactory.newBatchTestClassGroup(project.getProperty("test.batch.name"), buildProfile, job);
+						return Job.BuildProfile.PORTAL;
+					}
+
+					try {
+						Job job = JobFactory.newJob(project.getProperty("top.level.job.name"), null, null, null, getBuildProfile());
+
+						BatchTestClassGroup batchTestClassGroup = TestClassGroupFactory.newBatchTestClassGroup(project.getProperty("test.batch.name"), job);
 
 						if (batchTestClassGroup instanceof JUnitBatchTestClassGroup ||
 							batchTestClassGroup instanceof NPMTestBatchTestClassGroup) {
@@ -3175,178 +3704,6 @@ ${tomcat-gc-log}
 					project.setProperty("cmis.repository.vm.host.name", cmisRepositoryVMHostName);
 				]]>
 			</beanshell>
-
-			<if>
-				<contains string="@{cmis.repository.type}" substring="documentum" />
-				<then>
-					<get-testcase-property property.name="osgi.app.includes" />
-
-					<if>
-						<contains string="${osgi.app.includes}" substring="documentum" />
-						<then>
-							<pathconvert property="app.bnd.file">
-								<fileset
-									dir="modules"
-									includes="dxp/apps/documentum/app.bnd"
-								/>
-							</pathconvert>
-
-							<loadproperties srcFile="${app.bnd.file}">
-								<filterchain>
-									<linecontains>
-										<contains value="Liferay-Releng-App-Title" />
-									</linecontains>
-								</filterchain>
-							</loadproperties>
-
-							<if>
-								<available file="${project.dir}/plugins/dist/${Liferay-Releng-App-Title}.lpkg" />
-								<then>
-									<property name="lpkg.path" value="${project.dir}/plugins/dist/${Liferay-Releng-App-Title}.lpkg" />
-								</then>
-								<elseif>
-									<available file="${project.dir}/plugins/marketplace/${Liferay-Releng-App-Title}.lpkg" />
-									<then>
-										<property name="lpkg.path" value="${project.dir}/plugins/marketplace/${Liferay-Releng-App-Title}.lpkg" />
-									</then>
-								</elseif>
-							</if>
-
-							<if>
-								<isset property="lpkg.path" />
-								<then>
-									<local name="tstamp.value" />
-
-									<tstamp>
-										<format pattern="yyyyMMddkkmmssSSS" property="tstamp.value" />
-									</tstamp>
-
-									<local name="lpkg.dir" />
-
-									<property name="lpkg.dir" value="${tstamp.value}/lpkg-dir" />
-
-									<mkdir dir="${lpkg.dir}" />
-
-									<local name="lpkg.impl.include.name" />
-
-									<property name="lpkg.impl.include.name" value="Liferay Documentum Connector - Impl.lpkg" />
-
-									<unzip
-										dest="${lpkg.dir}"
-										src="${lpkg.path}"
-									>
-										<patternset>
-											<include name="${lpkg.impl.include.name}" />
-										</patternset>
-									</unzip>
-
-									<local name="lpkg.impl.path" />
-
-									<pathconvert property="lpkg.impl.path" setonempty="false">
-										<path>
-											<fileset
-												dir="${lpkg.dir}"
-											>
-												<include name="${lpkg.impl.include.name}" />
-											</fileset>
-										</path>
-									</pathconvert>
-
-									<local name="lpkg.impl.dir" />
-
-									<property name="lpkg.impl.dir" value="${tstamp.value}/lpkg-impl-dir" />
-
-									<mkdir dir="${lpkg.impl.dir}" />
-
-									<local name="war.include.name" />
-
-									<property name="war.include.name" value="documentum-hook-*.war" />
-
-									<unzip
-										dest="${lpkg.impl.dir}"
-										src="${lpkg.impl.path}"
-									>
-										<patternset>
-											<include name="${war.include.name}" />
-										</patternset>
-									</unzip>
-
-									<local name="war.path" />
-
-									<pathconvert property="war.path" setonempty="false">
-										<path>
-											<fileset
-												dir="${lpkg.impl.dir}"
-											>
-												<include name="${war.include.name}" />
-											</fileset>
-										</path>
-									</pathconvert>
-
-									<local name="war.dir" />
-
-									<property name="war.dir" value="${tstamp.value}/war-dir" />
-
-									<mkdir dir="${war.dir}" />
-
-									<unzip
-										dest="${war.dir}"
-										src="${war.path}"
-									>
-										<flattenmapper />
-										<patternset>
-											<include name="WEB-INF/classes/dfc.properties" />
-										</patternset>
-									</unzip>
-
-									<propertyfile file="${war.dir}/dfc.properties">
-										<entry key="dfc.docbroker.host[0]" value="${cmis.repository.vm.host.name}" />
-									</propertyfile>
-
-									<war
-										destfile="${war.path}"
-										update="true"
-									>
-										<zipfileset
-											file="${war.dir}/dfc.properties"
-											fullpath="WEB-INF/classes/dfc.properties"
-										/>
-									</war>
-
-									<zip
-										destfile="${lpkg.impl.path}"
-										update="true"
-									>
-										<zipfileset
-											dir="${lpkg.impl.dir}"
-										>
-											<include name="${war.include.name}" />
-										</zipfileset>
-									</zip>
-
-									<zip
-										destfile="${lpkg.path}"
-										update="true"
-									>
-										<zipfileset
-											dir="${lpkg.dir}"
-										>
-											<include name="${lpkg.impl.include.name}" />
-										</zipfileset>
-									</zip>
-
-									<delete dir="${tstamp.value}" />
-								</then>
-								<else>
-									<propertyfile file="${project.dir}/modules/dxp/apps/documentum/documentum-hook/docroot/WEB-INF/src/dfc.properties">
-										<entry key="dfc.docbroker.host[0]" value="${cmis.repository.vm.host.name}" />
-									</propertyfile>
-								</else>
-							</if>
-						</then>
-					</if>
-				</then>
-			</if>
 		</sequential>
 	</macrodef>
 
@@ -3774,9 +4131,17 @@ go</echo>
 					<or>
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.0.10.12" />
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.0.10.13" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.0.10.14" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.0.10.15" />
 					</or>
 					<then>
 						<var name="app.server.tomcat.version" value="8.0.53" />
+					</then>
+				</elseif>
+				<elseif>
+					<equals arg1="@{liferay.portal.bundle}" arg2="7.0.10.16" />
+					<then>
+						<var name="app.server.tomcat.version" value="8.5.63" />
 					</then>
 				</elseif>
 				<elseif>
@@ -3799,6 +4164,7 @@ go</echo>
 				<elseif>
 					<or>
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.1.10.3" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.2.0" />
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.2.1" />
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.2.10" />
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.2.10.1" />
@@ -3821,9 +4187,35 @@ go</echo>
 					<or>
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.1.10.4" />
 						<equals arg1="@{liferay.portal.bundle}" arg2="7.2.10.2" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.2.10.3" />
 					</or>
 					<then>
 						<var name="app.server.tomcat.version" value="9.0.33" />
+					</then>
+				</elseif>
+				<elseif>
+					<or>
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.1.10.5" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.3.5" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.3.10" />
+					</or>
+					<then>
+						<var name="app.server.tomcat.version" value="9.0.37" />
+					</then>
+				</elseif>
+				<elseif>
+					<equals arg1="@{liferay.portal.bundle}" arg2="7.1.10.6" />
+					<then>
+						<var name="app.server.tomcat.version" value="9.0.43" />
+					</then>
+				</elseif>
+				<elseif>
+					<or>
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.2.10.4" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.3.10.1" />
+					</or>
+					<then>
+						<var name="app.server.tomcat.version" value="9.0.40" />
 					</then>
 				</elseif>
 			</if>
@@ -3855,6 +4247,32 @@ go</echo>
 				app.server.tomcat.zip.name=${app.server.tomcat.zip.name}
 				app.server.tomcat.zip.url=${app.server.tomcat.zip.url}
 			</echo>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="set-up-search-engine">
+		<sequential>
+			<get-testcase-property property.name="remote.elasticsearch.enabled" />
+			<propertycopy from="search.engine[${env.CI_TEST_SUITE}]" name="suite.search.engine" silent="true" />
+
+			<if>
+				<or>
+					<contains string="${suite.search.engine}" substring="remote-elasticsearch7" />
+					<istrue value="${remote.elasticsearch.enabled}" />
+				</or>
+				<then>
+					<ant antfile="build-test-elasticsearch7.xml" target="start-elasticsearch" />
+				</then>
+			</if>
+
+			<get-testcase-property property.name="delete.sidecar.bundle" />
+
+			<if>
+				<equals arg1="${delete.sidecar.bundle}" arg2="true" />
+				<then>
+					<delete dir="${liferay.home}/elasticsearch7" failonerror="false" />
+				</then>
+			</if>
 		</sequential>
 	</macrodef>
 
@@ -4043,69 +4461,6 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 		</sequential>
 	</macrodef>
 
-	<macrodef name="start-android-device">
-		<sequential>
-			<fail message="Please set the property ${mobile.android.home}." unless="mobile.android.home" />
-
-			<echo file="${user.home}/.android/ddms.cfg">pingId=0</echo>
-
-			<execute>
-				echo no | ${mobile.android.home}/tools/android create avd -f -n deviceName -t android-19
-			</execute>
-
-			<echo append="true" file="${user.home}/.android/avd/deviceName.avd/config.ini">
-				hw.keyboard=yes
-			</echo>
-
-			<exec executable="/bin/bash" os="${os.apple},${os.unix}" spawn="true">
-				<arg value="-c" />
-				<arg value="${mobile.android.home}/tools/emulator -avd deviceName -no-boot-anim" />
-			</exec>
-
-			<exec executable="cmd.exe" os="${os.windows}">
-				<arg value="/c" />
-				<arg value="${mobile.android.home}/tools/emulator -avd deviceName -no-boot-anim" />
-			</exec>
-
-			<echo file="wait_for_android_device.sh">
-				<![CDATA[
-					#!/bin/bash
-
-					bootanim=""
-
-					until [[ $bootanim =~ "stopped" ]];
-					do
-						bootanim=`${mobile.android.home}/platform-tools/adb shell getprop init.svc.bootanim`
-
-						sleep 1
-					done
-				]]>
-			</echo>
-
-			<chmod
-				file="wait_for_android_device.sh"
-				perm="a+x"
-			/>
-
-			<exec executable="${basedir}/wait_for_android_device.sh" timeout="300000" />
-
-			<delete file="wait_for_android_device.sh" />
-
-			<execute>
-				${mobile.android.home}/platform-tools/adb push ${basedir.unix}/portal-web/test/functional/com/liferay/portalweb/dependencies/mobile/swipe_down.sh /data/local
-				${mobile.android.home}/platform-tools/adb push ${basedir.unix}/portal-web/test/functional/com/liferay/portalweb/dependencies/mobile/swipe_up.sh /data/local
-				${mobile.android.home}/platform-tools/adb push ${basedir.unix}/portal-web/test/functional/com/liferay/portalweb/dependencies/mobile/tap.sh /data/local
-
-				${mobile.android.home}/platform-tools/adb -s emulator-5554 shell chmod 0777 /data/local/swipe_down.sh
-				${mobile.android.home}/platform-tools/adb -s emulator-5554 shell chmod 0777 /data/local/swipe_up.sh
-				${mobile.android.home}/platform-tools/adb -s emulator-5554 shell chmod 0777 /data/local/tap.sh
-
-				${mobile.android.home}/platform-tools/adb -s emulator-5554 shell settings put system pointer_location 1
-				${mobile.android.home}/platform-tools/adb -s emulator-5554 shell settings put system show_touches 1
-			</execute>
-		</sequential>
-	</macrodef>
-
 	<macrodef name="start-app-server">
 		<attribute default="0" name="app.server.bundle.index" />
 		<attribute default="true" name="delete.liferay.home" />
@@ -4187,175 +4542,132 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 
 					<get-java-jdk-home type="${java.jdk.bundle.type}" version="${java.jdk.bundle.version}" />
 
-					<if>
-						<equals arg1="${test.ant.launched.by.selenium}" arg2="true" />
-						<then>
-							<parallel>
-								<if>
-									<istrue value="${test.docker.environment}" />
-									<then>
-										<echo>docker run -d -p ${test.app.server.leading.port.number}080:${test.app.server.leading.port.number}080 -v ${app.server.parent.dir}:${app.server.parent.dir} --cidfile=docker.process.pid --network=@{docker.network.name} openjdk:8-alpine ${app.server.bin.dir}/${app.server.start.executable} ${app.server.start.executable.arg.line}</echo>
+					<get-testcase-property property.name="ext.plugins.includes" />
 
-										<parallel>
-											<exec executable="docker">
-												<arg line="run -d" />
-												<arg line="-p ${test.app.server.leading.port.number}080:${test.app.server.leading.port.number}080" />
-												<arg value="-v" />
-												<arg value="${app.server.parent.dir}:${app.server.parent.dir}" />
-												<arg value="--cidfile=docker.process.pid" />
-												<arg value="--network=@{docker.network.name}" />
-												<arg value="openjdk:8u191-jdk-alpine3.8" />
-												<arg value="${app.server.bin.dir}/${app.server.start.executable}" />
-												<arg value="${app.server.start.executable.arg.line}" />
-											</exec>
-										</parallel>
-									</then>
-									<elseif>
-										<and>
-											<not>
-												<and>
-													<equals arg1="${operating.system.type}" arg2="centos" />
-													<equals arg1="${operating.system.centos.version}" arg2="7" />
-												</and>
-											</not>
-											<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
-										</and>
-										<then>
-											<sequential>
-												<get-operating-system-property property.name="operating.system.host" />
+					<get-operating-system-property property.name="operating.system.docker.image" />
 
-												<docker-execute container="${operating.system.host}">
-													chmod +x ${test.app.server.bin.dir}/${app.server.start.executable}
+					<parallel>
+						<if>
+							<not>
+								<isset property="ext.plugins.includes" />
+							</not>
+							<then>
+								<sequential>
+									<wait-for-app-server app.server.bin.dir="@{app.server.bin.dir}" app.server.bundle.index="@{app.server.bundle.index}" />
+								</sequential>
+							</then>
+						</if>
 
-													${test.app.server.bin.dir}/${app.server.start.executable} ${app.server.start.executable.arg.line}
-												</docker-execute>
-											</sequential>
-										</then>
-									</elseif>
-									<else>
-										<exec dir="${test.app.server.bin.dir}" executable="${app.server.start.executable}" outputproperty="app.server.log" resolveexecutable="true">
-											<arg line="${app.server.start.executable.arg.line}" />
-											<env key="JAVA_HOME" path="${java.jdk.home}" />
-										</exec>
-									</else>
-								</if>
+						<daemons>
+							<if>
+								<istrue value="${test.docker.environment}" />
+								<then>
+									<echo>docker run -d -p ${test.app.server.leading.port.number}080:${test.app.server.leading.port.number}080 -v ${app.server.parent.dir}:${app.server.parent.dir} --cidfile=docker.process.pid --network=@{docker.network.name} openjdk:8-alpine ${app.server.bin.dir}/${app.server.start.executable} ${app.server.start.executable.arg.line}</echo>
 
-								<wait-for-app-server app.server.bin.dir="@{app.server.bin.dir}" app.server.bundle.index="@{app.server.bundle.index}" />
-							</parallel>
-						</then>
-						<else>
-							<get-testcase-property property.name="ext.plugins.includes" />
-
-							<parallel>
-								<if>
-									<not>
-										<isset property="ext.plugins.includes" />
-									</not>
+									<exec executable="docker">
+										<arg line="run -d" />
+										<arg line="-p ${test.app.server.leading.port.number}080:${test.app.server.leading.port.number}080" />
+										<arg value="-v" />
+										<arg value="${app.server.parent.dir}:${app.server.parent.dir}" />
+										<arg value="--cidfile=docker.process.pid" />
+										<arg value="--network=@{docker.network.name}" />
+										<arg value="openjdk:8u191-jdk-alpine3.8" />
+										<arg value="${app.server.bin.dir}/${app.server.start.executable}" />
+										<arg value="${app.server.start.executable.arg.line}" />
+									</exec>
+								</then>
+								<elseif>
+									<isset property="operating.system.docker.image" />
 									<then>
 										<sequential>
-											<wait-for-app-server app.server.bin.dir="@{app.server.bin.dir}" app.server.bundle.index="@{app.server.bundle.index}" />
+											<get-operating-system-property property.name="operating.system.host" />
+
+											<docker-execute container="${operating.system.host}">
+												chmod +x ${test.app.server.bin.dir}/${app.server.start.executable}
+
+												${test.app.server.bin.dir}/${app.server.start.executable} ${app.server.start.executable.arg.line}
+											</docker-execute>
 										</sequential>
 									</then>
-								</if>
+								</elseif>
+								<else>
+									<beanshell>
+										<![CDATA[
+											import com.liferay.jenkins.results.parser.AppServer;
 
-								<daemons>
-									<if>
-										<istrue value="${test.docker.environment}" />
-										<then>
-											<echo>docker run -d -p ${test.app.server.leading.port.number}080:${test.app.server.leading.port.number}080 -v ${app.server.parent.dir}:${app.server.parent.dir} --cidfile=docker.process.pid --network=@{docker.network.name} openjdk:8-alpine ${app.server.bin.dir}/${app.server.start.executable} ${app.server.start.executable.arg.line}</echo>
+											AppServer appServer = new AppServer(project);
 
-											<exec executable="docker">
-												<arg line="run -d" />
-												<arg line="-p ${test.app.server.leading.port.number}080:${test.app.server.leading.port.number}080" />
-												<arg value="-v" />
-												<arg value="${app.server.parent.dir}:${app.server.parent.dir}" />
-												<arg value="--cidfile=docker.process.pid" />
-												<arg value="--network=@{docker.network.name}" />
-												<arg value="openjdk:8u191-jdk-alpine3.8" />
-												<arg value="${app.server.bin.dir}/${app.server.start.executable}" />
-												<arg value="${app.server.start.executable.arg.line}" />
-											</exec>
-										</then>
-										<elseif>
-											<and>
-												<not>
-													<and>
-														<equals arg1="${operating.system.type}" arg2="centos" />
-														<equals arg1="${operating.system.centos.version}" arg2="7" />
-													</and>
-												</not>
-												<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
-											</and>
-											<then>
-												<sequential>
-													<get-operating-system-property property.name="operating.system.host" />
-
-													<docker-execute container="${operating.system.host}">
-														chmod +x ${test.app.server.bin.dir}/${app.server.start.executable}
-
-														${test.app.server.bin.dir}/${app.server.start.executable} ${app.server.start.executable.arg.line}
-													</docker-execute>
-												</sequential>
-											</then>
-										</elseif>
-										<else>
-											<exec dir="${test.app.server.bin.dir}" executable="${app.server.start.executable}" failonerror="true" output="app.server.log" resolveexecutable="true">
-												<arg line="${app.server.start.executable.arg.line}" />
-												<env key="JAVA_HOME" path="${java.jdk.home}" />
-											</exec>
-										</else>
-									</if>
-								</daemons>
-							</parallel>
-						</else>
-					</if>
+											appServer.startService();
+										]]>
+									</beanshell>
+								</else>
+							</if>
+						</daemons>
+					</parallel>
 				</then>
 			</if>
 		</sequential>
 	</macrodef>
 
-	<macrodef name="start-appium">
+	<macrodef name="start-docker-browser">
 		<sequential>
-			<if>
-				<or>
-					<equals arg1="${browser.type}" arg2="android" />
-					<equals arg1="${browser.type}" arg2="androidchrome" />
-				</or>
-				<then>
-					<fail message="Please set the property ${mobile.android.home}." unless="mobile.android.home" />
+			<get-browser-property property.name="browser.docker.browser.options" />
+			<get-browser-property property.name="browser.docker.image" />
+			<get-browser-property property.name="browser.docker.run.options" />
+			<get-browser-property property.name="browser.host" />
 
-					<parallel>
-						<daemons>
-							<exec executable="/bin/bash" os="${os.apple},${os.unix}">
-								<env key="ANDROID_HOME" value="${mobile.android.home}" />
-								<env key="PATH" value="${env.PATH}:${mobile.android.home}/tools:${mobile.android.home}/platform-tools" />
-								<arg value="-c" />
-								<arg value="${appium.unix.cmd}" />
-							</exec>
+			<local name="browser.docker.network.run.option" />
 
-							<exec dir="${appium.win32.dir}" executable="cmd.exe" os="${os.windows}">
-								<env key="ANDROID_HOME" value="${mobile.android.home}" />
-								<env key="Path" value="${env.Path}:${mobile.android.home}/tools:${mobile.android.home}/platform-tools" />
-								<arg value="/c" />
-								<arg value="${appium.win32.cmd}" />
-							</exec>
-						</daemons>
-					</parallel>
-				</then>
-				<elseif>
-					<equals arg1="${browser.type}" arg2="iossafari" />
-					<then>
-						<parallel>
-							<daemons>
-								<exec executable="/bin/bash" os="${os.apple}">
-									<arg value="-c" />
-									<arg value="${appium.unix.cmd}" />
-								</exec>
-							</daemons>
-						</parallel>
-					</then>
-				</elseif>
-			</if>
+			<condition else="" property="browser.docker.network.run.option" value="--network=${env.DOCKER_NETWORK_NAME}">
+				<isset property="env.DOCKER_NETWORK_NAME" />
+			</condition>
+
+			<local name="docker.browser.start.script" />
+
+			<property name="docker.browser.start.script" value="docker_browser_start.sh" />
+
+			<echo file="${docker.browser.start.script}">
+				<![CDATA[
+					docker run \
+						--detach \
+						--hostname=${browser.host} \
+						--interactive \
+						--name=${browser.host} \
+						--tty \
+						\
+						${browser.docker.network.run.option} \
+						${browser.docker.run.options} \
+						\
+						${browser.docker.image} \
+						\
+						${browser.docker.browser.options}
+				]]>
+			</echo>
+
+			<chmod
+				perm="a+x"
+			>
+				<fileset
+					dir="."
+					includes="${docker.browser.start.script}"
+				/>
+			</chmod>
+
+			<exec executable="/bin/bash" os="${os.apple},${os.unix}">
+				<arg value="${docker.browser.start.script}" />
+			</exec>
+
+			<exec executable="cmd.exe" os="${os.windows}">
+				<arg value="${docker.browser.start.script}" />
+			</exec>
+
+			<delete file="${docker.browser.start.script}" />
+
+			<echo>Waiting for ${browser.host}:4444 to load</echo>
+
+			<waitfor maxwait="300" maxwaitunit="second">
+				<socket port="4444" server="${browser.host}" />
+			</waitfor>
 		</sequential>
 	</macrodef>
 
@@ -4722,17 +5034,6 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 		</sequential>
 	</macrodef>
 
-	<macrodef name="stop-android-device">
-		<sequential>
-			<fail message="Please set the property ${mobile.android.home}." unless="mobile.android.home" />
-
-			<execute>
-				${mobile.android.home}/platform-tools/adb emu kill
-				${mobile.android.home}/tools/android delete avd -n deviceName
-			</execute>
-		</sequential>
-	</macrodef>
-
 	<macrodef name="stop-app-server">
 		<attribute default="0" name="app.server.bundle.index" />
 		<attribute default="0" name="app.server.explicit.stop.count" />
@@ -4775,10 +5076,15 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 
 			<parallel>
 				<daemons>
-					<exec dir="${test.app.server.bin.dir}" executable="${app.server.stop.executable}" output="app.server.log" resolveexecutable="true">
-						<arg line="${app.server.stop.executable.arg.line}" />
-						<env key="JAVA_HOME" path="${java.jdk.home}" />
-					</exec>
+					<beanshell>
+						<![CDATA[
+							import com.liferay.jenkins.results.parser.AppServer;
+
+							AppServer appServer = new AppServer(project);
+
+							appServer.stopService();
+						]]>
+					</beanshell>
 				</daemons>
 				<sequential>
 					<if>
@@ -4846,7 +5152,9 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 							</not>
 						</and>
 						<then>
-							<get-jstack-output process.name="Bootstrap" />
+							<antcall target="print-jstack-logs">
+								<param name="process.name" value="Bootstrap" />
+							</antcall>
 
 							<if>
 								<and>
@@ -4863,7 +5171,7 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 								</then>
 							</if>
 
-							<fail message="Server is still available at ${app.server.waiting.url}.${line.separator}${jstack.output}">
+							<fail message="Server is still available at ${app.server.waiting.url}.">
 								<condition>
 									<equals arg1="@{app.server.explicit.stop.count}" arg2="3" />
 								</condition>
@@ -4916,25 +5224,6 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 		</sequential>
 	</macrodef>
 
-	<macrodef name="stop-appium">
-		<sequential>
-			<exec executable="/bin/bash" os="${os.apple},${os.unix}">
-				<arg value="-c" />
-				<arg value="killall node" />
-			</exec>
-
-			<exec executable="/bin/bash" os="${os.unix}">
-				<arg value="-c" />
-				<arg value="fuser -k 9515/tcp" />
-			</exec>
-
-			<exec executable="cmd.exe" os="${os.windows}">
-				<arg value="/c" />
-				<arg value="tskill node" />
-			</exec>
-		</sequential>
-	</macrodef>
-
 	<macrodef name="stop-chrome-driver">
 		<sequential>
 			<if>
@@ -4950,6 +5239,45 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 					</execute>
 				</else>
 			</if>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="stop-docker-browser">
+		<sequential>
+			<get-browser-property property.name="browser.host" />
+
+			<local name="docker.stop.script" />
+
+			<property name="docker.stop.script" value="docker_stop.sh" />
+
+			<echo file="${docker.stop.script}">
+				<![CDATA[
+					docker kill ${browser.host}
+
+					docker rm -f ${browser.host}
+
+					docker network disconnect -f ${env.DOCKER_NETWORK_NAME} ${browser.host} 2>/dev/null
+				]]>
+			</echo>
+
+			<chmod
+				perm="a+x"
+			>
+				<fileset
+					dir="."
+					includes="${docker.stop.script}"
+				/>
+			</chmod>
+
+			<exec executable="/bin/bash" failonerror="false" os="${os.apple},${os.unix}">
+				<arg value="${docker.stop.script}" />
+			</exec>
+
+			<exec executable="cmd.exe" failonerror="false" os="${os.windows}">
+				<arg value="${docker.stop.script}" />
+			</exec>
+
+			<delete file="${docker.stop.script}" />
 		</sequential>
 	</macrodef>
 
@@ -4972,7 +5300,7 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 						docker rm -f ${docker_rm_list}
 					fi
 
-					docker network disconnect -f ${env.DOCKER_NETWORK_NAME} ${database.host}
+					docker network disconnect -f ${env.DOCKER_NETWORK_NAME} ${database.host} 2>/dev/null
 				]]>
 			</echo>
 
@@ -5011,7 +5339,7 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 
 					docker rm -f ${operating.system.host}
 
-					docker network disconnect -f ${env.DOCKER_NETWORK_NAME} ${operating.system.host}
+					docker network disconnect -f ${env.DOCKER_NETWORK_NAME} ${operating.system.host} 2>/dev/null
 				]]>
 			</echo>
 
@@ -5039,7 +5367,7 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 	<macrodef name="stop-edge-driver">
 		<sequential>
 			<exec executable="taskkill.exe">
-				<arg line="/F /IM MicrosoftWebDriver.exe" />
+				<arg line="/F /IM ${selenium.edge.driver.executable}" />
 			</exec>
 		</sequential>
 	</macrodef>
@@ -5154,40 +5482,269 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 
 	<macrodef name="stop-remote-search-engine">
 		<sequential>
-			<get-testcase-property property.name="remote.elasticsearch.clusters.enabled" />
 			<get-testcase-property property.name="remote.elasticsearch.enabled" />
-			<get-testcase-property property.name="test.name.skip.portal.instance" />
 
 			<if>
-				<equals arg1="${remote.elasticsearch.enabled}" arg2="true" />
+				<or>
+					<contains string="${suite.search.engine}" substring="remote-elasticsearch7" />
+					<istrue value="${remote.elasticsearch.enabled}" />
+				</or>
 				<then>
-					<ant antfile="build-test-elasticsearch7.xml" target="stop-elasticsearch" />
+					<get-testcase-property property.name="elasticsearch.cluster.size" />
+					<get-testcase-property property.name="elasticsearch.multiple.connections" />
 
 					<if>
-						<and>
-							<equals arg1="${remote.elasticsearch.clusters.enabled}" arg2="true" />
-							<not>
-								<contains string="${test.name.skip.portal.instance}" substring="CrossCluster" />
-							</not>
-						</and>
+						<or>
+							<isset property="elasticsearch.cluster.size" />
+							<isset property="elasticsearch.multiple.connections" />
+						</or>
 						<then>
-							<ant antfile="build-test-elasticsearch7.xml" target="stop-elasticsearch-local-cluster" />
+							<condition else="2" property="elasticsearch.total.bundles" value="${elasticsearch.cluster.size}">
+								<isset property="elasticsearch.cluster.size" />
+							</condition>
+
+							<var name="elasticsearch.bundle.count" value="${elasticsearch.total.bundles}" />
+
+							<antelope:repeat count="${elasticsearch.total.bundles}">
+								<ant antfile="build-test-elasticsearch7.xml" target="stop-elasticsearch">
+									<property name="elasticsearch.bundle.number" value="${elasticsearch.bundle.count}" />
+								</ant>
+
+								<math
+									datatype="int"
+									operand1="${elasticsearch.bundle.count}"
+									operand2="1"
+									operation="-"
+									result="elasticsearch.bundle.count"
+								/>
+							</antelope:repeat>
+						</then>
+						<else>
+							<ant antfile="build-test-elasticsearch7.xml" target="stop-elasticsearch" />
+						</else>
+					</if>
+
+					<if>
+						<socket port="5601" server="localhost" />
+						<then>
+							<ant antfile="build-test-elasticsearch7.xml" target="stop-kibana" />
 						</then>
 					</if>
 				</then>
 			</if>
+		</sequential>
+	</macrodef>
 
-			<get-testcase-property property.name="solr.enabled" />
+	<macrodef name="swap-commerce-license">
+		<attribute name="commerce.license.file" />
+
+		<sequential>
+			<delete failonerror="false" file="${liferay.home}/deploy/portal-commerce-license.xml" verbose="true" />
+
+			<copy
+				file="${project.dir}/portal-web/test/functional/com/liferay/portalweb/dependencies/license/@{commerce.license.file}"
+				todir="${liferay.home}/deploy"
+			/>
 
 			<if>
-				<or>
-					<contains string="${env.CI_TEST_SUITE}" substring="solr" />
-					<equals arg1="${solr.enabled}" arg2="true" />
-				</or>
+				<equals arg1="@{commerce.license.file}" arg2="commerce-binary-license-developer.li" />
 				<then>
-					<ant antfile="build-test-solr.xml" target="stop-solr-core" />
+					<copy
+						file="${project.dir}/portal-web/test/functional/com/liferay/portalweb/dependencies/license/@{commerce.license.file}"
+						todir="${liferay.home}/data/license"
+					/>
 				</then>
 			</if>
+
+			<if>
+				<equals arg1="@{commerce.license.file}" arg2="commerce-dxp-license-developer-combined.xml" />
+				<then>
+					<delete failonerror="false" file="${liferay.home}/deploy/license.xml" verbose="true" />
+				</then>
+			</if>
+
+			<get-testcase-property property.name="commerce.license.property" />
+
+			<if>
+				<equals arg1="${commerce.license.property}" arg2="expiration-warning" />
+				<then>
+					<beanshell>
+						<![CDATA[
+							import java.time.ZoneId;
+							import java.time.ZonedDateTime;
+							import java.time.format.DateTimeFormatter;
+
+							DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy hh:mm:ss a zz");
+
+							ZoneId GMT = ZoneId.of("GMT");
+
+							ZonedDateTime now = ZonedDateTime.now(GMT);
+
+							//License expiration leeway
+							ZonedDateTime expiration = now.plusDays(30);
+
+							System.out.println(dateTimeFormatter.format(expiration));
+							project.setProperty("expiration.date", dateTimeFormatter.format(expiration));
+						]]>
+					</beanshell>
+
+					<replace
+						file="${liferay.home}/deploy/@{commerce.license.file}"
+						token="${expirationdate}"
+						value="${expiration.date}"
+					/>
+				</then>
+				<elseif>
+					<equals arg1="${commerce.license.property}" arg2="expired" />
+					<then>
+						<beanshell>
+							<![CDATA[
+								import java.time.ZoneId;
+								import java.time.ZonedDateTime;
+								import java.time.format.DateTimeFormatter;
+
+								DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy hh:mm:ss a zz");
+
+								ZoneId GMT = ZoneId.of("GMT");
+
+								ZonedDateTime now = ZonedDateTime.now(GMT);
+
+								//License expiration leeway
+								ZonedDateTime expiration = now.minusDays(2);
+
+								//License expiration delay
+								expiration = expiration.plusMinutes(5);
+
+								System.out.println(dateTimeFormatter.format(expiration));
+								project.setProperty("expiration.date", dateTimeFormatter.format(expiration));
+							]]>
+						</beanshell>
+
+						<replace
+							file="${liferay.home}/deploy/@{commerce.license.file}"
+							token="${expirationdate}"
+							value="${expiration.date}"
+						/>
+					</then>
+				</elseif>
+				<elseif>
+					<equals arg1="${commerce.license.property}" arg2="hostname" />
+					<then>
+						<replace
+							file="${liferay.home}/deploy/@{commerce.license.file}"
+							token="hostnameToReplace"
+							value="${env.HOSTNAME}"
+						/>
+
+						<replace
+							file="${liferay.home}/deploy/${dxp.license.file}"
+							token="hostnameToReplace"
+							value="${env.HOSTNAME}"
+						/>
+					</then>
+				</elseif>
+				<elseif>
+					<equals arg1="${commerce.license.property}" arg2="ip-address" />
+					<then>
+						<get-ip-address />
+
+						<replace
+							file="${liferay.home}/deploy/@{commerce.license.file}"
+							token="ipToReplace"
+							value="${ip.address}"
+						/>
+
+						<replace
+							file="${liferay.home}/deploy/${dxp.license.file}"
+							token="ipToReplace"
+							value="${ip.address}"
+						/>
+					</then>
+				</elseif>
+				<elseif>
+					<equals arg1="${commerce.license.property}" arg2="mac-address" />
+					<then>
+						<get-mac-address />
+
+						<replace
+							file="${liferay.home}/deploy/@{commerce.license.file}"
+							token="macAddressToReplace"
+							value="${mac.address}"
+						/>
+
+						<replace
+							file="${liferay.home}/deploy/${dxp.license.file}"
+							token="macAddressToReplace"
+							value="${mac.address}"
+						/>
+					</then>
+				</elseif>
+			</if>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="swap-dxp-license">
+		<attribute name="dxp.license.file" />
+
+		<sequential>
+			<delete failonerror="false" file="${liferay.home}/deploy/license.xml" verbose="true" />
+
+			<copy
+				file="${project.dir}/portal-web/test/functional/com/liferay/portalweb/dependencies/license/@{dxp.license.file}"
+				todir="${liferay.home}/deploy"
+			/>
+
+			<if>
+				<equals arg1="@{dxp.license.file}" arg2="dxp-binary-license-developer.li" />
+				<then>
+					<copy
+						file="${project.dir}/portal-web/test/functional/com/liferay/portalweb/dependencies/license/@{dxp.license.file}"
+						todir="${liferay.home}/data/license"
+					/>
+				</then>
+			</if>
+
+			<var name="expiration.leeway" value="2" />
+
+			<if>
+				<equals arg1="@{dxp.license.file}" arg2="portal-dxp-license-custom-expiration-48-hours.xml" />
+				<then>
+					<beanshell>
+						<![CDATA[
+							import java.time.ZoneId;
+							import java.time.ZonedDateTime;
+							import java.time.format.DateTimeFormatter;
+
+							DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy hh:mm:ss a zz");
+
+							ZoneId GMT = ZoneId.of("GMT");
+
+							ZonedDateTime now = ZonedDateTime.now(GMT);
+
+							//License expiration leeway
+							ZonedDateTime expiration = now.minusDays(2);
+
+							//License expiration delay
+							expiration = expiration.plusMinutes(5);
+
+							System.out.println(dateTimeFormatter.format(expiration));
+							project.setProperty("expiration.date", dateTimeFormatter.format(expiration));
+						]]>
+					</beanshell>
+				</then>
+			</if>
+
+			<replace
+				file="${liferay.home}/deploy/@{dxp.license.file}"
+				token="${host.name}"
+				value="${env.HOSTNAME}"
+			/>
+
+			<replace
+				file="${liferay.home}/deploy/@{dxp.license.file}"
+				token="${expirationdate}"
+				value="${expiration.date}"
+			/>
 		</sequential>
 	</macrodef>
 
@@ -5203,7 +5760,6 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 					<execute dir="@{patching.tool.dir}" failonerror="true">
 						patching-tool${file.suffix.bat} auto-discovery
 						patching-tool${file.suffix.bat} revert -force
-						patching-tool${file.suffix.bat} update-plugins
 					</execute>
 				</then>
 				<else>
@@ -5214,10 +5770,15 @@ war.path=${app.server.portal.dir}/</echo>
 
 					<execute dir="@{patching.tool.dir}" failonerror="true">
 						patching-tool${file.suffix.bat} revert -force
-						patching-tool${file.suffix.bat} update-plugins
 					</execute>
 				</else>
 			</if>
+
+			<execute>
+				<![CDATA[
+					tail -n 100 "${patching.tool.dir}/logs/patching-tool.log"
+				]]>
+			</execute>
 
 			<delete file="@{patching.tool.dir}/logs/patching-tool.log" />
 
@@ -5259,6 +5820,17 @@ war.path=${app.server.portal.dir}/</echo>
 			<delete dir="@{patching.tool.dir}/patches" />
 
 			<mkdir dir="@{patching.tool.dir}/patches" />
+		</sequential>
+	</macrodef>
+
+	<macrodef name="update-user-timezone">
+		<attribute default="UTC" name="time.zone" />
+		<sequential>
+			<replaceregexp
+				file="${app.server.dir}/bin/setenv.sh"
+				match="-Duser\.timezone=\w+"
+				replace="-Duser.timezone=@{time.zone}"
+			/>
 		</sequential>
 	</macrodef>
 
@@ -5325,12 +5897,20 @@ war.path=${app.server.portal.dir}/</echo>
 
 					<fail message="${patch.name} was not installed.">
 						<condition>
-							<not>
-								<resourcecontains
-									resource="@{patching.tool.dir}/logs/patching-tool.log"
-									substring="[*I] ${patch.name} :: Installed"
-								/>
-							</not>
+							<and>
+								<not>
+									<resourcecontains
+										resource="@{patching.tool.dir}/logs/patching-tool.log"
+										substring="[*AI] ${patch.name} :: Already installed"
+									/>
+								</not>
+								<not>
+									<resourcecontains
+										resource="@{patching.tool.dir}/logs/patching-tool.log"
+										substring="[*I] ${patch.name} :: Installed"
+									/>
+								</not>
+							</and>
 						</condition>
 					</fail>
 				</sequential>
@@ -5347,6 +5927,7 @@ war.path=${app.server.portal.dir}/</echo>
 
 			<local name="app.server.waiting.url" />
 
+			<get-operating-system-property property.name="operating.system.docker.image" />
 			<get-testcase-property property.name="portal.context" />
 
 			<if>
@@ -5355,15 +5936,7 @@ war.path=${app.server.portal.dir}/</echo>
 					<property name="app.server.waiting.url" value="http://localhost:${test.app.server.leading.port.number}080/${portal.context}/web/guest" />
 				</then>
 				<elseif>
-					<and>
-						<not>
-							<and>
-								<equals arg1="${operating.system.type}" arg2="centos" />
-								<equals arg1="${operating.system.centos.version}" arg2="7" />
-							</and>
-						</not>
-						<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
-					</and>
+					<isset property="operating.system.docker.image" />
 					<then>
 						<get-operating-system-property property.name="operating.system.host" />
 
@@ -5386,15 +5959,44 @@ war.path=${app.server.portal.dir}/</echo>
 			<if>
 				<isset property="app.server.waiting.timeout" />
 				<then>
-					<get-jstack-output process.name="Bootstrap" />
+					<antcall target="print-jstack-logs">
+						<param name="process.name" value="Bootstrap" />
+					</antcall>
 
 					<stop-app-server app.server.bundle.index="@{app.server.bundle.index}" />
 
-					<fail if="app.server.waiting.timeout" message="No server is available at ${app.server.waiting.url}${line.separator}${jstack.output}" />
+					<fail if="app.server.waiting.timeout" message="No server is available at ${app.server.waiting.url}" />
 				</then>
 			</if>
 
 			<echo>${app.server.waiting.url} has loaded</echo>
+
+			<if>
+				<not>
+					<isset property="commerce.enabled" />
+				</not>
+				<then>
+					<get-testcase-property property.name="commerce.enabled" />
+				</then>
+			</if>
+
+			<if>
+				<and>
+					<equals arg1="${build.profile}" arg2="dxp" />
+					<not>
+						<equals arg1="${commerce.enabled}" arg2="false" />
+					</not>
+					<or>
+						<equals arg1="${commerce.enabled}" arg2="true" />
+						<equals arg1="${env.CI_TEST_SUITE}" arg2="portal-fixpack-release" />
+						<equals arg1="${env.CI_TEST_SUITE}" arg2="portal-hotfix-release" />
+						<equals arg1="${env.CI_TEST_SUITE}" arg2="portal-release" />
+					</or>
+				</and>
+				<then>
+					<wait-for-license-activation />
+				</then>
+			</if>
 		</sequential>
 	</macrodef>
 
@@ -5411,7 +6013,6 @@ war.path=${app.server.portal.dir}/</echo>
 					<beanshell>
 						<![CDATA[
 							import org.apache.commons.io.FileUtils;
-
 							import org.apache.tools.ant.DirectoryScanner;
 
 							public String getCatalinaLogFilesContent() {
@@ -5486,12 +6087,132 @@ war.path=${app.server.portal.dir}/</echo>
 					<if>
 						<isset property="wait.for.app.server.log.timed.out.message" />
 						<then>
-							<get-jstack-output process.name="Bootstrap" />
+							<antcall target="print-jstack-logs">
+								<param name="process.name" value="Bootstrap" />
+							</antcall>
 
-							<fail message="${wait.for.app.server.log.timed.out.message}${line.separator}${jstack.output}" />
+							<fail message="${wait.for.app.server.log.timed.out.message}" />
 						</then>
 					</if>
 				</then>
+			</if>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="wait-for-app-server-log-message">
+		<attribute name="log.message" />
+
+		<sequential>
+			<local name="timed.out.message" />
+
+			<beanshell>
+				<![CDATA[
+					import java.io.File;
+
+					import org.apache.commons.io.FileUtils;
+					import org.apache.tools.ant.DirectoryScanner;
+
+					public boolean isContainedInCatalinaLogFiles(String searchString) {
+						DirectoryScanner directoryScanner = new DirectoryScanner();
+
+						File liferayHomeDir = new File(project.getProperty("liferay.home"));
+
+						String canonicalLogFileLocation = liferayHomeDir.getCanonicalPath();
+
+						directoryScanner.setIncludes(new String[] {canonicalLogFileLocation + "/logs/liferay.*.log"});
+
+						directoryScanner.scan();
+
+						String osName = project.getProperty("os.name");
+
+						osName = osName.toLowerCase();
+
+						for (String filePath : directoryScanner.getIncludedFiles()) {
+							if (osName.contains("win")) {
+								filePath = filePath.replace("/", "\\");
+							}
+
+							File file = new File(filePath);
+
+							String fileContent = FileUtils.readFileToString(file);
+
+							if (fileContent.contains(searchString)) {
+								return true;
+							}
+						}
+
+						return false;
+					}
+
+					System.out.println("Waiting for '@{log.message}' to appear in log message");
+
+					int timeoutDuration = Integer.parseInt(project.getProperty("timeout.app.server.wait"));
+
+					long timeoutTime = System.currentTimeMillis() + (1000 * timeoutDuration);
+
+					while (true) {
+						try {
+							if (isContainedInCatalinaLogFiles("@{log.message}")) {
+								break;
+							}
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+
+						long currentTime = System.currentTimeMillis();
+
+						if (currentTime > timeoutTime) {
+							project.setProperty("timed.out.message", "Unable to find log message after " + (timeoutDuration / 60) + " minutes.");
+
+							break;
+						}
+
+						Thread.sleep(1000);
+					}
+				]]>
+			</beanshell>
+
+			<if>
+				<isset property="timed.out.message" />
+				<then>
+					<antcall target="print-jstack-logs">
+						<param name="process.name" value="Bootstrap" />
+					</antcall>
+
+					<fail message="${timed.out.message}" />
+				</then>
+			</if>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="wait-for-license-activation">
+		<sequential>
+			<if>
+				<isset property="test.class" />
+				<then>
+					<get-poshi-method-name />
+				</then>
+			</if>
+
+			<get-commerce-license-product-name />
+
+			<get-dxp-license-product-name />
+
+			<wait-for-app-server-log-message log.message="${commerce.license.product.name} license validation passed" />
+
+			<wait-for-app-server-log-message log.message="${dxp.license.product.name} license validation passed" />
+
+			<if>
+				<equals arg1="${poshi.method.name}" arg2="DeployCommerceLicenseBinaryFile" />
+				<then>
+					<echo>Using license binary, not waiting for license registration</echo>
+				</then>
+				<else>
+					<wait-for-app-server-log-message log.message="License registered for ${commerce.license.product.name}" />
+
+					<wait-for-app-server-log-message log.message="License registered for ${dxp.license.product.name}" />
+				</else>
 			</if>
 		</sequential>
 	</macrodef>
@@ -5549,6 +6270,12 @@ war.path=${app.server.portal.dir}/</echo>
 							<property name="portal.version.url.path" value="7.3.0-ga1" />
 						</then>
 					</elseif>
+					<elseif>
+						<equals arg1="${portal.version}" arg2="7.3.5" />
+						<then>
+							<property name="portal.version.url.path" value="7.3.5-ga6" />
+						</then>
+					</elseif>
 					<else>
 						<property name="portal.version.url.path" value="${portal.version}" />
 					</else>
@@ -5565,6 +6292,7 @@ war.path=${app.server.portal.dir}/</echo>
 						<equals arg1="${portal.version}" arg2="7.2.0" />
 						<equals arg1="${portal.version}" arg2="7.2.1" />
 						<equals arg1="${portal.version}" arg2="7.3.0" />
+						<equals arg1="${portal.version}" arg2="7.3.5" />
 					</or>
 					<then>
 						<propertycopy from="sql.legacy.base.url[ce]" name="sql.legacy.base.url" />
@@ -5803,6 +6531,21 @@ alter database lportal set read_committed_snapshot on;
 go]]></replacevalue>
 								</replacefilter>
 							</replace>
+
+							<if>
+								<isset property="databases.size" />
+								<then>
+									<echo append="true" file="create.sql">
+create database lportal${databases.size};
+go
+
+alter database lportal${databases.size} set allow_snapshot_isolation on;
+go
+
+alter database lportal${databases.size} set read_committed_snapshot on;
+go</echo>
+								</then>
+							</if>
 						</then>
 					</elseif>
 					<elseif>
@@ -6004,17 +6747,6 @@ go</echo>
 		<delete failonerror="false" file="${project.dir}/console-shut-down" />
 	</target>
 
-	<target name="clean-up-mobile-device">
-		<get-testcase-property property.name="browser.type" />
-
-		<if>
-			<equals arg1="${browser.type}" arg2="android" />
-			<then>
-				<stop-android-device />
-			</then>
-		</if>
-	</target>
-
 	<target name="clean-up-selenium-driver">
 		<if>
 			<equals arg1="${browser.type}" arg2="chrome" />
@@ -6041,17 +6773,6 @@ go</echo>
 			<equals arg1="${browser.type}" arg2="internetexplorer" />
 			<then>
 				<stop-ie-driver />
-			</then>
-		</if>
-
-		<if>
-			<or>
-				<equals arg1="${browser.type}" arg2="android" />
-				<equals arg1="${browser.type}" arg2="androidchrome" />
-				<equals arg1="${browser.type}" arg2="iossafari" />
-			</or>
-			<then>
-				<stop-appium />
 			</then>
 		</if>
 	</target>
@@ -6101,6 +6822,15 @@ go</echo>
 			<arg value="releng.gradle" />
 			<arg value="-PgitRepoPath=${module.dir}" />
 		</gradle-execute>
+	</target>
+
+	<target name="cluster-invoke-method">
+		<if>
+			<isset property="cluster.invoke.method" />
+			<then>
+				<echo file="${liferay.home}/osgi/configs/com.liferay.cluster.test.module.configuration.ClusterTestConfiguration.config">clusterTestCommand="${cluster.invoke.method}"</echo>
+			</then>
+		</if>
 	</target>
 
 	<target name="copy-cluster-log">
@@ -6162,7 +6892,7 @@ go</echo>
 			<then>
 				<delete failonerror="false" includeemptydirs="true">
 					<fileset
-						dir="${app.server.lib.global.dir}"
+						dir="${app.server.lib.portal.dir}"
 						includes="${jdbc.db2.driver}"
 					/>
 				</delete>
@@ -6213,7 +6943,7 @@ go</echo>
 				<and>
 					<equals arg1="${database.type}" arg2="mariadb" />
 					<not>
-						<available file="${app.server.lib.global.dir}/${jdbc.mariadb.driver}" />
+						<available file="${app.server.lib.portal.dir}/${jdbc.mariadb.driver}" />
 					</not>
 				</and>
 				<then>
@@ -6231,7 +6961,7 @@ go</echo>
 				<and>
 					<equals arg1="${database.type}" arg2="mysql" />
 					<not>
-						<available file="${app.server.lib.global.dir}/${jdbc.mysql.driver}" />
+						<available file="${app.server.lib.portal.dir}/${jdbc.mysql.driver}" />
 					</not>
 				</and>
 				<then>
@@ -6252,7 +6982,7 @@ go</echo>
 				<then>
 					<delete failonerror="false" includeemptydirs="true">
 						<fileset
-							dir="${app.server.lib.global.dir}"
+							dir="${app.server.lib.portal.dir}"
 							includes="${jdbc.oracle.driver}"
 						/>
 					</delete>
@@ -6267,7 +6997,7 @@ go</echo>
 				<and>
 					<equals arg1="${database.type}" arg2="postgresql" />
 					<not>
-						<available file="${app.server.lib.global.dir}/${jdbc.postgresql.driver}" />
+						<available file="${app.server.lib.portal.dir}/${jdbc.postgresql.driver}" />
 					</not>
 				</and>
 				<then>
@@ -6286,7 +7016,7 @@ go</echo>
 				<then>
 					<delete failonerror="false" includeemptydirs="true">
 						<fileset
-							dir="${app.server.lib.global.dir}"
+							dir="${app.server.lib.portal.dir}"
 							includes="${jdbc.sqlserver.driver}"
 						/>
 					</delete>
@@ -6304,7 +7034,7 @@ go</echo>
 				<then>
 					<delete failonerror="false" includeemptydirs="true">
 						<fileset
-							dir="${app.server.lib.global.dir}"
+							dir="${app.server.lib.portal.dir}"
 							includes="${jdbc.sybase.driver}"
 						/>
 					</delete>
@@ -6316,77 +7046,15 @@ go</echo>
 				</then>
 			</elseif>
 		</if>
+	</target>
+
+	<target name="create-hidden-osgi-file">
+		<get-testcase-property property.name="create.osgi.hidden.file" />
 
 		<if>
-			<or>
-				<equals arg1="${app.server.type}" arg2="jboss" />
-				<equals arg1="${app.server.type}" arg2="wildfly" />
-			</or>
+			<isset property="create.osgi.hidden.file" />
 			<then>
-				<propertycopy from="app.server.${app.server.type}.lib.global.dir" name="app.server.lib.global.dir" override="true" />
-
-				<if>
-					<equals arg1="${database.type}" arg2="db2" />
-					<then>
-						<replace
-							file="${app.server.lib.global.dir}/module.xml"
-						>
-							<replacetoken><![CDATA[<resource-root path="hsql.jar" />]]></replacetoken>
-							<replacevalue>
-								<![CDATA[
-									<resource-root path="db2jcc4.jar" />
-									<resource-root path="db2jcc_license_cu.jar" />
-									<resource-root path="hsql.jar" />
-								]]>
-							</replacevalue>
-						</replace>
-					</then>
-					<elseif>
-						<equals arg1="${database.type}" arg2="mariadb" />
-						<then>
-							<replace
-								file="${app.server.lib.global.dir}/module.xml"
-							>
-								<replacetoken><![CDATA[<resource-root path="hsql.jar" />]]></replacetoken>
-								<replacevalue>
-									<![CDATA[
-										<resource-root path="hsql.jar" />
-										<resource-root path="mariadb.jar" />
-									]]>
-								</replacevalue>
-							</replace>
-						</then>
-					</elseif>
-					<elseif>
-						<equals arg1="${database.type}" arg2="oracle" />
-						<then>
-							<replace
-								file="${app.server.lib.global.dir}/module.xml"
-							>
-								<replacetoken><![CDATA[<resource-root path="hsql.jar" />]]></replacetoken>
-								<replacevalue>
-									<![CDATA[
-										<resource-root path="hsql.jar" />
-										<resource-root path="ojdbc6.jar" />
-									]]>
-								</replacevalue>
-							</replace>
-						</then>
-					</elseif>
-					<else>
-						<replace
-							file="${app.server.lib.global.dir}/module.xml"
-						>
-							<replacetoken><![CDATA[<resource-root path="hsql.jar" />]]></replacetoken>
-							<replacevalue>
-								<![CDATA[
-									<resource-root path="hsql.jar" />
-									<resource-root path="mysql.jar" />
-								]]>
-							</replacevalue>
-						</replace>
-					</else>
-				</if>
+				<touch file="${liferay.home}/osgi/configs/.keep" />
 			</then>
 		</if>
 	</target>
@@ -6397,6 +7065,34 @@ go</echo>
 		<exec executable="curl">
 			<arg line="${curl.args}" />
 		</exec>
+	</target>
+
+	<target name="delete-dependency-file">
+		<if>
+			<isset property="liferay.dependency.wars" />
+			<then>
+				<delete file="${liferay.home}/osgi/war/${liferay.dependency.wars}" />
+
+				<echo>${liferay.home}/osgi/war/${liferay.dependency.wars} </echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="liferay.dependency.jars" />
+			<then>
+				<delete file="${liferay.home}/osgi/modules/${liferay.dependency.jars}" />
+
+				<echo>${liferay.home}/osgi/modules/${liferay.dependency.jars} </echo>
+			</then>
+		</if>
+	</target>
+
+	<target name="delete-license-file">
+		<fail message="Please set the property ${license.xml.file}." unless="license.xml.file" />
+
+		<delete file="${liferay.home}/osgi/modules/${license.xml.file}" />
+
+		<delete dir="${liferay.home}/data/license" />
 	</target>
 
 	<target name="delete-liferay-home">
@@ -6417,7 +7113,12 @@ go</echo>
 				<get-testcase-property property.name="portal.version" />
 
 				<if>
-					<isset property="portal.version" />
+					<and>
+						<isset property="portal.version" />
+						<not>
+							<equals arg1="${keep.osgi.state}" arg2="true" />
+						</not>
+					</and>
 					<then>
 						<delete dir="${test.app.server.liferay.home}/osgi/state" />
 					</then>
@@ -6431,6 +7132,7 @@ go</echo>
 									<fileset
 										dir="${test.app.server.liferay.home}/data"
 									>
+										<exclude if:true="${keep.hypersonicdb}" name="document_library/**" />
 										<exclude if:true="${keep.hypersonicdb}" name="hypersonic/lportal.lobs" />
 										<exclude if:true="${keep.hypersonicdb}" name="hypersonic/lportal.properties" />
 										<exclude if:true="${keep.hypersonicdb}" name="hypersonic/lportal.script" />
@@ -6439,8 +7141,16 @@ go</echo>
 							</then>
 						</if>
 
+						<if>
+							<not>
+								<equals arg1="${keep.osgi.state}" arg2="true" />
+							</not>
+							<then>
+								<delete dir="${test.app.server.liferay.home}/osgi/state" />
+							</then>
+						</if>
+
 						<delete dir="${test.app.server.liferay.home}/logs" />
-						<delete dir="${test.app.server.liferay.home}/osgi/state" />
 						<delete dir="${test.app.server.liferay.home}/work" />
 
 						<delete file="${test.app.server.liferay.home}/portal-setup-wizard.properties" />
@@ -6450,6 +7160,96 @@ go</echo>
 		</if>
 
 		<delete dir="/tmp/sprite" />
+	</target>
+
+	<target name="delete-portal-theme">
+		<if>
+			<and>
+				<isset property="theme-name" />
+				<available file="${liferay.home}/osgi/war/${theme-name}.war" />
+			</and>
+			<then>
+				<echo>Deleting ${liferay.home}/osgi/war/${theme-name}.war.</echo>
+
+				<delete file="${liferay.home}/osgi/war/${theme-name}.war" />
+			</then>
+			<else>
+				<echo>Deleting ${liferay.home}/osgi/marketplace/Theme.lpkg.</echo>
+
+				<delete>
+					<fileset
+						dir="${liferay.home}/osgi/marketplace"
+						includes="*Theme*.lpkg"
+					/>
+				</delete>
+			</else>
+		</if>
+	</target>
+
+	<target name="delete-static-impl-license-jar">
+		<execute>
+			<![CDATA[
+				zip -d '${liferayHome}/osgi/marketplace/Liferay Static - Impl.lpkg' com.liferay.portal.license.enterprise.app.jar
+			]]>
+		</execute>
+	</target>
+
+	<target name="deploy-analytics-cloud-demo-data-creator">
+		<if>
+			<equals arg1="${functional.test.type}" arg2="analytics-cloud" />
+			<then>
+				<ant dir="portal-kernel" target="clean" />
+
+				<ant dir="portal-kernel" target="compile" />
+
+				<ant dir="portal-kernel" target="deploy" />
+
+				<ant dir="portal-kernel" target="install-portal-snapshot" />
+
+				<gradle-execute dir="modules/apps/analytics/analytics-demo-data-creator-api" task="deploy">
+					<arg value="clean" />
+				</gradle-execute>
+
+				<gradle-execute dir="modules/apps/analytics/analytics-demo-data-creator-impl" task="deploy">
+					<arg value="clean" />
+				</gradle-execute>
+
+				<property location="${analytics.cloud.faro.data.csv}" name="analytics.cloud.faro.data.csv.file.path" />
+
+				<echo file="${app.server.parent.dir}/osgi/modules/com.liferay.analytics.demo.data.creator.configuration.AnalyticsDemoDataCreatorConfiguration.config">
+pathToUsersCSV="${analytics.cloud.faro.data.csv.file.path}"
+virtualHostname="localhost"
+				</echo>
+
+				<print-file file.name="${app.server.parent.dir}/osgi/modules/com.liferay.analytics.demo.data.creator.configuration.AnalyticsDemoDataCreatorConfiguration.config" />
+			</then>
+		</if>
+	</target>
+
+	<target name="deploy-commerce-license-xml">
+		<if>
+			<matches pattern="https?://" string="${test.commerce.license.url}" />
+			<then>
+				<mkdir dir="${liferay.home}/deploy" />
+
+				<mirrors-get
+					dest="${liferay.home}/deploy/portal-commerce-license.xml"
+					src="${test.commerce.license.url}"
+				/>
+			</then>
+			<elseif>
+				<available file="${liferay.home}/portal-commerce-license.xml" />
+				<then>
+					<move
+						file="${liferay.home}/portal-commerce-license.xml"
+						tofile="${liferay.home}/deploy/portal-commerce-license.xml"
+					/>
+				</then>
+			</elseif>
+			<else>
+				<echo message="No commerce XML license found to deploy" />
+			</else>
+		</if>
 	</target>
 
 	<target name="deploy-dependency-jars">
@@ -6536,6 +7336,16 @@ go</echo>
 		</if>
 	</target>
 
+	<target name="deploy-dependency-war">
+		<property name="liferay.dependency.dir" value="${project.dir}/portal-web/test/functional/com/liferay/portalweb/dependencies" />
+		<property name="deploy.dir" value="${app.server.parent.dir}/deploy" />
+
+		<copy
+			file="${liferay.dependency.dir}/${liferay.dependency.war}"
+			todir="${deploy.dir}"
+		/>
+	</target>
+
 	<target name="deploy-extra-apps">
 		<get-testcase-property property.name="extraapps.plugins.includes" />
 
@@ -6560,6 +7370,15 @@ go</echo>
 				</not>
 			</and>
 			<then>
+				<local name="fixpack.version" />
+
+				<if>
+					<matches pattern="https?://" string="${test.build.fix.pack.zip.url}" />
+					<then>
+						<get-fixpack-version patch.file.zip.url="${test.build.fix.pack.zip.url}" />
+					</then>
+				</if>
+
 				<for param="app.file.path">
 					<path>
 						<fileset
@@ -6582,10 +7401,8 @@ go</echo>
 						<local name="sync.connector.override" />
 
 						<if>
-							<matches pattern="https?://" string="${test.build.fix.pack.zip.url}" />
+							<isset property="fixpack.version" />
 							<then>
-								<get-fixpack-version patch.file.zip.url="${test.build.fix.pack.zip.url}" />
-
 								<beanshell>
 									<![CDATA[
 										String appFileName = project.getProperty("app.file.name");
@@ -6724,6 +7541,25 @@ go</echo>
 				<mirrors-get
 					dest="${liferay.home}/deploy/license.xml"
 					src="${test.build.license.xml.zip.url}"
+				/>
+			</then>
+		</if>
+	</target>
+
+	<target name="deploy-license-xml-to-osgi-directory">
+		<get-testcase-property property.name="deploy.license.osgi.directory" />
+
+		<if>
+			<equals arg1="${deploy.license.osgi.directory}" arg2="true" />
+			<then>
+				<move
+					file="${liferay.home}/deploy/portal-commerce-license.xml"
+					todir="${liferay.home}/osgi/modules"
+				/>
+
+				<move
+					file="${liferay.home}/deploy/license.xml"
+					todir="${liferay.home}/osgi/modules"
 				/>
 			</then>
 		</if>
@@ -6970,6 +7806,7 @@ go</echo>
 				<pathconvert pathsep="," property="osgi.modules.paths">
 					<dirset
 						dir="modules"
+						excludes="**/node_modules/**"
 						includes="${osgi.modules.includes.pattern}"
 					>
 						<or>
@@ -7131,7 +7968,7 @@ go</echo>
 			srcfile="${mysql.input.file}"
 		/>
 
-		<sql classpath="${app.server.lib.global.dir}/${jdbc.mysql.driver}" driver="${database.mysql.driver}" onerror="continue" output="${mysql.output.file}" password="${database.mysql.password}" print="true" url="${database.mysql.url}" userid="${database.mysql.username}">
+		<sql classpath="${app.server.lib.portal.dir}/${jdbc.mysql.driver}" driver="${database.mysql.driver}" onerror="continue" output="${mysql.output.file}" password="${database.mysql.password}" print="true" url="${database.mysql.url}" userid="${database.mysql.username}">
 			<![CDATA[
 				${mysql.statement}
 			]]>
@@ -7139,7 +7976,6 @@ go</echo>
 	</target>
 
 	<target name="generate-changelog">
-		<record-git-commit-plugins />
 		<record-git-commit-portal />
 
 		<tstamp>
@@ -7161,15 +7997,9 @@ go</echo>
 		<if>
 			<and>
 				<available file="${previous.changelog.dir}/git-build-log.html" />
-				<available file="${previous.changelog.dir}/git-commit-plugins" />
 				<available file="${previous.changelog.dir}/git-commit-portal" />
 			</and>
 			<then>
-				<loadfile
-					property="previous.git.commit.plugins.rev.parse"
-					srcfile="${previous.changelog.dir}/git-commit-plugins"
-				/>
-
 				<loadfile
 					property="previous.git.commit.portal.rev.parse"
 					srcfile="${previous.changelog.dir}/git-commit-portal"
@@ -7179,23 +8009,6 @@ go</echo>
 					file="${previous.changelog.dir}/git-build-log.html"
 					tofile="${changelog.dir}/git-build-log.html"
 				/>
-
-				<if>
-					<equals arg1="${git.commit.plugins.rev.parse}" arg2="${previous.git.commit.plugins.rev.parse}" />
-					<then>
-						<property name="git.log.content.plugins" value="No Changes" />
-					</then>
-					<else>
-						<execute dir="${lp.plugins.dir}">
-							<![CDATA[git log --pretty=format:'<a href="https://github.com/liferay/liferay-plugins-ee/commit/'%H'" target="_blank">'%H'</a>''<br />'%an'<br />'%s'<br /><br />' ${previous.git.commit.plugins.rev.parse}...${git.commit.plugins.rev.parse} > ${changelog.dir}/git.log]]>
-						</execute>
-
-						<loadfile
-							property="git.log.content.plugins"
-							srcfile="${changelog.dir}/git.log"
-						/>
-					</else>
-				</if>
 
 				<if>
 					<equals arg1="${git.commit.portal.rev.parse}" arg2="${previous.git.commit.portal.rev.parse}" />
@@ -7226,7 +8039,6 @@ go</echo>
 				<h2>
 					Build #${env.BUILD_NUMBER} - ${env.JOB_NAME} - ${build.tstamp.value}<br />
 					Portal: ${git.commit.portal.rev.parse}<br />
-					Plugins: ${git.commit.plugins.rev.parse}
 				</h2>
 
 				<div id="portal">
@@ -7235,15 +8047,6 @@ go</echo>
 					</h4>
 					<p>
 						${git.log.content.portal}
-					</p>
-				</div>
-
-				<div id="plugins">
-					<h4>
-						Plugins Git Log:
-					</h4>
-					<p>
-						${git.log.content.plugins}
 					</p>
 				</div>
 			</div>
@@ -7304,19 +8107,15 @@ go</echo>
 				width: 100%;
 			}
 
-			#plugins {
-				float: right;
-			}
-
 			#portal {
 				float: left;
 			}
 
-			#plugins, #portal {
+			#portal {
 				width: 48%;
 			}
 
-			#plugins p, #portal p {
+			#portal p {
 				border-radius: 8px;
 				-moz-border-radius: 8px;
 				-webkit-border-radius: 8px;
@@ -7328,14 +8127,14 @@ go</echo>
 				word-wrap: break-word;
 			}
 
-			#plugins a, #portal a {
+			#portal a {
 				color: #3D7CA6;
 				font-family: Monaco, "Liberation Mono", Courier, monospace;
 				font-weight: bold;
 				text-decoration: none;
 			}
 
-			#plugins a:hover, #portal a:hover {
+			#portal a:hover {
 				text-decoration: underline;
 			}
 		</style>
@@ -7354,7 +8153,6 @@ go</echo>
 					Initial Commit<br />
 					Build #${env.BUILD_NUMBER} - ${env.JOB_NAME} - ${build.tstamp.value}<br />
 					Portal: ${git.commit.portal.rev.parse}<br />
-					Plugins: ${git.commit.plugins.rev.parse}
 				</h2>
 			</div>
 		</div>
@@ -7617,6 +8415,8 @@ go</echo>
 				<install-patch patching.tool.dir="${patching.tool.dir}" patch.file.zip.url="${patch.file.zip.url}" />
 
 				<validate-installed-patches patching.tool.dir="${patching.tool.dir}" />
+
+				<delete file="@{patching.tool.dir}/logs/patching-tool.log" />
 			</else>
 		</if>
 	</target>
@@ -7803,6 +8603,50 @@ ${update.properties}</echo>
 		<apply-portal-ext-properties />
 	</target>
 
+	<target name="prepare-antisamy-config-file">
+		<property name="liferay.security.antisamy.dir" value="${project.dir}/modules/apps/portal-security/portal-security-antisamy/src/main/resources/META-INF/resources" />
+
+		<property name="liferay.config.xml" value="knowledge-base-sanitizer-configuration.xml" />
+
+		<if>
+			<available file="${liferay.security.antisamy.dir}/${liferay.config.xml}" />
+			<then>
+				<echo>Remove allowDynamicAttributes in ${liferay.security.antisamy.dir}/${liferay.config.xml}.</echo>
+
+				<replace
+					file="${liferay.security.antisamy.dir}/${liferay.config.xml}"
+				>
+					<replacetoken><![CDATA[<dynamic-tag-attributes>]]></replacetoken>
+					<replacevalue><![CDATA[<!--<dynamic-tag-attributes>-->]]></replacevalue>
+				</replace>
+
+				<replace
+					file="${liferay.security.antisamy.dir}/${liferay.config.xml}"
+				>
+					<replacetoken><![CDATA[<attribute name="data-"/>]]></replacetoken>
+					<replacevalue><![CDATA[<!--<attribute name="data-"/>-->]]></replacevalue>
+				</replace>
+
+				<replace
+					file="${liferay.security.antisamy.dir}/${liferay.config.xml}"
+				>
+					<replacetoken><![CDATA[</dynamic-tag-attributes>]]></replacetoken>
+					<replacevalue><![CDATA[<!--</dynamic-tag-attributes>-->]]></replacevalue>
+				</replace>
+
+				<replace
+					file="${liferay.security.antisamy.dir}/${liferay.config.xml}"
+				>
+					<replacetoken><![CDATA[<directive name="allowDynamicAttributes" value="true"/>]]></replacetoken>
+					<replacevalue><![CDATA[<!--<directive name="allowDynamicAttributes" value="true"/>-->]]></replacevalue>
+				</replace>
+			</then>
+			<else>
+				<echo>The file ${liferay.config.xml} is not exist.</echo>
+			</else>
+		</if>
+	</target>
+
 	<target name="prepare-encryption-PCKS12-certificate">
 		<if>
 			<equals arg1="${app.server.type}" arg2="tomcat" />
@@ -7860,9 +8704,9 @@ ${update.properties}</echo>
 			replace="=&quot;7\1&quot;"
 		/>
 
-		<copy
-			file="${project.dir}/lib/portal/log4j.jar"
-			tofile="${app.server.parent.dir}/gateway/tomcat-${app.server.tomcat.version}/lib/log4j.jar"
+		<mirrors-get
+			dest="${app.server.parent.dir}/gateway/tomcat-${app.server.tomcat.version}/lib/log4j.jar"
+			src="https://repo1.maven.org/maven2/log4j/log4j/1.2.17/log4j-1.2.17.jar"
 		/>
 
 		<copy
@@ -7890,7 +8734,7 @@ ${update.properties}</echo>
 	</target>
 
 	<target name="prepare-lcs-portal-bundle">
-		<antcall target="prepare-portal-ext-properties" />
+		<antcall if:set="env.JENKINS_HOME" target="prepare-portal-ext-properties" />
 
 		<antcall inheritAll="false" target="rebuild-database" />
 
@@ -8006,9 +8850,9 @@ osb.lcs.portlet.oauth.consumer.secret=${osb.lcs.portlet.oauth.consumer.secret}</
 			replace="=&quot;9\1&quot;"
 		/>
 
-		<copy
-			file="${project.dir}/lib/portal/log4j.jar"
-			tofile="${app.server.parent.dir}/processor/tomcat-${app.server.tomcat.version}/lib/log4j.jar"
+		<mirrors-get
+			dest="${app.server.parent.dir}/processor/tomcat-${app.server.tomcat.version}/lib/log4j.jar"
+			src="https://repo1.maven.org/maven2/log4j/log4j/1.2.17/log4j-1.2.17.jar"
 		/>
 
 		<copy
@@ -8057,120 +8901,90 @@ osb.lcs.portlet.oauth.consumer.secret=${osb.lcs.portlet.oauth.consumer.secret}</
 		</if>
 
 		<echo file="${app.server.classes.portal.dir}/META-INF/portal-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="DEBUG" name="com.liferay.frontend.js.spa.web.internal.servlet.taglib" />
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-	<appender class="org.apache.log4j.ConsoleAppender" name="CONSOLE">
-		<layout class="org.apache.log4j.EnhancedPatternLayout">
-			<param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%t][%c{1}:%L] %m%n" />
-		</layout>
-	</appender>
+		<Logger level="INFO" name="com.liferay.portal.dao.orm.hibernate.VerifySessionFactoryWrapper" />
 
-	<appender class="org.apache.log4j.rolling.RollingFileAppender" name="TEXT_FILE">
-		<rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-			<param name="FileNamePattern" value="@liferay.home@/logs/liferay@spi.id@.%d{yyyy-MM-dd}.log" />
-		</rollingPolicy>
+		<Logger level="DEBUG" name="com.liferay.portal.equinox.log.bridge.internal" />
 
-		<layout class="org.apache.log4j.EnhancedPatternLayout">
-			<param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%t][%c{1}:%L] %m%n" />
-		</layout>
-	</appender>
+		<Logger level="${release.local.service.impl.log.level}" name="com.liferay.portal.service.impl.ReleaseLocalServiceImpl" />
 
-	<appender class="org.apache.log4j.rolling.RollingFileAppender" name="XML_FILE">
-		<rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-			<param name="FileNamePattern" value="@liferay.home@/logs/liferay@spi.id@.%d{yyyy-MM-dd}.xml" />
-		</rollingPolicy>
+		<Logger level="${dialect.detector.log.level}" name="com.liferay.portal.spring.hibernate.DialectDetector" />
 
-		<layout class="org.apache.log4j.xml.XMLLayout">
-			<param name="LocationInfo" value="true" />
-		</layout>
-	</appender>
-
-	<category name="com.liferay.frontend.js.spa.web.internal.servlet.taglib">
-		<priority value="DEBUG" />
-	</category>
-
-	<category name="com.liferay.portal.dao.orm.hibernate.VerifySessionFactoryWrapper">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.portal.equinox.log.bridge.internal">
-		<priority value="DEBUG" />
-	</category>
-
-	<category name="com.liferay.portal.service.impl.ReleaseLocalServiceImpl">
-		<priority value="${release.local.service.impl.log.level}" />
-	</category>
-
-	<category name="com.liferay.portal.spring.hibernate.DialectDetector">
-		<priority value="${dialect.detector.log.level}" />
-	</category>
-
-	<category name="com.zaxxer.hikari.pool.PoolBase">
-		<priority value="ERROR" />
-	</category>
-
-	<root>
-		<priority value="INFO" />
-		<appender-ref ref="CONSOLE" />
-		<appender-ref ref="TEXT_FILE" />
-		<appender-ref ref="XML_FILE" />
-	</root>
-</log4j:configuration>]]></echo>
+		<Logger level="ERROR" name="com.zaxxer.hikari.pool.PoolBase" />
+	</Loggers>
+</Configuration>]]></echo>
 
 		<echo file="${liferay.home}/osgi/log4j/com.liferay.portal.osgi.web.wab.generator.impl-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="ERROR" name="com.liferay.portal.osgi.web.wab.generator.internal.WabGenerator" />
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-	<category name="com.liferay.portal.osgi.web.wab.generator.internal.WabGenerator">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.osgi.web.wab.generator.internal.processor.WabProcessor">
-		<priority value="WARN" />
-	</category>
-</log4j:configuration>]]></echo>
+		<Logger level="WARN" name="com.liferay.portal.osgi.web.wab.generator.internal.processor.WabProcessor" />
+	</Loggers>
+</Configuration>]]></echo>
 
 		<echo file="${liferay.home}/osgi/log4j/com.liferay.portal.search-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
-
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-	<category name="com.liferay.portal.search.internal.SearchEngineInitializer">
-		<priority value="INFO" />
-	</category>
-</log4j:configuration>]]></echo>
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="INFO" name="com.liferay.portal.search.internal.SearchEngineInitializer" />
+	</Loggers>
+</Configuration>]]></echo>
 
 		<echo file="${liferay.home}/osgi/log4j/com.liferay.portal.search.elasticsearch7.impl-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="ERROR" name="com.liferay.portal.search.elasticsearch7.internal.sidecar.SidecarManager" />
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-	<category name="com.liferay.portal.search.elasticsearch7.internal.sidecar.SidecarManager">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.search.elasticsearch7.internal.index.CompanyIndexFactory">
-		<priority value="INFO" />
-	</category>
-</log4j:configuration>]]></echo>
+		<Logger level="INFO" name="com.liferay.portal.search.elasticsearch7.internal.index.CompanyIndexFactory" />
+	</Loggers>
+</Configuration>]]></echo>
 
 		<echo file="${liferay.home}/osgi/log4j/org.apache.aries.jax.rs.whiteboard-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="ERROR" name="com.liferay.oauth2.provider.rest.internal.endpoint.liferay.LiferayOAuthDataProvider" />
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-	<category name="com.liferay.oauth2.provider.rest.internal.endpoint.liferay.LiferayOAuthDataProvider">
-		<priority value="ERROR" />
-	</category>
+		<Logger level="ERROR" name="org.apache.cxf.rs.security.oauth2.services.AbstractOAuthService" />
+	</Loggers>
+</Configuration>]]></echo>
 
-	<category name="org.apache.cxf.rs.security.oauth2.services.AbstractOAuthService">
-		<priority value="ERROR" />
-	</category>
-</log4j:configuration>]]></echo>
-	</target>
+		<echo file="${liferay.home}/osgi/log4j/com.liferay.portal.cache.ehcache.impl-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="DEBUG" name="com.liferay.portal.cache.ehcache.internal.event.PortalCacheCacheEventListener.test.cache" />
+	</Loggers>
+</Configuration>]]></echo>
 
-	<target name="prepare-mobile-device">
-		<stop-android-device />
+		<get-testcase-property property.name="deploy.lcs.token.file" />
 
-		<start-android-device />
+		<if>
+			<equals arg1="${deploy.lcs.token.file}" arg2="true" />
+			<then>
+				<echo file="${liferay.home}/osgi/log4j/com.liferay.lcs.client.impl-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal.platform.http" />
+
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal" />
+
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal.advisor" />
+
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal.lifecycle" />
+
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal.task.advisor" />
+
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal.task.scheduler" />
+
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal.command" />
+
+		<Logger level="TRACE" name="com.liferay.lcs.client.internal.runnable" />
+	</Loggers>
+</Configuration>]]></echo>
+			</then>
+		</if>
 	</target>
 
 	<target name="prepare-osgi-module-configurations">
@@ -8178,7 +8992,7 @@ osb.lcs.portlet.oauth.consumer.secret=${osb.lcs.portlet.oauth.consumer.secret}</
 
 		<if>
 			<not>
-				<available file="${liferay.home}/osgi/configs/com.liferay.portal.bundle.blacklist.internal.BundleBlacklistConfiguration.config" />
+				<available file="${liferay.home}/osgi/configs/com.liferay.portal.bundle.blacklist.internal.configuration.BundleBlacklistConfiguration.config" />
 			</not>
 			<then>
 				<prepare-blacklist-configuration />
@@ -8199,6 +9013,10 @@ osb.lcs.portlet.oauth.consumer.secret=${osb.lcs.portlet.oauth.consumer.secret}</
 		<prepare-portal-elasticsearch-osgi-configuration />
 
 		<prepare-portal-search-osgi-configuration/>
+
+		<prepare-portal-template-freemarker-osgi-configuration />
+
+		<antcall target="prepare-selenium-login-config" />
 	</target>
 
 	<target name="prepare-patching-tool">
@@ -8267,8 +9085,6 @@ browser.launcher.url=
 
 setup.wizard.enabled=false
 
-buffered.increment.enabled=false
-
 mail.send.blacklist=
 
 mail.session.jndi.name=
@@ -8299,6 +9115,17 @@ login.secure.forgot.password=false</echo>
 			<then>
 				<echo append="true" file="portal-impl/src/portal-ext.properties"><![CDATA[
 jdbc.default.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_TIMEOUT=0]]></echo>
+			</then>
+		</if>
+
+		<get-testcase-property property.name="aws.store.enabled" />
+
+		<if>
+			<equals arg1="${aws.store.enabled}" arg2="true" />
+			<then>
+				<echo append="true" file="portal-impl/src/portal-ext.properties">
+
+dl.store.impl=com.liferay.portal.store.s3.S3Store</echo>
 			</then>
 		</if>
 
@@ -8369,6 +9196,15 @@ cluster.link.bind.addr["cluster-link-udp"]=${ip.address}</echo>
 					<replacetoken>jdbc.default.jndi.name=</replacetoken>
 					<replacevalue>jdbc.default.jndi.name=jdbc/LiferayPool</replacevalue>
 				</replace>
+			</then>
+		</if>
+
+		<get-testcase-property property.name="liferay.online.properties" />
+
+		<if>
+			<isset property="liferay.online.properties" />
+			<then>
+				<prepare-liferay-online-properties />
 			</then>
 		</if>
 
@@ -8458,11 +9294,7 @@ portal.security.manager.strategy=liferay</echo>
 		</if>
 
 		<if>
-			<or>
-				<equals arg1="${app.server.type}" arg2="weblogic" />
-				<equals arg1="${app.server.type}" arg2="websphere" />
-				<equals arg1="${javascript.fast.load}" arg2="false" />
-			</or>
+			<equals arg1="${javascript.fast.load}" arg2="false" />
 			<then>
 				<echo append="true" file="portal-impl/src/portal-ext.properties">
 
@@ -8721,6 +9553,7 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 		<get-ip-address />
 
 		<echo append="true" file="${test.ext.properties.file}">
+			app.server.type=${app.server.type}
 			component.names=${component.names}
 			get.location.max.retries=${test.get.location.max.retries}
 			get.location.timeout=${test.get.location.timeout}
@@ -8742,7 +9575,14 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			test.retry.command.wait.time=${test.retry.command.wait.time}
 		</echo>
 
-		<propertycopy from="browser.firefox.bin.file[${browser.firefox.version}]" name="browser.firefox.bin.file" silent="true" />
+		<if>
+			<isset property="aws.bucket.id" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					aws.bucket.id=${aws.bucket.id}
+				</echo>
+			</then>
+		</if>
 
 		<if>
 			<isset property="browser.chrome.bin.args" />
@@ -8753,6 +9593,8 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			</then>
 		</if>
 
+		<propertycopy from="browser.chrome.bin.file[${browser.chrome.version}]" name="browser.chrome.bin.file" silent="true" />
+
 		<if>
 			<isset property="browser.chrome.bin.file" />
 			<then>
@@ -8762,11 +9604,157 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			</then>
 		</if>
 
+		<propertycopy from="browser.firefox.bin.file[${browser.firefox.version}]" name="browser.firefox.bin.file" silent="true" />
+
 		<if>
 			<isset property="browser.firefox.bin.file" />
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
 					browser.firefox.bin.file=${browser.firefox.bin.file}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.chatwoot.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.chatwoot.password=${click.to.chat.chatwoot.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.crisp.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.crisp.password=${click.to.chat.crisp.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.hubspot.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.hubspot.password=${click.to.chat.hubspot.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.jivochat.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.jivochat.password=${click.to.chat.jivochat.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.livechat.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.livechat.password=${click.to.chat.livechat.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.liveperson.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.liveperson.password=${click.to.chat.liveperson.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.smartsupp.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.smartsupp.password=${click.to.chat.smartsupp.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.tawkto.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.tawkto.password=${click.to.chat.tawkto.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.tidio.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.tidio.password=${click.to.chat.tidio.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.tolvnow.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.tolvnow.password=${click.to.chat.tolvnow.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.zendesk.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.zendesk.password=${click.to.chat.zendesk.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.account.base.uri" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.account.base.uri=${digital.signature.account.base.uri}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.api.accountId" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.api.accountId=${digital.signature.api.accountId}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.api.username" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.api.username=${digital.signature.api.username}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.integration.key" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.integration.key=${digital.signature.integration.key}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.rsa.pivate.key" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.rsa.pivate.key=${digital.signature.rsa.pivate.key}
 				</echo>
 			</then>
 		</if>
@@ -8789,7 +9777,7 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			</then>
 			<else>
 				<echo append="true" file="${test.ext.properties.file}">
-					test.base.dir.name=test/
+					test.base.dir.name=${basedir.unix}/portal-web/test/functional/com/liferay/portalweb/
 				</echo>
 			</else>
 		</if>
@@ -8939,6 +9927,37 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 		</if>
 	</target>
 
+	<target name="prepare-release-bundle">
+		<ant antfile="build-release-slim.xml" dir="${release.tool.dir}" inheritAll="false" target="dist" useNativeBasedir="true">
+			<property name="override.decrement.module.bnd.versions" value="true" />
+			<property name="project.release.dir.native" value="${release.tool.dir}" />
+		</ant>
+
+		<copy
+			overwrite="true"
+			tofile="${project.dir}/liferay-portal-bundle-tomcat.tar.gz"
+		>
+			<fileset
+				dir="dist/"
+				includes="liferay-*-tomcat-*.tar.gz"
+			/>
+		</copy>
+
+		<untar
+			compression="gzip"
+			dest="./bundles"
+			src="liferay-portal-bundle-tomcat.tar.gz"
+		>
+			<cutdirsmapper dirs="1" />
+		</untar>
+
+		<antcall target="deploy-license-xml">
+			<param name="test.build.license.xml.zip.url" value="${test.license.xml.url}" />
+		</antcall>
+
+		<antcall target="deploy-commerce-license-xml" />
+	</target>
+
 	<target name="prepare-selenium">
 		<delete file="${test.ext.properties.file}" />
 
@@ -8946,10 +9965,14 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			<param name="test.class" value="${test.class}" />
 		</antcall>
 
+		<antcall target="prepare-selenium-login-config" />
+
 		<antcall target="prepare-selenium-analytics-cloud-properties" />
 		<antcall target="prepare-selenium-app-server-properties" />
 		<antcall target="prepare-selenium-browser" />
+		<antcall target="prepare-selenium-click-to-chat-properties" />
 		<antcall target="prepare-selenium-database-properties" />
+		<antcall target="prepare-selenium-digital-signature-properties" />
 		<antcall target="prepare-selenium-email-properties" />
 		<antcall target="prepare-selenium-facebook-properties" />
 		<antcall target="prepare-selenium-google-properties" />
@@ -8960,23 +9983,26 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 		<antcall target="prepare-selenium-sharepoint-properties" />
 		<antcall target="prepare-selenium-testcase-properties" />
 
-		<if>
-			<and>
-				<not>
-					<and>
-						<equals arg1="${operating.system.type}" arg2="centos" />
-						<equals arg1="${operating.system.centos.version}" arg2="7" />
-					</and>
-				</not>
-				<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
-			</and>
-			<then>
-				<get-operating-system-property property.name="operating.system.host.alias" />
+		<get-browser-property property.name="browser.docker.image" />
+		<get-operating-system-property property.name="operating.system.docker.image" />
 
+		<if>
+			<isset property="browser.docker.image" />
+			<then>
 				<echo append="true" file="${test.ext.properties.file}">
-					default.portal.url=${operating.system.host.alias}:8080
+					default.portal.url=${test.url}
 				</echo>
 			</then>
+			<elseif>
+				<isset property="operating.system.docker.image" />
+				<then>
+					<get-operating-system-property property.name="operating.system.host.alias" />
+
+					<echo append="true" file="${test.ext.properties.file}">
+						default.portal.url=${operating.system.host.alias}:8080
+					</echo>
+				</then>
+			</elseif>
 			<else>
 				<echo append="true" file="${test.ext.properties.file}">
 					default.portal.url=http://localhost:8080
@@ -9082,6 +10108,8 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			</else>
 		</if>
 
+		<get-testcase-property property.name="test.skip.tear.down" />
+
 		<if>
 			<and>
 				<contains string="${test.class}" substring="," />
@@ -9167,6 +10195,23 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 				</then>
 			</elseif>
 		</if>
+
+		<if>
+			<isset property="test.analytics.cloud.publisher.url" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					analytics.cloud.publisher.url=${test.analytics.cloud.publisher.url}
+				</echo>
+			</then>
+			<elseif>
+				<equals arg1="${analytics.cloud.enabled}" arg2="true" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						analytics.cloud.publisher.url=${analytics.cloud.asah.publisher.url}
+					</echo>
+				</then>
+			</elseif>
+		</if>
 	</target>
 
 	<target name="prepare-selenium-app-server-properties">
@@ -9189,53 +10234,6 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 		</echo>
 
 		<if>
-			<or>
-				<equals arg1="${browser.type}" arg2="android" />
-				<equals arg1="${browser.type}" arg2="androidchrome" />
-				<equals arg1="${browser.type}" arg2="iossafari" />
-			</or>
-			<then>
-				<stop-appium />
-
-				<start-appium />
-
-				<echo append="true" file="${test.ext.properties.file}">
-					mobile.android.home=${mobile.android.home}
-					mobile.browser=true
-				</echo>
-			</then>
-		</if>
-
-		<if>
-			<equals arg1="${browser.type}" arg2="android" />
-			<then>
-				<antcall target="prepare-mobile-device" />
-			</then>
-		</if>
-
-		<if>
-			<equals arg1="${browser.type}" arg2="androidchrome" />
-			<then>
-				<exec executable="/bin/bash" os="${os.apple},${os.unix}" outputproperty="mobile.device.name">
-					<arg value="-c" />
-					<arg value="${mobile.android.home}/platform-tools/adb devices" />
-				</exec>
-
-				<propertyregex
-					input="${mobile.device.name}"
-					override="true"
-					property="mobile.device.name"
-					regexp=".*\n([A-z0-9]*)"
-					select="\1"
-				/>
-
-				<echo append="true" file="${test.ext.properties.file}">
-					mobile.device.name=${mobile.device.name}
-				</echo>
-			</then>
-		</if>
-
-		<if>
 			<equals arg1="${browser.type}" arg2="chrome" />
 			<then>
 				<prepare-chrome-driver />
@@ -9254,6 +10252,7 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 				<prepare-edge-driver />
 
 				<echo append="true" file="${test.ext.properties.file}">
+					selenium.edge.driver.executable=${selenium.edge.driver.executable}
 					selenium.executable.dir.name=${selenium.executable.dir.name}
 				</echo>
 			</then>
@@ -9294,13 +10293,107 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			</then>
 		</if>
 
+		<get-browser-property property.name="browser.docker.image" />
+
 		<if>
-			<equals arg1="${selenium.remote.driver.enabled}" arg2="true" />
+			<isset property="browser.docker.image" />
+			<then>
+				<get-browser-property property.name="browser.host" />
+
+				<echo append="true" file="${test.ext.properties.file}">
+					selenium.remote.driver.url=http://${browser.host}:4444
+				</echo>
+			</then>
+			<elseif>
+				<isset property="selenium.remote.driver.url" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						selenium.desired.capabilities.platform=${selenium.desired.capabilities.platform}
+						selenium.remote.driver.url=${selenium.remote.driver.url}
+					</echo>
+				</then>
+			</elseif>
+		</if>
+	</target>
+
+	<target name="prepare-selenium-click-to-chat-properties">
+		<if>
+			<isset property="click.to.chat.chatwoot.password" />
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
-					selenium.desired.capabilities.platform=${selenium.desired.capabilities.platform}
-					selenium.remote.driver.enabled=${selenium.remote.driver.enabled}
-					selenium.remote.driver.hub=${selenium.remote.driver.hub}
+					click.to.chat.chatwoot.password=${click.to.chat.chatwoot.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.hubspot.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.hubspot.password=${click.to.chat.hubspot.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.jivochat.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.jivochat.password=${click.to.chat.jivochat.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.liveperson.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.liveperson.password=${click.to.chat.liveperson.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.smartsupp.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.smartsupp.password=${click.to.chat.smartsupp.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.tawkto.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.tawkto.password=${click.to.chat.tawkto.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.tidio.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.tidio.password=${click.to.chat.tidio.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.tolvnow.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.tolvnow.password=${click.to.chat.tolvnow.password}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="click.to.chat.zendesk.password" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					click.to.chat.zendesk.password=${click.to.chat.zendesk.password}
 				</echo>
 			</then>
 		</if>
@@ -9381,6 +10474,53 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
 					database.type=${database.type}
+				</echo>
+			</then>
+		</if>
+	</target>
+
+	<target name="prepare-selenium-digital-signature-properties">
+		<if>
+			<isset property="digital.signature.account.base.uri" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.account.base.uri=${digital.signature.account.base.uri}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.api.accountId" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.api.accountId=${digital.signature.api.accountId}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.api.username" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.api.username=${digital.signature.api.username}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.integration.key" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.integration.key=${digital.signature.integration.key}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="digital.signature.rsa.pivate.key" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					digital.signature.rsa.pivate.key=${digital.signature.rsa.pivate.key}
 				</echo>
 			</then>
 		</if>
@@ -9505,55 +10645,28 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 		</if>
 
 		<if>
-			<isset property="lcs.email.id.1" />
+			<isset property="lcs.site.password.1" />
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
-					lcs.email.id.1=${lcs.email.id.1}
+					lcs.site.password.1=${lcs.site.password.1}
 				</echo>
 			</then>
 		</if>
 
 		<if>
-			<isset property="lcs.email.id.2" />
+			<isset property="lcs.site.password.2" />
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
-					lcs.email.id.2=${lcs.email.id.2}
+					lcs.site.password.2=${lcs.site.password.2}
 				</echo>
 			</then>
 		</if>
 
 		<if>
-			<isset property="lcs.email.id.3" />
+			<isset property="lcs.site.password.3" />
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
-					lcs.email.id.3=${lcs.email.id.3}
-				</echo>
-			</then>
-		</if>
-
-		<if>
-			<isset property="lcs.email.password.1" />
-			<then>
-				<echo append="true" file="${test.ext.properties.file}">
-					lcs.email.password.1=${lcs.email.password.1}
-				</echo>
-			</then>
-		</if>
-
-		<if>
-			<isset property="lcs.email.password.2" />
-			<then>
-				<echo append="true" file="${test.ext.properties.file}">
-					lcs.email.password.2=${lcs.email.password.2}
-				</echo>
-			</then>
-		</if>
-
-		<if>
-			<isset property="lcs.email.password.3" />
-			<then>
-				<echo append="true" file="${test.ext.properties.file}">
-					lcs.email.password.3=${lcs.email.password.3}
+					lcs.site.password.3=${lcs.site.password.3}
 				</echo>
 			</then>
 		</if>
@@ -9716,6 +10829,15 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 		</if>
 
 		<if>
+			<isset property="google.api.key.4" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					google.api.key.4=${google.api.key.4}
+				</echo>
+			</then>
+		</if>
+
+		<if>
 			<isset property="google.client.id.1" />
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
@@ -9738,6 +10860,15 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
 					google.client.id.3=${google.client.id.3}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="google.client.id.4" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					google.client.id.4=${google.client.id.4}
 				</echo>
 			</then>
 		</if>
@@ -9768,6 +10899,20 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 				</echo>
 			</then>
 		</if>
+
+		<if>
+			<isset property="google.client.secret.4" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					google.client.secret.4=${google.client.secret.4}
+				</echo>
+			</then>
+		</if>
+	</target>
+
+	<target name="prepare-selenium-login-config">
+		<echo file="${liferay.home}/osgi/configs/com.liferay.portal.security.sso.token.configuration.TokenConfiguration.config" force="true">enabled="true"
+tokenLocation="REQUEST"</echo>
 	</target>
 
 	<target name="prepare-selenium-onedrive-properties">
@@ -9955,7 +11100,6 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 
 		<if>
 			<or>
-				<equals arg1="${cmis.repository.type}" arg2="documentum6" />
 				<equals arg1="${cmis.repository.type}" arg2="sharepoint2010" />
 				<equals arg1="${cmis.repository.type}" arg2="sharepoint2013" />
 			</or>
@@ -9984,6 +11128,17 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
 					ignore.errors.delimiter=${ignore.errors.delimiter}
+				</echo>
+			</then>
+		</if>
+
+		<get-testcase-property property.name="proxy.server.enabled" />
+
+		<if>
+			<equals arg1="${proxy.server.enabled}" arg2="true" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					proxy.server.enabled=true
 				</echo>
 			</then>
 		</if>
@@ -10163,8 +11318,6 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 		<app-server-properties-update>
 			app.server.type=${app.server.type}
 		</app-server-properties-update>
-
-		<antcall inheritAll="false" target="update-sdk-properties" />
 
 		<prepare-test-app-server-custom />
 
@@ -10363,7 +11516,7 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 						<mkdir dir="${app.server.websphere.java.ext.dir}" />
 
 						<move
-							file="${app.server.lib.global.dir}/portlet.jar"
+							file="${app.server.lib.portal.dir}/portlet.jar"
 							todir="${app.server.websphere.java.ext.dir}"
 						/>
 
@@ -10392,6 +11545,46 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 
 				<delete file="liferay-portal-dependencies.zip" />
 
+				<if>
+					<or>
+						<matches pattern="file://" string="${test.build.portal.elasticsearch.zip.url}" />
+						<matches pattern="https?://" string="${test.build.portal.elasticsearch.zip.url}" />
+					</or>
+					<then>
+						<propertyregex
+							input="${test.build.portal.elasticsearch.zip.url}"
+							override="true"
+							property="test.build.portal.elasticsearch.zip.name"
+							regexp=".+/([^/]+)"
+							replace="\1"
+						/>
+
+						<mirrors-get
+							dest="${test.build.portal.elasticsearch.zip.name}"
+							src="${test.build.portal.elasticsearch.zip.url}"
+						/>
+
+						<tstamp>
+							<format pattern="yyyyMMddkkmmssSSS" property="tstamp.value" />
+						</tstamp>
+
+						<mkdir dir="${tstamp.value}" />
+
+						<decompress
+							dest="${tstamp.value}"
+							src="${test.build.portal.elasticsearch.zip.name}"
+						/>
+
+						<execute>
+							cp -r ${tstamp.value}/*/elasticsearch7 ${liferay.home}/
+						</execute>
+
+						<delete file="${test.build.portal.elasticsearch.zip.name}" />
+
+						<delete dir="${tstamp.value}" />
+					</then>
+				</if>
+
 				<mirrors-get
 					dest="liferay-portal-osgi.zip"
 					src="${test.build.portal.osgi.zip.url}"
@@ -10415,16 +11608,44 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 					src="${test.build.portal.tools.zip.url}"
 				/>
 
+				<local name="liferay.portal.tools.temp.dir" />
+
+				<property name="liferay.portal.tools.temp.dir" value="liferay-portal-tools-temp" />
+
 				<unzip
-					dest="${liferay.home}/tools"
+					dest="${liferay.portal.tools.temp.dir}"
 					src="liferay-portal-tools.zip"
 				>
 					<mapper
-						from="[^/]+/(tools/)?(.*)"
-						to="\2"
+						from="[^/]+/(.*)"
+						to="\1"
 						type="regexp"
 					/>
 				</unzip>
+
+				<if>
+					<available file="${liferay.portal.tools.temp.dir}/portal-tools-db-upgrade-client" />
+					<then>
+						<move
+							todir="${liferay.home}/tools"
+						>
+							<fileset
+								dir="${liferay.portal.tools.temp.dir}"
+							/>
+						</move>
+					</then>
+					<else>
+						<move
+							todir="${liferay.home}/tools/portal-tools-db-upgrade-client"
+						>
+							<fileset
+								dir="${liferay.portal.tools.temp.dir}"
+							/>
+						</move>
+					</else>
+				</if>
+
+				<delete dir="${liferay.portal.tools.temp.dir}" failonerror="false" />
 
 				<move
 					todir="${liferay.home}/tools"
@@ -10467,13 +11688,6 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 				</if>
 
 				<delete file="liferay-portal-tools.zip" />
-
-				<if>
-					<equals arg1="${app.server.type}" arg2="jboss" />
-					<then>
-						<prepare-jboss-module-configuration />
-					</then>
-				</if>
 			</else>
 		</if>
 
@@ -10629,9 +11843,14 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 		</if>
 
 		<if>
-			<equals arg1="${app.server.type}" arg2="tomcat" />
+			<or>
+				<equals arg1="${app.server.type}" arg2="jboss" />
+				<equals arg1="${app.server.type}" arg2="wildfly" />
+			</or>
 			<then>
-				<antcall target="prepare-tomcat-ext-environment" />
+				<prepare-jboss-module-configuration />
+
+				<print-file file.name="${app.server.lib.global.dir}/module.xml" />
 			</then>
 		</if>
 
@@ -10641,94 +11860,11 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 				<equals arg1="${app.server.type}" arg2="websphere" />
 			</or>
 			<then>
-				<get
-					dest="${liferay.home}"
-					src="${elasticsearch.sidecar.analysis-icu.zip.url}"
-				/>
-
-				<get
-					dest="${liferay.home}"
-					src="${elasticsearch.sidecar.analysis-kuromoji.zip.url}"
-				/>
-
-				<get
-					dest="${liferay.home}"
-					src="${elasticsearch.sidecar.analysis-smartcn.zip.url}"
-				/>
-
-				<get
-					dest="${liferay.home}"
-					src="${elasticsearch.sidecar.analysis-stempel.zip.url}"
-				/>
-
-				<get
-					dest="${liferay.home}"
-					src="${elasticsearch.sidecar.no.jdk.tar.url}"
-				/>
+				<ant antfile="build-test-elasticsearch7.xml" target="get-sidecar-binaries" />
 			</then>
 		</if>
 
 		<lstopwatch action="total" name="prepare.bundles.${app.server.name}" />
-	</target>
-
-	<target name="prepare-tomcat-ext-environment">
-		<if>
-			<and>
-				<matches pattern="https?://" string="${test.build.bundle.zip.url}" />
-				<matches pattern="https?://" string="${test.build.fix.pack.zip.url}" />
-				<not>
-					<resourcecontains
-						resource="${app.server.dir}/conf/Catalina/localhost/ROOT.xml"
-						substring="ExtResourceSet"
-					/>
-				</not>
-			</and>
-			<then>
-				<local name="enable.ext.environment" />
-
-				<get-fixpack-version patch.file.zip.url="${test.build.fix.pack.zip.url}" />
-
-				<beanshell>
-					<![CDATA[
-						String fixpackVersion = project.getProperty("fixpack.version");
-
-						if (fixpackVersion != null) {
-							int fixpackVersionInt = Integer.valueOf(fixpackVersion);
-
-							if (fixpackVersionInt >= 16) {
-								project.setProperty("enable.ext.environment", "true");
-							}
-						}
-					]]>
-				</beanshell>
-
-				<get-testcase-property property.name="test.ignore.tomcat.ext.environment" />
-
-				<if>
-					<and>
-						<equals arg1="${enable.ext.environment}" arg2="true" />
-						<not>
-							<equals arg1="${test.ignore.tomcat.ext.environment}" arg2="true" />
-						</not>
-					</and>
-					<then>
-						<replace
-							file="${app.server.dir}/conf/Catalina/localhost/ROOT.xml"
-						>
-							<replacetoken><![CDATA[</Context>]]></replacetoken>
-							<replacevalue><![CDATA[	<Resources>
-		<PreResources
-			base="${catalina.base}/lib/ext/portal"
-			className="com.liferay.support.tomcat.webresources.ExtResourceSet"
-			webAppMount="/WEB-INF/lib"
-		/>
-	</Resources>
-</Context>]]></replacevalue>
-						</replace>
-					</then>
-				</if>
-			</then>
-		</if>
 	</target>
 
 	<target name="prepare-virtual-host-name-properties">
@@ -10772,6 +11908,57 @@ cluster.link.bind.addr["cluster-link-control"]=127.0.0.1
 cluster.link.bind.addr["cluster-link-udp"]=127.0.0.1</echo>
 	</target>
 
+	<target name="print-gc-logs">
+		<condition property="tomcat.gc.log" value="false">
+			<not>
+				<isset property="tomcat.gc.log" />
+			</not>
+		</condition>
+
+		<condition property="tsant.gc.log" value="false">
+			<not>
+				<isset property="tsant.gc.log" />
+			</not>
+		</condition>
+
+		<print-gc-logs
+			tomcat.gc.log="${tomcat.gc.log}"
+			tsant.gc.log="${tsant.gc.log}"
+		/>
+	</target>
+
+	<target name="print-jstack-logs">
+		<fail message="Please set the property ${process.name}." unless="process.name" />
+
+		<print-jstack-logs process.name="${process.name}" />
+	</target>
+
+	<target name="print-lcs-log-content">
+		<var name="lcs.log.files" unset="true" />
+
+		<fileset
+			dir="${liferay.home}/logs/"
+			id="lcs.log.files"
+		>
+			<include name="lcs.*.log" />
+		</fileset>
+
+		<pathconvert pathsep="," property="lcs.log.files" refid="lcs.log.files" />
+
+		<for list="${lcs.log.files}" param="lcs.log.file">
+			<sequential>
+				<print-file file.name="@{lcs.log.file}" />
+			</sequential>
+		</for>
+
+		<if>
+			<equals arg1="${lcs.log.files}" arg2="" />
+			<then>
+				<echo>No LCS logs found.</echo>
+			</then>
+		</if>
+	</target>
+
 	<target name="print-scm-revision">
 		<echo>Portal GIT ID:</echo>
 		<echo />
@@ -10801,13 +11988,10 @@ cluster.link.bind.addr["cluster-link-udp"]=127.0.0.1</echo>
 					<param name="keep.hypersonicdb" value="true" />
 				</antcall>
 
+				<get-database-property property.name="database.docker.image" />
+
 				<if>
-					<and>
-						<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
-						<not>
-							<equals arg1="${database.type}" arg2="hypersonic" />
-						</not>
-					</and>
+					<isset property="database.docker.image" />
 					<then>
 						<get-database-property property.name="database.host" />
 						<get-database-property property.name="database.password" />
@@ -10905,6 +12089,8 @@ cluster.link.bind.addr["cluster-link-udp"]=127.0.0.1</echo>
 
 						<execute>
 							<![CDATA[
+								chmod 755 ${create.sh.file.path} ${create.sql.file.path}
+
 								docker cp ${create.sh.file.path} ${database.host}:/tmp/create.sh
 								docker cp ${create.sql.file.path} ${database.host}:/tmp/create.sql
 
@@ -11137,8 +12323,10 @@ cluster.link.bind.addr["cluster-link-udp"]=127.0.0.1</echo>
 			src="${portal.legacy.dir}/${portal.version}/data-archive/${data.archive.type}-${database.type}.zip"
 		/>
 
+		<get-database-property property.name="database.docker.image" />
+
 		<if>
-			<equals arg1="${env.DOCKER_ENABLED}" arg2="true" />
+			<isset property="database.docker.image" />
 			<then>
 				<get-database-property property.name="database.host" />
 				<get-database-property property.name="database.password" />
@@ -11285,6 +12473,21 @@ cluster.link.bind.addr["cluster-link-udp"]=127.0.0.1</echo>
 						</then>
 					</elseif>
 					<elseif>
+						<equals arg1="${database.type}" arg2="sqlserver" />
+						<then>
+							<echo file="${import.database.sh.file.path}">
+								<![CDATA[
+									#!/bin/bash
+
+									/opt/mssql-tools/bin/sqlcmd -P ${database.sqlserver.password} -Q "RESTORE DATABASE ${database.sqlserver.schema} FROM DISK='/tmp/${database.type}.bak'" -S localhost -U ${database.sqlserver.username}
+								]]>
+							</echo>
+
+							<property name="docker.database.dest.path" value="/tmp/${database.type}.bak" />
+							<property name="import.database.src.path" value="${liferay.home}/${database.type}.bak" />
+						</then>
+					</elseif>
+					<elseif>
 						<equals arg1="${database.type}" arg2="sybase" />
 						<then>
 							<echo file="${import.database.sh.file.path}">
@@ -11424,7 +12627,7 @@ go</echo>
 					<elseif>
 						<equals arg1="${database.type}" arg2="oracle" />
 						<then>
-							<sql classpath="${app.server.lib.global.dir}/${jdbc.oracle.driver}" driver="oracle.jdbc.OracleDriver" onerror="continue" output="data.pump.log" password="${oracle.admin.password}" print="true" url="${database.oracle.url}" userid="${oracle.admin.user}">
+							<sql classpath="${app.server.lib.portal.dir}/${jdbc.oracle.driver}" driver="oracle.jdbc.OracleDriver" onerror="continue" output="data.pump.log" password="${oracle.admin.password}" print="true" url="${database.oracle.url}" userid="${oracle.admin.user}">
 								<![CDATA[
 									drop user lportal cascade;
 									select directory_name, directory_path from dba_directories where directory_name='DATA_PUMP_DIR';
@@ -11602,10 +12805,6 @@ if (ppstate.equals("normal")) {
 %>]]></echo>
 
 		<echo>Updated ${app.server.dir}/webapps/ROOT/html/common/themes/bottom-test.jsp.</echo>
-	</target>
-
-	<target name="record-git-commit-plugins">
-		<record-git-commit-plugins />
 	</target>
 
 	<target name="record-git-commit-portal">
@@ -11798,79 +12997,9 @@ if (ppstate.equals("normal")) {
 			<isset property="test.batch.name" />
 		</condition>
 
-		<local name="portal.branch.name" />
+		<get-test-case-properties-content test.batch.name="${test.batch.name}" />
 
-		<condition else="${git.working.branch.name}" property="portal.branch.name" value="${env.TEST_PORTAL_BRANCH_NAME}">
-			<isset property="env.TEST_PORTAL_BRANCH_NAME" />
-		</condition>
-
-		<local name="top.level.job.name" />
-
-		<condition else="default" property="top.level.job.name" value="${env.TOP_LEVEL_JOB_NAME}">
-			<isset property="env.TOP_LEVEL_JOB_NAME" />
-		</condition>
-
-		<beanshell>
-			<![CDATA[
-				import com.liferay.jenkins.results.parser.Job;
-				import com.liferay.jenkins.results.parser.JobFactory;
-				import com.liferay.jenkins.results.parser.test.clazz.group.AxisTestClassGroup;
-				import com.liferay.jenkins.results.parser.test.clazz.group.BatchTestClassGroup;
-				import com.liferay.jenkins.results.parser.test.clazz.group.TestClassGroupFactory;
-
-				Job job = JobFactory.newJob(project.getProperty("top.level.job.name"), project.getProperty("env.CI_TEST_SUITE"), project.getProperty("portal.branch.name"));
-
-				BatchTestClassGroup.BuildProfile buildProfile = BatchTestClassGroup.BuildProfile.PORTAL;
-
-				String testPortalBuildProfile = project.getProperty("build.profile");
-
-				if ((testPortalBuildProfile != null) && testPortalBuildProfile.equals("dxp")) {
-					buildProfile = BatchTestClassGroup.BuildProfile.DXP;
-				}
-
-				BatchTestClassGroup batchTestClassGroup = TestClassGroupFactory.newBatchTestClassGroup(project.getProperty("test.batch.name"), buildProfile, job);
-
-				int axisCount = batchTestClassGroup.getAxisCount();
-
-				StringBuilder sb = new StringBuilder();
-
-				for (i = 0; i < axisCount; i++) {
-					AxisTestClassGroup axisTestClassGroup = batchTestClassGroup.getAxisTestClassGroup(i);
-
-					List testClassGroup = axisTestClassGroup.getTestClassFiles();
-
-					sb.append("TEST_PLUGIN_GROUP_");
-					sb.append(i);
-					sb.append("=");
-
-					for (File testClass : testClassGroup) {
-						sb.append(testClass.getName());
-						sb.append(",");
-					}
-
-					if (!testClassGroup.isEmpty()) {
-						sb.setLength(sb.length() - 1);
-					}
-
-					sb.append("\n\n");
-				}
-
-				sb.append("TEST_PLUGIN_GROUPS=");
-
-				for (int i = 0; i < axisCount; i++) {
-					sb.append(i);
-					sb.append(" ");
-				}
-
-				if (axisCount > 0) {
-					sb.setLength(sb.length() - 1);
-				}
-
-				project.setProperty("test.plugin.names.properties.content", sb.toString());
-			]]>
-		</beanshell>
-
-		<echo file="test.plugin.names.properties">${test.plugin.names.properties.content}</echo>
+		<echo file="test.plugin.names.properties">${test.case.properties.content}</echo>
 
 		<print-file file.name="test.plugin.names.properties" />
 	</target>
@@ -12133,8 +13262,6 @@ jdbc.default.password=${database.mysql.password}</echo>
 			</then>
 		</if>
 
-		<antcall target="clean-up-mobile-device" />
-
 		<antcall target="clean-up-selenium-driver" />
 	</target>
 
@@ -12179,6 +13306,8 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 		<antcall target="prepare-ip-address-update" />
 
 		<antcall target="check-inet-address" />
+
+		<antcall target="create-hidden-osgi-file" />
 
 		<get-testcase-property property.name="database.jndi.enabled" />
 
@@ -12311,7 +13440,7 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 		</if>
 
 		<antcall inheritAll="false" target="copy-optional-jars">
-			<param name="todir" value="${app.server.lib.global.dir}" />
+			<param name="todir" value="${app.server.lib.portal.dir}" />
 		</antcall>
 
 		<get-testcase-property property.name="index.search.spell.checker.enabled" />
@@ -12387,12 +13516,51 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 		Deploy project samples to the deploy directory.
 		-->
 
+		<get-testcase-property property.name="antisamy.enabled" />
+
+		<if>
+			<equals arg1="${antisamy.enabled}" arg2="true" />
+			<then>
+				<antcall target="prepare-antisamy-config-file" />
+
+				<gradle-execute dir="${project.dir}/modules/apps/portal-security/portal-security-antisamy" task="deploy">
+					<arg value="clean" />
+				</gradle-execute>
+			</then>
+		</if>
+
+		<get-testcase-property property.name="aws.store.enabled" />
+
+		<if>
+			<equals arg1="${aws.store.enabled}" arg2="true" />
+			<then>
+				<tstamp>
+					<format pattern="yyyyMMddkkmmssSSS" property="aws.bucket.id" />
+				</tstamp>
+
+				<ant antfile="build-test-aws-s3.xml" target="configure-aws-cli" />
+
+				<ant antfile="build-test-aws-s3.xml" target="create-s3-bucket" />
+
+				<prepare-aws-s3-configuration />
+			</then>
+		</if>
+
 		<get-testcase-property property.name="cas.enabled" />
 
 		<if>
 			<equals arg1="${cas.enabled}" arg2="true" />
 			<then>
 				<ant antfile="build-test-authentication.xml" target="setup-cas" />
+			</then>
+		</if>
+
+		<get-testcase-property property.name="liferay.faces" />
+
+		<if>
+			<equals arg1="${liferay.faces}" arg2="true" />
+			<then>
+				<ant antfile="build-test-jsf.xml" target="run-jsf-tests" />
 			</then>
 		</if>
 
@@ -12404,15 +13572,6 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 				<ant antfile="build-test-authentication.xml" target="delete-openam-config" />
 
 				<ant antfile="build-test-authentication.xml" target="setup-openam" />
-			</then>
-		</if>
-
-		<get-testcase-property property.name="remote.elasticsearch.enabled" />
-
-		<if>
-			<equals arg1="${remote.elasticsearch.enabled}" arg2="true" />
-			<then>
-				<ant antfile="build-test-elasticsearch7.xml" target="start-elasticsearch" />
 			</then>
 		</if>
 
@@ -12442,28 +13601,6 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 			</then>
 		</if>
 
-		<get-testcase-property property.name="solr.enabled" />
-
-		<if>
-			<equals arg1="${solr.enabled}" arg2="true" />
-			<then>
-				<ant antfile="build-test-solr.xml" target="start-solr" />
-			</then>
-			<elseif>
-				<isset property="env.CI_TEST_SUITE" />
-				<then>
-					<propertycopy from="search.engine[${env.CI_TEST_SUITE}]" name="suite.search.engine" silent="true" />
-
-					<if>
-						<equals arg1="${suite.search.engine}" arg2="solr" />
-						<then>
-							<ant antfile="build-test-solr.xml" target="start-solr" />
-						</then>
-					</if>
-				</then>
-			</elseif>
-		</if>
-
 		<get-testcase-property property.name="test.smtp.server.enabled" />
 
 		<if>
@@ -12484,7 +13621,6 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 
 		<if>
 			<or>
-				<equals arg1="${cmis.repository.type}" arg2="documentum6" />
 				<equals arg1="${cmis.repository.type}" arg2="sharepoint2010" />
 				<equals arg1="${cmis.repository.type}" arg2="sharepoint2013" />
 			</or>
@@ -12506,11 +13642,27 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 			</then>
 		</if>
 
+		<get-testcase-property property.name="user.time.zone" />
+
+		<if>
+			<isset property="user.time.zone" />
+			<then>
+				<update-user-timezone time.zone="${user.time.zone}" />
+			</then>
+		</if>
+
 		<antcall target="deploy-osgi-apps" />
 
 		<antcall target="hot-deploy-osgi-apps" />
 
 		<antcall target="deploy-osgi-modules" />
+
+		<if>
+			<equals arg1="${functional.test.type}" arg2="analytics-cloud" />
+			<then>
+				<antcall target="deploy-analytics-cloud-demo-data-creator" />
+			</then>
+		</if>
 
 		<antcall target="deploy-specified-plugins">
 			<param name="test.class" value="${test.class}" />
@@ -12519,6 +13671,12 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 		<antcall target="deploy-dependency-jars" />
 
 		<antcall target="deploy-extra-apps" />
+
+		<set-up-search-engine />
+
+		<antcall inheritAll="false" target="prepare-log4j-ext-xml">
+			<param name="database.type" value="@{database.type}" />
+		</antcall>
 
 		<get-testcase-property property.name="osgi.module.configuration.file.names" />
 		<get-testcase-property property.name="osgi.module.configurations" />
@@ -12532,6 +13690,10 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 				<antcall target="deploy-osgi-module-configurations" />
 			</then>
 		</if>
+
+		<remake-dir dir="${selenium.output.dir.name}" />
+
+		<prepare-portal-licenses />
 
 		<get-testcase-property property.name="app.server.bundles.size" />
 
@@ -12560,6 +13722,15 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 			</then>
 		</if>
 
+		<get-testcase-property property.name="delete.precompiled.jsps" />
+
+		<if>
+			<equals arg1="${delete.precompiled.jsps}" arg2="true" />
+			<then>
+				<delete dir="${app.server.tomcat.work.dir}" verbose="true" />
+			</then>
+		</if>
+
 		<get-testcase-property property.name="hook.plugins.includes" />
 
 		<if>
@@ -12574,17 +13745,6 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 				<start-app-server />
 
 				<stop-app-server />
-			</then>
-		</if>
-
-		<remake-dir dir="${selenium.output.dir.name}" />
-
-		<get-testcase-property property.name="deploy.lcs.token.file" />
-
-		<if>
-			<equals arg1="${deploy.lcs.token.file}" arg2="true" />
-			<then>
-				<antcall target="deploy-lcs-environment-token" />
 			</then>
 		</if>
 
@@ -12621,10 +13781,6 @@ module.framework.properties.blacklist.portal.profile.names=${blacklist.portal.pr
 						</move>
 					</then>
 				</if>
-
-				<antcall inheritAll="false" target="prepare-log4j-ext-xml">
-					<param name="database.type" value="@{database.type}" />
-				</antcall>
 
 				<antcall target="start-app-server-preserve-liferay-home" />
 
@@ -12783,6 +13939,13 @@ url=${short.hostname}:8080</echo>
 			</then>
 			<else>
 				<antcall target="run-selenium-test" />
+
+				<if>
+					<equals arg1="${deploy.lcs.token.file}" arg2="true" />
+					<then>
+						<antcall target="print-lcs-log-content" />
+					</then>
+				</if>
 			</else>
 		</if>
 
@@ -12800,25 +13963,11 @@ url=${short.hostname}:8080</echo>
 
 		<if>
 			<or>
-				<equals arg1="${cmis.repository.type}" arg2="documentum6" />
 				<equals arg1="${cmis.repository.type}" arg2="sharepoint2010" />
 				<equals arg1="${cmis.repository.type}" arg2="sharepoint2013" />
 			</or>
 			<then>
 				<property file="${project.dir}/${test.ext.properties.file}" />
-
-				<if>
-					<contains string="${cmis.repository.type}" substring="documentum" />
-					<then>
-						<ssh-execute ssh.host="${cmis.repository.vm.host.name}">perl C:/Windows/resetdocumentum.pl</ssh-execute>
-					</then>
-					<elseif>
-						<contains string="${cmis.repository.type}" substring="sharepoint" />
-						<then>
-							<ssh-execute ssh.host="${cmis.repository.vm.host.name}">perl C:/Windows/resetsharepointrepo.pl</ssh-execute>
-						</then>
-					</elseif>
-				</if>
 
 				<if>
 					<os family="unix" />
@@ -12889,6 +14038,15 @@ url=${short.hostname}:8080</echo>
 			<equals arg1="${apacheds.enabled}" arg2="true" />
 			<then>
 				<ant antfile="build-test-apacheds.xml" target="stop-apacheds" />
+			</then>
+		</if>
+
+		<get-testcase-property property.name="aws.store.enabled" />
+
+		<if>
+			<equals arg1="${aws.store.enabled}" arg2="true" />
+			<then>
+				<ant antfile="build-test-aws-s3.xml" target="delete-s3-bucket" />
 			</then>
 		</if>
 
@@ -13148,6 +14306,17 @@ url=${short.hostname}:8080</echo>
 			token="${translation.description.target.original}"
 			value="${translation.description.target}"
 		/>
+
+		<if>
+			<equals arg1="${translation.file.encoding}" arg2="utf8" />
+			<then>
+				<copy
+					file="${selenium.output.dir.name}/${translation.file.name}.${translation.file.type}"
+					outputencoding="UTF-8"
+					tofile="${selenium.output.dir.name}/${translation.file.name}_utf8.${translation.file.type}"
+				/>
+			</then>
+		</if>
 	</target>
 
 	<target name="upgrade-legacy-database">
@@ -13189,29 +14358,38 @@ url=${short.hostname}:8080</echo>
 				</if>
 			</try>
 			<catch>
-				<get-jstack-output process.name="DBUpgrader" />
+				<antcall target="print-jstack-logs">
+					<param name="process.name" value="DBUpgrader" />
+				</antcall>
 
-				<fail message="${upgrade.error}${line.separator}${jstack.output}" />
+				<fail message="${upgrade.error}" />
 			</catch>
 		</trycatch>
+	</target>
 
-		<echo file="${liferay.home}/osgi/configs/com.liferay.portal.search.configuration.IndexStatusManagerConfiguration.cfg">indexReadOnly=false</echo>
+	<target name="wait-for-license-activation">
+		<wait-for-license-activation />
 	</target>
 
 	<target name="wait-for-plugins-deployment">
 		<fail message="Please set the property ${test.class}." unless="test.class" />
 
-		<if>
-			<not>
-				<equals arg1="${liferay.portal.bundle}" arg2="6.0.6" />
-			</not>
-			<then>
-				<condition property="required.plugins.includes" value="">
-					<not>
-						<isset property="required.plugins.includes" />
-					</not>
-				</condition>
+		<get-testcase-property property.name="hook.plugins.includes" />
+		<get-testcase-property property.name="layouttpl.plugins.includes" />
+		<get-testcase-property property.name="portlet.plugins.includes" />
+		<get-testcase-property property.name="theme.plugins.includes" />
+		<get-testcase-property property.name="web.plugins.includes" />
 
+		<if>
+			<or>
+				<isset property="hook.plugins.includes" />
+				<isset property="layouttpl.plugins.includes" />
+				<isset property="portlet.plugins.includes" />
+				<isset property="required.plugins.includes" />
+				<isset property="theme.plugins.includes" />
+				<isset property="web.plugins.includes" />
+			</or>
+			<then>
 				<if>
 					<not>
 						<available file="${liferay.home}/logs" type="dir" />
@@ -13229,12 +14407,6 @@ url=${short.hostname}:8080</echo>
 				</first>
 
 				<var name="log.file.path" value="${toString:first}" />
-
-				<get-testcase-property property.name="hook.plugins.includes" />
-				<get-testcase-property property.name="layouttpl.plugins.includes" />
-				<get-testcase-property property.name="portlet.plugins.includes" />
-				<get-testcase-property property.name="theme.plugins.includes" />
-				<get-testcase-property property.name="web.plugins.includes" />
 
 				<beanshell>
 					<![CDATA[
@@ -13295,5 +14467,21 @@ url=${short.hostname}:8080</echo>
 				</beanshell>
 			</then>
 		</if>
+	</target>
+
+	<target name="wait-for-server-shutdown">
+		<sleep seconds="10" />
+
+		<waitfor checkevery="5" checkeveryunit="second" maxwait="5" maxwaitunit="minute" timeoutproperty="app.server.shutdown.timeout">
+			<not>
+				<http url="http://localhost:${app.server.port.number}/web/guest" />
+			</not>
+		</waitfor>
+
+		<fail message="Server is still available at localhost:${app.server.port.number}">
+			<condition>
+				<isset property="app.server.shutdown.timeout" />
+			</condition>
+		</fail>
 	</target>
 </project>

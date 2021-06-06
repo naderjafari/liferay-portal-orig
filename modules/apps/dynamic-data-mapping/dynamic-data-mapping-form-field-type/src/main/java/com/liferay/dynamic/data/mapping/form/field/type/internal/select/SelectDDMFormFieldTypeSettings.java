@@ -40,14 +40,22 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 				"setOptions('predefinedValue', getValue('options'))",
 				"setRequired('ddmDataProviderInstanceId', contains(getValue('dataSourceType'), \"data-provider\"))",
 				"setRequired('ddmDataProviderInstanceOutput', contains(getValue('dataSourceType'), \"data-provider\"))",
-				"setRequired('options', contains(getValue('dataSourceType'), \"manual\"))",
+				"setRequired('options', contains(getValue('dataSourceType'), \"manual\") OR isEmpty(getValue('dataSourceType')))",
 				"setVisible('ddmDataProviderInstanceId', contains(getValue('dataSourceType'), \"data-provider\"))",
 				"setVisible('ddmDataProviderInstanceOutput', contains(getValue('dataSourceType'), \"data-provider\"))",
-				"setVisible('options', contains(getValue('dataSourceType'), \"manual\"))",
+				"setVisible('options', contains(getValue('dataSourceType'), \"manual\") OR isEmpty(getValue('dataSourceType')))",
 				"setVisible('predefinedValue', contains(getValue('dataSourceType'), \"manual\"))",
+				"setVisible('requiredErrorMessage', false)",
 				"setVisible('validation', false)"
 			},
 			condition = "TRUE"
+		),
+		@DDMFormRule(
+			actions = {
+				"setValue('ddmDataProviderInstanceId', '')",
+				"setValue('ddmDataProviderInstanceOutput', '')"
+			},
+			condition = "not(equals(getValue('dataSourceType'), \"data-provider\"))"
 		)
 	}
 )
@@ -62,7 +70,8 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 						@DDMFormLayoutColumn(
 							size = 12,
 							value = {
-								"label", "tip", "required", "dataSourceType",
+								"label", "tip", "required",
+								"requiredErrorMessage", "dataSourceType",
 								"options", "ddmDataProviderInstanceId",
 								"ddmDataProviderInstanceOutput"
 							}
@@ -79,11 +88,13 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 						@DDMFormLayoutColumn(
 							size = 12,
 							value = {
-								"name", "predefinedValue",
+								"name", "fieldReference", "predefinedValue",
 								"visibilityExpression", "validation",
-								"fieldNamespace", "indexType", "localizable",
+								"fieldNamespace", "indexType",
+								"labelAtStructureLevel", "localizable",
 								"nativeField", "readOnly", "dataType", "type",
-								"showLabel", "repeatable", "multiple"
+								"showLabel", "repeatable", "multiple",
+								"alphabeticalOrder"
 							}
 						)
 					}
@@ -94,6 +105,12 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 )
 public interface SelectDDMFormFieldTypeSettings
 	extends DefaultDDMFormFieldTypeSettings {
+
+	@DDMFormField(
+		label = "%order-options-alphabetically",
+		properties = "showAsSwitcher=true"
+	)
+	public boolean alphabeticalOrder();
 
 	@DDMFormField(
 		label = "%create-list",
@@ -135,7 +152,8 @@ public interface SelectDDMFormFieldTypeSettings
 		label = "%predefined-value",
 		properties = {
 			"placeholder=%enter-a-default-value",
-			"tooltip=%enter-a-default-value-that-is-submitted-if-no-other-value-is-entered"
+			"tooltip=%enter-a-default-value-that-is-submitted-if-no-other-value-is-entered",
+			"visualProperty=true"
 		},
 		type = "select"
 	)

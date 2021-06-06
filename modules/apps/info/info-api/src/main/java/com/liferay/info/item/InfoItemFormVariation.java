@@ -17,6 +17,7 @@ package com.liferay.info.item;
 import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.petra.lang.HashUtil;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -31,6 +32,7 @@ public class InfoItemFormVariation {
 		_labelInfoLocalizedValue = labelInfoLocalizedValue;
 	}
 
+	@Override
 	public boolean equals(Object object) {
 		if (this == object) {
 			return true;
@@ -52,6 +54,10 @@ public class InfoItemFormVariation {
 
 	public String getKey() {
 		return _key;
+	}
+
+	public String getLabel(Locale locale) {
+		return _labelInfoLocalizedValue.getValue(locale);
 	}
 
 	public InfoLocalizedValue<String> getLabelInfoLocalizedValue() {

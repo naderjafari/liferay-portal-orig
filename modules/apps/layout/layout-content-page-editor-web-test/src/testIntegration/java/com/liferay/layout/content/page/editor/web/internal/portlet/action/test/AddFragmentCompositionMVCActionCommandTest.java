@@ -14,6 +14,9 @@
 
 package com.liferay.layout.content.page.editor.web.internal.portlet.action.test;
 
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.model.FragmentCollection;
@@ -109,6 +112,12 @@ public class AddFragmentCompositionMVCActionCommandTest {
 		_serviceContext.setCompanyId(TestPropsValues.getCompanyId());
 
 		ServiceContextThreadLocal.pushServiceContext(_serviceContext);
+
+		_objectMapper = new ObjectMapper() {
+			{
+				configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+			}
+		};
 	}
 
 	@Test
@@ -306,13 +315,13 @@ public class AddFragmentCompositionMVCActionCommandTest {
 		LayoutStructureItem rootLayoutStructureItem =
 			layoutStructure.addRootLayoutStructureItem();
 
-		LayoutStructureItem containerLayoutStructureItem =
-			layoutStructure.addContainerLayoutStructureItem(
+		LayoutStructureItem containerStyledLayoutStructureItem =
+			layoutStructure.addContainerStyledLayoutStructureItem(
 				rootLayoutStructureItem.getItemId(), 0);
 
-		layoutStructure.addFragmentLayoutStructureItem(
+		layoutStructure.addFragmentStyledLayoutStructureItem(
 			fragmentEntryLink.getFragmentEntryLinkId(),
-			containerLayoutStructureItem.getItemId(), 0);
+			containerStyledLayoutStructureItem.getItemId(), 0);
 
 		_layoutPageTemplateStructureLocalService.addLayoutPageTemplateStructure(
 			TestPropsValues.getUserId(), _group.getGroupId(), _layout.getPlid(),
@@ -327,7 +336,7 @@ public class AddFragmentCompositionMVCActionCommandTest {
 			"fragmentCollectionId",
 			String.valueOf(fragmentCollection.getFragmentCollectionId()));
 		mockLiferayPortletActionRequest.addParameter(
-			"itemId", containerLayoutStructureItem.getItemId());
+			"itemId", containerStyledLayoutStructureItem.getItemId());
 		mockLiferayPortletActionRequest.addParameter(
 			"name", RandomTestUtil.randomString());
 		mockLiferayPortletActionRequest.addParameter(
@@ -381,8 +390,10 @@ public class AddFragmentCompositionMVCActionCommandTest {
 			fragmentComposition.getDataJSONObject();
 
 		Assert.assertEquals(
-			expectedFragmentCompositionDataJSONObject.toJSONString(),
-			fragmentCompositionDataJSONObject.toJSONString());
+			_objectMapper.readTree(
+				expectedFragmentCompositionDataJSONObject.toJSONString()),
+			_objectMapper.readTree(
+				fragmentCompositionDataJSONObject.toJSONString()));
 	}
 
 	@Test
@@ -531,9 +542,11 @@ public class AddFragmentCompositionMVCActionCommandTest {
 		_layoutPageTemplateStructureLocalService;
 
 	@Inject(
-		filter = "mvc.command.name=/content_layout/add_fragment_composition"
+		filter = "mvc.command.name=/layout_content_page_editor/add_fragment_composition"
 	)
 	private MVCActionCommand _mvcActionCommand;
+
+	private ObjectMapper _objectMapper;
 
 	@Inject
 	private Portal _portal;

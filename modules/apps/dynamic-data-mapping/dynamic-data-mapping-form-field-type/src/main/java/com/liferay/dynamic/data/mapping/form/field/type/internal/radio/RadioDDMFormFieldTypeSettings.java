@@ -34,6 +34,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 			actions = {
 				"setOptions('predefinedValue', getValue('options'))",
 				"setRequired('options', true)",
+				"setVisible('requiredErrorMessage', false)",
 				"setVisible('validation', false)"
 			},
 			condition = "TRUE"
@@ -50,7 +51,10 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 					{
 						@DDMFormLayoutColumn(
 							size = 12,
-							value = {"label", "tip", "required", "options"}
+							value = {
+								"label", "tip", "required",
+								"requiredErrorMessage", "options"
+							}
 						)
 					}
 				)
@@ -64,9 +68,10 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 						@DDMFormLayoutColumn(
 							size = 12,
 							value = {
-								"name", "predefinedValue",
+								"name", "fieldReference", "predefinedValue",
 								"visibilityExpression", "validation",
-								"fieldNamespace", "indexType", "localizable",
+								"fieldNamespace", "indexType",
+								"labelAtStructureLevel", "localizable",
 								"nativeField", "readOnly", "dataType", "type",
 								"showLabel", "repeatable", "inline"
 							}
@@ -82,7 +87,7 @@ public interface RadioDDMFormFieldTypeSettings
 
 	@DDMFormField(
 		label = "%inline", predefinedValue = "true",
-		properties = "showAsSwitcher=true"
+		properties = {"showAsSwitcher=true", "visualProperty=true"}
 	)
 	public boolean inline();
 
@@ -95,7 +100,8 @@ public interface RadioDDMFormFieldTypeSettings
 		label = "%predefined-value",
 		properties = {
 			"placeholder=%enter-a-default-value",
-			"tooltip=%enter-a-default-value-that-is-submitted-if-no-other-value-is-entered"
+			"tooltip=%enter-a-default-value-that-is-submitted-if-no-other-value-is-entered",
+			"visualProperty=true"
 		},
 		type = "select"
 	)

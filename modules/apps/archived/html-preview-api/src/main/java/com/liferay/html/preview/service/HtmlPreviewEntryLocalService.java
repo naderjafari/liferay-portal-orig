@@ -60,7 +60,7 @@ public interface HtmlPreviewEntryLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link HtmlPreviewEntryLocalServiceUtil} to access the html preview entry local service. Add custom service methods to <code>com.liferay.html.preview.service.impl.HtmlPreviewEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.html.preview.service.impl.HtmlPreviewEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the html preview entry local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link HtmlPreviewEntryLocalServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -137,6 +137,9 @@ public interface HtmlPreviewEntryLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("SegmentUser")
+@GraphQLName(
+	description = "Represents a user who belongs to a segment.",
+	value = "SegmentUser"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "SegmentUser")
-public class SegmentUser {
+public class SegmentUser implements Serializable {
 
 	public static SegmentUser toDTO(String json) {
 		return ObjectMapperUtil.readValue(SegmentUser.class, json);
@@ -200,6 +205,7 @@ public class SegmentUser {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.SegmentUser",
 		name = "x-class-name"
 	)
@@ -235,7 +241,7 @@ public class SegmentUser {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -274,7 +280,7 @@ public class SegmentUser {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

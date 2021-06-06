@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -46,7 +48,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("ColumnViewportDefinition")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ColumnViewportDefinition")
-public class ColumnViewportDefinition {
+public class ColumnViewportDefinition implements Serializable {
 
 	public static ColumnViewportDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(ColumnViewportDefinition.class, json);
@@ -124,6 +126,7 @@ public class ColumnViewportDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ColumnViewportDefinition",
 		name = "x-class-name"
 	)
@@ -159,7 +162,7 @@ public class ColumnViewportDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -198,7 +201,7 @@ public class ColumnViewportDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

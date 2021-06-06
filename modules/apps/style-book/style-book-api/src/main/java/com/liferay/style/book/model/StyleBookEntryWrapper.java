@@ -14,12 +14,15 @@
 
 package com.liferay.style.book.model;
 
+import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.portal.kernel.model.ModelWrapper;
 import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -43,6 +46,8 @@ public class StyleBookEntryWrapper
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
+		attributes.put("uuid", getUuid());
 		attributes.put("headId", getHeadId());
 		attributes.put("styleBookEntryId", getStyleBookEntryId());
 		attributes.put("groupId", getGroupId());
@@ -50,11 +55,12 @@ public class StyleBookEntryWrapper
 		attributes.put("userId", getUserId());
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
+		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("defaultStyleBookEntry", isDefaultStyleBookEntry());
+		attributes.put("frontendTokensValues", getFrontendTokensValues());
 		attributes.put("name", getName());
 		attributes.put("previewFileEntryId", getPreviewFileEntryId());
 		attributes.put("styleBookEntryKey", getStyleBookEntryKey());
-		attributes.put("tokensValues", getTokensValues());
 
 		return attributes;
 	}
@@ -65,6 +71,18 @@ public class StyleBookEntryWrapper
 
 		if (mvccVersion != null) {
 			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
+		}
+
+		String uuid = (String)attributes.get("uuid");
+
+		if (uuid != null) {
+			setUuid(uuid);
 		}
 
 		Long headId = (Long)attributes.get("headId");
@@ -109,11 +127,24 @@ public class StyleBookEntryWrapper
 			setCreateDate(createDate);
 		}
 
+		Date modifiedDate = (Date)attributes.get("modifiedDate");
+
+		if (modifiedDate != null) {
+			setModifiedDate(modifiedDate);
+		}
+
 		Boolean defaultStyleBookEntry = (Boolean)attributes.get(
 			"defaultStyleBookEntry");
 
 		if (defaultStyleBookEntry != null) {
 			setDefaultStyleBookEntry(defaultStyleBookEntry);
+		}
+
+		String frontendTokensValues = (String)attributes.get(
+			"frontendTokensValues");
+
+		if (frontendTokensValues != null) {
+			setFrontendTokensValues(frontendTokensValues);
 		}
 
 		String name = (String)attributes.get("name");
@@ -132,12 +163,6 @@ public class StyleBookEntryWrapper
 
 		if (styleBookEntryKey != null) {
 			setStyleBookEntryKey(styleBookEntryKey);
-		}
-
-		String tokensValues = (String)attributes.get("tokensValues");
-
-		if (tokensValues != null) {
-			setTokensValues(tokensValues);
 		}
 	}
 
@@ -162,6 +187,16 @@ public class StyleBookEntryWrapper
 	}
 
 	/**
+	 * Returns the ct collection ID of this style book entry.
+	 *
+	 * @return the ct collection ID of this style book entry
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
+	}
+
+	/**
 	 * Returns the default style book entry of this style book entry.
 	 *
 	 * @return the default style book entry of this style book entry
@@ -169,6 +204,16 @@ public class StyleBookEntryWrapper
 	@Override
 	public boolean getDefaultStyleBookEntry() {
 		return model.getDefaultStyleBookEntry();
+	}
+
+	/**
+	 * Returns the frontend tokens values of this style book entry.
+	 *
+	 * @return the frontend tokens values of this style book entry
+	 */
+	@Override
+	public String getFrontendTokensValues() {
+		return model.getFrontendTokensValues();
 	}
 
 	/**
@@ -196,6 +241,16 @@ public class StyleBookEntryWrapper
 		com.liferay.portal.kernel.theme.ThemeDisplay themeDisplay) {
 
 		return model.getImagePreviewURL(themeDisplay);
+	}
+
+	/**
+	 * Returns the modified date of this style book entry.
+	 *
+	 * @return the modified date of this style book entry
+	 */
+	@Override
+	public Date getModifiedDate() {
+		return model.getModifiedDate();
 	}
 
 	/**
@@ -259,16 +314,6 @@ public class StyleBookEntryWrapper
 	}
 
 	/**
-	 * Returns the tokens values of this style book entry.
-	 *
-	 * @return the tokens values of this style book entry
-	 */
-	@Override
-	public String getTokensValues() {
-		return model.getTokensValues();
-	}
-
-	/**
 	 * Returns the user ID of this style book entry.
 	 *
 	 * @return the user ID of this style book entry
@@ -296,6 +341,16 @@ public class StyleBookEntryWrapper
 	@Override
 	public String getUserUuid() {
 		return model.getUserUuid();
+	}
+
+	/**
+	 * Returns the uuid of this style book entry.
+	 *
+	 * @return the uuid of this style book entry
+	 */
+	@Override
+	public String getUuid() {
+		return model.getUuid();
 	}
 
 	/**
@@ -342,6 +397,16 @@ public class StyleBookEntryWrapper
 	}
 
 	/**
+	 * Sets the ct collection ID of this style book entry.
+	 *
+	 * @param ctCollectionId the ct collection ID of this style book entry
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
+	}
+
+	/**
 	 * Sets whether this style book entry is default style book entry.
 	 *
 	 * @param defaultStyleBookEntry the default style book entry of this style book entry
@@ -349,6 +414,16 @@ public class StyleBookEntryWrapper
 	@Override
 	public void setDefaultStyleBookEntry(boolean defaultStyleBookEntry) {
 		model.setDefaultStyleBookEntry(defaultStyleBookEntry);
+	}
+
+	/**
+	 * Sets the frontend tokens values of this style book entry.
+	 *
+	 * @param frontendTokensValues the frontend tokens values of this style book entry
+	 */
+	@Override
+	public void setFrontendTokensValues(String frontendTokensValues) {
+		model.setFrontendTokensValues(frontendTokensValues);
 	}
 
 	/**
@@ -369,6 +444,16 @@ public class StyleBookEntryWrapper
 	@Override
 	public void setHeadId(long headId) {
 		model.setHeadId(headId);
+	}
+
+	/**
+	 * Sets the modified date of this style book entry.
+	 *
+	 * @param modifiedDate the modified date of this style book entry
+	 */
+	@Override
+	public void setModifiedDate(Date modifiedDate) {
+		model.setModifiedDate(modifiedDate);
 	}
 
 	/**
@@ -432,16 +517,6 @@ public class StyleBookEntryWrapper
 	}
 
 	/**
-	 * Sets the tokens values of this style book entry.
-	 *
-	 * @param tokensValues the tokens values of this style book entry
-	 */
-	@Override
-	public void setTokensValues(String tokensValues) {
-		model.setTokensValues(tokensValues);
-	}
-
-	/**
 	 * Sets the user ID of this style book entry.
 	 *
 	 * @param userId the user ID of this style book entry
@@ -469,6 +544,35 @@ public class StyleBookEntryWrapper
 	@Override
 	public void setUserUuid(String userUuid) {
 		model.setUserUuid(userUuid);
+	}
+
+	/**
+	 * Sets the uuid of this style book entry.
+	 *
+	 * @param uuid the uuid of this style book entry
+	 */
+	@Override
+	public void setUuid(String uuid) {
+		model.setUuid(uuid);
+	}
+
+	@Override
+	public Map<String, Function<StyleBookEntry, Object>>
+		getAttributeGetterFunctions() {
+
+		return model.getAttributeGetterFunctions();
+	}
+
+	@Override
+	public Map<String, BiConsumer<StyleBookEntry, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
+	}
+
+	@Override
+	public StagedModelType getStagedModelType() {
+		return model.getStagedModelType();
 	}
 
 	@Override

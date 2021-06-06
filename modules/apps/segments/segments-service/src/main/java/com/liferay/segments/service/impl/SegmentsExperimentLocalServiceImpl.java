@@ -23,7 +23,6 @@ import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
@@ -49,6 +48,7 @@ import com.liferay.segments.exception.SegmentsExperimentNameException;
 import com.liferay.segments.exception.SegmentsExperimentRelSplitException;
 import com.liferay.segments.exception.SegmentsExperimentStatusException;
 import com.liferay.segments.exception.WinnerSegmentsExperienceException;
+import com.liferay.segments.model.SegmentsExperience;
 import com.liferay.segments.model.SegmentsExperiment;
 import com.liferay.segments.model.SegmentsExperimentRel;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
@@ -61,6 +61,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.osgi.service.component.annotations.Component;
@@ -430,22 +431,20 @@ public class SegmentsExperimentLocalServiceImpl
 			return;
 		}
 
-		JSONObject notificationEventJSONObject = JSONUtil.put(
-			"classPK", segmentsExperiment.getSegmentsExperimentId()
-		).put(
-			"referrerClassNameId", segmentsExperiment.getClassNameId()
-		).put(
-			"referrerClassPK", segmentsExperiment.getClassPK()
-		).put(
-			"segmentsExperimentKey",
-			segmentsExperiment.getSegmentsExperimentKey()
-		);
-
 		userNotificationEventLocalService.sendUserNotificationEvents(
 			segmentsExperiment.getUserId(),
 			SegmentsPortletKeys.SEGMENTS_EXPERIMENT,
 			UserNotificationDeliveryConstants.TYPE_WEBSITE,
-			notificationEventJSONObject);
+			JSONUtil.put(
+				"classPK", segmentsExperiment.getSegmentsExperimentId()
+			).put(
+				"referrerClassNameId", segmentsExperiment.getClassNameId()
+			).put(
+				"referrerClassPK", segmentsExperiment.getClassPK()
+			).put(
+				"segmentsExperimentKey",
+				segmentsExperiment.getSegmentsExperimentKey()
+			));
 	}
 
 	private DynamicQuery _getSegmentsExperienceIdsDynamicQuery(
@@ -463,6 +462,55 @@ public class SegmentsExperimentLocalServiceImpl
 			ProjectionFactoryUtil.property("segmentsExperienceId"));
 
 		return dynamicQuery;
+	}
+
+	private SegmentsExperience _publishSegmentsExperienceVariant(
+		SegmentsExperience controlSegmentsExperience,
+		SegmentsExperience variantSegmentsExperience) {
+
+		int lowestSegmentsExperiencePriority = Optional.ofNullable(
+			segmentsExperiencePersistence.fetchByG_C_C_Last(
+				controlSegmentsExperience.getGroupId(),
+				controlSegmentsExperience.getClassNameId(),
+				controlSegmentsExperience.getClassPK(), null)
+		).map(
+			SegmentsExperience::getPriority
+		).orElse(
+			SegmentsExperienceConstants.PRIORITY_DEFAULT
+		);
+
+		int controlSegmentsExperiencePriority =
+			controlSegmentsExperience.getPriority();
+		int variantSegmentsExperiencePriority =
+			variantSegmentsExperience.getPriority();
+
+		controlSegmentsExperience.setPriority(
+			lowestSegmentsExperiencePriority - 1);
+
+		controlSegmentsExperience = segmentsExperiencePersistence.update(
+			controlSegmentsExperience);
+
+		variantSegmentsExperience.setPriority(
+			lowestSegmentsExperiencePriority - 2);
+
+		variantSegmentsExperience = segmentsExperiencePersistence.update(
+			variantSegmentsExperience);
+
+		segmentsExperiencePersistence.flush();
+
+		controlSegmentsExperience.setPriority(
+			variantSegmentsExperiencePriority);
+		controlSegmentsExperience.setActive(false);
+
+		_segmentsExperienceLocalService.updateSegmentsExperience(
+			controlSegmentsExperience);
+
+		variantSegmentsExperience.setPriority(
+			controlSegmentsExperiencePriority);
+		variantSegmentsExperience.setActive(true);
+
+		return _segmentsExperienceLocalService.updateSegmentsExperience(
+			variantSegmentsExperience);
 	}
 
 	private SegmentsExperiment _updateSegmentsExperimentStatus(
@@ -528,11 +576,11 @@ public class SegmentsExperimentLocalServiceImpl
 			(winnerSegmentsExperienceId !=
 				segmentsExperiment.getSegmentsExperienceId())) {
 
-			_segmentsExperienceLocalService.updateSegmentsExperienceActive(
-				segmentsExperiment.getSegmentsExperienceId(), false);
-
-			_segmentsExperienceLocalService.updateSegmentsExperienceActive(
-				winnerSegmentsExperienceId, true);
+			_publishSegmentsExperienceVariant(
+				_segmentsExperienceLocalService.getSegmentsExperience(
+					segmentsExperiment.getSegmentsExperienceId()),
+				_segmentsExperienceLocalService.getSegmentsExperience(
+					winnerSegmentsExperienceId));
 		}
 
 		return segmentsExperiment;

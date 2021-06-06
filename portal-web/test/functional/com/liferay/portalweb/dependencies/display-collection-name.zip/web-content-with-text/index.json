@@ -3,10 +3,11 @@
 		{
 			"fields": [
 				{
-					"label": "Web Content With Text",
+					"label": "Content",
 					"name": "itemSelectorName",
 					"type": "itemSelector",
 					"typeOptions": {
+						"enableSelectTemplate" : true,
 						"itemSubtype": "STRUCTURE-TEXT",
 						"itemType" : "com.liferay.journal.model.JournalArticle"
 					}

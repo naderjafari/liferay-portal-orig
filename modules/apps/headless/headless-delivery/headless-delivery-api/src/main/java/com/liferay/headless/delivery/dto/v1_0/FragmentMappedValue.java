@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentMappedValue")
+@GraphQLName(
+	description = "Represents a fragment mapped value.",
+	value = "FragmentMappedValue"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentMappedValue")
-public class FragmentMappedValue {
+public class FragmentMappedValue implements Serializable {
 
 	public static FragmentMappedValue toDTO(String json) {
 		return ObjectMapperUtil.readValue(FragmentMappedValue.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The default value of the fragment mapped value.")
 	@Valid
 	public FragmentInlineValue getDefaultFragmentInlineValue() {
 		return defaultFragmentInlineValue;
@@ -80,11 +85,14 @@ public class FragmentMappedValue {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The default value of the fragment mapped value."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentInlineValue defaultFragmentInlineValue;
 
 	@Schema(
+		deprecated = true,
 		description = "Deprecated as of Athanasius (7.3.x), replaced by defaultFragmentInlineValue"
 	)
 	@Valid
@@ -118,7 +126,7 @@ public class FragmentMappedValue {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected DefaultValue defaultValue;
 
-	@Schema
+	@Schema(description = "The mapping of the fragment mapped value.")
 	@Valid
 	public Mapping getMapping() {
 		return mapping;
@@ -143,7 +151,7 @@ public class FragmentMappedValue {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The mapping of the fragment mapped value.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Mapping mapping;
 
@@ -210,6 +218,7 @@ public class FragmentMappedValue {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentMappedValue",
 		name = "x-class-name"
 	)
@@ -245,7 +254,7 @@ public class FragmentMappedValue {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -284,7 +293,7 @@ public class FragmentMappedValue {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

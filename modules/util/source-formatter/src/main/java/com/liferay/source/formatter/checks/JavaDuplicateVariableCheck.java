@@ -16,6 +16,8 @@ package com.liferay.source.formatter.checks;
 
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.source.formatter.checks.util.BNDSourceUtil;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
@@ -163,6 +165,9 @@ public class JavaDuplicateVariableCheck extends BaseJavaTermCheck {
 						absolutePath, fullyQualifiedClassName, javaClass));
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 		}
 
@@ -175,18 +180,21 @@ public class JavaDuplicateVariableCheck extends BaseJavaTermCheck {
 			String absolutePath, String fullyQualifiedName, JavaClass javaClass)
 		throws IOException {
 
-		List<JavaVariable> javaVariables = new ArrayList<>();
-
-		for (JavaTerm javaTerm : javaClass.getChildJavaTerms()) {
-			if ((javaTerm instanceof JavaVariable) &&
-				(javaTerm.isProtected() || javaTerm.isPublic())) {
-
-				javaVariables.add((JavaVariable)javaTerm);
-			}
-		}
-
 		Map<String, List<JavaVariable>> javaVariablesMap = HashMapBuilder.put(
-			fullyQualifiedName, javaVariables
+			fullyQualifiedName,
+			() -> {
+				List<JavaVariable> javaVariables = new ArrayList<>();
+
+				for (JavaTerm javaTerm : javaClass.getChildJavaTerms()) {
+					if ((javaTerm instanceof JavaVariable) &&
+						(javaTerm.isProtected() || javaTerm.isPublic())) {
+
+						javaVariables.add((JavaVariable)javaTerm);
+					}
+				}
+
+				return javaVariables;
+			}
 		).build();
 
 		List<String> extendedClassNames = javaClass.getExtendedClassNames(true);
@@ -208,6 +216,9 @@ public class JavaDuplicateVariableCheck extends BaseJavaTermCheck {
 
 		return _rootDirName;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JavaDuplicateVariableCheck.class);
 
 	private Map<String, String> _bundleSymbolicNamesMap;
 	private final Map<String, Map<String, List<JavaVariable>>>

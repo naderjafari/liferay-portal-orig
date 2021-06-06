@@ -16,12 +16,14 @@ package com.liferay.portal.service.impl;
 
 import com.liferay.admin.kernel.util.PortalMyAccountApplicationType;
 import com.liferay.expando.kernel.model.CustomAttributesDisplay;
+import com.liferay.exportimport.kernel.staging.LayoutStagingUtil;
 import com.liferay.petra.content.ContentUtil;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.ConfigurationFactoryImpl;
 import com.liferay.portal.kernel.application.type.ApplicationType;
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.cluster.Clusterable;
 import com.liferay.portal.kernel.configuration.Configuration;
 import com.liferay.portal.kernel.configuration.ConfigurationFactoryUtil;
@@ -66,6 +68,9 @@ import com.liferay.portal.kernel.scheduler.Trigger;
 import com.liferay.portal.kernel.scheduler.TriggerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.servlet.ServletContextClassLoaderPool;
 import com.liferay.portal.kernel.servlet.ServletContextUtil;
@@ -259,8 +264,29 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 					portletPreferences.getPortletId(), plid);
 			}
 
-			portletPreferencesLocalService.deletePortletPreferences(
-				portletPreferences.getPortletPreferencesId());
+			if (LayoutStagingUtil.isBranchingLayout(
+					_layoutLocalService.getLayout(plid))) {
+
+				ServiceContext serviceContext =
+					ServiceContextThreadLocal.getServiceContext();
+
+				String[] removePortlets = (String[])serviceContext.getAttribute(
+					"removePortletIds");
+
+				if (removePortlets == null) {
+					serviceContext.setAttribute(
+						"removePortletIds", new String[] {portletId});
+				}
+				else if (!ArrayUtil.contains(removePortlets, portletId)) {
+					serviceContext.setAttribute(
+						"removePortletIds",
+						ArrayUtil.append(removePortlets, portletId));
+				}
+			}
+			else {
+				portletPreferencesLocalService.deletePortletPreferences(
+					portletPreferences.getPortletPreferencesId());
+			}
 		}
 	}
 
@@ -318,8 +344,6 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 
 		_portletsMap.put(portlet.getRootPortletId(), portlet);
 
-		ResourceActionsUtil.check(portlet.getPortletId());
-
 		if (eagerDestroy) {
 			PortletInstanceFactoryUtil.clear(portlet, false);
 
@@ -328,37 +352,12 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 
 		clearCache();
 
-		PortletCategory portletCategory = (PortletCategory)WebAppPool.get(
-			portlet.getCompanyId(), WebKeys.PORTLET_CATEGORY);
+		companyLocalService.forEachCompanyId(
+			companyId -> {
+				_deployRemotePortlet(portlet, categoryNames, companyId);
 
-		if (portletCategory == null) {
-			_log.error(
-				"Unable to register remote portlet for company " +
-					portlet.getCompanyId() + " because it does not exist");
-
-			return portlet;
-		}
-
-		portletCategory.separate(portlet.getPortletId());
-
-		for (String categoryName : categoryNames) {
-			PortletCategory newPortletCategory = new PortletCategory(
-				categoryName);
-
-			if (newPortletCategory.getParentCategory() == null) {
-				PortletCategory rootPortletCategory = new PortletCategory();
-
-				rootPortletCategory.addCategory(newPortletCategory);
-			}
-
-			Set<String> portletIds = newPortletCategory.getPortletIds();
-
-			portletIds.add(portlet.getPortletId());
-
-			portletCategory.merge(newPortletCategory.getRootCategory());
-		}
-
-		checkPortlet(portlet);
+				portletPersistence.flush();
+			});
 
 		return portlet;
 	}
@@ -1042,7 +1041,15 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 					strutsPath, portlet.getPortletId());
 
 				if ((oldPortletId != null) && _log.isWarnEnabled()) {
-					_log.warn("Duplicate struts path " + strutsPath);
+					Portlet oldPortlet = _portletsMap.get(oldPortletId);
+
+					String oldPortletContextName = oldPortlet.getContextName();
+
+					if (!StringUtil.equals(
+							oldPortletContextName, portlet.getContextName())) {
+
+						_log.warn("Duplicate Struts path " + strutsPath);
+					}
 				}
 			}
 
@@ -1330,11 +1337,8 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		String portletId = portletElement.elementText("portlet-name");
 
 		if (Validator.isNotNull(servletContextName)) {
-			portletId = portletId.concat(
-				PortletConstants.WAR_SEPARATOR
-			).concat(
-				servletContextName
-			);
+			portletId = StringBundler.concat(
+				portletId, PortletConstants.WAR_SEPARATOR, servletContextName);
 		}
 
 		portletId = PortalUtil.getJsSafePortletId(portletId);
@@ -1591,7 +1595,8 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Unknown application type " +
-							applicationTypeElement.getText());
+							applicationTypeElement.getText(),
+						illegalArgumentException);
 				}
 			}
 		}
@@ -2003,11 +2008,8 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		String portletId = portletName;
 
 		if (Validator.isNotNull(servletContextName)) {
-			portletId = portletId.concat(
-				PortletConstants.WAR_SEPARATOR
-			).concat(
-				servletContextName
-			);
+			portletId = StringBundler.concat(
+				portletId, PortletConstants.WAR_SEPARATOR, servletContextName);
 		}
 
 		portletId = PortalUtil.getJsSafePortletId(portletId);
@@ -2199,7 +2201,8 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Portlet with the name " + portletId +
-							" does not have valid default preferences");
+							" does not have valid default preferences",
+						exception);
 				}
 			}
 		}
@@ -2675,13 +2678,9 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 			return;
 		}
 
-		String contextPath = servletContext.getContextPath();
-
-		spriteFileName = contextPath.concat(
-			SpriteProcessor.PATH
-		).concat(
-			spriteFileName
-		);
+		spriteFileName = StringBundler.concat(
+			servletContext.getContextPath(), SpriteProcessor.PATH,
+			spriteFileName);
 
 		portletApp.setSpriteImages(spriteFileName, spriteProperties);
 	}
@@ -2699,6 +2698,48 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		}
 
 		return updatePortlet(companyId, portletId, roles, active);
+	}
+
+	private void _deployRemotePortlet(
+			Portlet portlet, String[] categoryNames, Long companyId)
+		throws PortalException {
+
+		Portlet companyPortletModel = (Portlet)portlet.clone();
+
+		companyPortletModel.setCompanyId(companyId);
+
+		PortletCategory portletCategory = (PortletCategory)WebAppPool.get(
+			companyPortletModel.getCompanyId(), WebKeys.PORTLET_CATEGORY);
+
+		if (portletCategory == null) {
+			_log.error(
+				"Unable to register remote portlet for company " +
+					companyPortletModel.getCompanyId() +
+						" because it does not exist");
+
+			return;
+		}
+
+		portletCategory.separate(companyPortletModel.getPortletId());
+
+		for (String categoryName : categoryNames) {
+			PortletCategory newPortletCategory = new PortletCategory(
+				categoryName);
+
+			if (newPortletCategory.getParentCategory() == null) {
+				PortletCategory rootPortletCategory = new PortletCategory();
+
+				rootPortletCategory.addCategory(newPortletCategory);
+			}
+
+			Set<String> portletIds = newPortletCategory.getPortletIds();
+
+			portletIds.add(companyPortletModel.getPortletId());
+
+			portletCategory.merge(newPortletCategory.getRootCategory());
+		}
+
+		checkPortlet(companyPortletModel);
 	}
 
 	private Configuration _getConfiguration(PortletApp portletApp) {
@@ -2784,6 +2825,10 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 
 	private final AtomicReference<String[]> _friendlyURLMapperRootPortletIds =
 		new AtomicReference<>(new String[0]);
+
+	@BeanReference(type = LayoutLocalService.class)
+	private LayoutLocalService _layoutLocalService;
+
 	private ServiceTracker<FriendlyURLMapper, String[]> _serviceTracker;
 
 	private class FriendlyURLMapperServiceTrackerCustomizer

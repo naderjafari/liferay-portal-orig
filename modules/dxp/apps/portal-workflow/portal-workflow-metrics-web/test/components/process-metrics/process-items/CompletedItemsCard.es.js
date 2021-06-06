@@ -9,12 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {
-	cleanup,
-	findAllByTestId,
-	findByTestId,
-	render,
-} from '@testing-library/react';
+import {cleanup, render} from '@testing-library/react';
 import React from 'react';
 
 import CompletedItemsCard from '../../../../src/main/resources/META-INF/resources/js/components/process-metrics/process-items/CompletedItemsCard.es';
@@ -64,7 +59,7 @@ const timeRangeData = {
 };
 
 describe('The completed items card component should', () => {
-	let getByTestId;
+	let container, getAllByText;
 
 	afterEach(cleanup);
 
@@ -88,26 +83,19 @@ describe('The completed items card component should', () => {
 			{wrapper}
 		);
 
-		getByTestId = renderResult.getByTestId;
+		container = renderResult.container;
+		getAllByText = renderResult.getAllByText;
 	});
 
 	test('Be rendered with time range filter', async () => {
-		const timeRangeFilter = getByTestId('timeRangeFilter');
-		const filterItems = await findAllByTestId(
-			timeRangeFilter,
-			'filterItem'
-		);
-		const activeItem = filterItems.find((item) =>
-			item.className.includes('active')
-		);
-		const activeItemName = await findByTestId(activeItem, 'filterItemName');
+		const activeItem = container.querySelector('.active');
 
-		expect(timeRangeFilter).not.toBeNull();
-		expect(activeItemName).toHaveTextContent('Last 7 Days');
+		expect(getAllByText('Last 7 Days').length).toEqual(2);
+		expect(activeItem).toHaveTextContent('Last 7 Days');
 	});
 
 	test('Be rendered with overdue count "1"', () => {
-		const panelBody = getByTestId('panelBody');
+		const panelBody = container.querySelector('.panel-body');
 
 		const overdueLink = panelBody.children[0].children[0];
 		const overdueHeader = overdueLink.children[0].children[0];
@@ -123,7 +111,7 @@ describe('The completed items card component should', () => {
 	});
 
 	test('Be rendered with onTime count "2"', () => {
-		const panelBody = getByTestId('panelBody');
+		const panelBody = container.querySelector('.panel-body');
 
 		const onTimeLink = panelBody.children[0].children[1];
 		const onTimeHeader = onTimeLink.children[0].children[0];
@@ -139,7 +127,7 @@ describe('The completed items card component should', () => {
 	});
 
 	test('Be rendered with untracked count "3"', () => {
-		const panelBody = getByTestId('panelBody');
+		const panelBody = container.querySelector('.panel-body');
 
 		const untrackedLink = panelBody.children[0].children[2];
 		const untrackedHeader = untrackedLink.children[0].children[0];
@@ -156,7 +144,7 @@ describe('The completed items card component should', () => {
 	});
 
 	test('Be rendered with total completed count "6"', () => {
-		const panelBody = getByTestId('panelBody');
+		const panelBody = container.querySelector('.panel-body');
 
 		const totalLink = panelBody.children[0].children[3];
 		const totalHeader = totalLink.children[0].children[0];

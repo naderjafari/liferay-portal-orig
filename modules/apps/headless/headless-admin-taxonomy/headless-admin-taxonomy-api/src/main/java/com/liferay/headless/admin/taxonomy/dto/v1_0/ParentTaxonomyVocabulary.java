@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ParentTaxonomyVocabulary")
+@GraphQLName(
+	description = "The parent category's `TaxonomyVocabulary`, if such a parent category exists.",
+	value = "ParentTaxonomyVocabulary"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ParentTaxonomyVocabulary")
-public class ParentTaxonomyVocabulary {
+public class ParentTaxonomyVocabulary implements Serializable {
 
 	public static ParentTaxonomyVocabulary toDTO(String json) {
 		return ObjectMapperUtil.readValue(ParentTaxonomyVocabulary.class, json);
@@ -159,6 +164,7 @@ public class ParentTaxonomyVocabulary {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.taxonomy.dto.v1_0.ParentTaxonomyVocabulary",
 		name = "x-class-name"
 	)
@@ -194,7 +200,7 @@ public class ParentTaxonomyVocabulary {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -233,7 +239,7 @@ public class ParentTaxonomyVocabulary {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

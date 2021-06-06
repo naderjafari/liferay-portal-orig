@@ -28,6 +28,7 @@ definition {
 
 	@description = "This test ensures that user can map the blogs with SEO meta tags for display pages."
 	@priority = "5"
+	@refactorneeded
 	test MapBlogsToDisplayPage {
 		JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 			contentType = "Blogs Entry",
@@ -69,6 +70,7 @@ definition {
 
 	@description = "This test ensures that user can map the document with SEO meta tags for display pages."
 	@priority = "5"
+	@refactorneeded
 	test MapDocumentToDisplayPage {
 		JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 			contentType = "Document",
@@ -95,7 +97,7 @@ definition {
 			mappedField = "HTML Title");
 
 		OpenGraph.mapEditableTextToField(
-			field = "Content Type",
+			field = "MIME Type",
 			mappedField = "Description");
 
 		Button.clickSave();
@@ -106,11 +108,12 @@ definition {
 
 		OpenGraph.viewMappedField(
 			mappedField = "Description",
-			mappedFieldValue = "Document: Content Type");
+			mappedFieldValue = "Document: MIME Type");
 	}
 
 	@description = "This test ensures that user can map the web content with SEO meta tags for display pages."
 	@priority = "5"
+	@refactorneeded
 	test MapWebContentToDisplayPage {
 		JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 			contentType = "Web Content Article",
@@ -133,7 +136,7 @@ definition {
 			mappedFieldValue = "Basic Web Content: Description");
 
 		OpenGraph.mapEditableTextToField(
-			field = "Basic Web Content *",
+			field = "Basic Web Content",
 			mappedField = "HTML Title");
 
 		OpenGraph.mapEditableTextToField(
@@ -144,7 +147,7 @@ definition {
 
 		OpenGraph.viewMappedField(
 			mappedField = "Title",
-			mappedFieldValue = "Basic Web Content: Basic Web Content *");
+			mappedFieldValue = "Basic Web Content: Basic Web Content");
 
 		OpenGraph.viewMappedField(
 			mappedField = "Description",

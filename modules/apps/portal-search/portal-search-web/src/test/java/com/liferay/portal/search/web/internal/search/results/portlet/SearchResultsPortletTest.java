@@ -28,8 +28,6 @@ import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.Html;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.searcher.SearchRequest;
@@ -42,6 +40,7 @@ import com.liferay.portal.search.web.internal.portlet.shared.task.PortletSharedR
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchRequest;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchResponse;
 import com.liferay.portal.search.web.search.request.SearchSettings;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.IOException;
 
@@ -59,6 +58,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.ArgumentCaptor;
@@ -72,13 +73,17 @@ import org.mockito.MockitoAnnotations;
  */
 public class SearchResultsPortletTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
 
-		setUpHtmlUtil();
 		setUpPortletSharedSearchResponse();
-		setUpProps();
+		setUpPropsUtil();
 		setUpSearchSettings();
 
 		_portletURLFactory = createPortletURLFactory();
@@ -295,12 +300,6 @@ public class SearchResultsPortletTest {
 		_searchResultsPortlet.render(_renderRequest, _renderResponse);
 	}
 
-	protected void setUpHtmlUtil() throws Exception {
-		HtmlUtil htmlUtil = new HtmlUtil();
-
-		htmlUtil.setHtml(Mockito.mock(Html.class));
-	}
-
 	protected void setUpPortletSharedSearchResponse() {
 		Mockito.doReturn(
 			Optional.empty()
@@ -345,7 +344,7 @@ public class SearchResultsPortletTest {
 		);
 	}
 
-	protected void setUpProps() {
+	protected void setUpPropsUtil() {
 		PropsTestUtil.setProps(Collections.emptyMap());
 	}
 

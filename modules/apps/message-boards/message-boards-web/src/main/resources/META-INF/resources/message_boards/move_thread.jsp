@@ -47,7 +47,7 @@ if (portletTitleBasedNavigation) {
 }
 %>
 
-<div <%= portletTitleBasedNavigation ? "class=\"container-fluid-1280\"" : StringPool.BLANK %>>
+<div <%= portletTitleBasedNavigation ? "class=\"container-fluid container-fluid-max-xl\"" : StringPool.BLANK %>>
 	<portlet:actionURL name="/message_boards/move_thread" var="moveThreadURL">
 		<portlet:param name="mvcRenderCommandName" value="/message_boards/move_thread" />
 	</portlet:actionURL>
@@ -145,32 +145,24 @@ if (portletTitleBasedNavigation) {
 	);
 
 	if (selectCategoryButton) {
-		selectCategoryButton.addEventListener('click', function (event) {
-			Liferay.Util.selectEntity(
-				{
-					dialog: {
-						constrain: true,
-						modal: true,
-						width: 680,
-					},
-					id: '<portlet:namespace />selectCategory',
-					title:
-						'<liferay-ui:message arguments="category" key="select-x" />',
-
-					<portlet:renderURL var="selectCategoryURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
-						<portlet:param name="mvcRenderCommandName" value="/message_boards/select_category" />
-						<portlet:param name="mbCategoryId" value="<%= String.valueOf(category.getParentCategoryId()) %>" />
-					</portlet:renderURL>
-
-					uri: '<%= selectCategoryURL %>',
-				},
-				function (event) {
+		selectCategoryButton.addEventListener('click', (event) => {
+			Liferay.Util.openSelectionModal({
+				onSelect: function (event) {
 					Liferay.Util.setFormValues(form, {
 						categoryName: Liferay.Util.unescape(event.name),
 						mbCategoryId: event.categoryid,
 					});
-				}
-			);
+				},
+				selectEventName: '<portlet:namespace />selectCategory',
+				title: '<liferay-ui:message arguments="category" key="select-x" />',
+
+				<portlet:renderURL var="selectCategoryURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
+					<portlet:param name="mvcRenderCommandName" value="/message_boards/select_category" />
+					<portlet:param name="mbCategoryId" value="<%= String.valueOf(category.getParentCategoryId()) %>" />
+				</portlet:renderURL>
+
+				url: '<%= selectCategoryURL %>',
+			});
 		});
 	}
 </script>

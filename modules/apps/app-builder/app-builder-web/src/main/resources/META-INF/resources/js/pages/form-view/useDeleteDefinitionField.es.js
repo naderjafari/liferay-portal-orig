@@ -12,7 +12,7 @@
  * details.
  */
 
-import {PagesVisitor} from 'dynamic-data-mapping-form-renderer';
+import {PagesVisitor} from 'data-engine-js-components-web';
 import {useContext} from 'react';
 
 import FormViewContext from './FormViewContext.es';
@@ -22,11 +22,16 @@ export default ({dataLayoutBuilder}) => {
 	const [, dispatch] = useContext(FormViewContext);
 
 	return (event) => {
-		const {pages} = dataLayoutBuilder.getStore();
+		const {
+			pages,
+		} = dataLayoutBuilder.formBuilderWithLayoutProvider.refs.layoutProvider.state;
 		const visitor = new PagesVisitor(pages);
 
 		if (visitor.containsField(event.fieldName, true)) {
-			dataLayoutBuilder.dispatch('fieldDeleted', event);
+			dataLayoutBuilder.formBuilderWithLayoutProvider.refs.layoutProvider?.dispatch?.(
+				'fieldDeleted',
+				event
+			);
 		}
 		else {
 			dispatch(deleteDefinitionField(event.fieldName));

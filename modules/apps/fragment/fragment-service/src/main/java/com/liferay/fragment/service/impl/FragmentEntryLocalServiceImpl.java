@@ -15,6 +15,7 @@
 package com.liferay.fragment.service.impl;
 
 import com.liferay.document.library.kernel.service.DLAppLocalService;
+import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
 import com.liferay.fragment.configuration.FragmentServiceConfiguration;
 import com.liferay.fragment.constants.FragmentPortletKeys;
 import com.liferay.fragment.exception.DuplicateFragmentEntryKeyException;
@@ -461,7 +462,7 @@ public class FragmentEntryLocalServiceImpl
 	public List<FragmentEntry> getFragmentEntriesByUuidAndCompanyId(
 		String uuid, long companyId) {
 
-		return fragmentEntryPersistence.findByUUID_G(uuid, companyId);
+		return fragmentEntryPersistence.findByUuid_C(uuid, companyId);
 	}
 
 	@Override
@@ -469,7 +470,7 @@ public class FragmentEntryLocalServiceImpl
 		String uuid, long companyId, int start, int end,
 		OrderByComparator<FragmentEntry> orderByComparator) {
 
-		return fragmentEntryPersistence.findByUUID_G(
+		return fragmentEntryPersistence.findByUuid_C(
 			uuid, companyId, start, end, orderByComparator);
 	}
 
@@ -557,7 +558,9 @@ public class FragmentEntryLocalServiceImpl
 				FragmentServiceConfiguration.class,
 				draftFragmentEntry.getCompanyId());
 
-		if (fragmentServiceConfiguration.propagateChanges()) {
+		if (fragmentServiceConfiguration.propagateChanges() &&
+			!ExportImportThreadLocal.isStagingInProcess()) {
+
 			_propagateChanges(
 				updatedPublishedFragmentEntry.getFragmentEntryId());
 		}
@@ -609,9 +612,9 @@ public class FragmentEntryLocalServiceImpl
 
 	@Override
 	public FragmentEntry updateFragmentEntry(
-			long userId, long fragmentEntryId, String name, String css,
-			String html, String js, boolean cacheable, String configuration,
-			long previewFileEntryId, int status)
+			long userId, long fragmentEntryId, long fragmentCollectionId,
+			String name, String css, String html, String js, boolean cacheable,
+			String configuration, long previewFileEntryId, int status)
 		throws PortalException {
 
 		FragmentEntry fragmentEntry = fragmentEntryPersistence.findByPrimaryKey(
@@ -627,6 +630,7 @@ public class FragmentEntryLocalServiceImpl
 		User user = userLocalService.getUser(userId);
 
 		fragmentEntry.setModifiedDate(new Date());
+		fragmentEntry.setFragmentCollectionId(fragmentCollectionId);
 		fragmentEntry.setName(name);
 		fragmentEntry.setCss(css);
 		fragmentEntry.setHtml(html);
@@ -652,11 +656,34 @@ public class FragmentEntryLocalServiceImpl
 				FragmentServiceConfiguration.class,
 				fragmentEntry.getCompanyId());
 
-		if (fragmentServiceConfiguration.propagateChanges()) {
+		if (fragmentServiceConfiguration.propagateChanges() &&
+			!ExportImportThreadLocal.isStagingInProcess()) {
+
 			_propagateChanges(fragmentEntryId);
 		}
 
 		return fragmentEntry;
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 * #updateFragmentEntry(long, long, long, String, String, String, String, boolean, String, long, int)}
+	 */
+	@Deprecated
+	@Override
+	public FragmentEntry updateFragmentEntry(
+			long userId, long fragmentEntryId, String name, String css,
+			String html, String js, boolean cacheable, String configuration,
+			long previewFileEntryId, int status)
+		throws PortalException {
+
+		FragmentEntry fragmentEntry = fragmentEntryPersistence.findByPrimaryKey(
+			fragmentEntryId);
+
+		return updateFragmentEntry(
+			userId, fragmentEntryId, fragmentEntry.getFragmentCollectionId(),
+			name, css, html, js, cacheable, configuration, previewFileEntryId,
+			status);
 	}
 
 	@Override

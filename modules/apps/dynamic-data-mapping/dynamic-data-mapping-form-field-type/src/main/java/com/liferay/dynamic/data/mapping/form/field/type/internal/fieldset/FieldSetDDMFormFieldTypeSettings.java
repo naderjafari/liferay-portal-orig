@@ -32,7 +32,9 @@ import com.liferay.dynamic.data.mapping.form.field.type.DefaultDDMFormFieldTypeS
 			actions = {
 				"setVisible('ddmStructureId', FALSE)",
 				"setVisible('ddmStructureLayoutId', FALSE)",
-				"setVisible('name', FALSE)", "setVisible('rows', FALSE)"
+				"setVisible('fieldReference', FALSE)",
+				"setVisible('name', FALSE)", "setVisible('rows', FALSE)",
+				"setVisible('upgradedStructure', FALSE)"
 			},
 			condition = "TRUE"
 		)
@@ -49,9 +51,11 @@ import com.liferay.dynamic.data.mapping.form.field.type.DefaultDDMFormFieldTypeS
 						@DDMFormLayoutColumn(
 							size = 12,
 							value = {
-								"label", "name", "collapsible", "repeatable",
-								"showLabel", "rows", "type", "ddmStructureId",
-								"ddmStructureLayoutId"
+								"label", "name", "fieldReference",
+								"collapsible", "labelAtStructureLevel",
+								"repeatable", "showLabel", "rows", "type",
+								"ddmStructureId", "ddmStructureLayoutId",
+								"upgradedStructure"
 							}
 						)
 					}
@@ -77,5 +81,8 @@ public interface FieldSetDDMFormFieldTypeSettings
 
 	@DDMFormField(dataType = "json", type = "text")
 	public String rows();
+
+	@DDMFormField(predefinedValue = "false")
+	public boolean upgradedStructure();
 
 }

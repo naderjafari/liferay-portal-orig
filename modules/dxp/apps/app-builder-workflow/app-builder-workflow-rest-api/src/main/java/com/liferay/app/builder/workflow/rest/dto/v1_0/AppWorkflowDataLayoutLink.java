@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +45,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("AppWorkflowDataLayoutLink")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "AppWorkflowDataLayoutLink")
-public class AppWorkflowDataLayoutLink {
+public class AppWorkflowDataLayoutLink implements Serializable {
 
 	public static AppWorkflowDataLayoutLink toDTO(String json) {
 		return ObjectMapperUtil.readValue(
@@ -160,6 +162,7 @@ public class AppWorkflowDataLayoutLink {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflowDataLayoutLink",
 		name = "x-class-name"
 	)
@@ -195,7 +198,7 @@ public class AppWorkflowDataLayoutLink {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -234,7 +237,7 @@ public class AppWorkflowDataLayoutLink {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

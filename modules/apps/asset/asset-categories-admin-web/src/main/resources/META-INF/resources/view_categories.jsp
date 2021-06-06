@@ -21,17 +21,25 @@ AssetCategoriesManagementToolbarDisplayContext assetCategoriesManagementToolbarD
 %>
 
 <clay:management-toolbar
-	displayContext="<%= assetCategoriesManagementToolbarDisplayContext %>"
+	managementToolbarDisplayContext="<%= assetCategoriesManagementToolbarDisplayContext %>"
+	propsTransformer="js/AssetCategoriesManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="deleteCategory" var="deleteCategoryURL">
 	<portlet:param name="redirect" value="<%= currentURL %>" />
 </portlet:actionURL>
 
-<aui:form action="<%= deleteCategoryURL %>" cssClass="container-fluid-1280" name="fm">
-	<liferay-site-navigation:breadcrumb
-		breadcrumbEntries="<%= AssetCategoryUtil.getAssetCategoriesBreadcrumbEntries(assetCategoriesDisplayContext.getVocabulary(), assetCategoriesDisplayContext.getCategory(), request, renderResponse) %>"
-	/>
+<aui:form action="<%= deleteCategoryURL %>" cssClass="container-fluid container-fluid-max-xl" name="fm">
+
+	<%
+	List<BreadcrumbEntry> breadcrumbEntries = AssetCategoryUtil.getAssetCategoriesBreadcrumbEntries(assetCategoriesDisplayContext.getVocabulary(), assetCategoriesDisplayContext.getCategory(), request, renderResponse);
+	%>
+
+	<c:if test="<%= ListUtil.isNotEmpty(breadcrumbEntries) %>">
+		<liferay-site-navigation:breadcrumb
+			breadcrumbEntries="<%= breadcrumbEntries %>"
+		/>
+	</c:if>
 
 	<liferay-ui:search-container
 		id="assetCategories"
@@ -51,11 +59,10 @@ AssetCategoriesManagementToolbarDisplayContext assetCategoriesManagementToolbarD
 			<%
 			int subcategoriesCount = AssetCategoryLocalServiceUtil.getChildCategoriesCount(curCategory.getCategoryId());
 
-			Map<String, Object> rowData = HashMapBuilder.<String, Object>put(
-				"actions", assetCategoriesManagementToolbarDisplayContext.getAvailableActions(curCategory)
-			).build();
-
-			row.setData(rowData);
+			row.setData(
+				HashMapBuilder.<String, Object>put(
+					"actions", assetCategoriesManagementToolbarDisplayContext.getAvailableActions(curCategory)
+				).build());
 			%>
 
 			<c:choose>
@@ -156,8 +163,3 @@ AssetCategoriesManagementToolbarDisplayContext assetCategoriesManagementToolbarD
 	<aui:input name="parentCategoryId" type="hidden" />
 	<aui:input name="vocabularyId" type="hidden" />
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= assetCategoriesManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/AssetCategoriesManagementToolbarDefaultEventHandler.es"
-/>

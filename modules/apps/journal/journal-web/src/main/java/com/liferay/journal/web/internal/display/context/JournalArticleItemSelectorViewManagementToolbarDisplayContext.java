@@ -18,16 +18,20 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchCon
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.List;
@@ -66,11 +70,13 @@ public class JournalArticleItemSelectorViewManagementToolbarDisplayContext
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).setParameter(
+			"scope", StringPool.BLANK
+		).buildString();
 	}
 
 	@Override
@@ -84,7 +90,8 @@ public class JournalArticleItemSelectorViewManagementToolbarDisplayContext
 							dropdownItem.setHref(
 								getPortletURL(), "scope", "everywhere");
 							dropdownItem.setLabel(
-								LanguageUtil.get(request, "everywhere"));
+								LanguageUtil.get(
+									httpServletRequest, "everywhere"));
 						}
 					).add(
 						dropdownItem -> {
@@ -95,13 +102,43 @@ public class JournalArticleItemSelectorViewManagementToolbarDisplayContext
 						}
 					).build());
 				dropdownGroupItem.setLabel(
-					LanguageUtil.get(request, "filter-by-location"));
+					LanguageUtil.get(httpServletRequest, "filter-by-location"));
 			}
 		).build();
 
 		dropdownItemList.addAll(super.getFilterDropdownItems());
 
 		return dropdownItemList;
+	}
+
+	@Override
+	public List<LabelItem> getFilterLabelItems() {
+		String scope = ParamUtil.getString(httpServletRequest, "scope");
+
+		if (Validator.isNull(scope) || scope.equals("current")) {
+			return null;
+		}
+
+		return LabelItemListBuilder.add(
+			labelItem -> {
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						PortletURLUtil.clone(
+							getPortletURL(), liferayPortletResponse)
+					).setParameter(
+						"scope", (String)null
+					).buildString());
+
+				labelItem.setCloseable(true);
+
+				String label = String.format(
+					"%s: %s", LanguageUtil.get(httpServletRequest, "scope"),
+					_getScopeLabel(scope));
+
+				labelItem.setLabel(label);
+			}
+		).build();
 	}
 
 	@Override
@@ -121,6 +158,11 @@ public class JournalArticleItemSelectorViewManagementToolbarDisplayContext
 	}
 
 	@Override
+	public Boolean isDisabled() {
+		return false;
+	}
+
+	@Override
 	public Boolean isSelectable() {
 		return false;
 	}
@@ -128,6 +170,11 @@ public class JournalArticleItemSelectorViewManagementToolbarDisplayContext
 	@Override
 	protected String getDefaultDisplayStyle() {
 		return "descriptive";
+	}
+
+	@Override
+	protected String getDisplayStyle() {
+		return _journalArticleItemSelectorViewDisplayContext.getDisplayStyle();
 	}
 
 	@Override
@@ -187,23 +234,33 @@ public class JournalArticleItemSelectorViewManagementToolbarDisplayContext
 		Group group = _themeDisplay.getScopeGroup();
 
 		if (group.isSite()) {
-			return LanguageUtil.get(request, "current-site");
+			return LanguageUtil.get(httpServletRequest, "current-site");
 		}
 
 		if (group.isOrganization()) {
-			return LanguageUtil.get(request, "current-organization");
+			return LanguageUtil.get(httpServletRequest, "current-organization");
 		}
 
-		if (group.getType() == GroupConstants.TYPE_DEPOT) {
-			return LanguageUtil.get(request, "current-asset-library");
+		if (group.isDepot()) {
+			return LanguageUtil.get(
+				httpServletRequest, "current-asset-library");
 		}
 
-		return LanguageUtil.get(request, "current-scope");
+		return LanguageUtil.get(httpServletRequest, "current-scope");
+	}
+
+	private String _getScopeLabel(String scope) {
+		if (scope.equals("everywhere")) {
+			return LanguageUtil.get(httpServletRequest, "everywhere");
+		}
+
+		return _getCurrentScopeLabel();
 	}
 
 	private boolean _isEverywhereScopeFilter() {
 		if (Objects.equals(
-				ParamUtil.getString(request, "scope"), "everywhere")) {
+				ParamUtil.getString(httpServletRequest, "scope"),
+				"everywhere")) {
 
 			return true;
 		}

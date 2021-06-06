@@ -12,10 +12,9 @@
 
 import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
-import {ClayTooltipProvider} from '@clayui/tooltip';
+import ClayPanel from '@clayui/panel';
 import React, {useMemo} from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
 import ContentView from '../../../shared/components/content-view/ContentView.es';
 import ReloadButton from '../../../shared/components/list/ReloadButton.es';
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
@@ -49,7 +48,7 @@ const ProcessItemsCard = ({
 
 	return (
 		<PromisesResolver promises={promises}>
-			<Panel>
+			<ClayPanel className="mt-4">
 				<ProcessItemsCard.Header
 					data={data}
 					description={description}
@@ -64,7 +63,7 @@ const ProcessItemsCard = ({
 					processId={processId}
 					timeRange={timeRange}
 				/>
-			</Panel>
+			</ClayPanel>
 		</PromisesResolver>
 	);
 };
@@ -84,7 +83,7 @@ const Body = ({completed = false, data, processId, timeRange}) => {
 	};
 
 	return (
-		<Panel.Body>
+		<ClayPanel.Body>
 			<ContentView {...statesProps}>
 				{data ? (
 					<div className="d-flex pb-3">
@@ -107,29 +106,25 @@ const Body = ({completed = false, data, processId, timeRange}) => {
 					<></>
 				)}
 			</ContentView>
-		</Panel.Body>
+		</ClayPanel.Body>
 	);
 };
 
 const Header = ({children, data, description, title}) => (
-	<Panel.Header
-		elementClasses={['dashboard-panel-header', children && 'pb-0']}
+	<ClayPanel.Header
+		className={['dashboard-panel-header', children && 'pb-0']}
 	>
 		<ClayLayout.ContentRow>
 			<ClayLayout.ContentCol className="flex-row" expand>
 				<span className="mr-2">{title}</span>
 
-				<ClayTooltipProvider>
-					<span>
-						<span
-							className="workflow-tooltip"
-							data-tooltip-align={'right'}
-							title={description}
-						>
-							<ClayIcon symbol="question-circle-full" />
-						</span>
-					</span>
-				</ClayTooltipProvider>
+				<span
+					className="workflow-tooltip"
+					data-tooltip-align="right"
+					title={description}
+				>
+					<ClayIcon symbol="question-circle-full" />
+				</span>
 			</ClayLayout.ContentCol>
 
 			{children && data && (
@@ -138,7 +133,7 @@ const Header = ({children, data, description, title}) => (
 				</ClayLayout.ContentCol>
 			)}
 		</ClayLayout.ContentRow>
-	</Panel.Header>
+	</ClayPanel.Header>
 );
 
 ProcessItemsCard.Body = Body;

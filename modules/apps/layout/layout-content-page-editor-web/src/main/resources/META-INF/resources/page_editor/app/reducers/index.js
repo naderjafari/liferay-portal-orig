@@ -14,11 +14,15 @@
 
 import baseReducer from './baseReducer';
 import collectionsReducer from './collectionsReducer';
+import defaultFragmentEntryLinksReducer from './defaultFragmentEntryLinksReducer';
+import editablesReducer from './editablesReducer';
 import fragmentEntryLinksReducer from './fragmentEntryLinksReducer';
 import fragmentsReducer from './fragmentsReducer';
 import languageIdReducer from './languageIdReducer';
 import layoutDataReducer from './layoutDataReducer';
 import mappedInfoItemsReducer from './mappedInfoItemsReducer';
+import mappingFieldsReducer from './mappingFieldsReducer';
+import masterLayoutReducer from './masterLayoutReducer';
 import networkReducer from './networkReducer';
 import pageContentsReducer from './pageContentsReducer';
 import permissionsReducer from './permissionsReducer';
@@ -28,29 +32,17 @@ import sidebarReducer from './sidebarReducer';
 import undoReducer from './undoReducer';
 import widgetsReducer from './widgetsReducer';
 
-/**
- * Runs the base reducer plus any dynamically loaded reducers that have
- * been registered from plugins.
- */
-export function reducer(state, action) {
-	const nextState = undoReducer(state, action);
-
-	return [combinedReducer, ...Object.values(state.reducers || {})].reduce(
-		(nextState, nextReducer) => {
-			return nextReducer(nextState, action);
-		},
-		nextState
-	);
-}
-
 const combinedReducer = (state, action) =>
 	Object.entries({
 		collections: collectionsReducer,
+		editables: editablesReducer,
 		fragmentEntryLinks: fragmentEntryLinksReducer,
 		fragments: fragmentsReducer,
 		languageId: languageIdReducer,
 		layoutData: layoutDataReducer,
 		mappedInfoItems: mappedInfoItemsReducer,
+		mappingFields: mappingFieldsReducer,
+		masterLayout: masterLayoutReducer,
 		network: networkReducer,
 		pageContents: pageContentsReducer,
 		permissions: permissionsReducer,
@@ -66,3 +58,19 @@ const combinedReducer = (state, action) =>
 		}),
 		state
 	);
+
+/**
+ * Runs the base reducer plus any dynamically loaded reducers that have
+ * been registered from plugins.
+ */
+export function reducer(state, action) {
+	let nextState = undoReducer(state, action);
+	nextState = defaultFragmentEntryLinksReducer(nextState, action);
+
+	return [combinedReducer, ...Object.values(state.reducers || {})].reduce(
+		(nextState, nextReducer) => {
+			return nextReducer(nextState, action);
+		},
+		nextState
+	);
+}

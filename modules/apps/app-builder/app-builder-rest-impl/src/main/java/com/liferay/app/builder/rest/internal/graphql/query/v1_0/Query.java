@@ -20,6 +20,8 @@ import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
@@ -84,7 +86,7 @@ public class Query {
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {app(appId: ___){active, appDeployments, dataDefinitionId, dataDefinitionName, dataLayoutId, dataListViewId, dataRecordCollectionId, dateCreated, dateModified, id, name, scope, siteId, userId}}"}' -u 'test@liferay.com:test'
+	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {app(appId: ___){active, appDeployments, dataDefinitionId, dataDefinitionName, dataLayoutId, dataListViewId, dataRecordCollectionId, dateCreated, dateModified, id, name, scope, siteId, userId, version, workflowDefinitionName, workflowDefinitionVersion}}"}' -u 'test@liferay.com:test'
 	 */
 	@GraphQLField
 	public App app(@GraphQLName("appId") Long appId) throws Exception {
@@ -146,6 +148,7 @@ public class Query {
 
 		public AppPage(Page appPage) {
 			actions = appPage.getActions();
+
 			items = appPage.getItems();
 			lastPage = appPage.getLastPage();
 			page = appPage.getPage();
@@ -201,18 +204,22 @@ public class Query {
 		appResource.setContextHttpServletResponse(_httpServletResponse);
 		appResource.setContextUriInfo(_uriInfo);
 		appResource.setContextUser(_user);
+		appResource.setGroupLocalService(_groupLocalService);
+		appResource.setRoleLocalService(_roleLocalService);
 	}
 
 	private static ComponentServiceObjects<AppResource>
 		_appResourceComponentServiceObjects;
 
 	private AcceptLanguage _acceptLanguage;
-	private BiFunction<Object, String, Filter> _filterBiFunction;
-	private BiFunction<Object, String, Sort[]> _sortsBiFunction;
 	private com.liferay.portal.kernel.model.Company _company;
-	private com.liferay.portal.kernel.model.User _user;
+	private BiFunction<Object, String, Filter> _filterBiFunction;
+	private GroupLocalService _groupLocalService;
 	private HttpServletRequest _httpServletRequest;
 	private HttpServletResponse _httpServletResponse;
+	private RoleLocalService _roleLocalService;
+	private BiFunction<Object, String, Sort[]> _sortsBiFunction;
 	private UriInfo _uriInfo;
+	private com.liferay.portal.kernel.model.User _user;
 
 }

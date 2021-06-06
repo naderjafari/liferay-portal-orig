@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.persistence.OrganizationUtil;
 import com.liferay.portal.kernel.service.persistence.RoleUtil;
@@ -156,6 +157,10 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 	public static final String JOIN_BY_SOCIAL_RELATION_TYPE =
 		UserFinder.class.getName() + ".joinBySocialRelationType";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public Map<Long, Integer> countByGroups(
 		long companyId, int status, long[] groupIds) {
@@ -907,26 +912,33 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 				sql = StringUtil.removeSubstring(sql, _STATUS_SQL);
 			}
 
-			StringBundler sb = new StringBundler((paramsList.size() * 3) + 2);
-
-			for (int i = 0; i < paramsList.size(); i++) {
-				if (i == 0) {
-					sb.append(StringPool.OPEN_PARENTHESIS);
-				}
-				else {
-					sb.append(" UNION (");
-				}
-
-				sb.append(replaceJoinAndWhere(sql, paramsList.get(i)));
-				sb.append(StringPool.CLOSE_PARENTHESIS);
-			}
+			int initialCapacity = (paramsList.size() * 3) - 2;
 
 			if (orderByComparator != null) {
-				sb.append(" ORDER BY ");
-				sb.append(orderByComparator.toString());
+				initialCapacity += 2;
 			}
 
-			sql = sb.toString();
+			if (initialCapacity > 0) {
+				StringBundler sb = new StringBundler(initialCapacity);
+
+				for (int i = 0; i < paramsList.size(); i++) {
+					if (i == 0) {
+						sb.append(replaceJoinAndWhere(sql, paramsList.get(i)));
+					}
+					else {
+						sb.append(" UNION (");
+						sb.append(replaceJoinAndWhere(sql, paramsList.get(i)));
+						sb.append(StringPool.CLOSE_PARENTHESIS);
+					}
+				}
+
+				if (orderByComparator != null) {
+					sb.append(" ORDER BY ");
+					sb.append(orderByComparator.toString());
+				}
+
+				sql = sb.toString();
+			}
 
 			sql = CustomSQLUtil.replaceAndOperator(sql, andOperator);
 
@@ -1087,6 +1099,8 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 			params = _emptyLinkedHashMap;
 		}
 
+		params.remove(Field.GROUP_ID);
+
 		LinkedHashMap<String, Object> params1 = params;
 
 		LinkedHashMap<String, Object> params2 = null;
@@ -1160,7 +1174,8 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 				params2.remove("usersGroups");
 
 				if (PropsValues.ORGANIZATIONS_MEMBERSHIP_STRICT) {
-					params2.put("usersOrgs", organizationIds);
+					params2.put(
+						"usersOrgs", organizationIds.toArray(new Long[0]));
 				}
 				else {
 					Map<Serializable, Organization> organizations =
@@ -1284,6 +1299,13 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 				params1.remove("socialRelationType");
 
 				params2.remove("usersGroups");
+
+				params3 = new LinkedHashMap<>(params1);
+
+				params3.remove("socialRelationType");
+				params3.remove("usersGroups");
+
+				params3.put("groupsUserGroups", groupIds);
 			}
 		}
 

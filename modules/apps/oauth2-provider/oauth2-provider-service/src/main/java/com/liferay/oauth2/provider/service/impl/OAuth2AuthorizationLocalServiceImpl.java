@@ -167,6 +167,13 @@ public class OAuth2AuthorizationLocalServiceImpl
 		return null;
 	}
 
+	public OAuth2Authorization fetchOAuth2AuthorizationByRememberDeviceContent(
+		long userId, long oAuth2ApplicationId, String rememberDeviceContent) {
+
+		return oAuth2AuthorizationPersistence.fetchByU_O_R_First(
+			userId, oAuth2ApplicationId, rememberDeviceContent, null);
+	}
+
 	@Override
 	public OAuth2Authorization getOAuth2AuthorizationByAccessTokenContent(
 			String accessTokenContent)
@@ -236,6 +243,17 @@ public class OAuth2AuthorizationLocalServiceImpl
 	@Override
 	public int getUserOAuth2AuthorizationsCount(long userId) {
 		return oAuth2AuthorizationPersistence.countByUserId(userId);
+	}
+
+	public OAuth2Authorization updateRememberDeviceContent(
+		String refreshTokenContent, String rememberDeviceContent) {
+
+		OAuth2Authorization oAuth2Authorization =
+			fetchOAuth2AuthorizationByRefreshTokenContent(refreshTokenContent);
+
+		oAuth2Authorization.setRememberDeviceContent(rememberDeviceContent);
+
+		return oAuth2AuthorizationPersistence.update(oAuth2Authorization);
 	}
 
 	@Activate

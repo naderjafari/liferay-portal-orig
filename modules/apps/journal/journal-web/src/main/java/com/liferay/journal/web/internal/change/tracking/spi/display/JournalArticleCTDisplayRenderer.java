@@ -14,28 +14,35 @@
 
 package com.liferay.journal.web.internal.change.tracking.spi.display;
 
+import com.liferay.change.tracking.spi.display.BaseCTDisplayRenderer;
 import com.liferay.change.tracking.spi.display.CTDisplayRenderer;
 import com.liferay.change.tracking.spi.display.context.DisplayContext;
+import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.journal.constants.JournalPortletKeys;
 import com.liferay.journal.model.JournalArticle;
+import com.liferay.journal.model.JournalArticleDisplay;
+import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.util.JournalContent;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.diff.CompareVersionsException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
+import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
@@ -46,7 +53,19 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(immediate = true, service = CTDisplayRenderer.class)
 public class JournalArticleCTDisplayRenderer
-	implements CTDisplayRenderer<JournalArticle> {
+	extends BaseCTDisplayRenderer<JournalArticle> {
+
+	@Override
+	public String getContent(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse,
+			JournalArticle journalArticle)
+		throws Exception {
+
+		return _getContent(
+			liferayPortletRequest, liferayPortletResponse, journalArticle,
+			journalArticle.getDefaultLanguageId());
+	}
 
 	@Override
 	public String getEditURL(
@@ -64,20 +83,21 @@ public class JournalArticleCTDisplayRenderer
 			group = themeDisplay.getScopeGroup();
 		}
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			httpServletRequest, group, JournalPortletKeys.JOURNAL, 0, 0,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcPath", "/edit_article.jsp");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(httpServletRequest));
-		portletURL.setParameter(
-			"groupId", String.valueOf(journalArticle.getGroupId()));
-		portletURL.setParameter("articleId", journalArticle.getArticleId());
-		portletURL.setParameter(
-			"version", String.valueOf(journalArticle.getVersion()));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				httpServletRequest, group, JournalPortletKeys.JOURNAL, 0, 0,
+				PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/edit_article.jsp"
+		).setRedirect(
+			_portal.getCurrentURL(httpServletRequest)
+		).setParameter(
+			"articleId", journalArticle.getArticleId()
+		).setParameter(
+			"groupId", journalArticle.getGroupId()
+		).setParameter(
+			"version", journalArticle.getVersion()
+		).buildString();
 	}
 
 	@Override
@@ -86,26 +106,70 @@ public class JournalArticleCTDisplayRenderer
 	}
 
 	@Override
+	public String getPreviousContent(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse,
+			JournalArticle currentJournalArticle,
+			JournalArticle previousJournalArticle)
+		throws Exception {
+
+		return _getContent(
+			liferayPortletRequest, liferayPortletResponse,
+			previousJournalArticle,
+			currentJournalArticle.getDefaultLanguageId());
+	}
+
+	@Override
+	public JournalArticle getPreviousVersionedModel(
+		JournalArticle currentJournalArticle) {
+
+		boolean found = false;
+
+		for (JournalArticle journalArticle :
+				_journalArticleLocalService.getArticlesByResourcePrimKey(
+					currentJournalArticle.getResourcePrimKey())) {
+
+			if (found) {
+				return journalArticle;
+			}
+			else if (journalArticle.getVersion() ==
+						currentJournalArticle.getVersion()) {
+
+				found = true;
+			}
+		}
+
+		return null;
+	}
+
+	@Override
 	public String getTitle(Locale locale, JournalArticle journalArticle) {
 		return journalArticle.getTitle(locale);
 	}
 
 	@Override
-	public String getTypeName(Locale locale) {
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			locale, JournalArticleCTDisplayRenderer.class);
-
-		return _language.get(
-			resourceBundle,
-			"model.resource.com.liferay.journal.model.JournalArticle");
+	public String getVersionName(JournalArticle journalArticle) {
+		return String.valueOf(journalArticle.getVersion());
 	}
 
 	@Override
-	public void render(DisplayContext<JournalArticle> displayContext)
-		throws Exception {
+	public boolean hasContent() {
+		return true;
+	}
 
-		RequestDispatcher requestDispatcher =
-			_servletContext.getRequestDispatcher("/ct_display/render.jsp");
+	@Override
+	public boolean isVersioned() {
+		return true;
+	}
+
+	@Override
+	protected void buildDisplay(DisplayBuilder<JournalArticle> displayBuilder) {
+		JournalArticle journalArticle = displayBuilder.getModel();
+
+		Locale locale = displayBuilder.getLocale();
+
+		DisplayContext<JournalArticle> displayContext =
+			displayBuilder.getDisplayContext();
 
 		HttpServletRequest httpServletRequest =
 			displayContext.getHttpServletRequest();
@@ -114,19 +178,82 @@ public class JournalArticleCTDisplayRenderer
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		httpServletRequest.setAttribute(
-			WebKeys.JOURNAL_ARTICLE_DISPLAY,
+		JournalArticleDisplay journalArticleDisplay =
 			_journalContent.getDisplay(
-				displayContext.getModel(), "", "",
-				_language.getLanguageId(httpServletRequest), 1, null,
-				themeDisplay));
+				journalArticle, "", "", _language.getLanguageId(locale), 1,
+				null, themeDisplay);
 
-		requestDispatcher.include(
-			httpServletRequest, displayContext.getHttpServletResponse());
+		displayBuilder.display(
+			"name", journalArticle.getTitle(locale)
+		).display(
+			"description", journalArticle.getDescription(locale)
+		).display(
+			"created-by",
+			() -> {
+				String userName = journalArticle.getUserName();
+
+				if (Validator.isNotNull(userName)) {
+					return userName;
+				}
+
+				return null;
+			}
+		).display(
+			"create-date", journalArticle.getCreateDate()
+		).display(
+			"last-modified", journalArticle.getModifiedDate()
+		).display(
+			"version", journalArticle.getVersion()
+		).display(
+			"structure",
+			() -> {
+				DDMStructure ddmStructure = journalArticle.getDDMStructure();
+
+				return ddmStructure.getName(locale);
+			}
+		).display(
+			"template",
+			() -> {
+				DDMTemplate ddmTemplate = journalArticle.getDDMTemplate();
+
+				return ddmTemplate.getName(locale);
+			}
+		).display(
+			"content", journalArticleDisplay.getContent(), false
+		);
+	}
+
+	private String _getContent(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse,
+			JournalArticle journalArticle, String languageId)
+		throws Exception {
+
+		PortletRequestModel portletRequestModel = new PortletRequestModel(
+			liferayPortletRequest, liferayPortletResponse);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		if (!_journalArticleLocalService.isRenderable(
+				journalArticle, portletRequestModel, themeDisplay)) {
+
+			throw new CompareVersionsException(journalArticle.getVersion());
+		}
+
+		JournalArticleDisplay journalArticleDisplay =
+			_journalArticleLocalService.getArticleDisplay(
+				journalArticle, null, Constants.VIEW, languageId, 1,
+				portletRequestModel, themeDisplay);
+
+		return journalArticleDisplay.getContent();
 	}
 
 	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private JournalArticleLocalService _journalArticleLocalService;
 
 	@Reference
 	private JournalContent _journalContent;
@@ -136,8 +263,5 @@ public class JournalArticleCTDisplayRenderer
 
 	@Reference
 	private Portal _portal;
-
-	@Reference(target = "(osgi.web.symbolicname=com.liferay.journal.web)")
-	private ServletContext _servletContext;
 
 }

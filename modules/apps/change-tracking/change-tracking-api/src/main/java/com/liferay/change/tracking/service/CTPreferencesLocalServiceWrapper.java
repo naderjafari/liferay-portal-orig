@@ -134,6 +134,13 @@ public class CTPreferencesLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _ctPreferencesLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _ctPreferencesLocalService.dynamicQuery();
 	}
@@ -321,6 +328,11 @@ public class CTPreferencesLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _ctPreferencesLocalService.getPersistedModel(primaryKeyObj);
+	}
+
+	@Override
+	public void resetCTPreferences(long ctCollectionId) {
+		_ctPreferencesLocalService.resetCTPreferences(ctCollectionId);
 	}
 
 	/**

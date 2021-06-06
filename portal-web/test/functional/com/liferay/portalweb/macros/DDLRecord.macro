@@ -113,6 +113,14 @@ definition {
 		MenuItem.click(menuItem = "Edit");
 	}
 
+	macro editParagraphBody {
+		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+		Type.clickAtType(
+			locator1 = "CKEditor#BODY",
+			value1 = "${content}");
+		SelectFrame(value1 = "relative=top");
+	}
+
 	macro editPG {
 		Click(locator1 = "DDL#RECORD_TABLE_ELLIPSIS_1");
 
@@ -263,6 +271,12 @@ definition {
 			UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
 				locator1 = "TextInput#FILE",
 				value1 = "${document}");
+
+			Pause(locator1 = "3000");
+
+			AssertElementPresent.pauseAssertVisible(
+				locator1 = "ItemSelector#ADD_BUTTON",
+				value1 = "Add");
 
 			AssertClick(
 				locator1 = "ItemSelector#ADD_BUTTON",
@@ -754,17 +768,27 @@ definition {
 					locator1 = "DDLRecord#FIELD_1",
 					value1 = "${fieldFieldLabel} ${ddlRecordFieldData_1}");
 			}
-			else {
+			else if ("${field}" == "Number" || "${field}" == "Boolean" || "${field}" == "Color" || "${field}" == "Documents and Media" || "${field}" == "Geolocation" || "${field}" == "Link to Page" || "${field}" == "Radio" || "${field}" == "Select" || "${field}" == "Text") {
 				AssertTextEquals(
 					locator1 = "DDLRecord#FIELD_1",
 					value1 = "${fieldFieldLabel} ${ddlRecordFieldData}");
+			}
+			else {
+				AssertTextEquals(
+					locator1 = "DDLRecord#FIELD_1",
+					value1 = "${fieldFieldLabel}");
+
+				AssertTextEquals(
+					key_value = "${ddlRecordFieldData}",
+					locator1 = "DDLRecord#FIELD_1_VALUE",
+					value1 = "${ddlRecordFieldData}");
 			}
 		}
 	}
 
 	macro viewFirstRecordSearchResult {
 		AssertTextEquals(
-			locator1 = "Portlet#H3_HEADER",
+			locator1 = "Portlet#H4_COMPONENT_TITLE",
 			value1 = "New Data Definition Name for List: ${ddlListName}");
 
 		AssertTextEquals(
@@ -888,7 +912,7 @@ definition {
 
 	macro viewSecondRecordSearchResult {
 		AssertTextEquals(
-			locator1 = "Portlet#H3_HEADER",
+			locator1 = "Portlet#H4_COMPONENT_TITLE",
 			value1 = "New Data Definition Name for List: ${ddlListName}");
 
 		AssertTextEquals(

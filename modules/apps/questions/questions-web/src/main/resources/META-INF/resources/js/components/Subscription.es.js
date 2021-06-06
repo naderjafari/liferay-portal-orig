@@ -12,9 +12,9 @@
  * details.
  */
 
-import {useMutation} from '@apollo/client';
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
+import {useMutation} from 'graphql-hooks';
 import React, {useEffect, useState} from 'react';
 
 import {subscribeQuery, unsubscribeQuery} from '../utils/client.es';
@@ -26,27 +26,27 @@ export default ({question: {id: messageBoardThreadId, subscribed}}) => {
 		setSubscription(subscribed);
 	}, [subscribed]);
 
-	const onCompleted = () => {
-		setSubscription(!subscription);
-	};
-
-	const [subscribe] = useMutation(subscribeQuery, {onCompleted});
-	const [unsubscribe] = useMutation(unsubscribeQuery, {onCompleted});
+	const [subscribe] = useMutation(subscribeQuery);
+	const [unsubscribe] = useMutation(unsubscribeQuery);
 
 	const changeSubscription = () => {
-		if (subscription) {
-			unsubscribe({variables: {messageBoardThreadId}});
-		}
-		else {
-			subscribe({variables: {messageBoardThreadId}});
-		}
+		const fn = subscription ? unsubscribe : subscribe;
+		fn({variables: {messageBoardThreadId}}).then((_) =>
+			setSubscription(!subscription)
+		);
 	};
 
 	return (
 		<ClayButton
+			data-tooltip-align="top"
 			displayType={subscription ? 'primary' : 'secondary'}
 			monospaced
 			onClick={changeSubscription}
+			title={
+				subscription
+					? Liferay.Language.get('unsubscribe')
+					: Liferay.Language.get('subscribe')
+			}
 		>
 			<ClayIcon symbol="bell-on" />
 		</ClayButton>

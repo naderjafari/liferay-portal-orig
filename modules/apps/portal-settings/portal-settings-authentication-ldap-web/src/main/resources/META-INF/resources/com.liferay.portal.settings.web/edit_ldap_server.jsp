@@ -140,9 +140,9 @@ portletDisplay.setURLBack(backURL);
 renderResponse.setTitle((ldapServerId == 0) ? LanguageUtil.get(resourceBundle, "add-ldap-server") : LanguageUtil.get(resourceBundle, "edit-ldap-server"));
 %>
 
-<portlet:actionURL name="/portal_settings/edit_ldap_server" var="editLDAPServerURL" />
+<portlet:actionURL name="/portal_settings_authentication_ldap/edit_ldap_server" var="editLDAPServerURL" />
 
-<aui:form action="<%= editLDAPServerURL %>" cssClass="container-fluid-1280" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "saveEntry(false);" %>'>
+<aui:form action="<%= editLDAPServerURL %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "saveEntry(false);" %>'>
 	<liferay-ui:error exception="<%= DuplicateLDAPServerNameException.class %>" message="please-enter-a-unique-ldap-server-name" />
 	<liferay-ui:error exception="<%= LDAPFilterException.class %>" message="please-enter-a-valid-ldap-search-filter" />
 	<liferay-ui:error exception="<%= LDAPServerNameException.class %>" message="please-enter-a-valid-ldap-server-name" />
@@ -225,6 +225,8 @@ renderResponse.setTitle((ldapServerId == 0) ? LanguageUtil.get(resourceBundle, "
 
 			<aui:input cssClass="lfr-textarea" helpMessage="enter-properties-file-synxtax-comma-delimiter" label="custom-contact-mapping" name='<%= "ldap--" + LDAPConstants.CONTACT_CUSTOM_MAPPINGS + "--" %>' type="textarea" value="<%= StringUtil.merge(ldapServerConfiguration.contactCustomMappings(), StringPool.COMMA) %>" />
 
+			<aui:input cssClass="lfr-textarea" helpMessage="enter-properties-file-synxtax-comma-delimiter" label="user-ignore-attributes" name='<%= "ldap--" + LDAPConstants.USER_IGNORE_ATTRIBUTES + "--" %>' type="textarea" value="<%= StringUtil.merge(ldapServerConfiguration.userIgnoreAttributes(), StringPool.COMMA) %>" />
+
 			<aui:input name='<%= "ldap--" + LDAPConstants.USER_MAPPINGS + "--" %>' type="hidden" />
 
 			<aui:input name='<%= "ldap--" + LDAPConstants.CONTACT_MAPPINGS + "--" %>' type="hidden" value="<%= StringUtil.merge(ldapServerConfiguration.contactMappings(), StringPool.COMMA) %>" />
@@ -288,7 +290,7 @@ renderResponse.setTitle((ldapServerId == 0) ? LanguageUtil.get(resourceBundle, "
 	function <portlet:namespace />mapValues(fields, fieldValues) {
 		var form = document.<portlet:namespace />fm;
 
-		return fields.reduce(function (prev, item, index) {
+		return fields.reduce((prev, item, index) => {
 			var mappingElement = Liferay.Util.getFormElement(
 				form,
 				fieldValues[index]
@@ -512,11 +514,11 @@ renderResponse.setTitle((ldapServerId == 0) ? LanguageUtil.get(resourceBundle, "
 
 		if (type === 'ldapConnection') {
 			baseUrl =
-				'<portlet:renderURL copyCurrentRenderParameters="<%= false %>" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcRenderCommandName" value="/portal_settings/test_ldap_connection" /></portlet:renderURL>';
+				'<portlet:renderURL copyCurrentRenderParameters="<%= false %>" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcRenderCommandName" value="/portal_settings_authentication_ldap/test_ldap_connection" /></portlet:renderURL>';
 		}
 		else if (type === 'ldapGroups') {
 			baseUrl =
-				'<portlet:renderURL copyCurrentRenderParameters="<%= false %>" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcRenderCommandName" value="/portal_settings/test_ldap_groups" /></portlet:renderURL>';
+				'<portlet:renderURL copyCurrentRenderParameters="<%= false %>" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcRenderCommandName" value="/portal_settings_authentication_ldap/test_ldap_groups" /></portlet:renderURL>';
 
 			data.<portlet:namespace />importGroupSearchFilter =
 				document.<portlet:namespace />fm[
@@ -537,7 +539,7 @@ renderResponse.setTitle((ldapServerId == 0) ? LanguageUtil.get(resourceBundle, "
 		}
 		else if (type === 'ldapUsers') {
 			baseUrl =
-				'<portlet:renderURL copyCurrentRenderParameters="<%= false %>" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcRenderCommandName" value="/portal_settings/test_ldap_users" /></portlet:renderURL>';
+				'<portlet:renderURL copyCurrentRenderParameters="<%= false %>" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcRenderCommandName" value="/portal_settings_authentication_ldap/test_ldap_users" /></portlet:renderURL>';
 
 			data.<portlet:namespace />importUserSearchFilter =
 				document.<portlet:namespace />fm[
@@ -619,27 +621,26 @@ renderResponse.setTitle((ldapServerId == 0) ? LanguageUtil.get(resourceBundle, "
 
 			var searchParams = Liferay.Util.objectToURLSearchParams(data);
 
-			searchParams.forEach(function (value, key) {
+			searchParams.forEach((value, key) => {
 				url.searchParams.append(key, value);
 			});
 
 			Liferay.Util.fetch(url)
-				.then(function (response) {
+				.then((response) => {
 					return response.text();
 				})
-				.then(function (text) {
+				.then((text) => {
 					Liferay.Util.openModal({
 						bodyHTML: text,
 						size: 'full-screen',
 						title: '<%= UnicodeLanguageUtil.get(request, "ldap") %>',
 					});
 				})
-				.catch(function (error) {
+				.catch((error) => {
 					Liferay.Util.openToast({
 						message: Liferay.Language.get(
 							'an-unexpected-system-error-occurred'
 						),
-						title: Liferay.Language.get('error'),
 						type: 'danger',
 					});
 				});

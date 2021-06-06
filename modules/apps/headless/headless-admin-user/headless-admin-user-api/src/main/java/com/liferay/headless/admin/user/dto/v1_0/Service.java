@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Service")
+@GraphQLName(
+	description = "A list of services the organization provides. This follows the [`Service`](https://www.schema.org/Service) specification.",
+	value = "Service"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Service")
-public class Service {
+public class Service implements Serializable {
 
 	public static Service toDTO(String json) {
 		return ObjectMapperUtil.readValue(Service.class, json);
@@ -182,6 +187,7 @@ public class Service {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.Service",
 		name = "x-class-name"
 	)
@@ -217,7 +223,7 @@ public class Service {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -256,7 +262,7 @@ public class Service {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

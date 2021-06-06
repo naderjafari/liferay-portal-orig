@@ -14,6 +14,9 @@ definition {
 		else if ("${contentType}" == "Blogs Entry") {
 			var classTypeId = "0";
 		}
+		else if ("${contentType}" == "Category") {
+			var classTypeId = "0";
+		}
 		else {
 			if ("${subType}" == "Basic Web Content") {
 				var globalGroupId = JSONGroupAPI._getGroupIdByName(
@@ -182,13 +185,14 @@ definition {
 
 	@summary = "Delete a layoutPageTemplateEntry under an existing site"
 	macro deleteLayoutPageTemplateEntry {
-		Variables.assertDefined(parameterList = "${groupName},${layoutPageTemplateEntryName}");
+		Variables.assertDefined(parameterList = "${groupName},${layoutPageTemplateEntryName},${type}");
 
-		var groupId = JSONLayoutpagetemplateSetter.setGroupId(groupName = "${groupName}",site = "${site}");
+		var groupId = JSONLayoutpagetemplateSetter.setGroupId(groupKey = "${groupName}",site = "${site}");
 
 		var layoutPageTemplateEntryId = JSONLayoutpagetemplateSetter.setLayoutPageTemplateEntryId(
 			groupId = "${groupId}",
-			layoutPageTemplateEntryName = "${layoutPageTemplateEntryName}");
+			layoutPageTemplateEntryName = "${layoutPageTemplateEntryName}",
+			type = "${type}");
 
 		JSONLayoutpagetemplateAPI._deleteLayoutPageTemplateEntry(layoutPageTemplateEntryId = "${layoutPageTemplateEntryId}");
 	}

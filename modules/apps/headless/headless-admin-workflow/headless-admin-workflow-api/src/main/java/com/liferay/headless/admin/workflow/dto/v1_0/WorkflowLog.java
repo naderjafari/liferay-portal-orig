@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -48,10 +50,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WorkflowLog")
+@GraphQLName(
+	description = "Represents the log containing the workflow's activity history (e.g., transitions, assignees, etc.).",
+	value = "WorkflowLog"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WorkflowLog")
-public class WorkflowLog {
+public class WorkflowLog implements Serializable {
 
 	public static WorkflowLog toDTO(String json) {
 		return ObjectMapperUtil.readValue(WorkflowLog.class, json);
@@ -145,6 +150,34 @@ public class WorkflowLog {
 	@GraphQLField(description = "The log's creation date.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateCreated;
+
+	@Schema(description = "The log's description.")
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	@JsonIgnore
+	public void setDescription(
+		UnsafeSupplier<String, Exception> descriptionUnsafeSupplier) {
+
+		try {
+			description = descriptionUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The log's description.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String description;
 
 	@Schema(description = "The log's ID.")
 	public Long getId() {
@@ -474,6 +507,20 @@ public class WorkflowLog {
 			sb.append("\"");
 		}
 
+		if (description != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"description\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(description));
+
+			sb.append("\"");
+		}
+
 		if (id != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -582,6 +629,7 @@ public class WorkflowLog {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.WorkflowLog",
 		name = "x-class-name"
 	)
@@ -652,7 +700,7 @@ public class WorkflowLog {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -691,7 +739,7 @@ public class WorkflowLog {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

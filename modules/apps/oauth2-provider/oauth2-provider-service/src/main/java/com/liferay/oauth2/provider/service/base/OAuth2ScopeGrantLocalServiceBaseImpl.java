@@ -16,6 +16,7 @@ package com.liferay.oauth2.provider.service.base;
 
 import com.liferay.oauth2.provider.model.OAuth2ScopeGrant;
 import com.liferay.oauth2.provider.service.OAuth2ScopeGrantLocalService;
+import com.liferay.oauth2.provider.service.OAuth2ScopeGrantLocalServiceUtil;
 import com.liferay.oauth2.provider.service.persistence.OAuth2AuthorizationFinder;
 import com.liferay.oauth2.provider.service.persistence.OAuth2AuthorizationPersistence;
 import com.liferay.oauth2.provider.service.persistence.OAuth2ScopeGrantFinder;
@@ -47,10 +48,13 @@ import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -72,7 +76,7 @@ public abstract class OAuth2ScopeGrantLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>OAuth2ScopeGrantLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.oauth2.provider.service.OAuth2ScopeGrantLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>OAuth2ScopeGrantLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>OAuth2ScopeGrantLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -147,6 +151,13 @@ public abstract class OAuth2ScopeGrantLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return oAuth2ScopeGrantPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -303,6 +314,7 @@ public abstract class OAuth2ScopeGrantLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -321,6 +333,7 @@ public abstract class OAuth2ScopeGrantLocalServiceBaseImpl
 			(OAuth2ScopeGrant)persistedModel);
 	}
 
+	@Override
 	public BasePersistence<OAuth2ScopeGrant> getBasePersistence() {
 		return oAuth2ScopeGrantPersistence;
 	}
@@ -554,6 +567,11 @@ public abstract class OAuth2ScopeGrantLocalServiceBaseImpl
 			oAuth2AuthorizationId, oAuth2ScopeGrantIds);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -565,6 +583,8 @@ public abstract class OAuth2ScopeGrantLocalServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		oAuth2ScopeGrantLocalService = (OAuth2ScopeGrantLocalService)aopProxy;
+
+		_setLocalServiceUtilService(oAuth2ScopeGrantLocalService);
 	}
 
 	/**
@@ -606,6 +626,23 @@ public abstract class OAuth2ScopeGrantLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		OAuth2ScopeGrantLocalService oAuth2ScopeGrantLocalService) {
+
+		try {
+			Field field =
+				OAuth2ScopeGrantLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, oAuth2ScopeGrantLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

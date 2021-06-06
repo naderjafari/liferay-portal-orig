@@ -15,8 +15,11 @@
 package com.liferay.change.tracking.internal.closure;
 
 import com.liferay.change.tracking.closure.CTClosure;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,6 +31,7 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -36,8 +40,10 @@ import org.junit.Test;
 public class CTClosureImplTest {
 
 	@ClassRule
-	public static final CodeCoverageAssertor codeCoverageAssertor =
-		CodeCoverageAssertor.INSTANCE;
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			CodeCoverageAssertor.INSTANCE, LiferayUnitTestRule.INSTANCE);
 
 	@Test
 	public void testCTClosureImpl() {
@@ -110,6 +116,13 @@ public class CTClosureImplTest {
 			Collections.emptyMap(),
 			ctClosure.getChildPKsMap(
 				node5.getClassNameId(), node5.getPrimaryKey()));
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				"{\n\t(classNameId=1, classPK=1)\n\t\t(classNameId=2, ",
+				"classPK=2)\n\t\t\t(classNameId=3, classPK=3)\n\t\t\t\t(",
+				"classNameId=4, classPK=4)\n\t(classNameId=5, classPK=5)\n}"),
+			ctClosure.toString());
 	}
 
 }

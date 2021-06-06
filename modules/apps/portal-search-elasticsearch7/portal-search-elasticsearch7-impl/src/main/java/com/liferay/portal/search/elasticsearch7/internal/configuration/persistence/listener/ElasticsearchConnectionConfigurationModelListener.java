@@ -14,6 +14,7 @@
 
 package com.liferay.portal.search.elasticsearch7.internal.configuration.persistence.listener;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.persistence.listener.ConfigurationModelListener;
 import com.liferay.portal.configuration.persistence.listener.ConfigurationModelListenerException;
 import com.liferay.portal.kernel.log.Log;
@@ -24,6 +25,7 @@ import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConnectionConfiguration;
+import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionManager;
 import com.liferay.portal.search.elasticsearch7.internal.connection.constants.ConnectionConstants;
 
 import java.util.Dictionary;
@@ -46,6 +48,21 @@ public class ElasticsearchConnectionConfigurationModelListener
 	implements ConfigurationModelListener {
 
 	@Override
+	public void onBeforeDelete(String pid)
+		throws ConfigurationModelListenerException {
+
+		try {
+			elasticsearchConnectionManager.removeElasticsearchConnection(
+				getConnectionId(pid));
+		}
+		catch (Exception exception) {
+			throw new ConfigurationModelListenerException(
+				exception.getMessage(),
+				ElasticsearchConnectionConfiguration.class, getClass(), null);
+		}
+	}
+
+	@Override
 	public void onBeforeSave(String pid, Dictionary<String, Object> properties)
 		throws ConfigurationModelListenerException {
 
@@ -65,16 +82,38 @@ public class ElasticsearchConnectionConfigurationModelListener
 		}
 	}
 
+	protected String getConnectionId(String pid) throws Exception {
+		Configuration configuration = configurationAdmin.getConfiguration(
+			pid, StringPool.QUESTION);
+
+		Dictionary<String, Object> properties = configuration.getProperties();
+
+		String connectionId = null;
+
+		if (properties != null) {
+			connectionId = StringUtil.unquote(
+				(String)properties.get("connectionId"));
+		}
+
+		return connectionId;
+	}
+
 	@Reference
 	protected ConfigurationAdmin configurationAdmin;
 
+	@Reference
+	protected ElasticsearchConnectionManager elasticsearchConnectionManager;
+
 	private String _getMessage(String key, Object... arguments) {
 		try {
-			ResourceBundle resourceBundle = _getResourceBundle();
-
-			return ResourceBundleUtil.getString(resourceBundle, key, arguments);
+			return ResourceBundleUtil.getString(
+				_getResourceBundle(), key, arguments);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 	}
@@ -130,6 +169,15 @@ public class ElasticsearchConnectionConfigurationModelListener
 			filterString);
 
 		if (configurations == null) {
+			String previousConnectionId = getConnectionId(pid);
+
+			if ((previousConnectionId != null) &&
+				!previousConnectionId.equals(connectionId)) {
+
+				elasticsearchConnectionManager.removeElasticsearchConnection(
+					previousConnectionId);
+			}
+
 			return;
 		}
 

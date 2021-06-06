@@ -16,10 +16,10 @@ import React from 'react';
 
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
 import {ALL_INDEXES_KEY, getIndexesGroups} from './IndexesConstants.es';
-import {List} from './IndexesPageBodyList.es';
+import List from './IndexesPageBodyList.es';
 import {useReindexActions} from './hooks/useReindexActions.es';
 
-const Body = ({items = []}) => {
+function Body({items = []}) {
 	const {getReindexStatus, handleReindex, isReindexing} = useReindexActions();
 
 	const {completionPercentage = 0} = getReindexStatus(ALL_INDEXES_KEY);
@@ -41,7 +41,6 @@ const Body = ({items = []}) => {
 				>
 					<ClayList.ItemField
 						className="font-weight-semi-bold"
-						data-testid="reindexAllLabel"
 						expand
 					>
 						{Liferay.Language.get('workflow-indexes')}
@@ -49,13 +48,9 @@ const Body = ({items = []}) => {
 
 					<ClayList.ItemField>
 						{isReindexing(ALL_INDEXES_KEY) ? (
-							<ClayProgressBar
-								data-testid="reindexAllStatus"
-								value={completionPercentage}
-							/>
+							<ClayProgressBar value={completionPercentage} />
 						) : (
 							<ClayButton
-								data-testid="reindexAllBtn"
 								displayType="primary"
 								onClick={() => handleReindex(ALL_INDEXES_KEY)}
 								small
@@ -84,8 +79,8 @@ const Body = ({items = []}) => {
 			</PromisesResolver.Resolved>
 		</>
 	);
-};
+}
 
 Body.List = List;
 
-export {Body};
+export default Body;

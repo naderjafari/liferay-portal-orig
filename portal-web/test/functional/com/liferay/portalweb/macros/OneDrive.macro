@@ -59,12 +59,14 @@ definition {
 	macro deleteDocument {
 		var key_documentTitle = "${dmDocumentTitle}";
 
-		if (IsElementPresent(locator1 = "OneDrive#FILES_TITLE")) {
+		while (IsElementPresent(locator1 = "OneDrive#FILES_TITLE")) {
 			Click.mouseOverClick(locator1 = "OneDrive#FILES_CHECKBOX");
 
 			Click(locator1 = "OneDrive#DELETE");
 
 			Click(locator1 = "OneDrive#DELETE_CONFIRMATION");
+
+			Pause(locator1 = "3000");
 		}
 	}
 
@@ -77,24 +79,13 @@ definition {
 
 		Click(locator1 = "OneDrive#DOCUMENTS_TITLE");
 
-		if (isSet(dmDocumentTypeName)) {
-			Type(
-				locator1 = "OneDrive#DOCUMENTS_TITLE_RENAME",
-				value1 = "${dmDocumentTitle}");
+		Type(
+			locator1 = "OneDrive#DOCUMENTS_TITLE_RENAME",
+			value1 = "${dmDocumentTitle}");
 
-			KeyPress(
-				locator1 = "OneDrive#DOCUMENTS_TITLE_RENAME",
-				value1 = "\RETURN");
-		}
-		else {
-			Type(
-				locator1 = "OneDrive#DOCUMENTS_TITLE",
-				value1 = "${dmDocumentTitle}");
-
-			KeyPress(
-				locator1 = "OneDrive#DOCUMENTS_TITLE",
-				value1 = "\RETURN");
-		}
+		KeyPress(
+			locator1 = "OneDrive#DOCUMENTS_TITLE_RENAME",
+			value1 = "\RETURN");
 
 		Navigator.closeWindow();
 

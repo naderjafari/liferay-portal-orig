@@ -25,11 +25,13 @@ export default {
 	 * @param {function} options.onNetworkStatus
 	 */
 	getCollectionField({
+		classNameId,
+		classPK,
 		collection,
+		languageId,
 		listItemStyle,
 		listStyle,
 		onNetworkStatus,
-		segmentsExperienceId,
 		size,
 		templateKey,
 	}) {
@@ -37,10 +39,12 @@ export default {
 			config.getCollectionFieldURL,
 			{
 				body: {
+					classNameId,
+					classPK,
+					languageId,
 					layoutObjectReference: JSON.stringify(collection),
 					listItemStyle,
 					listStyle,
-					segmentsExperienceId,
 					size,
 					templateKey,
 				},
@@ -52,6 +56,7 @@ export default {
 	/**
 	 * Get available collection mapping fields
 	 * @param {object} options
+	 * @param {string} options.fieldType Type of field to which we are mapping
 	 * @param {string} options.itemSubtype Collection itemSubtype
 	 * @param {string} options.itemType Collection itemType
 	 * @param {function} options.onNetworkStatus

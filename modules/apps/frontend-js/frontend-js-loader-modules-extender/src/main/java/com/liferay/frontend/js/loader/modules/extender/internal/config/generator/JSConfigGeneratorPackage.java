@@ -58,9 +58,7 @@ public class JSConfigGeneratorPackage {
 		_bundle = bundle;
 		_contextPath = contextPath;
 
-		Version version = _bundle.getVersion();
-
-		String jsVersion = version.toString();
+		String jsVersion = String.valueOf(_bundle.getVersion());
 
 		int index = jsVersion.indexOf(".hotfix");
 
@@ -391,7 +389,7 @@ public class JSConfigGeneratorPackage {
 	private final boolean _applyVersioning;
 	private final Bundle _bundle;
 	private final String _contextPath;
-	private List<JSConfigGeneratorModule> _jsConfigGeneratorModules =
+	private final List<JSConfigGeneratorModule> _jsConfigGeneratorModules =
 		new ArrayList<>();
 	private final String _name;
 	private String _unversionedConfiguration = "";

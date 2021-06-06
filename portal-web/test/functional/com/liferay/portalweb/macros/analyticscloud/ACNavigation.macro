@@ -1,0 +1,63 @@
+definition {
+
+	macro assertPageHeader {
+		AssertTextEquals(
+			locator1 = "ACHeader#HEADER_TITLE",
+			value1 = "${headerTitle}");
+	}
+
+	macro clickHeaderTab {
+		Click(
+			key_tabName = "${tabName}",
+			locator1 = "ACHeader#GENERIC_HEADER_TAB");
+	}
+
+	macro collapseSidebar {
+		Click(locator1 = "ACNavigation#COLLAPSE_SIDEBAR_ARROW");
+	}
+
+	macro expandSidebar {
+		Click(locator1 = "ACNavigation#EXPAND_SIDEBAR_ARROW");
+	}
+
+	macro goToAccounts {
+		ACNavigation.goToSidebarOption(sidebarOption = "accounts");
+	}
+
+	macro goToAssets {
+		ACNavigation.goToSidebarOption(sidebarOption = "assets");
+	}
+
+	macro goToIndividuals {
+		ACNavigation.goToSidebarOption(sidebarOption = "individuals");
+	}
+
+	macro goToSegments {
+		ACNavigation.goToSidebarOption(sidebarOption = "segments");
+	}
+
+	macro goToSettings {
+		ACNavigation.goToSidebarOption(sidebarOption = "settings");
+	}
+
+	macro goToSidebarOption {
+		var key_SidebarOption = "${sidebarOption}";
+
+		Click(locator1 = "ACNavigation#GENERIC_SIDEBAR_OPTION");
+	}
+
+	macro goToSites {
+		ACNavigation.goToSidebarOption(sidebarOption = "sites");
+	}
+
+	macro goToTests {
+		ACNavigation.goToSidebarOption(sidebarOption = "tests");
+	}
+
+	macro switchTab {
+		var key_tabName = "${tabName}";
+
+		Click(locator1 = "ACNavigation#TAB_NAME");
+	}
+
+}

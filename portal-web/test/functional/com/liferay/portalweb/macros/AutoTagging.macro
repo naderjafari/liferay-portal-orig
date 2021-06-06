@@ -25,7 +25,6 @@ definition {
 				configurationScope = "System Scope");
 
 			FormFields.disableCheckbox(fieldName = "enabled");
-
 		}
 
 		else if ("${disableAutoTaggingFor}" == "Instance Settings") {
@@ -34,16 +33,20 @@ definition {
 				configurationName = "Asset Auto Tagging",
 				configurationScope = "Virtual Instance Scope");
 
-			Uncheck(locator1 = "Checkbox#ENABLE_AUTO_TAGGING");
+			FormFields.disableCheckbox(fieldName = "enabled");
 		}
 
-		else if ("${disableAutoTaggingFor}" == "Settings") {
+		else if ("${disableAutoTaggingFor}" == "Site Settings") {
 			ProductMenu.gotoPortlet(
 				category = "Configuration",
-				portlet = "Settings",
+				portlet = "Site Settings",
 				site = "${site}");
 
-			Panel.expandPanel(panel = "Asset Auto Tagging");
+			Click(
+				key_itemName = "Assets",
+				locator1 = "ListGroupItem#ITEM_TEXT");
+
+			Navigator.gotoNavTab(navTab = "Asset Auto Tagging");
 
 			Uncheck.uncheckToggleSwitch(locator1 = "Checkbox#ENABLE_AUTO_TAGGING");
 		}
@@ -93,13 +96,17 @@ definition {
 			}
 		}
 
-		else if ("${enableAutoTaggingFor}" == "Settings") {
+		else if ("${enableAutoTaggingFor}" == "Site Settings") {
 			ProductMenu.gotoPortlet(
 				category = "Configuration",
-				portlet = "Settings",
+				portlet = "Site Settings",
 				site = "${site}");
 
-			Panel.expandPanel(panel = "Asset Auto Tagging");
+			Click(
+				key_itemName = "Assets",
+				locator1 = "ListGroupItem#ITEM_TEXT");
+
+			Navigator.gotoNavTab(navTab = "Asset Auto Tagging");
 
 			Check.checkToggleSwitch(locator1 = "Checkbox#ENABLE_AUTO_TAGGING");
 		}
@@ -149,10 +156,7 @@ definition {
 
 		Click(locator1 = "Dropdown#TRIGGER");
 
-		AssertClick(
-			key_option = "${assetType}",
-			locator1 = "Dropdown#RESULT",
-			value1 = "${assetType}");
+		DropdownMenuItem.click(menuItem = "${assetType}");
 
 		if (IsElementPresent(locator1 = "Button#UPDATE")) {
 			PortletEntry.update();
@@ -174,6 +178,8 @@ definition {
 			configurationName = "TensorFlow Image Auto Tagging",
 			configurationScope = "Virtual Instance Scope");
 
+		Alert.viewInfoMessageSpecific(infoMessage = "The TensorFlow model will be downloaded in the background. No tags will be created until the model is fully downloaded");
+
 		FormFields.enableCheckbox(fieldName = "enabled");
 
 		if (IsElementPresent(locator1 = "Button#UPDATE")) {
@@ -183,6 +189,22 @@ definition {
 		else if (IsElementPresent(locator1 = "Button#SAVE")) {
 			PortletEntry.save();
 		}
+
+		Alert.viewInfoMessageSpecific(infoMessage = "The TensorFlow model is being downloaded in the background. No tags will be created until the model is fully downloaded");
+
+		while (IsElementPresent(key_infoMessage = "The TensorFlow model is being downloaded in the background. No tags will be created until the model is fully downloaded", locator1 = "Message#INFO_SPECIFIC")) {
+			Pause(locator1 = "20000");
+
+			Refresh();
+		}
+
+		AssertElementNotPresent(
+			key_infoMessage = "The TensorFlow model will be downloaded in the background. No tags will be created until the model is fully downloaded",
+			locator1 = "Message#INFO_SPECIFIC");
+
+		AssertElementNotPresent(
+			key_infoMessage = "The TensorFlow model is being downloaded in the background. No tags will be created until the model is fully downloaded",
+			locator1 = "Message#INFO_SPECIFIC");
 	}
 
 }

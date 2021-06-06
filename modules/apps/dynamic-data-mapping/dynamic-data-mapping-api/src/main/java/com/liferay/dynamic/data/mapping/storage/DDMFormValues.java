@@ -86,7 +86,7 @@ public class DDMFormValues implements Serializable {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * #getDDMFormFieldValuesMap(boolean)}
+	 *             #getDDMFormFieldValuesMap(boolean)}
 	 */
 	@Deprecated
 	public Map<String, List<DDMFormFieldValue>> getDDMFormFieldValuesMap() {
@@ -113,12 +113,42 @@ public class DDMFormValues implements Serializable {
 			ddmFormFieldValues.add(ddmFormFieldValue);
 
 			if (includeNestedDDMFormFieldValues) {
-				ddmFormFieldValuesMap.putAll(
-					ddmFormFieldValue.getNestedDDMFormFieldValuesMap());
+				ddmFormFieldValue.populateNestedDDMFormFieldValuesMap(
+					ddmFormFieldValuesMap);
 			}
 		}
 
 		return ddmFormFieldValuesMap;
+	}
+
+	public Map<String, List<DDMFormFieldValue>>
+		getDDMFormFieldValuesReferencesMap(
+			boolean includeNestedDDMFormFieldValues) {
+
+		Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesReferencesMap =
+			new LinkedHashMap<>();
+
+		for (DDMFormFieldValue ddmFormFieldValue : _ddmFormFieldValues) {
+			List<DDMFormFieldValue> ddmFormFieldValues =
+				ddmFormFieldValuesReferencesMap.get(
+					ddmFormFieldValue.getFieldReference());
+
+			if (ddmFormFieldValues == null) {
+				ddmFormFieldValues = new ArrayList<>();
+
+				ddmFormFieldValuesReferencesMap.put(
+					ddmFormFieldValue.getFieldReference(), ddmFormFieldValues);
+			}
+
+			ddmFormFieldValues.add(ddmFormFieldValue);
+
+			if (includeNestedDDMFormFieldValues) {
+				ddmFormFieldValue.populateNestedDDMFormFieldValuesReferencesMap(
+					ddmFormFieldValuesReferencesMap);
+			}
+		}
+
+		return ddmFormFieldValuesReferencesMap;
 	}
 
 	public Locale getDefaultLocale() {

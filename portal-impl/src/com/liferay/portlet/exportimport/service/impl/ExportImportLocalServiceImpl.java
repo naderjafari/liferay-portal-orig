@@ -189,10 +189,10 @@ public class ExportImportLocalServiceImpl
 			layoutImportController.importFile(exportImportConfiguration, file);
 		}
 		catch (PortalException portalException) {
-			Throwable cause = portalException.getCause();
+			Throwable throwable = portalException.getCause();
 
-			if (cause instanceof LocaleException) {
-				throw (PortalException)cause;
+			if (throwable instanceof LocaleException) {
+				throw (PortalException)throwable;
 			}
 
 			throw portalException;
@@ -263,10 +263,10 @@ public class ExportImportLocalServiceImpl
 				exportImportConfiguration, file);
 		}
 		catch (PortalException portalException) {
-			Throwable cause = portalException.getCause();
+			Throwable throwable = portalException.getCause();
 
-			if (cause instanceof LocaleException) {
-				throw (PortalException)cause;
+			if (throwable instanceof LocaleException) {
+				throw (PortalException)throwable;
 			}
 
 			throw portalException;
@@ -284,6 +284,29 @@ public class ExportImportLocalServiceImpl
 
 			throw exportImportRuntimeException;
 		}
+	}
+
+	@Override
+	public long importLayoutSetPrototypeInBackground(
+			long userId, ExportImportConfiguration exportImportConfiguration,
+			File file)
+		throws PortalException {
+
+		BackgroundTask backgroundTask =
+			BackgroundTaskManagerUtil.addBackgroundTask(
+				userId, exportImportConfiguration.getGroupId(),
+				exportImportConfiguration.getName(),
+				BackgroundTaskExecutorNames.
+					LAYOUT_SET_PROTOTYPE_IMPORT_BACKGROUND_TASK_EXECUTOR,
+				HashMapBuilder.<String, Serializable>put(
+					"exportImportConfigurationId",
+					exportImportConfiguration.getExportImportConfigurationId()
+				).build(),
+				new ServiceContext());
+
+		backgroundTask.addAttachment(userId, file.getName(), file);
+
+		return backgroundTask.getBackgroundTaskId();
 	}
 
 	@Override
@@ -386,10 +409,10 @@ public class ExportImportLocalServiceImpl
 				exportImportConfiguration, file);
 		}
 		catch (PortalException portalException) {
-			Throwable cause = portalException.getCause();
+			Throwable throwable = portalException.getCause();
 
-			if (cause instanceof LocaleException) {
-				throw (PortalException)cause;
+			if (throwable instanceof LocaleException) {
+				throw (PortalException)throwable;
 			}
 
 			throw portalException;
@@ -422,19 +445,19 @@ public class ExportImportLocalServiceImpl
 			portletImportController.importFile(exportImportConfiguration, file);
 		}
 		catch (PortalException portalException) {
-			Throwable cause = portalException.getCause();
+			Throwable throwable = portalException.getCause();
 
 			while (true) {
-				if (cause == null) {
+				if (throwable == null) {
 					break;
 				}
 
-				if (cause instanceof LocaleException) {
-					throw (PortalException)cause;
+				if (throwable instanceof LocaleException) {
+					throw (PortalException)throwable;
 				}
 
-				if (cause instanceof PortletDataException) {
-					cause = cause.getCause();
+				if (throwable instanceof PortletDataException) {
+					throwable = throwable.getCause();
 				}
 				else {
 					break;
@@ -595,10 +618,10 @@ public class ExportImportLocalServiceImpl
 				exportImportConfiguration, file);
 		}
 		catch (PortalException portalException) {
-			Throwable cause = portalException.getCause();
+			Throwable throwable = portalException.getCause();
 
-			if (cause instanceof LocaleException) {
-				throw (PortalException)cause;
+			if (throwable instanceof LocaleException) {
+				throw (PortalException)throwable;
 			}
 
 			throw portalException;
@@ -669,10 +692,10 @@ public class ExportImportLocalServiceImpl
 				exportImportConfiguration, file);
 		}
 		catch (PortalException portalException) {
-			Throwable cause = portalException.getCause();
+			Throwable throwable = portalException.getCause();
 
-			if (cause instanceof LocaleException) {
-				throw (PortalException)cause;
+			if (throwable instanceof LocaleException) {
+				throw (PortalException)throwable;
 			}
 
 			throw portalException;

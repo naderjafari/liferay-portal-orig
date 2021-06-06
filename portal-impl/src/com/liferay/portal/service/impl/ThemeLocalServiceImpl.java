@@ -178,7 +178,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 		List<Theme> themes = getThemes(companyId);
 
-		themes = PluginUtil.restrictPlugins(themes, companyId, userId);
+		themes = PluginUtil.restrictPlugins(themes, companyId, groupId, userId);
 
 		Iterator<Theme> iterator = themes.iterator();
 
@@ -269,9 +269,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 	@Override
 	public List<Theme> getThemes(long companyId) {
-		Map<String, Theme> themes = _getThemes(companyId);
-
-		List<Theme> themesList = ListUtil.fromMapValues(themes);
+		List<Theme> themesList = ListUtil.fromMapValues(_getThemes(companyId));
 
 		return ListUtil.sort(themesList);
 	}
@@ -581,13 +579,13 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 		Element rootElement = document.getRootElement();
 
-		Version portalVersion = _getVersion(ReleaseInfo.getVersion());
-
 		boolean compatible = false;
 
 		Element compatibilityElement = rootElement.element("compatibility");
 
 		if (compatibilityElement != null) {
+			Version portalVersion = _getVersion(ReleaseInfo.getVersion());
+
 			List<Element> versionElements = compatibilityElement.elements(
 				"version");
 
@@ -918,13 +916,9 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			return;
 		}
 
-		String contextPath = servletContext.getContextPath();
-
-		spriteFileName = contextPath.concat(
-			SpriteProcessor.PATH
-		).concat(
-			spriteFileName
-		);
+		spriteFileName = StringBundler.concat(
+			servletContext.getContextPath(), SpriteProcessor.PATH,
+			spriteFileName);
 
 		theme.setSpriteImages(spriteFileName, spriteProperties);
 	}

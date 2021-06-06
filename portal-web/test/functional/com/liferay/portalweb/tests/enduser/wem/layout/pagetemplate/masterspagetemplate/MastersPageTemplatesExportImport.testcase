@@ -46,7 +46,7 @@ definition {
 		task ("Assert Export action is disabled") {
 			Click.waitForMenuToggleJSClick(
 				key_card = "Custom Masters Page Template",
-				locator1 = "LexiconCard#CARD_ELLIPSIS");
+				locator1 = "Card#CARD_ELLIPSIS");
 
 			AssertVisible(
 				key_menuItem = "Export",
@@ -61,8 +61,10 @@ definition {
 	}
 
 	@description = "This is a use case for LPS-102207. Can export a master page template containing the layout elements and nested elements and import."
-	@priority = "4"
+	@priority = "5"
 	test ExportImportMastersPageTemplateWithCompositionOfFragments {
+		property portal.acceptance = "true";
+
 		task ("Add a custom master") {
 			JSONLayoutpagetemplate.addMasterPageTemplateEntry(
 				groupName = "Test Site Name",
@@ -82,35 +84,16 @@ definition {
 				fragmentName = "Container",
 				scope = "Master");
 
-			Click(
-				key_elementType = "Container",
-				key_position = "1",
-				locator1 = "PageEditor#LAYOUT_ELEMENTS_HEADER");
-
-			PageEditor.expandFragmentCollection(collectionName = "Basic Components");
-
-			DragAndDrop.javaScriptDragAndDropToObject(
-				key_collectionName = "Basic Components",
-				key_fragmentName = "Heading",
-				key_position = "1",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_FRAGMENT",
-				locator2 = "PageEditor#CONTAINER_CONTAINER",
-				value1 = "");
-
-			PageEditor.waitForAutoSave();
-
-			AssertElementPresent(
-				key_elementHeader = "//div[contains(@class,'page-editor')]//li[contains(.,'Heading')]",
-				key_position = "1",
-				locator1 = "PageEditor#CONTAINER_CONTAINER_NESTED_ELEMENT");
+			PageEditor.addElementToContainer(
+				collectionName = "Basic Components",
+				fragmentName = "Heading",
+				navTab = "Fragments");
 
 			PageEditor.addFragment(
 				collectionName = "Layout Elements",
 				dropTarget = "Footer",
 				fragmentName = "Grid",
 				scope = "Master");
-
-			PageEditor.gotoTab(tabName = "Fragments");
 
 			PageEditor.expandFragmentCollection(collectionName = "Basic Components");
 
@@ -181,8 +164,10 @@ definition {
 	}
 
 	@description = "This is a use case for LPS-102207. Can export a master page template containing the custom configuration settings of fragments and import."
-	@priority = "4"
+	@priority = "5"
 	test ExportImportMastersPageTemplateWithCustomConfigurationSettingOfFragments {
+		property portal.acceptance = "true";
+
 		task ("Add a custom master") {
 			JSONLayoutpagetemplate.addMasterPageTemplateEntry(
 				groupName = "Test Site Name",
@@ -203,7 +188,7 @@ definition {
 				scope = "Master");
 
 			PageEditor.editLayoutContainer(
-				backgroundImage = "Manual Selection",
+				backgroundImage = "Direct",
 				panel = "Styles",
 				uploadFileName = "Document_1.png");
 
@@ -220,9 +205,8 @@ definition {
 			PageEditor.gotoStyle(fragmentName = "Heading");
 
 			PageEditor.configureFragment(
-				marginBottom = "1",
-				textAlign = "Center",
-				textColor = "danger");
+				alignment = "Center",
+				textColor = "Danger");
 
 			PageEditor.gotoConfiguration(fragmentName = "Heading");
 
@@ -232,7 +216,6 @@ definition {
 				alignment = "center",
 				fragmentName = "heading",
 				headingLevel = "h2",
-				marginBottom = "1",
 				textColor = "danger");
 
 			Button.click(button = "Publish Master");
@@ -269,7 +252,6 @@ definition {
 				alignment = "center",
 				fragmentName = "heading",
 				headingLevel = "h2",
-				marginBottom = "1",
 				textColor = "danger");
 		}
 	}
@@ -290,7 +272,9 @@ definition {
 				item = "Edit",
 				masterLayoutName = "Custom Masters Page Template");
 
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			Theme.configureLookAndFeelShowFooter(showFooter = "true");
 
@@ -344,7 +328,9 @@ definition {
 
 			MastersPageTemplatesAdmin.gotoMasters(masterLayoutName = "Custom Masters Page Template");
 
-			PageEditor.gotoTab(tabName = "Look and Feel");
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Click(locator1 = "PageEditor#MORE_LINK");
 
 			Pause(locator1 = "3000");
 
@@ -489,6 +475,15 @@ definition {
 	@description = "This is a use case for LPS-106815. The Organization Role permission settings of widgets will be exported and imported with master page template."
 	@priority = "4"
 	test ExportImportMastersPageTemplateWithOrganizationRolePermissionSettingsOfWidgets {
+		property osgi.app.includes = "account";
+		property test.name.skip.portal.instance = "MastersPageTemplatesExportImport#ExportImportMastersPageTemplateWithOrganizationRolePermissionSettingsOfWidgets";
+
+		task ("Restart the server") {
+			Portlet.shutdownServer();
+
+			Portlet.startServer(deleteLiferayHome = "false");
+		}
+
 		task ("Add a organization and organization site") {
 			JSONOrganization.addOrganization(
 				organizationName = "Organization Name 1",
@@ -703,7 +698,7 @@ definition {
 				checkboxName = "Overwrite Existing Page Templates",
 				locator1 = "Checkbox#ANY_CHECKBOX");
 
-			Click(locator1 = "Button#IMPORT");
+			Button.clickImport();
 
 			Alert.viewSuccessMessage();
 
@@ -733,7 +728,7 @@ definition {
 				locator1 = "TextInput#FILE",
 				value1 = "master-page-invalid-value.zip");
 
-			Click(locator1 = "Button#IMPORT");
+			Button.clickImport();
 		}
 
 		task ("Assert the specific error message is shown on Import popup") {

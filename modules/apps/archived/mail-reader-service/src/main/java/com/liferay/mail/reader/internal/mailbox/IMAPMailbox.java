@@ -326,8 +326,6 @@ public class IMAPMailbox extends BaseMailbox {
 	public void sendMessage(long accountId, long messageId)
 		throws PortalException {
 
-		Account account = AccountLocalServiceUtil.getAccount(accountId);
-
 		Message message = MessageLocalServiceUtil.getMessage(messageId);
 
 		Address[] toAddresses = parseAddresses(message.getTo());
@@ -339,6 +337,8 @@ public class IMAPMailbox extends BaseMailbox {
 
 			throw new MailException(MailException.MESSAGE_HAS_NO_RECIPIENTS);
 		}
+
+		Account account = AccountLocalServiceUtil.getAccount(accountId);
 
 		List<Attachment> attachments =
 			AttachmentLocalServiceUtil.getAttachments(messageId);
@@ -373,13 +373,13 @@ public class IMAPMailbox extends BaseMailbox {
 
 		updateFolders();
 
-		List<Folder> folders = FolderLocalServiceUtil.getFolders(
-			account.getAccountId());
-
 		String key = AccountLock.getKey(
 			user.getUserId(), account.getAccountId());
 
 		if (AccountLock.acquireLock(key)) {
+			List<Folder> folders = FolderLocalServiceUtil.getFolders(
+				account.getAccountId());
+
 			try {
 				for (Folder folder : folders) {
 					_imapAccessor.storeEnvelopes(folder.getFolderId(), true);
@@ -445,6 +445,10 @@ public class IMAPMailbox extends BaseMailbox {
 				MessageLocalServiceUtil.getMessage(folderId, remoteMessageId);
 			}
 			catch (NoSuchMessageException noSuchMessageException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchMessageException, noSuchMessageException);
+				}
+
 				missingRemoteMessageIdsList.add(remoteMessageId);
 			}
 		}
@@ -493,6 +497,10 @@ public class IMAPMailbox extends BaseMailbox {
 					account.getAccountId(), jxFolder.getFullName());
 			}
 			catch (NoSuchFolderException noSuchFolderException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchFolderException, noSuchFolderException);
+				}
+
 				FolderLocalServiceUtil.addFolder(
 					user.getUserId(), account.getAccountId(),
 					jxFolder.getFullName(), jxFolder.getName(), 0);

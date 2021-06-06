@@ -13,11 +13,13 @@
  */
 
 import ClayIcon from '@clayui/icon';
+import classNames from 'classnames';
 import React, {useRef} from 'react';
 import {useDragLayer} from 'react-dnd';
 
-import {config} from '../config/index';
-import {useSelector} from '../store/index';
+import {ITEM_ACTIVATION_ORIGINS} from '../config/constants/itemActivationOrigins';
+import {useSelector} from '../contexts/StoreContext';
+import selectLanguageId from '../selectors/selectLanguageId';
 
 const getItemStyles = (currentOffset, ref, rtl) => {
 	if (!currentOffset || !ref.current) {
@@ -43,7 +45,7 @@ const getItemStyles = (currentOffset, ref, rtl) => {
 export default function DragPreview() {
 	const ref = useRef();
 
-	const languageId = useSelector((state) => state.languageId);
+	const languageId = useSelector(selectLanguageId);
 
 	const {currentOffset, isDragging, item} = useDragLayer((monitor) => ({
 		currentOffset: monitor.getClientOffset(),
@@ -58,20 +60,25 @@ export default function DragPreview() {
 	return (
 		<div className="page-editor__drag-preview">
 			<div
-				className="page-editor__drag-preview__content"
+				className={classNames('page-editor__drag-preview__content', {
+					'page-editor__drag-preview__content__treeview':
+						item?.origin === ITEM_ACTIVATION_ORIGINS.sidebar,
+				})}
 				ref={ref}
 				style={getItemStyles(
 					currentOffset,
 					ref,
-					config.languageDirection[languageId] === 'rtl'
+					Liferay.Language.direction[languageId] === 'rtl'
 				)}
 			>
-				{item && item.icon && (
-					<ClayIcon className="mr-3" symbol={item.icon} />
+				{item?.icon && (
+					<div className="align-items-center d-flex h-100">
+						<ClayIcon className="mt-0" symbol={item.icon} />
+					</div>
 				)}
-				{item && item.name
-					? item.name
-					: Liferay.Language.get('element')}
+				<span className="ml-3 text-truncate">
+					{item?.name ? item.name : Liferay.Language.get('element')}
+				</span>
 			</div>
 		</div>
 	);

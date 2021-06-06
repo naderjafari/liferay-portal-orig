@@ -16,10 +16,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import {config} from '../../app/config/index';
+import itemSelectorValueToCollection from '../../app/utils/item-selector-value/itemSelectorValueToCollection';
 import ItemSelector from './ItemSelector';
 
 export default function CollectionSelector({
-	collectionTitle,
+	collectionItem,
 	itemSelectorURL,
 	label,
 	onCollectionSelect,
@@ -32,14 +33,16 @@ export default function CollectionSelector({
 			itemSelectorURL={itemSelectorURL || config.infoListSelectorURL}
 			label={label}
 			onItemSelect={onCollectionSelect}
-			selectedItemTitle={collectionTitle}
-			showMappedItems={false}
+			quickMappedInfoItems={config.selectedMappingTypes?.linkedCollection}
+			selectedItem={collectionItem}
+			showMappedItems={!!config.selectedMappingTypes?.linkedCollection}
+			transformValueCallback={itemSelectorValueToCollection}
 		/>
 	);
 }
 
 CollectionSelector.propTypes = {
-	collectionTitle: PropTypes.string,
+	collectionItem: PropTypes.shape({title: PropTypes.string}),
 	label: PropTypes.string,
 	onCollectionSelect: PropTypes.func.isRequired,
 };

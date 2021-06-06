@@ -21,21 +21,28 @@ import com.liferay.dynamic.data.mapping.exception.NoSuchStructureException;
 import com.liferay.dynamic.data.mapping.info.item.provider.DDMStructureInfoItemFieldSetProvider;
 import com.liferay.dynamic.data.mapping.info.item.provider.DDMTemplateInfoItemFieldSetProvider;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.expando.info.item.provider.ExpandoInfoItemFieldSetProvider;
 import com.liferay.info.exception.NoSuchClassTypeException;
 import com.liferay.info.exception.NoSuchFormVariationException;
 import com.liferay.info.field.InfoFieldSet;
-import com.liferay.info.field.InfoFieldSetEntry;
 import com.liferay.info.form.InfoForm;
 import com.liferay.info.item.field.reader.InfoItemFieldReaderFieldSetProvider;
 import com.liferay.info.item.provider.InfoItemFormProvider;
+import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.web.internal.info.item.JournalArticleInfoItemFields;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
@@ -55,10 +62,13 @@ public class JournalArticleInfoItemFormProvider
 	@Override
 	public InfoForm getInfoForm() {
 		try {
-			return getInfoForm(0);
+			return _getInfoForm(
+				0,
+				_assetEntryInfoItemFieldSetProvider.getInfoFieldSet(
+					JournalArticle.class.getName()));
 		}
-		catch (NoSuchClassTypeException noSuchClassTypeException) {
-			throw new RuntimeException(noSuchClassTypeException);
+		catch (NoSuchFormVariationException noSuchFormVariationException) {
+			throw new RuntimeException(noSuchFormVariationException);
 		}
 	}
 
@@ -100,34 +110,113 @@ public class JournalArticleInfoItemFormProvider
 				AssetEntry.class.getName()));
 	}
 
+	@Override
+	public InfoForm getInfoForm(String formVariationKey, long groupId)
+		throws NoSuchFormVariationException {
+
+		return _getInfoForm(
+			GetterUtil.getLong(formVariationKey),
+			_assetEntryInfoItemFieldSetProvider.getInfoFieldSet(
+				JournalArticle.class.getName(),
+				GetterUtil.getLong(formVariationKey), groupId));
+	}
+
+	private InfoFieldSet _getBasicInformationInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.titleInfoField
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.descriptionInfoField
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.publishDateInfoField
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.authorNameInfoField
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.authorProfileImageInfoField
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.lastEditorNameInfoField
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.lastEditorProfileImageInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(getClass(), "basic-information")
+		).name(
+			"basic-information"
+		).build();
+	}
+
+	private InfoFieldSet _getDisplayPageInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.displayPageURLInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(getClass(), "display-page")
+		).name(
+			"display-page"
+		).build();
+	}
+
+	private InfoFieldSet _getFeaturedImageInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.smallImageInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(getClass(), "featured-image")
+		).name(
+			"featured-image"
+		).build();
+	}
+
 	private InfoForm _getInfoForm(
 			long ddmStructureId, InfoFieldSet assetEntryInfoFieldSet)
 		throws NoSuchFormVariationException {
 
+		Set<Locale> availableLocales = LanguageUtil.getAvailableLocales();
+
+		InfoLocalizedValue.Builder infoLocalizedValueBuilder =
+			InfoLocalizedValue.builder();
+
+		for (Locale locale : availableLocales) {
+			infoLocalizedValueBuilder.value(
+				locale,
+				ResourceActionsUtil.getModelResource(
+					locale, JournalArticle.class.getName()));
+		}
+
 		try {
 			return InfoForm.builder(
-			).infoFieldSetEntries(
-				_getJournalArticleFields()
 			).infoFieldSetEntry(
-				_infoItemFieldReaderFieldSetProvider.getInfoFieldSet(
-					JournalArticle.class.getName())
-			).infoFieldSetEntry(
-				assetEntryInfoFieldSet
-			).infoFieldSetEntry(
-				_expandoInfoItemFieldSetProvider.getInfoFieldSet(
-					JournalArticle.class.getName())
+				_getBasicInformationInfoFieldSet()
 			).<NoSuchStructureException>infoFieldSetEntry(
 				consumer -> {
 					if (ddmStructureId != 0) {
 						consumer.accept(
 							_ddmStructureInfoItemFieldSetProvider.
-								getInfoItemFieldSet(ddmStructureId));
+								getInfoItemFieldSet(
+									ddmStructureId,
+									_getStructureFieldSetNameInfoLocalizedValue(
+										ddmStructureId)));
 
 						consumer.accept(
 							_ddmTemplateInfoItemFieldSetProvider.
 								getInfoItemFieldSet(ddmStructureId));
 					}
 				}
+			).infoFieldSetEntry(
+				_getDisplayPageInfoFieldSet()
+			).infoFieldSetEntry(
+				_getFeaturedImageInfoFieldSet()
+			).infoFieldSetEntry(
+				_expandoInfoItemFieldSetProvider.getInfoFieldSet(
+					JournalArticle.class.getName())
+			).infoFieldSetEntry(
+				assetEntryInfoFieldSet
+			).infoFieldSetEntry(
+				_getScheduleInfoFieldSet()
+			).infoFieldSetEntry(
+				_infoItemFieldReaderFieldSetProvider.getInfoFieldSet(
+					JournalArticle.class.getName())
+			).labelInfoLocalizedValue(
+				infoLocalizedValueBuilder.build()
 			).name(
 				JournalArticle.class.getName()
 			).build();
@@ -138,17 +227,47 @@ public class JournalArticleInfoItemFormProvider
 		}
 	}
 
-	private Collection<InfoFieldSetEntry> _getJournalArticleFields() {
-		return Arrays.asList(
-			JournalArticleInfoItemFields.titleInfoField,
-			JournalArticleInfoItemFields.descriptionInfoField,
-			JournalArticleInfoItemFields.smallImageInfoField,
-			JournalArticleInfoItemFields.authorNameInfoField,
-			JournalArticleInfoItemFields.authorProfileImageInfoField,
-			JournalArticleInfoItemFields.lastEditorNameInfoField,
-			JournalArticleInfoItemFields.lastEditorProfileImageInfoField,
-			JournalArticleInfoItemFields.publishDateInfoField,
-			JournalArticleInfoItemFields.displayPageUrlInfoField);
+	private InfoFieldSet _getScheduleInfoFieldSet() {
+		return InfoFieldSet.builder(
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.displayDateInfoField
+		).infoFieldSetEntry(
+			JournalArticleInfoItemFields.expirationDateInfoField
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(getClass(), "schedule")
+		).name(
+			"schedule"
+		).build();
+	}
+
+	private InfoLocalizedValue<String>
+			_getStructureFieldSetNameInfoLocalizedValue(long ddmStructureId)
+		throws NoSuchStructureException {
+
+		try {
+			DDMStructure ddmStructure =
+				_ddmStructureLocalService.getDDMStructure(ddmStructureId);
+
+			Map<Locale, String> nameMap = new HashMap<>(
+				ddmStructure.getNameMap());
+
+			nameMap.replaceAll(
+				(locale, name) -> StringBundler.concat(
+					LanguageUtil.get(locale, "content"), StringPool.SPACE,
+					StringPool.OPEN_PARENTHESIS, name,
+					StringPool.CLOSE_PARENTHESIS));
+
+			return InfoLocalizedValue.<String>builder(
+			).values(
+				nameMap
+			).build();
+		}
+		catch (NoSuchStructureException noSuchStructureException) {
+			throw noSuchStructureException;
+		}
+		catch (PortalException portalException) {
+			throw new RuntimeException("Unexpected exception", portalException);
+		}
 	}
 
 	@Reference
@@ -161,6 +280,9 @@ public class JournalArticleInfoItemFormProvider
 	@Reference
 	private DDMStructureInfoItemFieldSetProvider
 		_ddmStructureInfoItemFieldSetProvider;
+
+	@Reference
+	private DDMStructureLocalService _ddmStructureLocalService;
 
 	@Reference
 	private DDMTemplateInfoItemFieldSetProvider

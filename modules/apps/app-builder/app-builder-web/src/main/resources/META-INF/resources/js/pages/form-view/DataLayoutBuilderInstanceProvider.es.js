@@ -15,11 +15,12 @@
 import {DataLayoutBuilderActions} from 'data-engine-taglib';
 import React, {useContext, useEffect} from 'react';
 
-import generateDataDefinitionFieldName from '../../utils/generateDataDefinitionFieldName.es';
+import customFields from '../../components/form-renderer-custom-fields/index.es';
 import DataLayoutBuilderContext from './DataLayoutBuilderInstanceContext.es';
 import FormViewContext from './FormViewContext.es';
 import useDeleteDefinitionField from './useDeleteDefinitionField.es';
 import useDeleteDefinitionFieldModal from './useDeleteDefinitionFieldModal.es';
+import useDuplicateField from './useDuplicateField.es';
 import useSaveAsFieldset from './useSaveAsFieldset.es';
 
 export default ({children, dataLayoutBuilder}) => {
@@ -27,33 +28,49 @@ export default ({children, dataLayoutBuilder}) => {
 		{
 			config: {allowNestedFields},
 			dataDefinition,
+			dataLayout,
 			editingLanguageId,
+			focusedCustomObjectField,
+			focusedField,
+			hoveredField,
 		},
 		dispatch,
 	] = useContext(FormViewContext);
-	const deleteDefinitionField = useDeleteDefinitionField({dataLayoutBuilder});
-	const onDeleteDefinitionField = useDeleteDefinitionFieldModal((event) => {
-		deleteDefinitionField(event);
-	});
+	const {defaultLanguageId, id: dataDefinitionLoaded} = dataDefinition;
+	const {id: dataLayoutLoaded} = dataLayout;
 
+	const deleteDefinitionField = useDeleteDefinitionField({dataLayoutBuilder});
+	const deleteDefinitionFieldModal = useDeleteDefinitionFieldModal(
+		(event) => {
+			deleteDefinitionField(event);
+		}
+	);
+	const duplicateField = useDuplicateField({dataLayoutBuilder});
 	const saveAsFieldset = useSaveAsFieldset({dataLayoutBuilder});
 
 	useEffect(() => {
 		dataLayoutBuilder.onEditingLanguageIdChange({
+			defaultLanguageId,
 			editingLanguageId,
 		});
-	}, [dataLayoutBuilder, editingLanguageId]);
+	}, [dataLayoutBuilder, defaultLanguageId, editingLanguageId]);
 
 	useEffect(() => {
-		const provider = dataLayoutBuilder.getLayoutProvider();
+		if (Object.keys(focusedCustomObjectField).length > 0) {
+			const dataDefinitionField = focusedCustomObjectField;
 
-		const {fieldHovered} = provider.state;
+			dispatch({
+				payload: {dataDefinitionField},
+				type:
+					DataLayoutBuilderActions.UPDATE_FOCUSED_CUSTOM_OBJECT_FIELD,
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dispatch, defaultLanguageId, editingLanguageId]);
 
-		let fieldActions = [];
-
+	useEffect(() => {
 		const duplicateAction = {
-			action: (event) =>
-				dataLayoutBuilder.dispatch('fieldDuplicated', event),
+			action: (event) => duplicateField(event),
 			label: Liferay.Language.get('duplicate'),
 		};
 
@@ -64,33 +81,36 @@ export default ({children, dataLayoutBuilder}) => {
 					type: DataLayoutBuilderActions.DELETE_DATA_LAYOUT_FIELD,
 				});
 
-				dataLayoutBuilder.dispatch('fieldDeleted', event);
+				dataLayoutBuilder.formBuilderWithLayoutProvider.refs.layoutProvider?.dispatch?.(
+					'fieldDeleted',
+					event
+				);
 			},
 			label: Liferay.Language.get('remove'),
 		};
 
 		const deleteFromObjectAction = {
-			action: (event) => {
-				onDeleteDefinitionField(event);
-			},
+			action: (event) => deleteDefinitionFieldModal(event),
+			disabled:
+				focusedField?.nativeField ||
+				hoveredField?.customProperties?.nativeField,
 			label: Liferay.Language.get('delete-from-object'),
-			style: 'danger',
 		};
 
-		fieldActions = [
+		let fieldActions = [
 			duplicateAction,
+			removeAction,
 			{
-				...removeAction,
-				separator: true,
+				type: 'divider',
 			},
 			deleteFromObjectAction,
 		];
 
 		if (
 			allowNestedFields &&
-			Object.keys(fieldHovered).length &&
-			fieldHovered.type === 'fieldset' &&
-			!fieldHovered.ddmStructureId
+			Object.keys(hoveredField).length &&
+			hoveredField.fieldType === 'fieldset' &&
+			!hoveredField.customProperties.ddmStructureId
 		) {
 			fieldActions = [
 				duplicateAction,
@@ -98,46 +118,59 @@ export default ({children, dataLayoutBuilder}) => {
 				{
 					action: ({fieldName}) => saveAsFieldset(fieldName),
 					label: Liferay.Language.get('save-as-fieldset'),
-					separator: true,
+				},
+				{
+					type: 'divider',
 				},
 				deleteFromObjectAction,
 			];
 		}
 
+		if (hoveredField.fieldType === 'fieldset') {
+			fieldActions.splice(fieldActions.indexOf(duplicateAction), 1);
+		}
+
+		const provider =
+			dataLayoutBuilder.formBuilderWithLayoutProvider.refs.layoutProvider;
+
 		provider.props = {
 			...provider.props,
 			fieldActions,
-			shouldAutoGenerateName: () => false,
 		};
 
-		provider.getEvents().fieldHovered(fieldHovered);
+		provider.getEvents().fieldHovered(hoveredField);
 	}, [
 		allowNestedFields,
 		dataLayoutBuilder,
 		dispatch,
-		onDeleteDefinitionField,
+		duplicateField,
+		focusedField,
+		hoveredField,
+		deleteDefinitionFieldModal,
 		saveAsFieldset,
 	]);
 
 	useEffect(() => {
-		const provider = dataLayoutBuilder.getLayoutProvider();
+		dispatch({
+			payload: customFields,
+			type: DataLayoutBuilderActions.SET_FORM_RENDERER_CUSTOM_FIELDS,
+		});
+	}, [dispatch]);
 
-		provider.props.fieldNameGenerator = (
-			desiredFieldName,
-			currentFieldName,
-			blacklist
-		) =>
-			generateDataDefinitionFieldName(
-				dataDefinition,
-				desiredFieldName,
-				currentFieldName,
-				blacklist
-			);
-	}, [dataDefinition, dataLayoutBuilder]);
+	useEffect(() => {
+		if (dataDefinitionLoaded && dataLayoutLoaded) {
+			dispatch({type: DataLayoutBuilderActions.UPDATE_PAGES});
+		}
+	}, [dispatch, dataDefinitionLoaded, dataLayoutLoaded]);
+
+	const dataLayoutBuilderDispatch = (...args) =>
+		dataLayoutBuilder.formBuilderWithLayoutProvider.refs.layoutProvider?.dispatch?.(
+			...args
+		);
 
 	return (
 		<DataLayoutBuilderContext.Provider
-			value={[dataLayoutBuilder, dataLayoutBuilder.dispatch]}
+			value={[dataLayoutBuilder, dataLayoutBuilderDispatch]}
 		>
 			{children}
 		</DataLayoutBuilderContext.Provider>

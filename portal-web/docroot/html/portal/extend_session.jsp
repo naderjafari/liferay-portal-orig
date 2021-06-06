@@ -26,9 +26,7 @@ for (String servletContextName : ServletContextPool.keySet()) {
 
 	PortletApp portletApp = PortletLocalServiceUtil.getPortletApp(servletContextName);
 
-	List<Portlet> portlets = portletApp.getPortlets();
-
-	for (Portlet portlet : portlets) {
+	for (Portlet portlet : portletApp.getPortlets()) {
 		PortletConfig portletConfig = PortletConfigFactoryUtil.create(portlet, servletContext);
 
 		String invokerPortletName = portletConfig.getInitParameter(InvokerPortlet.INIT_INVOKER_PORTLET_NAME);
@@ -37,7 +35,7 @@ for (String servletContextName : ServletContextPool.keySet()) {
 			invokerPortletName = portletConfig.getPortletName();
 		}
 
-		String path = StringPool.SLASH.concat(invokerPortletName).concat("/invoke");
+		String path = StringBundler.concat(StringPool.SLASH, invokerPortletName, "/invoke");
 
 		RequestDispatcher requestDispatcher = servletContext.getRequestDispatcher(path);
 
@@ -60,5 +58,5 @@ for (String servletContextName : ServletContextPool.keySet()) {
 %>
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.portal.extend_session_jsp");
+private static final Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.portal.extend_session_jsp");
 %>

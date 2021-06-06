@@ -17,10 +17,16 @@ package com.liferay.site.internal.change.tracking.spi.reference;
 import com.liferay.change.tracking.spi.reference.TableReferenceDefinition;
 import com.liferay.change.tracking.spi.reference.builder.ChildTableReferenceInfoBuilder;
 import com.liferay.change.tracking.spi.reference.builder.ParentTableReferenceInfoBuilder;
+import com.liferay.friendly.url.model.FriendlyURLEntryTable;
+import com.liferay.layout.friendly.url.LayoutFriendlyURLEntryHelper;
+import com.liferay.petra.sql.dsl.query.FromStep;
+import com.liferay.petra.sql.dsl.query.JoinStep;
+import com.liferay.portal.kernel.model.ClassNameTable;
 import com.liferay.portal.kernel.model.LayoutFriendlyURLTable;
-import com.liferay.portal.kernel.model.LayoutTable;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutFriendlyURLPersistence;
+
+import java.util.function.Function;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -36,6 +42,12 @@ public class LayoutFriendlyURLTableReferenceDefinition
 	public void defineChildTableReferences(
 		ChildTableReferenceInfoBuilder<LayoutFriendlyURLTable>
 			childTableReferenceInfoBuilder) {
+
+		childTableReferenceInfoBuilder.referenceInnerJoin(
+			_getFriendlyURLEntryJoinFunction(false)
+		).referenceInnerJoin(
+			_getFriendlyURLEntryJoinFunction(true)
+		);
 	}
 
 	@Override
@@ -44,10 +56,7 @@ public class LayoutFriendlyURLTableReferenceDefinition
 			parentTableReferenceInfoBuilder) {
 
 		parentTableReferenceInfoBuilder.groupedModel(
-			LayoutFriendlyURLTable.INSTANCE
-		).singleColumnReference(
-			LayoutFriendlyURLTable.INSTANCE.plid, LayoutTable.INSTANCE.plid
-		);
+			LayoutFriendlyURLTable.INSTANCE);
 	}
 
 	@Override
@@ -59,6 +68,35 @@ public class LayoutFriendlyURLTableReferenceDefinition
 	public LayoutFriendlyURLTable getTable() {
 		return LayoutFriendlyURLTable.INSTANCE;
 	}
+
+	private Function<FromStep, JoinStep> _getFriendlyURLEntryJoinFunction(
+		boolean privateLayout) {
+
+		return fromStep -> fromStep.from(
+			FriendlyURLEntryTable.INSTANCE
+		).innerJoinON(
+			LayoutFriendlyURLTable.INSTANCE,
+			LayoutFriendlyURLTable.INSTANCE.groupId.eq(
+				FriendlyURLEntryTable.INSTANCE.groupId
+			).and(
+				LayoutFriendlyURLTable.INSTANCE.plid.eq(
+					FriendlyURLEntryTable.INSTANCE.classPK)
+			)
+		).innerJoinON(
+			ClassNameTable.INSTANCE,
+			ClassNameTable.INSTANCE.classNameId.eq(
+				FriendlyURLEntryTable.INSTANCE.classNameId
+			).and(
+				ClassNameTable.INSTANCE.value.eq(
+					_layoutFriendlyURLEntryHelper.getClassName(privateLayout))
+			).and(
+				LayoutFriendlyURLTable.INSTANCE.privateLayout.eq(privateLayout)
+			)
+		);
+	}
+
+	@Reference
+	private LayoutFriendlyURLEntryHelper _layoutFriendlyURLEntryHelper;
 
 	@Reference
 	private LayoutFriendlyURLPersistence _layoutFriendlyURLPersistence;

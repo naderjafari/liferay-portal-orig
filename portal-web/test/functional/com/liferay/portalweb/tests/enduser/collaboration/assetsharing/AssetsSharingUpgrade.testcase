@@ -10,7 +10,9 @@ definition {
 	setUp {
 		SignIn.signIn();
 
-		Smoke.viewWelcomePage();
+		var portalURL = PropsUtil.get("portal.url");
+
+		AssertLocation.assertPartialLocation(value1 = "${portalURL}/web/guest");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Configuration",
@@ -21,6 +23,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test ViewSharedAssetsArchive72101 {
 		property data.archive.type = "data-archive-asset-sharing";
 		property portal.version = "7.2.10.1";

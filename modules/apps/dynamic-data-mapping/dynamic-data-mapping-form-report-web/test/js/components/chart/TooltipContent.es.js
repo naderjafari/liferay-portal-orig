@@ -20,6 +20,14 @@ import TooltipContent from '../../../../src/main/resources/META-INF/resources/js
 describe('Tooltip', () => {
 	afterEach(cleanup);
 
+	const field = {
+		columns: {
+			Col1: {value: 'Col 1'},
+			Col2: {value: 'Col 2'},
+			Col3: {value: 'Col 3'},
+		},
+	};
+
 	it('renders the tooltip with label, number of entries and percentage for SimpleBarChart', () => {
 		const {container} = render(
 			<TooltipContent
@@ -46,22 +54,23 @@ describe('Tooltip', () => {
 		const {container} = render(
 			<TooltipContent
 				active={true}
+				field={field}
 				label="Row 1"
 				payload={[
 					{
-						dataKey: 'Col 1',
+						dataKey: 'Col1',
 						fill: '#4b9bff',
 						name: 'Col 1',
 						value: 1,
 					},
 					{
-						dataKey: 'Col 2',
+						dataKey: 'Col2',
 						fill: '#af78ff',
 						name: 'Col 2',
 						value: 2,
 					},
 					{
-						dataKey: 'Col 3',
+						dataKey: 'Col3',
 						fill: '#50d2a0',
 						name: 'Col 3',
 						value: 3,
@@ -113,5 +122,53 @@ describe('Tooltip', () => {
 			.innerHTML;
 
 		expect(tooltipLabel).toBe('Option 1: 1 entry <b>(100%)</b>');
+	});
+
+	it('renders tooltip for Multiple Selection using a Simple Bar chart', () => {
+		const {container} = render(
+			<TooltipContent
+				active={true}
+				payload={[
+					{
+						name: 'count',
+						payload: {count: 3, label: 'Option A'},
+						value: 3,
+					},
+					{
+						name: 'count',
+						payload: {count: 1, label: 'Option B'},
+						value: 1,
+					},
+					{
+						name: 'count',
+						payload: {count: 1, label: 'Option C'},
+						value: 1,
+					},
+					{
+						name: 'count',
+						payload: {count: 1, label: 'Option D'},
+						value: 1,
+					},
+				]}
+				showBullet={false}
+				showHeader={false}
+				totalEntries={3}
+			/>
+		);
+
+		const tooltipLabels = container.querySelectorAll('#tooltip-label');
+
+		expect(tooltipLabels[0].innerHTML).toBe(
+			'Option A: 3 entries <b>(100%)</b>'
+		);
+		expect(tooltipLabels[1].innerHTML).toBe(
+			'Option B: 1 entry <b>(33.3%)</b>'
+		);
+		expect(tooltipLabels[2].innerHTML).toBe(
+			'Option C: 1 entry <b>(33.3%)</b>'
+		);
+		expect(tooltipLabels[3].innerHTML).toBe(
+			'Option D: 1 entry <b>(33.3%)</b>'
+		);
 	});
 });

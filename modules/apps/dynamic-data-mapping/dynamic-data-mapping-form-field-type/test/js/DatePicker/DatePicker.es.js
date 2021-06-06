@@ -15,7 +15,7 @@
 import {wait} from '@testing-library/dom';
 import {act, cleanup, render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {PageProvider} from 'dynamic-data-mapping-form-renderer';
+import {PageProvider} from 'data-engine-js-components-web';
 import moment from 'moment';
 import React from 'react';
 
@@ -24,6 +24,8 @@ import DatePicker from '../../../src/main/resources/META-INF/resources/DatePicke
 const spritemap = 'icons.svg';
 
 const defaultDatePickerConfig = {
+	locale: 'en_US',
+	localizedValue: {},
 	name: 'dateField',
 	spritemap,
 };
@@ -158,9 +160,72 @@ describe('DatePicker', () => {
 		await wait(() =>
 			expect(
 				getAllByDisplayValue(moment().format('MM/DD/YYYY'))
-			).toBeTruthy()
+			).toHaveLength(2)
 		);
 
 		expect(handleFieldEdited).toHaveBeenCalled();
+	});
+
+	it('call the onChange callback with a valid date', async () => {
+		const onChange = jest.fn();
+
+		const {container, getAllByDisplayValue, getByLabelText} = render(
+			<DatePickerWithProvider
+				{...defaultDatePickerConfig}
+				onChange={onChange}
+			/>
+		);
+
+		userEvent.click(
+			container.querySelector('.date-picker-dropdown-toggle')
+		);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		userEvent.click(getByLabelText('Select current date'));
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const date = moment().format('MM/DD/YYYY');
+
+		await wait(() => expect(getAllByDisplayValue(date)).toBeTruthy());
+
+		expect(onChange).toHaveBeenCalledWith({}, date);
+	});
+
+	it('fills the input with the current date according to the locale', async () => {
+		const handleFieldEdited = jest.fn();
+
+		const {container, getAllByDisplayValue, getByLabelText} = render(
+			<DatePickerWithProvider
+				{...defaultDatePickerConfig}
+				locale="ja_JP"
+				onChange={handleFieldEdited}
+			/>
+		);
+
+		userEvent.click(
+			container.querySelector('.date-picker-dropdown-toggle')
+		);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		userEvent.click(getByLabelText('Select current date'));
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		await wait(() =>
+			expect(
+				getAllByDisplayValue(moment().format('YYYY/MM/DD'))
+			).toBeTruthy()
+		);
 	});
 });

@@ -21,7 +21,7 @@ const withParamsMock = (...components) => ({
 	location: {search: query},
 	match: {params: routeParams},
 }) => {
-	return components.map((component) => {
+	return components.map((component, key) => {
 		if (routeParams.sort) {
 			routeParams.sort = decodeURIComponent(routeParams.sort);
 		}
@@ -29,6 +29,7 @@ const withParamsMock = (...components) => ({
 		return cloneElement(component, {
 			...routeParams,
 			history,
+			key,
 			query,
 			routeParams,
 		});
@@ -51,17 +52,20 @@ const MockRouter = ({
 	const [reindexStatuses, setReindexStatuses] = useState(
 		initialReindexStatuses
 	);
+	const [fetchDateModified, setFetchDateModified] = useState(false);
 
 	const contextState = useMemo(
 		() => ({
 			client,
 			defaultDelta: 20,
 			deltaValues: [5, 10, 20, 30, 50, 75],
+			fetchDateModified,
 			getClient: () => client,
 			isAmPm,
 			maxPages: 3,
 			portletNamespace: 'workflow',
 			reindexStatuses,
+			setFetchDateModified,
 			setReindexStatuses,
 			setTitle,
 			title,

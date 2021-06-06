@@ -25,6 +25,8 @@ import com.liferay.document.library.web.internal.display.context.logic.FileVersi
 import com.liferay.document.library.web.internal.display.context.util.DLRequestHelper;
 import com.liferay.document.library.web.internal.settings.DLPortletInstanceSettings;
 import com.liferay.dynamic.data.mapping.exception.StorageException;
+import com.liferay.dynamic.data.mapping.kernel.DDMForm;
+import com.liferay.dynamic.data.mapping.kernel.DDMFormField;
 import com.liferay.dynamic.data.mapping.kernel.DDMStructure;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.storage.StorageEngine;
@@ -39,6 +41,7 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.RepositoryUtil;
 
+import java.util.List;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -166,12 +169,66 @@ public class DefaultDLEditFileEntryDisplayContext
 
 	@Override
 	public boolean isDDMStructureVisible(DDMStructure ddmStructure) {
-		return true;
+		DDMForm ddmForm = ddmStructure.getDDMForm();
+
+		List<DDMFormField> ddmFormFields = ddmForm.getDDMFormFields();
+
+		return !ddmFormFields.isEmpty();
 	}
 
 	@Override
 	public boolean isFolderSelectionVisible() {
 		return _showSelectFolder;
+	}
+
+	@Override
+	public boolean isNeverExpire() throws PortalException {
+		if (_neverExpire != null) {
+			return _neverExpire;
+		}
+
+		if (_fileEntry == null) {
+			_neverExpire = true;
+		}
+		else if ((_fileVersion != null) &&
+				 (_fileVersion.getExpirationDate() != null)) {
+
+			_neverExpire = false;
+		}
+		else if (_fileEntry.getExpirationDate() != null) {
+			_neverExpire = false;
+		}
+		else {
+			_neverExpire = ParamUtil.getBoolean(
+				_httpServletRequest, "neverExpire", true);
+		}
+
+		return _neverExpire;
+	}
+
+	@Override
+	public boolean isNeverReview() throws PortalException {
+		if (_neverReview != null) {
+			return _neverReview;
+		}
+
+		if (_fileEntry == null) {
+			_neverReview = true;
+		}
+		else if ((_fileVersion != null) &&
+				 (_fileVersion.getReviewDate() != null)) {
+
+			_neverReview = false;
+		}
+		else if (_fileEntry.getReviewDate() != null) {
+			_neverReview = false;
+		}
+		else {
+			_neverReview = ParamUtil.getBoolean(
+				_httpServletRequest, "neverReview", true);
+		}
+
+		return _neverReview;
 	}
 
 	@Override
@@ -236,10 +293,12 @@ public class DefaultDLEditFileEntryDisplayContext
 		StorageEngine storageEngine) {
 
 		try {
-			_dlRequestHelper = new DLRequestHelper(httpServletRequest);
+			_httpServletRequest = httpServletRequest;
 			_dlValidator = dlValidator;
 			_fileEntry = fileEntry;
 			_storageEngine = storageEngine;
+
+			_dlRequestHelper = new DLRequestHelper(httpServletRequest);
 
 			ThemeDisplay themeDisplay =
 				(ThemeDisplay)httpServletRequest.getAttribute(
@@ -311,6 +370,9 @@ public class DefaultDLEditFileEntryDisplayContext
 	private final FileVersion _fileVersion;
 	private final FileVersionDisplayContextHelper
 		_fileVersionDisplayContextHelper;
+	private HttpServletRequest _httpServletRequest;
+	private Boolean _neverExpire;
+	private Boolean _neverReview;
 	private final boolean _showSelectFolder;
 	private final StorageEngine _storageEngine;
 

@@ -17,11 +17,13 @@ package com.liferay.journal.web.internal.display.context;
 import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
+import com.liferay.depot.util.SiteConnectedGroupGroupProviderUtil;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
+import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.journal.configuration.JournalServiceConfiguration;
 import com.liferay.journal.constants.JournalArticleConstants;
 import com.liferay.journal.constants.JournalFolderConstants;
@@ -38,7 +40,6 @@ import com.liferay.journal.util.comparator.FolderArticleDisplayDateComparator;
 import com.liferay.journal.util.comparator.FolderArticleModifiedDateComparator;
 import com.liferay.journal.util.comparator.FolderArticleTitleComparator;
 import com.liferay.journal.web.internal.asset.model.JournalArticleAssetRenderer;
-import com.liferay.journal.web.internal.configuration.JournalDDMEditorConfiguration;
 import com.liferay.journal.web.internal.configuration.JournalWebConfiguration;
 import com.liferay.journal.web.internal.constants.JournalWebConstants;
 import com.liferay.journal.web.internal.portlet.action.ActionUtil;
@@ -54,9 +55,9 @@ import com.liferay.journal.web.internal.util.ExportTranslationUtil;
 import com.liferay.journal.web.internal.util.JournalArticleTranslation;
 import com.liferay.journal.web.internal.util.JournalArticleTranslationRowChecker;
 import com.liferay.journal.web.internal.util.JournalPortletUtil;
-import com.liferay.journal.web.internal.util.SiteConnectedGroupUtil;
 import com.liferay.message.boards.model.MBMessage;
 import com.liferay.message.boards.service.MBMessageLocalServiceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
@@ -108,13 +109,14 @@ import com.liferay.trash.TrashHelper;
 import java.io.Serializable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.portlet.PortletURL;
 import javax.portlet.ResourceURL;
@@ -268,12 +270,14 @@ public class JournalDisplayContext {
 			return _articleTranslationsSearchContainer;
 		}
 
-		PortletURL portletURL = PortletURLUtil.clone(
-			PortletURLUtil.getCurrent(
-				_liferayPortletRequest, _liferayPortletResponse),
-			_liferayPortletResponse);
-
-		portletURL.setParameter("mvcPath", "/select_article_translations.jsp");
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletURLUtil.clone(
+				PortletURLUtil.getCurrent(
+					_liferayPortletRequest, _liferayPortletResponse),
+				_liferayPortletResponse)
+		).setMVCPath(
+			"/select_article_translations.jsp"
+		).build();
 
 		SearchContainer<JournalArticleTranslation>
 			articleTranslationsSearchContainer = new SearchContainer<>(
@@ -470,13 +474,14 @@ public class JournalDisplayContext {
 		}
 
 		_ddmStructures = JournalFolderServiceUtil.getDDMStructures(
-			SiteConnectedGroupUtil.getCurrentAndAncestorSiteAndDepotGroupIds(
-				_themeDisplay.getScopeGroupId(), true),
+			SiteConnectedGroupGroupProviderUtil.
+				getCurrentAndAncestorSiteAndDepotGroupIds(
+					_themeDisplay.getScopeGroupId(), true),
 			getFolderId(), restrictionType);
 
-		Locale locale = _themeDisplay.getLocale();
-
 		if (_journalWebConfiguration.journalBrowseByStructuresSortedByName()) {
+			Locale locale = _themeDisplay.getLocale();
+
 			_ddmStructures.sort(
 				(ddmStructure1, ddmStructure2) -> {
 					String name1 = ddmStructure1.getName(locale);
@@ -562,17 +567,25 @@ public class JournalDisplayContext {
 			"props",
 			HashMapBuilder.<String, Object>put(
 				"availableExportFileFormats",
-				TranslationInfoItemFieldValuesExporterTrackerUtil.
-					getTranslationInfoItemFieldValuesExporters(
-					).stream(
-					).map(
+				() -> {
+					Collection<TranslationInfoItemFieldValuesExporter>
+						translationInfoItemFieldValuesExporters =
+							TranslationInfoItemFieldValuesExporterTrackerUtil.
+								getTranslationInfoItemFieldValuesExporters();
+
+					Stream<TranslationInfoItemFieldValuesExporter>
+						translationInfoItemFieldValuesExporterStream =
+							translationInfoItemFieldValuesExporters.stream();
+
+					return translationInfoItemFieldValuesExporterStream.map(
 						this::_getExportFileFormatJSONObject
 					).collect(
 						Collectors.toList()
-					)
+					);
+				}
 			).put(
 				"availableTargetLocales",
-				ExportTranslationUtil.getLocalesJSONJArray(
+				ExportTranslationUtil.getLocalesJSONArray(
 					_themeDisplay.getLocale(),
 					LanguageUtil.getAvailableLocales(
 						_themeDisplay.getSiteGroupId()))
@@ -646,17 +659,16 @@ public class JournalDisplayContext {
 			_themeDisplay.getScopeGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
 
-		JSONObject jsonObject = JSONUtil.put(
-			"children", jsonArray
-		).put(
-			"icon", "folder"
-		).put(
-			"id", JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID
-		).put(
-			"name", LanguageUtil.get(_themeDisplay.getLocale(), "home")
-		);
-
-		return JSONUtil.put(jsonObject);
+		return JSONUtil.put(
+			JSONUtil.put(
+				"children", jsonArray
+			).put(
+				"icon", "folder"
+			).put(
+				"id", JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID
+			).put(
+				"name", LanguageUtil.get(_themeDisplay.getLocale(), "home")
+			));
 	}
 
 	public String getFolderTitle() {
@@ -765,14 +777,22 @@ public class JournalDisplayContext {
 		_orderByCol = ParamUtil.getString(_httpServletRequest, "orderByCol");
 
 		if (Validator.isNull(_orderByCol)) {
-			String defaultOrderByCol = "modified-date";
-
 			if (isSearch()) {
-				defaultOrderByCol = "relevance";
+				_orderByCol = _portalPreferences.getValue(
+					JournalPortletKeys.JOURNAL, "order-by-col", "relevance");
 			}
+			else {
+				_orderByCol = _portalPreferences.getValue(
+					JournalPortletKeys.JOURNAL, "order-by-col",
+					"modified-date");
 
-			_orderByCol = _portalPreferences.getValue(
-				JournalPortletKeys.JOURNAL, "order-by-col", defaultOrderByCol);
+				if (Objects.equals(_orderByCol, "relevance")) {
+					_orderByCol = "modified-date";
+
+					_portalPreferences.setValue(
+						JournalPortletKeys.JOURNAL, "order-by-col", null);
+				}
+			}
 		}
 		else {
 			_portalPreferences.setValue(
@@ -830,7 +850,7 @@ public class JournalDisplayContext {
 		return orderColumns;
 	}
 
-	public String getOriginalAuthor(JournalArticle article) {
+	public String getOriginalAuthorUserName(JournalArticle article) {
 		AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(
 			JournalArticle.class.getName(),
 			JournalArticleAssetRenderer.getClassPK(article));
@@ -1113,32 +1133,12 @@ public class JournalDisplayContext {
 		return false;
 	}
 
-	public boolean useDataEngineEditor() {
-		return _journalDDMEditorConfiguration.useDataEngineEditor();
-	}
-
 	protected SearchContext buildSearchContext(
 		int start, int end, boolean showVersions) {
 
 		SearchContext searchContext = new SearchContext();
 
 		searchContext.setAndSearch(false);
-		searchContext.setAttribute("head", Boolean.TRUE);
-		searchContext.setAttribute("latest", Boolean.TRUE);
-
-		LinkedHashMap<String, Object> params =
-			LinkedHashMapBuilder.<String, Object>put(
-				"expandoAttributes", getKeywords()
-			).put(
-				"keywords", getKeywords()
-			).build();
-
-		searchContext.setAttribute("params", params);
-
-		if (!showVersions) {
-			searchContext.setAttribute("showNonindexable", Boolean.TRUE);
-		}
-
 		searchContext.setAttributes(
 			HashMapBuilder.<String, Serializable>put(
 				Field.ARTICLE_ID, getKeywords()
@@ -1156,13 +1156,24 @@ public class JournalDisplayContext {
 			).put(
 				"ddmStructureKey", getDDMStructureKey()
 			).put(
-				"params", params
+				"head", !showVersions
+			).put(
+				"latest", !showVersions
+			).put(
+				"params",
+				LinkedHashMapBuilder.<String, Object>put(
+					"expandoAttributes", getKeywords()
+				).put(
+					"keywords", getKeywords()
+				).build()
+			).put(
+				"showNonindexable", !showVersions
 			).build());
-
 		searchContext.setCompanyId(_themeDisplay.getCompanyId());
 		searchContext.setEnd(end);
 		searchContext.setFolderIds(_getFolderIds());
 		searchContext.setGroupIds(new long[] {_themeDisplay.getScopeGroupId()});
+		searchContext.setIncludeInternalAssetCategories(true);
 		searchContext.setKeywords(getKeywords());
 
 		QueryConfig queryConfig = searchContext.getQueryConfig();
@@ -1195,9 +1206,6 @@ public class JournalDisplayContext {
 			assetDisplayPageFriendlyURLProvider;
 		_trashHelper = trashHelper;
 
-		_journalDDMEditorConfiguration =
-			(JournalDDMEditorConfiguration)_httpServletRequest.getAttribute(
-				JournalDDMEditorConfiguration.class.getName());
 		_journalWebConfiguration =
 			(JournalWebConfiguration)_httpServletRequest.getAttribute(
 				JournalWebConfiguration.class.getName());
@@ -1314,9 +1322,7 @@ public class JournalDisplayContext {
 
 			Hits hits = indexer.search(searchContext);
 
-			int total = hits.getLength();
-
-			articleAndFolderSearchContainer.setTotal(total);
+			articleAndFolderSearchContainer.setTotal(hits.getLength());
 
 			List<Object> results = new ArrayList<>();
 
@@ -1425,24 +1431,25 @@ public class JournalDisplayContext {
 		TranslationInfoItemFieldValuesExporter
 			translationInfoItemFieldValuesExporter) {
 
+		InfoLocalizedValue<String> labelInfoLocalizedValue =
+			translationInfoItemFieldValuesExporter.getLabelInfoLocalizedValue();
+
 		return JSONUtil.put(
 			"displayName",
-			translationInfoItemFieldValuesExporter.getLabelInfoLocalizedValue(
-			).getValue(
-				_themeDisplay.getLocale()
-			)
+			labelInfoLocalizedValue.getValue(_themeDisplay.getLocale())
 		).put(
 			"mimeType", translationInfoItemFieldValuesExporter.getMimeType()
 		);
 	}
 
 	private String _getFeedsURL() {
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view_feeds.jsp");
-		portletURL.setParameter("redirect", _themeDisplay.getURLCurrent());
-
-		return portletURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCPath(
+			"/view_feeds.jsp"
+		).setRedirect(
+			_themeDisplay.getURLCurrent()
+		).buildString();
 	}
 
 	private List<Long> _getFolderIds() {
@@ -1579,9 +1586,7 @@ public class JournalDisplayContext {
 
 		Hits hits = indexer.search(searchContext);
 
-		int total = hits.getLength();
-
-		articleVersionsSearchContainer.setTotal(total);
+		articleVersionsSearchContainer.setTotal(hits.getLength());
 
 		List<JournalArticle> results = new ArrayList<>();
 
@@ -1629,7 +1634,6 @@ public class JournalDisplayContext {
 	private JournalFolder _folder;
 	private Long _folderId;
 	private final HttpServletRequest _httpServletRequest;
-	private final JournalDDMEditorConfiguration _journalDDMEditorConfiguration;
 	private final JournalWebConfiguration _journalWebConfiguration;
 	private String _keywords;
 	private final LiferayPortletRequest _liferayPortletRequest;

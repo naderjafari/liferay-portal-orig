@@ -4,6 +4,7 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Wiki";
+
 	var pageName = "Wiki Test Page";
 	var portletName = "Wiki";
 
@@ -41,8 +42,10 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddChildSiteWikiFrontPageFormatHTML {
 		property testray.component.names = "Training";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		JSONGroup.addGroup(groupName = "Site Name");
@@ -68,29 +71,9 @@ definition {
 
 		WikiNavigator.gotoCP(wikiPageTitle = "FrontPage");
 
-		AssertClick(
-			locator1 = "Wiki#FRONTPAGE_DEFAULT_MESSAGE",
-			value1 = "This page is empty. Edit it to add some text.");
-
-		Panel.expandPanel(panel = "Configuration");
-
-		SelectNoError(
-			locator1 = "Wiki#ADD_PAGE_FORMAT_DROPDOWN",
-			value1 = "HTML");
-
-		AssertConfirm(value1 = "You may lose some formatting when switching from Creole to HTML. Do you want to continue?");
-
-		Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
-
-		var wikiPageContent = '''<!DOCTYPE html> <html lang="en"> <body> <h1>My First Heading</h1> <p>My first paragraph.</p> </body> </html>''';
-
-		Type(
-			locator1 = "CKEditor#BODY_FIELD_SOURCE_ON",
-			value1 = "${wikiPageContent}");
-
-		SelectFrame(value1 = "relative=top");
-
-		PortletEntry.publish();
+		WikiPage.addFrontPagePG(
+			htmlSource = "true",
+			wikiPageContent = "${wikiPageContent}");
 
 		SitePages.openPagesAdmin(siteURLKey = "Child SiteName");
 
@@ -120,13 +103,9 @@ definition {
 			locator1 = "Link#EDIT",
 			value1 = "Edit");
 
-		Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
-
 		var wikiPageContent = '''<!DOCTYPE html> <html lang="en"> <body> <h1>Edited My First Heading</h1> <p>Edited My first paragraph.</p> </body> </html>''';
 
-		Type(
-			locator1 = "CKEditor#BODY_FIELD_SOURCE_ON",
-			value1 = "${wikiPageContent}");
+		CKEditor.addSourceContent(content = "${wikiPageContent}");
 
 		SelectFrame(value1 = "relative=top");
 
@@ -142,8 +121,8 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFrontPageChildPageFormatHTML {
-
 		var welcomeToLiferay = '''
 				<p><a href="http://www.liferay.com">Welcome to LIFERAY</a></p>
 			''';
@@ -168,11 +147,7 @@ definition {
 
 		AssertConfirm(value1 = "You may lose some formatting when switching from Creole to HTML. Do you want to continue?");
 
-		Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
-
-		Type(
-			locator1 = "CKEditor#BODY_FIELD_SOURCE_ON",
-			value1 = "${welcomeToLiferay}");
+		CKEditor.addSourceContent(content = "${welcomeToLiferay}");
 
 		SelectFrame(value1 = "relative=top");
 
@@ -188,6 +163,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFrontPageChildPageWithInvalidTitle {
 		WikiPage.addFrontPagePG(
 			wikiNodeName = "Main",
@@ -290,32 +266,15 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFrontPageContentWithNoJavascript {
-		Navigator.gotoPage(pageName = "Wiki Test Page");
-
-		AssertClick(
-			locator1 = "Wiki#FRONTPAGE_DEFAULT_MESSAGE",
-			value1 = "This page is empty. Edit it to add some text.");
-
-		Panel.expandPanel(panel = "Configuration");
-
-		SelectNoError(
-			locator1 = "Wiki#ADD_PAGE_FORMAT_DROPDOWN",
-			value1 = "HTML");
-
-		AssertConfirm(value1 = "You may lose some formatting when switching from Creole to HTML. Do you want to continue?");
-
-		Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
-
 		var wikiPageContent = '''<p id='demo'>PASS</p> <script type='text/javascript'>document.getElementById('demo').innerHTML = 'this code should not be read by the client';</script>''';
 
-		Type(
-			locator1 = "CKEditor#BODY_FIELD_SOURCE_ON",
-			value1 = "${wikiPageContent}");
+		Navigator.gotoPage(pageName = "Wiki Test Page");
 
-		SelectFrame(value1 = "relative=top");
-
-		PortletEntry.publish();
+		WikiPage.addFrontPagePG(
+			htmlSource = "true",
+			wikiPageContent = "${wikiPageContent}");
 
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -327,6 +286,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFrontPageWithAttachments {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -374,6 +334,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddFrontPageWithChildPages {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -402,6 +363,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddFrontPageWithCreoleFormat {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -424,6 +386,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddFrontPageWithHTMLFormat {
 		property portal.acceptance = "true";
 		property testray.component.names = "Training";
@@ -451,6 +414,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddPageWithChildPage {
 		property portal.acceptance = "true";
 
@@ -483,6 +447,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddPageWithHTMLFormat {
 		property portal.acceptance = "true";
 
@@ -508,7 +473,7 @@ definition {
 
 		Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
 
-		Type(
+		Type.typeCodeMirrorEditorNoError(
 			locator1 = "CKEditor#BODY_FIELD_SOURCE_ON",
 			value1 = "${welcomeToLiferay}");
 
@@ -533,7 +498,17 @@ definition {
 
 	@description = "This test covers LPS-95711. It ensures that an image can be added to the front page via URL."
 	@priority = "4"
+	@refactorneeded
 	test AddPageWithImageViaURL {
+		property test.name.skip.portal.instance = "PGWiki#AddPageWithImageViaURL";
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_2.jpg",
+			groupName = "Guest",
+			mimeType = "image/jpeg",
+			sourceFileName = "Document_2.jpg");
+
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
 		WikiNavigator.gotoFrontPagePG();
@@ -542,22 +517,23 @@ definition {
 
 		ItemSelector.gotoItemSelectorViaCKEditor();
 
-		ItemSelector.addFromURL(
-			imageSourceURL = "https://raw.githubusercontent.com/liferay/liferay-portal/master/portal-web/test/functional/com/liferay/portalweb/dependencies/Document_1.jpg",
+		ItemSelector.addImageFromURL(
+			imageSourceURL = "http://localhost:8080/webdav/guest/document_library/Document_2.jpg",
 			navTab = "URL");
 
-		CKEditor.viewEntryContentImage(contentImageName = "Document_1.jpg");
+		CKEditor.viewEntryContentImage(contentImageName = "Document_2.jpg");
 
 		PortletEntry.publish();
 
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
 		AssertElementPresent(
-			key_contentImageName = "Document_1.jpg",
+			key_contentImageName = "Document_2.jpg",
 			locator1 = "Wiki#CONTENT_IMAGE_NAME");
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test AddPageWithInlineImage {
 		ProductMenu.gotoPortlet(
 			category = "Site Builder",
@@ -615,6 +591,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test AddWikiPages {
 		property testray.component.names = "Training";
 
@@ -644,6 +621,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test CancelAddPage {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -663,6 +641,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test CancelEditPage {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -696,6 +675,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test CompareVersionEditFrontPage {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -732,6 +712,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test CopyPage {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -775,6 +756,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test DeleteFrontPage {
 		property portal.acceptance = "true";
 
@@ -792,6 +774,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test DeletePage {
 		property portal.acceptance = "true";
 
@@ -817,6 +800,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test EditDraftPage {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -858,6 +842,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test EditFrontPage {
 		property portal.acceptance = "true";
 
@@ -885,6 +870,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test LinkWikiPage1toWikiPage2 {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -925,6 +911,7 @@ definition {
 	}
 
 	@priority = "3"
+	@refactorneeded
 	test RemoveRedirectLinkFromPage {
 		property test.name.skip.portal.instance = "PGWiki#RemoveRedirectLinkFromWikiPage";
 
@@ -971,6 +958,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test RenamePageTitle {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -1006,6 +994,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test RevertChangesMadeToParentPages {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -1070,6 +1059,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test RevertEditFrontPage {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 
@@ -1119,6 +1109,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test SaveEditedPageAsDraft {
 		Navigator.gotoPage(pageName = "Wiki Test Page");
 

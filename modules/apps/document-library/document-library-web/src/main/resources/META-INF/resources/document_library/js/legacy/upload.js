@@ -152,7 +152,7 @@ AUI.add(
 			'</span>';
 
 		var TPL_ENTRY_WRAPPER =
-			'<li class="lfr-asset-item data-title="{title}"></li>';
+			'<li class="card-page-item card-page-item-asset" data-title="{title}"></li>';
 
 		var TPL_ERROR_FOLDER = new A.Template(
 			'<span class="lfr-status-success-label">{validFilesLength}</span>',
@@ -495,11 +495,10 @@ AUI.add(
 
 				_createEntriesContainer(searchContainer, displayStyle) {
 					var containerClasses =
-						'display-style-descriptive tabular-list-group';
+						'list-group list-group-notification show-quick-actions-on-hover';
 
 					if (displayStyle === CSS_ICON) {
-						containerClasses =
-							'display-style-icon list-unstyled row';
+						containerClasses = 'card-page card-page-equal-height';
 					}
 
 					var entriesContainer = ANode.create(
@@ -533,11 +532,11 @@ AUI.add(
 					}
 					else {
 						var entriesContainerSelector =
-							'ul.tabular-list-group:last-of-type';
+							'ul.list-group:last-of-type';
 
 						if (displayStyle === CSS_ICON) {
 							entriesContainerSelector =
-								'ul.list-unstyled:last-of-type';
+								'ul.card-page:last-of-type';
 						}
 
 						entriesContainer =
@@ -573,7 +572,7 @@ AUI.add(
 						instance._removeEmptyResultsMessage(searchContainer);
 
 						var searchContainerWrapper = A.one(
-							'div.lfr-search-container-wrapper.main-content-body'
+							'div.lfr-search-container-wrapper'
 						);
 
 						if (searchContainerWrapper) {
@@ -1230,7 +1229,7 @@ AUI.add(
 							instance._updateFileLink(
 								fileNode,
 								response.message,
-								displayStyleList
+								displayStyle
 							);
 
 							instance._updateFileHiddenInput(
@@ -1387,12 +1386,15 @@ AUI.add(
 					}
 				},
 
-				_updateFileLink(node, id, displayStyleList) {
+				_updateFileLink(node, id, displayStyle) {
 					var instance = this;
 
-					var selector = SELECTOR_ENTRY_LINK;
+					var selector = 'a';
 
-					if (displayStyleList) {
+					if (displayStyle === CSS_ICON) {
+						selector = SELECTOR_ENTRY_LINK;
+					}
+					else if (displayStyle === STR_LIST) {
 						selector =
 							SELECTOR_ENTRY_DISPLAY_STYLE +
 							STR_SPACE +

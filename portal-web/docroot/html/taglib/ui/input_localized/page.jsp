@@ -35,6 +35,7 @@
 					editorName="<%= editorName %>"
 					name="<%= inputEditorName %>"
 					onChangeMethod='<%= randomNamespace + "onChangeEditor" %>'
+					onInitMethod='<%= randomNamespace + "onInitEditor" %>'
 					placeholder="<%= placeholder %>"
 					toolbarSet="<%= toolbarSet %>"
 				/>
@@ -46,6 +47,15 @@
 						var editor = window['<%= namespace + HtmlUtil.escapeJS(inputEditorName) %>'];
 
 						inputLocalized.updateInputLanguage(editor.getHTML());
+					}
+
+					function <%= namespace + randomNamespace %>onInitEditor() {
+						Liferay.componentReady('<%= namespace + HtmlUtil.escapeJS(fieldName) %>')
+							.then(inputLocalized => {
+								var editor = window['<%= namespace + HtmlUtil.escapeJS(inputEditorName) %>'];
+								inputLocalized.updateInputPlaceholder(editor);
+							}
+						);
 					}
 				</aui:script>
 			</c:when>
@@ -84,7 +94,7 @@
 				languageValue = LocalizationUtil.getLocalization(xml, curLanguageId, false);
 			}
 
-			if (Validator.isNotNull(languageValue) || (!ignoreRequestValue && (request.getParameter(name + StringPool.UNDERLINE + curLanguageId) != null))) {
+			if (Validator.isNotNull(languageValue) || (!ignoreRequestValue && Validator.isNotNull(ParamUtil.getString(request, name + StringPool.UNDERLINE + curLanguageId, languageValue)))) {
 				languageIds.add(curLanguageId);
 			}
 		}
@@ -155,7 +165,7 @@
 
 							Locale curLocale = LocaleUtil.fromLanguageId(curLanguageId);
 
-							if (errorLocales.contains(curLocale) || ((index == 0) && errorLocales.isEmpty())) {
+							if (errorLocales.contains(curLocale) || (curLanguageId.equals(selectedLanguageId) && errorLocales.isEmpty())) {
 								linkCssClass += " active";
 							}
 
@@ -249,10 +259,9 @@
 
 			<%
 			for (Locale availableLocale : availableLocales) {
-				String availableLanguageId = LocaleUtil.toLanguageId(availableLocale);
 			%>
 
-				available['<%= availableLanguageId %>'] = '<%= availableLocale.getDisplayName(locale) %>';
+				available['<%= LocaleUtil.toLanguageId(availableLocale) %>'] = '<%= availableLocale.getDisplayName(locale) %>';
 
 			<%
 			}
@@ -264,10 +273,9 @@
 
 			<%
 			for (Locale errorLocale : errorLocales) {
-				String errorLocaleId = LocaleUtil.toLanguageId(errorLocale);
 			%>
 
-				errors['<%= errorLocaleId %>'] = '<%= errorLocale.getDisplayName(locale) %>';
+				errors['<%= LocaleUtil.toLanguageId(errorLocale) %>'] = '<%= errorLocale.getDisplayName(locale) %>';
 
 			<%
 			}

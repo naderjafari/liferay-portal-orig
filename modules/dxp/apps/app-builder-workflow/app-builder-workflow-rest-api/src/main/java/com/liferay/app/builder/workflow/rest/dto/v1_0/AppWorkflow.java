@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("AppWorkflow")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "AppWorkflow")
-public class AppWorkflow {
+public class AppWorkflow implements Serializable {
 
 	public static AppWorkflow toDTO(String json) {
 		return ObjectMapperUtil.readValue(AppWorkflow.class, json);
@@ -76,6 +78,34 @@ public class AppWorkflow {
 	@GraphQLField
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long appId;
+
+	@Schema
+	public String getAppVersion() {
+		return appVersion;
+	}
+
+	public void setAppVersion(String appVersion) {
+		this.appVersion = appVersion;
+	}
+
+	@JsonIgnore
+	public void setAppVersion(
+		UnsafeSupplier<String, Exception> appVersionUnsafeSupplier) {
+
+		try {
+			appVersion = appVersionUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String appVersion;
 
 	@Schema
 	public Long getAppWorkflowDefinitionId() {
@@ -203,6 +233,20 @@ public class AppWorkflow {
 			sb.append(appId);
 		}
 
+		if (appVersion != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"appVersion\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(appVersion));
+
+			sb.append("\"");
+		}
+
 		if (appWorkflowDefinitionId != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -259,6 +303,7 @@ public class AppWorkflow {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflow",
 		name = "x-class-name"
 	)
@@ -294,7 +339,7 @@ public class AppWorkflow {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -333,7 +378,7 @@ public class AppWorkflow {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

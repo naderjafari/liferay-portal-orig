@@ -16,18 +16,20 @@ import '@testing-library/jest-dom/extend-expect';
 import {cleanup, render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
+import {DndProvider} from 'react-dnd';
+import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {ControlsProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/editableFragmentEntryProcessor';
 import {LAYOUT_DATA_ITEM_TYPE_LABELS} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypeLabels';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/store/index';
+import {ControlsProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {StoreAPIContextProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 import PageStructureSidebar from '../../../../../../src/main/resources/META-INF/resources/page_editor/plugins/page-structure/components/PageStructureSidebar';
 
 jest.mock(
 	'../../../../../../src/main/resources/META-INF/resources/page_editor/app/config',
-	() => ({config: {pageType: 'content'}})
+	() => ({config: {layoutType: 'content'}})
 );
 
 const renderComponent = ({
@@ -43,131 +45,166 @@ const renderComponent = ({
 	);
 
 	return render(
-		<ControlsProvider
-			activeInitialState={{
-				activationOrigin: null,
-				activeItemId,
-				activeItemType: null,
-			}}
-			hoverInitialState={{
-				hoveredItemId: null,
-			}}
-		>
-			<StoreAPIContextProvider
-				getState={() => ({
-					fragmentEntryLinks: {
-						'001': {
-							content: {
-								value: {
-									content: '<div>001</div>',
+		<DndProvider backend={HTML5Backend}>
+			<ControlsProvider
+				activeInitialState={{
+					activationOrigin: null,
+					activeItemId,
+					activeItemType: null,
+				}}
+				hoverInitialState={{
+					hoveredItemId: null,
+				}}
+			>
+				<StoreAPIContextProvider
+					getState={() => ({
+						fragmentEntryLinks: {
+							'001': {
+								content:
+									'<div>001<span data-lfr-editable-id="05-editable">editable</span><span data-lfr-editable-id="06-editable">editable</span></div>',
+								editableTypes: {
+									'05-editable': 'text',
+									'06-editable': 'text',
 								},
-							},
-							editableValues: {
-								[EDITABLE_FRAGMENT_ENTRY_PROCESSOR]: {
-									'05-editable': {
-										defaultValue: 'defaultValue',
+								editableValues: {
+									[EDITABLE_FRAGMENT_ENTRY_PROCESSOR]: {
+										'05-editable': {
+											defaultValue: 'defaultValue',
+										},
+										'06-editable': {
+											classNameId: 'itemClassNameId',
+											classPK: 'itemClassPK',
+											classTypeId: 'itemClassTypeId',
+											defaultValue: 'defaultValue',
+											fieldId: 'text-field-1',
+										},
 									},
 								},
+								fragmentEntryLinkId: '001',
+								name: 'Fragment 1',
 							},
-							fragmentEntryLinkId: '001',
-							name: 'Fragment 1',
 						},
-					},
 
-					layoutData: {
-						items: {
-							'00-main': {
-								children: rootItemChildren,
-								config: {},
-								itemId: '00-main',
-								parentId: null,
-								type: LAYOUT_DATA_ITEM_TYPES.root,
-							},
-							'01-container': {
-								children: ['02-row'],
-								config: {},
-								itemId: '01-container',
-								parentId: 'main',
-								type: LAYOUT_DATA_ITEM_TYPES.container,
-							},
-							'02-row': {
-								children: ['03-column'],
-								config: {},
-								itemId: '02-row',
-								parentId: '01-container',
-								type: LAYOUT_DATA_ITEM_TYPES.row,
-							},
-							'03-column': {
-								children: ['04-fragment'],
-								config: {},
-								itemId: '03-column',
-								parentId: '02-row',
-								type: LAYOUT_DATA_ITEM_TYPES.column,
-							},
-							'04-fragment': {
-								children: [],
-								config: {
-									fragmentEntryLinkId: '001',
+						layoutData: {
+							items: {
+								'00-main': {
+									children: rootItemChildren,
+									config: {},
+									itemId: '00-main',
+									parentId: null,
+									type: LAYOUT_DATA_ITEM_TYPES.root,
 								},
-								itemId: '04-fragment',
-								parentId: '03-column',
-								type: LAYOUT_DATA_ITEM_TYPES.fragment,
-							},
-							'05-row': {
-								children: [],
-								config: {
-									fragmentEntryLinkId: '001',
+								'01-container': {
+									children: ['02-row'],
+									config: {},
+									itemId: '01-container',
+									parentId: 'main',
+									type: LAYOUT_DATA_ITEM_TYPES.container,
 								},
-								itemId: '05-row',
-								parentId: '03-column',
-								type: LAYOUT_DATA_ITEM_TYPES.fragment,
+								'02-row': {
+									children: ['03-column'],
+									config: {},
+									itemId: '02-row',
+									parentId: '01-container',
+									type: LAYOUT_DATA_ITEM_TYPES.row,
+								},
+								'03-column': {
+									children: ['04-fragment'],
+									config: {},
+									itemId: '03-column',
+									parentId: '02-row',
+									type: LAYOUT_DATA_ITEM_TYPES.column,
+								},
+								'04-fragment': {
+									children: [],
+									config: {
+										fragmentEntryLinkId: '001',
+									},
+									itemId: '04-fragment',
+									parentId: '03-column',
+									type: LAYOUT_DATA_ITEM_TYPES.fragment,
+								},
+								'05-row': {
+									children: [],
+									config: {
+										fragmentEntryLinkId: '001',
+									},
+									itemId: '05-row',
+									parentId: '03-column',
+									type: LAYOUT_DATA_ITEM_TYPES.fragment,
+								},
 							},
+
+							rootItems: {main: '00-main'},
+							version: 1,
 						},
 
-						rootItems: {main: '00-main'},
-						version: 1,
-					},
+						mappedInfoItems: [
+							{
+								classNameId: 'itemClassNameId',
+								classPK: 'itemClassPK',
+								classTypeId: 'itemClassTypeId',
+							},
+						],
 
-					masterLayoutData: {
-						items: {
-							'10-main': {
-								children: masterRootItemChildren,
-								config: {},
-								itemId: '10-main',
-								parentId: null,
-								type: LAYOUT_DATA_ITEM_TYPES.root,
-							},
-							'11-container': {
-								children: ['12-dropzone'],
-								config: {},
-								itemId: '11-container',
-								parentId: '10-main',
-								type: LAYOUT_DATA_ITEM_TYPES.container,
-							},
-							'12-dropzone': {
-								children: [],
-								config: {},
-								itemId: '12-dropzone',
-								parentId: '11-container',
-								type: LAYOUT_DATA_ITEM_TYPES.dropZone,
-							},
+						mappingFields: {
+							'itemClassNameId-itemClassTypeId': [
+								{
+									fields: [
+										{
+											key: 'text-field-1',
+											label: 'Text Field 1',
+											type: 'text',
+										},
+									],
+								},
+							],
 						},
 
-						rootItems: {main: '10-main'},
-						version: 1,
-					},
+						masterLayout: {
+							masterLayoutData: {
+								items: {
+									'10-main': {
+										children: masterRootItemChildren,
+										config: {},
+										itemId: '10-main',
+										parentId: null,
+										type: LAYOUT_DATA_ITEM_TYPES.root,
+									},
+									'11-container': {
+										children: ['12-dropzone'],
+										config: {},
+										itemId: '11-container',
+										parentId: '10-main',
+										type: LAYOUT_DATA_ITEM_TYPES.container,
+									},
+									'12-dropzone': {
+										children: [],
+										config: {},
+										itemId: '12-dropzone',
+										parentId: '11-container',
+										type: LAYOUT_DATA_ITEM_TYPES.dropZone,
+									},
+								},
 
-					permissions: {
-						LOCKED_SEGMENTS_EXPERIMENT: lockedExperience,
-						UPDATE: hasUpdatePermissions,
-					},
+								rootItems: {main: '10-main'},
+								version: 1,
+							},
+							masterLayoutPlid: '0',
+						},
 
-					selectedViewportSize: viewportSize,
-				})}
-			>
-				<PageStructureSidebar />
-			</StoreAPIContextProvider>
-		</ControlsProvider>
+						permissions: {
+							LOCKED_SEGMENTS_EXPERIMENT: lockedExperience,
+							UPDATE: hasUpdatePermissions,
+						},
+
+						selectedViewportSize: viewportSize,
+					})}
+				>
+					<PageStructureSidebar />
+				</StoreAPIContextProvider>
+			</ControlsProvider>
+		</DndProvider>
 	);
 };
 
@@ -177,7 +214,7 @@ describe('PageStructureSidebar', () => {
 	it('has a sidebar panel title', () => {
 		const {getByText} = renderComponent();
 
-		expect(getByText('page-structure')).toBeInTheDocument();
+		expect(getByText('selection')).toBeInTheDocument();
 	});
 
 	it('has a warning message when there is no content', () => {
@@ -227,7 +264,7 @@ describe('PageStructureSidebar', () => {
 	it('disables items that are in masterLayout', () => {
 		const {getByLabelText} = renderComponent();
 		const button = getByLabelText('select-x-container');
-		expect(button).toBeDisabled();
+		expect(button.parentElement).toHaveAttribute('aria-disabled', 'true');
 	});
 
 	it('allows removing items of certain types', () => {
@@ -311,5 +348,14 @@ describe('PageStructureSidebar', () => {
 		expect(queryByLabelText('remove-x-container')).toBe(null);
 		expect(queryByLabelText('remove-x-grid')).toBe(null);
 		expect(queryByLabelText('remove-x-Fragment 1')).toBe(null);
+	});
+
+	it('uses field label for mapped editables', () => {
+		const {getByText} = renderComponent({
+			activeItemId: '04-fragment',
+			rootItemChildren: ['04-fragment'],
+		});
+
+		expect(getByText('Text Field 1')).toBeInTheDocument();
 	});
 });

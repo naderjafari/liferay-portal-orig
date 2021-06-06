@@ -9,7 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {cleanup, findByTestId, render} from '@testing-library/react';
+import {cleanup, render} from '@testing-library/react';
 import React from 'react';
 
 import PerformanceByStepCard from '../../../../src/main/resources/META-INF/resources/js/components/process-metrics/performance-by-step-card/PerformanceByStepCard.es';
@@ -76,7 +76,7 @@ const timeRangeData = {
 };
 
 describe('The performance by step card component should', () => {
-	let getAllByTestId, getByTestId;
+	let container, getAllByText, getByText;
 
 	beforeAll(() => {
 		jsonSessionStorage.set('timeRanges', timeRangeData);
@@ -99,31 +99,22 @@ describe('The performance by step card component should', () => {
 				{wrapper}
 			);
 
-			getByTestId = renderResult.getByTestId;
-			getAllByTestId = renderResult.getAllByTestId;
+			container = renderResult.container;
+			getAllByText = renderResult.getAllByText;
+			getByText = renderResult.getByText;
 		});
 
 		test('Be rendered with time range filter', async () => {
-			const timeRangeFilter = getByTestId('timeRangeFilter');
+			const activeItem = container.querySelector('.active');
 
-			const filterItems = await getAllByTestId('filterItem');
-
-			const activeItem = filterItems.find((item) =>
-				item.className.includes('active')
-			);
-			const activeItemName = await findByTestId(
-				activeItem,
-				'filterItemName'
-			);
-
-			expect(timeRangeFilter).not.toBeNull();
-			expect(activeItemName).toHaveTextContent('Last 7 Days');
+			expect(getAllByText('Last 7 Days').length).toEqual(2);
+			expect(activeItem).toHaveTextContent('Last 7 Days');
 		});
 
 		test('Be rendered with "View All Steps" button and total "(3)"', () => {
-			const viewAllSteps = getByTestId('viewAllSteps');
+			const viewAllSteps = getByText('view-all-steps (3)');
 
-			expect(viewAllSteps).toHaveTextContent('view-all-steps (3)');
+			expect(viewAllSteps).toBeTruthy();
 			expect(viewAllSteps.parentNode.getAttribute('href')).toContain(
 				'filters.dateEnd=2019-12-09T00%3A00%3A00Z&filters.dateStart=2019-12-03T00%3A00%3A00Z&filters.timeRange%5B0%5D=7'
 			);
@@ -151,15 +142,15 @@ describe('The performance by step card component should', () => {
 				{wrapper}
 			);
 
-			getByTestId = renderResult.getByTestId;
+			getByText = renderResult.getByText;
 		});
 
 		test('Be rendered with empty state view', () => {
-			const emptyStateDiv = getByTestId('emptyState');
-
-			expect(emptyStateDiv.children[0].children[0]).toHaveTextContent(
+			const emptyStateMessage = getByText(
 				'there-is-no-data-at-the-moment'
 			);
+
+			expect(emptyStateMessage).toBeTruthy();
 		});
 	});
 });

@@ -9,7 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {cleanup, fireEvent, render} from '@testing-library/react';
+import {act, cleanup, fireEvent, render} from '@testing-library/react';
 import React, {useState} from 'react';
 
 import {InstanceListContext} from '../../../src/main/resources/META-INF/resources/js/components/instance-list-page/InstanceListPageProvider.es';
@@ -30,7 +30,7 @@ const instance = {
 };
 
 const setInstanceId = jest.fn();
-const setVisibleModal = jest.fn();
+const openModal = jest.fn();
 
 const ContainerMock = ({children}) => {
 	const [, setSelectAll] = useState(false);
@@ -53,7 +53,6 @@ const ContainerMock = ({children}) => {
 		},
 	]);
 	const [singleTransition, setSingleTransition] = useState({});
-	const [visibleModal] = useState('');
 
 	return (
 		<MockRouter>
@@ -69,10 +68,10 @@ const ContainerMock = ({children}) => {
 			>
 				<ModalContext.Provider
 					value={{
+						openModal,
 						setSingleTransition,
-						setVisibleModal,
 						singleTransition,
-						visibleModal,
+						visibleModal: '',
 					}}
 				>
 					{children}
@@ -86,70 +85,277 @@ describe('The instance list item should', () => {
 	afterEach(cleanup);
 
 	test('Be rendered with "User 1", "Jan 01, 2019, 12:00 AM", and "Review, Update" columns', () => {
-		const {getByTestId} = render(<Table.Item {...instance} />, {
+		const {getByText} = render(<Table.Item {...instance} />, {
 			wrapper: ContainerMock,
 		});
 
-		const creatorCell = getByTestId('creatorCell');
-		const dateCreatedCell = getByTestId('dateCreatedCell');
-		const taskNamesCell = getByTestId('taskNamesCell');
+		const creatorCell = getByText('User 1');
+		const dateCreatedCell = getByText('Jan 01, 2019, 12:00 AM');
+		const taskNamesCell = getByText('Review, Update');
 
-		expect(creatorCell.innerHTML).toBe('User 1');
-		expect(dateCreatedCell.innerHTML).toBe('Jan 01, 2019, 12:00 AM');
-		expect(taskNamesCell.innerHTML).toBe('Review, Update');
+		expect(creatorCell).toBeTruthy();
+		expect(dateCreatedCell).toBeTruthy();
+		expect(taskNamesCell).toBeTruthy();
 	});
 
 	test('Be rendered with check icon when the slaStatus is "OnTime"', () => {
-		const {getByTestId} = render(
+		const {container} = render(
 			<Table.Item {...instance} slaStatus="OnTime" />,
 			{
 				wrapper: ContainerMock,
 			}
 		);
 
-		const instanceStatusIcon = getByTestId('statusIcon');
-
-		expect([...instanceStatusIcon.classList]).toContain(
-			'lexicon-icon-check-circle'
+		const instanceStatusIcon = container.querySelector(
+			'.lexicon-icon-check-circle'
 		);
+
+		expect(instanceStatusIcon).toBeTruthy();
 	});
 
 	test('Be rendered with exclamation icon when the slaStatus is "Overdue"', () => {
-		const {getByTestId} = render(
+		const {container} = render(
 			<Table.Item {...instance} slaStatus="Overdue" />,
 			{
 				wrapper: ContainerMock,
 			}
 		);
 
-		const instanceStatusIcon = getByTestId('statusIcon');
-
-		expect([...instanceStatusIcon.classList]).toContain(
-			'lexicon-icon-exclamation-circle'
+		const instanceStatusIcon = container.querySelector(
+			'.lexicon-icon-exclamation-circle'
 		);
+
+		expect(instanceStatusIcon).toBeTruthy();
 	});
 
-	test('Be rendered with hr icon when the slaStatus is "Untracked"', () => {
-		const {getByTestId} = render(
+	test('Be rendered with hr icon and due date when the slaStatus is "Untracked"', () => {
+		const {container} = render(
 			<Table.Item {...instance} slaStatus="Untracked" />,
 			{
 				wrapper: ContainerMock,
 			}
 		);
 
-		const instanceStatusIcon = getByTestId('statusIcon');
+		const instanceStatusIcon = container.querySelector('.lexicon-icon-hr');
 
-		expect([...instanceStatusIcon.classList]).toContain('lexicon-icon-hr');
+		expect(instanceStatusIcon).toBeTruthy();
+
+		const instanceStatus = container.querySelector('.due-date.text-info');
+
+		expect(instanceStatus).toBeTruthy();
+		expect(instanceStatus.innerHTML).toEqual('-');
+	});
+
+	test('Be rendered with due date success when the slaStatus is "OnTime" and slaResult status is "RUNNING"', () => {
+		const slaResult = {
+			dateOverdue: '2021-04-16T12:44:25Z',
+			name: 'SLA Test',
+			onTime: true,
+			remainingTime: 99999000,
+			status: 'RUNNING',
+		};
+
+		const {baseElement, container, getByText} = render(
+			<Table.Item
+				{...instance}
+				slaResults={[slaResult]}
+				slaStatus="OnTime"
+			/>,
+			{
+				wrapper: ContainerMock,
+			}
+		);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const dueDateCol = container.querySelector('.due-date.text-success');
+
+		expect(dueDateCol).toBeTruthy();
+
+		const dueDateBadge = dueDateCol.querySelector('.due-date-badge');
+
+		expect(dueDateBadge).toBeTruthy();
+
+		const dateText = getByText('Apr 16');
+
+		expect(dateText).toBeTruthy();
+
+		fireEvent.mouseOver(dateText);
+
+		act(() => {
+			jest.advanceTimersByTime(1001);
+		});
+
+		let popoverElement = baseElement.querySelector('.popover');
+
+		expect(popoverElement).toBeTruthy();
+
+		fireEvent.mouseEnter(popoverElement);
+
+		const slaNamePopoverText = getByText('SLA Test:');
+
+		expect(slaNamePopoverText).toBeTruthy();
+
+		const slaDateTimeRemaingTime = getByText(
+			'Apr 16, 12:44 PM (1d 03h 46min left)'
+		);
+
+		expect(slaDateTimeRemaingTime).toBeTruthy();
+
+		fireEvent.mouseLeave(popoverElement);
+		fireEvent.mouseOut(dateText);
+
+		popoverElement = baseElement.querySelector('.popover');
+
+		expect(popoverElement).toBeNull();
+	});
+
+	test('Be rendered with due date danger when the slaStatus is "Overdue" and slaResult status is "RUNNING"', () => {
+		const slaResult = {
+			dateOverdue: '2021-04-16T12:44:25Z',
+			name: 'SLA Test',
+			onTime: false,
+			remainingTime: -99999000,
+			status: 'RUNNING',
+		};
+
+		const {baseElement, container, getByText} = render(
+			<Table.Item
+				{...instance}
+				slaResults={[slaResult]}
+				slaStatus="Overdue"
+			/>,
+			{
+				wrapper: ContainerMock,
+			}
+		);
+
+		const dueDateCol = container.querySelector('.due-date.text-danger');
+
+		expect(dueDateCol).toBeTruthy();
+
+		const dueDateBadge = dueDateCol.querySelector('.due-date-badge');
+
+		expect(dueDateBadge).toBeTruthy();
+
+		const dateText = getByText('Apr 16');
+
+		expect(dateText).toBeTruthy();
+
+		fireEvent.mouseOver(dateText);
+
+		act(() => {
+			jest.advanceTimersByTime(1001);
+		});
+
+		let popoverElement = baseElement.querySelector('.popover');
+
+		expect(popoverElement).toBeTruthy();
+
+		const slaNamePopoverText = getByText('SLA Test:');
+
+		expect(slaNamePopoverText).toBeTruthy();
+
+		const slaDateTimeRemaingTime = getByText(
+			'Apr 16, 12:44 PM (1d 03h 46min overdue)'
+		);
+
+		expect(slaDateTimeRemaingTime).toBeTruthy();
+
+		fireEvent.mouseOut(dateText);
+
+		popoverElement = baseElement.querySelector('.popover');
+
+		expect(popoverElement).toBeNull();
+	});
+
+	test('Be rendered with due date when the year is not the current year', () => {
+		const slaResult = {
+			dateOverdue: '2020-04-16T12:44:25Z',
+			status: 'RUNNING',
+		};
+
+		const {getByText} = render(
+			<Table.Item
+				{...instance}
+				slaResults={[slaResult]}
+				slaStatus="Overdue"
+			/>,
+			{
+				wrapper: ContainerMock,
+			}
+		);
+
+		const dateText = getByText('Apr 16, 2020');
+
+		expect(dateText).toBeTruthy();
+	});
+
+	test('Be rendered with remaining time when the SLA is less than a minute.', () => {
+		const slaResult = {
+			dateOverdue: '2021-04-16T12:44:25Z',
+			name: 'SLA Test',
+			onTime: true,
+			remainingTime: 10000,
+			status: 'RUNNING',
+		};
+
+		const {baseElement, getByText} = render(
+			<Table.Item
+				{...instance}
+				slaResults={[slaResult]}
+				slaStatus="OnTime"
+			/>,
+			{
+				wrapper: ContainerMock,
+			}
+		);
+
+		const dateText = getByText('Apr 16');
+
+		expect(dateText).toBeTruthy();
+
+		fireEvent.mouseOver(dateText);
+
+		act(() => {
+			jest.advanceTimersByTime(1001);
+		});
+
+		const popoverElement = baseElement.querySelector('.popover');
+
+		expect(popoverElement).toBeTruthy();
+
+		const slaDateTimeRemaingTime = getByText(
+			'Apr 16, 12:44 PM (10sec left)'
+		);
+
+		expect(slaDateTimeRemaingTime).toBeTruthy();
+	});
+
+	test('Be rendered with due date when the slaResults is empty', () => {
+		const {container} = render(
+			<Table.Item {...instance} slaResults={[]} slaStatus="OnTime" />,
+			{
+				wrapper: ContainerMock,
+			}
+		);
+
+		const dueDateCol = container.querySelector('.due-date.text-info');
+
+		expect(dueDateCol).toBeTruthy();
+		expect(dueDateCol.innerHTML).toEqual('-');
 	});
 
 	test('Call setInstanceId with "1" as instance id param', () => {
 		instance.status = 'Completed';
 
-		const {getByTestId} = render(<Table.Item {...instance} />, {
+		const {container} = render(<Table.Item {...instance} />, {
 			wrapper: ContainerMock,
 		});
 
-		const instanceIdLink = getByTestId('instanceIdLink');
+		const instanceIdLink = container.querySelector('.link-text');
 
 		fireEvent.click(instanceIdLink);
 
@@ -165,7 +371,7 @@ describe('The instance list item should', () => {
 
 		fireEvent.click(reassignTaskButton);
 
-		expect(setVisibleModal).toHaveBeenCalled();
+		expect(openModal).toHaveBeenCalled();
 	});
 
 	test('set BulkTransition modal visualization by clicking the reassign task button', () => {
@@ -177,7 +383,7 @@ describe('The instance list item should', () => {
 
 		fireEvent.click(reassignTaskButton);
 
-		expect(setVisibleModal).toHaveBeenCalled();
+		expect(openModal).toHaveBeenCalled();
 	});
 });
 
@@ -211,7 +417,7 @@ describe('The InstanceListPageItem quick action menu should', () => {
 
 		fireEvent.click(reassignTaskButton);
 
-		expect(setVisibleModal).toHaveBeenCalled();
+		expect(openModal).toHaveBeenCalled();
 	});
 
 	test('set SingleUpdateDueDate modal visualization by clicking the reassign task button', () => {
@@ -223,7 +429,7 @@ describe('The InstanceListPageItem quick action menu should', () => {
 
 		fireEvent.click(reassignTaskButton);
 
-		expect(setVisibleModal).toHaveBeenCalled();
+		expect(openModal).toHaveBeenCalled();
 	});
 
 	test('set SingleUpdateDueDate modal visualization by clicking the reassign task button', () => {
@@ -235,7 +441,7 @@ describe('The InstanceListPageItem quick action menu should', () => {
 
 		fireEvent.click(reassignTaskButton);
 
-		expect(setVisibleModal).toHaveBeenCalled();
+		expect(openModal).toHaveBeenCalled();
 	});
 
 	test('set SingleUpdateDueDate modal visualization by clicking the reassign task button', () => {
@@ -247,7 +453,7 @@ describe('The InstanceListPageItem quick action menu should', () => {
 
 		fireEvent.click(reassignTaskButton);
 
-		expect(setVisibleModal).toHaveBeenCalled();
+		expect(openModal).toHaveBeenCalled();
 	});
 });
 
@@ -263,11 +469,13 @@ describe('The InstanceListPageItem instance checkbox component should', () => {
 	};
 
 	test('Set checkbox value by clicking it', () => {
-		const {getByTestId} = render(<Table.Item {...instance} />, {
+		const {container} = render(<Table.Item {...instance} />, {
 			wrapper: ContainerMock,
 		});
 
-		const instanceCheckbox = getByTestId('instanceCheckbox');
+		const instanceCheckbox = container.querySelector(
+			'input.custom-control-input'
+		);
 
 		expect(instanceCheckbox.checked).toEqual(true);
 

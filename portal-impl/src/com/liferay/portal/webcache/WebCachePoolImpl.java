@@ -40,7 +40,7 @@ public class WebCachePoolImpl implements WebCachePool {
 	}
 
 	@Override
-	public Object get(String key, WebCacheItem wci) {
+	public Object get(String key, WebCacheItem webCacheItem) {
 		Object object = _portalCache.get(key);
 
 		if (object != null) {
@@ -48,22 +48,24 @@ public class WebCachePoolImpl implements WebCachePool {
 		}
 
 		try {
-			object = wci.convert(key);
+			object = webCacheItem.convert(key);
 
 			if (object == null) {
 				return null;
 			}
 
-			int timeToLive = (int)(wci.getRefreshTime() / Time.SECOND);
+			int timeToLive = (int)(webCacheItem.getRefreshTime() / Time.SECOND);
 
-			_portalCache.put(key, object, timeToLive);
+			if (timeToLive > 0) {
+				_portalCache.put(key, object, timeToLive);
+			}
 		}
 		catch (WebCacheException webCacheException) {
 			if (_log.isWarnEnabled()) {
-				Throwable cause = webCacheException.getCause();
+				Throwable throwable = webCacheException.getCause();
 
-				if (cause != null) {
-					_log.warn(cause, cause);
+				if (throwable != null) {
+					_log.warn(throwable, throwable);
 				}
 				else {
 					_log.warn(webCacheException, webCacheException);

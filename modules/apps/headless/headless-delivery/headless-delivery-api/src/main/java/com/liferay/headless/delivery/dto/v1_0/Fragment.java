@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,16 +42,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Fragment")
+@GraphQLName(
+	description = "Represents a template made up of CSS, HTML, and JavaScript used to build Content Pages.",
+	value = "Fragment"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Fragment")
-public class Fragment {
+public class Fragment implements Serializable {
 
 	public static Fragment toDTO(String json) {
 		return ObjectMapperUtil.readValue(Fragment.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The collection name this fragment belongs to.")
 	public String getCollectionName() {
 		return collectionName;
 	}
@@ -73,11 +78,11 @@ public class Fragment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The collection name this fragment belongs to.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String collectionName;
 
-	@Schema
+	@Schema(description = "The fragment's key.")
 	public String getKey() {
 		return key;
 	}
@@ -99,11 +104,11 @@ public class Fragment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment's key.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String key;
 
-	@Schema
+	@Schema(description = "The fragment's name.")
 	public String getName() {
 		return name;
 	}
@@ -125,7 +130,7 @@ public class Fragment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment's name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String name;
 
@@ -204,6 +209,7 @@ public class Fragment {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Fragment",
 		name = "x-class-name"
 	)
@@ -239,7 +245,7 @@ public class Fragment {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -278,7 +284,7 @@ public class Fragment {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

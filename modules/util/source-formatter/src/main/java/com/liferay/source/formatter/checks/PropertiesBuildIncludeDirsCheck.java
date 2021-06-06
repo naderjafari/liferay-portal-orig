@@ -18,8 +18,10 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
+import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -69,7 +72,7 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 		sb.append("#build.include.dirs=\\");
 		sb.append(StringPool.NEW_LINE);
 
-		Set<String> buildIncludeDirs = _getBuildIncludeDirs();
+		Set<String> buildIncludeDirs = _getBuildIncludeDirs(absolutePath);
 
 		for (String buildIncludeDir : buildIncludeDirs) {
 			sb.append(matcher.group(1));
@@ -87,10 +90,21 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 		return StringUtil.replaceFirst(content, matcher.group(), sb.toString());
 	}
 
-	private Set<String> _getBuildIncludeDirs() throws IOException {
+	private Set<String> _getBuildIncludeDirs(String absolutePath)
+		throws IOException {
+
 		File modulesDir = new File(getPortalDir(), "modules");
 
-		final Set<String> buildIncludeDirs = new TreeSet<>();
+		List<String> buildExcludeModuleNames = getAttributeValues(
+			_BUILD_EXCLUDE_MODULE_NAMES, absolutePath);
+
+		List<String> ignoredModuleNames = _getIgnoredModuleNames(
+			SourceUtil.getRootDirName(absolutePath));
+
+		List<String> skipModuleNames = ListUtil.concat(
+			buildExcludeModuleNames, ignoredModuleNames);
+
+		Set<String> buildIncludeDirs = new TreeSet<>();
 
 		Files.walkFileTree(
 			modulesDir.toPath(), EnumSet.noneOf(FileVisitOption.class), 15,
@@ -98,7 +112,8 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 
 				@Override
 				public FileVisitResult preVisitDirectory(
-					Path dirPath, BasicFileAttributes basicFileAttributes) {
+						Path dirPath, BasicFileAttributes basicFileAttributes)
+					throws IOException {
 
 					if (ArrayUtil.contains(
 							_SKIP_DIR_NAMES,
@@ -107,7 +122,8 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 						return FileVisitResult.SKIP_SUBTREE;
 					}
 
-					String moduleDirName = _getModuleDirName(dirPath);
+					String moduleDirName = _getModuleDirName(
+						dirPath, skipModuleNames);
 
 					if (moduleDirName == null) {
 						return FileVisitResult.CONTINUE;
@@ -133,7 +149,30 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 		return buildIncludeDirs;
 	}
 
-	private String _getModuleDirName(Path dirPath) {
+	private List<String> _getIgnoredModuleNames(String rootDirName)
+		throws IOException {
+
+		List<String> ignoredModuleNames = new ArrayList<>();
+
+		File file = new File(rootDirName + "/.gitignore");
+
+		if (!file.exists()) {
+			return ignoredModuleNames;
+		}
+
+		Matcher matcher = _ignoredModuleNamePattern.matcher(
+			FileUtil.read(file));
+
+		while (matcher.find()) {
+			ignoredModuleNames.add(matcher.group());
+		}
+
+		return ignoredModuleNames;
+	}
+
+	private String _getModuleDirName(Path dirPath, List<String> skipModuleNames)
+		throws IOException {
+
 		String absolutePath = SourceUtil.getAbsolutePath(dirPath);
 
 		int x = absolutePath.indexOf("/modules/");
@@ -142,10 +181,16 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 			return null;
 		}
 
-		String directoryPath = absolutePath.substring(x + 9);
+		for (String skipModuleName : skipModuleNames) {
+			if (absolutePath.contains(skipModuleName + "/") ||
+				absolutePath.endsWith(skipModuleName)) {
+
+				return null;
+			}
+		}
 
 		String[] directoryNames = StringUtil.split(
-			directoryPath, CharPool.SLASH);
+			absolutePath.substring(x + 9), CharPool.SLASH);
 
 		if (directoryNames.length < 2) {
 			return null;
@@ -165,6 +210,9 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 		return null;
 	}
 
+	private static final String _BUILD_EXCLUDE_MODULE_NAMES =
+		"buildExcludeModuleNames";
+
 	private static final String _BUILD_INCLUDE_CATEGORY_NAMES =
 		"buildIncludeCategoryNames";
 
@@ -175,6 +223,8 @@ public class PropertiesBuildIncludeDirsCheck extends BaseFileCheck {
 		"test-coverage", "test-results", "tmp"
 	};
 
+	private static final Pattern _ignoredModuleNamePattern = Pattern.compile(
+		"^/modules/([^/\n]+/)*\\w+$", Pattern.MULTILINE);
 	private static final Pattern _pattern = Pattern.compile(
 		"([^\\S\\n]*)#build\\.include\\.dirs=\\\\(\\s*#.*)*");
 

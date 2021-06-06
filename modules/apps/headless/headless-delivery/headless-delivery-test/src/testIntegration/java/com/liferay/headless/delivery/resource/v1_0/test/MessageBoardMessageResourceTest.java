@@ -25,8 +25,12 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
@@ -44,6 +48,71 @@ public class MessageBoardMessageResourceTest
 		ServiceContext serviceContext = new ServiceContext();
 
 		serviceContext.setScopeGroupId(testGroup.getGroupId());
+	}
+
+	@Override
+	@Test
+	public void testPutSiteMessageBoardMessageByExternalReferenceCode()
+		throws Exception {
+
+		// Update
+
+		super.testPutSiteMessageBoardMessageByExternalReferenceCode();
+
+		// Add
+
+		MessageBoardMessage randomMessageBoardMessage =
+			randomMessageBoardMessage();
+
+		randomMessageBoardMessage.setParentMessageBoardMessageId(
+			_mbThread.getRootMessageId());
+
+		MessageBoardMessage putMessageBoardMessage =
+			messageBoardMessageResource.
+				putSiteMessageBoardMessageByExternalReferenceCode(
+					testGroup.getGroupId(),
+					randomMessageBoardMessage.getExternalReferenceCode(),
+					randomMessageBoardMessage);
+
+		assertEquals(randomMessageBoardMessage, putMessageBoardMessage);
+		assertValid(putMessageBoardMessage);
+
+		MessageBoardMessage getMessageBoardMessage =
+			messageBoardMessageResource.
+				getSiteMessageBoardMessageByExternalReferenceCode(
+					testGroup.getGroupId(),
+					putMessageBoardMessage.getExternalReferenceCode());
+
+		assertEquals(randomMessageBoardMessage, getMessageBoardMessage);
+		assertValid(getMessageBoardMessage);
+
+		Assert.assertEquals(
+			randomMessageBoardMessage.getExternalReferenceCode(),
+			getMessageBoardMessage.getExternalReferenceCode());
+	}
+
+	@Test
+	public void testPutSiteMessageBoardMessageWithoutParentMessageId()
+		throws Exception {
+
+		MessageBoardMessage randomMessageBoardMessage =
+			randomMessageBoardMessage();
+
+		randomMessageBoardMessage.setParentMessageBoardMessageId((Long)null);
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
+					"WebApplicationExceptionMapper",
+				LoggerTestUtil.ERROR)) {
+
+			assertHttpResponseStatusCode(
+				400,
+				messageBoardMessageResource.
+					putSiteMessageBoardMessageByExternalReferenceCodeHttpResponse(
+						testGroup.getGroupId(),
+						randomMessageBoardMessage.getExternalReferenceCode(),
+						randomMessageBoardMessage));
+		}
 	}
 
 	@Override
@@ -87,6 +156,14 @@ public class MessageBoardMessageResourceTest
 
 	@Override
 	protected MessageBoardMessage
+			testDeleteSiteMessageBoardMessageByExternalReferenceCode_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
 			testGetMessageBoardMessage_addMessageBoardMessage()
 		throws Exception {
 
@@ -119,11 +196,27 @@ public class MessageBoardMessageResourceTest
 
 	@Override
 	protected MessageBoardMessage
+			testGetSiteMessageBoardMessageByExternalReferenceCode_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
 			testGetSiteMessageBoardMessageByFriendlyUrlPath_addMessageBoardMessage()
 		throws Exception {
 
 		return testPostMessageBoardMessageMessageBoardMessage_addMessageBoardMessage(
 			randomMessageBoardMessage());
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testGetSiteMessageBoardMessagePermissionsPage_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
 	}
 
 	@Override
@@ -167,6 +260,14 @@ public class MessageBoardMessageResourceTest
 
 	@Override
 	protected MessageBoardMessage
+			testPutMessageBoardMessagePermission_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
 			testPutMessageBoardMessageSubscribe_addMessageBoardMessage()
 		throws Exception {
 
@@ -176,6 +277,22 @@ public class MessageBoardMessageResourceTest
 	@Override
 	protected MessageBoardMessage
 			testPutMessageBoardMessageUnsubscribe_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testPutSiteMessageBoardMessageByExternalReferenceCode_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testPutSiteMessageBoardMessagePermission_addMessageBoardMessage()
 		throws Exception {
 
 		return _addMessageBoardMessage();

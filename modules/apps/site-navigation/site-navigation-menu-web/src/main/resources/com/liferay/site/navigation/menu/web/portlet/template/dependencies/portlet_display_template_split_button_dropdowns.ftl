@@ -22,21 +22,12 @@
 
 				<#if navItem.isBrowsable() || showChildrenNavItems>
 					<#assign
-						nav_item_caret = ""
 						nav_item_css_class = ""
 						nav_item_href_link = ""
 					/>
 
-					<#if navItem.isSelected()>
+					<#if navItem.isChildSelected() || navItem.isSelected()>
 						<#assign nav_item_css_class = "active" />
-					</#if>
-
-					<#if showChildrenNavItems>
-						<#assign toggle_text>
-							<@liferay.language key="toggle" />
-						</#assign>
-
-						<#assign nav_item_caret = "<button aria-expanded='false' aria-haspopup='true' class='${nav_item_css_class} btn btn-secondary dropdown-toggle' data-toggle='liferay-dropdown' type='button'><span class='caret'></span><span class='sr-only'>${toggle_text}</span></button>" />
 					</#if>
 
 					<#if navItem.isBrowsable()>
@@ -44,15 +35,34 @@
 					</#if>
 
 					<li>
-						<a aria-labelledby="layout_${portletDisplay.getId()}_${navItem.getLayoutId()}" class="${nav_item_css_class} btn btn-secondary" ${nav_item_href_link}><span>${navItem.getName()}</span></a>${nav_item_caret}
+						<#if showChildrenNavItems>
+							<#assign toggle_text>
+								<@liferay.language key="toggle" />
+							</#assign>
+
+							<div class="btn-group">
+						</#if>
+
+						<a class="${nav_item_css_class} btn btn-secondary" ${nav_item_href_link}><span>${navItem.getName()}</span></a>
 
 						<#if showChildrenNavItems>
+							<button aria-expanded="false" aria-haspopup="true" class="${nav_item_css_class} btn btn-secondary c-px-2 dropdown-toggle" data-toggle="liferay-dropdown" type="button">
+								<@liferay_aui.icon
+									image="angle-down"
+									markupView="lexicon"
+								/>
+
+								<span class='sr-only'>${toggle_text}</span>
+							</button>
+
 							<ul aria-expanded="false" class="child-menu dropdown-menu" role="menu">
 								<@buildChildrenNavItems
 									displayDepth=displayDepth
 									navItem=navItem
 								/>
 							</ul>
+
+							</div>
 						</#if>
 					</li>
 				</#if>

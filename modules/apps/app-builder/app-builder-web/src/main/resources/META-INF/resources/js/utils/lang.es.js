@@ -13,7 +13,7 @@
  */
 
 const getLocalizedValue = (defaultLanguageId, localizedValues) => {
-	const languageId = Liferay.ThemeDisplay.getLanguageId();
+	const languageId = themeDisplay.getLanguageId();
 
 	if (localizedValues[languageId]) {
 		return localizedValues[languageId];
@@ -22,28 +22,37 @@ const getLocalizedValue = (defaultLanguageId, localizedValues) => {
 	return localizedValues[defaultLanguageId];
 };
 
-const sub = (langKey, args) => {
+const getLocalizedUserPreferenceValue = (
+	localizedValues,
+	userLanguageId,
+	defaultLanguageId
+) => {
+	const languageId = themeDisplay.getLanguageId();
+
+	if (localizedValues[userLanguageId]) {
+		return localizedValues[userLanguageId];
+	}
+
+	return localizedValues[languageId] ?? localizedValues[defaultLanguageId];
+};
+
+const sub = (langKey, args, join = true) => {
 	const SPLIT_REGEX = /({\d+})/g;
 
 	const keyArray = langKey
 		.split(SPLIT_REGEX)
 		.filter((val) => val.length !== 0);
-
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
-
 		const indexKey = `{${i}}`;
-
 		let argIndex = keyArray.indexOf(indexKey);
-
 		while (argIndex >= 0) {
 			keyArray.splice(argIndex, 1, arg);
-
 			argIndex = keyArray.indexOf(indexKey);
 		}
 	}
 
-	return keyArray.join('');
+	return join ? keyArray.join('') : keyArray;
 };
 
-export {getLocalizedValue, sub};
+export {getLocalizedValue, getLocalizedUserPreferenceValue, sub};

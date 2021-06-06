@@ -812,12 +812,12 @@ public class CalendarBookingLocalServiceImpl
 			return false;
 		}
 
-		int[] statuses = {
-			WorkflowConstants.STATUS_APPROVED, WorkflowConstants.STATUS_PENDING
-		};
-
 		List<CalendarBooking> calendarBookings = getOverlappingCalendarBookings(
-			calendar.getCalendarId(), startTime, endTime, statuses);
+			calendar.getCalendarId(), startTime, endTime,
+			new int[] {
+				WorkflowConstants.STATUS_APPROVED,
+				WorkflowConstants.STATUS_PENDING
+			});
 
 		if (!calendarBookings.isEmpty()) {
 			return true;
@@ -1734,6 +1734,11 @@ public class CalendarBookingLocalServiceImpl
 				calendarId = getNotLiveCalendarId(calendarId);
 			}
 			catch (NoSuchCalendarException noSuchCalendarException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						noSuchCalendarException, noSuchCalendarException);
+				}
+
 				continue;
 			}
 
@@ -2382,6 +2387,11 @@ public class CalendarBookingLocalServiceImpl
 				calendarId = getNotLiveCalendarId(calendarId);
 			}
 			catch (NoSuchCalendarException noSuchCalendarException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						noSuchCalendarException, noSuchCalendarException);
+				}
+
 				continue;
 			}
 

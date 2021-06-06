@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -44,10 +46,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("DataDefinitionField")
+@GraphQLName(
+	description = "Represents the value of each field in data definition.",
+	value = "DataDefinitionField"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DataDefinitionField")
-public class DataDefinitionField {
+public class DataDefinitionField implements Serializable {
 
 	public static DataDefinitionField toDTO(String json) {
 		return ObjectMapperUtil.readValue(DataDefinitionField.class, json);
@@ -737,6 +742,7 @@ public class DataDefinitionField {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataDefinitionField",
 		name = "x-class-name"
 	)
@@ -806,7 +812,7 @@ public class DataDefinitionField {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -845,7 +851,7 @@ public class DataDefinitionField {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

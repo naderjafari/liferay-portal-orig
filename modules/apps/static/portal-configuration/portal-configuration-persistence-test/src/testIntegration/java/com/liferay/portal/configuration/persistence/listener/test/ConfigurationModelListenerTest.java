@@ -22,6 +22,7 @@ import com.liferay.portal.configuration.persistence.listener.ConfigurationModelL
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.IOException;
@@ -124,9 +125,10 @@ public class ConfigurationModelListenerTest {
 	public void testOnAfterSave() throws Exception {
 		String pid = StringUtil.randomString(20);
 
-		Dictionary<String, Object> testProperties = new HashMapDictionary<>();
-
-		testProperties.put(_TEST_KEY, _TEST_VALUE);
+		Dictionary<String, Object> testProperties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				_TEST_KEY, _TEST_VALUE
+			).build();
 
 		AtomicBoolean called = new AtomicBoolean();
 
@@ -200,9 +202,10 @@ public class ConfigurationModelListenerTest {
 	public void testOnBeforeSave() throws Exception {
 		String pid = StringUtil.randomString(20);
 
-		Dictionary<String, Object> testProperties = new HashMapDictionary<>();
-
-		testProperties.put(_TEST_KEY, _TEST_VALUE);
+		Dictionary<String, Object> testProperties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				_TEST_KEY, _TEST_VALUE
+			).build();
 
 		_configuration = _getConfiguration(pid);
 
@@ -257,16 +260,14 @@ public class ConfigurationModelListenerTest {
 		}
 	}
 
-	private static Configuration _getConfiguration(String pid)
-		throws IOException {
-
+	private Configuration _getConfiguration(String pid) throws IOException {
 		return OSGiServiceUtil.callService(
 			_bundleContext, ConfigurationAdmin.class,
 			configurationAdmin -> configurationAdmin.getConfiguration(
 				pid, StringPool.QUESTION));
 	}
 
-	private static boolean _hasPid(String pid) {
+	private boolean _hasPid(String pid) {
 		return OSGiServiceUtil.callService(
 			_bundleContext, PersistenceManager.class,
 			persistenceManager -> persistenceManager.exists(pid));
@@ -275,13 +276,12 @@ public class ConfigurationModelListenerTest {
 	private ServiceRegistration<?> _registerConfigurationModelListener(
 		ConfigurationModelListener configurationModelListener, String pid) {
 
-		Dictionary<String, String> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", pid);
-
 		return _bundleContext.registerService(
 			ConfigurationModelListener.class.getName(),
-			configurationModelListener, properties);
+			configurationModelListener,
+			HashMapDictionaryBuilder.put(
+				"model.class.name", pid
+			).build());
 	}
 
 	private static final String _TEST_KEY = StringUtil.randomString(20);

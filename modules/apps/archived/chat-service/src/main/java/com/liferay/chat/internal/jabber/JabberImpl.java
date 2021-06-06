@@ -437,21 +437,15 @@ public class JabberImpl implements Jabber {
 	}
 
 	protected String getFullJabberId(String screenName) {
-		String jabberId = getJabberId(screenName);
-
-		return jabberId.concat(
-			StringPool.SLASH
-		).concat(
-			_chatGroupServiceConfiguration.jabberResource()
-		);
+		return StringBundler.concat(
+			getJabberId(screenName), StringPool.SLASH,
+			_chatGroupServiceConfiguration.jabberResource());
 	}
 
 	protected String getJabberId(String screenName) {
-		return screenName.concat(
-			StringPool.AT
-		).concat(
-			_chatGroupServiceConfiguration.jabberResource()
-		);
+		return StringBundler.concat(
+			screenName, StringPool.AT,
+			_chatGroupServiceConfiguration.jabberResource());
 	}
 
 	protected void importUser(long userId, String password) throws Exception {
@@ -519,7 +513,8 @@ public class JabberImpl implements Jabber {
 
 	private static final Log _log = LogFactoryUtil.getLog(JabberImpl.class);
 
-	private ChatGroupServiceConfiguration _chatGroupServiceConfiguration;
+	private volatile ChatGroupServiceConfiguration
+		_chatGroupServiceConfiguration;
 	private ConnectionConfiguration _connectionConfiguration;
 	private final Map<Long, Connection> _connections = new HashMap<>();
 	private final Set<Long> _onlineUserIds = new HashSet<>();

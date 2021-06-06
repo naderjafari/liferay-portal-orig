@@ -12,6 +12,7 @@
  * details.
  */
 
+import {ClayButtonWithIcon} from '@clayui/button';
 import ClayForm from '@clayui/form';
 import ClayLayout from '@clayui/layout';
 import {
@@ -23,27 +24,26 @@ import {
 } from 'data-engine-taglib';
 import React, {useContext, useState} from 'react';
 
-import Button from '../../components/button/Button.es';
 import EditTableViewContext, {
 	UPDATE_FOCUSED_COLUMN,
 } from './EditTableViewContext.es';
 import TableViewFiltersList from './TableViewFilters.es';
-import {getFieldTypeLabel} from './utils.es';
+import {getFieldLabel, getFieldTypeLabel} from './utils.es';
 
 const BtnAction = ({angle = 'left', className, onClick}) => (
-	<Button
+	<ClayButtonWithIcon
 		className={className}
 		displayType="secondary"
-		monospaced={false}
 		onClick={onClick}
 		symbol={`angle-${angle}`}
 	/>
 );
 
 const FiltersSidebarHeader = () => {
-	const [{dataDefinition, fieldTypes, focusedColumn}, dispatch] = useContext(
-		EditTableViewContext
-	);
+	const [
+		{dataDefinition, editingLanguageId, fieldTypes, focusedColumn},
+		dispatch,
+	] = useContext(EditTableViewContext);
 
 	const onClickBack = () => {
 		dispatch({payload: {fieldName: null}, type: UPDATE_FOCUSED_COLUMN});
@@ -67,8 +67,9 @@ const FiltersSidebarHeader = () => {
 						dragAlignment="none"
 						draggable={false}
 						icon={fieldType}
-						label={DataDefinitionUtils.getFieldLabel(
+						label={getFieldLabel(
 							dataDefinition,
+							editingLanguageId,
 							focusedColumn
 						)}
 						name={focusedColumn}
@@ -82,19 +83,20 @@ const FiltersSidebarHeader = () => {
 const FieldsTabContent = ({keywords, onAddFieldName}) => {
 	const [
 		{
-			dataDefinition: {dataDefinitionFields = []},
+			dataDefinition: {dataDefinitionFields = [], defaultLanguageId},
 			dataListView: {fieldNames},
+			editingLanguageId,
 			fieldTypes,
 		},
 	] = useContext(EditTableViewContext);
 
 	const fieldTypesItems = [];
 
-	const fieldTypeModel = ({fieldType, label: {en_US: label}, name}) => ({
+	const fieldTypeModel = ({fieldType, label, name}) => ({
 		description: getFieldTypeLabel(fieldTypes, fieldType),
 		disabled: fieldNames.some((fieldName) => fieldName === name),
 		icon: fieldType,
-		label,
+		label: label[editingLanguageId] || label[defaultLanguageId],
 		name,
 	});
 
@@ -117,7 +119,13 @@ const FieldsTabContent = ({keywords, onAddFieldName}) => {
 
 	return (
 		<FieldTypeList
-			dragType={DragTypes.DRAG_FIELD_TYPE}
+			dragType={DragTypes.DRAG_FIELD_TYPE_ADD}
+			emptyState={{
+				description: Liferay.Language.get(
+					'columns-are-needed-to-create-table-views-for-this-object'
+				),
+				title: Liferay.Language.get('there-are-no-columns-yet'),
+			}}
 			fieldTypes={fieldTypesItems}
 			keywords={keywords}
 			onDoubleClick={({name}) => onAddFieldName(name, fieldNames.length)}

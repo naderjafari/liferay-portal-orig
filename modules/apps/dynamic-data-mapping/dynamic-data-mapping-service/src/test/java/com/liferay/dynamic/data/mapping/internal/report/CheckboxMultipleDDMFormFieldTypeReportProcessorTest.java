@@ -19,14 +19,15 @@ import com.liferay.dynamic.data.mapping.model.DDMFormFieldType;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
-import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,10 +42,10 @@ import org.powermock.api.mockito.PowerMockito;
 public class CheckboxMultipleDDMFormFieldTypeReportProcessorTest
 	extends PowerMockito {
 
-	@Before
-	public void setUp() {
-		_setUpJSONFactoryUtil();
-	}
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testProcessDDMFormInstanceReportOnDeleteEvent()
@@ -79,16 +80,19 @@ public class CheckboxMultipleDDMFormFieldTypeReportProcessorTest
 			value
 		);
 
-		JSONObject fieldJSONObject = JSONUtil.put(
-			"type", DDMFormFieldType.CHECKBOX_MULTIPLE
-		).put(
-			"values", JSONUtil.put("option1", 1)
-		);
-
 		JSONObject processedFieldJSONObject =
 			_checkboxMultipleDDMFormFieldTypeReportProcessor.process(
-				ddmFormFieldValue, fieldJSONObject, 0,
-				DDMFormInstanceReportConstants.EVENT_DELETE_RECORD_VERSION);
+				ddmFormFieldValue,
+				JSONUtil.put(
+					"totalEntries", 1
+				).put(
+					"type", DDMFormFieldType.CHECKBOX_MULTIPLE
+				).put(
+					"values", JSONUtil.put("option1", 1)
+				),
+				0, DDMFormInstanceReportConstants.EVENT_DELETE_RECORD_VERSION);
+
+		Assert.assertEquals(0, processedFieldJSONObject.getInt("totalEntries"));
 
 		JSONObject valuesJSONObject = processedFieldJSONObject.getJSONObject(
 			"values");
@@ -133,11 +137,15 @@ public class CheckboxMultipleDDMFormFieldTypeReportProcessorTest
 			_checkboxMultipleDDMFormFieldTypeReportProcessor.process(
 				ddmFormFieldValue,
 				JSONUtil.put(
+					"totalEntries", 0
+				).put(
 					"type", DDMFormFieldType.CHECKBOX_MULTIPLE
 				).put(
 					"values", JSONFactoryUtil.createJSONObject()
 				),
 				0, DDMFormInstanceReportConstants.EVENT_ADD_RECORD_VERSION);
+
+		Assert.assertEquals(1, processedFieldJSONObject.getInt("totalEntries"));
 
 		Assert.assertEquals(
 			DDMFormFieldType.CHECKBOX_MULTIPLE,
@@ -186,23 +194,21 @@ public class CheckboxMultipleDDMFormFieldTypeReportProcessorTest
 			_checkboxMultipleDDMFormFieldTypeReportProcessor.process(
 				ddmFormFieldValue,
 				JSONUtil.put(
+					"totalEntries", 1
+				).put(
 					"type", DDMFormFieldType.CHECKBOX_MULTIPLE
 				).put(
 					"values", JSONUtil.put("option1", 1)
 				),
 				0, DDMFormInstanceReportConstants.EVENT_ADD_RECORD_VERSION);
 
+		Assert.assertEquals(2, processedFieldJSONObject.getInt("totalEntries"));
+
 		JSONObject valuesJSONObject = processedFieldJSONObject.getJSONObject(
 			"values");
 
 		Assert.assertEquals(2, valuesJSONObject.getLong("option1"));
 		Assert.assertEquals(1, valuesJSONObject.getLong("option2"));
-	}
-
-	private void _setUpJSONFactoryUtil() {
-		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
-
-		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
 	}
 
 	private final CheckboxMultipleDDMFormFieldTypeReportProcessor

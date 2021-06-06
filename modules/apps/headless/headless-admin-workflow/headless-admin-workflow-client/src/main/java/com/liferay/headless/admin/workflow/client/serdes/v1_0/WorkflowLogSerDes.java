@@ -100,6 +100,20 @@ public class WorkflowLogSerDes {
 			sb.append("\"");
 		}
 
+		if (workflowLog.getDescription() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"description\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(workflowLog.getDescription()));
+
+			sb.append("\"");
+		}
+
 		if (workflowLog.getId() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -248,6 +262,14 @@ public class WorkflowLogSerDes {
 				liferayToJSONDateFormat.format(workflowLog.getDateCreated()));
 		}
 
+		if (workflowLog.getDescription() == null) {
+			map.put("description", null);
+		}
+		else {
+			map.put(
+				"description", String.valueOf(workflowLog.getDescription()));
+		}
+
 		if (workflowLog.getId() == null) {
 			map.put("id", null);
 		}
@@ -356,6 +378,11 @@ public class WorkflowLogSerDes {
 						toDate((String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "description")) {
+				if (jsonParserFieldValue != null) {
+					workflowLog.setDescription((String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "id")) {
 				if (jsonParserFieldValue != null) {
 					workflowLog.setId(
@@ -408,10 +435,6 @@ public class WorkflowLogSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -440,7 +463,7 @@ public class WorkflowLogSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -476,7 +499,7 @@ public class WorkflowLogSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

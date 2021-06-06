@@ -42,12 +42,12 @@ public class ClayDataSetDisplayViewSerializerImpl
 	implements ClayDataSetDisplayViewSerializer {
 
 	@Override
-	public JSONArray serialize(String dataSetDisplayViewKey, Locale locale) {
+	public JSONArray serialize(String clayDataSetDisplayName, Locale locale) {
 		JSONArray jsonArray = _jsonFactory.createJSONArray();
 
 		List<ClayDataSetDisplayView> clayDataSetDisplayViews =
 			_clayDataSetDisplayViewRegistry.getClayDataSetDisplayViews(
-				dataSetDisplayViewKey);
+				clayDataSetDisplayName);
 
 		for (ClayDataSetDisplayView clayDataSetDisplayView :
 				clayDataSetDisplayViews) {
@@ -58,12 +58,14 @@ public class ClayDataSetDisplayViewSerializerImpl
 			JSONObject jsonObject = JSONUtil.put(
 				"contentRenderer", clayDataSetDisplayView.getContentRenderer()
 			).put(
-				"contentRendererModuleUrl",
+				"contentRendererModuleURL",
 				clayDataSetDisplayView.getContentRendererModuleURL()
 			).put(
 				"label",
 				LanguageUtil.get(
 					resourceBundle, clayDataSetDisplayView.getLabel())
+			).put(
+				"name", clayDataSetDisplayView.getName()
 			).put(
 				"thumbnail", clayDataSetDisplayView.getThumbnail()
 			);

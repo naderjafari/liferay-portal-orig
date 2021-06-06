@@ -17,6 +17,8 @@ package com.liferay.app.builder.workflow.rest.client.dto.v1_0;
 import com.liferay.app.builder.workflow.rest.client.function.UnsafeSupplier;
 import com.liferay.app.builder.workflow.rest.client.serdes.v1_0.AppWorkflowSerDes;
 
+import java.io.Serializable;
+
 import java.util.Objects;
 
 import javax.annotation.Generated;
@@ -26,7 +28,7 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class AppWorkflow implements Cloneable {
+public class AppWorkflow implements Cloneable, Serializable {
 
 	public static AppWorkflow toDTO(String json) {
 		return AppWorkflowSerDes.toDTO(json);
@@ -50,6 +52,27 @@ public class AppWorkflow implements Cloneable {
 	}
 
 	protected Long appId;
+
+	public String getAppVersion() {
+		return appVersion;
+	}
+
+	public void setAppVersion(String appVersion) {
+		this.appVersion = appVersion;
+	}
+
+	public void setAppVersion(
+		UnsafeSupplier<String, Exception> appVersionUnsafeSupplier) {
+
+		try {
+			appVersion = appVersionUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String appVersion;
 
 	public Long getAppWorkflowDefinitionId() {
 		return appWorkflowDefinitionId;

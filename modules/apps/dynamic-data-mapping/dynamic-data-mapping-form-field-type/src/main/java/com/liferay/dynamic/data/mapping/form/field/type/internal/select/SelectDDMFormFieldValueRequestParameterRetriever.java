@@ -15,13 +15,16 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.select;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRequestParameterRetriever;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.Objects;
 
@@ -34,7 +37,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=select",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.SELECT,
 	service = DDMFormFieldValueRequestParameterRetriever.class
 )
 public class SelectDDMFormFieldValueRequestParameterRetriever
@@ -45,7 +49,7 @@ public class SelectDDMFormFieldValueRequestParameterRetriever
 		HttpServletRequest httpServletRequest, String ddmFormFieldParameterName,
 		String defaultDDMFormFieldParameterValue) {
 
-		String[] parameterValues = ParamUtil.getParameterValues(
+		String[] parameterValues = getParameterValues(
 			httpServletRequest, ddmFormFieldParameterName,
 			getDefaultDDMFormFieldParameterValues(
 				defaultDDMFormFieldParameterValue));
@@ -73,6 +77,24 @@ public class SelectDDMFormFieldValueRequestParameterRetriever
 
 			return StringUtil.split(defaultDDMFormFieldParameterValue);
 		}
+	}
+
+	protected String[] getParameterValues(
+		HttpServletRequest httpServletRequest, String ddmFormFieldParameterName,
+		String[] defaultDDMFormFieldParameterValues) {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		if (themeDisplay.isLifecycleAction()) {
+			return ParamUtil.getParameterValues(
+				httpServletRequest, ddmFormFieldParameterName);
+		}
+
+		return ParamUtil.getParameterValues(
+			httpServletRequest, ddmFormFieldParameterName,
+			defaultDDMFormFieldParameterValues);
 	}
 
 	@Reference

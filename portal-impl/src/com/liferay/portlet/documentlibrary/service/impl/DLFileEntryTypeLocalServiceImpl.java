@@ -43,6 +43,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -98,7 +99,8 @@ public class DLFileEntryTypeLocalServiceImpl
 	public DLFileEntryType addFileEntryType(
 			long userId, long groupId, long dataDefinitionId,
 			String fileEntryTypeKey, Map<Locale, String> nameMap,
-			Map<Locale, String> descriptionMap, ServiceContext serviceContext)
+			Map<Locale, String> descriptionMap, int scope,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		User user = userPersistence.findByPrimaryKey(userId);
@@ -137,6 +139,7 @@ public class DLFileEntryTypeLocalServiceImpl
 		dlFileEntryType.setFileEntryTypeKey(fileEntryTypeKey);
 		dlFileEntryType.setNameMap(nameMap);
 		dlFileEntryType.setDescriptionMap(descriptionMap);
+		dlFileEntryType.setScope(scope);
 
 		dlFileEntryType = dlFileEntryTypePersistence.update(dlFileEntryType);
 
@@ -156,8 +159,29 @@ public class DLFileEntryTypeLocalServiceImpl
 	}
 
 	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #addFileEntryType(long, long, long, String, Map, Map, long,
+	 *             ServiceContext)}
+	 */
+	@Deprecated
+	@Override
+	public DLFileEntryType addFileEntryType(
+			long userId, long groupId, long dataDefinitionId,
+			String fileEntryTypeKey, Map<Locale, String> nameMap,
+			Map<Locale, String> descriptionMap, ServiceContext serviceContext)
+		throws PortalException {
+
+		return addFileEntryType(
+			userId, groupId, dataDefinitionId, fileEntryTypeKey, nameMap,
+			descriptionMap,
+			DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_DEFAULT,
+			serviceContext);
+	}
+
+	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * #addFileEntryType(long, long, String, Map, Map, long, ServiceContext)}
+	 *             #addFileEntryType(long, long, String, Map, Map, long,
+	 *             ServiceContext)}
 	 */
 	@Deprecated
 	@Override
@@ -205,6 +229,7 @@ public class DLFileEntryTypeLocalServiceImpl
 		dlFileEntryType.setCompanyId(user.getCompanyId());
 		dlFileEntryType.setUserId(user.getUserId());
 		dlFileEntryType.setUserName(user.getFullName());
+		dlFileEntryType.setDataDefinitionId(ddmStructureIds[0]);
 		dlFileEntryType.setFileEntryTypeKey(fileEntryTypeKey);
 		dlFileEntryType.setNameMap(nameMap);
 		dlFileEntryType.setDescriptionMap(descriptionMap);
@@ -231,7 +256,8 @@ public class DLFileEntryTypeLocalServiceImpl
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * #addFileEntryType(long, long, String, Map, Map, long, ServiceContext)}
+	 *             #addFileEntryType(long, long, String, Map, Map, long,
+	 *             ServiceContext)}
 	 */
 	@Deprecated
 	@Override
@@ -310,6 +336,10 @@ public class DLFileEntryTypeLocalServiceImpl
 					dlFileEntryType.getFileEntryTypeId());
 		}
 
+		DDMStructureLinkManagerUtil.deleteStructureLinks(
+			classNameLocalService.getClassNameId(DLFileEntryType.class),
+			dlFileEntryType.getFileEntryTypeId());
+
 		DDMStructure ddmStructure = DDMStructureManagerUtil.fetchStructure(
 			dlFileEntryType.getGroupId(),
 			classNameLocalService.getClassNameId(DLFileEntryMetadata.class),
@@ -323,16 +353,14 @@ public class DLFileEntryTypeLocalServiceImpl
 		}
 
 		if (ddmStructure != null) {
-			long classNameId = classNameLocalService.getClassNameId(
-				DLFileEntryType.class);
-
-			DDMStructureLinkManagerUtil.deleteStructureLink(
-				classNameId, dlFileEntryType.getFileEntryTypeId(),
-				ddmStructure.getStructureId());
-
 			DDMStructureManagerUtil.deleteStructure(
 				ddmStructure.getStructureId());
 		}
+
+		resourceLocalService.deleteResource(
+			dlFileEntryType.getCompanyId(), DLFileEntryType.class.getName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			dlFileEntryType.getFileEntryTypeId());
 
 		dlFileEntryTypePersistence.remove(dlFileEntryType);
 	}
@@ -355,6 +383,14 @@ public class DLFileEntryTypeLocalServiceImpl
 		for (DLFileEntryType dlFileEntryType : dlFileEntryTypes) {
 			dlFileEntryTypeLocalService.deleteFileEntryType(dlFileEntryType);
 		}
+	}
+
+	@Override
+	public DLFileEntryType fetchDataDefinitionFileEntryType(
+		long groupId, long dataDefinitionId) {
+
+		return dlFileEntryTypePersistence.fetchByG_DDI(
+			groupId, dataDefinitionId);
 	}
 
 	@Override
@@ -420,6 +456,10 @@ public class DLFileEntryTypeLocalServiceImpl
 		return dlFileEntryTypePersistence.findByG_F(groupId, fileEntryTypeKey);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	@Override
 	public List<DLFileEntryType> getFileEntryTypes(long ddmStructureId)
 		throws PortalException {
@@ -569,12 +609,13 @@ public class DLFileEntryTypeLocalServiceImpl
 			serviceContext.getUserId(), dlFileEntry.getFileEntryId(), null,
 			null, null, null, null,
 			DLVersionNumberIncrease.fromMajorVersion(false),
-			defaultFileEntryTypeId, null, null, null, 0, serviceContext);
+			defaultFileEntryTypeId, null, null, null, 0, null, null,
+			serviceContext);
 	}
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * #updateFileEntryType(long, Map, Map)}
+	 *             #updateFileEntryType(long, Map, Map)}
 	 */
 	@Deprecated
 	@Override
@@ -606,7 +647,7 @@ public class DLFileEntryTypeLocalServiceImpl
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 * #updateFileEntryType(long, Map, Map)}
+	 *             #updateFileEntryType(long, Map, Map)}
 	 */
 	@Deprecated
 	@Override
@@ -655,6 +696,26 @@ public class DLFileEntryTypeLocalServiceImpl
 
 		for (Long fileEntryTypeId : fileEntryTypeIds) {
 			if (!originalFileEntryTypeIds.contains(fileEntryTypeId)) {
+				if (fileEntryTypeId ==
+						DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_ALL) {
+
+					continue;
+				}
+
+				DLFileEntryType dlFileEntryType =
+					DLFileEntryTypeLocalServiceUtil.fetchDLFileEntryType(
+						fileEntryTypeId);
+
+				if (dlFileEntryType == null) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Document library file entry type " +
+								fileEntryTypeId + " does not exist");
+					}
+
+					continue;
+				}
+
 				dlFolderPersistence.addDLFileEntryType(
 					dlFolder.getFolderId(), fileEntryTypeId);
 			}
@@ -688,7 +749,7 @@ public class DLFileEntryTypeLocalServiceImpl
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {{@link
-	 * #_getFileEntryTypesPrimaryFolderId(long)}}
+	 *             #_getFileEntryTypesPrimaryFolderId(long)}}
 	 */
 	@Deprecated
 	protected static long getFileEntryTypesPrimaryFolderId(

@@ -75,9 +75,7 @@ public class UpgradeAssetDisplayPageEntryTest {
 
 	@Before
 	public void setUp() throws Exception {
-		_groups = new ArrayList<>();
 		_timestamp = new Timestamp(System.currentTimeMillis());
-		_assetEntryClassUuids = new HashMap<>();
 
 		setUpClassNameIds();
 		setUpUpgradeAssetDisplayPageEntry();
@@ -144,17 +142,18 @@ public class UpgradeAssetDisplayPageEntryTest {
 
 		String sql = sb.toString();
 
-		try (Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(sql)) {
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
-			ps.setLong(1, _counterLocalService.increment());
-			ps.setLong(2, groupId);
-			ps.setLong(3, companyId);
-			ps.setLong(4, classNameId);
-			ps.setLong(5, classPK);
-			ps.setString(6, classUuid);
+			preparedStatement.setLong(1, _counterLocalService.increment());
+			preparedStatement.setLong(2, groupId);
+			preparedStatement.setLong(3, companyId);
+			preparedStatement.setLong(4, classNameId);
+			preparedStatement.setLong(5, classPK);
+			preparedStatement.setString(6, classUuid);
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 	}
 
@@ -173,27 +172,28 @@ public class UpgradeAssetDisplayPageEntryTest {
 
 		String sql = sb.toString();
 
-		try (Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(sql)) {
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
-			ps.setString(1, PortalUUIDUtil.generate());
-			ps.setLong(2, _counterLocalService.increment());
-			ps.setLong(3, resourcePrimKey);
-			ps.setLong(4, groupId);
-			ps.setLong(5, companyId);
-			ps.setLong(6, TestPropsValues.getUserId());
-			ps.setString(7, null);
-			ps.setTimestamp(8, _timestamp);
-			ps.setTimestamp(9, _timestamp);
-			ps.setLong(10, 0);
-			ps.setLong(11, 0);
-			ps.setLong(12, 0);
-			ps.setString(13, "/");
-			ps.setString(14, RandomTestUtil.randomString());
-			ps.setDouble(15, version);
-			ps.setString(16, layoutUuid);
+			preparedStatement.setString(1, PortalUUIDUtil.generate());
+			preparedStatement.setLong(2, _counterLocalService.increment());
+			preparedStatement.setLong(3, resourcePrimKey);
+			preparedStatement.setLong(4, groupId);
+			preparedStatement.setLong(5, companyId);
+			preparedStatement.setLong(6, TestPropsValues.getUserId());
+			preparedStatement.setString(7, null);
+			preparedStatement.setTimestamp(8, _timestamp);
+			preparedStatement.setTimestamp(9, _timestamp);
+			preparedStatement.setLong(10, 0);
+			preparedStatement.setLong(11, 0);
+			preparedStatement.setLong(12, 0);
+			preparedStatement.setString(13, "/");
+			preparedStatement.setString(14, RandomTestUtil.randomString());
+			preparedStatement.setDouble(15, version);
+			preparedStatement.setString(16, layoutUuid);
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 	}
 
@@ -377,7 +377,7 @@ public class UpgradeAssetDisplayPageEntryTest {
 						Class<?> clazz = upgradeStep.getClass();
 
 						if (Objects.equals(clazz.getName(), _CLASS_NAME)) {
-							_upgradeAssetDisplayPageEntry =
+							_assetDisplayPageEntryUpgradeProcess =
 								(UpgradeProcess)upgradeStep;
 						}
 					}
@@ -393,6 +393,7 @@ public class UpgradeAssetDisplayPageEntryTest {
 		Group liveGroup = createGroup();
 
 		GroupTestUtil.enableLocalStaging(liveGroup);
+
 		Group stagingGroup = liveGroup.getStagingGroup();
 
 		String layoutUuid = PortalUUIDUtil.generate();
@@ -404,7 +405,7 @@ public class UpgradeAssetDisplayPageEntryTest {
 			stagingResourcePrimKeys, multipleArticleVersions, liveGroup,
 			layoutUuid);
 
-		_upgradeAssetDisplayPageEntry.upgrade();
+		_assetDisplayPageEntryUpgradeProcess.upgrade();
 
 		assertAssetDisplayPageEntries(stagingGroup, stagingResourcePrimKeys);
 		assertAssetDisplayPageEntries(liveGroup, liveResourcePrimKeys);
@@ -442,7 +443,7 @@ public class UpgradeAssetDisplayPageEntryTest {
 			createJournalArticles(
 				articleCount, multipleArticleVersions, group, layoutUuid);
 
-			_upgradeAssetDisplayPageEntry.upgrade();
+			_assetDisplayPageEntryUpgradeProcess.upgrade();
 
 			Assert.assertEquals(0, getAssetDisplayPageEntriesCount(group));
 		}
@@ -464,7 +465,7 @@ public class UpgradeAssetDisplayPageEntryTest {
 		List<Long> resourcePrimKeys = createJournalArticles(
 			articleCount, multipleArticleVersions, group, layoutUuid);
 
-		_upgradeAssetDisplayPageEntry.upgrade();
+		_assetDisplayPageEntryUpgradeProcess.upgrade();
 
 		Assert.assertEquals(
 			articleCount, getAssetDisplayPageEntriesCount(group));
@@ -474,23 +475,23 @@ public class UpgradeAssetDisplayPageEntryTest {
 
 	private static final String _CLASS_NAME =
 		"com.liferay.journal.internal.upgrade.v1_1_6." +
-			"UpgradeAssetDisplayPageEntry";
+			"AssetDisplayPageEntryUpgradeProcess";
 
 	@Inject(
 		filter = "(&(objectClass=com.liferay.journal.internal.upgrade.JournalServiceUpgrade))"
 	)
 	private static UpgradeStepRegistrator _upgradeStepRegistrator;
 
-	private Map<Long, String> _assetEntryClassUuids;
+	private UpgradeProcess _assetDisplayPageEntryUpgradeProcess;
+	private final Map<Long, String> _assetEntryClassUuids = new HashMap<>();
 	private long _classNameIdJournalArticle;
 
 	@Inject
 	private CounterLocalService _counterLocalService;
 
 	@DeleteAfterTestRun
-	private List<Group> _groups;
+	private List<Group> _groups = new ArrayList<>();
 
 	private Timestamp _timestamp;
-	private UpgradeProcess _upgradeAssetDisplayPageEntry;
 
 }

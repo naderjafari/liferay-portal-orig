@@ -12,11 +12,10 @@
  * details.
  */
 
+import {getItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {errorToast} from 'data-engine-js-components-web/js/utils/toast.es';
 import {DataDefinitionUtils} from 'data-engine-taglib';
 import {useEffect, useState} from 'react';
-
-import {getItem} from '../utils/client.es';
-import {errorToast} from '../utils/toast.es';
 
 export default function useDataListView(dataListViewId, dataDefinitionId) {
 	const [state, setState] = useState({
@@ -36,14 +35,20 @@ export default function useDataListView(dataListViewId, dataDefinitionId) {
 			.then(([dataDefinition, dataListView]) => {
 				setState((prevState) => ({
 					...prevState,
-					columns: dataListView.fieldNames.map((column) => ({
-						key: 'dataRecordValues/' + column,
-						sortable: true,
-						value: DataDefinitionUtils.getFieldLabel(
+					columns: dataListView.fieldNames.map((column) => {
+						const {
+							label: value,
+						} = DataDefinitionUtils.getDataDefinitionField(
 							dataDefinition,
 							column
-						),
-					})),
+						);
+
+						return {
+							key: 'dataRecordValues/' + column,
+							sortable: true,
+							value,
+						};
+					}),
 					dataDefinition: {
 						...prevState.dataDefinition,
 						...dataDefinition,

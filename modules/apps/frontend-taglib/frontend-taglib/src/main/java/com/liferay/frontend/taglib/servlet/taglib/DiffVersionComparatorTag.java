@@ -15,6 +15,8 @@
 package com.liferay.frontend.taglib.servlet.taglib;
 
 import com.liferay.frontend.taglib.internal.servlet.ServletContextUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.diff.DiffVersion;
 import com.liferay.portal.kernel.diff.DiffVersionsInfo;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -59,12 +61,16 @@ public class DiffVersionComparatorTag extends IncludeTag {
 
 		Date modifiedDate = diffVersion.getModifiedDate();
 
+		HttpServletRequest httpServletRequest = getRequest();
+
 		String timeDescription = LanguageUtil.getTimeDescription(
-			request, System.currentTimeMillis() - modifiedDate.getTime(), true);
+			httpServletRequest,
+			System.currentTimeMillis() - modifiedDate.getTime(), true);
 
 		JSONObject diffVersionJSONObject = JSONUtil.put(
 			"displayDate",
-			LanguageUtil.format(request, "x-ago", timeDescription, false)
+			LanguageUtil.format(
+				httpServletRequest, "x-ago", timeDescription, false)
 		).put(
 			"inRange",
 			(diffVersion.getVersion() > _sourceVersion) &&
@@ -75,7 +81,8 @@ public class DiffVersionComparatorTag extends IncludeTag {
 
 		diffVersionJSONObject.put(
 			"label",
-			LanguageUtil.format(request, "version-x", diffVersionString));
+			LanguageUtil.format(
+				httpServletRequest, "version-x", diffVersionString));
 
 		sourceURL.setParameter("sourceVersion", diffVersionString);
 
@@ -89,12 +96,13 @@ public class DiffVersionComparatorTag extends IncludeTag {
 
 		diffVersionJSONObject.put("targetURL", targetURL.toString());
 
-		User user = UserLocalServiceUtil.getUser(diffVersion.getUserId());
+		User user = UserLocalServiceUtil.fetchUser(diffVersion.getUserId());
 
 		diffVersionJSONObject.put(
-			"userInitials", user.getInitials()
+			"userInitials",
+			(user != null) ? user.getInitials() : StringPool.BLANK
 		).put(
-			"userName", user.getFullName()
+			"userName", (user != null) ? user.getFullName() : StringPool.BLANK
 		).put(
 			"version", diffVersionString
 		);
@@ -154,7 +162,7 @@ public class DiffVersionComparatorTag extends IncludeTag {
 	public void setPageContext(PageContext pageContext) {
 		super.setPageContext(pageContext);
 
-		servletContext = ServletContextUtil.getServletContext();
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
 	public void setPortletURL(PortletURL portletURL) {
@@ -200,23 +208,27 @@ public class DiffVersionComparatorTag extends IncludeTag {
 
 		Map<String, Object> data = new HashMap<>();
 
+		HttpServletRequest parentHttpServletRequest = getRequest();
+
 		try {
 			if (_availableLocales != null) {
-				ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-					WebKeys.THEME_DISPLAY);
+				ThemeDisplay themeDisplay =
+					(ThemeDisplay)parentHttpServletRequest.getAttribute(
+						WebKeys.THEME_DISPLAY);
 
 				JSONArray availableLocalesJSONArray =
 					JSONFactoryUtil.createJSONArray();
 
 				for (Locale availableLocale : _availableLocales) {
-					JSONObject availableLocaleJSONObject = JSONUtil.put(
-						"displayName",
-						availableLocale.getDisplayName(themeDisplay.getLocale())
-					).put(
-						"languageId", LocaleUtil.toLanguageId(availableLocale)
-					);
-
-					availableLocalesJSONArray.put(availableLocaleJSONObject);
+					availableLocalesJSONArray.put(
+						JSONUtil.put(
+							"displayName",
+							availableLocale.getDisplayName(
+								themeDisplay.getLocale())
+						).put(
+							"languageId",
+							LocaleUtil.toLanguageId(availableLocale)
+						));
 				}
 
 				data.put("availableLocales", availableLocalesJSONArray);
@@ -225,20 +237,20 @@ public class DiffVersionComparatorTag extends IncludeTag {
 			data.put("diffHtmlResults", _diffHtmlResults);
 
 			RenderResponse renderResponse =
-				(RenderResponse)request.getAttribute(
+				(RenderResponse)parentHttpServletRequest.getAttribute(
 					JavaConstants.JAVAX_PORTLET_RESPONSE);
 
-			PortletURL sourceURL = PortletURLUtil.clone(
-				_portletURL, renderResponse);
+			PortletURL sourceURL = PortletURLBuilder.create(
+				PortletURLUtil.clone(_portletURL, renderResponse)
+			).setParameter(
+				"targetVersion", _targetVersion
+			).build();
 
-			sourceURL.setParameter(
-				"targetVersion", String.valueOf(_targetVersion));
-
-			PortletURL targetURL = PortletURLUtil.clone(
-				_portletURL, renderResponse);
-
-			targetURL.setParameter(
-				"sourceVersion", String.valueOf(_sourceVersion));
+			PortletURL targetURL = PortletURLBuilder.create(
+				PortletURLUtil.clone(_portletURL, renderResponse)
+			).setParameter(
+				"sourceVersion", _sourceVersion
+			).build();
 
 			JSONArray diffVersionsJSONArray = JSONFactoryUtil.createJSONArray();
 

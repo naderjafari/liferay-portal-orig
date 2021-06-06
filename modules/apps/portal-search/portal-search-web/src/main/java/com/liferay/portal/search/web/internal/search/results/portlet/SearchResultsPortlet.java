@@ -27,9 +27,11 @@ import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.IndexerRegistry;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.FastDateFormatFactory;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.legacy.document.DocumentBuilderFactory;
@@ -152,12 +154,6 @@ public class SearchResultsPortlet extends MVCPortlet {
 
 		searchResultsPortletDisplayContext.setDocuments(documents);
 
-		Optional<String> keywordsOptional =
-			portletSharedSearchResponse.getKeywordsOptional();
-
-		searchResultsPortletDisplayContext.setKeywords(
-			keywordsOptional.orElse(StringPool.BLANK));
-
 		SearchResultsPortletPreferences searchResultsPortletPreferences =
 			new SearchResultsPortletPreferencesImpl(
 				portletSharedSearchResponse.getPortletPreferences(
@@ -166,8 +162,16 @@ public class SearchResultsPortlet extends MVCPortlet {
 		SearchResponse searchResponse = getSearchResponse(
 			portletSharedSearchResponse, searchResultsPortletPreferences);
 
+		SearchRequest searchRequest = searchResponse.getRequest();
+
+		Optional<String> keywordsOptional = Optional.ofNullable(
+			searchRequest.getQueryString());
+
+		searchResultsPortletDisplayContext.setKeywords(
+			keywordsOptional.orElse(StringPool.BLANK));
+
 		searchResultsPortletDisplayContext.setRenderNothing(
-			isRenderNothing(portletSharedSearchResponse, searchResponse));
+			isRenderNothing(renderRequest, searchRequest));
 
 		searchResultsPortletDisplayContext.setSearchContainer(
 			buildSearchContainer(
@@ -353,6 +357,8 @@ public class SearchResultsPortlet extends MVCPortlet {
 			summaryBuilderFactory
 		).setThemeDisplay(
 			themeDisplay
+		).setUserLocalService(
+			userLocalService
 		);
 
 		return searchResultSummaryDisplayBuilder.build();
@@ -411,19 +417,21 @@ public class SearchResultsPortlet extends MVCPortlet {
 	}
 
 	protected boolean isRenderNothing(
-		PortletSharedSearchResponse portletSharedSearchResponse,
-		SearchResponse searchResponse) {
+		RenderRequest renderRequest, SearchRequest searchRequest) {
 
-		Optional<String> keywordsOptional =
-			portletSharedSearchResponse.getKeywordsOptional();
+		long assetEntryId = ParamUtil.getLong(renderRequest, "assetEntryId");
 
-		if (keywordsOptional.isPresent()) {
+		if (assetEntryId != 0) {
 			return false;
 		}
 
-		SearchRequest searchRequest = searchResponse.getRequest();
+		if ((searchRequest.getQueryString() == null) &&
+			!searchRequest.isEmptySearchEnabled()) {
 
-		return !searchRequest.isEmptySearchEnabled();
+			return true;
+		}
+
+		return false;
 	}
 
 	protected void removeSearchResultImageContributor(
@@ -466,6 +474,9 @@ public class SearchResultsPortlet extends MVCPortlet {
 
 	@Reference
 	protected SummaryBuilderFactory summaryBuilderFactory;
+
+	@Reference
+	protected UserLocalService userLocalService;
 
 	@Reference
 	private Portal _portal;

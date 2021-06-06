@@ -127,8 +127,9 @@ public class AnnotationsExtendedObjectClassDefinition
 		URL url = bundle.getResource(resourcePath);
 
 		if (url != null) {
-			try (InputStream is = url.openStream()) {
-				return JSONFactoryUtil.createJSONObject(StringUtil.read(is));
+			try (InputStream inputStream = url.openStream()) {
+				return JSONFactoryUtil.createJSONObject(
+					StringUtil.read(inputStream));
 			}
 			catch (Exception exception) {
 				_log.error(
@@ -149,6 +150,9 @@ public class AnnotationsExtendedObjectClassDefinition
 				_objectClassDefinition.getID());
 		}
 		catch (ClassNotFoundException classNotFoundException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(classNotFoundException, classNotFoundException);
+			}
 		}
 	}
 
@@ -216,7 +220,7 @@ public class AnnotationsExtendedObjectClassDefinition
 			ExtendedObjectClassDefinition.XML_NAMESPACE, attributes);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		AnnotationsExtendedObjectClassDefinition.class);
 
 	private Class<?> _configurationBeanClass;

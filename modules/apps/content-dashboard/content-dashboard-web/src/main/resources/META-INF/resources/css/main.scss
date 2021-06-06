@@ -1,3 +1,10 @@
+@import 'atlas-variables';
+@import 'variables';
+
+.audit-graph {
+	position: relative;
+}
+
 .content-dashboard-management-toolbar {
 	.navbar-expand-md .container-fluid {
 		padding: 0;
@@ -13,6 +20,10 @@
 }
 
 .lfr-search-container-wrapper {
+	.quick-action-menu {
+		padding-left: 20px;
+	}
+
 	.taglib-search-iterator-page-iterator-bottom {
 		margin-top: 24px;
 	}
@@ -41,4 +52,57 @@
 .custom-tooltip {
 	box-shadow: 0 1px 15px -2px rgba(0, 0, 0, 0.2);
 	opacity: 1;
+}
+
+// Sidebar
+
+.has-control-menu {
+	.loading-indicator-wrapper {
+		height: calc(100% - #{$controlMenuHeight});
+	}
+
+	.content-dashboard.sidebar {
+		top: $controlMenuHeight;
+	}
+}
+
+.loading-indicator-wrapper {
+	height: 100%;
+}
+
+.content-dashboard.sidebar {
+	bottom: 0;
+	height: auto;
+	left: 100%;
+	position: fixed;
+	transition: transform 0.5s ease;
+	width: $sidebarWidth;
+	z-index: $zindex-dropdown - 1;
+
+	.sidebar-body {
+		padding-top: 0;
+
+		& > .sidebar-section {
+			margin-bottom: 16px;
+		}
+	}
+}
+
+.sidebar-open {
+	.content-dashboard.sidebar {
+		transform: translateX(-100%);
+		will-change: transform;
+	}
+
+	.sidebar-wrapper {
+		padding-right: $sidebarWidth;
+	}
+}
+
+.sidebar-wrapper {
+	transition: padding-right 0.5s ease;
+}
+
+.text-truncate-reverse {
+	direction: rtl;
 }

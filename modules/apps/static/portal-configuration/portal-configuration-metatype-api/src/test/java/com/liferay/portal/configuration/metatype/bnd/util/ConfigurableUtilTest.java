@@ -17,16 +17,18 @@ package com.liferay.portal.configuration.metatype.bnd.util;
 import aQute.bnd.annotation.metatype.Meta;
 
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.rule.NewEnv;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.test.aspects.ReflectionUtilAdvice;
 import com.liferay.portal.test.rule.AdviseWith;
-import com.liferay.portal.test.rule.AspectJNewEnvTestRule;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
+import com.liferay.portal.util.PropsImpl;
 
 import java.util.Collections;
-import java.util.Dictionary;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
@@ -36,6 +38,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,7 +52,12 @@ public class ConfigurableUtilTest {
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new AggregateTestRule(
-			AspectJNewEnvTestRule.INSTANCE, CodeCoverageAssertor.INSTANCE);
+			CodeCoverageAssertor.INSTANCE, LiferayUnitTestRule.INSTANCE);
+
+	@Before
+	public void setUp() {
+		PropsUtil.setProps(new PropsImpl());
+	}
 
 	@Test
 	public void testBigString() {
@@ -109,13 +117,12 @@ public class ConfigurableUtilTest {
 
 		// Test dictionary
 
-		Dictionary<String, String> dictionary = new HashMapDictionary<>();
-
-		dictionary.put("testReqiredString", "testReqiredString1");
-
 		_assertTestConfiguration(
 			ConfigurableUtil.createConfigurable(
-				TestConfiguration.class, dictionary),
+				TestConfiguration.class,
+				HashMapDictionaryBuilder.put(
+					"testReqiredString", "testReqiredString1"
+				).build()),
 			"testReqiredString1");
 
 		// Test map
@@ -158,6 +165,35 @@ public class ConfigurableUtilTest {
 		// Constructor
 
 		new ConfigurableUtil();
+	}
+
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
+	@Test
+	public void testOverride() {
+
+		// Test dictionary override
+
+		com.liferay.portal.util.PropsUtil.set(
+			"configuration.override." + TestConfiguration.class.getName() +
+				"_testReqiredString",
+			"\"testReqiredString3\"");
+
+		_assertTestConfiguration(
+			ConfigurableUtil.createConfigurable(
+				TestConfiguration.class,
+				HashMapDictionaryBuilder.put(
+					"testReqiredString", "testReqiredString1"
+				).build()),
+			"testReqiredString3");
+
+		// Test map override
+
+		_assertTestConfiguration(
+			ConfigurableUtil.createConfigurable(
+				TestConfiguration.class,
+				Collections.singletonMap(
+					"testReqiredString", "testReqiredString2")),
+			"testReqiredString3");
 	}
 
 	@Aspect
@@ -216,22 +252,20 @@ public class ConfigurableUtilTest {
 		Assert.assertEquals(TestEnum.TEST_VALUE, testConfiguration.testEnum());
 		Assert.assertEquals(1.0, testConfiguration.testFloat(), 0);
 		Assert.assertEquals(100, testConfiguration.testInt());
-		Assert.assertEquals(100L, testConfiguration.testLong());
-		Assert.assertArrayEquals(
-			new long[] {100, 100}, testConfiguration.testLongArray());
 		Assert.assertNull(testConfiguration.testNullResult());
 		Assert.assertEquals(
 			requiredString, testConfiguration.testReqiredString());
 		Assert.assertEquals(1, testConfiguration.testShort());
 		Assert.assertEquals("test_string", testConfiguration.testString());
-		Assert.assertEquals(
-			"a=b\\,c= d", testConfiguration.testStringBackslashEscape());
 		Assert.assertArrayEquals(
 			new String[] {"test_string_1", "test_string_2"},
 			testConfiguration.testStringArray());
 		Assert.assertArrayEquals(
-			new String[] {"a,b", "b,c", " c\\", "d"},
-			testConfiguration.testStringArrayBackslashEscape());
+			new String[] {"a=b", "c=d,e=f"},
+			testConfiguration.testStringEscapeMultiValuedAttribute());
+		Assert.assertEquals(
+			"a=b,c=d\\,e=f",
+			testConfiguration.testStringEscapeSingleValuedAttribute());
 
 		TestClass testClass = testConfiguration.testClass();
 
@@ -239,13 +273,13 @@ public class ConfigurableUtilTest {
 	}
 
 	private void _testBigString(int length) {
-		StringBuilder stringBuilder = new StringBuilder(length);
+		StringBundler sb = new StringBundler(length);
 
 		for (int i = 0; i < length; i++) {
-			stringBuilder.append(CharPool.LOWER_CASE_A);
+			sb.append(CharPool.LOWER_CASE_A);
 		}
 
-		String bigString = stringBuilder.toString();
+		String bigString = sb.toString();
 
 		_assertTestConfiguration(
 			ConfigurableUtil.createConfigurable(
@@ -280,9 +314,6 @@ public class ConfigurableUtilTest {
 		@Meta.AD(deflt = "100", required = false)
 		public long testLong();
 
-		@Meta.AD(deflt = "100, 100", required = false)
-		public long[] testLongArray();
-
 		@Meta.AD(required = false)
 		public String testNullResult();
 
@@ -298,11 +329,11 @@ public class ConfigurableUtilTest {
 		@Meta.AD(deflt = "test_string_1|test_string_2", required = false)
 		public String[] testStringArray();
 
-		@Meta.AD(deflt = "a\\,b,b\\,c,\\ c\\\\,d", required = false)
-		public String[] testStringArrayBackslashEscape();
+		@Meta.AD(deflt = "a=b,c=d\\,e=f", required = false)
+		public String[] testStringEscapeMultiValuedAttribute();
 
-		@Meta.AD(deflt = "a\\=b\\\\\\,c\\=\\ d", required = false)
-		public String testStringBackslashEscape();
+		@Meta.AD(deflt = "a=b,c=d\\,e=f", required = false)
+		public String testStringEscapeSingleValuedAttribute();
 
 	}
 

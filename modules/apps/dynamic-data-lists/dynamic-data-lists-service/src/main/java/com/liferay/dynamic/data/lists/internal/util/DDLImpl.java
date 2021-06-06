@@ -40,6 +40,8 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -135,10 +137,12 @@ public class DDLImpl implements DDL {
 
 				fieldValuesStream.forEach(
 					fieldValue -> {
-						JSONArray jsonArrayValue = getJSONArrayValue(
+						JSONArray valueJSONArray = getJSONArrayValue(
 							fieldValue);
 
-						fieldJSONArray.put(jsonArrayValue.get(0));
+						for (Object object : valueJSONArray) {
+							fieldJSONArray.put(object);
+						}
 					});
 
 				jsonObject.put(fieldName, fieldJSONArray);
@@ -308,6 +312,10 @@ public class DDLImpl implements DDL {
 			return getFileEntryTitle(uuid, groupId);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}
@@ -334,6 +342,10 @@ public class DDLImpl implements DDL {
 			return fileEntry.getTitle();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return LanguageUtil.format(
 				LocaleUtil.getSiteDefault(), "is-temporarily-unavailable",
 				"content");
@@ -345,6 +357,10 @@ public class DDLImpl implements DDL {
 			return JSONFactoryUtil.createJSONArray(String.valueOf(fieldValue));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return JSONFactoryUtil.createJSONArray();
 		}
 	}
@@ -357,6 +373,10 @@ public class DDLImpl implements DDL {
 				groupId, privateLayout, layoutId, languageId);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return LanguageUtil.format(
 				LocaleUtil.getSiteDefault(), "is-temporarily-unavailable",
 				"content");
@@ -378,6 +398,10 @@ public class DDLImpl implements DDL {
 				LanguageUtil.getLanguageId(locale));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}
@@ -440,6 +464,8 @@ public class DDLImpl implements DDL {
 	protected void setStorageEngine(StorageEngine storageEngine) {
 		_storageEngine = storageEngine;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(DDLImpl.class);
 
 	private DDLRecordLocalService _ddlRecordLocalService;
 	private DDLRecordService _ddlRecordService;

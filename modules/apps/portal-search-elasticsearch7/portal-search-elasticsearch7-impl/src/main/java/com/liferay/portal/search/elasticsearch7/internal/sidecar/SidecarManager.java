@@ -22,7 +22,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationObserver;
-import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationObserverComparator;
 import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationWrapper;
 import com.liferay.portal.search.elasticsearch7.internal.configuration.OperationModeResolver;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionBuilder;
@@ -57,7 +56,7 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	public int compareTo(
 		ElasticsearchConfigurationObserver elasticsearchConfigurationObserver) {
 
-		return elasticsearchConfigurationObserverComparator.compare(
+		return elasticsearchConfigurationWrapper.compare(
 			this, elasticsearchConfigurationObserver);
 	}
 
@@ -96,17 +95,18 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 				ConnectionConstants.SIDECAR_CONNECTION_ID);
 		}
 		else {
-			if (_log.isWarnEnabled()) {
-				StringBundler sb = new StringBundler(8);
+			_startupSuccessful = false;
 
-				sb.append("Liferay is configured to use Elasticsearch engine ");
-				sb.append("running in a child process of current process ");
-				sb.append("named as sidecar. Do NOT use sidecar in ");
-				sb.append("production. Sidecar is useful for development and ");
-				sb.append("demonstration purposes. Refer to the ");
+			if (_log.isWarnEnabled()) {
+				StringBundler sb = new StringBundler(7);
+
+				sb.append("Liferay automatically starts a child process of ");
+				sb.append("Elasticsearch named sidecar for convenient ");
+				sb.append("development and demonstration purposes. Do NOT ");
+				sb.append("use sidecar in production. Refer to the ");
 				sb.append("documentation for details on the limitations of ");
-				sb.append("sidecar. Remote Elasticsearch connections can be ");
-				sb.append("configured in the Control Panel.");
+				sb.append("sidecar and instructions on configuring a remote ");
+				sb.append("Elasticsearch connection in the Control Panel.");
 
 				_log.warn(sb.toString());
 			}
@@ -118,7 +118,8 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 			_sidecar = new Sidecar(
 				clusterExecutor, elasticsearchConfigurationWrapper,
 				getElasticsearchInstancePaths(), processExecutor,
-				new ProcessExecutorPathsImpl(props), _settingsContributors);
+				new ProcessExecutorPathsImpl(props), _settingsContributors,
+				this);
 
 			ElasticsearchConnectionBuilder elasticsearchConnectionBuilder =
 				new ElasticsearchConnectionBuilder();
@@ -140,6 +141,8 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 
 			elasticsearchConnectionManager.addElasticsearchConnection(
 				elasticsearchConnectionBuilder.build());
+
+			_startupSuccessful = true;
 		}
 	}
 
@@ -163,6 +166,10 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 		).workPath(
 			workPath
 		).build();
+	}
+
+	protected boolean isStartupSuccessful() {
+		return _startupSuccessful;
 	}
 
 	protected void removeSettingsContributor(
@@ -191,10 +198,6 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	protected ClusterExecutor clusterExecutor;
 
 	@Reference
-	protected ElasticsearchConfigurationObserverComparator
-		elasticsearchConfigurationObserverComparator;
-
-	@Reference
 	protected volatile ElasticsearchConfigurationWrapper
 		elasticsearchConfigurationWrapper;
 
@@ -215,5 +218,6 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	private final Set<SettingsContributor> _settingsContributors =
 		new ConcurrentSkipListSet<>();
 	private Sidecar _sidecar;
+	private boolean _startupSuccessful;
 
 }

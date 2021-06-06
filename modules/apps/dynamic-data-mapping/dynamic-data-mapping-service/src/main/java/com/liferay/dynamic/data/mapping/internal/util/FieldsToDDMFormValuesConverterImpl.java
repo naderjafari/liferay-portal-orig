@@ -26,13 +26,13 @@ import com.liferay.dynamic.data.mapping.storage.Field;
 import com.liferay.dynamic.data.mapping.storage.Fields;
 import com.liferay.dynamic.data.mapping.util.DDMFieldsCounter;
 import com.liferay.dynamic.data.mapping.util.FieldsToDDMFormValuesConverter;
+import com.liferay.dynamic.data.mapping.util.NumericDDMFormFieldUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Serializable;
 
-import java.text.NumberFormat;
+import java.text.DecimalFormat;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -73,6 +73,13 @@ public class FieldsToDDMFormValuesConverterImpl
 			for (int i = 0; i < repetitions; i++) {
 				DDMFormFieldValue ddmFormFieldValue = createDDMFormFieldValue(
 					fieldName);
+
+				DDMFormField ddmFormField = ddmFormFieldsMap.get(fieldName);
+
+				if (ddmFormField != null) {
+					ddmFormFieldValue.setFieldReference(
+						ddmFormField.getFieldReference());
+				}
 
 				setDDMFormFieldValueProperties(
 					ddmFormFieldValue, ddmFormFieldsMap, fields,
@@ -214,15 +221,17 @@ public class FieldsToDDMFormValuesConverterImpl
 		else if ((fieldValue instanceof Number) &&
 				 !(fieldValue instanceof Integer)) {
 
-			NumberFormat numberFormat = NumberFormat.getInstance(locale);
+			DecimalFormat decimalFormat =
+				NumericDDMFormFieldUtil.getDecimalFormat(locale);
 
 			Number number = (Number)fieldValue;
 
 			if (number instanceof Double || number instanceof Float) {
-				numberFormat.setMinimumFractionDigits(1);
+				decimalFormat.setMaximumFractionDigits(Integer.MAX_VALUE);
+				decimalFormat.setMinimumFractionDigits(1);
 			}
 
-			return numberFormat.format(number.doubleValue());
+			return decimalFormat.format(number.doubleValue());
 		}
 
 		return String.valueOf(fieldValue);
@@ -304,16 +313,16 @@ public class FieldsToDDMFormValuesConverterImpl
 
 		DDMFormField ddmFormField = ddmFormFieldMap.get(fieldName);
 
-		if (Validator.isNotNull(ddmFormField.getDataType())) {
+		Field field = ddmFields.get(fieldName);
+
+		if (!ddmFormField.isTransient() && (field != null)) {
 			if (ddmFormField.isLocalizable()) {
 				setDDMFormFieldValueLocalizedValue(
-					ddmFormFieldValue, ddmFields.get(fieldName),
-					ddmFieldsCounter.get(fieldName));
+					ddmFormFieldValue, field, ddmFieldsCounter.get(fieldName));
 			}
 			else {
 				setDDMFormFieldValueUnlocalizedValue(
-					ddmFormFieldValue, ddmFields.get(fieldName),
-					ddmFieldsCounter.get(fieldName));
+					ddmFormFieldValue, field, ddmFieldsCounter.get(fieldName));
 			}
 		}
 
@@ -343,6 +352,14 @@ public class FieldsToDDMFormValuesConverterImpl
 			for (int i = 0; i < repetitions; i++) {
 				DDMFormFieldValue nestedDDMFormFieldValue =
 					createDDMFormFieldValue(nestedFieldName);
+
+				DDMFormField nestedDDMFormField = ddmFormFieldsMap.get(
+					nestedFieldName);
+
+				if (nestedDDMFormField != null) {
+					nestedDDMFormFieldValue.setFieldReference(
+						nestedDDMFormField.getFieldReference());
+				}
 
 				setDDMFormFieldValueProperties(
 					nestedDDMFormFieldValue, ddmFormFieldsMap, ddmFields,

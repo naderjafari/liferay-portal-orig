@@ -65,7 +65,6 @@ public class AssetSearcherClassNameIdsTest {
 	@Before
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
-		_users = new ArrayList<>();
 
 		_journalArticleFixture.setGroup(_group);
 
@@ -75,9 +74,7 @@ public class AssetSearcherClassNameIdsTest {
 
 	@Test
 	public void testAll() throws Exception {
-		User user = addUser();
-
-		UserTestUtil.setUser(user);
+		UserTestUtil.setUser(addUser());
 
 		addBlogsEntry();
 		addBookmarksEntry();
@@ -90,9 +87,7 @@ public class AssetSearcherClassNameIdsTest {
 
 	@Test
 	public void testMultiple() throws Exception {
-		User user = addUser();
-
-		UserTestUtil.setUser(user);
+		UserTestUtil.setUser(addUser());
 
 		addBlogsEntry();
 		addBookmarksEntry();
@@ -109,9 +104,7 @@ public class AssetSearcherClassNameIdsTest {
 
 	@Test
 	public void testSingle() throws Exception {
-		User user = addUser();
-
-		UserTestUtil.setUser(user);
+		UserTestUtil.setUser(addUser());
 
 		addBlogsEntry();
 		addBookmarksEntry();
@@ -210,6 +203,6 @@ public class AssetSearcherClassNameIdsTest {
 
 	private final JournalArticleFixture _journalArticleFixture =
 		new JournalArticleFixture();
-	private List<User> _users;
+	private final List<User> _users = new ArrayList<>();
 
 }

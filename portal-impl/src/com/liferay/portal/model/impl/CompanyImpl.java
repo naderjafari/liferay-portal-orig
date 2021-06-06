@@ -23,6 +23,8 @@ import com.liferay.portal.kernel.cache.thread.local.Lifecycle;
 import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCache;
 import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCacheManager;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Account;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.CompanyConstants;
@@ -300,6 +302,9 @@ public class CompanyImpl extends CompanyBaseImpl {
 				getCompanyId(), 0);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		if (virtualHost == null) {
@@ -391,6 +396,13 @@ public class CompanyImpl extends CompanyBaseImpl {
 		return companySecurityBag._strangersWithMx;
 	}
 
+	@Override
+	public boolean isUpdatePasswordRequired() {
+		CompanySecurityBag companySecurityBag = getCompanySecurityBag();
+
+		return companySecurityBag._updatePasswordRequired;
+	}
+
 	public void setCompanySecurityBag(Object companySecurityBag) {
 		_companySecurityBag = (CompanySecurityBag)companySecurityBag;
 	}
@@ -440,6 +452,10 @@ public class CompanyImpl extends CompanyBaseImpl {
 				preferences, company,
 				PropsKeys.COMPANY_SECURITY_STRANGERS_WITH_MX,
 				PropsValues.COMPANY_SECURITY_STRANGERS_WITH_MX);
+			_updatePasswordRequired = _getPrefsPropsBoolean(
+				preferences, company,
+				PropsKeys.COMPANY_SECURITY_UPDATE_PASSWORD_REQUIRED,
+				PropsValues.COMPANY_SECURITY_UPDATE_PASSWORD_REQUIRED);
 		}
 
 		private final String _authType;
@@ -448,6 +464,7 @@ public class CompanyImpl extends CompanyBaseImpl {
 		private final boolean _strangers;
 		private final boolean _strangersVerify;
 		private final boolean _strangersWithMx;
+		private final boolean _updatePasswordRequired;
 
 	}
 
@@ -478,6 +495,8 @@ public class CompanyImpl extends CompanyBaseImpl {
 
 		return defaultValue;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(CompanyImpl.class);
 
 	private Account _account;
 	private CompanyInfo _companyInfo;

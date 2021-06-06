@@ -19,7 +19,10 @@
 <%
 String[] installedPatches = PatcherUtil.getInstalledPatches();
 
-long uptimeDiff = System.currentTimeMillis() - PortalUtil.getUptime().getTime();
+Date modifiedDate = PortalUtil.getUptime();
+
+long uptimeDiff = System.currentTimeMillis() - modifiedDate.getTime();
+
 long days = uptimeDiff / Time.DAY;
 long hours = (uptimeDiff / Time.HOUR) % 24;
 long minutes = (uptimeDiff / Time.MINUTE) % 60;
@@ -28,6 +31,7 @@ long seconds = (uptimeDiff / Time.SECOND) % 60;
 Runtime runtime = Runtime.getRuntime();
 
 long totalMemory = runtime.totalMemory();
+
 long usedMemory = totalMemory - runtime.freeMemory();
 %>
 
@@ -36,7 +40,7 @@ long usedMemory = totalMemory - runtime.freeMemory();
 	id="adminServerAdministrationActionsPanelContainer"
 	persistState="<%= true %>"
 >
-	<div class="panel panel-default server-admin-tabs" id="adminServerInformationPanel">
+	<div class="panel panel-secondary server-admin-tabs" id="adminServerInformationPanel">
 		<div class="panel-body">
 			<div class="alert alert-info">
 				<strong><liferay-ui:message key="info" /></strong>: <%= ReleaseInfo.getReleaseInfo() %>
@@ -117,7 +121,7 @@ long usedMemory = totalMemory - runtime.freeMemory();
 
 	<liferay-ui:panel
 		collapsible="<%= true %>"
-		cssClass="server-admin-actions-panel"
+		cssClass="panel-secondary server-admin-actions-panel"
 		extended="<%= true %>"
 		id="adminServerAdministrationSystemActionsPanel"
 		markupView="lexicon"
@@ -148,7 +152,7 @@ long usedMemory = totalMemory - runtime.freeMemory();
 
 	<liferay-ui:panel
 		collapsible="<%= true %>"
-		cssClass="server-admin-actions-panel"
+		cssClass="panel-secondary server-admin-actions-panel"
 		extended="<%= true %>"
 		id="adminServerAdministrationCacheActionsPanel"
 		markupView="lexicon"
@@ -197,7 +201,7 @@ long usedMemory = totalMemory - runtime.freeMemory();
 
 	<liferay-ui:panel
 		collapsible="<%= true %>"
-		cssClass="server-admin-actions-panel"
+		cssClass="panel-secondary server-admin-actions-panel"
 		extended="<%= true %>"
 		id="adminServerAdministrationVerificationActionsPanel"
 		markupView="lexicon"
@@ -228,7 +232,7 @@ long usedMemory = totalMemory - runtime.freeMemory();
 
 	<liferay-ui:panel
 		collapsible="<%= true %>"
-		cssClass="server-admin-actions-panel"
+		cssClass="panel-secondary server-admin-actions-panel"
 		extended="<%= true %>"
 		id="adminServerAdministrationCleanUpActionsPanel"
 		markupView="lexicon"

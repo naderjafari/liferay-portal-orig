@@ -15,26 +15,45 @@
 package com.liferay.layout.responsive;
 
 import com.liferay.layout.util.structure.ColumnLayoutStructureItem;
+import com.liferay.layout.util.structure.CommonStylesUtil;
+import com.liferay.layout.util.structure.ContainerStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.RowLayoutStructureItem;
+import com.liferay.layout.util.structure.RowStyledLayoutStructureItem;
+import com.liferay.layout.util.structure.StyledLayoutStructureItem;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @author Pavel Savinov
  */
 public class ResponsiveLayoutStructureUtil {
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #getColumnCssClass(ColumnLayoutStructureItem, RowStyledLayoutStructureItem)}
+	 */
+	@Deprecated
 	public static String getColumnCssClass(
-		RowLayoutStructureItem rowLayoutStructureItem,
 		ColumnLayoutStructureItem columnLayoutStructureItem) {
+
+		return getColumnCssClass(columnLayoutStructureItem, null);
+	}
+
+	public static String getColumnCssClass(
+		ColumnLayoutStructureItem columnLayoutStructureItem,
+		RowStyledLayoutStructureItem rowStyledLayoutStructureItem) {
 
 		StringBundler sb = new StringBundler();
 
@@ -58,6 +77,106 @@ public class ResponsiveLayoutStructureUtil {
 			sb.append("col");
 			sb.append(viewportSize.getCssClassPrefix());
 			sb.append(columnSize);
+		}
+
+		if ((rowStyledLayoutStructureItem != null) &&
+			Objects.equals(
+				rowStyledLayoutStructureItem.getVerticalAlignment(),
+				"middle")) {
+
+			sb.append("d-flex flex-column ");
+		}
+
+		return sb.toString();
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnCssClass(ColumnLayoutStructureItem, RowStyledLayoutStructureItem)}
+	 */
+	@Deprecated
+	public static String getColumnCssClass(
+		RowLayoutStructureItem rowLayoutStructureItem,
+		ColumnLayoutStructureItem columnLayoutStructureItem) {
+
+		return getColumnCssClass(columnLayoutStructureItem, null);
+	}
+
+	public static String getResponsiveCssClassValues(
+			StyledLayoutStructureItem styledLayoutStructureItem)
+		throws Exception {
+
+		StringBundler sb = new StringBundler();
+
+		JSONObject itemConfigJSONObject =
+			styledLayoutStructureItem.getItemConfigJSONObject();
+
+		for (ViewportSize viewportSize : ViewportSize.values()) {
+			if (Objects.equals(viewportSize, ViewportSize.DESKTOP)) {
+				continue;
+			}
+
+			JSONObject viewportItemConfigJSONObject =
+				_getViewportItemConfigJSONObject(
+					itemConfigJSONObject, viewportSize);
+
+			if (viewportItemConfigJSONObject == null) {
+				continue;
+			}
+
+			JSONObject viewportStylesJSONObject =
+				viewportItemConfigJSONObject.getJSONObject("styles");
+
+			if (viewportStylesJSONObject == null) {
+				continue;
+			}
+
+			Set<String> keys = viewportStylesJSONObject.keySet();
+
+			for (String key : keys) {
+				if (!CommonStylesUtil.isResponsive(key)) {
+					continue;
+				}
+
+				String value = viewportStylesJSONObject.getString(key);
+
+				if (Validator.isNull(value)) {
+					continue;
+				}
+
+				if (styledLayoutStructureItem instanceof
+						ContainerStyledLayoutStructureItem) {
+
+					ContainerStyledLayoutStructureItem
+						containerStyledLayoutStructureItem =
+							(ContainerStyledLayoutStructureItem)
+								styledLayoutStructureItem;
+
+					if (Objects.equals(
+							containerStyledLayoutStructureItem.getWidthType(),
+							"fixed") &&
+						(Objects.equals(key, "marginLeft") ||
+						 Objects.equals(key, "marginRight"))) {
+
+						continue;
+					}
+				}
+
+				String cssClass = StringUtil.replace(
+					CommonStylesUtil.getResponsiveTemplate(key),
+					StringPool.OPEN_CURLY_BRACE, StringPool.CLOSE_CURLY_BRACE,
+					HashMapBuilder.put(
+						"value", value
+					).put(
+						"viewport", viewportSize.getCssClassPrefix()
+					).build());
+
+				if (sb.length() > 0) {
+					sb.append(StringPool.SPACE);
+				}
+
+				sb.append(cssClass);
+			}
 		}
 
 		return sb.toString();
@@ -100,18 +219,30 @@ public class ResponsiveLayoutStructureUtil {
 		return defaultValue;
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getRowCssClass(RowStyledLayoutStructureItem)}
+	 */
+	@Deprecated
 	public static String getRowCssClass(
 		RowLayoutStructureItem rowLayoutStructureItem) {
+
+		return getRowCssClass(
+			(RowStyledLayoutStructureItem)rowLayoutStructureItem);
+	}
+
+	public static String getRowCssClass(
+		RowStyledLayoutStructureItem rowStyledLayoutStructureItem) {
 
 		StringBundler sb = new StringBundler();
 
 		sb.append("align-items-lg-");
 		sb.append(
 			_getVerticalAlignmentCssClass(
-				rowLayoutStructureItem.getVerticalAlignment()));
+				rowStyledLayoutStructureItem.getVerticalAlignment()));
 
 		Map<String, JSONObject> rowViewportConfigurations =
-			rowLayoutStructureItem.getViewportConfigurations();
+			rowStyledLayoutStructureItem.getViewportConfigurations();
 
 		for (ViewportSize viewportSize : ViewportSize.values()) {
 			if (Objects.equals(viewportSize, ViewportSize.DESKTOP)) {
@@ -122,7 +253,7 @@ public class ResponsiveLayoutStructureUtil {
 				getResponsivePropertyValue(
 					viewportSize, rowViewportConfigurations,
 					"verticalAlignment",
-					rowLayoutStructureItem.getVerticalAlignment()));
+					rowStyledLayoutStructureItem.getVerticalAlignment()));
 
 			sb.append(StringPool.SPACE);
 			sb.append("align-items");
@@ -132,13 +263,13 @@ public class ResponsiveLayoutStructureUtil {
 
 		sb.append(StringPool.SPACE);
 
-		if (rowLayoutStructureItem.isReverseOrder() &&
-			(rowLayoutStructureItem.getModulesPerRow() > 1)) {
+		if (rowStyledLayoutStructureItem.isReverseOrder() &&
+			(rowStyledLayoutStructureItem.getModulesPerRow() > 1)) {
 
 			sb.append("flex-lg-row-reverse");
 		}
-		else if (rowLayoutStructureItem.isReverseOrder() &&
-				 (rowLayoutStructureItem.getModulesPerRow() == 1)) {
+		else if (rowStyledLayoutStructureItem.isReverseOrder() &&
+				 (rowStyledLayoutStructureItem.getModulesPerRow() == 1)) {
 
 			sb.append("flex-lg-column-reverse");
 		}
@@ -154,12 +285,12 @@ public class ResponsiveLayoutStructureUtil {
 			boolean reverseOrder = GetterUtil.getBoolean(
 				getResponsivePropertyValue(
 					viewportSize, rowViewportConfigurations, "reverseOrder",
-					rowLayoutStructureItem.isReverseOrder()));
+					rowStyledLayoutStructureItem.isReverseOrder()));
 
 			int modulesPerRow = GetterUtil.getInteger(
 				getResponsivePropertyValue(
 					viewportSize, rowViewportConfigurations, "modulesPerRow",
-					rowLayoutStructureItem.getModulesPerRow()));
+					rowStyledLayoutStructureItem.getModulesPerRow()));
 
 			sb.append(StringPool.SPACE);
 
@@ -181,7 +312,7 @@ public class ResponsiveLayoutStructureUtil {
 			}
 		}
 
-		if (!rowLayoutStructureItem.isGutters()) {
+		if (!rowStyledLayoutStructureItem.isGutters()) {
 			sb.append(StringPool.SPACE);
 			sb.append("no-gutters");
 		}
@@ -200,6 +331,53 @@ public class ResponsiveLayoutStructureUtil {
 		}
 
 		return "start";
+	}
+
+	private static JSONObject _getViewportItemConfigJSONObject(
+		JSONObject itemConfigJSONObject, ViewportSize currentViewportSize) {
+
+		if (itemConfigJSONObject.has(currentViewportSize.getViewportSizeId())) {
+			JSONObject viewportItemConfigJSONObject =
+				itemConfigJSONObject.getJSONObject(
+					currentViewportSize.getViewportSizeId());
+
+			JSONObject stylesJSONObject =
+				viewportItemConfigJSONObject.getJSONObject("styles");
+
+			if ((stylesJSONObject != null) && (stylesJSONObject.length() > 0)) {
+				return viewportItemConfigJSONObject;
+			}
+		}
+
+		ViewportSize[] viewportSizes = ViewportSize.values();
+
+		Comparator<ViewportSize> comparator = Comparator.comparingInt(
+			ViewportSize::getOrder);
+
+		Arrays.sort(viewportSizes, comparator.reversed());
+
+		for (ViewportSize viewportSize : viewportSizes) {
+			if (viewportSize.getOrder() >= currentViewportSize.getOrder()) {
+				continue;
+			}
+
+			if (itemConfigJSONObject.has(viewportSize.getViewportSizeId())) {
+				JSONObject viewportItemConfigJSONObject =
+					itemConfigJSONObject.getJSONObject(
+						viewportSize.getViewportSizeId());
+
+				JSONObject stylesJSONObject =
+					viewportItemConfigJSONObject.getJSONObject("styles");
+
+				if ((stylesJSONObject != null) &&
+					(stylesJSONObject.length() > 0)) {
+
+					return viewportItemConfigJSONObject;
+				}
+			}
+		}
+
+		return itemConfigJSONObject;
 	}
 
 }

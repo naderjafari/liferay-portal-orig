@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("WorkflowTaskAssignableUser")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WorkflowTaskAssignableUser")
-public class WorkflowTaskAssignableUser {
+public class WorkflowTaskAssignableUser implements Serializable {
 
 	public static WorkflowTaskAssignableUser toDTO(String json) {
 		return ObjectMapperUtil.readValue(
@@ -174,6 +176,7 @@ public class WorkflowTaskAssignableUser {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.WorkflowTaskAssignableUser",
 		name = "x-class-name"
 	)
@@ -209,7 +212,7 @@ public class WorkflowTaskAssignableUser {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -248,7 +251,7 @@ public class WorkflowTaskAssignableUser {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

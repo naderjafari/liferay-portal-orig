@@ -84,16 +84,6 @@ exports[`SegmentEdit renders 1`] = `
               />
             </div>
           </div>
-          <div
-            class="align-self-center"
-          >
-            <img
-              class="lfr-portal-tooltip source-icon"
-              data-testid="source-icon"
-              src="/dxp-icon.svg"
-              title="source.dxp"
-            />
-          </div>
         </div>
       </div>
     </div>
@@ -187,16 +177,6 @@ exports[`SegmentEdit renders with edit buttons if the user has update permission
                 value="Segment title"
               />
             </div>
-          </div>
-          <div
-            class="align-self-center"
-          >
-            <img
-              class="lfr-portal-tooltip source-icon"
-              data-testid="source-icon"
-              src="/dxp-icon.svg"
-              title="source.dxp"
-            />
           </div>
         </div>
         <div
@@ -371,16 +351,6 @@ exports[`SegmentEdit renders with given values 1`] = `
               />
             </div>
           </div>
-          <div
-            class="align-self-center"
-          >
-            <img
-              class="lfr-portal-tooltip source-icon"
-              data-testid="source-icon"
-              src="/dxp-icon.svg"
-              title="source.dxp"
-            />
-          </div>
         </div>
         <div
           class="form-header-section-right"
@@ -522,34 +492,28 @@ exports[`SegmentEdit renders with given values 1`] = `
               class="sidebar-collapse"
             >
               <ul
-                class="list-unstyled sidebar-collapse-groups"
+                class="sidebar-collapse-groups"
               >
                 <li
-                  class="sidebar-collapse-first-test-values-group"
+                  class="sidebar-collapse-item sidebar-collapse-first-test-values-group active"
                 >
-                  <div
-                    class="sidebar-collapse-header-root"
+                  <a
+                    class="sidebar-collapse-header"
                   >
-                    <a
-                      class="d-flex justify-content-between sidebar-collapse-header"
-                    >
-                      First Test Values Group
-                      <span
-                        class="collapse-icon"
+                    First Test Values Group
+                    <span>
+                      <svg
+                        class="lexicon-icon lexicon-icon-angle-right active"
+                        role="presentation"
                       >
-                        <svg
-                          class="lexicon-icon lexicon-icon-angle-right active"
-                          role="presentation"
-                        >
-                          <use
-                            xlink:href="#angle-right"
-                          />
-                        </svg>
-                      </span>
-                    </a>
-                  </div>
+                        <use
+                          xlink:href="#angle-right"
+                        />
+                      </svg>
+                    </span>
+                  </a>
                   <ul
-                    class="properties-list active"
+                    class="properties-list"
                   >
                     <li
                       class="criteria-sidebar-item-root color--first-test-values-group"
@@ -868,16 +832,6 @@ exports[`SegmentEdit renders without edit buttons if the user does not have upda
                 value="Segment title"
               />
             </div>
-          </div>
-          <div
-            class="align-self-center"
-          >
-            <img
-              class="lfr-portal-tooltip source-icon"
-              data-testid="source-icon"
-              src="/dxp-icon.svg"
-              title="source.dxp"
-            />
           </div>
         </div>
       </div>

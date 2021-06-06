@@ -50,8 +50,10 @@ public class AccountGroupWrapper
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
-		attributes.put("name", getName());
+		attributes.put("defaultAccountGroup", isDefaultAccountGroup());
 		attributes.put("description", getDescription());
+		attributes.put("name", getName());
+		attributes.put("type", getType());
 
 		return attributes;
 	}
@@ -107,16 +109,29 @@ public class AccountGroupWrapper
 			setModifiedDate(modifiedDate);
 		}
 
-		String name = (String)attributes.get("name");
+		Boolean defaultAccountGroup = (Boolean)attributes.get(
+			"defaultAccountGroup");
 
-		if (name != null) {
-			setName(name);
+		if (defaultAccountGroup != null) {
+			setDefaultAccountGroup(defaultAccountGroup);
 		}
 
 		String description = (String)attributes.get("description");
 
 		if (description != null) {
 			setDescription(description);
+		}
+
+		String name = (String)attributes.get("name");
+
+		if (name != null) {
+			setName(name);
+		}
+
+		String type = (String)attributes.get("type");
+
+		if (type != null) {
+			setType(type);
 		}
 	}
 
@@ -148,6 +163,16 @@ public class AccountGroupWrapper
 	@Override
 	public Date getCreateDate() {
 		return model.getCreateDate();
+	}
+
+	/**
+	 * Returns the default account group of this account group.
+	 *
+	 * @return the default account group of this account group
+	 */
+	@Override
+	public boolean getDefaultAccountGroup() {
+		return model.getDefaultAccountGroup();
 	}
 
 	/**
@@ -211,6 +236,16 @@ public class AccountGroupWrapper
 	}
 
 	/**
+	 * Returns the type of this account group.
+	 *
+	 * @return the type of this account group
+	 */
+	@Override
+	public String getType() {
+		return model.getType();
+	}
+
+	/**
 	 * Returns the user ID of this account group.
 	 *
 	 * @return the user ID of this account group
@@ -238,6 +273,16 @@ public class AccountGroupWrapper
 	@Override
 	public String getUserUuid() {
 		return model.getUserUuid();
+	}
+
+	/**
+	 * Returns <code>true</code> if this account group is default account group.
+	 *
+	 * @return <code>true</code> if this account group is default account group; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isDefaultAccountGroup() {
+		return model.isDefaultAccountGroup();
 	}
 
 	@Override
@@ -273,6 +318,16 @@ public class AccountGroupWrapper
 	@Override
 	public void setCreateDate(Date createDate) {
 		model.setCreateDate(createDate);
+	}
+
+	/**
+	 * Sets whether this account group is default account group.
+	 *
+	 * @param defaultAccountGroup the default account group of this account group
+	 */
+	@Override
+	public void setDefaultAccountGroup(boolean defaultAccountGroup) {
+		model.setDefaultAccountGroup(defaultAccountGroup);
 	}
 
 	/**
@@ -333,6 +388,16 @@ public class AccountGroupWrapper
 	@Override
 	public void setPrimaryKey(long primaryKey) {
 		model.setPrimaryKey(primaryKey);
+	}
+
+	/**
+	 * Sets the type of this account group.
+	 *
+	 * @param type the type of this account group
+	 */
+	@Override
+	public void setType(String type) {
+		model.setType(type);
 	}
 
 	/**

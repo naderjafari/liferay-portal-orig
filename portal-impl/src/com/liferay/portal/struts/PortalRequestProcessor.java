@@ -113,7 +113,6 @@ public class PortalRequestProcessor {
 
 		_publicPaths.add(_PATH_C);
 		_publicPaths.add(_PATH_PORTAL_API_JSONWS);
-		_publicPaths.add(_PATH_PORTAL_FLASH);
 		_publicPaths.add(_PATH_PORTAL_J_LOGIN);
 		_publicPaths.add(_PATH_PORTAL_LAYOUT);
 		_publicPaths.add(_PATH_PORTAL_LICENSE);
@@ -222,22 +221,18 @@ public class PortalRequestProcessor {
 		}
 
 		if ((portlet == null) || !portlet.isActive()) {
-			return layoutFriendlyURL.concat(
-				StringPool.QUESTION
-			).concat(
-				httpServletRequest.getQueryString()
-			);
+			return StringBundler.concat(
+				layoutFriendlyURL, StringPool.QUESTION,
+				httpServletRequest.getQueryString());
 		}
 
 		FriendlyURLMapper friendlyURLMapper =
 			portlet.getFriendlyURLMapperInstance();
 
 		if (friendlyURLMapper == null) {
-			return layoutFriendlyURL.concat(
-				StringPool.QUESTION
-			).concat(
-				httpServletRequest.getQueryString()
-			);
+			return StringBundler.concat(
+				layoutFriendlyURL, StringPool.QUESTION,
+				httpServletRequest.getQueryString());
 		}
 
 		String namespace = PortalUtil.getPortletNamespace(portletId);
@@ -264,11 +259,9 @@ public class PortalRequestProcessor {
 			return layoutFriendlyURL.concat(portletFriendlyURL);
 		}
 
-		return layoutFriendlyURL.concat(
-			StringPool.QUESTION
-		).concat(
-			httpServletRequest.getQueryString()
-		);
+		return StringBundler.concat(
+			layoutFriendlyURL, StringPool.QUESTION,
+			httpServletRequest.getQueryString());
 	}
 
 	private String _getLastPath(HttpServletRequest httpServletRequest) {
@@ -499,11 +492,8 @@ public class PortalRequestProcessor {
 				fullPathWithoutQueryString = path;
 
 				if (Validator.isNotNull(queryString)) {
-					fullPath = path.concat(
-						StringPool.QUESTION
-					).concat(
-						queryString
-					);
+					fullPath = StringBundler.concat(
+						path, StringPool.QUESTION, queryString);
 				}
 				else {
 					fullPath = path;
@@ -529,14 +519,15 @@ public class PortalRequestProcessor {
 			}
 		}
 
-		String remoteUser = httpServletRequest.getRemoteUser();
-
 		User user = null;
 
 		try {
 			user = PortalUtil.getUser(httpServletRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		// Last path
@@ -588,6 +579,8 @@ public class PortalRequestProcessor {
 			return _PATH_PORTAL_LAYOUT;
 		}
 
+		String remoteUser = httpServletRequest.getRemoteUser();
+
 		if ((remoteUser != null) || (user != null)) {
 
 			// Authenticated users can always log out
@@ -623,9 +616,6 @@ public class PortalRequestProcessor {
 			return _PATH_PORTAL_LOGOUT;
 		}
 
-		long companyId = PortalUtil.getCompanyId(httpServletRequest);
-		String portletId = ParamUtil.getString(httpServletRequest, "p_p_id");
-
 		// Authenticated users must be active
 
 		if (user != null) {
@@ -635,12 +625,15 @@ public class PortalRequestProcessor {
 				return _PATH_PORTAL_ERROR;
 			}
 
+			String portletId = ParamUtil.getString(
+				httpServletRequest, "p_p_id");
+
 			if (!path.equals(_PATH_PORTAL_JSON_SERVICE) &&
 				!path.equals(_PATH_PORTAL_RENDER_PORTLET) &&
 				!themeDisplay.isImpersonated() &&
 				!InterruptedPortletRequestWhitelistUtil.
 					isPortletInvocationWhitelisted(
-						companyId, portletId,
+						PortalUtil.getCompanyId(httpServletRequest), portletId,
 						PortalUtil.getStrutsAction(httpServletRequest))) {
 
 				// Authenticated users should agree to Terms of Use
@@ -735,6 +728,9 @@ public class PortalRequestProcessor {
 			user = PortalUtil.getUser(httpServletRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		if ((user != null) && _isPortletPath(path)) {
@@ -798,6 +794,10 @@ public class PortalRequestProcessor {
 				}
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
+
 				SessionErrors.add(
 					httpServletRequest, PrincipalException.class.getName());
 
@@ -838,8 +838,6 @@ public class PortalRequestProcessor {
 
 	private static final String _PATH_PORTAL_EXTEND_SESSION =
 		"/portal/extend_session";
-
-	private static final String _PATH_PORTAL_FLASH = "/portal/flash";
 
 	private static final String _PATH_PORTAL_J_LOGIN = "/portal/j_login";
 

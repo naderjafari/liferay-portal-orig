@@ -14,18 +14,18 @@
 
 package com.liferay.journal.web.internal.display.context;
 
+import com.liferay.depot.util.SiteConnectedGroupGroupProviderUtil;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.util.comparator.StructureModifiedDateComparator;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
 import com.liferay.journal.service.JournalFolderServiceUtil;
-import com.liferay.journal.web.internal.util.SiteConnectedGroupUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -71,15 +71,15 @@ public class JournalViewMoreMenuItemsDisplayContext {
 
 		if (Validator.isNull(_getKeywords())) {
 			_ddmStructures = JournalFolderServiceUtil.getDDMStructures(
-				SiteConnectedGroupUtil.
+				SiteConnectedGroupGroupProviderUtil.
 					getCurrentAndAncestorSiteAndDepotGroupIds(
 						themeDisplay.getScopeGroupId(), true),
-				_folderId, _restrictionType);
+				_folderId, _restrictionType, _getOrderByComparator());
 		}
 		else {
 			_ddmStructures = JournalFolderServiceUtil.searchDDMStructures(
 				themeDisplay.getCompanyId(),
-				SiteConnectedGroupUtil.
+				SiteConnectedGroupGroupProviderUtil.
 					getCurrentAndAncestorSiteAndDepotGroupIds(
 						themeDisplay.getScopeGroupId(), true),
 				_folderId, _restrictionType, _getKeywords(), QueryUtil.ALL_POS,
@@ -99,7 +99,7 @@ public class JournalViewMoreMenuItemsDisplayContext {
 		Group scopeGroup = themeDisplay.getScopeGroup();
 
 		if (ddmStructure.getGroupId() == scopeGroup.getGroupId()) {
-			if (scopeGroup.getType() == GroupConstants.TYPE_DEPOT) {
+			if (scopeGroup.isDepot()) {
 				return LanguageUtil.get(
 					_httpServletRequest, "current-asset-library");
 			}
@@ -187,13 +187,15 @@ public class JournalViewMoreMenuItemsDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view_more_menu_items.jsp");
-		portletURL.setParameter("folderId", String.valueOf(_folderId));
-		portletURL.setParameter("eventName", getEventName());
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view_more_menu_items.jsp"
+		).setParameter(
+			"eventName", getEventName()
+		).setParameter(
+			"folderId", _folderId
+		).build();
 	}
 
 	public String getRedirect() {

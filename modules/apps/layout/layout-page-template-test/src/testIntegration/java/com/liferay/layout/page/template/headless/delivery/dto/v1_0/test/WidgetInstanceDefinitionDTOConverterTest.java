@@ -44,7 +44,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -170,12 +170,15 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 
 		Role role = _roleLocalService.getDefaultGroupRole(_group.getGroupId());
 
-		List<String> actionIds = new ArrayList<>();
-
-		actionIds.add(resourceAction.getActionId());
-
 		Map<Long, String[]> roleIdsToActionIds = HashMapBuilder.put(
-			role.getRoleId(), actionIds.toArray(new String[0])
+			role.getRoleId(),
+			() -> {
+				List<String> actionIds = new ArrayList<>();
+
+				actionIds.add(resourceAction.getActionId());
+
+				return actionIds.toArray(new String[0]);
+			}
 		).build();
 
 		String resourcePrimKey = _portletPermission.getPrimaryKey(
@@ -186,7 +189,7 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 			resourcePrimKey, roleIdsToActionIds);
 
 		WidgetInstance widgetInstance = ReflectionTestUtil.invoke(
-			_getService(), "toDTO",
+			_getService(), "getWidgetInstance",
 			new Class<?>[] {FragmentEntryLink.class, String.class},
 			fragmentEntryLink, testPortletId);
 
@@ -227,9 +230,8 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 	private Object _getService() {
 		ServiceReference<?> serviceReference =
 			_bundleContext.getServiceReference(
-				"com.liferay.layout.page.template.admin.web.internal." +
-					"headless.delivery.dto.v1_0.converter." +
-						"WidgetInstanceDTOConverter");
+				"com.liferay.headless.delivery.internal.dto.v1_0.mapper." +
+					"WidgetInstanceMapper");
 
 		return _bundleContext.getService(serviceReference);
 	}
@@ -238,12 +240,11 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 		_serviceRegistrations.add(
 			_bundleContext.registerService(
 				Portlet.class, new TestPortlet(),
-				new HashMapDictionary<String, String>() {
-					{
-						put("com.liferay.portlet.instanceable", "true");
-						put("javax.portlet.name", portletId);
-					}
-				}));
+				HashMapDictionaryBuilder.put(
+					"com.liferay.portlet.instanceable", "true"
+				).put(
+					"javax.portlet.name", portletId
+				).build()));
 	}
 
 	private BundleContext _bundleContext;

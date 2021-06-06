@@ -106,7 +106,9 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 		WorkflowTaskAssignableUsersResource.Builder builder =
 			WorkflowTaskAssignableUsersResource.builder();
 
-		workflowTaskAssignableUsersResource = builder.locale(
+		workflowTaskAssignableUsersResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -287,7 +289,8 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 	}
 
 	protected void assertValid(
-		WorkflowTaskAssignableUsers workflowTaskAssignableUsers) {
+			WorkflowTaskAssignableUsers workflowTaskAssignableUsers)
+		throws Exception {
 
 		boolean valid = true;
 
@@ -340,7 +343,7 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.headless.admin.workflow.dto.v1_0.
 						WorkflowTaskAssignableUsers.class)) {
 
@@ -375,7 +378,7 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -442,9 +445,22 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -618,12 +634,12 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -633,10 +649,10 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

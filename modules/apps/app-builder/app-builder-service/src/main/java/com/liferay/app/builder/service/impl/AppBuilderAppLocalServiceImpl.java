@@ -18,6 +18,7 @@ import com.liferay.app.builder.constants.AppBuilderAppConstants;
 import com.liferay.app.builder.model.AppBuilderApp;
 import com.liferay.app.builder.model.AppBuilderAppDeployment;
 import com.liferay.app.builder.service.AppBuilderAppDeploymentLocalService;
+import com.liferay.app.builder.service.AppBuilderAppVersionLocalService;
 import com.liferay.app.builder.service.base.AppBuilderAppLocalServiceBaseImpl;
 import com.liferay.dynamic.data.lists.model.DDLRecordSet;
 import com.liferay.dynamic.data.lists.service.DDLRecordSetLocalService;
@@ -75,7 +76,13 @@ public class AppBuilderAppLocalServiceImpl
 		appBuilderApp.setNameMap(nameMap);
 		appBuilderApp.setScope(scope);
 
-		return appBuilderAppPersistence.update(appBuilderApp);
+		appBuilderApp = appBuilderAppPersistence.update(appBuilderApp);
+
+		_appBuilderAppVersionLocalService.addAppBuilderAppVersion(
+			groupId, companyId, userId, appBuilderApp.getAppBuilderAppId(),
+			ddlRecordSetId, ddmStructureId, ddmStructureLayoutId);
+
+		return appBuilderApp;
 	}
 
 	/**
@@ -131,6 +138,9 @@ public class AppBuilderAppLocalServiceImpl
 			_appBuilderAppDeploymentLocalService.deleteAppBuilderAppDeployment(
 				appBuilderAppDeployment.getAppBuilderAppDeploymentId());
 		}
+
+		_appBuilderAppVersionLocalService.deleteAppBuilderAppVersions(
+			appBuilderAppId);
 
 		return appBuilderAppPersistence.remove(appBuilderAppId);
 	}
@@ -191,6 +201,17 @@ public class AppBuilderAppLocalServiceImpl
 
 	@Override
 	public List<AppBuilderApp> getAppBuilderApps(
+		long groupId, long companyId, long ddmStructureId, String scope,
+		int start, int end,
+		OrderByComparator<AppBuilderApp> orderByComparator) {
+
+		return appBuilderAppPersistence.findByG_C_DDMSI_S(
+			groupId, companyId, ddmStructureId, scope, start, end,
+			orderByComparator);
+	}
+
+	@Override
+	public List<AppBuilderApp> getAppBuilderApps(
 		long groupId, String scope, int start, int end,
 		OrderByComparator<AppBuilderApp> orderByComparator) {
 
@@ -209,6 +230,14 @@ public class AppBuilderAppLocalServiceImpl
 
 		return appBuilderAppPersistence.countByG_C_D(
 			groupId, companyId, ddmStructureId);
+	}
+
+	@Override
+	public int getAppBuilderAppsCount(
+		long groupId, long companyId, long ddmStructureId, String scope) {
+
+		return appBuilderAppPersistence.filterCountByG_C_DDMSI_S(
+			groupId, companyId, ddmStructureId, scope);
 	}
 
 	@Override
@@ -257,6 +286,8 @@ public class AppBuilderAppLocalServiceImpl
 		AppBuilderApp appBuilderApp = appBuilderAppPersistence.findByPrimaryKey(
 			appBuilderAppId);
 
+		long oldDDMStructureLayoutId = appBuilderApp.getDdmStructureLayoutId();
+
 		appBuilderApp.setUserId(user.getUserId());
 		appBuilderApp.setUserName(user.getFullName());
 		appBuilderApp.setModifiedDate(new Date());
@@ -266,12 +297,27 @@ public class AppBuilderAppLocalServiceImpl
 		appBuilderApp.setDeDataListViewId(deDataListViewId);
 		appBuilderApp.setNameMap(nameMap);
 
-		return appBuilderAppPersistence.update(appBuilderApp);
+		appBuilderApp = appBuilderAppPersistence.update(appBuilderApp);
+
+		if (oldDDMStructureLayoutId !=
+				appBuilderApp.getDdmStructureLayoutId()) {
+
+			_appBuilderAppVersionLocalService.addAppBuilderAppVersion(
+				appBuilderApp.getGroupId(), appBuilderApp.getCompanyId(),
+				userId, appBuilderApp.getAppBuilderAppId(),
+				appBuilderApp.getDdlRecordSetId(), ddmStructureId,
+				ddmStructureLayoutId);
+		}
+
+		return appBuilderApp;
 	}
 
 	@Reference
 	private AppBuilderAppDeploymentLocalService
 		_appBuilderAppDeploymentLocalService;
+
+	@Reference
+	private AppBuilderAppVersionLocalService _appBuilderAppVersionLocalService;
 
 	@Reference
 	private DDLRecordSetLocalService _ddlRecordSetLocalService;

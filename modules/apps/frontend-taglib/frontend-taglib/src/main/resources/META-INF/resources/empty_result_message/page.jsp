@@ -41,11 +41,12 @@
 			<c:choose>
 				<c:when test="<%= actionDropdownItems.size() > 1 %>">
 					<clay:dropdown-menu
-						componentId="<%= componentId %>"
-						defaultEventHandler="<%= defaultEventHandler %>"
+						additionalProps="<%= additionalProps %>"
 						displayType="<%= buttonCssClass %>"
 						dropdownItems="<%= actionDropdownItems %>"
 						label="new"
+						propsTransformer="<%= propsTransformer %>"
+						propsTransformerServletContext="<%= propsTransformerServletContext %>"
 						small="<%= true %>"
 					/>
 				</c:when>
@@ -58,21 +59,19 @@
 					<c:choose>
 						<c:when test='<%= Validator.isNotNull(actionDropdownItem.get("href")) %>'>
 							<clay:link
-								buttonStyle="<%= buttonCssClass %>"
-								componentId="<%= componentId %>"
-								data='<%= (HashMap)actionDropdownItem.get("data") %>'
-								defaultEventHandler="<%= defaultEventHandler %>"
+								displayType="<%= buttonCssClass %>"
 								href='<%= String.valueOf(actionDropdownItem.get("href")) %>'
 								label='<%= String.valueOf(actionDropdownItem.get("label")) %>'
+								type="button"
 							/>
 						</c:when>
 						<c:otherwise>
 							<clay:button
-								componentId="<%= componentId %>"
-								data='<%= (HashMap)actionDropdownItem.get("data") %>'
-								defaultEventHandler="<%= defaultEventHandler %>"
+								additionalProps='<%= (HashMap)actionDropdownItem.get("data") %>'
 								displayType="<%= buttonCssClass %>"
 								label='<%= String.valueOf(actionDropdownItem.get("label")) %>'
+								propsTransformer="<%= buttonPropsTransformer %>"
+								propsTransformerServletContext="<%= propsTransformerServletContext %>"
 							/>
 						</c:otherwise>
 					</c:choose>

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("DataLayoutRow")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DataLayoutRow")
-public class DataLayoutRow {
+public class DataLayoutRow implements Serializable {
 
 	public static DataLayoutRow toDTO(String json) {
 		return ObjectMapperUtil.readValue(DataLayoutRow.class, json);
@@ -134,6 +136,7 @@ public class DataLayoutRow {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataLayoutRow",
 		name = "x-class-name"
 	)
@@ -169,7 +172,7 @@ public class DataLayoutRow {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -208,7 +211,7 @@ public class DataLayoutRow {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

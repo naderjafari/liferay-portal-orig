@@ -21,8 +21,10 @@ import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLTrashLocalService;
 import com.liferay.document.library.kernel.util.DLAppHelperThreadLocal;
 import com.liferay.petra.function.UnsafeSupplier;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -166,8 +168,9 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 					repository.getRepositoryId());
 
 			return localRepository.addFileEntry(
-				userId, folderId, fileName, mimeType, fileName,
-				StringPool.BLANK, StringPool.BLANK, file, serviceContext);
+				null, userId, folderId, fileName, mimeType, fileName,
+				StringPool.BLANK, StringPool.BLANK, file, null, null,
+				serviceContext);
 		}
 		finally {
 			DLAppHelperThreadLocal.setEnabled(dlAppHelperEnabled);
@@ -272,12 +275,16 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 		UnicodeProperties typeSettingsUnicodeProperties =
 			new UnicodeProperties();
 
-		return _run(
-			() -> _repositoryLocalService.addRepository(
-				user.getUserId(), groupId, classNameId,
-				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, portletId,
-				StringPool.BLANK, portletId, typeSettingsUnicodeProperties,
-				true, serviceContext));
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(0)) {
+
+			return _run(
+				() -> _repositoryLocalService.addRepository(
+					user.getUserId(), groupId, classNameId,
+					DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, portletId,
+					StringPool.BLANK, portletId, typeSettingsUnicodeProperties,
+					true, serviceContext));
+		}
 	}
 
 	@Override
@@ -652,6 +659,10 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 					fileName, String.valueOf(i));
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
+
 				break;
 			}
 		}

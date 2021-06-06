@@ -40,7 +40,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + StyleBookPortletKeys.STYLE_BOOK,
-		"mvc.command.name=/style_book/save_draft_style_book_entry"
+		"mvc.command.name=/style_book/edit_style_book_entry"
 	},
 	service = MVCActionCommand.class
 )
@@ -54,8 +54,8 @@ public class EditStyleBookEntryMVCActionCommand extends BaseMVCActionCommand {
 		long styleBookEntryId = ParamUtil.getLong(
 			actionRequest, "styleBookEntryId");
 
-		String tokensValues = ParamUtil.getString(
-			actionRequest, "tokensValues");
+		String frontendTokensValues = ParamUtil.getString(
+			actionRequest, "frontendTokensValues");
 
 		try {
 			StyleBookEntry styleBookEntry =
@@ -76,8 +76,8 @@ public class EditStyleBookEntryMVCActionCommand extends BaseMVCActionCommand {
 					draftStyleBookEntry.getStyleBookEntryId();
 			}
 
-			_styleBookEntryService.updateTokensValues(
-				draftStyleBookEntryId, tokensValues);
+			_styleBookEntryService.updateFrontendTokensValues(
+				draftStyleBookEntryId, frontendTokensValues);
 
 			JSONPortletResponseUtil.writeJSON(
 				actionRequest, actionResponse,

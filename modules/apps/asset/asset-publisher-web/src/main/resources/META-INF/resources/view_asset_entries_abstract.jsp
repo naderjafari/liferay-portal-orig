@@ -54,7 +54,7 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 	request.setAttribute("view.jsp-assetRenderer", assetRenderer);
 
 	try {
-		String title = assetRenderer.getTitle(locale);
+		String title = assetRenderer.getTitle(LocaleUtil.fromLanguageId(LanguageUtil.getLanguageId(request)));
 
 		String viewURL = assetPublisherHelper.getAssetViewURL(liferayPortletRequest, liferayPortletResponse, assetRenderer, assetEntry, assetPublisherDisplayContext.isAssetLinkBehaviorViewInPortlet());
 
@@ -66,8 +66,8 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 %>
 
 		<div class="asset-abstract mb-5 <%= assetPublisherWebHelper.isDefaultAssetPublisher(layout, portletDisplay.getId(), assetPublisherDisplayContext.getPortletResource()) ? "default-asset-publisher" : StringPool.BLANK %> <%= ((previewClassNameId == assetEntry.getClassNameId()) && (previewClassPK == assetEntry.getClassPK())) ? "p-1 preview-asset-entry" : StringPool.BLANK %>" <%= AUIUtil.buildData(fragmentsEditorData) %>>
-			<div class="mb-2">
-				<h4 class="component-title">
+			<div class="align-items-center d-flex mb-2">
+				<p class="component-title h4">
 					<c:choose>
 						<c:when test="<%= assetPublisherDisplayContext.isShowContextLink() %>">
 							<a class="asset-title d-inline" href="<%= viewURL %>">
@@ -80,11 +80,19 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 							</span>
 						</c:otherwise>
 					</c:choose>
+				</p>
 
-					<span class="d-inline-flex">
-						<liferay-util:include page="/asset_actions.jsp" servletContext="<%= application %>" />
-					</span>
-				</h4>
+				<liferay-util:buffer
+					var="assetActions"
+				>
+					<liferay-util:include page="/asset_actions.jsp" servletContext="<%= application %>" />
+				</liferay-util:buffer>
+
+				<c:if test="<%= Validator.isNotNull(assetActions) %>">
+					<div class="d-inline-flex">
+						<%= assetActions %>
+					</div>
+				</c:if>
 			</div>
 
 			<span class="asset-anchor lfr-asset-anchor" id="<%= assetEntry.getEntryId() %>"></span>
@@ -200,17 +208,16 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 			</c:if>
 
 			<c:if test="<%= assetPublisherDisplayContext.isEnableRelatedAssets() %>">
-
-				<%
-				PortletURL assetLingsURL = renderResponse.createRenderURL();
-
-				assetLingsURL.setParameter("mvcPath", "/view_content.jsp");
-				%>
-
 				<div class="asset-links mb-4">
 					<liferay-asset:asset-links
 						assetEntryId="<%= assetEntry.getEntryId() %>"
-						portletURL="<%= assetLingsURL %>"
+						portletURL='<%=
+							PortletURLBuilder.createRenderURL(
+								renderResponse
+							).setMVCPath(
+								"/view_content.jsp"
+							).build()
+						%>'
 						viewInContext="<%= assetPublisherDisplayContext.isAssetLinkBehaviorViewInPortlet() %>"
 					/>
 				</div>
@@ -221,7 +228,7 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 
 				<clay:content-row
 					cssClass="asset-details"
-					floatElements="true"
+					floatElements=""
 					verticalAlign="center"
 				>
 					<c:if test="<%= assetPublisherDisplayContext.isEnableRatings() && assetRenderer.isRatable() %>">
@@ -264,14 +271,21 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 						>
 
 							<%
-							PortletURL printAssetURL = renderResponse.createRenderURL();
-
-							printAssetURL.setParameter("mvcPath", "/view_content.jsp");
-							printAssetURL.setParameter("assetEntryId", String.valueOf(assetEntry.getEntryId()));
-							printAssetURL.setParameter("viewMode", Constants.PRINT);
-							printAssetURL.setParameter("type", assetRendererFactory.getType());
-							printAssetURL.setParameter("languageId", LanguageUtil.getLanguageId(request));
-							printAssetURL.setWindowState(LiferayWindowState.POP_UP);
+							PortletURL printAssetURL = PortletURLBuilder.createRenderURL(
+								renderResponse
+							).setMVCPath(
+								"/view_content.jsp"
+							).setParameter(
+								"assetEntryId", assetEntry.getEntryId()
+							).setParameter(
+								"languageId", LanguageUtil.getLanguageId(request)
+							).setParameter(
+								"type", assetRendererFactory.getType()
+							).setParameter(
+								"viewMode", Constants.PRINT
+							).setWindowState(
+								LiferayWindowState.POP_UP
+							).build();
 
 							String id = assetEntry.getEntryId() + StringUtil.randomId();
 							%>
@@ -296,10 +310,6 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 						</clay:content-col>
 					</c:if>
 
-					<%
-					PortletURL viewFullContentURL = assetPublisherHelper.getBaseAssetViewURL(liferayPortletRequest, liferayPortletResponse, assetRenderer, assetEntry);
-					%>
-
 					<clay:content-col>
 						<liferay-social-bookmarks:bookmarks
 							className="<%= assetEntry.getClassName() %>"
@@ -308,7 +318,7 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 							target="_blank"
 							title="<%= title %>"
 							types="<%= assetPublisherDisplayContext.getSocialBookmarksTypes() %>"
-							urlImpl="<%= viewFullContentURL %>"
+							urlImpl="<%= assetPublisherHelper.getBaseAssetViewURL(liferayPortletRequest, liferayPortletResponse, assetRenderer, assetEntry) %>"
 						/>
 					</clay:content-col>
 				</clay:content-row>
@@ -319,7 +329,7 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 
 				<clay:content-row
 					cssClass="asset-details"
-					floatElements="true"
+					floatElements=""
 					verticalAlign="center"
 				>
 					<c:if test="<%= assetPublisherDisplayContext.isShowAvailableLocales() && assetRenderer.isLocalizable() %>">
@@ -350,11 +360,15 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 					<c:if test="<%= assetPublisherDisplayContext.isEnableConversions() && assetRenderer.isConvertible() %>">
 
 						<%
-						PortletURL exportAssetURL = assetRenderer.getURLExport(liferayPortletRequest, liferayPortletResponse);
-
-						exportAssetURL.setParameter("plid", String.valueOf(themeDisplay.getPlid()));
-						exportAssetURL.setParameter("portletResource", portletDisplay.getId());
-						exportAssetURL.setWindowState(LiferayWindowState.EXCLUSIVE);
+						PortletURL exportAssetURL = PortletURLBuilder.create(
+							assetRenderer.getURLExport(liferayPortletRequest, liferayPortletResponse)
+						).setParameter(
+							"plid", themeDisplay.getPlid()
+						).setParameter(
+							"portletResource", portletDisplay.getId()
+						).setWindowState(
+							LiferayWindowState.EXCLUSIVE
+						).build();
 
 						for (String extension : assetPublisherDisplayContext.getExtensions(assetRenderer)) {
 							exportAssetURL.setParameter("targetExtension", extension);
@@ -404,5 +418,5 @@ for (AssetEntry assetEntry : assetEntryResult.getAssetEntries()) {
 %>
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("com_liferay_asset_publisher_web.view_asset_entries_abstract_jsp");
+private static final Log _log = LogFactoryUtil.getLog("com_liferay_asset_publisher_web.view_asset_entries_abstract_jsp");
 %>

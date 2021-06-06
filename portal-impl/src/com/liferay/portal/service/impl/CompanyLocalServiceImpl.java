@@ -18,7 +18,9 @@ import com.liferay.expando.kernel.model.ExpandoColumn;
 import com.liferay.expando.kernel.model.ExpandoTable;
 import com.liferay.petra.encryptor.Encryptor;
 import com.liferay.petra.encryptor.EncryptorException;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.DBPartitionUtil;
@@ -47,6 +49,7 @@ import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.ContactConstants;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
+import com.liferay.portal.kernel.model.GroupTable;
 import com.liferay.portal.kernel.model.LayoutPrototype;
 import com.liferay.portal.kernel.model.LayoutSetPrototype;
 import com.liferay.portal.kernel.model.Organization;
@@ -68,10 +71,12 @@ import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManagerUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
@@ -103,6 +108,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.net.IDN;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -146,10 +154,10 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	}
 
 	/**
-	 * Adds a company.
+	 * Adds a company with the primary key.
 	 *
-	 * @param  companyId the primary key of the company (<code>null</code> or
-	 *         <code>0</code> to generate it automatically)
+	 * @param  companyId the primary key of the company (optionally <code>null</code> or
+	 *         <code>0</code> to generate a key automatically)
 	 * @param  webId the the company's web domain
 	 * @param  virtualHostname the company's virtual host name
 	 * @param  mx the company's mail domain
@@ -159,7 +167,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	 *         <code>0</code>)
 	 * @param  active whether the company is active
 	 * @return the company
-	 * @review
 	 */
 	@Override
 	public Company addCompany(
@@ -186,23 +193,27 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			DBPartitionUtil.setDefaultCompanyId(company.getCompanyId());
 		}
 
-		company.setWebId(webId);
-		company.setMx(mx);
-		company.setSystem(system);
-		company.setMaxUsers(maxUsers);
-		company.setActive(active);
+		boolean newDBPartitionAdded = DBPartitionUtil.addDBPartition(
+			company.getCompanyId());
 
-		company = companyPersistence.update(company);
+		SafeCloseable safeCloseable =
+			CompanyThreadLocal.setInitializingCompanyIdWithSafeCloseable(
+				company.getCompanyId());
 
-		// Virtual host
+		try {
+			company.setWebId(webId);
+			company.setMx(mx);
+			company.setSystem(system);
+			company.setMaxUsers(maxUsers);
+			company.setActive(active);
 
-		updateVirtualHostname(company.getCompanyId(), virtualHostname);
+			company = companyPersistence.update(company);
 
-		try (SafeClosable safeClosable =
-				CompanyThreadLocal.setInitializingCompanyId(
-					company.getCompanyId())) {
+			// Virtual host
 
-			if (DBPartitionUtil.addDBPartition(company.getCompanyId())) {
+			updateVirtualHostname(company.getCompanyId(), virtualHostname);
+
+			if (newDBPartitionAdded) {
 				dlFileEntryTypeLocalService.
 					createBasicDocumentDLFileEntryType();
 			}
@@ -241,7 +252,26 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				return company;
 			}
 
-			return _checkCompany(company, mx);
+			company = _checkCompany(company, mx);
+
+			TransactionCommitCallbackUtil.registerCallback(
+				new Callable<Void>() {
+
+					@Override
+					public Void call() throws Exception {
+						safeCloseable.close();
+
+						return null;
+					}
+
+				});
+
+			return company;
+		}
+		catch (Exception exception) {
+			safeCloseable.close();
+
+			throw exception;
 		}
 	}
 
@@ -348,11 +378,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 					companyId);
 		}
 
-		Long currentCompanyId = CompanyThreadLocal.getCompanyId();
 		boolean deleteInProcess = CompanyThreadLocal.isDeleteInProcess();
 
 		try {
-			CompanyThreadLocal.setCompanyId(companyId);
 			CompanyThreadLocal.setDeleteInProcess(true);
 
 			return doDeleteCompany(companyId);
@@ -365,7 +393,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			throw portalException;
 		}
 		finally {
-			CompanyThreadLocal.setCompanyId(currentCompanyId);
 			CompanyThreadLocal.setDeleteInProcess(deleteInProcess);
 		}
 	}
@@ -422,6 +449,59 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		}
 
 		return companyPersistence.fetchByPrimaryKey(virtualHost.getCompanyId());
+	}
+
+	@Override
+	@Transactional(enabled = false)
+	public <E extends Exception> void forEachCompany(
+			UnsafeConsumer<Company, E> unsafeConsumer)
+		throws E {
+
+		forEachCompany(unsafeConsumer, companyLocalService.getCompanies(false));
+	}
+
+	@Override
+	@Transactional(enabled = false)
+	public <E extends Exception> void forEachCompany(
+			UnsafeConsumer<Company, E> unsafeConsumer, List<Company> companies)
+		throws E {
+
+		for (Company company : companies) {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setWithSafeCloseable(
+						company.getCompanyId())) {
+
+				unsafeConsumer.accept(company);
+			}
+		}
+	}
+
+	@Override
+	@Transactional(enabled = false)
+	public <E extends Exception> void forEachCompanyId(
+			UnsafeConsumer<Long, E> unsafeConsumer)
+		throws E {
+
+		forEachCompanyId(
+			unsafeConsumer,
+			ListUtil.toLongArray(
+				companyLocalService.getCompanies(false),
+				Company::getCompanyId));
+	}
+
+	@Override
+	@Transactional(enabled = false)
+	public <E extends Exception> void forEachCompanyId(
+			UnsafeConsumer<Long, E> unsafeConsumer, long[] companyIds)
+		throws E {
+
+		for (long companyId : companyIds) {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setWithSafeCloseable(companyId)) {
+
+				unsafeConsumer.accept(companyId);
+			}
+		}
 	}
 
 	/**
@@ -510,7 +590,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			virtualHostname = StringUtil.toLowerCase(
 				StringUtil.trim(virtualHostname));
 
-			VirtualHost virtualHost = virtualHostPersistence.findByHostname(
+			VirtualHost virtualHost = virtualHostLocalService.fetchVirtualHost(
 				virtualHostname);
 
 			if ((virtualHost == null) && virtualHostname.contains("xn--")) {
@@ -965,6 +1045,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				if (!Objects.equals(oldLanguageIds, newLanguageIds)) {
 					validateLanguageIds(newLanguageIds);
 
+					_updateGroupLanguageIds(
+						companyId, newLanguageIds, oldLanguageIds);
+
 					LanguageUtil.resetAvailableLocales(companyId);
 
 					// Invalidate cache of all layout set prototypes that belong
@@ -1136,6 +1219,21 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		final Company company = companyPersistence.findByPrimaryKey(companyId);
 
 		if (DBPartitionUtil.removeDBPartition(companyId)) {
+			_clearCompanyCache(companyId);
+
+			Callable<Void> callable = new Callable<Void>() {
+
+				@Override
+				public Void call() throws Exception {
+					PortalInstances.removeCompany(company.getCompanyId());
+
+					return null;
+				}
+
+			};
+
+			TransactionCommitCallbackUtil.registerCallback(callable);
+
 			return company;
 		}
 
@@ -1143,13 +1241,11 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		companyPersistence.remove(company);
 
+		companyInfoPersistence.remove(company.getCompanyInfo());
+
 		// Account
 
 		accountLocalService.deleteAccount(company.getAccountId());
-
-		// Company info
-
-		companyInfoPersistence.remove(company.getCompanyInfo());
 
 		// Expando
 
@@ -1252,32 +1348,33 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		portalPreferencesLocalService.deletePortalPreferences(
 			portalPreferences);
 
-		// Portlet
-
-		List<Portlet> portlets = portletPersistence.findByCompanyId(companyId);
-
-		for (Portlet portlet : portlets) {
-			portletLocalService.deletePortlet(portlet.getId());
-		}
-
-		portletLocalService.removeCompanyPortletsPool(companyId);
-
 		// User
 
-		ActionableDynamicQuery userActionableDynamicQuery =
-			userLocalService.getActionableDynamicQuery();
+		User defaultUser = userLocalService.getDefaultUser(companyId);
 
-		userActionableDynamicQuery.setCompanyId(companyId);
-		userActionableDynamicQuery.setPerformActionMethod(
-			(User user) -> {
-				if (!user.isDefaultUser()) {
-					userLocalService.deleteUser(user.getUserId());
-				}
-			});
+		String name = PrincipalThreadLocal.getName();
 
-		userActionableDynamicQuery.performActions();
+		try {
+			PrincipalThreadLocal.setName(defaultUser.getUserId());
 
-		userLocalService.deleteUser(userLocalService.getDefaultUser(companyId));
+			ActionableDynamicQuery userActionableDynamicQuery =
+				userLocalService.getActionableDynamicQuery();
+
+			userActionableDynamicQuery.setCompanyId(companyId);
+			userActionableDynamicQuery.setPerformActionMethod(
+				(User user) -> {
+					if (!user.isDefaultUser()) {
+						userLocalService.deleteUser(user.getUserId());
+					}
+				});
+
+			userActionableDynamicQuery.performActions();
+		}
+		finally {
+			PrincipalThreadLocal.setName(name);
+		}
+
+		userLocalService.deleteUser(defaultUser);
 
 		// Role
 
@@ -1290,13 +1387,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		roleActionableDynamicQuery.performActions();
 
-		// Virtual host
-
-		VirtualHost companyVirtualHost =
-			virtualHostLocalService.fetchVirtualHost(companyId, 0);
-
-		virtualHostLocalService.deleteVirtualHost(companyVirtualHost);
-
 		// System event
 
 		DeleteSystemEventActionableDynamicQuery
@@ -1306,28 +1396,20 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		deleteSystemEventActionableDynamicQuery.performActions();
 
-		// Portal instance
-
-		Callable<Void> callable = new Callable<Void>() {
-
-			@Override
-			public Void call() throws Exception {
-				PortalInstances.removeCompany(companyId);
-
-				unregisterCompany(company);
-
-				return null;
-			}
-
-		};
-
-		TransactionCommitCallbackUtil.registerCallback(callable);
+		_deletePortalInstance(company);
 
 		return company;
 	}
 
 	protected void preregisterCompany(long companyId) {
-		SearchEngineHelperUtil.initialize(companyId);
+		try {
+			SearchEngineHelperUtil.initialize(companyId);
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to initialize search engine for company " + companyId,
+				exception);
+		}
 	}
 
 	protected void preunregisterCompany(Company company) {
@@ -1402,6 +1484,23 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		throws CompanyVirtualHostException {
 
 		if (Validator.isNotNull(virtualHostname)) {
+			try {
+				if (Validator.isIPv6Address(virtualHostname)) {
+					Inet6Address address = (Inet6Address)InetAddress.getByName(
+						virtualHostname);
+
+					virtualHostname = address.getHostAddress();
+				}
+			}
+			catch (UnknownHostException unknownHostException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(unknownHostException, unknownHostException);
+				}
+
+				throw new CompanyVirtualHostException(
+					"Virtual hostname is not a valid IPv6 address");
+			}
+
 			VirtualHost virtualHost = virtualHostPersistence.fetchByHostname(
 				virtualHostname);
 
@@ -1498,32 +1597,26 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			throw new CompanyVirtualHostException(
 				"localhost can only be used with the default web ID " + webId);
 		}
-		else if (!Validator.isDomain(virtualHostname)) {
+		else if (!Validator.isDomain(virtualHostname) &&
+				 !Validator.isIPAddress(virtualHostname)) {
+
 			throw new CompanyVirtualHostException(
-				"Virtual hostname is an invalid domain");
+				"Virtual hostname is invalid");
 		}
 		else {
-			try {
-				VirtualHost virtualHost = virtualHostPersistence.findByHostname(
-					virtualHostname);
+			VirtualHost virtualHost = virtualHostLocalService.fetchVirtualHost(
+				virtualHostname);
 
-				Company virtualHostnameCompany =
-					companyPersistence.findByPrimaryKey(
-						virtualHost.getCompanyId());
-
-				if (!webId.equals(virtualHostnameCompany.getWebId())) {
-					throw new CompanyVirtualHostException(
-						"Duplicate virtual hostname " + virtualHostname);
-				}
+			if (virtualHost == null) {
+				return;
 			}
-			catch (NoSuchVirtualHostException noSuchVirtualHostException) {
 
-				// LPS-52675
+			Company virtualHostnameCompany =
+				companyPersistence.findByPrimaryKey(virtualHost.getCompanyId());
 
-				if (_log.isDebugEnabled()) {
-					_log.debug(
-						noSuchVirtualHostException, noSuchVirtualHostException);
-				}
+			if (!webId.equals(virtualHostnameCompany.getWebId())) {
+				throw new CompanyVirtualHostException(
+					"Duplicate virtual hostname " + virtualHostname);
 			}
 		}
 	}
@@ -1950,6 +2043,111 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		}
 	}
 
+	private void _deletePortalInstance(Company company) throws PortalException {
+
+		// Portlet
+
+		List<Portlet> portlets = portletPersistence.findByCompanyId(
+			company.getCompanyId());
+
+		for (Portlet portlet : portlets) {
+			portletLocalService.deletePortlet(portlet.getId());
+		}
+
+		portletLocalService.removeCompanyPortletsPool(company.getCompanyId());
+
+		// Virtual host
+
+		VirtualHost companyVirtualHost =
+			virtualHostLocalService.fetchVirtualHost(company.getCompanyId(), 0);
+
+		virtualHostLocalService.deleteVirtualHost(companyVirtualHost);
+
+		// Portal instance
+
+		Callable<Void> callable = new Callable<Void>() {
+
+			@Override
+			public Void call() throws Exception {
+				PortalInstances.removeCompany(company.getCompanyId());
+
+				unregisterCompany(company);
+
+				return null;
+			}
+
+		};
+
+		TransactionCommitCallbackUtil.registerCallback(callable);
+	}
+
+	private void _updateGroupLanguageIds(
+		long companyId, String newLanguageIds, String oldLanguageIds) {
+
+		String[] oldLanguageIdsArray = StringUtil.split(oldLanguageIds);
+
+		if (ArrayUtil.isEmpty(oldLanguageIdsArray)) {
+			oldLanguageIdsArray = LocaleUtil.toLanguageIds(
+				LanguageUtil.getCompanyAvailableLocales(companyId));
+		}
+
+		List<String> removedLanguageIds = ListUtil.remove(
+			ListUtil.fromArray(oldLanguageIdsArray),
+			ListUtil.fromArray(StringUtil.split(newLanguageIds)));
+
+		if (ListUtil.isEmpty(removedLanguageIds)) {
+			return;
+		}
+
+		List<Group> groups = groupLocalService.dslQuery(
+			DSLQueryFactoryUtil.selectDistinct(
+				GroupTable.INSTANCE
+			).from(
+				GroupTable.INSTANCE
+			).where(
+				GroupTable.INSTANCE.companyId.eq(
+					companyId
+				).and(
+					GroupTable.INSTANCE.active.eq(true)
+				).and(
+					GroupTable.INSTANCE.site.eq(true)
+				).and(
+					GroupTable.INSTANCE.typeSettings.like(
+						"%inheritLocales=false%")
+				)
+			));
+
+		for (Group group : groups) {
+			UnicodeProperties groupTypeSettingsUnicodeProperties =
+				group.getTypeSettingsProperties();
+
+			String[] groupLanguageIds = StringUtil.split(
+				groupTypeSettingsUnicodeProperties.getProperty(
+					PropsKeys.LOCALES));
+
+			boolean updateLocales = false;
+
+			for (String removedLanguageId : removedLanguageIds) {
+				if (ArrayUtil.contains(groupLanguageIds, removedLanguageId)) {
+					groupLanguageIds = ArrayUtil.remove(
+						groupLanguageIds, removedLanguageId);
+
+					updateLocales = true;
+				}
+			}
+
+			if (updateLocales) {
+				LanguageUtil.resetAvailableGroupLocales(group.getGroupId());
+
+				groupTypeSettingsUnicodeProperties.setProperty(
+					PropsKeys.LOCALES,
+					StringUtil.merge(groupLanguageIds, StringPool.COMMA));
+
+				groupLocalService.updateGroup(group);
+			}
+		}
+	}
+
 	private static final String _DEFAULT_VIRTUAL_HOST = "localhost";
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -1974,9 +2172,10 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				registry.getService(serviceReference);
 
 			synchronized (_pendingCompanies) {
-				for (Company company : _pendingCompanies) {
-					portalInstanceLifecycleManager.registerCompany(company);
-				}
+				forEachCompany(
+					company -> portalInstanceLifecycleManager.registerCompany(
+						company),
+					new ArrayList<Company>(_pendingCompanies));
 
 				_pendingCompanies.clear();
 			}

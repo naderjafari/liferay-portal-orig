@@ -12,10 +12,10 @@
  * details.
  */
 
-import {useMutation} from '@apollo/client';
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput, ClaySelect} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
+import {useManualQuery, useMutation} from 'graphql-hooks';
 import React, {useContext, useEffect, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
@@ -25,10 +25,14 @@ import Link from '../../components/Link.es';
 import QuestionsEditor from '../../components/QuestionsEditor';
 import TagSelector from '../../components/TagSelector.es';
 import TextLengthValidation from '../../components/TextLengthValidation.es';
-import useSection from '../../hooks/useSection.es';
-import {client, createQuestionQuery} from '../../utils/client.es';
+import {
+	createQuestionInASectionQuery,
+	createQuestionInRootQuery,
+	getSectionBySectionTitleQuery,
+} from '../../utils/client.es';
 import lang from '../../utils/lang.es';
 import {
+	deleteCache,
 	getContextLink,
 	historyPushWithSlug,
 	slugToText,
@@ -54,32 +58,59 @@ export default withRouter(
 		const context = useContext(AppContext);
 		const historyPushParser = historyPushWithSlug(history.push);
 
-		const section = useSection(slugToText(sectionTitle), context.siteKey);
-
 		const [debounceCallback] = useDebounceCallback(
 			() => historyPushParser(`/questions/${sectionTitle}/`),
 			500
 		);
 
-		const [createQuestion] = useMutation(createQuestionQuery, {
-			context: getContextLink(sectionTitle),
-			onCompleted() {
-				client.resetStore();
-				debounceCallback();
-			},
-		});
+		const [createQuestionInASection] = useMutation(
+			createQuestionInASectionQuery
+		);
+
+		const [createQuestionInRoot] = useMutation(createQuestionInRootQuery);
+		const [getSectionBySectionTitle] = useManualQuery(
+			getSectionBySectionTitleQuery,
+			{
+				variables: {
+					filter: `title eq '${slugToText(
+						sectionTitle
+					)}' or id eq '${slugToText(sectionTitle)}'`,
+					siteKey: context.siteKey,
+				},
+			}
+		);
 
 		useEffect(() => {
-			if (section && section.parentSection) {
-				setSections([
-					{
-						id: section.parentSection.id,
-						title: section.parentSection.title,
-					},
-					...section.parentSection.messageBoardSections.items,
-				]);
-			}
-		}, [section, section.parentSection]);
+			getSectionBySectionTitle().then(({data}) => {
+				const section = data.messageBoardSections.items[0];
+				setSectionId((section && section.id) || +context.rootTopicId);
+				if (section.parentMessageBoardSection) {
+					setSections([
+						{
+							id: section.parentMessageBoardSection.id,
+							title: section.parentMessageBoardSection.title,
+						},
+						...section.parentMessageBoardSection
+							.messageBoardSections.items,
+						...section.messageBoardSections.items,
+					]);
+				}
+				else {
+					setSections([
+						{
+							id: section.id,
+							title: section.title,
+						},
+						...section.messageBoardSections.items,
+					]);
+				}
+			});
+		}, [
+			context.rootTopicId,
+			context.siteKey,
+			sectionTitle,
+			getSectionBySectionTitle,
+		]);
 
 		const processError = (error) => {
 			if (error.message && error.message.includes('AssetTagException')) {
@@ -97,145 +128,161 @@ export default withRouter(
 			setError(error);
 		};
 
+		const createQuestion = () => {
+			deleteCache();
+			if (
+				sectionTitle === context.rootTopicId &&
+				+context.rootTopicId === 0
+			) {
+				createQuestionInRoot({
+					fetchOptionsOverrides: getContextLink(sectionTitle),
+					variables: {
+						articleBody,
+						headline,
+						keywords: tags.map((tag) => tag.label),
+						siteKey: context.siteKey,
+					},
+				})
+					.then(debounceCallback)
+					.catch(processError);
+			}
+			else {
+				createQuestionInASection({
+					fetchOptionsOverrides: getContextLink(sectionTitle),
+					variables: {
+						articleBody,
+						headline,
+						keywords: tags.map((tag) => tag.label),
+						messageBoardSectionId: sectionId,
+					},
+				})
+					.then(debounceCallback)
+					.catch(processError);
+			}
+		};
+
 		return (
 			<section className="c-mt-5 questions-section questions-section-new">
-				<div className="questions-container">
-					<div className="row">
-						<div className="c-mx-auto col-xl-10">
-							<h1>{Liferay.Language.get('new-question')}</h1>
-							<ClayForm className="c-mt-5">
-								<ClayForm.Group>
-									<label htmlFor="basicInput">
-										{Liferay.Language.get('title')}
+				<div className="questions-container row">
+					<div className="c-mx-auto col-xl-10">
+						<h1>{Liferay.Language.get('new-question')}</h1>
+						<ClayForm className="c-mt-5">
+							<ClayForm.Group>
+								<label htmlFor="basicInput">
+									{Liferay.Language.get('title')}
 
-										<span className="c-ml-2 reference-mark">
-											<ClayIcon symbol="asterisk" />
+									<span className="c-ml-2 reference-mark">
+										<ClayIcon symbol="asterisk" />
+									</span>
+								</label>
+
+								<ClayInput
+									maxLength={75}
+									onChange={(event) =>
+										setHeadline(event.target.value)
+									}
+									placeholder={Liferay.Language.get(
+										'what-is-your-question'
+									)}
+									required
+									type="text"
+									value={headline}
+								/>
+
+								<ClayForm.FeedbackGroup>
+									<ClayForm.FeedbackItem>
+										<span className="small text-secondary">
+											{Liferay.Language.get(
+												'be-specific-and-imagine-you-are-asking-a-question-to-another-person'
+											)}
 										</span>
-									</label>
+									</ClayForm.FeedbackItem>
+								</ClayForm.FeedbackGroup>
+							</ClayForm.Group>
 
-									<ClayInput
-										maxLength={75}
-										onChange={(event) =>
-											setHeadline(event.target.value)
-										}
-										placeholder={Liferay.Language.get(
-											'what-is-your-question'
-										)}
-										required
-										type="text"
-										value={headline}
-									/>
+							<ClayForm.Group className="c-mt-4">
+								<label htmlFor="basicInput">
+									{Liferay.Language.get('body')}
 
-									<ClayForm.FeedbackGroup>
-										<ClayForm.FeedbackItem>
-											<span className="small text-secondary">
-												{Liferay.Language.get(
-													'be-specific-and-imagine-you-are-asking-a-question-to-another-person'
-												)}
-											</span>
-										</ClayForm.FeedbackItem>
-									</ClayForm.FeedbackGroup>
-								</ClayForm.Group>
+									<span className="c-ml-2 reference-mark">
+										<ClayIcon symbol="asterisk" />
+									</span>
+								</label>
 
+								<QuestionsEditor
+									onChange={(event) => {
+										setArticleBody(event.editor.getData());
+									}}
+								/>
+
+								<ClayForm.FeedbackGroup>
+									<ClayForm.FeedbackItem>
+										<span className="small text-secondary">
+											{Liferay.Language.get(
+												'include-all-the-information-someone-would-need-to-answer-your-question'
+											)}
+										</span>
+
+										<TextLengthValidation
+											text={articleBody}
+										/>
+									</ClayForm.FeedbackItem>
+								</ClayForm.FeedbackGroup>
+							</ClayForm.Group>
+
+							{sections.length > 1 && (
 								<ClayForm.Group className="c-mt-4">
 									<label htmlFor="basicInput">
-										{Liferay.Language.get('body')}
-
-										<span className="c-ml-2 reference-mark">
-											<ClayIcon symbol="asterisk" />
-										</span>
+										{Liferay.Language.get('topic')}
 									</label>
-
-									<QuestionsEditor
-										onChange={(event) => {
-											setArticleBody(
-												event.editor.getData()
-											);
-										}}
-									/>
-
-									<ClayForm.FeedbackGroup>
-										<ClayForm.FeedbackItem>
-											<span className="small text-secondary">
-												{Liferay.Language.get(
-													'include-all-the-information-someone-would-need-to-answer-your-question'
-												)}
-											</span>
-
-											<TextLengthValidation
-												text={articleBody}
+									<ClaySelect
+										onChange={(event) =>
+											setSectionId(event.target.value)
+										}
+									>
+										{sections.map(({id, title}) => (
+											<ClaySelect.Option
+												key={id}
+												label={title}
+												selected={sectionId === id}
+												value={id}
 											/>
-										</ClayForm.FeedbackItem>
-									</ClayForm.FeedbackGroup>
+										))}
+									</ClaySelect>
 								</ClayForm.Group>
+							)}
 
-								{sections.length > 1 && (
-									<ClayForm.Group className="c-mt-4">
-										<label htmlFor="basicInput">
-											{Liferay.Language.get('topic')}
-										</label>
-										<ClaySelect
-											onChange={(event) =>
-												setSectionId(event.target.value)
-											}
-										>
-											{sections.map(({id, title}) => (
-												<ClaySelect.Option
-													key={id}
-													label={title}
-													selected={
-														section &&
-														section.id === id
-													}
-													value={id}
-												/>
-											))}
-										</ClaySelect>
-									</ClayForm.Group>
-								)}
+							<TagSelector
+								className="c-mt-3"
+								tags={tags}
+								tagsChange={(tags) => setTags(tags)}
+								tagsLoaded={setTagsLoaded}
+							/>
+						</ClayForm>
 
-								<TagSelector
-									className="c-mt-3"
-									tags={tags}
-									tagsChange={(tags) => setTags(tags)}
-									tagsLoaded={setTagsLoaded}
-								/>
-							</ClayForm>
+						<div className="c-mt-4 d-flex flex-column-reverse flex-sm-row">
+							<ClayButton
+								className="c-mt-4 c-mt-sm-0"
+								disabled={
+									!articleBody ||
+									!headline ||
+									!tagsLoaded ||
+									stripHTML(articleBody).length < 15
+								}
+								displayType="primary"
+								onClick={() => {
+									createQuestion();
+								}}
+							>
+								{Liferay.Language.get('post-your-question')}
+							</ClayButton>
 
-							<div className="c-mt-4 d-flex flex-column-reverse flex-sm-row">
-								<ClayButton
-									className="c-mt-4 c-mt-sm-0"
-									disabled={
-										!articleBody ||
-										!headline ||
-										!tagsLoaded ||
-										stripHTML(articleBody).length < 15
-									}
-									displayType="primary"
-									onClick={() => {
-										createQuestion({
-											variables: {
-												articleBody,
-												headline,
-												keywords: tags.map(
-													(tag) => tag.label
-												),
-												messageBoardSectionId:
-													sectionId || section.id,
-											},
-										}).catch(processError);
-									}}
-								>
-									{Liferay.Language.get('post-your-question')}
-								</ClayButton>
-
-								<Link
-									className="btn btn-secondary c-ml-sm-3"
-									to={`/questions/${sectionTitle}`}
-								>
-									{Liferay.Language.get('cancel')}
-								</Link>
-							</div>
+							<Link
+								className="btn btn-secondary c-ml-sm-3"
+								to={`/questions/${sectionTitle}`}
+							>
+								{Liferay.Language.get('cancel')}
+							</Link>
 						</div>
 					</div>
 				</div>

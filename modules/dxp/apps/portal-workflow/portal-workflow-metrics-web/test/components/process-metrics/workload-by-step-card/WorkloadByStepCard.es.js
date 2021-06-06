@@ -25,6 +25,8 @@ const mockProps = {
 };
 
 describe('The WorkloadByStepCard component should', () => {
+	let container;
+
 	afterAll(cleanup);
 
 	const data = {
@@ -41,8 +43,6 @@ describe('The WorkloadByStepCard component should', () => {
 		totalCount: 1,
 	};
 
-	let getByTestId;
-
 	const clientMock = {
 		get: jest.fn().mockResolvedValue({data}),
 	};
@@ -54,11 +54,11 @@ describe('The WorkloadByStepCard component should', () => {
 			</MockRouter>
 		);
 
-		getByTestId = renderResult.getByTestId;
+		container = renderResult.container;
 	});
 
 	test('Load table component with request data and navigation links', () => {
-		const workloadByStepTable = getByTestId('workloadByStepTable');
+		const workloadByStepTable = container.querySelector('.table');
 		const tableItems = workloadByStepTable.children[1].children[0].children;
 
 		expect(tableItems[0]).toHaveTextContent('Node Name');
@@ -67,13 +67,13 @@ describe('The WorkloadByStepCard component should', () => {
 		expect(tableItems[3]).toHaveTextContent(1);
 
 		expect(tableItems[1].innerHTML).toContain(
-			'/instance/12345/20/1?backPath=%2F1%2F20%2Ftitle%253Aasc%3FbackPath%3D%252F&amp;filters.statuses%5B0%5D=Pending&amp;filters.slaStatuses%5B0%5D=Overdue'
+			'/instance/12345/20/1/dateCreated:asc?backPath=%2F1%2F20%2Ftitle%253Aasc%3FbackPath%3D%252F&amp;filters.statuses%5B0%5D=Pending&amp;filters.slaStatuses%5B0%5D=Overdue'
 		);
 		expect(tableItems[2].innerHTML).toContain(
-			'/instance/12345/20/1?backPath=%2F1%2F20%2Ftitle%253Aasc%3FbackPath%3D%252F&amp;filters.statuses%5B0%5D=Pending&amp;filters.slaStatuses%5B0%5D=OnTime'
+			'/instance/12345/20/1/dateCreated:asc?backPath=%2F1%2F20%2Ftitle%253Aasc%3FbackPath%3D%252F&amp;filters.statuses%5B0%5D=Pending&amp;filters.slaStatuses%5B0%5D=OnTime'
 		);
 		expect(tableItems[3].innerHTML).toContain(
-			'/instance/12345/20/1?backPath=%2F1%2F20%2Ftitle%253Aasc%3FbackPath%3D%252F&amp;filters.statuses%5B0%5D=Pending'
+			'/instance/12345/20/1/dateCreated:asc?backPath=%2F1%2F20%2Ftitle%253Aasc%3FbackPath%3D%252F&amp;filters.statuses%5B0%5D=Pending'
 		);
 	});
 });

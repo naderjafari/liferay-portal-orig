@@ -22,11 +22,10 @@ import com.liferay.application.list.constants.PanelCategoryKeys;
 import com.liferay.asset.categories.admin.web.constants.AssetCategoriesAdminPortletKeys;
 import com.liferay.asset.tags.constants.AssetTagsAdminPortletKeys;
 import com.liferay.depot.web.internal.constants.DepotPortletKeys;
-import com.liferay.depot.web.internal.servlet.taglib.clay.DepotDashboardApplicationHorizontalCard;
-import com.liferay.depot.web.internal.servlet.taglib.clay.DepotDashboardApplicationVerticalCard;
+import com.liferay.depot.web.internal.servlet.taglib.clay.DepotDashboardApplicationNavigationCard;
 import com.liferay.document.library.constants.DLPortletKeys;
-import com.liferay.frontend.taglib.clay.servlet.taglib.soy.HorizontalCard;
-import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
+import com.liferay.exportimport.constants.ExportImportPortletKeys;
+import com.liferay.frontend.taglib.clay.servlet.taglib.soy.NavigationCard;
 import com.liferay.journal.constants.JournalPortletKeys;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
@@ -67,19 +66,11 @@ public class DepotAdminViewDepotDashboardDisplayContext {
 		_portal = portal;
 	}
 
-	public HorizontalCard getDepotDashboardApplicationHorizontalCard(
-		PanelApp panelApp, Locale locale) {
+	public NavigationCard getDepotDashboardApplicationNavigationCard(
+		PanelApp panelApp, Locale locale, Boolean small) {
 
-		return new DepotDashboardApplicationHorizontalCard(
-			_getPortletURL(panelApp), _getIcon(panelApp),
-			_portal.getPortletTitle(panelApp.getPortletId(), locale));
-	}
-
-	public VerticalCard getDepotDashboardApplicationVerticalCard(
-		PanelApp panelApp, Locale locale) {
-
-		return new DepotDashboardApplicationVerticalCard(
-			_getPortletURL(panelApp), _getIcon(panelApp),
+		return new DepotDashboardApplicationNavigationCard(
+			_getPortletURL(panelApp), _getIcon(panelApp), small,
 			_portal.getPortletTitle(panelApp.getPortletId(), locale));
 	}
 
@@ -140,6 +131,7 @@ public class DepotAdminViewDepotDashboardDisplayContext {
 
 	private static final String[] _PANEL_CATEGORY_KEYS = {
 		PanelCategoryKeys.SITE_ADMINISTRATION_CONTENT,
+		PanelCategoryKeys.SITE_ADMINISTRATION_BUILD,
 		PanelCategoryKeys.SITE_ADMINISTRATION_CATEGORIZATION,
 		PanelCategoryKeys.SITE_ADMINISTRATION_RECYCLE_BIN,
 		PanelCategoryKeys.SITE_ADMINISTRATION_MEMBERS,
@@ -156,6 +148,10 @@ public class DepotAdminViewDepotDashboardDisplayContext {
 			DepotPortletKeys.DEPOT_SETTINGS, "cog"
 		).put(
 			DLPortletKeys.DOCUMENT_LIBRARY_ADMIN, "documents-and-media"
+		).put(
+			ExportImportPortletKeys.EXPORT, "download"
+		).put(
+			ExportImportPortletKeys.IMPORT, "upload"
 		).put(
 			JournalPortletKeys.JOURNAL, "web-content"
 		).put(

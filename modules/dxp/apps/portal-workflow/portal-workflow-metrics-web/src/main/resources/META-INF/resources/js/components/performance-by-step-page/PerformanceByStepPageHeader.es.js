@@ -16,29 +16,29 @@ import ResultsBar from '../../shared/components/results-bar/ResultsBar.es';
 import SearchField from '../../shared/components/search-field/SearchField.es';
 import TimeRangeFilter from '../filter/TimeRangeFilter.es';
 
-const Header = ({filterKeys, routeParams, totalCount}) => {
+export default function Header({filterKeys, routeParams, totalCount}) {
 	return (
 		<>
 			<ClayManagementToolbar className="mb-0">
-				<ClayManagementToolbar.Item>
-					<strong className="ml-0 mr-0 navbar-text">
-						{Liferay.Language.get('filter-by')}
-					</strong>
-				</ClayManagementToolbar.Item>
+				<ClayManagementToolbar.ItemList>
+					<ClayManagementToolbar.Item>
+						<strong className="ml-0 mr-0 navbar-text">
+							{Liferay.Language.get('filter-by')}
+						</strong>
+					</ClayManagementToolbar.Item>
+				</ClayManagementToolbar.ItemList>
 
-				<div className="navbar-form-autofit">
-					<SearchField
-						disabled={false}
-						placeholder={Liferay.Language.get(
-							'search-for-step-name'
-						)}
-					/>
-				</div>
-
-				<TimeRangeFilter
-					buttonClassName="btn-flat btn-sm"
-					options={{position: 'right'}}
+				<SearchField
+					disabled={false}
+					placeholder={Liferay.Language.get('search-for-step-name')}
 				/>
+
+				<ClayManagementToolbar.ItemList>
+					<TimeRangeFilter
+						buttonClassName="btn-flat btn-sm"
+						options={{position: 'right'}}
+					/>
+				</ClayManagementToolbar.ItemList>
 			</ClayManagementToolbar>
 
 			{routeParams.search && (
@@ -58,6 +58,4 @@ const Header = ({filterKeys, routeParams, totalCount}) => {
 			)}
 		</>
 	);
-};
-
-export {Header};
+}

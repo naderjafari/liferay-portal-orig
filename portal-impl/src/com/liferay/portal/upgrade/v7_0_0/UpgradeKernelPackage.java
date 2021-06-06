@@ -49,7 +49,7 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 				"Lock_", "className", getClassNames(), WildcardMode.SURROUND);
 			upgradeTable(
 				"ResourceAction", "name", getClassNames(),
-				WildcardMode.SURROUND);
+				WildcardMode.SURROUND, true);
 			upgradeTable(
 				"ResourcePermission", "name", getClassNames(),
 				WildcardMode.SURROUND);
@@ -61,7 +61,7 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 				"ListType", "type_", getClassNames(), WildcardMode.TRAILING);
 			upgradeTable(
 				"ResourceAction", "name", getResourceNames(),
-				WildcardMode.LEADING);
+				WildcardMode.LEADING, true);
 			upgradeTable(
 				"ResourcePermission", "name", getResourceNames(),
 				WildcardMode.LEADING);
@@ -99,23 +99,26 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 			String updateSQL, String[] name)
 		throws SQLException {
 
-		try (PreparedStatement ps1 = connection.prepareStatement(selectSQL);
-			ResultSet rs = ps1.executeQuery();
-			PreparedStatement ps2 = AutoBatchPreparedStatementUtil.autoBatch(
-				connection.prepareStatement(updateSQL))) {
+		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+				selectSQL);
+			ResultSet resultSet = preparedStatement1.executeQuery();
+			PreparedStatement preparedStatement2 =
+				AutoBatchPreparedStatementUtil.autoBatch(
+					connection.prepareStatement(updateSQL))) {
 
-			while (rs.next()) {
-				ps2.setString(
+			while (resultSet.next()) {
+				preparedStatement2.setString(
 					1,
 					StringUtil.replace(
-						rs.getString(columnName), name[0], name[1]));
+						resultSet.getString(columnName), name[0], name[1]));
 
-				ps2.setLong(2, rs.getLong(primaryKeyColumnName));
+				preparedStatement2.setLong(
+					2, resultSet.getLong(primaryKeyColumnName));
 
-				ps2.addBatch();
+				preparedStatement2.addBatch();
 			}
 
-			ps2.executeBatch();
+			preparedStatement2.executeBatch();
 		}
 	}
 
@@ -168,11 +171,7 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 			for (String[] name : names) {
 				upgradeLongTextTable(
 					columnName, primaryKeyColumnName,
-					selectPrefix.concat(
-						name[0]
-					).concat(
-						selectPostfix
-					),
+					StringBundler.concat(selectPrefix, name[0], selectPostfix),
 					updateSQL, name);
 			}
 		}
@@ -340,6 +339,7 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 			"com.liferay.portlet.expando.model.",
 			"com.liferay.expando.kernel.model."
 		},
+		{"com.liferay.portlet.journal.model.", "com.liferay.journal.model."},
 		{
 			"com.liferay.portlet.messageboards.model.",
 			"com.liferay.message.boards.kernel.model."
@@ -367,6 +367,7 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 		{"com.liferay.portlet.asset", "com.liferay.asset"},
 		{"com.liferay.portlet.blogs", "com.liferay.blogs"},
 		{"com.liferay.portlet.documentlibrary", "com.liferay.document.library"},
+		{"com.liferay.portlet.journal", "com.liferay.journal"},
 		{"com.liferay.portlet.messageboards", "com.liferay.message.boards"}
 	};
 

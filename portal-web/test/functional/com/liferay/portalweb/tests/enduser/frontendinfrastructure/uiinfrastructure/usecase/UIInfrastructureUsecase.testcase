@@ -25,30 +25,12 @@ definition {
 		}
 	}
 
-	// Ignored due to LPS-113623
-
-	@ignore = "true"
 	@priority = "5"
+	@refactorneeded
 	test CheckAUIPreloadConfiguration {
 		property test.name.skip.portal.instance = "UIInfrastructureUsecase#CheckAUIPreloadConfiguration";
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "System Settings");
-
-		SystemSettings.gotoConfiguration(
-			configurationCategory = "Third Party",
-			configurationName = "AUI",
-			configurationScope = "System Scope");
-
-		FormFields.viewCheckboxChecked(fieldName = "enableAUIPreload");
-
-		SystemSettings.configureSystemSetting(
-			enableSetting = "false",
-			settingFieldName = "Preload Widely Used AUI Modules");
-
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Configuration",
 			panel = "Control Panel",
 			portlet = "System Settings");
@@ -60,13 +42,28 @@ definition {
 
 		FormFields.viewCheckboxNotChecked(fieldName = "enableAUIPreload");
 
-		Navigator.gotoPage(pageName = "Home");
+		SystemSettings.configureSystemSettingWithRefresh(
+			enableSetting = "true",
+			settingFieldName = "Preload Widely Used AUI Modules");
 
-		Portlet.viewTitle(portletName = "Hello World");
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "Third Party",
+			configurationName = "AUI",
+			configurationScope = "System Scope");
+
+		FormFields.viewCheckboxChecked(fieldName = "enableAUIPreload");
+
+		Navigator.gotoPage(pageName = "Home");
 	}
 
 	@description = "This is a use case for LPS-95157. It checks the nav-bar menu icons on guest page level after page refresh."
 	@priority = "5"
+	@refactorneeded
 	test RefreshHomePage {
 		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
 		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
@@ -87,7 +84,7 @@ definition {
 		AssertCssValue(
 			locator1 = "//ul[contains(@id,'controlMenu')]",
 			locator2 = "list-style",
-			value1 = "none outside none");
+			value1 = "outside none none");
 
 		takeScreenshot();
 
@@ -103,13 +100,14 @@ definition {
 		AssertCssValue(
 			locator1 = "//ul[contains(@id,'controlMenu')]",
 			locator2 = "list-style",
-			value1 = "none outside none");
+			value1 = "outside none none");
 
 		takeScreenshot();
 	}
 
 	@description = "This is a use case for LPS-95157. It checks the nav-bar menu icons on admin page level after page refresh."
 	@priority = "5"
+	@refactorneeded
 	test RefreshWebContent {
 		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
 		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
@@ -130,12 +128,13 @@ definition {
 		AssertCssValue(
 			locator1 = "//ul[contains(@id,'controlMenu')]",
 			locator2 = "list-style",
-			value1 = "none outside none");
+			value1 = "outside none none");
 
 		takeScreenshot();
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test RightToLeftSmoke {
 		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
 		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
@@ -187,6 +186,7 @@ definition {
 
 	@description = "Ensure that a user can access portlet options and drag and drop portlets."
 	@priority = "5"
+	@refactorneeded
 	test Smoke {
 		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
 		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
@@ -201,11 +201,11 @@ definition {
 
 		Navigator.gotoPage(pageName = "Test Page");
 
-		Portlet.addPG(portletName = "Hello World");
+		Portlet.addPG(portletName = "IFrame");
 
-		task ("Assert the 'Configuration' iframe of the Hello World portlet") {
+		task ("Assert the 'Configuration' iframe of the IFrame portlet") {
 			Portlet.gotoPortletOptions(
-				portletName = "Hello World",
+				portletName = "IFrame",
 				portletOption = "Configuration");
 
 			IFrame.selectConfigurationFrame();
@@ -220,9 +220,9 @@ definition {
 
 		Navigator.gotoPage(pageName = "Test Page");
 
-		task ("Assert the 'Look and Feel' iframe of the Hello World portlet") {
+		task ("Assert the 'Look and Feel' iframe of the IFrame portlet") {
 			Portlet.gotoPortletOptions(
-				portletName = "Hello World",
+				portletName = "IFrame",
 				portletOption = "Look and Feel Configuration");
 
 			IFrame.selectConfigurationFrame();
@@ -239,24 +239,25 @@ definition {
 		Portlet.dragAndDropPortletToColumnPG(
 			columnNumberFrom = "1",
 			columnNumberTo = "2",
-			portletName = "Hello World");
+			portletName = "IFrame");
 
 		Portlet.dragAndDropPortletToColumnPG(
 			columnNumberFrom = "2",
 			columnNumberTo = "1",
-			portletName = "Hello World");
+			portletName = "IFrame");
 
-		task ("Removes Hello World Portlet on Test Page") {
+		task ("Removes IFrame Portlet on Test Page") {
 			Navigator.gotoPage(pageName = "Test Page");
 
-			Portlet.deletePG(portletName = "Hello World");
+			Portlet.deletePG(portletName = "IFrame");
 
-			Portlet.viewNoSpecificPG(portletName = "Hello World");
+			Portlet.viewNoSpecificPG(portletName = "IFrame");
 		}
 	}
 
 	@description = "This is a use case for LPS-70390."
 	@priority = "4"
+	@refactorneeded
 	test ViewNonASCIICharactersWithSPADisabled {
 		property custom.properties = "javascript.single.page.application.enabled=false";
 
@@ -285,6 +286,7 @@ definition {
 
 	@description = "Checks for each portlet having defined boundaries."
 	@priority = "5"
+	@refactorneeded
 	test ViewPortletBoundaries {
 		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
 		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
@@ -307,20 +309,22 @@ definition {
 
 		Navigator.gotoPage(pageName = "Test Page");
 
-		Portlet.addPG(portletName = "Message Board");
+		Portlet.addPG(portletName = "Message Boards");
 
 		Navigator.gotoPage(pageName = "Test Page");
 
-		Portlet.addPG(portletName = "Hello World");
+		Portlet.addPG(portletName = "IFrame");
 
 		Navigator.gotoPage(pageName = "Test Page");
 
 		Portlet.addPG(portletName = "Documents and Media");
 
+		Navigator.gotoPage(pageName = "Test Page");
+
 		Portlet.dragAndDropPortletToColumnPG(
 			columnNumberFrom = "1",
 			columnNumberTo = "2",
-			portletName = "Hello World");
+			portletName = "IFrame");
 
 		Navigator.gotoPage(pageName = "Test Page");
 
@@ -338,10 +342,10 @@ definition {
 		takeScreenshot();
 
 		MouseOver(
-			key_portletTitleName = "Hello World",
+			key_portletTitleName = "IFrame",
 			locator1 = "Home#PAGE_COLUMN_PORTLET_COLUMN_2_PORTLET_TITLE");
 
-		Portlet.assertPortletHeader(portletName = "HelloWorldPortlet");
+		Portlet.assertPortletHeader(portletName = "IFramePortlet");
 
 		takeScreenshot();
 
@@ -355,7 +359,9 @@ definition {
 	}
 
 	@description = "This test validates sign in and sign out UI"
+	@ignore = "true"
 	@priority = "5"
+	@refactorneeded
 	test ViewSignInSignOutUI {
 		property portal.acceptance = "false";
 

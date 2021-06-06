@@ -50,7 +50,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + LayoutPageTemplateAdminPortletKeys.LAYOUT_PAGE_TEMPLATES,
-		"mvc.command.name=/layout_prototype/update_layout_prototype"
+		"mvc.command.name=/layout_page_template_admin/update_layout_prototype"
 	},
 	service = MVCActionCommand.class
 )
@@ -84,15 +84,15 @@ public class UpdateLayoutPrototypeMVCActionCommand
 				actionRequest, actionResponse,
 				JSONUtil.put("redirectURL", redirect));
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(t, t);
+				_log.debug(throwable, throwable);
 			}
 
-			if (t instanceof LayoutPageTemplateEntryNameException) {
+			if (throwable instanceof LayoutPageTemplateEntryNameException) {
 				LayoutPageTemplateEntryNameException
 					layoutPageTemplateEntryNameException =
-						(LayoutPageTemplateEntryNameException)t;
+						(LayoutPageTemplateEntryNameException)throwable;
 
 				_layoutPageTemplateEntryExceptionRequestHandler.
 					handlePortalException(

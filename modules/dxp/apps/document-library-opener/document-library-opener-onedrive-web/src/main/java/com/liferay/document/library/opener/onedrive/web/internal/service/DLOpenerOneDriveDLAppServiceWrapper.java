@@ -28,7 +28,6 @@ import com.liferay.document.library.opener.onedrive.web.internal.constants.DLOpe
 import com.liferay.document.library.opener.onedrive.web.internal.exception.GraphServicePortalException;
 import com.liferay.document.library.opener.service.DLOpenerFileEntryReferenceLocalService;
 import com.liferay.document.library.opener.upload.UniqueFileEntryTitleProvider;
-import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -37,9 +36,11 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 
 import java.io.File;
+import java.io.InputStream;
 
 import java.util.Objects;
 
@@ -162,18 +163,34 @@ public class DLOpenerOneDriveDLAppServiceWrapper extends DLAppServiceWrapper {
 			serviceContext.getUserId(), fileEntry);
 	}
 
-	private long _getUserId() {
-		return GetterUtil.getLong(PrincipalThreadLocal.getName());
-	}
+	@Override
+	public FileEntry updateFileEntryAndCheckIn(
+			long fileEntryId, String sourceFileName, String mimeType,
+			String title, String description, String changeLog,
+			DLVersionNumberIncrease dlVersionNumberIncrease,
+			InputStream inputStream, long size, ServiceContext serviceContext)
+		throws PortalException {
 
-	private String _removeExtension(String string) {
-		int i = string.lastIndexOf(CharPool.PERIOD);
+		FileEntry fileEntry = getFileEntry(fileEntryId);
 
-		if (i == -1) {
-			return string;
+		if (!_dlOpenerOneDriveManager.isConfigured(fileEntry.getCompanyId()) ||
+			!_dlOpenerOneDriveManager.isOneDriveFile(fileEntry)) {
+
+			return super.updateFileEntryAndCheckIn(
+				fileEntryId, sourceFileName, mimeType, title, description,
+				changeLog, dlVersionNumberIncrease, null, serviceContext);
 		}
 
-		return string.substring(0, i);
+		checkInFileEntry(
+			fileEntryId, dlVersionNumberIncrease, changeLog, serviceContext);
+
+		return super.updateFileEntry(
+			fileEntryId, sourceFileName, mimeType, title, description,
+			changeLog, dlVersionNumberIncrease, null, 0, serviceContext);
+	}
+
+	private long _getUserId() {
+		return GetterUtil.getLong(PrincipalThreadLocal.getName());
 	}
 
 	private void _updateFileEntryFromOneDrive(
@@ -193,16 +210,18 @@ public class DLOpenerOneDriveDLAppServiceWrapper extends DLAppServiceWrapper {
 		if (!Objects.equals(
 				sourceFileName, dLOpenerOneDriveFileReference.getTitle())) {
 
+			String mimeTypeExtension =
+				DLOpenerOneDriveMimeTypes.getMimeTypeExtension(
+					fileEntry.getMimeType());
+
 			title = _uniqueFileEntryTitleProvider.provide(
 				fileEntry.getGroupId(), fileEntry.getFolderId(),
+				mimeTypeExtension,
 				_dlValidator.fixName(
-					_removeExtension(
+					FileUtil.stripExtension(
 						dLOpenerOneDriveFileReference.getTitle())));
 
-			sourceFileName = title;
-
-			sourceFileName += DLOpenerOneDriveMimeTypes.getMimeTypeExtension(
-				fileEntry.getMimeType());
+			sourceFileName = title.concat(mimeTypeExtension);
 		}
 
 		try {

@@ -39,6 +39,7 @@ import com.liferay.dynamic.data.mapping.service.DDMFormInstanceService;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceVersionLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMStructureService;
+import com.liferay.dynamic.data.mapping.storage.DDMStorageAdapterTracker;
 import com.liferay.dynamic.data.mapping.util.DDMFormLayoutFactory;
 import com.liferay.dynamic.data.mapping.util.DDMFormValuesMerger;
 import com.liferay.dynamic.data.mapping.util.comparator.StructureCreateDateComparator;
@@ -50,6 +51,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -104,9 +106,11 @@ public class DDMFormAdminFieldSetDisplayContext
 		DDMFormValuesFactory ddmFormValuesFactory,
 		DDMFormValuesMerger ddmFormValuesMerger,
 		DDMFormWebConfiguration ddmFormWebConfiguration,
+		DDMStorageAdapterTracker ddmStorageAdapterTracker,
 		DDMStructureLocalService ddmStructureLocalService,
-		DDMStructureService ddmStructureService, JSONFactory jsonFactory,
-		NPMResolver npmResolver, Portal portal) {
+		DDMStructureService ddmStructureService,
+		boolean ffSearchLocationDDMFormFieldTypeEnabled,
+		JSONFactory jsonFactory, NPMResolver npmResolver, Portal portal) {
 
 		super(
 			renderRequest, renderResponse,
@@ -118,8 +122,9 @@ public class DDMFormAdminFieldSetDisplayContext
 			ddmFormInstanceVersionLocalService, ddmFormRenderer,
 			ddmFormTemplateContextFactory, ddmFormValuesFactory,
 			ddmFormValuesMerger, ddmFormWebConfiguration,
-			ddmStructureLocalService, ddmStructureService, jsonFactory,
-			npmResolver, portal);
+			ddmStorageAdapterTracker, ddmStructureLocalService,
+			ddmStructureService, ffSearchLocationDDMFormFieldTypeEnabled,
+			jsonFactory, npmResolver, portal);
 
 		_fieldSetPermissionCheckerHelper = new FieldSetPermissionCheckerHelper(
 			formAdminRequestHelper);
@@ -148,6 +153,24 @@ public class DDMFormAdminFieldSetDisplayContext
 		return CreationMenuBuilder.addPrimaryDropdownItem(
 			getAddElementSetDropdownItem()
 		).build();
+	}
+
+	@Override
+	public Map<String, Object> getDDMFormSettingsContext(
+			PageContext pageContext)
+		throws Exception {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		DDMFormLayout ddmFormLayout = DDMFormLayoutFactory.create(
+			DDMFormInstanceSettings.class);
+
+		ddmFormLayout.setPaginationMode(DDMFormLayout.TABBED_MODE);
+
+		return ddmFormRenderer.getDDMFormTemplateContext(
+			createSettingsDDMForm(0L, themeDisplay), ddmFormLayout,
+			createDDMFormRenderingContext(pageContext, renderRequest));
 	}
 
 	@Override
@@ -212,7 +235,7 @@ public class DDMFormAdminFieldSetDisplayContext
 	}
 
 	@Override
-	public String getFormLocalizedDescription() {
+	public JSONObject getFormLocalizedDescriptionJSONObject() {
 		DDMStructure structure = getDDMStructure();
 
 		JSONObject jsonObject = jsonFactory.createJSONObject();
@@ -229,11 +252,11 @@ public class DDMFormAdminFieldSetDisplayContext
 			}
 		}
 
-		return jsonObject.toString();
+		return jsonObject;
 	}
 
 	@Override
-	public <T> String getFormLocalizedName(T object) {
+	public <T> JSONObject getFormLocalizedNameJSONObject(T object) {
 		DDMStructure structure = (DDMStructure)object;
 
 		JSONObject jsonObject = jsonFactory.createJSONObject();
@@ -250,7 +273,7 @@ public class DDMFormAdminFieldSetDisplayContext
 			}
 		}
 
-		return jsonObject.toString();
+		return jsonObject;
 	}
 
 	@Override
@@ -272,11 +295,15 @@ public class DDMFormAdminFieldSetDisplayContext
 
 	@Override
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/admin/view.jsp");
-		portletURL.setParameter("groupId", String.valueOf(getScopeGroupId()));
-		portletURL.setParameter("currentTab", "element-set");
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/admin/view.jsp"
+		).setParameter(
+			"currentTab", "element-set"
+		).setParameter(
+			"groupId", getScopeGroupId()
+		).build();
 
 		String delta = ParamUtil.getString(renderRequest, "delta");
 
@@ -313,9 +340,11 @@ public class DDMFormAdminFieldSetDisplayContext
 
 	@Override
 	public SearchContainer<?> getSearch() {
-		PortletURL portletURL = getPortletURL();
-
-		portletURL.setParameter("displayStyle", getDisplayStyle());
+		PortletURL portletURL = PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).build();
 
 		FieldSetSearch fieldSetSearch = new FieldSetSearch(
 			renderRequest, portletURL);
@@ -347,35 +376,20 @@ public class DDMFormAdminFieldSetDisplayContext
 
 	@Override
 	public String getSearchActionURL() {
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/admin/view.jsp");
-		portletURL.setParameter("groupId", String.valueOf(getScopeGroupId()));
-		portletURL.setParameter("currentTab", "element-set");
-
-		return portletURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/admin/view.jsp"
+		).setParameter(
+			"currentTab", "element-set"
+		).setParameter(
+			"groupId", getScopeGroupId()
+		).buildString();
 	}
 
 	@Override
 	public String getSearchContainerId() {
 		return "structure";
-	}
-
-	@Override
-	public String serializeSettingsForm(PageContext pageContext)
-		throws PortalException {
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		DDMFormLayout ddmFormLayout = DDMFormLayoutFactory.create(
-			DDMFormInstanceSettings.class);
-
-		ddmFormLayout.setPaginationMode(DDMFormLayout.TABBED_MODE);
-
-		return ddmFormRenderer.render(
-			createSettingsDDMForm(0L, themeDisplay), ddmFormLayout,
-			createDDMFormRenderingContext(pageContext, renderRequest));
 	}
 
 	protected UnsafeConsumer<DropdownItem, Exception>

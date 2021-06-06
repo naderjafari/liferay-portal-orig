@@ -34,7 +34,7 @@ public interface ElasticsearchConfiguration {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #productionModeEnabled()}
+	 *             #productionModeEnabled()}
 	 */
 	@Deprecated
 	@Meta.AD(
@@ -172,7 +172,7 @@ public interface ElasticsearchConfiguration {
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #sidecarHttpPort()}
+	 *             #sidecarHttpPort()}
 	 */
 	@Deprecated
 	@Meta.AD(
@@ -217,6 +217,12 @@ public interface ElasticsearchConfiguration {
 	public String networkPublishHost();
 
 	@Meta.AD(
+		deflt = "true", description = "track-total-hits-help",
+		name = "track-total-hits", required = false
+	)
+	public boolean trackTotalHits();
+
+	@Meta.AD(
 		deflt = "", description = "transport-tcp-port-help",
 		name = "transport-tcp-port", required = false
 	)
@@ -254,7 +260,7 @@ public interface ElasticsearchConfiguration {
 	public boolean sidecarDebug();
 
 	@Meta.AD(
-		deflt = "-agentlib:jdwp\\=transport\\=dt_socket\\,address\\=8001\\,server\\=y\\,suspend\\=y\\,quiet\\=y",
+		deflt = "-agentlib:jdwp=transport=dt_socket,address=8001,server=y,suspend=y,quiet=y",
 		description = "sidecar-debug-settings-help",
 		name = "sidecar-debug-settings", required = false
 	)
@@ -284,5 +290,28 @@ public interface ElasticsearchConfiguration {
 		name = "sidecar-shutdown-timeout", required = false
 	)
 	public long sidecarShutdownTimeout();
+
+	@Meta.AD(
+		description = "proxy-host-help", name = "proxy-host", required = false
+	)
+	public String proxyHost();
+
+	@Meta.AD(
+		deflt = "0", description = "proxy-port-help", name = "proxy-port",
+		required = false
+	)
+	public int proxyPort();
+
+	@Meta.AD(
+		description = "proxy-username-help", name = "proxy-username",
+		required = false
+	)
+	public String proxyUserName();
+
+	@Meta.AD(
+		description = "proxy-password-help", name = "proxy-password",
+		required = false, type = Meta.Type.Password
+	)
+	public String proxyPassword();
 
 }

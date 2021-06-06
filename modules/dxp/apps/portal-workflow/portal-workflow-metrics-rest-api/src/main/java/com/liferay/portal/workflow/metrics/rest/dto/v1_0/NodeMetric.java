@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +44,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("NodeMetric")
+@GraphQLName(
+	description = "https://www.schema.org/NodeMetric", value = "NodeMetric"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "NodeMetric")
-public class NodeMetric {
+public class NodeMetric implements Serializable {
 
 	public static NodeMetric toDTO(String json) {
 		return ObjectMapperUtil.readValue(NodeMetric.class, json);
@@ -353,6 +357,7 @@ public class NodeMetric {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.NodeMetric",
 		name = "x-class-name"
 	)
@@ -388,7 +393,7 @@ public class NodeMetric {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -427,7 +432,7 @@ public class NodeMetric {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

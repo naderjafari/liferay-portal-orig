@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -87,19 +88,19 @@ public class JSONServiceAction extends JSONAction {
 			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		String className = ParamUtil.getString(
-			httpServletRequest, "serviceClassName");
-		String methodName = ParamUtil.getString(
-			httpServletRequest, "serviceMethodName");
+		if (!isValidRequest(httpServletRequest)) {
+			return null;
+		}
 
 		String[] serviceParameters = getStringArrayFromJSON(
 			httpServletRequest, "serviceParameters");
 		String[] serviceParameterTypes = getStringArrayFromJSON(
 			httpServletRequest, "serviceParameterTypes");
 
-		if (!isValidRequest(httpServletRequest)) {
-			return null;
-		}
+		String className = ParamUtil.getString(
+			httpServletRequest, "serviceClassName");
+		String methodName = ParamUtil.getString(
+			httpServletRequest, "serviceMethodName");
 
 		Thread currentThread = Thread.currentThread();
 
@@ -161,7 +162,15 @@ public class JSONServiceAction extends JSONAction {
 					exception);
 			}
 
-			return JSONFactoryUtil.serializeThrowable(exception);
+			if (PropsValues.JSON_SERVICE_SERIALIZE_THROWABLE) {
+				return JSONFactoryUtil.serializeThrowable(exception);
+			}
+
+			PortalUtil.sendError(
+				HttpServletResponse.SC_INTERNAL_SERVER_ERROR, exception,
+				httpServletRequest, httpServletResponse);
+
+			return JSONFactoryUtil.getNullJSON();
 		}
 	}
 
@@ -418,7 +427,8 @@ public class JSONServiceAction extends JSONAction {
 					StringBundler.concat(
 						"Unsupported parameter type for class ", clazz,
 						", method ", methodName, ", parameter ", parameter,
-						", and type ", typeNameOrClassDescriptor));
+						", and type ", typeNameOrClassDescriptor),
+					exception);
 
 				return null;
 			}
@@ -632,11 +642,8 @@ public class JSONServiceAction extends JSONAction {
 				fieldDescriptor = "S";
 			}
 			else {
-				fieldDescriptor = "L".concat(
-					fieldDescriptor
-				).concat(
-					StringPool.SEMICOLON
-				);
+				fieldDescriptor = StringBundler.concat(
+					"L", fieldDescriptor, StringPool.SEMICOLON);
 			}
 
 			return dimensions.concat(fieldDescriptor);

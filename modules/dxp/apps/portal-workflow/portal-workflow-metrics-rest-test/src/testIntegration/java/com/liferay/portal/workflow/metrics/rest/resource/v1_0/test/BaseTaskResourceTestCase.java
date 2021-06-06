@@ -108,7 +108,9 @@ public abstract class BaseTaskResourceTestCase {
 
 		TaskResource.Builder builder = TaskResource.builder();
 
-		taskResource = builder.locale(
+		taskResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -210,7 +212,7 @@ public abstract class BaseTaskResourceTestCase {
 		Long irrelevantProcessId =
 			testGetProcessTasksPage_getIrrelevantProcessId();
 
-		if ((irrelevantProcessId != null)) {
+		if (irrelevantProcessId != null) {
 			Task irrelevantTask = testGetProcessTasksPage_addTask(
 				irrelevantProcessId, randomIrrelevantTask());
 
@@ -449,7 +451,7 @@ public abstract class BaseTaskResourceTestCase {
 		}
 	}
 
-	protected void assertValid(Task task) {
+	protected void assertValid(Task task) throws Exception {
 		boolean valid = true;
 
 		if (task.getDateCreated() == null) {
@@ -636,7 +638,7 @@ public abstract class BaseTaskResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.portal.workflow.metrics.rest.dto.v1_0.Task.
 						class)) {
 
@@ -671,7 +673,7 @@ public abstract class BaseTaskResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -915,9 +917,22 @@ public abstract class BaseTaskResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -1289,12 +1304,12 @@ public abstract class BaseTaskResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1304,10 +1319,10 @@ public abstract class BaseTaskResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

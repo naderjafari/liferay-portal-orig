@@ -3,6 +3,14 @@ definition {
 	var formName = "Created Form Name";
 	var rowIndexNumber = "1";
 
+	macro closePublishedFormWindow {
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content & Data",
+			portlet = "Forms");
+	}
+
 	macro enableLocalNetworkDataProvider {
 		Navigator.openURL();
 
@@ -59,19 +67,38 @@ definition {
 
 		var key_fieldName = "${fieldName}";
 
-		while (IsElementNotPresent(locator1 = "Form#SIDEBAR_MENUITEM_REMOVE_FIELD")) {
-			Click(locator1 = "Form#SIDEBAR_ELLIPSIS");
-		}
+		ScrollBy(value1 = "0, 230");
+
+		Click(locator1 = "Form#SIDEBAR_ELLIPSIS");
 
 		Click(locator1 = "Form#SIDEBAR_MENUITEM_REMOVE_FIELD");
 	}
 
 	macro gotoEditField {
+		Form.openSidebar();
+
+		Form.gotoFieldsTab();
+
 		var key_fieldName = "${fieldName}";
+		var key_fieldPositionNumber = "${fieldPositionNumber}";
 
-		WaitForElementPresent(locator1 = "Form#FIELD_BODY");
+		if (isSet(formPageNumber)) {
+			var key_formPageNumber = "${formPageNumber}";
+		}
+		else {
+			var key_formPageNumber = "0";
+		}
 
-		Click(locator1 = "Form#FIELD_BODY");
+		if (isSet(key_fieldPositionNumber)) {
+			ScrollWebElementIntoView(locator1 = "Form#FIELD_BODY_IN_SPECIFIC_POSITION");
+
+			Click(locator1 = "Form#FIELD_BODY_IN_SPECIFIC_POSITION");
+		}
+		else {
+			ScrollWebElementIntoView(locator1 = "Form#FIELD_BODY");
+
+			Click(locator1 = "Form#FIELD_BODY");
+		}
 
 		AssertElementPresent(locator1 = "Form#SIDEBAR_BASIC_TAB");
 	}
@@ -83,15 +110,27 @@ definition {
 			value1 = "${formName}");
 	}
 
-	macro gotoFormBuilder {
-		var key_assetTitle = "Form";
+	macro gotoEntries {
+		var key_navigationBarItem = "Entries";
 
 		WaitForElementPresent(
-			locator1 = "NavBar#ASSET_TITLE",
+			locator1 = "FormsAdmin#FORMS_NAVIGATION_BAR_ITEM",
+			value1 = "Entries");
+
+		AssertClick(
+			locator1 = "FormsAdmin#FORMS_NAVIGATION_BAR_ITEM",
+			value1 = "Entries");
+	}
+
+	macro gotoFormBuilder {
+		var key_navigationBarItem = "Form";
+
+		WaitForElementPresent(
+			locator1 = "FormsAdmin#FORMS_NAVIGATION_BAR_ITEM",
 			value1 = "Form");
 
 		AssertClick(
-			locator1 = "NavBar#ASSET_TITLE",
+			locator1 = "FormsAdmin#FORMS_NAVIGATION_BAR_ITEM",
 			value1 = "Form");
 	}
 
@@ -130,21 +169,21 @@ definition {
 	}
 
 	macro gotoRules {
-		var key_assetTitle = "Rules";
+		var key_navigationBarItem = "Rules";
 
 		WaitForElementPresent(
-			locator1 = "NavBar#ASSET_TITLE",
+			locator1 = "FormsAdmin#FORMS_NAVIGATION_BAR_ITEM",
 			value1 = "Rules");
 
 		AssertClick(
-			locator1 = "NavBar#ASSET_TITLE",
+			locator1 = "FormsAdmin#FORMS_NAVIGATION_BAR_ITEM",
 			value1 = "Rules");
 	}
 
 	macro gotoSettings {
 		AssertElementPresent(locator1 = "Form#NAME_FIELD");
 
-		LexiconEntry.gotoHeaderMenuItem(menuItem = "Settings");
+		Click(locator1 = "Form#SETTINGS_FORM_BUTTON");
 	}
 
 	macro gotoView {
@@ -156,12 +195,7 @@ definition {
 	}
 
 	macro gotoViewEntries {
-		if (IsElementNotPresent(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS")) {
-			AssertElementPresent(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS_IE");
-		}
-		else {
-			AssertElementPresent(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
-		}
+		AssertElementPresent(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
 
 		LexiconEntry.gotoEllipsisMenuItem(menuItem = "View Entries");
 	}
@@ -169,9 +203,7 @@ definition {
 	macro openPublishURL {
 		FormsAdminNavigator.gotoPublishCopyURLLink();
 
-		Pause(locator1 = "2000");
-
-		var publishFormURL = selenium.getElementValue("Form#PUBLISH_FORM_PUBLIC_URL");
+		var publishFormURL = Form.getPublishedFormPublicURL();
 
 		Navigator.openSpecificURL(url = "${publishFormURL}");
 	}

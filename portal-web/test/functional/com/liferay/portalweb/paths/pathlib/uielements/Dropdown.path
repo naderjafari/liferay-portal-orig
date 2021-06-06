@@ -9,8 +9,23 @@
 </thead>
 <tbody>
 <tr>
+	<td>ANY_DISABLED</td>
+	<td>//*[contains(@class, 'dropdown')]//*[contains(@class, 'disabled') and contains(text(), '${key_text}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ANY_ENABLED</td>
+	<td>//*[contains(@class, 'dropdown')]//*[not(contains(@class, 'disabled') and contains(text(),'${key_text}'))]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>CAPTION</td>
 	<td>//div[contains(@class,'caption') and normalize-space()='${key_caption}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>DROPDOWN_TOGGLE_BUTTON</td>
+	<td>//div[contains(@class,'btn-group')]//a[contains(.,'${key_toggleButtonName}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -20,17 +35,17 @@
 </tr>
 <tr>
 	<td>ENTRIES</td>
-	<td>//a[contains(@class,'dropdown') and contains(.,'Entries')] | //button[contains(@class,'dropdown') and contains(.,'Entries')]</td>
+	<td>//*[contains(@class,'dropdown') and contains(.,'Entries')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ENTRIES_NUMBER</td>
+	<td>//div[@class='dropdown pagination-items-per-page']//a[@role='button' and contains(text(),'${key_numberEntries}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>FRIENDLY_URL_LOCALE</td>
 	<td>//button[contains(@id,'friendlyURLMenu')]//span[contains(@class,'btn-section')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>RESULT</td>
-	<td>//div[contains(@class,'dropdown-menu')]//ul//li/button[text()='${key_option}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -51,7 +66,7 @@
 <!--FILTER-->
 <tr>
 	<td>FILTER_AND_ORDER</td>
-	<td>//button[*[normalize-space(text())='Filter and Order']]</td>
+	<td>//button[contains(.,'Filter and Order') or contains(@class,'Filter and Order')]</td>
 	<td></td>
 </tr>
 </tbody>

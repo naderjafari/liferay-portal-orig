@@ -26,8 +26,22 @@ definition {
 		Button.click(button = "Cancel");
 	}
 
+	macro clickCheckOut {
+		Click(locator1 = "Button#CHECKOUT");
+	}
+
+	macro clickCollapse {
+		Click(
+			key_label = "${label}",
+			locator1 = "DDMEditStructure#FORM_COLLAPSE_BUTTON");
+	}
+
 	macro clickComment {
 		Click(locator1 = "Button#COMMENT");
+	}
+
+	macro clickConfirm {
+		Click(locator1 = "Button#CONFIRM");
 	}
 
 	macro clickDelete {
@@ -40,6 +54,10 @@ definition {
 
 	macro clickEdit {
 		Button.click(button = "Edit");
+	}
+
+	macro clickImport {
+		Button.click(button = "Import");
 	}
 
 	macro clickInstall {

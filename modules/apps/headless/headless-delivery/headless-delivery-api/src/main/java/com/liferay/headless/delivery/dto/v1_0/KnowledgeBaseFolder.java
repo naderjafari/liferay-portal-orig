@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -49,20 +51,25 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("KnowledgeBaseFolder")
+@GraphQLName(
+	description = "Represents a folder for organizing Knowledge Base articles.",
+	value = "KnowledgeBaseFolder"
+)
 @JsonFilter("Liferay.Vulcan")
 @Schema(
-	requiredProperties = {"name"},
-	description = "Represents a folder for organizing Knowledge Base articles."
+	description = "Represents a folder for organizing Knowledge Base articles.",
+	requiredProperties = {"name"}
 )
 @XmlRootElement(name = "KnowledgeBaseFolder")
-public class KnowledgeBaseFolder {
+public class KnowledgeBaseFolder implements Serializable {
 
 	public static KnowledgeBaseFolder toDTO(String json) {
 		return ObjectMapperUtil.readValue(KnowledgeBaseFolder.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -88,7 +95,9 @@ public class KnowledgeBaseFolder {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -121,7 +130,9 @@ public class KnowledgeBaseFolder {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(
+		description = "A list of the custom fields associated with the folder."
+	)
 	@Valid
 	public CustomField[] getCustomFields() {
 		return customFields;
@@ -146,7 +157,9 @@ public class KnowledgeBaseFolder {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of the custom fields associated with the folder."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected CustomField[] customFields;
 
@@ -710,6 +723,7 @@ public class KnowledgeBaseFolder {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.KnowledgeBaseFolder",
 		name = "x-class-name"
 	)
@@ -779,7 +793,7 @@ public class KnowledgeBaseFolder {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -818,7 +832,7 @@ public class KnowledgeBaseFolder {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

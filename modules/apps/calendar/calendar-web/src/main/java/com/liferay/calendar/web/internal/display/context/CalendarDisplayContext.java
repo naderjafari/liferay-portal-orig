@@ -36,6 +36,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -88,6 +89,7 @@ public class CalendarDisplayContext {
 		_calendarLocalService = calendarLocalService;
 		_calendarResourceLocalService = calendarResourceLocalService;
 		_calendarService = calendarService;
+
 		_themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 	}
@@ -103,12 +105,11 @@ public class CalendarDisplayContext {
 	}
 
 	public String getClearResultsURL() throws PortletException {
-		PortletURL clearResultsURL = PortletURLUtil.clone(
-			getPortletURL(), _renderResponse);
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(getPortletURL(), _renderResponse)
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() {
@@ -172,6 +173,17 @@ public class CalendarDisplayContext {
 			for (Calendar groupCalendar : groupCalendars) {
 				if (groupCalendar.isDefaultCalendar() &&
 					CalendarPermission.contains(
+						_themeDisplay.getPermissionChecker(), groupCalendar,
+						CalendarActionKeys.VIEW_BOOKING_DETAILS)) {
+
+					defaultCalendar = groupCalendar;
+				}
+			}
+		}
+
+		if (defaultCalendar == null) {
+			for (Calendar groupCalendar : groupCalendars) {
+				if (CalendarPermission.contains(
 						_themeDisplay.getPermissionChecker(), groupCalendar,
 						CalendarActionKeys.VIEW_BOOKING_DETAILS)) {
 
@@ -310,9 +322,6 @@ public class CalendarDisplayContext {
 
 			Group scopeGroup = _themeDisplay.getScopeGroup();
 
-			long scopeGroupId = scopeGroup.getGroupId();
-			long scopeLiveGroupId = scopeGroup.getLiveGroupId();
-
 			Group calendarGroup = _groupLocalService.getGroup(
 				calendar.getGroupId());
 
@@ -320,14 +329,14 @@ public class CalendarDisplayContext {
 				long calendarGroupId = calendarGroup.getGroupId();
 
 				if (calendarGroup.isStagingGroup()) {
-					if (scopeGroupId != calendarGroupId) {
+					if (scopeGroup.getGroupId() != calendarGroupId) {
 						calendar =
 							_calendarLocalService.fetchCalendarByUuidAndGroupId(
 								calendar.getUuid(),
 								calendarGroup.getLiveGroupId());
 					}
 				}
-				else if (scopeLiveGroupId == calendarGroupId) {
+				else if (scopeGroup.getLiveGroupId() == calendarGroupId) {
 					Group stagingGroup = calendarGroup.getStagingGroup();
 
 					calendar =
@@ -351,10 +360,13 @@ public class CalendarDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view.jsp");
-		portletURL.setParameter("tabs1", "resources");
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view.jsp"
+		).setTabs1(
+			"resources"
+		).build();
 
 		String keywords = getKeywords();
 
@@ -483,16 +495,16 @@ public class CalendarDisplayContext {
 	protected void setCalendarResourceSearchResults(
 		CalendarResourceSearch calendarResourceSearch) {
 
-		long[] groupIds = {_themeDisplay.getScopeGroupId()};
-		long[] classNameIds = {
-			PortalUtil.getClassNameId(CalendarResource.class.getName())
-		};
 		CalendarResourceDisplayTerms displayTerms =
 			new CalendarResourceDisplayTerms(_renderRequest);
 
 		List<CalendarResource> calendarResources =
 			_calendarResourceLocalService.searchByKeywords(
-				_themeDisplay.getCompanyId(), groupIds, classNameIds,
+				_themeDisplay.getCompanyId(),
+				new long[] {_themeDisplay.getScopeGroupId()},
+				new long[] {
+					PortalUtil.getClassNameId(CalendarResource.class.getName())
+				},
 				getKeywords(), displayTerms.isActive(),
 				displayTerms.isAndOperator(), calendarResourceSearch.getStart(),
 				calendarResourceSearch.getEnd(),
@@ -504,16 +516,16 @@ public class CalendarDisplayContext {
 	protected void setCalendarResourceSearchTotal(
 		CalendarResourceSearch calendarResourceSearch) {
 
-		long[] groupIds = {_themeDisplay.getScopeGroupId()};
-		long[] classNameIds = {
-			PortalUtil.getClassNameId(CalendarResource.class.getName())
-		};
 		CalendarResourceDisplayTerms displayTerms =
 			new CalendarResourceDisplayTerms(_renderRequest);
 
 		int total = _calendarResourceLocalService.searchCount(
-			_themeDisplay.getCompanyId(), groupIds, classNameIds, getKeywords(),
-			displayTerms.isActive());
+			_themeDisplay.getCompanyId(),
+			new long[] {_themeDisplay.getScopeGroupId()},
+			new long[] {
+				PortalUtil.getClassNameId(CalendarResource.class.getName())
+			},
+			getKeywords(), displayTerms.isActive());
 
 		calendarResourceSearch.setTotal(total);
 	}

@@ -12,68 +12,60 @@
  * details.
  */
 
-import React from 'react';
+import classNames from 'classnames';
+import React, {useEffect, useState} from 'react';
 
 import useSetRef from '../../../core/hooks/useSetRef';
+import {getLayoutDataItemPropTypes} from '../../../prop-types/index';
+import {LAYOUT_DATA_ITEM_TYPES} from '../../config/constants/layoutDataItemTypes';
 import {
-	LayoutDataPropTypes,
-	getLayoutDataItemPropTypes,
-} from '../../../prop-types/index';
-import {LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS} from '../../config/constants/layoutDataFloatingToolbarButtons';
-import selectCanUpdateItemConfiguration from '../../selectors/selectCanUpdateItemConfiguration';
-import selectShowFloatingToolbar from '../../selectors/selectShowFloatingToolbar';
-import {useSelector} from '../../store/index';
-import {useIsActive} from '../Controls';
+	useHoveredItemId,
+	useHoveredItemType,
+} from '../../contexts/ControlsContext';
 import Topper from '../Topper';
-import FloatingToolbar from '../floating-toolbar/FloatingToolbar';
 import Collection from './Collection';
+import isHovered from './isHovered';
 
-const CollectionWithControls = React.forwardRef(
-	({children, item, layoutData}, ref) => {
-		const canUpdateItemConfiguration = useSelector(
-			selectCanUpdateItemConfiguration
-		);
-		const isActive = useIsActive();
+const CollectionWithControls = React.forwardRef(({children, item}, ref) => {
+	const [hovered, setHovered] = useState(false);
+	const hoveredItemType = useHoveredItemType();
+	const hoveredItemId = useHoveredItemId();
+	const [setRef, itemElement] = useSetRef(ref);
 
-		const showFloatingToolbar = useSelector(selectShowFloatingToolbar);
+	const isMapped =
+		item.type === LAYOUT_DATA_ITEM_TYPES.collection &&
+		'collection' in item.config;
 
-		const [setRef, itemElement] = useSetRef(ref);
-
-		const buttons = [];
-
-		if (canUpdateItemConfiguration) {
-			buttons.push(
-				LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.collectionConfiguration
+	useEffect(() => {
+		if (isMapped) {
+			setHovered(
+				isHovered({
+					editableValue: item.config.collection,
+					hoveredItemId,
+					hoveredItemType,
+				})
 			);
 		}
+	}, [isMapped, item, hoveredItemId, hoveredItemType]);
 
-		return (
-			<Topper
-				item={item}
-				itemElement={itemElement}
-				layoutData={layoutData}
-			>
-				<>
-					<Collection item={item} ref={setRef}>
-						{children}
-					</Collection>
-
-					{isActive(item.itemId) && showFloatingToolbar && (
-						<FloatingToolbar
-							buttons={buttons}
-							item={item}
-							itemElement={itemElement}
-						/>
-					)}
-				</>
-			</Topper>
-		);
-	}
-);
+	return (
+		<Topper
+			className={classNames({
+				'page-editor__topper--hovered': hovered,
+			})}
+			isMapped={isMapped}
+			item={item}
+			itemElement={itemElement}
+		>
+			<Collection item={item} ref={setRef}>
+				{children}
+			</Collection>
+		</Topper>
+	);
+});
 
 CollectionWithControls.propTypes = {
 	item: getLayoutDataItemPropTypes().isRequired,
-	layoutData: LayoutDataPropTypes.isRequired,
 };
 
 export default CollectionWithControls;

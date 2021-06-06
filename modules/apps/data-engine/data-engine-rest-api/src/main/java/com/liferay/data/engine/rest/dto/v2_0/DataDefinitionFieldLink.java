@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("DataDefinitionFieldLink")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DataDefinitionFieldLink")
-public class DataDefinitionFieldLink {
+public class DataDefinitionFieldLink implements Serializable {
 
 	public static DataDefinitionFieldLink toDTO(String json) {
 		return ObjectMapperUtil.readValue(DataDefinitionFieldLink.class, json);
@@ -223,6 +225,7 @@ public class DataDefinitionFieldLink {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataDefinitionFieldLink",
 		name = "x-class-name"
 	)
@@ -258,7 +261,7 @@ public class DataDefinitionFieldLink {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -297,7 +300,7 @@ public class DataDefinitionFieldLink {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

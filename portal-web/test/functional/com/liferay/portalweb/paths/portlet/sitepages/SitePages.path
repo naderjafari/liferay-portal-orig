@@ -25,21 +25,6 @@
 	<td></td>
 </tr>
 <tr>
-	<td>LIST_GROUP_ITEM_DEPTH</td>
-	<td>//ul[${key_depth}]/li[contains(@class,'list-group-item')]/a</td>
-	<td></td>
-</tr>
-<tr>
-	<td>LIST_GROUP_ITEM_ELLIPSIS_ICON</td>
-	<td>//li[contains(.,'${key_pageName}')]//*[*[name()='svg'][contains(@class,'ellipsis-v')]]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>LIST_GROUP_ITEM_ELLIPSIS_ICON_IE</td>
-	<td>//li[contains(.,'${key_pageName}')]//button[contains(@class,'dropdown-toggle')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>LIST_GROUP_ITEM_CHECKBOX</td>
 	<td>//li[contains(.,'${key_pageName}')]//input[@type='checkbox']</td>
 	<td></td>
@@ -50,6 +35,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>LIST_GROUP_ITEM_DEPTH</td>
+	<td>//ul[${key_depth}]/li[contains(@class,'list-group-item')]/a</td>
+	<td></td>
+</tr>
+<tr>
 	<td>LIST_GROUP_ITEM_DRAG_HANDLER</td>
 	<td>//div[contains(@class,'miller-columns')]//li[contains(.,'${key_pageName}')]/div[contains(@class,'drag-handler')]</td>
 	<td></td>
@@ -57,6 +47,21 @@
 <tr>
 	<td>LIST_GROUP_ITEM_DROP_TARGET</td>
 	<td>//li[contains(.,'${key_pageNameTo}')]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>LIST_GROUP_ITEM_ELLIPSIS_ICON</td>
+	<td>//li[contains(.,'${key_pageName}')]//*[*[name()='svg'][contains(@class,'ellipsis-v')]]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>LIST_GROUP_ITEM_ENTRY_TITLE</td>
+	<td>//li[contains(@class,'list-group-item')][contains(.,'${key_pageName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>LIST_GROUP_ITEM_ENTRY_TITLE_LINK</td>
+	<td>//li[contains(@class,'list-group-item')]//a[normalize-space(text())='${key_pageName}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -71,7 +76,7 @@
 </tr>
 <tr>
 	<td>LIST_GROUP_ITEM_PAGE_TYPE</td>
-	<td>//li[contains(@class,'list-group-item')]//h5[contains(.,'Content Page')]/../ h4[contains(.,'${key_pageName}')]</td>
+	<td>//li[contains(@class,'list-group-item')]//h5[contains(.,'${key_pageType}')]/../ h4[contains(.,'${key_pageName}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -82,11 +87,6 @@
 <tr>
 	<td>LIST_GROUP_ITEM_ROW_ENTRY</td>
 	<td>//ul[${key_depth}]/li[contains(@class,'list-group-item')][${key_index}]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>LIST_GROUP_ITEM_ROW_ENTRY_TITLE_LINK</td>
-	<td>//li[contains(.,'${key_pageName}')]//h4/a</td>
 	<td></td>
 </tr>
 <tr>
@@ -108,6 +108,11 @@
 <tr>
 	<td>DETAILS_FRIENDLY_BASE_URL</td>
 	<td>//div[contains(@class,'friendly-url')]/div[contains(@class,'form-text')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FRIENDLY_URL</td>
+	<td>//input[contains(@name,'friendlyURL') and contains(@value,'${key_friendlyURL}')]</td>
 	<td></td>
 </tr>
 <tr>

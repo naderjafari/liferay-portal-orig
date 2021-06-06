@@ -20,6 +20,7 @@ import com.liferay.portal.search.aggregation.Aggregation;
 import com.liferay.portal.search.aggregation.pipeline.PipelineAggregation;
 import com.liferay.portal.search.filter.ComplexQueryPart;
 import com.liferay.portal.search.groupby.GroupByRequest;
+import com.liferay.portal.search.highlight.Highlight;
 import com.liferay.portal.search.internal.searcher.SearchRequestImpl;
 import com.liferay.portal.search.query.Query;
 import com.liferay.portal.search.rescore.Rescore;
@@ -60,8 +61,9 @@ public class SearchRequestBuilderImpl implements SearchRequestBuilder {
 		SearchContext searchContext) {
 
 		_searchRequestBuilderFactory = searchRequestBuilderFactory;
-		_facetContext = new FacetContextImpl(searchContext);
 		_searchContext = searchContext;
+
+		_facetContext = new FacetContextImpl(searchContext);
 	}
 
 	public SearchRequestBuilderImpl(
@@ -125,12 +127,41 @@ public class SearchRequestBuilderImpl implements SearchRequestBuilder {
 	}
 
 	@Override
+	public SearchRequestBuilder addPostFilterQueryPart(
+		ComplexQueryPart complexQueryPart) {
+
+		if (complexQueryPart != null) {
+			withSearchRequestImpl(
+				searchRequestImpl -> searchRequestImpl.addPostFilterQueryPart(
+					complexQueryPart));
+		}
+
+		return this;
+	}
+
+	@Override
+	public SearchRequestBuilder addRescore(Rescore rescore) {
+		withSearchRequestImpl(
+			searchRequestImpl -> searchRequestImpl.addRescore(rescore));
+
+		return this;
+	}
+
+	@Override
 	public SearchRequestBuilder addSelectedFieldNames(
 		String... selectedFieldNames) {
 
 		withSearchRequestImpl(
 			searchRequestImpl -> searchRequestImpl.addSelectedFieldNames(
 				selectedFieldNames));
+
+		return this;
+	}
+
+	@Override
+	public SearchRequestBuilder addSort(Sort sort) {
+		withSearchRequestImpl(
+			searchRequestImpl -> searchRequestImpl.addSort(sort));
 
 		return this;
 	}
@@ -295,6 +326,14 @@ public class SearchRequestBuilderImpl implements SearchRequestBuilder {
 	}
 
 	@Override
+	public SearchRequestBuilder highlight(Highlight highlight) {
+		withSearchRequestImpl(
+			searchRequestImpl -> searchRequestImpl.setHighlight(highlight));
+
+		return this;
+	}
+
+	@Override
 	public SearchRequestBuilder highlightEnabled(boolean highlightEnabled) {
 		withSearchRequestImpl(
 			searchRequestImpl -> searchRequestImpl.setHighlightEnabled(
@@ -349,9 +388,26 @@ public class SearchRequestBuilderImpl implements SearchRequestBuilder {
 
 	@Override
 	public SearchRequestBuilder modelIndexerClasses(Class<?>... classes) {
+		String[] classNames = Stream.of(
+			classes
+		).map(
+			clazz -> clazz.getCanonicalName()
+		).toArray(
+			String[]::new
+		);
+
 		withSearchRequestImpl(
-			searchRequestImpl -> searchRequestImpl.setModelIndexerClasses(
-				classes));
+			searchRequestImpl -> searchRequestImpl.setModelIndexerClassNames(
+				classNames));
+
+		return this;
+	}
+
+	@Override
+	public SearchRequestBuilder modelIndexerClassNames(String... classNames) {
+		withSearchRequestImpl(
+			searchRequestImpl -> searchRequestImpl.setModelIndexerClassNames(
+				classNames));
 
 		return this;
 	}

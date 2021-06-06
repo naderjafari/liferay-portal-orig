@@ -19,11 +19,15 @@
 <%
 String tabs3 = ParamUtil.getString(request, "tabs3", "new-import-process");
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcRenderCommandName", "exportImport");
-portletURL.setParameter("tabs2", "import");
-portletURL.setParameter("portletResource", portletResource);
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/export_import/export_import"
+).setTabs2(
+	"import"
+).setParameter(
+	"portletResource", portletResource
+).build();
 
 boolean validate = ParamUtil.getBoolean(request, "validate", true);
 
@@ -40,9 +44,8 @@ String[] tempFileNames = LayoutServiceUtil.getTempFileNames(scopeGroupId, Export
 					navigationItem -> {
 						navigationItem.setActive(tabs3.equals("new-import-process"));
 						navigationItem.setHref(portletURL.toString());
-						navigationItem.setLabel(LanguageUtil.get(request, "new-import-process"));
-					}
-				);
+						navigationItem.setLabel(LanguageUtil.get(httpServletRequest, "new-import-process"));
+					});
 
 				portletURL.setParameter("tabs3", "current-and-previous");
 
@@ -50,9 +53,8 @@ String[] tempFileNames = LayoutServiceUtil.getTempFileNames(scopeGroupId, Export
 					navigationItem -> {
 						navigationItem.setActive(tabs3.equals("current-and-previous"));
 						navigationItem.setHref(portletURL.toString());
-						navigationItem.setLabel(LanguageUtil.get(request, "current-and-previous"));
-					}
-				);
+						navigationItem.setLabel(LanguageUtil.get(httpServletRequest, "current-and-previous"));
+					});
 			}
 		}
 	%>'
@@ -90,7 +92,7 @@ String[] tempFileNames = LayoutServiceUtil.getTempFileNames(scopeGroupId, Export
 </c:choose>
 
 <aui:script use="liferay-export-import-export-import">
-	<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="exportImport" var="importProcessesURL">
+	<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="/export_import/export_import" var="importProcessesURL">
 		<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.IMPORT %>" />
 		<portlet:param name="tabs2" value="import" />
 		<portlet:param name="<%= SearchContainer.DEFAULT_CUR_PARAM %>" value="<%= ParamUtil.getString(request, SearchContainer.DEFAULT_CUR_PARAM) %>" />

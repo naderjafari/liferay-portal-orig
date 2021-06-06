@@ -15,51 +15,92 @@
 import {
 	FormSupport,
 	PagesVisitor,
+	generateInstanceId,
 	normalizeFieldName,
-} from 'dynamic-data-mapping-form-renderer';
+} from 'data-engine-js-components-web';
+
+import {
+	getDefaultFieldName,
+	localizeField,
+} from '../../../util/fieldSupport.es';
+import {sub} from '../../../util/strings.es';
+import {
+	getSettingsContextProperty,
+	updateField,
+	updateFieldLabel,
+	updateSettingsContextInstanceId,
+	updateSettingsContextProperty,
+} from '../util/settingsContext.es';
 
 export const generateFieldName = (
 	pages,
 	desiredName,
 	currentName = null,
-	blacklist = []
+	blacklist = [],
+	generateFieldNameUsingFieldLabel
 ) => {
-	let counter = 0;
-	let fieldName = normalizeFieldName(desiredName);
+	let fieldName;
+	let existingField;
 
-	let existingField = FormSupport.findFieldByFieldName(pages, fieldName);
+	if (generateFieldNameUsingFieldLabel) {
+		let counter = 0;
 
-	while (
-		(existingField && existingField.fieldName !== currentName) ||
-		blacklist.includes(fieldName)
-	) {
-		if (counter > 0) {
-			fieldName = normalizeFieldName(desiredName) + counter;
-		}
+		fieldName = normalizeFieldName(desiredName);
 
 		existingField = FormSupport.findFieldByFieldName(pages, fieldName);
 
-		counter++;
+		while (
+			(existingField && existingField.fieldName !== currentName) ||
+			blacklist.includes(fieldName)
+		) {
+			if (counter > 0) {
+				fieldName = normalizeFieldName(desiredName) + counter;
+			}
+
+			existingField = FormSupport.findFieldByFieldName(pages, fieldName);
+
+			counter++;
+		}
+
+		return normalizeFieldName(fieldName);
 	}
+	else {
+		fieldName = desiredName;
 
-	return normalizeFieldName(fieldName);
-};
+		existingField = FormSupport.findFieldByFieldName(pages, fieldName);
 
-export const getFieldValue = (pages, fieldName) => {
-	return getFieldProperty(pages, fieldName, 'value');
+		while (
+			(existingField && existingField.fieldName !== currentName) ||
+			blacklist.includes(fieldName)
+		) {
+			fieldName = getDefaultFieldName();
+
+			existingField = FormSupport.findFieldByFieldName(pages, fieldName);
+		}
+
+		return fieldName;
+	}
 };
 
 export const getFieldProperty = (pages, fieldName, propertyName) => {
 	const visitor = new PagesVisitor(pages);
 	let propertyValue;
 
-	visitor.mapFields((field) => {
-		if (field.fieldName === fieldName) {
-			propertyValue = field[propertyName];
-		}
-	});
+	visitor.mapFields(
+		(field) => {
+			if (field.fieldName === fieldName) {
+				propertyValue = field[propertyName];
+			}
+		},
+		true,
+		true
+	);
 
 	return propertyValue;
+};
+
+export const getFieldValue = (pages, fieldName) => {
+	return getFieldProperty(pages, fieldName, 'value');
 };
 
 export const getField = (pages, fieldName) => {
@@ -83,6 +124,24 @@ export const getFieldLocalizedValue = (pages, fieldName, locale) => {
 	);
 
 	return fieldLocalizedValue[locale];
+};
+
+export const getLabel = (
+	originalField,
+	defaultLanguageId,
+	editingLanguageId
+) => {
+	const labelFieldLocalizedValue = getFieldLocalizedValue(
+		originalField.settingsContext.pages,
+		'label',
+		editingLanguageId
+	);
+
+	if (!labelFieldLocalizedValue) {
+		return;
+	}
+
+	return sub(Liferay.Language.get('copy-of-x'), [labelFieldLocalizedValue]);
 };
 
 export const updateFieldValidationProperty = (
@@ -123,4 +182,168 @@ export const updateFieldValidationProperty = (
 
 		return field;
 	});
+};
+
+export const getValidation = (originalField) => {
+	const validation = getSettingsContextProperty(
+		originalField.settingsContext,
+		'validation'
+	);
+
+	return validation;
+};
+
+export const createDuplicatedField = (originalField, props, blacklist = []) => {
+	const {
+		availableLanguageIds,
+		defaultLanguageId,
+		editingLanguageId,
+		fieldNameGenerator,
+		generateFieldNameUsingFieldLabel,
+	} = props;
+	const newFieldName = fieldNameGenerator(
+		getDefaultFieldName(),
+		null,
+		blacklist
+	);
+
+	let duplicatedField = updateField(
+		props,
+		originalField,
+		'name',
+		newFieldName
+	);
+
+	duplicatedField = updateField(
+		props,
+		duplicatedField,
+		'fieldReference',
+		newFieldName
+	);
+
+	duplicatedField.instanceId = generateInstanceId(8);
+
+	availableLanguageIds.forEach((availableLanguageId) => {
+		const label = getLabel(
+			originalField,
+			defaultLanguageId,
+			availableLanguageId
+		);
+
+		if (label) {
+			duplicatedField = updateFieldLabel(
+				defaultLanguageId,
+				availableLanguageId,
+				fieldNameGenerator,
+				duplicatedField,
+				generateFieldNameUsingFieldLabel,
+				label
+			);
+		}
+	});
+
+	if (duplicatedField.nestedFields?.length > 0) {
+		duplicatedField.nestedFields = duplicatedField.nestedFields.map(
+			(field) => {
+				const newDuplicatedNestedField = createDuplicatedField(
+					field,
+					props,
+					blacklist
+				);
+
+				blacklist.push(newDuplicatedNestedField.fieldName);
+
+				let {rows = []} = duplicatedField;
+
+				if (typeof rows === 'string') {
+					rows = JSON.parse(rows);
+				}
+
+				const visitor = new PagesVisitor([
+					{
+						rows,
+					},
+				]);
+
+				const layout = visitor.mapColumns((column) => {
+					return {
+						...column,
+						fields: column.fields.map((fieldName) => {
+							if (fieldName === field.fieldName) {
+								return newDuplicatedNestedField.fieldName;
+							}
+
+							return fieldName;
+						}),
+					};
+				});
+
+				duplicatedField.rows = layout[0].rows;
+
+				return newDuplicatedNestedField;
+			}
+		);
+
+		duplicatedField.settingsContext = updateSettingsContextProperty(
+			defaultLanguageId,
+			props.editingLanguageId,
+			duplicatedField.settingsContext,
+			'rows',
+			duplicatedField.rows
+		);
+
+		duplicatedField.ddmStructureLayoutId = '';
+
+		duplicatedField.settingsContext = updateSettingsContextProperty(
+			defaultLanguageId,
+			props.editingLanguageId,
+			duplicatedField.settingsContext,
+			'ddmStructureLayoutId',
+			duplicatedField.ddmStructureLayoutId
+		);
+	}
+
+	const settingsContext = updateSettingsContextInstanceId(duplicatedField);
+
+	const settingsVisitor = new PagesVisitor(settingsContext.pages);
+
+	duplicatedField.settingsContext = {
+		...settingsContext,
+		pages: settingsVisitor.mapFields((field) =>
+			localizeField(field, defaultLanguageId, editingLanguageId)
+		),
+	};
+
+	return updateField(
+		props,
+		duplicatedField,
+		'validation',
+		getValidation(duplicatedField)
+	);
+};
+
+export const findInvalidFieldReference = (focusedField, pages, value) => {
+	let hasInvalidFieldReference = false;
+
+	const visitor = new PagesVisitor(pages);
+
+	visitor.mapFields(
+		(field) => {
+			const fieldReference = getSettingsContextProperty(
+				field.settingsContext,
+				'fieldReference'
+			);
+
+			if (
+				focusedField.fieldName !== field.fieldName &&
+				fieldReference?.toLowerCase() === value?.toLowerCase()
+			) {
+				hasInvalidFieldReference = true;
+			}
+		},
+		true,
+		true
+	);
+
+	return hasInvalidFieldReference;
 };

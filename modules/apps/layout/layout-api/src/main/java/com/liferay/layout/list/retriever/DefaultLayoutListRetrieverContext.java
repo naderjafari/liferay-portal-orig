@@ -25,26 +25,71 @@ public class DefaultLayoutListRetrieverContext
 	implements LayoutListRetrieverContext {
 
 	@Override
+	public Optional<long[][]> getAssetCategoryIdsOptional() {
+		return Optional.ofNullable(_assetCategoryIds);
+	}
+
+	@Override
+	public Optional<Object> getContextObjectOptional() {
+		return Optional.ofNullable(_contextObject);
+	}
+
+	@Override
 	public Optional<Pagination> getPaginationOptional() {
 		return Optional.ofNullable(_pagination);
 	}
 
 	@Override
+	public Optional<long[]> getSegmentsEntryIdsOptional() {
+		return Optional.ofNullable(_segmentsEntryIds);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	@Override
 	public Optional<long[]> getSegmentsExperienceIdsOptional() {
 		return Optional.ofNullable(_segmentsExperienceIds);
+	}
+
+	public void setAssetCategoryIds(long[][] assetCategoryIds) {
+		_assetCategoryIds = assetCategoryIds;
+	}
+
+	public void setContextObject(Object contextObject) {
+		_contextObject = contextObject;
 	}
 
 	public void setPagination(Pagination pagination) {
 		_pagination = pagination;
 	}
 
-	public void setSegmentsExperienceIdsOptional(
-		long[] segmentsExperienceIdsOptional) {
-
-		_segmentsExperienceIds = segmentsExperienceIdsOptional;
+	public void setSegmentsEntryIds(long[] segmentsEntryIds) {
+		_segmentsEntryIds = segmentsEntryIds;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public void setSegmentsExperienceIds(long[] segmentsExperienceIds) {
+		_segmentsExperienceIds = segmentsExperienceIds;
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #setSegmentsExperienceIds(long[])}
+	 */
+	@Deprecated
+	public void setSegmentsExperienceIdsOptional(long[] segmentsExperienceIds) {
+		_segmentsExperienceIds = segmentsExperienceIds;
+	}
+
+	private long[][] _assetCategoryIds;
+	private Object _contextObject;
 	private Pagination _pagination;
+	private long[] _segmentsEntryIds;
 	private long[] _segmentsExperienceIds;
 
 }

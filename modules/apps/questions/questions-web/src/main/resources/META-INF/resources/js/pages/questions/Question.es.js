@@ -12,20 +12,24 @@
  * details.
  */
 
-import {useMutation, useQuery} from '@apollo/client';
 import ClayButton from '@clayui/button';
 import ClayForm from '@clayui/form';
 import ClayIcon from '@clayui/icon';
+import ClayLabel from '@clayui/label';
 import ClayNavigationBar from '@clayui/navigation-bar';
 import classNames from 'classnames';
+import {useMutation} from 'graphql-hooks';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
+import {Helmet} from 'react-helmet';
 import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../../AppContext.es';
+import Alert from '../../components/Alert.es';
 import Answer from '../../components/Answer.es';
 import ArticleBodyRenderer from '../../components/ArticleBodyRenderer.es';
+import Breadcrumb from '../../components/Breadcrumb.es';
 import CreatorRow from '../../components/CreatorRow.es';
-import DeleteThread from '../../components/DeleteThread.es';
+import DeleteQuestion from '../../components/DeleteQuestion.es';
 import Link from '../../components/Link.es';
 import PaginatedList from '../../components/PaginatedList.es';
 import QuestionsEditor from '../../components/QuestionsEditor';
@@ -38,14 +42,15 @@ import TextLengthValidation from '../../components/TextLengthValidation.es';
 import useQueryParams from '../../hooks/useQueryParams.es';
 import {
 	createAnswerQuery,
-	getMessagesQuery,
-	getThreadQuery,
+	getMessages,
+	getThread,
 	markAsAnswerMessageBoardMessageQuery,
 } from '../../utils/client.es';
 import lang from '../../utils/lang.es';
 import {
 	dateToBriefInternationalHuman,
 	getContextLink,
+	getFullPath,
 	stripHTML,
 } from '../../utils/utils.es';
 
@@ -59,6 +64,8 @@ export default withRouter(
 	}) => {
 		const context = useContext(AppContext);
 
+		const [error, setError] = useState(null);
+
 		const queryParams = useQueryParams(location);
 
 		const sort = queryParams.get('sort') || 'active';
@@ -69,85 +76,101 @@ export default withRouter(
 		const [page, setPage] = useState(1);
 		const [pageSize, setPageSize] = useState(20);
 
-		const {
-			loading,
-			data: {messageBoardThreadByFriendlyUrlPath: question = {}} = {},
-		} = useQuery(getThreadQuery, {
-			context: {
-				uri: '/o/graphql?nestedFields=lastPostDate',
-			},
-			variables: {
-				friendlyUrlPath: questionId,
-				siteKey: context.siteKey,
-			},
-		});
-
-		const {
-			data: {messageBoardThreadMessageBoardMessages = {}} = {},
-			refetch,
-		} = useQuery(getMessagesQuery, {
-			context: {
-				uri: '/o/graphql?nestedFields=lastPostDate',
-			},
-			skip: !question || !question.id,
-			variables: {
-				messageBoardThreadId: question.id,
-				page: sort === 'votes' ? 1 : page,
-				pageSize: sort === 'votes' ? 100 : pageSize,
-				sort:
-					sort === 'votes' || sort === 'active'
-						? 'dateModified:desc'
-						: 'dateCreated:desc',
-			},
-		});
-
+		const [loading, setLoading] = useState(true);
+		const [question, setQuestion] = useState({});
 		const [answers, setAnswers] = useState({});
 
-		useEffect(() => {
-			if (messageBoardThreadMessageBoardMessages.totalCount) {
-				if (sort !== 'votes') {
-					setAnswers({...messageBoardThreadMessageBoardMessages});
-				}
-				else {
-					const items = [
-						...[
-							...messageBoardThreadMessageBoardMessages.items,
-						].sort((answer1, answer2) => {
-							if (answer2.showAsAnswer) {
-								return 1;
+		const fetchMessages = useCallback(() => {
+			if (question && question.id) {
+				getMessages(question.id, sort, page, pageSize).then(
+					({data: {messageBoardThreadMessageBoardMessages}}) => {
+						if (
+							messageBoardThreadMessageBoardMessages?.totalCount
+						) {
+							if (sort !== 'votes') {
+								setAnswers({
+									...messageBoardThreadMessageBoardMessages,
+								});
 							}
-							if (answer1.showAsAnswer) {
-								return -1;
+							else {
+								const items = [
+									...[
+										...messageBoardThreadMessageBoardMessages.items,
+									].sort((answer1, answer2) => {
+										if (answer2.showAsAnswer) {
+											return 1;
+										}
+										if (answer1.showAsAnswer) {
+											return -1;
+										}
+
+										const ratingValue1 =
+											(answer1.aggregateRating &&
+												answer1.aggregateRating
+													.ratingValue) ||
+											0;
+										const ratingValue2 =
+											(answer2.aggregateRating &&
+												answer2.aggregateRating
+													.ratingValue) ||
+											0;
+
+										return ratingValue2 - ratingValue1;
+									}),
+								];
+
+								setAnswers({
+									...messageBoardThreadMessageBoardMessages,
+									items,
+								});
 							}
-
-							const ratingValue1 =
-								(answer1.aggregateRating &&
-									answer1.aggregateRating.ratingValue) ||
-								0;
-							const ratingValue2 =
-								(answer2.aggregateRating &&
-									answer2.aggregateRating.ratingValue) ||
-								0;
-
-							return ratingValue2 - ratingValue1;
-						}),
-					];
-
-					setAnswers({
-						...messageBoardThreadMessageBoardMessages,
-						items,
-					});
-				}
+						}
+					}
+				);
 			}
-		}, [messageBoardThreadMessageBoardMessages, pageSize, sort]);
+		}, [question, page, pageSize, sort]);
 
-		const [createAnswer] = useMutation(createAnswerQuery, {
-			context: getContextLink(`${sectionTitle}/${questionId}`),
-			onCompleted() {
-				setArticleBody('');
-				refetch();
-			},
-		});
+		useEffect(() => {
+			getThread(questionId, context.siteKey)
+				.then(
+					({data: {messageBoardThreadByFriendlyUrlPath}, error}) => {
+						if (error) {
+							setError({
+								message: 'Loading question',
+								title: 'Error',
+							});
+							setLoading(false);
+						}
+						else {
+							setQuestion(messageBoardThreadByFriendlyUrlPath);
+							setLoading(false);
+						}
+					}
+				)
+				.catch((error) => {
+					if (process.env.NODE_ENV === 'development') {
+						console.error(error);
+					}
+					setError({message: 'Loading question', title: 'Error'});
+					setLoading(false);
+				});
+		}, [questionId, context.siteKey]);
+
+		sectionTitle =
+			sectionTitle || sectionTitle === '0'
+				? sectionTitle
+				: question.messageBoardSection &&
+				  question.messageBoardSection.title;
+
+		useEffect(() => {
+			document.title = (question && question.title) || questionId;
+		}, [question, questionId]);
+
+		useEffect(() => {
+			fetchMessages();
+		}, [fetchMessages]);
+
+		const [createAnswer] = useMutation(createAnswerQuery);
 
 		const deleteAnswer = useCallback(
 			(answer) => {
@@ -165,12 +188,7 @@ export default withRouter(
 		);
 
 		const [markAsAnswerMessageBoardMessage] = useMutation(
-			markAsAnswerMessageBoardMessageQuery,
-			{
-				onCompleted() {
-					refetch();
-				},
-			}
+			markAsAnswerMessageBoardMessageQuery
 		);
 
 		const answerChange = useCallback(
@@ -185,44 +203,60 @@ export default withRouter(
 							messageBoardMessageId: answer.id,
 							showAsAnswer: false,
 						},
+					}).then(() => {
+						fetchMessages();
 					});
 				}
 			},
-			[markAsAnswerMessageBoardMessage, answers.items]
+			[markAsAnswerMessageBoardMessage, answers.items, fetchMessages]
 		);
 
 		return (
-			<section className="c-mt-5 questions-section questions-section-single">
-				<div className="questions-container">
-					{!loading && (
-						<div className="row">
+			<section className="questions-section questions-section-single">
+				<Breadcrumb
+					section={
+						question.messageBoardSection || context.rootTopicId
+					}
+				/>
+
+				<div className="c-mt-5">
+					{!loading && !error && (
+						<div className="questions-container row">
 							<div className="col-md-1 text-md-center">
 								<Rating
 									aggregateRating={question.aggregateRating}
+									disabled={!!question.locked}
 									entityId={question.id}
 									myRating={
 										question.myRating &&
 										question.myRating.ratingValue
 									}
-									type={'Thread'}
+									type="Thread"
 								/>
 							</div>
 
 							<div className="col-md-10">
 								<div className="align-items-end flex-column-reverse flex-md-row row">
 									<div className="c-mt-4 c-mt-md-0 col-md-8">
-										{!!question.messageBoardSection
-											.numberOfMessageBoardSections && (
-											<Link
-												to={`/questions/${question.messageBoardSection.title}`}
-											>
-												<SectionLabel
-													section={
-														question.messageBoardSection
-													}
-												/>
-											</Link>
-										)}
+										{!!question.messageBoardSection &&
+											!!question.messageBoardSection
+												.numberOfMessageBoardSections && (
+												<Link
+													to={`/questions/${
+														context.useTopicNamesInURL
+															? sectionTitle
+															: question
+																	.messageBoardSection
+																	.id
+													}`}
+												>
+													<SectionLabel
+														section={
+															question.messageBoardSection
+														}
+													/>
+												</Link>
+											)}
 
 										<h1
 											className={classNames(
@@ -235,6 +269,22 @@ export default withRouter(
 											)}
 										>
 											{question.headline}
+
+											{question.status &&
+												question.status !==
+													'approved' && (
+													<span className="c-ml-2">
+														<ClayLabel displayType="info">
+															{question.status}
+														</ClayLabel>
+													</span>
+												)}
+
+											{!!question.locked && (
+												<span className="c-ml-2">
+													<ClayIcon symbol="lock" />
+												</span>
+											)}
 										</h1>
 
 										<p className="c-mb-0 small text-secondary">
@@ -259,49 +309,62 @@ export default withRouter(
 										</p>
 									</div>
 
-									<div className="col-md-4 text-right">
-										<ClayButton.Group
-											className="questions-actions"
-											spaced={true}
-										>
-											{question.actions.subscribe && (
-												<Subscription
-													question={question}
-												/>
-											)}
-
-											{question.actions.delete && (
-												<>
-													<DeleteThread
+									{!question.locked && (
+										<div className="col-md-4 text-right">
+											<ClayButton.Group
+												className="questions-actions"
+												spaced={true}
+											>
+												{question.actions.subscribe && (
+													<Subscription
 														question={question}
-														showDeleteModalPanel={
-															showDeleteModalPanel
+														siteKey={
+															context.siteKey
 														}
 													/>
-													<ClayButton
-														displayType="secondary"
-														onClick={() =>
-															setShowDeleteModalPanel(
-																true
-															)
-														}
-													>
-														<ClayIcon symbol="trash" />
-													</ClayButton>
-												</>
-											)}
+												)}
 
-											{question.actions.replace && (
-												<Link to={`${url}/edit`}>
-													<ClayButton displayType="secondary">
-														{Liferay.Language.get(
-															'edit'
-														)}
-													</ClayButton>
-												</Link>
-											)}
-										</ClayButton.Group>
-									</div>
+												{question.actions.delete && (
+													<>
+														<DeleteQuestion
+															deleteModalVisibility={
+																showDeleteModalPanel
+															}
+															question={question}
+															setDeleteModalVisibility={
+																setShowDeleteModalPanel
+															}
+														/>
+
+														<ClayButton
+															data-tooltip-align="top"
+															displayType="secondary"
+															onClick={() =>
+																setShowDeleteModalPanel(
+																	true
+																)
+															}
+															title={Liferay.Language.get(
+																'delete'
+															)}
+														>
+															<ClayIcon symbol="trash" />
+														</ClayButton>
+													</>
+												)}
+
+												{question.actions.replace && (
+													<Link to={`${url}/edit`}>
+														<ClayButton displayType="secondary">
+															{Liferay.Language.get(
+																'edit'
+															)}
+														</ClayButton>
+													</Link>
+												)}
+											</ClayButton.Group>
+										</div>
+									)}
 								</div>
 
 								<div className="c-mt-4">
@@ -310,10 +373,7 @@ export default withRouter(
 
 								<div className="c-mt-4">
 									<TagList
-										sectionTitle={
-											question.messageBoardSection &&
-											question.messageBoardSection.title
-										}
+										sectionTitle={sectionTitle}
 										tags={question.keywords}
 									/>
 								</div>
@@ -384,7 +444,12 @@ export default withRouter(
 											<Answer
 												answer={answer}
 												answerChange={answerChange}
+												canMarkAsAnswer={
+													!question.locked &&
+													!!question.actions.replace
+												}
 												deleteAnswer={deleteAnswer}
+												editable={!question.locked}
 												key={answer.id}
 											/>
 										)}
@@ -392,6 +457,7 @@ export default withRouter(
 								</div>
 
 								{question &&
+									question.status !== 'pending' &&
 									question.actions &&
 									question.actions['reply-to-thread'] && (
 										<div className="c-mt-5">
@@ -408,10 +474,29 @@ export default withRouter(
 													</label>
 
 													<div className="c-mt-2">
+														{question.locked && (
+															<div className="question-locked-text">
+																<span>
+																	<ClayIcon symbol="lock" />
+																</span>
+																{Liferay.Language.get(
+																	'this-question-is-closed-new-answers-and-comments-are-disabled'
+																)}
+															</div>
+														)}
 														<QuestionsEditor
 															contents={
 																articleBody
 															}
+															cssClass={
+																question.locked
+																	? 'question-locked'
+																	: ''
+															}
+															editorConfig={{
+																readOnly:
+																	question.locked,
+															}}
 															onChange={(
 																event
 															) => {
@@ -434,27 +519,35 @@ export default withRouter(
 												</ClayForm.Group>
 											</ClayForm>
 
-											<ClayButton
-												disabled={
-													!articleBody ||
-													stripHTML(articleBody)
-														.length < 15
-												}
-												displayType="primary"
-												onClick={() => {
-													createAnswer({
-														variables: {
-															articleBody,
-															messageBoardThreadId:
-																question.id,
-														},
-													});
-												}}
-											>
-												{Liferay.Language.get(
-													'post-answer'
-												)}
-											</ClayButton>
+											{!question.locked && (
+												<ClayButton
+													disabled={
+														!articleBody ||
+														stripHTML(articleBody)
+															.length < 15
+													}
+													displayType="primary"
+													onClick={() => {
+														createAnswer({
+															fetchOptionsOverrides: getContextLink(
+																`${sectionTitle}/${questionId}`
+															),
+															variables: {
+																articleBody,
+																messageBoardThreadId:
+																	question.id,
+															},
+														}).then(() => {
+															setArticleBody('');
+															fetchMessages();
+														});
+													}}
+												>
+													{Liferay.Language.get(
+														'post-answer'
+													)}
+												</ClayButton>
+											)}
 										</div>
 									)}
 							</div>
@@ -463,7 +556,21 @@ export default withRouter(
 					{question && question.id && (
 						<RelatedQuestions question={question} />
 					)}
+
+					<Alert info={error} />
 				</div>
+
+				{question && (
+					<Helmet>
+						<title>{question.headline}</title>
+						<link
+							href={`${getFullPath('questions')}${
+								context.historyRouterBasePath ? '' : '#/'
+							}questions/${sectionTitle}/${questionId}`}
+							rel="canonical"
+						/>
+					</Helmet>
+				)}
 			</section>
 		);
 	}

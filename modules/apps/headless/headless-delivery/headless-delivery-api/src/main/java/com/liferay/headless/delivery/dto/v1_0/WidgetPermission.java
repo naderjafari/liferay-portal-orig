@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,16 +42,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WidgetPermission")
+@GraphQLName(
+	description = "The widget instance's permissions.",
+	value = "WidgetPermission"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WidgetPermission")
-public class WidgetPermission {
+public class WidgetPermission implements Serializable {
 
 	public static WidgetPermission toDTO(String json) {
 		return ObjectMapperUtil.readValue(WidgetPermission.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "The keys of the actions the role has permission for."
+	)
 	public String[] getActionKeys() {
 		return actionKeys;
 	}
@@ -73,11 +80,13 @@ public class WidgetPermission {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The keys of the actions the role has permission for."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String[] actionKeys;
 
-	@Schema
+	@Schema(description = "The role's key.")
 	public String getRoleKey() {
 		return roleKey;
 	}
@@ -101,7 +110,7 @@ public class WidgetPermission {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The role's key.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String roleKey;
 
@@ -176,6 +185,7 @@ public class WidgetPermission {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.WidgetPermission",
 		name = "x-class-name"
 	)
@@ -211,7 +221,7 @@ public class WidgetPermission {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -250,7 +260,7 @@ public class WidgetPermission {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

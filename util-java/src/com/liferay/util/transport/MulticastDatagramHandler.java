@@ -39,8 +39,8 @@ public class MulticastDatagramHandler implements DatagramHandler {
 	}
 
 	@Override
-	public void errorReceived(Throwable t) {
-		_log.error(t, t);
+	public void errorReceived(Throwable throwable) {
+		_log.error(throwable, throwable);
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public class MulticastDatagramHandler implements DatagramHandler {
 		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 			new UnsyncByteArrayOutputStream(bytes.length);
 
-		try (InputStream is = new GZIPInputStream(
+		try (InputStream inputStream = new GZIPInputStream(
 				new UnsyncByteArrayInputStream(bytes))) {
 
 			byte[] buffer = new byte[1500];
@@ -91,7 +91,7 @@ public class MulticastDatagramHandler implements DatagramHandler {
 					break;
 				}
 
-				c = is.read(buffer, 0, 1500);
+				c = inputStream.read(buffer, 0, 1500);
 
 				if (c != -1) {
 					unsyncByteArrayOutputStream.write(buffer, 0, c);

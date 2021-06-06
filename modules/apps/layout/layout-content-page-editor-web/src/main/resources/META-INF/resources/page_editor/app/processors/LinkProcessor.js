@@ -12,25 +12,28 @@
  * details.
  */
 
+import {config} from '../config/index';
 import getAlloyEditorProcessor from './getAlloyEditorProcessor';
 import {getLinkableEditableEditorWrapper} from './getLinkableEditableEditorWrapper';
 
 export default getAlloyEditorProcessor(
 	'text',
 	getLinkableEditableEditorWrapper,
-	(element, value, config) => {
+	(element, value, editableConfig, languageId) => {
 		const anchor =
 			element instanceof HTMLAnchorElement
 				? element
 				: element.querySelector('a');
 
-		if (anchor) {
-			if (config.href) {
-				anchor.href = config.href;
-			}
+		const link =
+			editableConfig[languageId] ||
+			editableConfig[config.defaultLanguageId] ||
+			editableConfig;
 
+		if (anchor) {
+			anchor.href = link.href || '#';
 			anchor.innerHTML = value;
-			anchor.target = config.target || '';
+			anchor.target = link.target || '';
 		}
 	}
 );

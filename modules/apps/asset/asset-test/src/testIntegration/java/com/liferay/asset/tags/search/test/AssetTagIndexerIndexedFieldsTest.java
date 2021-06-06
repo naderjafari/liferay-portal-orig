@@ -22,8 +22,6 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Indexer;
-import com.liferay.portal.kernel.search.SearchEngine;
-import com.liferay.portal.kernel.search.SearchEngineHelper;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -33,7 +31,11 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.document.DocumentBuilderFactory;
+import com.liferay.portal.search.filter.ComplexQueryPart;
+import com.liferay.portal.search.filter.ComplexQueryPartBuilderFactory;
 import com.liferay.portal.search.model.uid.UIDFactory;
+import com.liferay.portal.search.query.Queries;
+import com.liferay.portal.search.query.Query;
 import com.liferay.portal.search.searcher.SearchRequestBuilderFactory;
 import com.liferay.portal.search.searcher.Searcher;
 import com.liferay.portal.search.test.util.FieldValuesAssert;
@@ -49,7 +51,6 @@ import com.liferay.users.admin.test.util.search.UserSearchFixture;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -97,20 +98,16 @@ public class AssetTagIndexerIndexedFieldsTest {
 		_groups = groupSearchFixture.getGroups();
 
 		_indexedFieldsFixture = new IndexedFieldsFixture(
-			resourcePermissionLocalService, searchEngineHelper, uidFactory,
-			documentBuilderFactory);
+			resourcePermissionLocalService, uidFactory, documentBuilderFactory);
 
 		_users = userSearchFixture.getUsers();
 	}
 
 	@Test
 	public void testIndexedFields() throws Exception {
-		Assume.assumeFalse(
-			isNumberSortableImplementedAsDoubleForSearchEngine());
-
 		AssetTag assetTag = _assetTagFixture.createAssetTag();
 
-		String searchTerm = assetTag.getUserName();
+		String searchTerm = String.valueOf(assetTag.getPrimaryKey());
 
 		assertFieldValues(_expectedFieldValues(assetTag), searchTerm);
 	}
@@ -118,9 +115,7 @@ public class AssetTagIndexerIndexedFieldsTest {
 	@Rule
 	public SearchTestRule searchTestRule = new SearchTestRule();
 
-	protected void assertFieldValues(
-		Map<String, String> map, String searchTerm) {
-
+	protected void assertFieldValues(Map<String, String> map, String classPK) {
 		FieldValuesAssert.assertFieldValues(
 			map, name -> !name.equals("score"),
 			searcher.search(
@@ -133,22 +128,9 @@ public class AssetTagIndexerIndexedFieldsTest {
 					StringPool.STAR
 				).modelIndexerClasses(
 					AssetTag.class
-				).queryString(
-					searchTerm
+				).addComplexQueryPart(
+					_getComplexQueryPart(_queries.term("entryClassPK", classPK))
 				).build()));
-	}
-
-	protected boolean isNumberSortableImplementedAsDoubleForSearchEngine() {
-		SearchEngine searchEngine = searchEngineHelper.getSearchEngine(
-			searchEngineHelper.getDefaultSearchEngineId());
-
-		String vendor = searchEngine.getVendor();
-
-		if (vendor.equals("Solr")) {
-			return true;
-		}
-
-		return false;
 	}
 
 	@Inject
@@ -164,9 +146,6 @@ public class AssetTagIndexerIndexedFieldsTest {
 
 	@Inject
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
-
-	@Inject
-	protected SearchEngineHelper searchEngineHelper;
 
 	@Inject
 	protected Searcher searcher;
@@ -218,6 +197,13 @@ public class AssetTagIndexerIndexedFieldsTest {
 		return map;
 	}
 
+	private ComplexQueryPart _getComplexQueryPart(Query query) {
+		return _complexQueryPartBuilderFactory.builder(
+		).query(
+			query
+		).build();
+	}
+
 	private void _populateDates(AssetTag assetTag, Map<String, String> map) {
 		_indexedFieldsFixture.populateDate(
 			Field.CREATE_DATE, assetTag.getCreateDate(), map);
@@ -238,12 +224,18 @@ public class AssetTagIndexerIndexedFieldsTest {
 	@DeleteAfterTestRun
 	private List<AssetTag> _assetTags;
 
+	@Inject
+	private ComplexQueryPartBuilderFactory _complexQueryPartBuilderFactory;
+
 	private Group _group;
 
 	@DeleteAfterTestRun
 	private List<Group> _groups;
 
 	private IndexedFieldsFixture _indexedFieldsFixture;
+
+	@Inject
+	private Queries _queries;
 
 	@DeleteAfterTestRun
 	private List<User> _users;

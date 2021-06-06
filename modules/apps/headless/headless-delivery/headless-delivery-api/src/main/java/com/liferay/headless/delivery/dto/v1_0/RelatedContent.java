@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("RelatedContent")
+@GraphQLName(
+	description = "Represents a relationship between two resources, internally modeled as AssetLink.",
+	value = "RelatedContent"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "RelatedContent")
-public class RelatedContent {
+public class RelatedContent implements Serializable {
 
 	public static RelatedContent toDTO(String json) {
 		return ObjectMapperUtil.readValue(RelatedContent.class, json);
@@ -202,6 +207,7 @@ public class RelatedContent {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.RelatedContent",
 		name = "x-class-name"
 	)
@@ -237,7 +243,7 @@ public class RelatedContent {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -276,7 +282,7 @@ public class RelatedContent {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

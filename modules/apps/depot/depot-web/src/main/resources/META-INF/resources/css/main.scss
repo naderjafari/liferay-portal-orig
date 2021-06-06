@@ -1,16 +1,5 @@
-@import 'atlas';
+@import 'atlas-variables';
 
-.lfr-depot-dashboard-container {
-	.card .autofit-col {
-		position: initial;
-	}
-
-	a.card-title {
-		@extend .stretched-link;
-
-		&:hover {
-			color: inherit;
-			text-decoration: unset;
-		}
-	}
+.lfr-depot-dashboard-container .card-title {
+	color: $dark;
 }

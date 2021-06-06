@@ -3,8 +3,8 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
+	property testray.component.names = "Theme";
 	property testray.main.component.name = "Fragments";
-	property testray.component.name = "Theme";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -47,9 +47,17 @@ definition {
 			collectionName = "Basic Components",
 			fragmentName = "Button");
 
+		Click.clickNoWaitForVisible(
+			key_fragmentName = "Button",
+			locator1 = "Fragment#FRAGMENT_HEADER");
+
+		Pause(locator1 = "3000");
+
+		var key_navItem = "General";
+
 		AssertVisible(
-			key_elementType = "Fragment",
-			locator1 = "PageEditor#FRAGMENT_BODY_TOOLBAR_CONFIGURATION_BUTTON");
+			locator1 = "PageEditor#NAV_ITEM_BUTTON",
+			value1 = "General");
 	}
 
 	@description = "This is a test for LPS-99377. User can change checkbox fragment configuration."
@@ -188,11 +196,18 @@ definition {
 			collectionName = "Collection Name",
 			fragmentName = "Text Fragment Example");
 
-		Click.clickNoMouseOver(
-			key_elementType = "Fragment",
-			locator1 = "PageEditor#FRAGMENT_BODY_TOOLBAR_CONFIGURATION_BUTTON");
-
 		task ("Assert placeholder is exist") {
+			Click.clickNoWaitForVisible(
+				key_fragmentName = "Text Fragment Example",
+				locator1 = "Fragment#FRAGMENT_HEADER");
+
+			Pause(locator1 = "3000");
+
+			AssertClick(
+				key_navItem = "General",
+				locator1 = "PageEditor#NAV_ITEM_BUTTON",
+				value1 = "General");
+
 			AssertVisible(locator1 = "FragmentEditor#FRAGMENTS_EDITOR_FLOATING_CONFIGURATION_PANEL");
 		}
 	}
@@ -283,57 +298,6 @@ definition {
 		}
 	}
 
-	@description = "This is a test for LPS-100545. Ensure that the correct content is selected when using itemSelector."
-	@priority = "4"
-	test CanSelectSpecificWebContentUsingItemSelector {
-		for (var count : list "1,2,3") {
-			JSONWebcontent.addWebContent(
-				content = "WC WebContent Content ${count}",
-				groupName = "Test Site Name",
-				title = "WebContent Title ${count}");
-		}
-
-		task ("Add a section fragment to the fragment collection via JSON") {
-			var htmlSnippet = FragmentsAPI.getFragmentFileContent(fileName = "itemSelector_configuration.html");
-			var jsonSnippet = FragmentsAPI.getFragmentFileContent(fileName = "itemSelector_configuration.json");
-
-			JSONFragment.addSection(
-				collectionName = "Collection Name",
-				configuration = "${jsonSnippet}",
-				fragmentStatus = "Approved",
-				groupName = "Test Site Name",
-				html = "${htmlSnippet}",
-				name = "itemSelector Fragment Example");
-		}
-
-		ContentPagesNavigator.openEditContentPage(
-			pageName = "Test Content Page Name",
-			siteName = "Test Site Name");
-
-		PageEditor.addFragment(
-			collectionName = "Collection Name",
-			fragmentName = "itemSelector Fragment Example");
-
-		PageEditor.editContentDisplay(
-			fragmentName = "itemSelector Fragment Example",
-			webcontent = "true",
-			webContentContent = "WC WebContent Content 2",
-			webContentTitle = "WebContent Title 2");
-
-		PageEditor.clickPublish();
-
-		ContentPagesNavigator.openViewContentPage(
-			pageName = "Test Content Page Name",
-			siteName = "Test Site Name");
-
-		task ("Assert correct content is visible") {
-			AssertVisible(
-				key_content = "WC WebContent Content 2",
-				key_fragmentClass = "configuration",
-				locator1 = "Fragment#FRAGMENT");
-		}
-	}
-
 	@description = "This is a test for LPS-96685. User can change fragment configuration value."
 	@priority = "5"
 	test ChangeConfigurationFragmentToContentPage {
@@ -366,6 +330,484 @@ definition {
 
 		task ("Assert dark text is visible") {
 			AssertElementPresent(locator1 = "//div[contains(@class,'fragment-configuration')]/div[contains(@class,'dark')]");
+		}
+	}
+
+	@description = "This is a test for LPS-100963. When a fragment that uses JavaScript has a configuration, there is a JavaScript configuration object available which contains the current values of the fragment configuration."
+	@priority = "4"
+	test ConfigureFragmentWithJavaScript {
+		task ("Add a new fragment with the following codes") {
+			FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "test-site-name");
+
+			FragmentsAdminNavigator.gotoCollection(collectionName = "Collection Name");
+
+			FragmentsAdmin.addFragment(fragmentName = "Fragment Name");
+
+			FragmentsEditor.gotoConfigurationTab();
+
+			var jsonSnippet = '''
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "primary",
+					"label": "type",
+					"name": "buttonType",
+					"type": "select",
+					"typeOptions": {
+						"validValues": [
+							{
+								"value": "primary"
+							},
+							{
+								"value": "secondary"
+							},
+							{
+								"value": "link"
+							},
+							{
+								"value": "outline-primary"
+							},
+							{
+								"value": "outline-secondary"
+							}
+						]
+					}
+				}
+			]
+		},
+		{
+			"configurationRole": "style",
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "nm",
+					"label": "size",
+					"name": "buttonSize",
+					"type": "select",
+					"typeOptions": {
+						"validValues": [
+							{
+								"label": "small",
+								"value": "sm"
+							},
+							{
+								"label": "normal",
+								"value": "nm"
+							},
+							{
+								"label": "large",
+								"value": "lg"
+							}
+						]
+					}
+				}
+			]
+		}
+	]
+}
+				''';
+
+			FragmentsEditor.typeConfigurationEditor(content = "${jsonSnippet}");
+
+			Pause(locator1 = "3000");
+
+			FragmentsEditor.gotoCodeTab();
+
+			var htmlSnippet = '''
+<div class="component-fragment-name text-break">
+	<a
+		class="btn"
+		data-lfr-editable-id="link"
+		data-lfr-editable-type="link"
+		href=""
+		id="fragment-${fragmentEntryLinkNamespace}-link"
+	>
+		Go Somewhere
+	</a>
+</div>
+			''';
+
+			FragmentsEditor.typeHtmlEditor(content = "${htmlSnippet}");
+
+			var jsSnippet = '''
+
+const size = configuration.buttonSize;
+const type = configuration.buttonType;
+
+function main() {
+		const editableField = fragmentElement.querySelector('.btn');
+
+	editableField.classList.add(`btn-${size}`);
+	editableField.classList.add(`btn-${type}`);
+}
+
+main();
+
+			''';
+
+			FragmentsEditor.typeJsEditor(content = "${jsSnippet}");
+
+			FragmentsEditor.publish();
+		}
+
+		task ("Add the new fragment to page") {
+			ContentPagesNavigator.openEditContentPage(
+				pageName = "Test Content Page Name",
+				siteName = "Test Site Name");
+
+			PageEditor.addFragment(
+				collectionName = "Collection Name",
+				fragmentName = "Fragment Name");
+		}
+
+		task ("View the fragment styles") {
+			PageEditor.viewFragmentStyle(
+				fragmentName = "Fragment-Name",
+				size = "nm",
+				type = "primary");
+		}
+
+		task ("Configure the fragment") {
+			PageEditor.gotoConfiguration(fragmentName = "Fragment Name");
+
+			PageEditor.configureFragment(type = "Link");
+
+			PageEditor.gotoStyle(fragmentName = "Fragment Name");
+
+			PageEditor.configureFragment(size = "Large");
+		}
+
+		task ("View the fragment styles") {
+			PageEditor.viewFragmentStyle(
+				fragmentName = "Fragment-Name",
+				size = "lg",
+				type = "link");
+
+			PageEditor.clickPublish();
+		}
+
+		task ("View the fragment styles in view mode") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Content Page Name",
+				siteName = "Test Site Name");
+
+			PageEditor.viewFragmentStyle(
+				fragmentName = "Fragment-Name",
+				size = "lg",
+				type = "link");
+		}
+	}
+
+	@description = "This is a test for LPS-101249. Can only select Documents and Media when set itemType to FileEntry."
+	@priority = "3"
+	test OnlySelectDocumentsAndMediaViaFragmentWhenItemTypeIsFileEntry {
+		task ("Add a WC based on Basic Web Content") {
+			JSONWebcontent.addWebContent(
+				content = "Web Content Content",
+				description = "Web Content Description",
+				groupName = "Test Site Name",
+				title = "Web Content Title");
+		}
+
+		task ("Add a blog") {
+			JSONBlog.addEntry(
+				entryContent = "Blogs Entry Content",
+				entryTitle = "Blogs Entry Title",
+				groupName = "Test Site Name");
+		}
+
+		task ("Add a document with an image") {
+			JSONDocument.addFileWithUploadedFile(
+				dmDocumentDescription = "DM Document Description",
+				dmDocumentTitle = "Document Title",
+				groupName = "Test Site Name",
+				mimeType = "image/jpeg",
+				sourceFileName = "Document_1.jpg");
+		}
+
+		task ("Import test fragments from dependencies folder") {
+			FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "test-site-name");
+
+			FragmentsAdmin.importCollectionFromDependenciesFolder(collectionZipFile = "display-collection-name.zip");
+		}
+
+		task ("Add new fragment to content page") {
+			ContentPagesNavigator.openEditContentPage(
+				pageName = "Test Content Page Name",
+				siteName = "Test Site Name");
+
+			PageEditor.addFragment(
+				collectionName = "imported",
+				fragmentName = "Documents and Media");
+
+			AssertElementPresent(
+				key_fragmentName = "Documents and Media",
+				key_messageIfo = "The selected content will be shown here.",
+				locator1 = "Fragment#MESSAGE_INFO");
+		}
+
+		task ("Open select popup") {
+			PageEditor.gotoSelectPanel(fragmentName = "Documents and Media");
+		}
+
+		task ("Assert only Documents and Media entry shown") {
+			AssertElementPresent(
+				key_card = "Document Title",
+				locator1 = "Card#CARD");
+
+			AssertElementNotPresent(
+				key_navItem = "Web Content",
+				locator1 = "NavBar#NAV_ITEM_LINK");
+
+			AssertElementNotPresent(
+				key_navItem = "Blogs",
+				locator1 = "NavBar#NAV_ITEM_LINK");
+		}
+
+		task ("Assert fragment display correctly") {
+			LexiconCard.clickCard(card = "Document Title");
+
+			AssertVisible(
+				key_content = "Document Title",
+				key_fragmentClass = "dm",
+				locator1 = "Fragment#FRAGMENT");
+		}
+	}
+
+	@description = "This is a test for LPS-101249 and LPS-100545. Can only select web content articles created with a specific structure when set itemSubtype."
+	@priority = "3"
+	test OnlySelectWebContentBasedOnCustomStructureViaFragmentWhenSetItemSubtype {
+		property test.name.skip.portal.instance = "ContentPagesWithFragmentConfiguration#OnlySelectWebContentBasedOnCustomStructureViaFragmentWhenSetItemSubtype";
+
+		task ("Add a WC based on Basic Web Content") {
+			JSONWebcontent.addWebContent(
+				content = "Web Content Content",
+				description = "Web Content Description",
+				groupName = "Test Site Name",
+				title = "Basic Web Content Title");
+		}
+
+		task ("Disable autogenerate structure key") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Configuration",
+				panel = "Control Panel",
+				portlet = "System Settings");
+
+			SystemSettings.gotoConfiguration(
+				configurationCategory = "Web Content",
+				configurationName = "Administration",
+				configurationScope = "System Scope");
+
+			FormFields.disableCheckbox(fieldName = "Autogenerate Structure Key");
+
+			PortletEntry.save();
+		}
+
+		task ("Add a structure with Text field") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			NavItem.gotoStructures();
+
+			WebContentStructures.addCP(
+				structureDescription = "WC Structure Description",
+				structureKey = "STRUCTURE-TEXT",
+				structureName = "WC Structure Name");
+
+			DataEngine.addField(
+				fieldFieldLabel = "Text",
+				fieldName = "Text");
+
+			WebContentStructures.saveCP(structureName = "WC Structure Name");
+		}
+
+		task ("Add a template for new structure") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			NavItem.gotoTemplates();
+
+			WebContentTemplates.addCP(
+				structureName = "WC Structure Name",
+				templateDescription = "WC Template Description",
+				templateFieldNames = "Text",
+				templateName = "WC Template Name");
+		}
+
+		task ("Add a WC based on structure with Text field") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
+
+			WebContent.addWithStructureCP(
+				description = "Web Content Description",
+				structureName = "WC Structure Name",
+				templateName = "WC Template Name",
+				webContentText = "Web Content Text",
+				webContentTitle = "Web Content With Text Title");
+
+			PortletEntry.publish();
+
+			WebContent.viewTitle(webContentTitle = "Web Content With Text Title");
+		}
+
+		task ("Import test fragments from dependencies folder") {
+			FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "test-site-name");
+
+			FragmentsAdmin.importCollectionFromDependenciesFolder(collectionZipFile = "display-collection-name.zip");
+		}
+
+		task ("Add new fragment to content page") {
+			ContentPagesNavigator.openEditContentPage(
+				pageName = "Test Content Page Name",
+				siteName = "Test Site Name");
+
+			PageEditor.addFragment(
+				collectionName = "imported",
+				fragmentName = "Web Content With Text");
+
+			AssertElementPresent(
+				key_fragmentName = "Web Content With Text",
+				key_messageIfo = "The selected content will be shown here.",
+				locator1 = "Fragment#MESSAGE_INFO");
+		}
+
+		task ("Open select popup") {
+			PageEditor.gotoSelectPanel(fragmentName = "Web Content With Text");
+		}
+
+		task ("Assert only WC with text field shown in popup") {
+			AssertElementNotPresent(
+				key_listEntry = "Basic Web Content Title",
+				locator1 = "LexiconList#LIST_ENTRY_TITLE");
+
+			AssertElementPresent(
+				key_listEntry = "Web Content With Text Title",
+				locator1 = "LexiconList#LIST_ENTRY_TITLE");
+		}
+
+		task ("Assert fragment display correctly") {
+			AssertClick(
+				key_listEntry = "Web Content With Text Title",
+				locator1 = "LexiconList#LIST_ENTRY_TITLE",
+				value1 = "Web Content With Text Title");
+
+			for (var content : list "Web Content With Text Title,Web Content Description,Web Content Text") {
+				AssertVisible(
+					key_content = "${content}",
+					key_fragmentClass = "wctext",
+					locator1 = "Fragment#FRAGMENT");
+			}
+		}
+
+		task ("Select the custom template") {
+			Select(
+				key_fieldLabel = "Template",
+				locator1 = "Select#GENERIC_SELECT_FIELD",
+				value1 = "WC Template Name");
+
+			PageEditor.waitForAutoSave();
+
+			AssertSelectedLabel(
+				key_fieldLabel = "Template",
+				locator1 = "Select#GENERIC_SELECT_FIELD",
+				value1 = "WC Template Name");
+		}
+
+		task ("View displayed content") {
+			for (var content : list "Web Content With Text Title,Web Content Description,Web Content Text") {
+				AssertVisible(
+					key_content = "${content}",
+					key_fragmentClass = "wctext",
+					locator1 = "Fragment#FRAGMENT");
+			}
+		}
+	}
+
+	@description = "This is a test for LPS-101249. Can only select web content articles when set itemType to JournalArticle"
+	@priority = "5"
+	test OnlySelectWebContentViaFragmentWhenItemTypeIsJournalArticle {
+		property portal.acceptance = "true";
+
+		task ("Add a WC based on Basic Web Content") {
+			JSONWebcontent.addWebContent(
+				content = "Web Content Content",
+				description = "Web Content Description",
+				groupName = "Test Site Name",
+				title = "Web Content Title");
+		}
+
+		task ("Add a blog") {
+			Navigator.openSiteURL(siteName = "Test Site Name");
+
+			JSONBlog.addEntry(
+				entryContent = "Blogs Entry Content",
+				entryTitle = "Blogs Entry Title",
+				groupName = "Test Site Name");
+		}
+
+		task ("Add a document") {
+			JSONDocument.addFile(
+				dmDocumentDescription = "DM Document Description",
+				dmDocumentTitle = "DM Document Title",
+				groupName = "Test Site Name");
+		}
+
+		task ("Import test fragments from dependencies folder") {
+			FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "test-site-name");
+
+			FragmentsAdmin.importCollectionFromDependenciesFolder(collectionZipFile = "display-collection-name.zip");
+		}
+
+		task ("Add new fragment to content page") {
+			ContentPagesNavigator.openEditContentPage(
+				pageName = "Test Content Page Name",
+				siteName = "Test Site Name");
+
+			PageEditor.addFragment(
+				collectionName = "imported",
+				fragmentName = "Web Content");
+
+			AssertElementPresent(
+				key_fragmentName = "Web Content",
+				key_messageIfo = "The selected content will be shown here.",
+				locator1 = "Fragment#MESSAGE_INFO");
+		}
+
+		task ("Open select popup") {
+			PageEditor.gotoSelectPanel(fragmentName = "Web Content");
+		}
+
+		task ("Assert only Web Content entry shown") {
+			AssertElementPresent(
+				key_listEntry = "Web Content Title",
+				locator1 = "LexiconList#LIST_ENTRY_TITLE");
+
+			AssertElementNotPresent(
+				key_navItem = "Documents and Media",
+				locator1 = "NavBar#NAV_ITEM_LINK");
+
+			AssertElementNotPresent(
+				key_navItem = "Blogs",
+				locator1 = "NavBar#NAV_ITEM_LINK");
+		}
+
+		task ("Assert fragment display correctly") {
+			AssertClick(
+				key_listEntry = "Web Content Title",
+				locator1 = "LexiconList#LIST_ENTRY_TITLE",
+				value1 = "Web Content Title");
+
+			AssertVisible(
+				key_content = "Web Content Content",
+				key_fragmentClass = "wc",
+				locator1 = "Fragment#FRAGMENT");
+
+			AssertVisible(
+				key_content = "Web Content Description",
+				key_fragmentClass = "wc",
+				locator1 = "Fragment#FRAGMENT");
 		}
 	}
 

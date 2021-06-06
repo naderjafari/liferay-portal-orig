@@ -70,15 +70,14 @@ if (fieldsJSONArray != null) {
 	fieldsJSONArrayString = fieldsJSONArray.toString();
 }
 
-boolean saveAndContinue = ParamUtil.getBoolean(request, "saveAndContinue");
 boolean showBackURL = ParamUtil.getBoolean(request, "showBackURL", true);
 %>
 
-<portlet:actionURL name="addStructure" var="addStructureURL">
+<portlet:actionURL name="/dynamic_data_mapping/add_structure" var="addStructureURL">
 	<portlet:param name="mvcPath" value="/edit_structure.jsp" />
 </portlet:actionURL>
 
-<portlet:actionURL name="updateStructure" var="updateStructureURL">
+<portlet:actionURL name="/dynamic_data_mapping/update_structure" var="updateStructureURL">
 	<portlet:param name="mvcPath" value="/edit_structure.jsp" />
 </portlet:actionURL>
 
@@ -100,7 +99,7 @@ if (Validator.isNotNull(requestUpdateStructureURL)) {
 		<aui:input name="scopeClassNameId" type="hidden" value="<%= scopeClassNameId %>" />
 		<aui:input name="definition" type="hidden" />
 		<aui:input name="status" type="hidden" />
-		<aui:input name="saveAndContinue" type="hidden" value="<%= saveAndContinue %>" />
+		<aui:input name="saveAndContinue" type="hidden" value='<%= ParamUtil.getBoolean(request, "saveAndContinue") %>' />
 
 		<liferay-ui:error exception="<%= DDMFormLayoutValidationException.class %>" message="please-enter-a-valid-form-layout" />
 
@@ -317,7 +316,7 @@ if (Validator.isNotNull(requestUpdateStructureURL)) {
 						</aui:field-wrapper>
 
 						<c:if test="<%= structure != null %>">
-							<portlet:resourceURL id="getStructure" var="getStructureURL">
+							<portlet:resourceURL id="/dynamic_data_mapping/get_structure" var="getStructureURL">
 								<portlet:param name="structureId" value="<%= String.valueOf(classPK) %>" />
 							</portlet:resourceURL>
 
@@ -348,29 +347,22 @@ if (Validator.isNotNull(requestUpdateStructureURL)) {
 
 <aui:script>
 	function <portlet:namespace />openParentStructureSelector() {
-		Liferay.Util.openDDMPortlet(
-			{
-				basePortletURL:
-					'<%= PortletURLFactoryUtil.create(request, DDMPortletKeys.DYNAMIC_DATA_MAPPING, PortletRequest.RENDER_PHASE) %>',
-				classPK: <%= (structure != null) ? structure.getPrimaryKey() : 0 %>,
-				dialog: {
-					destroyOnHide: true,
-				},
-				eventName: '<portlet:namespace />selectParentStructure',
-				mvcPath: '/select_structure.jsp',
-				showAncestorScopes: true,
-				showManageTemplates: false,
-				title: '<%= HtmlUtil.escapeJS(scopeTitle) %>',
-			},
-			function (event) {
-				var form = document.<portlet:namespace />fm;
+		const opener = Liferay.Util.getOpener();
+
+		opener.Liferay.Util.openSelectionModal({
+			onSelect: function (selectedItem) {
+				const form = document.<portlet:namespace />fm;
+
+				if (!form) {
+					return;
+				}
 
 				Liferay.Util.setFormValues(form, {
-					parentStructureId: event.ddmstructureid,
-					parentStructureName: Liferay.Util.unescape(event.name),
+					parentStructureId: selectedItem.ddmstructureid,
+					parentStructureName: Liferay.Util.unescape(selectedItem.name),
 				});
 
-				var removeParentStructureButton = Liferay.Util.getFormElement(
+				const removeParentStructureButton = Liferay.Util.getFormElement(
 					form,
 					'removeParentStructureButton'
 				);
@@ -378,19 +370,62 @@ if (Validator.isNotNull(requestUpdateStructureURL)) {
 				if (removeParentStructureButton) {
 					Liferay.Util.toggleDisabled(removeParentStructureButton, false);
 				}
-			}
-		);
+			},
+			selectEventName: '<portlet:namespace />selectParentStructure',
+			title: '<%= HtmlUtil.escapeJS(scopeTitle) %>',
+
+			<%
+			Portlet portlet = PortletLocalServiceUtil.getPortletById(portletDisplay.getId());
+			%>
+
+			url:
+				'<%=
+					PortletURLBuilder.create(
+						PortletURLFactoryUtil.create(request, DDMPortletKeys.DYNAMIC_DATA_MAPPING, PortletRequest.RENDER_PHASE)
+					).setMVCPath(
+						"/select_structure.jsp"
+					).setParameter(
+						"classNameId", PortalUtil.getClassNameId(DDMStructure.class)
+					).setParameter(
+						"classPK", (structure != null) ? structure.getPrimaryKey() : 0
+					).setParameter(
+						"groupId", groupId
+					).setParameter(
+						"navigationStartsOn", DDMNavigationHelper.EDIT_STRUCTURE
+					).setParameter(
+						"portletResourceNamespace", liferayPortletResponse.getNamespace()
+					).setParameter(
+						"refererPortletName", refererPortletName
+					).setParameter(
+						"showAncestorScopes", true
+					).setParameter(
+						"showBackURL", false
+					).setParameter(
+						"showHeader", false
+					).setParameter(
+						"showManageTemplates", false
+					).setParameter(
+						"structureAvailableFields", liferayPortletResponse.getNamespace() + "getAvailableFields"
+					).setWindowState(
+						LiferayWindowState.POP_UP
+					).buildString()
+				%>',
+		});
 	}
 
 	function <portlet:namespace />removeParentStructure() {
-		var form = document.<portlet:namespace />fm;
+		const form = document.<portlet:namespace />fm;
+
+		if (!form) {
+			return;
+		}
 
 		Liferay.Util.setFormValues(form, {
 			parentStructureId: '',
 			parentStructureName: '',
 		});
 
-		var removeParentStructureButton = Liferay.Util.getFormElement(
+		const removeParentStructureButton = Liferay.Util.getFormElement(
 			form,
 			'removeParentStructureButton'
 		);

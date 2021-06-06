@@ -169,6 +169,10 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 				}
 			}
 
+			searchContext.setAttribute(
+				"search.exception.message",
+				_getExceptionMessage(runtimeException));
+
 			return new HitsImpl();
 		}
 		finally {
@@ -312,10 +316,11 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 		searchSearchRequest.setSize(size);
 
 		searchSearchRequest.setStart(start);
-
 		searchSearchRequest.setSorts(searchContext.getSorts());
 		searchSearchRequest.setSorts(searchRequest.getSorts());
 		searchSearchRequest.setStats(searchContext.getStats());
+		searchSearchRequest.setTrackTotalHits(
+			_elasticsearchConfigurationWrapper.trackTotalHits());
 
 		return searchSearchRequest;
 	}
@@ -356,7 +361,8 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 		}
 
 		if (message.contains(
-				"Fielddata is disabled on text fields by default.")) {
+				"Text fields are not optimised for operations that require " +
+					"per-document field data")) {
 
 			_log.error(
 				"Unable to aggregate facet on a nonkeyword field", exception);
@@ -381,6 +387,8 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 			baseSearchResponse.getSearchResponseString()
 		).statsResponseMap(
 			baseSearchResponse.getStatsResponseMap()
+		).searchTimeValue(
+			baseSearchResponse.getSearchTimeValue()
 		);
 	}
 
@@ -402,10 +410,13 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 		baseSearchRequest.addComplexQueryParts(
 			searchRequest.getComplexQueryParts());
 		baseSearchRequest.setExplain(searchRequest.isExplain());
+		baseSearchRequest.setHighlight(searchRequest.getHighlight());
 		baseSearchRequest.setIncludeResponseString(
 			searchRequest.isIncludeResponseString());
 		baseSearchRequest.setPostFilterQuery(
 			searchRequest.getPostFilterQuery());
+		baseSearchRequest.addPostFilterComplexQueryParts(
+			searchRequest.getPostFilterComplexQueryParts());
 		baseSearchRequest.setRescores(searchRequest.getRescores());
 		baseSearchRequest.setStatsRequests(searchRequest.getStatsRequests());
 
@@ -509,6 +520,16 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 		SearchResponseBuilderFactory searchResponseBuilderFactory) {
 
 		_searchResponseBuilderFactory = searchResponseBuilderFactory;
+	}
+
+	private String _getExceptionMessage(RuntimeException runtimeException) {
+		String message = runtimeException.toString();
+
+		for (Throwable throwable : runtimeException.getSuppressed()) {
+			message = message.concat("\nSuppressed: " + throwable.getMessage());
+		}
+
+		return message;
 	}
 
 	private SearchRequestBuilder _getSearchRequestBuilder(

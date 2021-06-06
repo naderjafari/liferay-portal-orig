@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +44,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageSectionDefinition")
+@GraphQLName(
+	description = "Represents a definition of a Page section.",
+	value = "PageSectionDefinition"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageSectionDefinition")
-public class PageSectionDefinition {
+public class PageSectionDefinition implements Serializable {
 
 	public static PageSectionDefinition toDTO(String json) {
 		return ObjectMapperUtil.readValue(PageSectionDefinition.class, json);
 	}
 
-	@Schema
+	@Schema(deprecated = true)
 	public String getBackgroundColor() {
 		return backgroundColor;
 	}
@@ -75,11 +80,12 @@ public class PageSectionDefinition {
 		}
 	}
 
+	@Deprecated
 	@GraphQLField
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String backgroundColor;
 
-	@Schema
+	@Schema(description = "The background fragment image of the page section.")
 	@Valid
 	public FragmentImage getBackgroundFragmentImage() {
 		return backgroundFragmentImage;
@@ -108,11 +114,14 @@ public class PageSectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The background fragment image of the page section."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentImage backgroundFragmentImage;
 
 	@Schema(
+		deprecated = true,
 		description = "Deprecated as of Athanasius (7.3.x), replaced by backgroundFragmentImage"
 	)
 	@Valid
@@ -147,7 +156,7 @@ public class PageSectionDefinition {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected BackgroundImage backgroundImage;
 
-	@Schema
+	@Schema(description = "The fragment link of the page section.")
 	@Valid
 	public FragmentLink getFragmentLink() {
 		return fragmentLink;
@@ -172,11 +181,72 @@ public class PageSectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment link of the page section.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentLink fragmentLink;
 
-	@Schema
+	@Schema(description = "The fragment style of the page section.")
+	@Valid
+	public FragmentStyle getFragmentStyle() {
+		return fragmentStyle;
+	}
+
+	public void setFragmentStyle(FragmentStyle fragmentStyle) {
+		this.fragmentStyle = fragmentStyle;
+	}
+
+	@JsonIgnore
+	public void setFragmentStyle(
+		UnsafeSupplier<FragmentStyle, Exception> fragmentStyleUnsafeSupplier) {
+
+		try {
+			fragmentStyle = fragmentStyleUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The fragment style of the page section.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentStyle fragmentStyle;
+
+	@Schema(description = "A list of fragment viewports of the page section.")
+	@Valid
+	public FragmentViewport[] getFragmentViewports() {
+		return fragmentViewports;
+	}
+
+	public void setFragmentViewports(FragmentViewport[] fragmentViewports) {
+		this.fragmentViewports = fragmentViewports;
+	}
+
+	@JsonIgnore
+	public void setFragmentViewports(
+		UnsafeSupplier<FragmentViewport[], Exception>
+			fragmentViewportsUnsafeSupplier) {
+
+		try {
+			fragmentViewports = fragmentViewportsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "A list of fragment viewports of the page section."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentViewport[] fragmentViewports;
+
+	@Schema(description = "the page section's layout.")
 	@Valid
 	public Layout getLayout() {
 		return layout;
@@ -201,7 +271,7 @@ public class PageSectionDefinition {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "the page section's layout.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Layout layout;
 
@@ -277,6 +347,36 @@ public class PageSectionDefinition {
 			sb.append(String.valueOf(fragmentLink));
 		}
 
+		if (fragmentStyle != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentStyle\": ");
+
+			sb.append(String.valueOf(fragmentStyle));
+		}
+
+		if (fragmentViewports != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentViewports\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < fragmentViewports.length; i++) {
+				sb.append(String.valueOf(fragmentViewports[i]));
+
+				if ((i + 1) < fragmentViewports.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (layout != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -293,6 +393,7 @@ public class PageSectionDefinition {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageSectionDefinition",
 		name = "x-class-name"
 	)
@@ -328,7 +429,7 @@ public class PageSectionDefinition {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -367,7 +468,7 @@ public class PageSectionDefinition {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

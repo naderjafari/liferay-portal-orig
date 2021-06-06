@@ -22,19 +22,21 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Node;
+
 /**
  * @author Michael Hashimoto
  */
 public class PortalRelease {
 
 	public PortalRelease(String portalVersion) {
-		_portalVersion = portalVersion;
-
 		String bundlesBaseURLContent = null;
 		String bundlesBaseURLString = null;
 
 		for (String baseURLString : _BASE_URL_STRINGS) {
-			bundlesBaseURLString = baseURLString + "/" + _portalVersion;
+			bundlesBaseURLString = baseURLString + "/" + portalVersion;
 
 			try {
 				bundlesBaseURLContent = JenkinsResultsParserUtil.toString(
@@ -44,7 +46,54 @@ public class PortalRelease {
 			}
 			catch (IOException ioException) {
 			}
+
+			try {
+				String xml = JenkinsResultsParserUtil.toString(
+					baseURLString + "/");
+
+				xml = xml.substring(xml.indexOf("<html>"));
+
+				xml = xml.replaceAll("&nbsp;", "");
+				xml = xml.replaceAll("<img[^>]+>", "");
+				xml = xml.replaceAll("<hr>", "");
+
+				Document document = Dom4JUtil.parse(xml);
+
+				for (Node node : Dom4JUtil.getNodesByXPath(document, "//a")) {
+					String text = node.getText();
+
+					text = text.trim();
+					text = text.replace("/", "");
+
+					if (!text.startsWith(portalVersion + "-")) {
+						continue;
+					}
+
+					bundlesBaseURLString = baseURLString + "/" + text;
+
+					try {
+						bundlesBaseURLContent =
+							JenkinsResultsParserUtil.toString(
+								bundlesBaseURLString + "/", true, 0, 5, 0);
+
+						portalVersion = text;
+
+						break;
+					}
+					catch (IOException ioException) {
+					}
+				}
+
+				if (bundlesBaseURLContent != null) {
+					break;
+				}
+			}
+			catch (DocumentException | IOException exception) {
+				throw new RuntimeException(exception);
+			}
 		}
+
+		_portalVersion = portalVersion;
 
 		if ((bundlesBaseURLString == null) || (bundlesBaseURLContent == null)) {
 			throw new RuntimeException(
@@ -179,6 +228,19 @@ public class PortalRelease {
 		return _getURL(_sqlFileNamePattern);
 	}
 
+	public URL getTomcatLocalURL() {
+		String tomcatLocalURLString = String.valueOf(getTomcatURL());
+
+		try {
+			return new URL(
+				tomcatLocalURLString.replace(
+					"https://release.liferay.com/1", "http://release-1/1"));
+		}
+		catch (MalformedURLException malformedURLException) {
+			throw new RuntimeException(malformedURLException);
+		}
+	}
+
 	public URL getTomcatURL() {
 		return _getURL(_tomcatFileNamePattern);
 	}
@@ -191,7 +253,7 @@ public class PortalRelease {
 		return _getURL(_wildFlyFileNamePattern);
 	}
 
-	private static String _getMirrorsURLString(String urlString) {
+	private String _getMirrorsURLString(String urlString) {
 		if (urlString == null) {
 			throw new NullPointerException();
 		}
@@ -202,7 +264,7 @@ public class PortalRelease {
 			"https?:\\/\\/", "http://mirrors.lax.liferay.com/");
 	}
 
-	private static String _getNonMirrorsURLString(String urlString) {
+	private String _getNonMirrorsURLString(String urlString) {
 		urlString = urlString.replace("http://mirrors/", "https://");
 		urlString = urlString.replace(
 			"http://mirrors.lax.liferay.com/", "https://");

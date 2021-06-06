@@ -510,7 +510,7 @@ AUI.add(
 							instance._onSelectFlag,
 							instance
 						),
-						Liferay.on(
+						Liferay.after(
 							'inputLocalized:defaultLocaleChanged',
 							A.bind('_onDefaultLocaleChanged', instance)
 						),
@@ -659,6 +659,24 @@ AUI.add(
 
 					instance._updateTranslationStatus(selectedLanguageId);
 				},
+
+				updateInputPlaceholder(editor) {
+					var instance = this;
+
+					var inputPlaceholder = instance.get(STR_INPUT_PLACEHOLDER);
+
+					var nativeEditor = editor.getNativeEditor();
+
+					var newPlaceholder = A.one(
+						'#' + nativeEditor.element.getId()
+					);
+
+					if (inputPlaceholder.compareTo(newPlaceholder)) {
+						return;
+					}
+
+					instance.set(STR_INPUT_PLACEHOLDER, newPlaceholder);
+				},
 			},
 
 			register(id, config) {
@@ -713,7 +731,6 @@ AUI.add(
 			'aui-palette',
 			'aui-set',
 			'liferay-form',
-			'portal-available-languages',
 		],
 	}
 );

@@ -59,7 +59,6 @@ public class ResourcePermissionFinderImpl
 
 	public static final FinderPath FINDER_PATH_COUNT_BY_C_N_S_P_R_A =
 		new FinderPath(
-			Long.class,
 			ResourcePermissionPersistenceImpl.
 				FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
 			"countByC_N_S_P_R_A",
@@ -67,7 +66,11 @@ public class ResourcePermissionFinderImpl
 				Long.class.getName(), String.class.getName(),
 				Integer.class.getName(), String.class.getName(),
 				Long.class.getName(), Long.class.getName()
-			});
+			},
+			new String[] {
+				"companyId", "name", "scope", "primKey", "roleId", "actionIds"
+			},
+			false);
 
 	@Override
 	public int countByR_S(long roleId, int[] scopes) {
@@ -119,7 +122,7 @@ public class ResourcePermissionFinderImpl
 		};
 
 		Long count = (Long)FinderCacheUtil.getResult(
-			FINDER_PATH_COUNT_BY_C_N_S_P_R_A, finderArgs, this);
+			FINDER_PATH_COUNT_BY_C_N_S_P_R_A, finderArgs);
 
 		if (count != null) {
 			return count.intValue();
@@ -180,6 +183,10 @@ public class ResourcePermissionFinderImpl
 		return count.intValue();
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public Map<Serializable, ResourcePermission> fetchByPrimaryKeys(
 		Set<Serializable> primaryKeys) {

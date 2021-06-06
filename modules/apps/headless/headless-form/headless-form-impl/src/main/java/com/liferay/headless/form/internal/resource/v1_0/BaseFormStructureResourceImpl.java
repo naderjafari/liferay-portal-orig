@@ -36,6 +36,7 @@ import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.TransformUtil;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -72,7 +73,7 @@ import javax.ws.rs.core.UriInfo;
 @Generated("")
 @Path("/v1.0")
 public abstract class BaseFormStructureResourceImpl
-	implements FormStructureResource, EntityModelResource,
+	implements EntityModelResource, FormStructureResource,
 			   VulcanBatchEngineTaskItemDelegate<FormStructure> {
 
 	/**
@@ -80,8 +81,10 @@ public abstract class BaseFormStructureResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-form/v1.0/form-structures/{formStructureId}'  -u 'test@liferay.com:test'
 	 */
-	@Override
+	@Deprecated
 	@GET
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(
 		value = {@Parameter(in = ParameterIn.PATH, name = "formStructureId")}
 	)
@@ -101,8 +104,10 @@ public abstract class BaseFormStructureResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-form/v1.0/sites/{siteId}/form-structures'  -u 'test@liferay.com:test'
 	 */
-	@Override
+	@Deprecated
 	@GET
+	@Operation(deprecated = true)
+	@Override
 	@Parameters(
 		value = {
 			@Parameter(in = ParameterIn.PATH, name = "siteId"),
@@ -158,7 +163,7 @@ public abstract class BaseFormStructureResourceImpl
 		throws Exception {
 
 		return getSiteFormStructuresPage(
-			(Long)parameters.get("siteId"), pagination);
+			Long.parseLong((String)parameters.get("siteId")), pagination);
 	}
 
 	@Override
@@ -220,6 +225,14 @@ public abstract class BaseFormStructureResourceImpl
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

@@ -55,6 +55,8 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.workflow.kaleo.model.KaleoDefinition;
+import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionLocalService;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -112,16 +114,20 @@ public class DDMFormInstanceLocalServiceImpl
 		updateWorkflowDefinitionLink(
 			ddmFormInstance, settingsDDMFormValues, serviceContext);
 
-		if (serviceContext.isAddGroupPermissions() ||
-			serviceContext.isAddGuestPermissions()) {
+		if (GetterUtil.getBoolean(
+				serviceContext.getAttribute("addResources"), true)) {
 
-			addFormInstanceResources(
-				ddmFormInstance, serviceContext.isAddGroupPermissions(),
-				serviceContext.isAddGuestPermissions());
-		}
-		else {
-			addFormInstanceResources(
-				ddmFormInstance, serviceContext.getModelPermissions());
+			if (serviceContext.isAddGroupPermissions() ||
+				serviceContext.isAddGuestPermissions()) {
+
+				addFormInstanceResources(
+					ddmFormInstance, serviceContext.isAddGroupPermissions(),
+					serviceContext.isAddGuestPermissions());
+			}
+			else {
+				addFormInstanceResources(
+					ddmFormInstance, serviceContext.getModelPermissions());
+			}
 		}
 
 		addFormInstanceVersion(
@@ -189,6 +195,30 @@ public class DDMFormInstanceLocalServiceImpl
 			ddmFormInstance.getCompanyId(), ddmFormInstance.getGroupId(),
 			ddmFormInstance.getUserId(), DDMFormInstance.class.getName(),
 			ddmFormInstance.getFormInstanceId(), modelPermissions);
+	}
+
+	@Override
+	public DDMFormInstance copyFormInstance(
+			long userId, long groupId, Map<Locale, String> nameMap,
+			DDMFormInstance ddmFormInstance,
+			DDMFormValues settingsDDMFormValues, ServiceContext serviceContext)
+		throws PortalException {
+
+		DDMStructure ddmStructure = ddmFormInstance.getStructure();
+
+		serviceContext.setAttribute("addResources", Boolean.FALSE);
+
+		DDMFormInstance newDDMFormInstance = addFormInstance(
+			userId, groupId, nameMap, ddmFormInstance.getDescriptionMap(),
+			ddmStructure.getDDMForm(), ddmStructure.getDDMFormLayout(),
+			settingsDDMFormValues, serviceContext);
+
+		resourceLocalService.copyModelResources(
+			ddmFormInstance.getCompanyId(), DDMFormInstance.class.getName(),
+			ddmFormInstance.getFormInstanceId(),
+			newDDMFormInstance.getFormInstanceId());
+
+		return newDDMFormInstance;
 	}
 
 	@Override
@@ -539,7 +569,8 @@ public class DDMFormInstanceLocalServiceImpl
 	}
 
 	protected DDMFormValues getFormInstanceSettingsFormValues(
-		String serializedSettingsDDMFormValues) {
+			String serializedSettingsDDMFormValues)
+		throws PortalException {
 
 		DDMForm ddmForm = DDMFormFactory.create(DDMFormInstanceSettings.class);
 
@@ -579,7 +610,7 @@ public class DDMFormInstanceLocalServiceImpl
 			return storageType;
 		}
 
-		return StorageType.JSON.toString();
+		return StorageType.DEFAULT.toString();
 	}
 
 	protected long getStructureVersionId(long ddmStructureId)
@@ -645,14 +676,24 @@ public class DDMFormInstanceLocalServiceImpl
 		String workflowDefinition = getWorkflowDefinition(
 			settingsDDMFormValues);
 
-		if (workflowDefinition.equals("no-workflow")) {
-			workflowDefinition = "";
+		String latestWorkflowDefinition = "";
+
+		if (Validator.isNotNull(workflowDefinition) &&
+			!workflowDefinition.equals("no-workflow")) {
+
+			KaleoDefinition kaleoDefinition =
+				_kaleoDefinitionLocalService.getKaleoDefinition(
+					workflowDefinition, serviceContext);
+
+			latestWorkflowDefinition =
+				workflowDefinition + StringPool.AT +
+					kaleoDefinition.getVersion();
 		}
 
 		workflowDefinitionLinkLocalService.updateWorkflowDefinitionLink(
 			serviceContext.getUserId(), serviceContext.getCompanyId(),
 			formInstance.getGroupId(), DDMFormInstance.class.getName(),
-			formInstance.getFormInstanceId(), 0, workflowDefinition);
+			formInstance.getFormInstanceId(), 0, latestWorkflowDefinition);
 	}
 
 	protected void validate(
@@ -720,6 +761,9 @@ public class DDMFormInstanceLocalServiceImpl
 
 	@Reference(target = "(ddm.form.values.serializer.type=json)")
 	private DDMFormValuesSerializer _jsonDDMFormValuesSerializer;
+
+	@Reference
+	private KaleoDefinitionLocalService _kaleoDefinitionLocalService;
 
 	@Reference
 	private MailService _mailService;

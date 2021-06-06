@@ -34,6 +34,16 @@
 	<td></td>
 </tr>
 <tr>
+	<td>LINK_TO_PAGE_SPECIFIC_PAGE_LINK</td>
+	<td>//a[contains(@class,'collapse-icon')][normalize-space(text())='${key_pageName}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>LOCALIZED_BUTTON</td>
+	<td>//button[contains(@class,'localized-trigger')][contains(@id,'JournalPortlet_${key_fieldName}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>PRIORITY</td>
 	<td>//input[contains(@id,'assetPriority')]</td>
 	<td></td>
@@ -83,6 +93,11 @@
 <tr>
 	<td>ENTRY_LIST_TITLE</td>
 	<td>//li[contains(@data-title,'${key_webContentTitle}')]//*[@data-qa-id='rowItemContent']//a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ENTRY_LIST_TITLE_NAME</td>
+	<td>//li[contains(@data-title,'${key_webContentTitle}')]//*[@data-qa-id='rowItemContent']//a[contains(text(),'${key_webContentTitle}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -137,6 +152,11 @@
 	<td></td>
 </tr>
 <!--SIDEBAR -->
+<tr>
+	<td>PREVIEW_BUTTON</td>
+	<td>//fieldset[contains(@id,'${key_fieldsetName}')]//button[.//*[name()='svg'][contains(@class,'lexicon-icon-view')]]</td>
+	<td></td>
+</tr>
 <tr>
 	<td>SIDEBAR_BODY</td>
 	<td>//div[@class='sidebar-body']//div[contains(@id,'TabsSection')]</td>

@@ -58,10 +58,10 @@ public abstract class BaseSelectionResourceImpl implements SelectionResource {
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/bulk/v1.0/bulk-selection' -d $'{"documentIds": ___, "selectionScope": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Override
 	@Consumes({"application/json", "application/xml"})
-	@POST
+	@Override
 	@Path("/bulk-selection")
+	@POST
 	@Produces({"application/json", "application/xml"})
 	@Tags(value = {@Tag(name = "Selection")})
 	public Selection postBulkSelection(
@@ -101,6 +101,14 @@ public abstract class BaseSelectionResourceImpl implements SelectionResource {
 		com.liferay.portal.kernel.model.User contextUser) {
 
 		this.contextUser = contextUser;
+	}
+
+	public void setGroupLocalService(GroupLocalService groupLocalService) {
+		this.groupLocalService = groupLocalService;
+	}
+
+	public void setRoleLocalService(RoleLocalService roleLocalService) {
+		this.roleLocalService = roleLocalService;
 	}
 
 	protected Map<String, String> addAction(

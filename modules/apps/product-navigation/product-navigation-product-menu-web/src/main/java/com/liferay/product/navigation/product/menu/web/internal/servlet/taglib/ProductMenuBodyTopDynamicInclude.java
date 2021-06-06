@@ -15,12 +15,14 @@
 package com.liferay.product.navigation.product.menu.web.internal.servlet.taglib;
 
 import com.liferay.application.list.PanelAppRegistry;
+import com.liferay.application.list.PanelCategory;
 import com.liferay.application.list.PanelCategoryRegistry;
+import com.liferay.application.list.constants.PanelCategoryKeys;
 import com.liferay.application.list.display.context.logic.PanelCategoryHelper;
 import com.liferay.petra.reflect.ReflectionUtil;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
@@ -40,6 +42,7 @@ import com.liferay.taglib.servlet.PageContextFactoryUtil;
 
 import java.io.IOException;
 
+import java.util.List;
 import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
@@ -76,9 +79,15 @@ public class ProductMenuBodyTopDynamicInclude extends BaseDynamicInclude {
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		if (_isApplicationsMenuApp(themeDisplay) &&
+		Group scopeGroup = themeDisplay.getScopeGroup();
+
+		if ((_isApplicationsMenuApp(themeDisplay) || scopeGroup.isDepot()) &&
 			_isEnableApplicationsMenu(themeDisplay.getCompanyId())) {
 
+			return;
+		}
+
+		if (!_hasPanelCategories(themeDisplay)) {
 			return;
 		}
 
@@ -92,12 +101,12 @@ public class ProductMenuBodyTopDynamicInclude extends BaseDynamicInclude {
 
 			String productMenuState = SessionClicks.get(
 				httpServletRequest,
-				"com.liferay.product.navigation.product.menu.web_" +
-					"productMenuState",
+				"com.liferay.product.navigation.product.menu." +
+					"web_productMenuState",
 				"closed");
 
 			if (Objects.equals(productMenuState, "open")) {
-				productMenuState += StringPool.SPACE + "product-menu-open";
+				productMenuState += " product-menu-open";
 			}
 
 			jspWriter.write(productMenuState);
@@ -141,6 +150,31 @@ public class ProductMenuBodyTopDynamicInclude extends BaseDynamicInclude {
 	@Modified
 	protected void activate(BundleContext bundleContext) {
 		_bundleContext = bundleContext;
+	}
+
+	private boolean _hasPanelCategories(ThemeDisplay themeDisplay) {
+		List<PanelCategory> childPanelCategories =
+			_panelCategoryRegistry.getChildPanelCategories(
+				PanelCategoryKeys.ROOT, themeDisplay.getPermissionChecker(),
+				themeDisplay.getScopeGroup());
+
+		if (!childPanelCategories.isEmpty()) {
+			return true;
+		}
+
+		if (!_isEnableApplicationsMenu(themeDisplay.getCompanyId())) {
+			childPanelCategories =
+				_panelCategoryRegistry.getChildPanelCategories(
+					PanelCategoryKeys.APPLICATIONS_MENU,
+					themeDisplay.getPermissionChecker(),
+					themeDisplay.getScopeGroup());
+
+			if (!childPanelCategories.isEmpty()) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private boolean _isApplicationsMenuApp(ThemeDisplay themeDisplay) {

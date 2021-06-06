@@ -12,14 +12,26 @@
  * details.
  */
 
-import {PagesVisitor, generateName} from 'dynamic-data-mapping-form-renderer';
+import {PagesVisitor, generateName} from 'data-engine-js-components-web';
+
+const getPredefinedValues = ({locale, localizedValue, options}) => {
+	if (Array.isArray(localizedValue[locale])) {
+		return localizedValue[locale].filter((value) => {
+			if (options.find((option) => value === option.value)) {
+				return value;
+			}
+		});
+	}
+
+	return localizedValue[locale];
+};
 
 export const getFilteredSettingsContext = ({
 	config,
+	defaultLanguageId = themeDisplay.getDefaultLanguageId(),
 	editingLanguageId,
 	settingsContext,
 }) => {
-	const defaultLanguageId = themeDisplay.getDefaultLanguageId();
 	const unsupportedTabs = [...config.disabledTabs];
 
 	const pages = settingsContext.pages.filter(
@@ -46,6 +58,13 @@ export const getFilteredSettingsContext = ({
 						editingLanguageId,
 					};
 
+					const {visibleProperties} = config;
+
+					if (visibleProperties.includes(fieldName)) {
+						updatedField.visibilityExpression = 'TRUE';
+						updatedField.visible = true;
+					}
+
 					if (unsupportedProperties.includes(fieldName)) {
 						return {
 							...updatedField,
@@ -56,11 +75,62 @@ export const getFilteredSettingsContext = ({
 					}
 
 					if (fieldName === 'dataSourceType') {
-						return {
+						const field = {
 							...updatedField,
 							name: generateName(name, updatedField),
 							predefinedValue: '["manual"]',
+						};
+
+						if (!name.includes('form_web')) {
+							field.readOnly = true;
+							field.visibilityExpression = 'FALSE';
+							field.visible = false;
+						}
+
+						return field;
+					}
+
+					if (
+						fieldName === 'ddmDataProviderInstanceId' ||
+						fieldName === 'ddmDataProviderInstanceOutput'
+					) {
+						const field = {
+							...updatedField,
+						};
+
+						if (!name.includes('form_web')) {
+							field.visibilityExpression = 'FALSE';
+							field.visible = false;
+						}
+
+						return field;
+					}
+
+					if (fieldName === 'localizable') {
+						return {
+							...updatedField,
+							showAsSwitcher: true,
+						};
+					}
+
+					if (fieldName === 'name') {
+						return {
+							...updatedField,
 							readOnly: true,
+						};
+					}
+
+					if (fieldName === 'predefinedValue') {
+						field.localizedValue[
+							field.locale
+						] = getPredefinedValues(field);
+					}
+
+					if (fieldName === 'repeatable') {
+						return {
+							...updatedField,
+							name: generateName(name, updatedField),
+							showMaximumRepetitionsInfo: false,
 						};
 					}
 

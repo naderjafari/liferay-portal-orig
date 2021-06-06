@@ -50,13 +50,14 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 			String fileContent)
 		throws IOException {
 
-		return formatAnnotations(fileName, absolutePath, (JavaClass)javaTerm);
+		return formatAnnotations(
+			fileName, absolutePath, (JavaClass)javaTerm, fileContent);
 	}
 
 	@Override
 	protected String formatAnnotation(
 		String fileName, String absolutePath, JavaClass javaClass,
-		String annotation, String indent) {
+		String fileContent, String annotation, String indent) {
 
 		String trimmedAnnotation = StringUtil.trim(annotation);
 
@@ -269,6 +270,12 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 
 	private String _formatEnabledAttribute(
 		String absolutePath, String annotation) {
+
+		if (absolutePath.contains("-test/") ||
+			absolutePath.contains("-test-util/")) {
+
+			return annotation;
+		}
 
 		List<String> enterpriseAppModulePathNames = getAttributeValues(
 			_ENTERPRISE_APP_MODULE_PATH_NAMES_KEY, absolutePath);

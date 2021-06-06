@@ -28,10 +28,13 @@ if (Validator.isNull(redirect)) {
 	redirect = String.valueOf(renderResponse.createRenderURL());
 }
 
-PortletURL searchURL = renderResponse.createRenderURL();
-
-searchURL.setParameter("mvcRenderCommandName", "/search");
-searchURL.setParameter("redirect", redirect);
+PortletURL searchURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/configuration_admin/search_results"
+).setRedirect(
+	redirect
+).build();
 
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(redirect);
@@ -65,14 +68,14 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 			modelVar="configurationEntry"
 		>
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="name"
 			>
 				<aui:a href="<%= configurationEntry.getEditURL(renderRequest, renderResponse) %>"><strong><%= configurationEntry.getName() %></strong></aui:a>
 			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="category"
 			>
 
@@ -101,7 +104,7 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="scope"
 			>
 				<c:choose>
@@ -146,7 +149,7 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 						/>
 
 						<c:if test="<%= configurationModel.hasScopeConfiguration(configurationScopeDisplayContext.getScope()) %>">
-							<portlet:actionURL name="deleteConfiguration" var="deleteConfigActionURL">
+							<portlet:actionURL name="/configuration_admin/delete_configuration" var="deleteConfigActionURL">
 								<portlet:param name="redirect" value="<%= currentURL %>" />
 								<portlet:param name="factoryPid" value="<%= configurationModel.getFactoryPid() %>" />
 								<portlet:param name="pid" value="<%= configurationModel.getID() %>" />
@@ -159,7 +162,7 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 							/>
 
 							<c:if test="<%= ExtendedObjectClassDefinition.Scope.SYSTEM.equals(configurationScopeDisplayContext.getScope()) %>">
-								<portlet:resourceURL id="export" var="exportURL">
+								<portlet:resourceURL id="/configuration_admin/export_configuration" var="exportURL">
 									<portlet:param name="factoryPid" value="<%= configurationModel.getFactoryPid() %>" />
 									<portlet:param name="pid" value="<%= configurationModel.getID() %>" />
 								</portlet:resourceURL>

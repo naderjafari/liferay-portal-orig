@@ -45,7 +45,7 @@ import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -302,6 +302,31 @@ public class OrganizationLocalServiceTest {
 		Group groupB = organizationB.getGroup();
 
 		Assert.assertEquals(groupA.getGroupId(), groupB.getParentGroupId());
+	}
+
+	@Test
+	public void testAddUserOrganizationByEmailAddress() throws Exception {
+		Organization organization = OrganizationTestUtil.addOrganization();
+
+		User user = UserTestUtil.addUser();
+
+		Assert.assertFalse(
+			OrganizationLocalServiceUtil.hasUserOrganization(
+				user.getUserId(), organization.getOrganizationId()));
+
+		OrganizationLocalServiceUtil.addUserOrganizationByEmailAddress(
+			user.getEmailAddress(), organization.getOrganizationId());
+
+		Assert.assertTrue(
+			OrganizationLocalServiceUtil.hasUserOrganization(
+				user.getUserId(), organization.getOrganizationId()));
+
+		OrganizationLocalServiceUtil.deleteUserOrganizationByEmailAddress(
+			user.getEmailAddress(), organization.getOrganizationId());
+
+		Assert.assertFalse(
+			OrganizationLocalServiceUtil.hasUserOrganization(
+				user.getUserId(), organization.getOrganizationId()));
 	}
 
 	@Test
@@ -871,11 +896,9 @@ public class OrganizationLocalServiceTest {
 				ConfigurationTestUtil.createFactoryConfiguration(
 					"com.liferay.organizations.internal.configuration." +
 						"OrganizationTypeConfiguration",
-					new HashMapDictionary<String, Object>() {
-						{
-							put("name", organizationType);
-						}
-					}));
+					HashMapDictionaryBuilder.<String, Object>put(
+						"name", organizationType
+					).build()));
 
 			_organizations.add(
 				OrganizationTestUtil.addOrganization(organizationType));

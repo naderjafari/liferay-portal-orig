@@ -2,21 +2,17 @@ definition {
 
 	@summary = "Select a content type and subtype when adding a display page. These locators should not be needed to be reused."
 	macro _selectMappingTypes {
-		if (!(isSet(contentType))) {
-			var contentType = "Web Content Article";
+		if (isSet(contentType)) {
+			Select(
+				locator1 = "//div[contains(.,'Content Type')]/select",
+				value1 = "${contentType}");
 		}
 
-		if (!(isSet(subType))) {
-			var subType = "Basic Web Content";
+		if (isSet(subType)) {
+			Select(
+				locator1 = "//div[contains(.,'Subtype')]/select",
+				value1 = "${subType}");
 		}
-
-		Select(
-			locator1 = "//div[contains(.,'Content Type')]/select",
-			value1 = "${contentType}");
-
-		Select(
-			locator1 = "//div[contains(.,'Subtype')]/select",
-			value1 = "${subType}");
 	}
 
 	macro addDisplayPage {
@@ -47,7 +43,7 @@ definition {
 	}
 
 	macro gotoDisplayPage {
-		LexiconCard.clickCardTitle(card = "${displayPageName}");
+		LexiconCard.clickCardTitleLink(card = "${displayPageName}");
 
 		PageEditor.assertFragmentSidebarLoaded();
 	}
@@ -73,7 +69,7 @@ definition {
 			locator1 = "TextInput#FILE",
 			value1 = "${displayPageTemplateZipFileName}");
 
-		Click(locator1 = "Button#IMPORT");
+		Button.clickImport();
 
 		Alert.viewSuccessMessage();
 
@@ -85,9 +81,9 @@ definition {
 			displayPageName = "${displayPageName}",
 			item = "Mark As Default");
 
-		AssertVisible(
-			key_card = "${displayPageName}",
-			locator1 = "LexiconCard#CARD_STICKER");
+		LexiconCard.viewCardSticker(
+			card = "${displayPageName}",
+			icon = "check-circle");
 	}
 
 	macro openDisplayPagesAdmin {

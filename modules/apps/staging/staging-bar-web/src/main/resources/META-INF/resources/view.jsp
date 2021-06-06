@@ -157,7 +157,7 @@ if (liveLayout != null) {
 											</clay:col>
 
 											<clay:col>
-												<c:if test="<%= !layoutRevision.isIncomplete() %>">
+												<c:if test="<%= !layoutRevision.isIncomplete() && !layout.isTypeContent() %>">
 													<liferay-util:include page="/view_layout_branch_details.jsp" servletContext="<%= application %>" />
 												</c:if>
 											</clay:col>
@@ -215,7 +215,7 @@ if (liveLayout != null) {
 									cssClass="staging-alert-container"
 								>
 									<div class="alert alert-warning hide warning-content" id="<portlet:namespace />warningMessage">
-										<liferay-ui:message key="an-inital-staging-publication-is-in-progress" />
+										<liferay-ui:message key="an-inital-staging-publish-process-is-in-progress" />
 									</div>
 
 									<liferay-util:include page="/last_publication_date_message.jsp" servletContext="<%= application %>" />
@@ -232,7 +232,7 @@ if (liveLayout != null) {
 								<div class="container-fluid container-fluid-max-xl staging-alert-container">
 									<span class="alert-indicator">
 										<svg aria-hidden="true" class="lexicon-icon lexicon-icon-info-circle">
-											<use xlink:href="<%= themeDisplay.getPathThemeImages() %>/lexicon/icons.svg#info-circle" />
+											<use xlink:href="<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg#info-circle" />
 										</svg>
 									</span>
 
@@ -276,7 +276,7 @@ if (liveLayout != null) {
 			var stagingToggle = document.querySelector('.staging-toggle');
 
 			if (stagingToggle) {
-				stagingToggle.addEventListener('click', function (event) {
+				stagingToggle.addEventListener('click', (event) => {
 					event.preventDefault();
 
 					staging.classList.toggle('staging-show');
@@ -298,7 +298,7 @@ if (liveLayout != null) {
 					taskExecutorClassName:
 						'<%= BackgroundTaskExecutorNames.LAYOUT_STAGING_BACKGROUND_TASK_EXECUTOR %>',
 				},
-				function (obj) {
+				(obj) => {
 					var incomplete = obj > 0;
 
 					if (incomplete) {

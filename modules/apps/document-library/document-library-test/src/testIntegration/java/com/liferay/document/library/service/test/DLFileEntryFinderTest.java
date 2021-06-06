@@ -1281,9 +1281,9 @@ public class DLFileEntryFinderTest {
 		DLAppTestUtil.populateServiceContext(serviceContext, fileEntryTypeId);
 
 		return DLAppLocalServiceUtil.addFileEntry(
-			userId, repositoryId, folderId, fileName, contentType,
+			null, userId, repositoryId, folderId, fileName, contentType,
 			fileName.concat(titleSuffix), StringPool.BLANK, StringPool.BLANK,
-			(byte[])null, serviceContext);
+			(byte[])null, null, null, serviceContext);
 	}
 
 	protected int doCountBy_G_U_F_M(
@@ -1501,7 +1501,7 @@ public class DLFileEntryFinderTest {
 		dlFileEntry = DLFileEntryLocalServiceUtil.updateDLFileEntry(
 			dlFileEntry);
 
-		DLFileVersion dlFileVersion = dlFileEntry.getFileVersion();
+		DLFileVersion dlFileVersion1 = dlFileEntry.getFileVersion();
 
 		addFileEntry(
 			TestPropsValues.getUserId(), repositoryId, folder.getFolderId(),
@@ -1517,6 +1517,7 @@ public class DLFileEntryFinderTest {
 			fileEntry.getFileEntryId(), "FE3.txt", ContentTypes.TEXT_PLAIN,
 			"FE3.txt".concat(titleSuffix), StringPool.BLANK, StringPool.BLANK,
 			DLVersionNumberIncrease.MINOR, TestDataConstants.TEST_BYTE_ARRAY,
+			fileEntry.getExpirationDate(), fileEntry.getReviewDate(),
 			serviceContext);
 
 		dlFileEntry = DLFileEntryLocalServiceUtil.getFileEntry(
@@ -1526,15 +1527,15 @@ public class DLFileEntryFinderTest {
 
 		DLFileEntryLocalServiceUtil.updateDLFileEntry(dlFileEntry);
 
-		DLFileVersion dlFileVersion3 = dlFileEntry.getFileVersion();
+		DLFileVersion dlFileVersion2 = dlFileEntry.getFileVersion();
 
-		dlFileVersion3.setExtraSettings("hello=world");
+		dlFileVersion2.setExtraSettings("hello=world");
 
-		DLFileVersionLocalServiceUtil.updateDLFileVersion(dlFileVersion3);
+		DLFileVersionLocalServiceUtil.updateDLFileVersion(dlFileVersion2);
 
 		DLTrashServiceUtil.moveFileEntryToTrash(fileEntry.getFileEntryId());
 
-		return new Object[] {folder, dlFileVersion};
+		return new Object[] {folder, dlFileVersion1};
 	}
 
 	private static final long _SMALL_IMAGE_ID = 1234L;

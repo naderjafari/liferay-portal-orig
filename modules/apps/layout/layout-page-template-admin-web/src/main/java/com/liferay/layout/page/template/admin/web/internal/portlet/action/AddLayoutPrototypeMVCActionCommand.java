@@ -63,7 +63,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + LayoutPageTemplateAdminPortletKeys.LAYOUT_PAGE_TEMPLATES,
-		"mvc.command.name=/layout_prototype/add_layout_prototype"
+		"mvc.command.name=/layout_page_template_admin/add_layout_prototype"
 	},
 	service = MVCActionCommand.class
 )
@@ -147,12 +147,12 @@ public class AddLayoutPrototypeMVCActionCommand extends BaseMVCActionCommand {
 				actionRequest, actionResponse,
 				JSONUtil.put("redirectURL", redirectURL));
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(t, t);
+				_log.debug(throwable, throwable);
 			}
 
-			if (t instanceof LayoutNameException) {
+			if (throwable instanceof LayoutNameException) {
 				JSONPortletResponseUtil.writeJSON(
 					actionRequest, actionResponse,
 					JSONUtil.put(
@@ -161,10 +161,12 @@ public class AddLayoutPrototypeMVCActionCommand extends BaseMVCActionCommand {
 							themeDisplay.getRequest(),
 							"please-enter-a-valid-name")));
 			}
-			else if (t instanceof LayoutPageTemplateEntryNameException) {
+			else if (throwable instanceof
+						LayoutPageTemplateEntryNameException) {
+
 				LayoutPageTemplateEntryNameException
 					layoutPageTemplateEntryNameException =
-						(LayoutPageTemplateEntryNameException)t;
+						(LayoutPageTemplateEntryNameException)throwable;
 
 				_layoutPageTemplateEntryExceptionRequestHandler.
 					handlePortalException(

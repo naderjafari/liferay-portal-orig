@@ -82,8 +82,8 @@ UnicodeProperties layoutTypeSettings = selLayout.getTypeSettingsProperties();
 						</div>
 
 						<react:component
-							data="<%= layoutsSEODisplayContext.getSEOMappingData() %>"
 							module="js/seo/display_page_templates/SeoMapping"
+							props="<%= layoutsSEODisplayContext.getSEOMappingData() %>"
 							servletContext="<%= application %>"
 						/>
 					</div>
@@ -143,40 +143,37 @@ UnicodeProperties layoutTypeSettings = selLayout.getTypeSettingsProperties();
 						<label><liferay-ui:message key="preview" /></label>
 
 						<div>
-
-							<%
-							Map<String, Object> data = HashMapBuilder.<String, Object>put(
-								"targets",
-								HashMapBuilder.<String, Object>put(
-									"description",
-									HashMapBuilder.put(
-										"defaultValue", selLayout.getDescription(locale)
-									).put(
-										"id", "descriptionSEO"
-									).build()
-								).put(
-									"title",
-									HashMapBuilder.<String, Object>put(
-										"defaultValue", layoutsSEODisplayContext.getDefaultPageTitleMap()
-									).put(
-										"id", "title"
-									).build()
-								).put(
-									"url",
-									HashMapBuilder.<String, Object>put(
-										"defaultValue", layoutsSEODisplayContext.getDefaultCanonicalURLMap()
-									).put(
-										"id", "canonicalURL"
-									).build()
-								).build()
-							).put(
-								"titleSuffix", layoutsSEODisplayContext.getPageTitleSuffix()
-							).build();
-							%>
-
 							<react:component
-								data="<%= data %>"
 								module="js/seo/PreviewSeo.es"
+								props='<%=
+									HashMapBuilder.<String, Object>put(
+										"targets",
+										HashMapBuilder.<String, Object>put(
+											"description",
+											HashMapBuilder.put(
+												"defaultValue", selLayout.getDescription(locale)
+											).put(
+												"id", "descriptionSEO"
+											).build()
+										).put(
+											"title",
+											HashMapBuilder.<String, Object>put(
+												"defaultValue", layoutsSEODisplayContext.getDefaultPageTitleMap()
+											).put(
+												"id", "title"
+											).build()
+										).put(
+											"url",
+											HashMapBuilder.<String, Object>put(
+												"defaultValue", layoutsSEODisplayContext.getDefaultCanonicalURLMap()
+											).put(
+												"id", "canonicalURL"
+											).build()
+										).build()
+									).put(
+										"titleSuffix", layoutsSEODisplayContext.getPageTitleSuffix()
+									).build()
+								%>'
 								servletContext="<%= application %>"
 							/>
 						</div>

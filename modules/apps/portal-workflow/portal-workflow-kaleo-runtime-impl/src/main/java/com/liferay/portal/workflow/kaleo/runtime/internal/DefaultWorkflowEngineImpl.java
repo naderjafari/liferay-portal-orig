@@ -55,8 +55,8 @@ import com.liferay.portal.workflow.kaleo.model.KaleoTransition;
 import com.liferay.portal.workflow.kaleo.runtime.ExecutionContext;
 import com.liferay.portal.workflow.kaleo.runtime.KaleoSignaler;
 import com.liferay.portal.workflow.kaleo.runtime.WorkflowEngine;
-import com.liferay.portal.workflow.kaleo.runtime.internal.node.NodeExecutorFactory;
-import com.liferay.portal.workflow.kaleo.runtime.node.NodeExecutor;
+import com.liferay.portal.workflow.kaleo.runtime.internal.node.TaskNodeExecutor;
+import com.liferay.portal.workflow.kaleo.runtime.util.WorkflowContextUtil;
 import com.liferay.portal.workflow.kaleo.runtime.util.comparator.KaleoInstanceOrderByComparator;
 
 import java.io.InputStream;
@@ -198,13 +198,20 @@ public class DefaultWorkflowEngineImpl
 			executionContext.setKaleoTaskInstanceToken(
 				kaleoTimerInstanceToken.getKaleoTaskInstanceToken());
 
-			final KaleoNode currentKaleoNode =
-				kaleoInstanceToken.getCurrentKaleoNode();
+			_taskNodeExecutor.executeTimer(executionContext);
 
-			NodeExecutor nodeExecutor = _nodeExecutorFactory.getNodeExecutor(
-				currentKaleoNode.getType());
+			kaleoTimerInstanceToken =
+				kaleoTimerInstanceTokenLocalService.getKaleoTimerInstanceToken(
+					kaleoTimerInstanceTokenId);
 
-			nodeExecutor.executeTimer(currentKaleoNode, executionContext);
+			if (!kaleoTimerInstanceToken.isCompleted()) {
+				kaleoTimerInstanceToken.setWorkflowContext(
+					WorkflowContextUtil.convert(
+						executionContext.getWorkflowContext()));
+
+				kaleoTimerInstanceTokenLocalService.
+					updateKaleoTimerInstanceToken(kaleoTimerInstanceToken);
+			}
 
 			TransactionCommitCallbackUtil.registerCallback(
 				new Callable<Void>() {
@@ -212,7 +219,8 @@ public class DefaultWorkflowEngineImpl
 					@Override
 					public Void call() throws Exception {
 						_kaleoSignaler.signalExecute(
-							currentKaleoNode, executionContext);
+							kaleoInstanceToken.getCurrentKaleoNode(),
+							executionContext);
 
 						return null;
 					}
@@ -690,6 +698,9 @@ public class DefaultWorkflowEngineImpl
 				kaleoInstance,
 				kaleoInstance.getRootKaleoInstanceToken(serviceContext));
 		}
+		catch (WorkflowException workflowException) {
+			throw workflowException;
+		}
 		catch (Exception exception) {
 			throw new WorkflowException(exception);
 		}
@@ -705,6 +716,9 @@ public class DefaultWorkflowEngineImpl
 
 				_workflowValidator.validate(definition);
 			}
+		}
+		catch (WorkflowException workflowException) {
+			throw workflowException;
 		}
 		catch (Exception exception) {
 			throw new WorkflowException(exception);
@@ -746,7 +760,7 @@ public class DefaultWorkflowEngineImpl
 			}
 		}
 		catch (WorkflowException workflowException) {
-			throw new WorkflowException(workflowException);
+			throw workflowException;
 		}
 		finally {
 			_workflowModelParser.setValidate(true);
@@ -857,7 +871,7 @@ public class DefaultWorkflowEngineImpl
 	private KaleoWorkflowModelConverter _kaleoWorkflowModelConverter;
 
 	@Reference
-	private NodeExecutorFactory _nodeExecutorFactory;
+	private TaskNodeExecutor _taskNodeExecutor;
 
 	@Reference
 	private WorkflowDeployer _workflowDeployer;

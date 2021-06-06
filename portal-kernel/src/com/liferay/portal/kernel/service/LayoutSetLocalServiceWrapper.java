@@ -137,6 +137,13 @@ public class LayoutSetLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _layoutSetLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _layoutSetLocalService.dynamicQuery();
 	}
@@ -453,20 +460,6 @@ public class LayoutSetLocalServiceWrapper
 
 		return _layoutSetLocalService.updateSettings(
 			groupId, privateLayout, settings);
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 #updateVirtualHosts(long, boolean, TreeMap)}
-	 */
-	@Deprecated
-	@Override
-	public LayoutSet updateVirtualHost(
-			long groupId, boolean privateLayout, String virtualHostname)
-		throws com.liferay.portal.kernel.exception.PortalException {
-
-		return _layoutSetLocalService.updateVirtualHost(
-			groupId, privateLayout, virtualHostname);
 	}
 
 	@Override

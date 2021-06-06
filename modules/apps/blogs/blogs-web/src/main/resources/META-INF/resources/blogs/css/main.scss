@@ -3,29 +3,6 @@
 @import 'common_main';
 
 .portlet-blogs {
-	.entry-options {
-		margin-bottom: 10px;
-		min-height: 30px;
-		position: relative;
-
-		&.inline {
-			position: absolute;
-			right: 0;
-			top: 0;
-		}
-
-		& > div {
-			padding: 5px;
-			text-align: center;
-		}
-
-		& > .btn {
-			position: absolute;
-			right: 0;
-			top: 0;
-		}
-	}
-
 	.taglib-custom-attributes-list {
 		margin-bottom: 1em;
 	}
@@ -159,8 +136,18 @@
 			padding-left: 0;
 			text-align: center;
 
-			&.alloy-editor-placeholder:empty:not(:focus) {
+			&.alloy-editor-placeholder.ae-placeholder:not(:focus):not(.form-control) {
 				border-left-width: 0;
+			}
+
+			&.alloy-editor-placeholder:before {
+				border-color: inherit;
+				border-left: 2px solid;
+				display: inline-block;
+				margin: 0 auto;
+				padding-left: 0.5rem;
+				text-align: center;
+				width: auto;
 			}
 		}
 
@@ -238,14 +225,6 @@
 
 		.small-image {
 			height: 140px;
-		}
-	}
-
-	.entry-card {
-		.aspect-ratio.aspect-ratio-bg-cover {
-			@include media-breakpoint-down(sm) {
-				padding-bottom: 50%;
-			}
 		}
 	}
 

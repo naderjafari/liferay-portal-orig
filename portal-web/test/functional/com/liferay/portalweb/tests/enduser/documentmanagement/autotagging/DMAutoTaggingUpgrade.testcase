@@ -10,7 +10,9 @@ definition {
 	setUp {
 		SignIn.signIn();
 
-		Smoke.viewWelcomePage();
+		var portalURL = PropsUtil.get("portal.url");
+
+		AssertLocation(value1 = "${portalURL}/web/guest?SM_USER=test@liferay.com");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Configuration",
@@ -21,6 +23,7 @@ definition {
 	}
 
 	@priority = "5"
+	@refactorneeded
 	test ViewDMArchive72101 {
 		property data.archive.type = "data-archive-auto-tagging";
 		property portal.version = "7.2.10.1";
@@ -34,8 +37,8 @@ definition {
 			tagName = "alice");
 
 		Upgrade.addAutoTaggedDM(
-			dmDocumentFile = "Commerce_Black.jpg",
-			dmDocumentTitle = "DM Document JPG",
+			dmDocumentFile = "Commerce_Blue.jpg",
+			dmDocumentTitle = "DM Document JPG New",
 			tagName = "jersey");
 
 		Upgrade.addAutoTaggedDM(

@@ -23,8 +23,10 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.PortletPreferencesServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class PortletPreferencesSoap implements Serializable {
 
 	public static PortletPreferencesSoap toSoapModel(PortletPreferences model) {
@@ -38,7 +40,6 @@ public class PortletPreferencesSoap implements Serializable {
 		soapModel.setOwnerType(model.getOwnerType());
 		soapModel.setPlid(model.getPlid());
 		soapModel.setPortletId(model.getPortletId());
-		soapModel.setPreferences(model.getPreferences());
 
 		return soapModel;
 	}
@@ -165,14 +166,6 @@ public class PortletPreferencesSoap implements Serializable {
 		_portletId = portletId;
 	}
 
-	public String getPreferences() {
-		return _preferences;
-	}
-
-	public void setPreferences(String preferences) {
-		_preferences = preferences;
-	}
-
 	private long _mvccVersion;
 	private long _ctCollectionId;
 	private long _portletPreferencesId;
@@ -181,6 +174,5 @@ public class PortletPreferencesSoap implements Serializable {
 	private int _ownerType;
 	private long _plid;
 	private String _portletId;
-	private String _preferences;
 
 }

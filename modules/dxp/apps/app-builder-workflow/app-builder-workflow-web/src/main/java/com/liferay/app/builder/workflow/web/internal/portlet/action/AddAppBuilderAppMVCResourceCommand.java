@@ -15,11 +15,16 @@
 package com.liferay.app.builder.workflow.web.internal.portlet.action;
 
 import com.liferay.app.builder.constants.AppBuilderPortletKeys;
+import com.liferay.app.builder.model.AppBuilderApp;
 import com.liferay.app.builder.rest.dto.v1_0.App;
 import com.liferay.app.builder.rest.resource.v1_0.AppResource;
 import com.liferay.app.builder.workflow.rest.dto.v1_0.AppWorkflow;
 import com.liferay.app.builder.workflow.rest.resource.v1_0.AppWorkflowResource;
+import com.liferay.dynamic.data.lists.model.DDLRecord;
+import com.liferay.portal.kernel.model.WorkflowDefinitionLink;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -29,6 +34,7 @@ import java.util.Optional;
 import javax.portlet.ResourceRequest;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Rafael Praxedes
@@ -36,7 +42,7 @@ import org.osgi.service.component.annotations.Component;
 @Component(
 	property = {
 		"javax.portlet.name=" + AppBuilderPortletKeys.APPS,
-		"mvc.command.name=/app_builder/add_workflow_app"
+		"mvc.command.name=/app_builder_workflow/add_app_builder_app"
 	},
 	service = MVCResourceCommand.class
 )
@@ -51,8 +57,9 @@ public class AddAppBuilderAppMVCResourceCommand
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		AppResource appResource = AppResource.builder(
-		).user(
+		AppResource.Builder appResourceBuilder = _appResourceFactory.create();
+
+		AppResource appResource = appResourceBuilder.user(
 			themeDisplay.getUser()
 		).build();
 
@@ -60,17 +67,42 @@ public class AddAppBuilderAppMVCResourceCommand
 			ParamUtil.getLong(resourceRequest, "dataDefinitionId"),
 			App.toDTO(ParamUtil.getString(resourceRequest, "app")));
 
-		AppWorkflowResource appWorkflowResource = AppWorkflowResource.builder(
-		).user(
-			themeDisplay.getUser()
-		).build();
+		AppWorkflowResource.Builder appWorkflowResourceBuilder =
+			_appWorkflowResourceFactory.create();
+
+		AppWorkflowResource appWorkflowResource =
+			appWorkflowResourceBuilder.user(
+				themeDisplay.getUser()
+			).build();
 
 		appWorkflowResource.postAppWorkflow(
 			app.getId(),
 			AppWorkflow.toDTO(
 				ParamUtil.getString(resourceRequest, "appWorkflow")));
 
+		WorkflowDefinitionLink workflowDefinitionLink =
+			_workflowDefinitionLinkLocalService.getWorkflowDefinitionLink(
+				themeDisplay.getCompanyId(), 0,
+				ResourceActionsUtil.getCompositeModelName(
+					AppBuilderApp.class.getName(), DDLRecord.class.getName()),
+				app.getId(), 0);
+
+		app.setWorkflowDefinitionName(
+			workflowDefinitionLink.getWorkflowDefinitionName());
+		app.setWorkflowDefinitionVersion(
+			workflowDefinitionLink.getWorkflowDefinitionVersion());
+
 		return Optional.of(app);
 	}
+
+	@Reference
+	private AppResource.Factory _appResourceFactory;
+
+	@Reference
+	private AppWorkflowResource.Factory _appWorkflowResourceFactory;
+
+	@Reference
+	private WorkflowDefinitionLinkLocalService
+		_workflowDefinitionLinkLocalService;
 
 }

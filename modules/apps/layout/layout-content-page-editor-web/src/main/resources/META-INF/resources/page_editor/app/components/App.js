@@ -13,37 +13,88 @@
  */
 
 import PropTypes from 'prop-types';
-import React, {useEffect} from 'react';
+import React, {useEffect, useMemo} from 'react';
+import {createPortal} from 'react-dom';
 
-import useAutoExtendSession from '../../core/hooks/useAutoExtendSession';
+import {StyleBookContextProvider} from '../../plugins/page-design-options/hooks/useStyleBook';
 import {INIT} from '../actions/types';
+import {LAYOUT_TYPES} from '../config/constants/layoutTypes';
 import {config} from '../config/index';
+import {CollectionActiveItemContextProvider} from '../contexts/CollectionActiveItemContext';
+import {ControlsProvider} from '../contexts/ControlsContext';
+import {DisplayPagePreviewItemContextProvider} from '../contexts/DisplayPagePreviewItemContext';
+import {EditableProcessorContextProvider} from '../contexts/EditableProcessorContext';
+import {GlobalContextProvider} from '../contexts/GlobalContext';
+import {StoreContextProvider, useSelector} from '../contexts/StoreContext';
 import {reducer} from '../reducers/index';
-import {StoreContextProvider, useSelector} from '../store/index';
-import {DragAndDropContextProvider} from '../utils/useDragAndDrop';
-import {ControlsProvider} from './Controls';
+import selectLanguageId from '../selectors/selectLanguageId';
+import {DragAndDropContextProvider} from '../utils/drag-and-drop/useDragAndDrop';
+import {DisplayPagePreviewItemSelector} from './DisplayPagePreviewItemSelector';
 import DragPreview from './DragPreview';
 import LayoutViewport from './LayoutViewport';
+import ShortcutManager from './ShortcutManager';
 import Sidebar from './Sidebar';
 import Toolbar from './Toolbar';
 import URLParser from './URLParser';
 
+const DEFAULT_SESSION_LENGTH = 60 * 1000;
+
 export default function App({state}) {
+	const displayPagePreviewItemSelectorWrapper = useMemo(
+		() =>
+			config.layoutType === LAYOUT_TYPES.display &&
+			document.getElementById('infoItemSelectorContainer'),
+		[]
+	);
+
 	const initialState = reducer(state, {type: INIT});
 
-	useAutoExtendSession();
+	useEffect(() => {
+		if (Liferay.Session && config.autoExtendSessionEnabled) {
+			const sessionLength =
+				Liferay.Session.get('sessionLength') || DEFAULT_SESSION_LENGTH;
+
+			const interval = setInterval(() => {
+				Liferay.Session.extend();
+			}, sessionLength / 2);
+
+			return () => clearInterval(interval);
+		}
+	}, []);
 
 	return (
 		<StoreContextProvider initialState={initialState} reducer={reducer}>
 			<LanguageDirection />
 			<URLParser />
 			<ControlsProvider>
-				<DragAndDropContextProvider>
-					<DragPreview />
-					<Toolbar />
-					<LayoutViewport />
-					<Sidebar />
-				</DragAndDropContextProvider>
+				<CollectionActiveItemContextProvider>
+					<DragAndDropContextProvider>
+						<EditableProcessorContextProvider>
+							<DisplayPagePreviewItemContextProvider>
+								{displayPagePreviewItemSelectorWrapper
+									? createPortal(
+											<DisplayPagePreviewItemSelector
+												dark
+											/>,
+											displayPagePreviewItemSelectorWrapper
+									  )
+									: null}
+
+								<DragPreview />
+								<Toolbar />
+								<ShortcutManager />
+
+								<GlobalContextProvider>
+									<LayoutViewport />
+
+									<StyleBookContextProvider>
+										<Sidebar />
+									</StyleBookContextProvider>
+								</GlobalContextProvider>
+							</DisplayPagePreviewItemContextProvider>
+						</EditableProcessorContextProvider>
+					</DragAndDropContextProvider>
+				</CollectionActiveItemContextProvider>
 			</ControlsProvider>
 		</StoreContextProvider>
 	);
@@ -54,10 +105,10 @@ App.propTypes = {
 };
 
 const LanguageDirection = () => {
-	const languageId = useSelector((state) => state.languageId);
+	const languageId = useSelector(selectLanguageId);
 
 	useEffect(() => {
-		const currentLanguageDirection = config.languageDirection[languageId];
+		const currentLanguageDirection = Liferay.Language.direction[languageId];
 		const wrapper = document.getElementById('wrapper');
 
 		if (wrapper) {

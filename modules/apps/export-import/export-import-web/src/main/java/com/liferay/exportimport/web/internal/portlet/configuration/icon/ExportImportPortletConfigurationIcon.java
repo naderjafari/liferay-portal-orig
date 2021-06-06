@@ -62,7 +62,7 @@ public class ExportImportPortletConfigurationIcon
 	public String getOnClick(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		StringBundler sb = new StringBundler(11);
+		StringBundler sb = new StringBundler(13);
 
 		sb.append("Liferay.Portlet.openModal({namespace: '");
 
@@ -73,7 +73,9 @@ public class ExportImportPortletConfigurationIcon
 
 		sb.append(portletDisplay.getNamespace());
 
-		sb.append("', portletSelector: '#p_p_id_");
+		sb.append("', onClose: function() {Liferay.Portlet.refresh('#p_p_id_");
+		sb.append(portletDisplay.getId());
+		sb.append("_')}, portletSelector: '#p_p_id_");
 		sb.append(portletDisplay.getId());
 		sb.append("_', portletId: '");
 		sb.append(portletDisplay.getId());
@@ -134,6 +136,11 @@ public class ExportImportPortletConfigurationIcon
 
 			return false;
 		}
+	}
+
+	@Override
+	public boolean isShowInEditMode(PortletRequest portletRequest) {
+		return true;
 	}
 
 	@Override

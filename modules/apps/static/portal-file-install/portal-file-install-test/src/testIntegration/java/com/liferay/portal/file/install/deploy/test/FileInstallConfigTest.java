@@ -15,24 +15,32 @@
 package com.liferay.portal.file.install.deploy.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.ConfigurationTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.PropsValues;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.util.Dictionary;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -47,6 +55,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ManagedService;
+import org.osgi.service.cm.ManagedServiceFactory;
 
 /**
  * @author Kyle Miho
@@ -68,13 +77,7 @@ public class FileInstallConfigTest {
 
 	@After
 	public void tearDown() throws Exception {
-		if (_configurationPath != null) {
-			Files.deleteIfExists(_configurationPath);
-		}
-
-		if (_configuration != null) {
-			ConfigurationTestUtil.deleteConfiguration(_configuration);
-		}
+		_deleteConfiguration();
 	}
 
 	@Test
@@ -131,6 +134,59 @@ public class FileInstallConfigTest {
 		Assert.assertArrayEquals(
 			new String[] {"testUntypedString", "testUntypedString2"},
 			(String[])properties.get("configUntypedStringArray"));
+	}
+
+	@Test
+	public void testConfigurationDeprecatedFileExtension() throws Exception {
+		Assume.assumeFalse(
+			PropsValues.MODULE_FRAMEWORK_FILE_INSTALL_CFG_ENABLED);
+
+		String configurationPid = _CONFIGURATION_PID_PREFIX.concat(
+			".testDummy");
+		String configurationPidDeprecated = _CONFIGURATION_PID_PREFIX.concat(
+			".testConfigurationDeprecatedFileExtension");
+
+		String content = "testKey=\"testValue\"";
+		String contentDeprecated = "testKeyDeprecated=\"testValueDeprecated\"";
+
+		_configurationPath = Paths.get(
+			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR,
+			configurationPid.concat(".config"));
+
+		Path configPathDeprecated = Paths.get(
+			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR,
+			configurationPidDeprecated.concat(".cfg"));
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.file.install.internal.configuration." +
+					"ConfigurationFileInstaller",
+				LoggerTestUtil.WARN)) {
+
+			Files.write(configPathDeprecated, contentDeprecated.getBytes());
+
+			_configuration = _createConfiguration(configurationPid, content);
+
+			List<LogEntry> logEntries = logCapture.getLogEntries();
+
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
+
+			LogEntry logEntry = logEntries.get(0);
+
+			Assert.assertEquals(
+				StringBundler.concat(
+					"Unable to install .cfg file ", configPathDeprecated,
+					", please use .config file instead."),
+				logEntry.getMessage());
+
+			Configuration configurationDeprecated =
+				_configurationAdmin.getConfiguration(
+					configurationPidDeprecated, StringPool.QUESTION);
+
+			Assert.assertNull(configurationDeprecated.getProperties());
+		}
+		finally {
+			Files.deleteIfExists(configPathDeprecated);
+		}
 	}
 
 	@Test
@@ -198,7 +254,7 @@ public class FileInstallConfigTest {
 			configurationPid.concat(".config"));
 
 		String testKey = "testKey";
-		String testValue = "testValue";
+		String testValue = "\"testValue\"";
 
 		_configuration = _createConfiguration(
 			configurationPid,
@@ -210,8 +266,80 @@ public class FileInstallConfigTest {
 		Assert.assertEquals("testValue", dictionary.get(testKey));
 	}
 
+	@Test
+	public void testEncoding() throws Exception {
+		String configurationPid = _CONFIGURATION_PID_PREFIX.concat(
+			".testEncoding");
+
+		_configurationPath = Paths.get(
+			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR,
+			configurationPid.concat(".config"));
+
+		String special = "üß";
+
+		StringBundler sb = new StringBundler(5);
+
+		sb.append("testKey");
+		sb.append(StringPool.EQUAL);
+		sb.append(StringPool.QUOTE);
+		sb.append(special);
+		sb.append(StringPool.QUOTE);
+
+		String line = sb.toString();
+
+		_configuration = _createConfiguration(
+			configurationPid, line, StandardCharsets.UTF_8);
+
+		Dictionary<String, Object> dictionary = _configuration.getProperties();
+
+		Assert.assertEquals(special, dictionary.get("testKey"));
+
+		_deleteConfiguration();
+
+		_configuration = _createConfiguration(
+			configurationPid, line, StandardCharsets.ISO_8859_1);
+
+		dictionary = _configuration.getProperties();
+
+		Assert.assertNotEquals(special, dictionary.get("testKey"));
+	}
+
+	@Test
+	public void testFactoryConfiguration() throws Exception {
+		String configurationPid = _CONFIGURATION_PID_PREFIX.concat(
+			".testFactoryConfiguration~default");
+
+		_configurationPath = Paths.get(
+			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR,
+			configurationPid.concat(".config"));
+
+		String testKey = "testKey";
+		String testValue = "\"testValue\"";
+
+		_configuration = _createFacotryConfiguration(
+			configurationPid,
+			StringBundler.concat(testKey, StringPool.EQUAL, testValue));
+
+		Assert.assertEquals(
+			_CONFIGURATION_PID_PREFIX.concat(".testFactoryConfiguration"),
+			_configuration.getFactoryPid());
+		Assert.assertEquals(configurationPid, _configuration.getPid());
+
+		Dictionary<String, Object> dictionary = _configuration.getProperties();
+
+		Assert.assertEquals("testValue", dictionary.get(testKey));
+	}
+
 	private Configuration _createConfiguration(
 			String configurationPid, String content)
+		throws Exception {
+
+		return _createConfiguration(
+			configurationPid, content, Charset.defaultCharset());
+	}
+
+	private Configuration _createConfiguration(
+			String configurationPid, String content, Charset charset)
 		throws Exception {
 
 		CountDownLatch countDownLatch = new CountDownLatch(2);
@@ -223,7 +351,7 @@ public class FileInstallConfigTest {
 					Constants.SERVICE_PID, configurationPid));
 
 		try {
-			Files.write(_configurationPath, content.getBytes());
+			Files.write(_configurationPath, content.getBytes(charset));
 
 			countDownLatch.await();
 		}
@@ -233,6 +361,69 @@ public class FileInstallConfigTest {
 
 		return _configurationAdmin.getConfiguration(
 			configurationPid, StringPool.QUESTION);
+	}
+
+	private Configuration _createFacotryConfiguration(
+			String configurationPid, String content)
+		throws Exception {
+
+		CountDownLatch countDownLatch = new CountDownLatch(1);
+
+		String factoryPid = configurationPid.substring(
+			0, configurationPid.indexOf(CharPool.TILDE));
+
+		ServiceRegistration<ManagedServiceFactory> serviceRegistration =
+			_bundleContext.registerService(
+				ManagedServiceFactory.class,
+				new ManagedServiceFactory() {
+
+					@Override
+					public void deleted(String pid) {
+					}
+
+					@Override
+					public String getName() {
+						return "Test managed service factory for PID " +
+							factoryPid;
+					}
+
+					@Override
+					public void updated(
+						String pid, Dictionary<String, ?> dictionary) {
+
+						countDownLatch.countDown();
+					}
+
+				},
+				MapUtil.singletonDictionary(Constants.SERVICE_PID, factoryPid));
+
+		try {
+			Files.write(
+				_configurationPath, content.getBytes(Charset.defaultCharset()));
+
+			countDownLatch.await();
+		}
+		finally {
+			serviceRegistration.unregister();
+		}
+
+		Configuration[] configurations = _configurationAdmin.listConfigurations(
+			"(service.factoryPid=" + factoryPid + ")");
+
+		Assert.assertEquals(
+			configurations.toString(), 1, configurations.length);
+
+		return configurations[0];
+	}
+
+	private void _deleteConfiguration() throws Exception {
+		if (_configurationPath != null) {
+			Files.deleteIfExists(_configurationPath);
+		}
+
+		if (_configuration != null) {
+			ConfigurationTestUtil.deleteConfiguration(_configuration);
+		}
 	}
 
 	private static final String _CONFIGURATION_PID_PREFIX =

@@ -19,7 +19,14 @@ import com.liferay.gradle.plugins.JspCDefaultsPlugin;
 import com.liferay.gradle.plugins.LiferayOSGiPlugin;
 import com.liferay.gradle.plugins.extensions.BundleExtension;
 import com.liferay.gradle.plugins.extensions.LiferayOSGiExtension;
+import com.liferay.gradle.plugins.js.module.config.generator.JSModuleConfigGeneratorPlugin;
+import com.liferay.gradle.plugins.js.transpiler.JSTranspilerBasePlugin;
+import com.liferay.gradle.plugins.js.transpiler.JSTranspilerPlugin;
+import com.liferay.gradle.plugins.node.NodePlugin;
+import com.liferay.gradle.plugins.rest.builder.RESTBuilderPlugin;
 import com.liferay.gradle.plugins.service.builder.ServiceBuilderPlugin;
+import com.liferay.gradle.plugins.soy.SoyPlugin;
+import com.liferay.gradle.plugins.soy.SoyTranslationPlugin;
 import com.liferay.gradle.plugins.test.integration.TestIntegrationBasePlugin;
 import com.liferay.gradle.plugins.test.integration.TestIntegrationPlugin;
 import com.liferay.gradle.plugins.upgrade.table.builder.UpgradeTableBuilderPlugin;
@@ -27,6 +34,7 @@ import com.liferay.gradle.plugins.util.BndUtil;
 import com.liferay.gradle.plugins.workspace.FrontendPlugin;
 import com.liferay.gradle.plugins.workspace.WorkspaceExtension;
 import com.liferay.gradle.plugins.workspace.WorkspacePlugin;
+import com.liferay.gradle.plugins.workspace.internal.JSModuleConfigGeneratorDefaultsPlugin;
 import com.liferay.gradle.plugins.workspace.internal.util.FileUtil;
 import com.liferay.gradle.plugins.workspace.internal.util.GradleUtil;
 import com.liferay.gradle.plugins.wsdd.builder.WSDDBuilderPlugin;
@@ -123,13 +131,25 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 			}
 
 			GradleUtil.applyPlugin(project, LiferayOSGiPlugin.class);
+			GradleUtil.applyPlugin(project, RESTBuilderPlugin.class);
+			GradleUtil.applyPlugin(project, ServiceBuilderPlugin.class);
+			GradleUtil.applyPlugin(project, SoyPlugin.class);
+			GradleUtil.applyPlugin(project, SoyTranslationPlugin.class);
+			GradleUtil.applyPlugin(project, UpgradeTableBuilderPlugin.class);
+			GradleUtil.applyPlugin(project, WSDDBuilderPlugin.class);
 
-			if (FileUtil.exists(project, "service.xml")) {
-				GradleUtil.applyPlugin(project, ServiceBuilderPlugin.class);
-				GradleUtil.applyPlugin(
-					project, UpgradeTableBuilderPlugin.class);
-				GradleUtil.applyPlugin(project, WSDDBuilderPlugin.class);
+			if (GradleUtil.hasTask(
+					project, NodePlugin.PACKAGE_RUN_BUILD_TASK_NAME)) {
+
+				GradleUtil.applyPlugin(project, JSTranspilerBasePlugin.class);
 			}
+			else {
+				GradleUtil.applyPlugin(
+					project, JSModuleConfigGeneratorPlugin.class);
+				GradleUtil.applyPlugin(project, JSTranspilerPlugin.class);
+			}
+
+			JSModuleConfigGeneratorDefaultsPlugin.INSTANCE.apply(project);
 
 			Jar jar = (Jar)GradleUtil.getTask(
 				project, JavaPlugin.JAR_TASK_NAME);
@@ -257,9 +277,7 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 						return FileVisitResult.SKIP_SUBTREE;
 					}
 
-					Path dirNamePath = dirPath.getFileName();
-
-					String dirName = dirNamePath.toString();
+					String dirName = String.valueOf(dirPath.getFileName());
 
 					if (isExcludedDirName(dirName)) {
 						return FileVisitResult.SKIP_SUBTREE;
@@ -284,12 +302,6 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 	}
 
 	protected static final String NAME = "modules";
-
-	private static File _getResourcesDir(SourceSet sourceSet) {
-		SourceSetOutput sourceSetOutput = sourceSet.getOutput();
-
-		return sourceSetOutput.getResourcesDir();
-	}
 
 	private void _configureLiferayOSGi(Project project) {
 		LiferayOSGiExtension liferayOSGiExtension = GradleUtil.getExtension(
@@ -408,11 +420,11 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 	private void _configureTaskSetUpTestableTomcat(
 		Task setUpTestableTomcatTask, WorkspaceExtension workspaceExtension) {
 
-		Project project = setUpTestableTomcatTask.getProject();
-
 		File homeDir = workspaceExtension.getHomeDir();
 
 		if (!homeDir.exists()) {
+			Project project = setUpTestableTomcatTask.getProject();
+
 			Task initBundleTask = GradleUtil.getTask(
 				project.getRootProject(),
 				RootProjectConfigurator.INIT_BUNDLE_TASK_NAME);
@@ -498,6 +510,12 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 		return (Map<String, Object>)jsonSlurper.parse(packageJsonFile);
 	}
 
+	private File _getResourcesDir(SourceSet sourceSet) {
+		SourceSetOutput sourceSetOutput = sourceSet.getOutput();
+
+		return sourceSetOutput.getResourcesDir();
+	}
+
 	private WorkspaceExtension _getWorkspaceExtension(Project project) {
 		return GradleUtil.getExtension(
 			(ExtensionAware)project.getGradle(), WorkspaceExtension.class);
@@ -508,13 +526,12 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 		Map<String, Object> packageJsonMap = _getPackageJsonMap(
 			packageJsonPath.toFile());
 
-		Map<String, Object> portlet = (Map<String, Object>)packageJsonMap.get(
-			"portlet");
-
+		Map<String, Object> liferayTheme =
+			(Map<String, Object>)packageJsonMap.get("liferayTheme");
 		Map<String, Object> scripts = (Map<String, Object>)packageJsonMap.get(
 			"scripts");
 
-		if ((portlet != null) && (scripts != null) &&
+		if ((liferayTheme == null) && (scripts != null) &&
 			(scripts.get("build") != null)) {
 
 			return true;

@@ -220,6 +220,10 @@ public class MediaWikiImporter implements WikiImporter {
 				page = _wikiPageLocalService.getPage(node.getNodeId(), title);
 			}
 			catch (NoSuchPageException noSuchPageException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchPageException, noSuchPageException);
+				}
+
 				page = _wikiPageLocalService.addPage(
 					authorUserId, node.getNodeId(), title,
 					WikiPageConstants.NEW, null, true, serviceContext);
@@ -331,11 +335,6 @@ public class MediaWikiImporter implements WikiImporter {
 			return;
 		}
 
-		ProgressTracker progressTracker =
-			ProgressTrackerThreadLocal.getProgressTracker();
-
-		int count = 0;
-
 		ZipReader zipReader = ZipReaderFactoryUtil.getZipReader(
 			imagesInputStream);
 
@@ -345,6 +344,11 @@ public class MediaWikiImporter implements WikiImporter {
 			throw new ImportFilesException();
 		}
 
+		ProgressTracker progressTracker =
+			ProgressTrackerThreadLocal.getProgressTracker();
+
+		int count = 0;
+
 		int total = entries.size();
 
 		if (total > 0) {
@@ -353,6 +357,10 @@ public class MediaWikiImporter implements WikiImporter {
 					node.getNodeId(), SHARED_IMAGES_TITLE);
 			}
 			catch (NoSuchPageException noSuchPageException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchPageException, noSuchPageException);
+				}
+
 				ServiceContext serviceContext = new ServiceContext();
 
 				serviceContext.setAddGroupPermissions(true);
@@ -405,9 +413,9 @@ public class MediaWikiImporter implements WikiImporter {
 
 					inputStreamOVPs.clear();
 
-					percentage = Math.min(50 + ((i * 50) / total), 99);
-
 					if (progressTracker != null) {
+						percentage = Math.min(50 + ((i * 50) / total), 99);
+
 						progressTracker.setPercent(percentage);
 					}
 				}
@@ -625,13 +633,13 @@ public class MediaWikiImporter implements WikiImporter {
 	protected List<String> readSpecialNamespaces(Element root)
 		throws ImportFilesException {
 
-		List<String> namespaces = new ArrayList<>();
-
 		Element siteinfoElement = root.element("siteinfo");
 
 		if (siteinfoElement == null) {
 			throw new ImportFilesException("Invalid pages XML file");
 		}
+
+		List<String> namespaces = new ArrayList<>();
 
 		Element namespacesElement = siteinfoElement.element("namespaces");
 

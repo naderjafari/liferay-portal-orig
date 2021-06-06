@@ -19,11 +19,11 @@ import com.liferay.asset.list.constants.AssetListPortletKeys;
 import com.liferay.asset.list.model.AssetListEntry;
 import com.liferay.asset.list.service.AssetListEntryService;
 import com.liferay.asset.list.web.internal.handler.AssetListEntryExceptionRequestHandler;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -93,7 +93,8 @@ public class AddAssetListEntryMVCActionCommand extends BaseMVCActionCommand {
 			}
 
 			JSONObject jsonObject = JSONUtil.put(
-				"redirectURL", getRedirectURL(actionResponse, assetListEntry));
+				"redirectURL",
+				getRedirectURL(actionRequest, actionResponse, assetListEntry));
 
 			if (SessionErrors.contains(
 					actionRequest, "assetListEntryNameInvalid")) {
@@ -115,14 +116,21 @@ public class AddAssetListEntryMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	protected String getRedirectURL(
-		ActionResponse actionResponse, AssetListEntry assetListEntry) {
+		ActionRequest actionRequest, ActionResponse actionResponse,
+		AssetListEntry assetListEntry) {
 
-		LiferayPortletResponse liferayPortletResponse =
-			_portal.getLiferayPortletResponse(actionResponse);
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_portal.getLiferayPortletResponse(actionResponse)
+		).setMVCPath(
+			"/edit_asset_list_entry.jsp"
+		).build();
 
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
+		String backURL = ParamUtil.getString(actionRequest, "backURL");
 
-		portletURL.setParameter("mvcPath", "/edit_asset_list_entry.jsp");
+		if (backURL != null) {
+			portletURL.setParameter("backURL", backURL);
+		}
+
 		portletURL.setParameter(
 			"assetListEntryId",
 			String.valueOf(assetListEntry.getAssetListEntryId()));

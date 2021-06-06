@@ -50,16 +50,25 @@ public class BlogPostingImageResourceTest
 
 		BlogPostingImage blogPostingImage = randomBlogPostingImage();
 
-		blogPostingImage.setTitle("*,?");
-
 		try {
 			testPostSiteBlogPostingImage_addBlogPostingImage(
-				blogPostingImage, getMultipartFiles());
+				blogPostingImage,
+				HashMapBuilder.put(
+					"file",
+					() -> {
+						File tempFile = FileUtil.createTempFile("*,?", "txt");
+
+						FileUtil.write(
+							tempFile, TestDataConstants.TEST_BYTE_ARRAY);
+
+						return tempFile;
+					}
+				).build());
 
 			Assert.fail();
 		}
-		catch (Throwable e) {
-			Assert.assertTrue(e instanceof Problem.ProblemException);
+		catch (Throwable throwable) {
+			Assert.assertTrue(throwable instanceof Problem.ProblemException);
 		}
 
 		folder = BlogsEntryLocalServiceUtil.fetchAttachmentsFolder(

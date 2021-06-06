@@ -17,11 +17,13 @@ package com.liferay.source.formatter;
 import com.liferay.petra.nio.CharsetDecoderUtil;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.checks.SourceCheck;
 import com.liferay.source.formatter.checks.configuration.SourceChecksResult;
 import com.liferay.source.formatter.checks.configuration.SourceFormatterConfiguration;
@@ -76,12 +78,6 @@ import org.apache.tools.ant.types.selectors.SelectorUtils;
  */
 public abstract class BaseSourceProcessor implements SourceProcessor {
 
-	public static final int PLUGINS_MAX_DIR_LEVEL =
-		ToolsUtil.PLUGINS_MAX_DIR_LEVEL;
-
-	public static final int PORTAL_MAX_DIR_LEVEL =
-		ToolsUtil.PORTAL_MAX_DIR_LEVEL;
-
 	@Override
 	public final void format() throws Exception {
 		List<String> fileNames = getFileNames();
@@ -104,9 +100,7 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 
 		_sourceFormatterMessagesMap = new HashMap<>();
 
-		_sourceChecks = _getSourceChecks(
-			_sourceFormatterConfiguration, _containsModuleFile(fileNames),
-			_sourceFormatterArgs.getCheckName());
+		_sourceChecks = _getSourceChecks(fileNames);
 
 		addProgressStatusUpdate(
 			new ProgressStatusUpdate(
@@ -322,13 +316,17 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 
 		_sourceFormatterMessagesMap.remove(fileName);
 
-		_checkUTF8(file, fileName);
+		String newContent = content;
 
-		String newContent = StringUtil.replace(
-			content, StringPool.RETURN_NEW_LINE, StringPool.NEW_LINE);
+		if (ListUtil.isEmpty(_sourceFormatterArgs.getCheckNames())) {
+			_checkUTF8(file, fileName);
 
-		if (!content.equals(newContent)) {
-			modifiedMessages.add(file.toString() + " (ReturnCharacter)");
+			newContent = StringUtil.replace(
+				newContent, StringPool.RETURN_NEW_LINE, StringPool.NEW_LINE);
+
+			if (!content.equals(newContent)) {
+				modifiedMessages.add(file.toString() + " (ReturnCharacter)");
+			}
 		}
 
 		newContent = parse(file, fileName, newContent, modifiedMessages);
@@ -420,7 +418,7 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 	protected File getPortalDir() {
 		File portalImplDir = SourceFormatterUtil.getFile(
 			_sourceFormatterArgs.getBaseDirName(), "portal-impl",
-			ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+			_sourceFormatterArgs.getMaxDirLevel());
 
 		if (portalImplDir == null) {
 			return null;
@@ -520,10 +518,9 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 					file.delete();
 				}
 			}
-			else {
-				_sourceMismatchExceptions.add(
-					new SourceMismatchException(fileName, content, newContent));
-			}
+
+			_sourceMismatchExceptions.add(
+				new SourceMismatchException(fileName, content, newContent));
 		}
 
 		if (_sourceFormatterArgs.isPrintErrors()) {
@@ -593,6 +590,10 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 			charsetDecoder.decode(ByteBuffer.wrap(bytes));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			processMessage(fileName, "UTF-8");
 		}
 	}
@@ -648,17 +649,17 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 			new ProgressStatusUpdate(ProgressStatus.CHECK_FILE_COMPLETED));
 	}
 
-	private List<SourceCheck> _getSourceChecks(
-			SourceFormatterConfiguration sourceFormatterConfiguration,
-			boolean includeModuleChecks, String checkName)
+	private List<SourceCheck> _getSourceChecks(List<String> fileNames)
 		throws Exception {
 
 		Class<?> clazz = getClass();
 
 		List<SourceCheck> sourceChecks = SourceChecksUtil.getSourceChecks(
-			sourceFormatterConfiguration, clazz.getSimpleName(),
-			getPropertiesMap(), _sourceFormatterArgs.getSkipCheckNames(),
-			_portalSource, _subrepository, includeModuleChecks, checkName);
+			_sourceFormatterConfiguration, clazz.getSimpleName(),
+			getPropertiesMap(), _sourceFormatterArgs.getCheckNames(),
+			_sourceFormatterArgs.getCheckCategoryNames(),
+			_sourceFormatterArgs.getSkipCheckNames(), _portalSource,
+			_subrepository, _containsModuleFile(fileNames));
 
 		for (SourceCheck sourceCheck : sourceChecks) {
 			_initSourceCheck(sourceCheck);
@@ -671,6 +672,7 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 		sourceCheck.setAllFileNames(_allFileNames);
 		sourceCheck.setBaseDirName(_sourceFormatterArgs.getBaseDirName());
 		sourceCheck.setFileExtensions(_sourceFormatterArgs.getFileExtensions());
+		sourceCheck.setMaxDirLevel(_sourceFormatterArgs.getMaxDirLevel());
 		sourceCheck.setMaxLineLength(_sourceFormatterArgs.getMaxLineLength());
 		sourceCheck.setPluginsInsideModulesDirectoryNames(
 			_pluginsInsideModulesDirectoryNames);
@@ -720,6 +722,9 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return absolutePath.contains("/modules/");
@@ -753,8 +758,9 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 
 			DebugUtil.finishTask();
 		}
-		catch (Throwable t) {
-			throw new RuntimeException("Unable to format " + fileName, t);
+		catch (Throwable throwable) {
+			throw new RuntimeException(
+				"Unable to format " + fileName, throwable);
 		}
 	}
 
@@ -778,6 +784,9 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 
 		return sourceChecksResult;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseSourceProcessor.class);
 
 	private List<String> _allFileNames;
 	private boolean _browserStarted;

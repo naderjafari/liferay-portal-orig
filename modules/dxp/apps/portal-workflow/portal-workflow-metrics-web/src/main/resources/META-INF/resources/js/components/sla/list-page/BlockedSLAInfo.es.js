@@ -14,7 +14,7 @@ import React, {useEffect, useState} from 'react';
 
 import {useFetch} from '../../../shared/hooks/useFetch.es';
 
-const BlockedSLAInfo = ({processId}) => {
+export default function BlockedSLAInfo({processId}) {
 	const [visible, setVisible] = useState(true);
 
 	const {data, fetchData} = useFetch({
@@ -30,7 +30,6 @@ const BlockedSLAInfo = ({processId}) => {
 		data.totalCount > 0 &&
 		visible && (
 			<ClayAlert
-				data-testid="alertBlockedSLA"
 				displayType="danger"
 				onClose={() => setVisible(false)}
 				title={Liferay.Language.get('error')}
@@ -41,6 +40,4 @@ const BlockedSLAInfo = ({processId}) => {
 			</ClayAlert>
 		)
 	);
-};
-
-export default BlockedSLAInfo;
+}

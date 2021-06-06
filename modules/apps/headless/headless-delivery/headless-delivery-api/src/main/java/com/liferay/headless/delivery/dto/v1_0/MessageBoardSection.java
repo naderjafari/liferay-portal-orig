@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -49,20 +51,25 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("MessageBoardSection")
+@GraphQLName(
+	description = "Represents a section/folder on a message board, used to organize messages.",
+	value = "MessageBoardSection"
+)
 @JsonFilter("Liferay.Vulcan")
 @Schema(
-	requiredProperties = {"title"},
-	description = "Represents a section/folder on a message board, used to organize messages."
+	description = "Represents a section/folder on a message board, used to organize messages.",
+	requiredProperties = {"title"}
 )
 @XmlRootElement(name = "MessageBoardSection")
-public class MessageBoardSection {
+public class MessageBoardSection implements Serializable {
 
 	public static MessageBoardSection toDTO(String json) {
 		return ObjectMapperUtil.readValue(MessageBoardSection.class, json);
 	}
 
-	@Schema
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -88,7 +95,9 @@ public class MessageBoardSection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -121,7 +130,9 @@ public class MessageBoardSection {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(
+		description = "A list of the custom fields associated with the section."
+	)
 	@Valid
 	public CustomField[] getCustomFields() {
 		return customFields;
@@ -146,7 +157,9 @@ public class MessageBoardSection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of the custom fields associated with the section."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected CustomField[] customFields;
 
@@ -328,7 +341,7 @@ public class MessageBoardSection {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Integer numberOfMessageBoardThreads;
 
-	@Schema
+	@Schema(description = "The ID of the section parent's, if it exists.")
 	public Long getParentMessageBoardSectionId() {
 		return parentMessageBoardSectionId;
 	}
@@ -356,7 +369,7 @@ public class MessageBoardSection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The ID of the section parent's, if it exists.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long parentMessageBoardSectionId;
 
@@ -390,7 +403,9 @@ public class MessageBoardSection {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long siteId;
 
-	@Schema
+	@Schema(
+		description = "A flag that indicates whether the user making the requests is subscribed to this section."
+	)
 	public Boolean getSubscribed() {
 		return subscribed;
 	}
@@ -414,7 +429,9 @@ public class MessageBoardSection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A flag that indicates whether the user making the requests is subscribed to this section."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Boolean subscribed;
 
@@ -695,6 +712,7 @@ public class MessageBoardSection {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.MessageBoardSection",
 		name = "x-class-name"
 	)
@@ -764,7 +782,7 @@ public class MessageBoardSection {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -803,7 +821,7 @@ public class MessageBoardSection {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

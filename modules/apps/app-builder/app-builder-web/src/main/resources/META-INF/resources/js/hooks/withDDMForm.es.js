@@ -12,7 +12,11 @@
  * details.
  */
 
-import {PagesVisitor} from 'dynamic-data-mapping-form-renderer';
+import {
+	PagesVisitor,
+	formatFieldValue,
+	setDataRecord,
+} from 'data-engine-js-components-web';
 import React, {useCallback, useEffect, useState} from 'react';
 
 export function useDDMFormSubmit(ddmForm, onSubmit) {
@@ -25,75 +29,70 @@ export function useDDMFormSubmit(ddmForm, onSubmit) {
 	}, [ddmForm, onSubmit]);
 }
 
-export function useDDMFormValidation(ddmForm, onSubmitCallback) {
+export function useDDMFormValidation(ddmForm, languageId) {
 	return useCallback(
 		(event) => {
-			if (typeof event.stopImmediatePropagation === 'function') {
-				event.stopImmediatePropagation();
-			}
-
-			const ddmReactForm = ddmForm.reactComponentRef.current;
-
-			ddmReactForm.validate().then((isValidForm) => {
-				if (!isValidForm) {
-					return;
+			return new Promise((resolve, reject) => {
+				if (typeof event.stopImmediatePropagation === 'function') {
+					event.stopImmediatePropagation();
 				}
 
-				const dataRecord = {
-					dataRecordValues: {},
-				};
+				const ddmReactForm = ddmForm.reactComponentRef.current;
 
-				const languageId = themeDisplay.getLanguageId();
-				const visitor = new PagesVisitor(ddmReactForm.get('pages'));
-
-				const setDataRecord = ({
-					fieldName,
-					localizable,
-					repeatable,
-					value,
-					visible,
-				}) => {
-					let _value = value;
-
-					if (!visible) {
-						_value = '';
-					}
-
-					if (localizable) {
-						if (!dataRecord.dataRecordValues[fieldName]) {
-							dataRecord.dataRecordValues[fieldName] = {
-								[languageId]: [],
-							};
+				ddmReactForm
+					.validate()
+					.then((isValidForm) => {
+						if (!isValidForm) {
+							return reject();
 						}
 
-						if (repeatable) {
-							dataRecord.dataRecordValues[fieldName][
-								languageId
-							].push(_value);
-						}
-						else {
-							dataRecord.dataRecordValues[fieldName] = {
-								[languageId]: _value,
-							};
-						}
-					}
-					else {
-						dataRecord.dataRecordValues[fieldName] = _value;
-					}
-				};
+						const visitor = new PagesVisitor(
+							ddmReactForm.get('pages')
+						);
 
-				visitor.mapFields(({nestedFields, ...field}) => {
-					if (Array.isArray(nestedFields)) {
-						return nestedFields.forEach(setDataRecord);
-					}
+						const dataRecordValues = {};
 
-					setDataRecord(field);
-				});
+						visitor.mapFields(
+							(field) => {
+								const {
+									editingLanguageId,
+									localizedValue,
+								} = field;
 
-				onSubmitCallback(dataRecord);
+								if (
+									localizedValue[languageId] === undefined &&
+									editingLanguageId != languageId
+								) {
+									const newValue = formatFieldValue(
+										field,
+										true,
+										languageId,
+										editingLanguageId
+									);
+
+									if (!localizedValue[languageId]) {
+										localizedValue[languageId] = newValue;
+									}
+
+									field.value = newValue;
+								}
+
+								setDataRecord(
+									field,
+									dataRecordValues,
+									languageId
+								);
+							},
+							true,
+							true
+						);
+
+						resolve({dataRecordValues});
+					})
+					.catch(reject);
 			});
 		},
-		[ddmForm, onSubmitCallback]
+		[ddmForm.reactComponentRef, languageId]
 	);
 }
 

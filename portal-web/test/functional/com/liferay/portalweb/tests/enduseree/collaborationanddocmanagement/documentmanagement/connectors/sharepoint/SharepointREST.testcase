@@ -2,11 +2,11 @@
 definition {
 
 	property osgi.app.includes = "sharepoint-rest";
-	property portal.ssl.enabled = "true";
 	property portal.release = "false";
+	property portal.ssl.enabled = "true";
 	property portal.upstream = "true";
 	property test.run.environment = "EE";
-	property testray.main.component.name = "Documents Management";
+	property testray.main.component.name = "Sharepoint";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -32,7 +32,7 @@ definition {
 			configurationName = "Sharepoint OAuth2",
 			configurationScope = "System Scope");
 
-		Click(locator1 = "Button#ADD");
+		Button.clickAdd();
 
 		Type(
 			key_text = "name",
@@ -99,7 +99,9 @@ definition {
 		DMRepository.addSharepoint(
 			dmRepositoryLibraryPath = "Documentos compartidos",
 			dmRepositoryName = "Sharepoint (${configurationName})",
-			dmRepositorySiteAbsoluteURL = "https://liferaycolab.sharepoint.com");
+			dmRepositorySiteAbsoluteURL = "https://liferaycolab.sharepoint.com",
+			permissionDefinitionKey = "ACCESS",
+			roleTitle = "Guest");
 
 		PortletEntry.save();
 
@@ -128,6 +130,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test CheckinDocument {
 		property test.name.skip.portal.instance = "SharepointREST#CheckinDocument";
 
@@ -173,6 +176,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DeleteDocumentInSubfolder {
 		property test.name.skip.portal.instance = "SharepointREST#DeleteDocumentInSubfolder";
 
@@ -222,6 +226,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test DeleteSubfolder {
 		property test.name.skip.portal.instance = "SharepointREST#DeleteSubfolder";
 
@@ -245,6 +250,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test EditDocumentFile {
 		property test.name.skip.portal.instance = "SharepointREST#EditDocumentFile";
 
@@ -257,7 +263,7 @@ definition {
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_3.doc");
 
 		DMDocument.viewCP(
-			dmDocumentSize = "36 KB",
+			dmDocumentSize = "37 KB",
 			dmDocumentTitle = "Document_3.doc");
 
 		ProductMenu.gotoPortlet(
@@ -284,7 +290,7 @@ definition {
 			dmDocumentSize = "30 KB",
 			dmDocumentTitle = "Document_3.doc");
 
-		DMDocument.viewDocumentMetadataCP(
+		DMDocument.cannotViewDocumentMetadataCP(
 			metadataData = "image/jpeg",
 			metadataLabel = "Content Type");
 
@@ -296,6 +302,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test MoveCheckedoutDocumentToFolder {
 		property test.name.skip.portal.instance = "SharepointREST#MoveCheckedoutDocumentToFolder";
 
@@ -356,6 +363,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test MoveDocumentToHome {
 		property test.name.skip.portal.instance = "SharepointREST#MoveDocumentToHome";
 
@@ -383,6 +391,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test SearchDocumentViaHome {
 		property test.name.skip.portal.instance = "SharepointREST#SearchDocumentViaHome";
 
@@ -404,6 +413,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewDocumentAsGuest {
 		property test.name.skip.portal.instance = "SharepointREST#ViewDocumentAsGuest";
 
@@ -424,6 +434,10 @@ definition {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
 		Portlet.addPG(portletName = "Documents and Media");
+
+		DMDocument.enableActionsMenuOnPortlet();
+
+		Navigator.gotoPage(pageName = "Documents and Media Page");
 
 		DMRepository.cleanRepository(dmDocumentTitle = "Document_1.doc");
 
@@ -451,19 +465,11 @@ definition {
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
 			value1 = "Collaboration Test Application");
 
-		if (IsElementNotPresent(locator1 = "MicrosoftLogin#LOGIN_EMAIL_FIELD")) {
-			Navigator.openURL();
+		Pause(locator1 = "3000");
 
-			Navigator.gotoPage(pageName = "Documents and Media Page");
-
-			LexiconEntry.changeDisplayStyle(displayStyle = "list");
-
-			Pause(locator1 = "3000");
-
-			DMNavigator.gotoRepository(
-				dmRepositoryName = "Collaboration Test Application",
-				guest = "true");
-		}
+		AssertElementNotPresent(
+			key_dmDocumentTitle = "Document_1.doc",
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE");
 
 		User.loginUserPG(
 			password = "test",
@@ -473,6 +479,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewEditedCheckedoutDocument {
 		property test.name.skip.portal.instance = "SharepointREST#ViewEditedCheckedoutDocument";
 
@@ -516,6 +523,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewOriginalFileExtensionAfterUnsuccessfulExtensionChange {
 		property test.name.skip.portal.instance = "SharepointREST#ViewOriginalFileExtensionAfterUnsuccessfulExtensionChange";
 
@@ -551,6 +559,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewOriginalFileExtensionAfterUnsuccessfulExtensionRemoval {
 		property test.name.skip.portal.instance = "SharepointREST#ViewOriginalFileExtensionAfterUnsuccessfulExtensionRemoval";
 
@@ -585,7 +594,9 @@ definition {
 		DMRepository.cleanRepository(dmDocumentTitle = "Document_3.docx");
 	}
 
+	@description = "This test ensures that repositories can be added both on site admin and on a content page."
 	@priority = "4"
+	@refactorneeded
 	test ViewRepository {
 		property test.name.skip.portal.instance = "SharepointREST#ViewRepository";
 
@@ -594,6 +605,45 @@ definition {
 		DMRepository.gotoCP(dmRepositoryName = "Collaboration Test Application");
 
 		DMRepository.viewBreadcrumb(dmRepositoryName = "Collaboration Test Application");
+
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Content Page Name",
+			type = "content");
+
+		ContentPagesNavigator.openEditContentPage(
+			pageName = "Test Content Page Name",
+			siteName = "Guest");
+
+		PageEditor.addWidget(portletName = "Documents and Media");
+
+		DMDocument.enableActionsMenuOnPortlet();
+
+		PageEditor.clickPublish();
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		DMNavigator.gotoAddRepositoryCP();
+
+		Type(
+			key_fieldLabel = "Name",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "Collaboration Test Application 2");
+
+		DMRepository.addSharepoint(
+			dmRepositoryLibraryPath = "Documentos compartidos",
+			dmRepositoryName = "Sharepoint (CollabQA)",
+			dmRepositorySiteAbsoluteURL = "https://liferaycolab.sharepoint.com",
+			permissionDefinitionKey = "ACCESS",
+			roleTitle = "Guest");
+
+		PortletEntry.save();
+
+		Navigator.openSpecificURL(url = "https://localhost:8443/group/guest/~/control_panel/manage?p_p_id=com_liferay_document_library_web_portlet_DLAdminPortlet");
+
+		DMRepository.gotoCP(dmRepositoryName = "Collaboration Test Application 2");
+
+		DMRepository.viewBreadcrumb(dmRepositoryName = "Collaboration Test Application 2");
 	}
 
 }

@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -40,10 +42,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("AssetType")
+@GraphQLName(
+	description = "Represents the asset type associated with a `TaxonomyCategory`.",
+	value = "AssetType"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "AssetType")
-public class AssetType {
+public class AssetType implements Serializable {
 
 	public static AssetType toDTO(String json) {
 		return ObjectMapperUtil.readValue(AssetType.class, json);
@@ -206,6 +211,7 @@ public class AssetType {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.taxonomy.dto.v1_0.AssetType",
 		name = "x-class-name"
 	)
@@ -241,7 +247,7 @@ public class AssetType {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -280,7 +286,7 @@ public class AssetType {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

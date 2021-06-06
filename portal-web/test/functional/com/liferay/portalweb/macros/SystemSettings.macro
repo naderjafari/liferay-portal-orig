@@ -1,22 +1,9 @@
 definition {
 
-	macro configureCrossClusterReplication {
-		FormFields.enableCheckbox(fieldName = "ccrEnabled");
-
-		FormFields.editTextMultiline(
-			fieldName = "ccrLocalClusterConnectionConfigurations",
-			fieldValue = "localhost:8080=${ccrLocalClusterConnectionID}");
-
-		SystemSettings.saveConfiguration();
-	}
-
 	macro configureDisplayStyle {
 		Click(locator1 = "Dropdown#TRIGGER");
 
-		AssertClick(
-			key_option = "${displayStyle}",
-			locator1 = "Dropdown#RESULT",
-			value1 = "${displayStyle}");
+		DropdownMenuItem.click(menuItem = "${displayStyle}");
 
 		AssertTextEquals(
 			locator1 = "Dropdown#SELECTED_VALUE",
@@ -39,6 +26,12 @@ definition {
 		if ("${enableSetting}" == "true") {
 			Check.toggleSwitch(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
 
+			if (isSet(settingValue)) {
+				SystemSettings.editTextAreaSetting(
+					settingName = "${settingName}",
+					settingValue = "${settingValue}");
+			}
+
 			SystemSettings.saveConfiguration();
 
 			AssertChecked.assertCheckedNotVisible(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
@@ -47,6 +40,29 @@ definition {
 			Uncheck.uncheckToggleSwitch(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
 
 			SystemSettings.saveConfiguration();
+
+			AssertNotChecked.assertNotCheckedNotVisible(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
+		}
+	}
+
+	macro configureSystemSettingWithRefresh {
+		var key_settingFieldName = "${settingFieldName}";
+
+		if ("${enableSetting}" == "true") {
+			Check.toggleSwitch(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
+
+			SystemSettings.saveConfiguration();
+
+			Refresh();
+
+			AssertChecked.assertCheckedNotVisible(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
+		}
+		else if ("${enableSetting}" == "false") {
+			Uncheck.uncheckToggleSwitch(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
+
+			SystemSettings.saveConfiguration();
+
+			Refresh();
 
 			AssertNotChecked.assertNotCheckedNotVisible(locator1 = "SystemSettings#SETTING_FIELD_NAME_CHECKBOX");
 		}
@@ -83,6 +99,20 @@ definition {
 			value1 = "${settingValue}");
 	}
 
+	macro editTextAreaSettingMultiLines {
+		for (var settingValue : list "${settingValues}") {
+			Type.sendKeys(
+				key_label = "${settingName}",
+				locator1 = "TextArea#ANY_LABELED",
+				value1 = "${settingValue}");
+
+			KeyPress(
+				key_label = "${settingName}",
+				locator1 = "TextArea#ANY_LABELED",
+				value1 = "\RETURN");
+		}
+	}
+
 	macro editTextSetting {
 		Type(
 			key_fieldLabel = "${settingName}",
@@ -102,16 +132,6 @@ definition {
 		DownloadTempFile();
 	}
 
-	macro gotoAddEntry {
-		AssertClick(
-			locator1 = "Button#ADD",
-			value1 = "Add");
-
-		AssertElementPresent(
-			key_title = "Add",
-			locator1 = "Header#H2_TITLE");
-	}
-
 	macro gotoConfiguration {
 		Click(
 			key_itemName = "${configurationCategory}",
@@ -120,7 +140,7 @@ definition {
 		var browserType = PropsUtil.get("browser.type");
 
 		if ("${browserType}" == "chrome") {
-			Pause(locator1 = "5000");
+			Pause(locator1 = "3000");
 		}
 
 		Click(
@@ -141,6 +161,20 @@ definition {
 
 	macro openSystemSettingsAdmin {
 		Navigator.openWithAppendToBaseURL(urlAppend = "group/control_panel/manage?p_p_id=com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet");
+	}
+
+	macro openToConfigInSystemSettings {
+		var baseURL = "${baseURL}";
+
+		if (contains("${baseURL}", "{baseURL}")) {
+			var baseURL = PropsUtil.get("portal.url");
+		}
+
+		if ("${portlet}" == "Applications Menu") {
+			var portletId = "com.liferay.product.navigation.applications.menu.configuration.ApplicationsMenuInstanceConfiguration";
+		}
+
+		Open(locator1 = "${baseURL}/group/control_panel/manage?p_p_id=com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet&_com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet_factoryPid=${portletId}&_com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet_mvcRenderCommandName=%2Fconfiguration_admin%2Fedit_configuration");
 	}
 
 	macro resetConfiguration {
@@ -170,6 +204,13 @@ definition {
 		Click(
 			key_selectOption = "${selectOption}",
 			locator1 = "SystemSettings#DROPDOWN_MENU_OPTION");
+	}
+
+	macro viewTextareaPartialText {
+		AssertTextEquals.assertPartialText(
+			key_label = "${settingName}",
+			locator1 = "TextArea#ANY_LABELED",
+			value1 = "${settingValue}");
 	}
 
 	macro viewTextareaValue {

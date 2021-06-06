@@ -9,19 +9,27 @@
  * distribution rights of the Software.
  */
 
-import {getTranslatedValue} from 'app-builder-web/js/utils/utils.es';
+import {isEqualObjects} from 'data-engine-js-components-web/js/utils/utils.es';
 
 export function canDeployApp(app, config) {
-	const appName = getTranslatedValue(app, 'name');
 	const isValidSteps = config.steps.every((step) => {
-		const assigneeRoles = step?.appWorkflowRoleAssignments || [{}];
-		const duplicatedFields =
-			step?.errors?.formViews?.duplicatedFields || [];
+		const assigneeRoles = step.appWorkflowRoleAssignments || [{}];
+		const duplicatedFields = step.errors?.formViews.duplicatedFields || [];
+		const isValidFormViews = step.appWorkflowDataLayoutLinks?.every(
+			({dataLayoutId}) => dataLayoutId
+		);
+		const transitions = step.appWorkflowTransitions || [];
+
+		const isValidTransitionNames = transitions.every(
+			({name}) => name.trim().length
+		);
 
 		return (
-			assigneeRoles.length > 0 &&
-			duplicatedFields.length === 0 &&
-			step.name.trim().length > 0
+			assigneeRoles.length &&
+			!duplicatedFields.length &&
+			(isValidFormViews || step.initial !== undefined) &&
+			isValidTransitionNames &&
+			step.name.trim().length
 		);
 	});
 
@@ -29,28 +37,70 @@ export function canDeployApp(app, config) {
 		app.dataDefinitionId &&
 		app.dataLayoutId &&
 		app.dataListViewId &&
-		appName.trim().length > 0 &&
+		app.appName?.trim().length &&
 		isValidSteps
 	);
 }
 
-export function getFormViewFields({dataLayoutPages = []}) {
-	return dataLayoutPages.reduce(
-		(fields, {dataLayoutRows}) => [
-			...fields,
-			...dataLayoutRows.reduce(
-				(fields, {dataLayoutColumns}) => [
-					...fields,
-					...dataLayoutColumns.reduce(
-						(fields, {fieldNames}) => [...fields, ...fieldNames],
-						[]
-					),
-				],
-				[]
-			),
-		],
-		[]
-	);
+export function checkRequiredFields(formViews = [], dataDefinition) {
+	const requiredFields = dataDefinition.dataDefinitionFields
+		.filter(({required}) => required)
+		.map(({customProperties: {nativeField}, name}) => ({
+			name,
+			nativeField,
+		}));
+
+	const isMissingRequiredFields = (formView) => {
+		const missingRequiredFields = {customField: false, nativeField: false};
+
+		requiredFields.forEach(({name, nativeField}) => {
+			if (!formView.fields.includes(name)) {
+				missingRequiredFields[
+					nativeField ? 'nativeField' : 'customField'
+				] = true;
+			}
+		});
+
+		return missingRequiredFields;
+	};
+
+	return formViews.map((formView) => ({
+		...formView,
+		missingRequiredFields: isMissingRequiredFields(formView),
+	}));
+}
+
+export function hasConfigBreakChanges({draftConfig, ...config}) {
+	const props = ['dataObject', 'formView', 'steps'];
+
+	return props
+		.map((prop) => !isEqualObjects(draftConfig[prop], config[prop]))
+		.some((isDifferent) => isDifferent);
+}
+
+export function populateFormViewFields(formView) {
+	return {
+		...formView,
+		fields: formView.dataLayoutPages?.reduce(
+			(fields, {dataLayoutRows}) => [
+				...fields,
+				...dataLayoutRows.reduce(
+					(fields, {dataLayoutColumns}) => [
+						...fields,
+						...dataLayoutColumns.reduce(
+							(fields, {fieldNames}) => [
+								...fields,
+								...fieldNames,
+							],
+							[]
+						),
+					],
+					[]
+				),
+			],
+			[]
+		),
+	};
 }
 
 export function validateSelectedFormViews(formViews = []) {

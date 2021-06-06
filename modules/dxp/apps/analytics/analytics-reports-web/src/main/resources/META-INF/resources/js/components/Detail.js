@@ -9,80 +9,102 @@
  * distribution rights of the Software.
  */
 
-import {ClayButtonWithIcon} from '@clayui/button';
-import {Align} from 'metal-position';
+import ClayButton from '@clayui/button';
+import ClayIcon from '@clayui/icon';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useContext} from 'react';
 
-import Keywords from './Keywords';
-import TotalCount from './TotalCount';
+import {ChartDispatchContext} from '../context/ChartStateContext';
+import {StoreDispatchContext} from '../context/StoreContext';
+import KeywordsDetail from './detail/KeywordsDetail';
+import ReferralDetail from './detail/ReferralDetail';
+import SocialDetail from './detail/SocialDetail';
+
+const TRAFFIC_CHANNELS = {
+	DIRECT: 'direct',
+	ORGANIC: 'organic',
+	PAID: 'paid',
+	REFERRAL: 'referral',
+	SOCIAL: 'social',
+};
+
 export default function Detail({
 	currentPage,
-	languageTag,
 	onCurrentPageChange,
 	onTrafficSourceNameChange,
+	timeSpanOptions,
 	trafficShareDataProvider,
 	trafficVolumeDataProvider,
 }) {
+	const chartDispatch = useContext(ChartDispatchContext);
+
+	const storeDispatch = useContext(StoreDispatchContext);
+
 	return (
 		<>
-			<div className="d-flex p-2">
-				<ClayButtonWithIcon
-					className="text-secondary"
+			<div className="c-pt-3 c-px-3 d-flex">
+				<ClayButton
 					displayType="unstyled"
 					onClick={() => {
 						onCurrentPageChange({view: 'main'});
 						onTrafficSourceNameChange('');
+						chartDispatch({type: 'SET_LOADING'});
+						storeDispatch({
+							selectedTrafficSourceName: '',
+							type: 'SET_SELECTED_TRAFFIC_SOURCE_NAME',
+						});
 					}}
-					small="true"
-					symbol="angle-left"
-				/>
+					small={true}
+				>
+					<ClayIcon symbol="angle-left-small" />
+				</ClayButton>
+
 				<div className="align-self-center flex-grow-1 mx-2">
-					{currentPage.data.title}
+					<strong>{currentPage.data.title}</strong>
 				</div>
 			</div>
 
-			<hr className="my-0" />
+			{(currentPage.view === TRAFFIC_CHANNELS.ORGANIC ||
+				currentPage.view === TRAFFIC_CHANNELS.PAID) &&
+				currentPage.data.countryKeywords.length > 0 && (
+					<KeywordsDetail
+						currentPage={currentPage}
+						trafficShareDataProvider={trafficShareDataProvider}
+						trafficVolumeDataProvider={trafficVolumeDataProvider}
+					/>
+				)}
 
-			<div className="p-3 traffic-source-detail">
-				<TotalCount
-					className="mb-2"
-					dataProvider={trafficVolumeDataProvider}
-					label={Liferay.Util.sub(
-						Liferay.Language.get('traffic-volume')
-					)}
-					popoverAlign={Align.Bottom}
-					popoverHeader={Liferay.Language.get('traffic-volume')}
-					popoverMessage={Liferay.Language.get(
-						'traffic-volume-is-the-estimated-number-of-visitors-coming-to-your-page'
-					)}
-					popoverPosition="bottom"
+			{currentPage.view === TRAFFIC_CHANNELS.REFERRAL && (
+				<ReferralDetail
+					currentPage={currentPage}
+					timeSpanOptions={timeSpanOptions}
+					trafficShareDataProvider={trafficShareDataProvider}
+					trafficVolumeDataProvider={trafficVolumeDataProvider}
 				/>
+			)}
 
-				<TotalCount
-					className="mb-4"
-					dataProvider={trafficShareDataProvider}
-					label={Liferay.Util.sub(
-						Liferay.Language.get('traffic-share')
-					)}
-					percentage={true}
-					popoverHeader={Liferay.Language.get('traffic-share')}
-					popoverMessage={Liferay.Language.get(
-						'traffic-share-is-the-percentage-of-traffic-sent-to-your-page-by-one-source'
-					)}
+			{currentPage.view === TRAFFIC_CHANNELS.SOCIAL && (
+				<SocialDetail
+					currentPage={currentPage}
+					timeSpanOptions={timeSpanOptions}
+					trafficShareDataProvider={trafficShareDataProvider}
+					trafficVolumeDataProvider={trafficVolumeDataProvider}
 				/>
-
-				<Keywords currentPage={currentPage} languageTag={languageTag} />
-			</div>
+			)}
 		</>
 	);
 }
 
-Detail.proptypes = {
+Detail.propTypes = {
 	currentPage: PropTypes.object.isRequired,
-	languageTag: PropTypes.string.isRequired,
 	onCurrentPageChange: PropTypes.func.isRequired,
 	onTrafficSourceNameChange: PropTypes.func.isRequired,
+	timeSpanOptions: PropTypes.arrayOf(
+		PropTypes.shape({
+			key: PropTypes.string,
+			label: PropTypes.string,
+		})
+	).isRequired,
 	trafficShareDataProvider: PropTypes.func.isRequired,
 	trafficVolumeDataProvider: PropTypes.func.isRequired,
 };

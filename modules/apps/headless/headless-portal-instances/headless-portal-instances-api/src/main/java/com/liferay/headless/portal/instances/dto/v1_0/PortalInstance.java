@@ -26,12 +26,16 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Generated;
+
+import javax.validation.Valid;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -43,7 +47,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("PortalInstance")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PortalInstance")
-public class PortalInstance {
+public class PortalInstance implements Serializable {
 
 	public static PortalInstance toDTO(String json) {
 		return ObjectMapperUtil.readValue(PortalInstance.class, json);
@@ -165,6 +169,80 @@ public class PortalInstance {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String portalInstanceId;
 
+	@Schema(
+		description = "optional portal initializer key for an portal instance initialization."
+	)
+	public String getPortalInstanceInitializerKey() {
+		return portalInstanceInitializerKey;
+	}
+
+	public void setPortalInstanceInitializerKey(
+		String portalInstanceInitializerKey) {
+
+		this.portalInstanceInitializerKey = portalInstanceInitializerKey;
+	}
+
+	@JsonIgnore
+	public void setPortalInstanceInitializerKey(
+		UnsafeSupplier<String, Exception>
+			portalInstanceInitializerKeyUnsafeSupplier) {
+
+		try {
+			portalInstanceInitializerKey =
+				portalInstanceInitializerKeyUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "optional portal initializer key for an portal instance initialization."
+	)
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+	protected String portalInstanceInitializerKey;
+
+	@Schema(
+		description = "optional portal initializer payload(contains required data for a portal instance initializer)."
+	)
+	@Valid
+	public Map<String, String> getPortalInstanceInitializerPayload() {
+		return portalInstanceInitializerPayload;
+	}
+
+	public void setPortalInstanceInitializerPayload(
+		Map<String, String> portalInstanceInitializerPayload) {
+
+		this.portalInstanceInitializerPayload =
+			portalInstanceInitializerPayload;
+	}
+
+	@JsonIgnore
+	public void setPortalInstanceInitializerPayload(
+		UnsafeSupplier<Map<String, String>, Exception>
+			portalInstanceInitializerPayloadUnsafeSupplier) {
+
+		try {
+			portalInstanceInitializerPayload =
+				portalInstanceInitializerPayloadUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "optional portal initializer payload(contains required data for a portal instance initializer)."
+	)
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+	protected Map<String, String> portalInstanceInitializerPayload;
+
 	@Schema
 	public String getVirtualHost() {
 		return virtualHost;
@@ -268,6 +346,30 @@ public class PortalInstance {
 			sb.append("\"");
 		}
 
+		if (portalInstanceInitializerKey != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"portalInstanceInitializerKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(portalInstanceInitializerKey));
+
+			sb.append("\"");
+		}
+
+		if (portalInstanceInitializerPayload != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"portalInstanceInitializerPayload\": ");
+
+			sb.append(_toJSON(portalInstanceInitializerPayload));
+		}
+
 		if (virtualHost != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -288,6 +390,7 @@ public class PortalInstance {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.portal.instances.dto.v1_0.PortalInstance",
 		name = "x-class-name"
 	)
@@ -323,7 +426,7 @@ public class PortalInstance {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -362,7 +465,7 @@ public class PortalInstance {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -12,9 +12,10 @@
  * details.
  */
 
-import {FormSupport, PagesVisitor} from 'dynamic-data-mapping-form-renderer';
+import {FormSupport, PagesVisitor} from 'data-engine-js-components-web';
 
-import {createField} from '../../../util/fieldSupport.es';
+import {FIELD_TYPE_FIELDSET} from '../../../util/constants.es';
+import {addField, createField} from '../../../util/fieldSupport.es';
 import {createFieldSet} from '../util/fieldset.es';
 import {updateField} from '../util/settingsContext.es';
 import handleFieldDeleted from './fieldDeletedHandler.es';
@@ -47,7 +48,7 @@ const handleSectionAdded = (props, state, event) => {
 	const {fieldName, parentFieldName} = data;
 	const {pages} = state;
 
-	const newField = event.newField || createField(props, event);
+	const newField = event.newField ?? createField(props, event);
 	const existingField = FormSupport.findFieldByFieldName(pages, fieldName);
 	const fieldSetField = createFieldSet(props, event, [
 		existingField,
@@ -71,7 +72,10 @@ const handleSectionAdded = (props, state, event) => {
 
 					return addNestedField({
 						field: updatedParentField,
-						indexes,
+						indexes: {
+							...indexes,
+							pageIndex: 0,
+						},
 						nestedField: fieldSetField,
 						props,
 					});
@@ -82,6 +86,15 @@ const handleSectionAdded = (props, state, event) => {
 			false,
 			true
 		);
+	}
+	else if (existingField.type === FIELD_TYPE_FIELDSET) {
+		newPages = addField({
+			...props,
+			indexes,
+			newField,
+			pages,
+			parentFieldName: existingField.fieldName,
+		}).pages;
 	}
 	else {
 		newPages = visitor.mapFields((field) => {

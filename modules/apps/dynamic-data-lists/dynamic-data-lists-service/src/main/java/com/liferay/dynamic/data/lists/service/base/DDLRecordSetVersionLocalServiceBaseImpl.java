@@ -16,7 +16,9 @@ package com.liferay.dynamic.data.lists.service.base;
 
 import com.liferay.dynamic.data.lists.model.DDLRecordSetVersion;
 import com.liferay.dynamic.data.lists.service.DDLRecordSetVersionLocalService;
+import com.liferay.dynamic.data.lists.service.DDLRecordSetVersionLocalServiceUtil;
 import com.liferay.dynamic.data.lists.service.persistence.DDLRecordSetVersionPersistence;
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -37,17 +39,22 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -69,7 +76,7 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>DDLRecordSetVersionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.dynamic.data.lists.service.DDLRecordSetVersionLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>DDLRecordSetVersionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>DDLRecordSetVersionLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -147,6 +154,13 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return ddlRecordSetVersionPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -309,6 +323,7 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -327,6 +342,7 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 			(DDLRecordSetVersion)persistedModel);
 	}
 
+	@Override
 	public BasePersistence<DDLRecordSetVersion> getBasePersistence() {
 		return ddlRecordSetVersionPersistence;
 	}
@@ -387,11 +403,17 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 		return ddlRecordSetVersionPersistence.update(ddlRecordSetVersion);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			DDLRecordSetVersionLocalService.class,
-			IdentifiableOSGiService.class, PersistedModelLocalService.class
+			IdentifiableOSGiService.class, CTService.class,
+			PersistedModelLocalService.class
 		};
 	}
 
@@ -399,6 +421,8 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		ddlRecordSetVersionLocalService =
 			(DDLRecordSetVersionLocalService)aopProxy;
+
+		_setLocalServiceUtilService(ddlRecordSetVersionLocalService);
 	}
 
 	/**
@@ -411,8 +435,23 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 		return DDLRecordSetVersionLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<DDLRecordSetVersion> getCTPersistence() {
+		return ddlRecordSetVersionPersistence;
+	}
+
+	@Override
+	public Class<DDLRecordSetVersion> getModelClass() {
 		return DDLRecordSetVersion.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DDLRecordSetVersion>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(ddlRecordSetVersionPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -441,6 +480,23 @@ public abstract class DDLRecordSetVersionLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		DDLRecordSetVersionLocalService ddlRecordSetVersionLocalService) {
+
+		try {
+			Field field =
+				DDLRecordSetVersionLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, ddlRecordSetVersionLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

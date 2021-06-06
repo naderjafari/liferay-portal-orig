@@ -20,6 +20,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.json.JSONObjectImpl;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -109,6 +111,11 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	@Override
 	public void setFileExtensions(List<String> fileExtensions) {
 		_fileExtensions = fileExtensions;
+	}
+
+	@Override
+	public void setMaxDirLevel(int maxDirLevel) {
+		_maxDirLevel = maxDirLevel;
 	}
 
 	@Override
@@ -378,6 +385,10 @@ public abstract class BaseSourceCheck implements SourceCheck {
 		return SourceUtil.getLineStartPos(content, lineNumber);
 	}
 
+	protected int getMaxDirLevel() {
+		return _maxDirLevel;
+	}
+
 	protected int getMaxLineLength() {
 		return _maxLineLength;
 	}
@@ -390,8 +401,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 				_MODULES_PROPERTIES_FILE_NAME, absolutePath);
 		}
 
-		return getContent(
-			_MODULES_PROPERTIES_FILE_NAME, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		return getContent(_MODULES_PROPERTIES_FILE_NAME, _maxDirLevel);
 	}
 
 	protected List<String> getPluginsInsideModulesDirectoryNames() {
@@ -415,7 +425,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			return getGitContent(fileName, portalBranchName);
 		}
 
-		String content = getContent(fileName, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		String content = getContent(fileName, _maxDirLevel);
 
 		if (Validator.isNotNull(content)) {
 			return content;
@@ -481,7 +491,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 
 	protected File getPortalDir() {
 		File portalImplDir = SourceFormatterUtil.getFile(
-			getBaseDirName(), "portal-impl", ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+			getBaseDirName(), "portal-impl", _maxDirLevel);
 
 		if (portalImplDir == null) {
 			return null;
@@ -494,7 +504,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			String fileName, String absolutePath)
 		throws IOException {
 
-		File file = getFile(fileName, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		File file = getFile(fileName, _maxDirLevel);
 
 		if (file != null) {
 			return new FileInputStream(file);
@@ -648,6 +658,9 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return absolutePath.contains("/modules/");
@@ -760,6 +773,9 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	private static final String _MODULES_PROPERTIES_FILE_NAME =
 		"modules/modules.properties";
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseSourceCheck.class);
+
 	private JSONObject _attributesJSONObject = new JSONObjectImpl();
 	private final Map<String, String> _attributeValueMap =
 		new ConcurrentHashMap<>();
@@ -772,6 +788,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	private final Map<String, List<String>> _excludesValuesMap =
 		new ConcurrentHashMap<>();
 	private List<String> _fileExtensions;
+	private int _maxDirLevel;
 	private int _maxLineLength;
 	private List<String> _pluginsInsideModulesDirectoryNames;
 	private Document _portalCustomSQLDocument;

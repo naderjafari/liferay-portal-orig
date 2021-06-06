@@ -14,6 +14,7 @@
 
 package com.liferay.portal.tools;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
@@ -435,9 +436,7 @@ public class JavadocBuilder {
 		String[] lines, Map<String, Element> fieldElementsMap,
 		JavaField javaField) {
 
-		String fieldKey = _getFieldKey(javaField);
-
-		Element fieldElement = fieldElementsMap.get(fieldKey);
+		Element fieldElement = fieldElementsMap.get(_getFieldKey(javaField));
 
 		if (fieldElement == null) {
 			return null;
@@ -482,9 +481,8 @@ public class JavadocBuilder {
 		String[] lines, Map<String, Element> methodElementsMap,
 		JavaMethod javaMethod) {
 
-		String methodKey = _getMethodKey(javaMethod);
-
-		Element methodElement = methodElementsMap.get(methodKey);
+		Element methodElement = methodElementsMap.get(
+			_getMethodKey(javaMethod));
 
 		if (methodElement == null) {
 			return null;
@@ -529,7 +527,7 @@ public class JavadocBuilder {
 	}
 
 	private String _getMethodKey(Element methodElement) {
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler();
 
 		sb.append(methodElement.elementText("name"));
 		sb.append(StringPool.OPEN_PARENTHESIS);
@@ -549,7 +547,7 @@ public class JavadocBuilder {
 	}
 
 	private String _getMethodKey(JavaMethod javaMethod) {
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler();
 
 		sb.append(javaMethod.getName());
 		sb.append(StringPool.OPEN_PARENTHESIS);
@@ -723,7 +721,7 @@ public class JavadocBuilder {
 			}
 		}
 
-		StringBuilder sb = new StringBuilder(oldContent.length());
+		StringBundler sb = new StringBundler(oldContent.length());
 
 		for (String line : lines) {
 			if (line != null) {
@@ -758,9 +756,7 @@ public class JavadocBuilder {
 			}
 		}
 
-		JavaClass javaClass = _getJavaClass(fileName);
-
-		String newContent = _getJavadocXml(javaClass);
+		String newContent = _getJavadocXml(_getJavaClass(fileName));
 
 		if ((oldContent == null) || !oldContent.equals(newContent)) {
 			_fileImpl.write(file, newContent.getBytes());
@@ -802,9 +798,7 @@ public class JavadocBuilder {
 		List<Element> methodElements = rootElement.elements("method");
 
 		for (Element methodElement : methodElements) {
-			String methodKey = _getMethodKey(methodElement);
-
-			methodElementsMap.put(methodKey, methodElement);
+			methodElementsMap.put(_getMethodKey(methodElement), methodElement);
 		}
 
 		JavaMethod[] javaMethods = javaClass.getMethods();
@@ -824,9 +818,7 @@ public class JavadocBuilder {
 		List<Element> fieldElements = rootElement.elements("field");
 
 		for (Element fieldElement : fieldElements) {
-			String fieldKey = _getFieldKey(fieldElement);
-
-			fieldElementsMap.put(fieldKey, fieldElement);
+			fieldElementsMap.put(_getFieldKey(fieldElement), fieldElement);
 		}
 
 		JavaField[] javaFields = javaClass.getFields();
@@ -841,7 +833,7 @@ public class JavadocBuilder {
 				_getJavaFieldComment(lines, fieldElementsMap, javaField));
 		}
 
-		StringBuilder sb = new StringBuilder(oldContent.length());
+		StringBundler sb = new StringBundler(oldContent.length());
 
 		for (int lineNumber = 1; lineNumber <= lines.length; lineNumber++) {
 			String line = lines[lineNumber - 1];

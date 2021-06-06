@@ -35,17 +35,45 @@ definition {
 	@priority = "5"
 	test AddChildSiteFromImportedSiteTemplate {
 		property portal.acceptance = "true";
+		property portal.upstream = "true";
 		property test.name.skip.portal.instance = "SitesUsecase#AddChildSiteFromImportedSiteTemplate";
 		property testray.component.names = "Training";
+
+		JSONOrganization.addOrganization(organizationName = "Space Program Academy of Continuing Education");
+
+		User.openUsersAdmin();
+
+		UsersAndOrganizationsNavigator.gotoOrganizations();
+
+		Suborganization.addCP(
+			orgName = "Space Program Academy of Continuing Education",
+			suborgName = "College of Agricultural Science");
+
+		User.openUsersAdmin();
+
+		UsersAndOrganizationsNavigator.gotoOrganizations();
+
+		LAR.exportPortlet(larFileName = "organizations.lar");
+
+		Suborganization.removeCP(
+			orgName = "Space Program Academy of Continuing Education",
+			subOrgName = "College of Agricultural Science");
+
+		User.openUsersAdmin();
+
+		UsersAndOrganizationsNavigator.gotoOrganizations();
+
+		Organization.deleteCP(orgName = "Space Program Academy of Continuing Education");
+
+		Organization.deleteCP(orgName = "College of Agricultural Science");
 
 		User.openUsersAdmin();
 
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 
 		LAR.importPortlet(
-			larFileName = "organizations-7.0.lar",
-			portletName = "Users and Organizations",
-			uploadFrom = "dependencies");
+			larFileName = "organizations.lar",
+			portletName = "Users and Organizations");
 
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 
@@ -59,12 +87,26 @@ definition {
 
 		SiteTemplatesNavigator.openSiteTemplatesAdmin();
 
-		LAR.importPortlet(
-			larFileName = "class-site-template-7.2.lar",
-			portletName = "Site Templates",
-			uploadFrom = "dependencies");
+		SiteTemplates.addCP(siteTemplateName = "Digital Class Room");
 
-		SiteTemplates.viewCP(siteTemplateName = "Digital Class Room");
+		for (var pageName : list "Courses,Student Boards,Materials") {
+			SiteTemplates.addSitePageViaSiteTemplateCP(
+				pageName = "${pageName}",
+				siteTemplateName = "Digital Class Room");
+		}
+
+		SiteTemplatesNavigator.openSiteTemplatesAdmin();
+
+		LAR.exportPortlet(larFileName = "class-site-template.lar");
+
+		SiteTemplates.deleteCP(siteTemplateName = "Digital Class Room");
+
+		SiteTemplatesNavigator.openSiteTemplatesAdmin();
+
+		LAR.importPortlet(
+			larFileName = "class-site-template.lar",
+			portletName = "Site Templates",
+			siteTemplateName = "Digital Class Room");
 
 		Site.openSitesAdmin();
 
@@ -73,6 +115,8 @@ definition {
 			parentSiteName = "College of Agricultural Science",
 			siteName = "Moon Rocks 101",
 			siteType = "Blank");
+
+		Navigator.gotoBack();
 
 		Site.selectPageType(
 			selectPrivatePages = "true",
@@ -85,6 +129,8 @@ definition {
 			parentSiteName = "College of Agricultural Science",
 			siteName = "Moon Rocks 202",
 			siteType = "Blank");
+
+		Navigator.gotoBack();
 
 		Site.selectPageType(
 			checkPrivatePagesPropagation = "true",
@@ -110,6 +156,7 @@ definition {
 
 	@priority = "5"
 	test AddOrganizationSitesAndDeactivate {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "SitesUseCase#AddOrganizationSitesAndDeactivate";
 		property testray.component.names = "Site Administration,Training,Users and Organizations";
@@ -125,6 +172,10 @@ definition {
 
 		SystemSettings.saveConfiguration();
 
+		SiteTemplates.addCP(siteTemplateName = "Site Template Name 1");
+
+		SiteTemplates.addCP(siteTemplateName = "Site Template Name 2");
+
 		JSONOrganization.addOrganization(organizationName = "Organization Name 1");
 
 		User.openUsersAdmin();
@@ -132,8 +183,8 @@ definition {
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 
 		Organization.addSiteCP(
-			organizationSite = "Community Site",
-			orgName = "Organization Name 1");
+			orgName = "Organization Name 1",
+			siteTemplateName = "Site Template Name 1");
 
 		Site.openSiteSettingsAdmin(siteURLKey = "organization-name-1");
 
@@ -155,8 +206,8 @@ definition {
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 
 		Organization.addSiteCP(
-			organizationSite = "Intranet Site",
-			orgName = "Organization Name 2");
+			orgName = "Organization Name 2",
+			siteTemplateName = "Site Template Name 2");
 
 		Site.openSiteSettingsAdmin(siteURLKey = "organization-name-2");
 
@@ -177,11 +228,10 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea@liferay.com",
-			userScreenName = "usersn");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
 		User.openUsersAdmin();
 
@@ -205,15 +255,13 @@ definition {
 
 		Page.viewDefaultSiteTemplatePagesPG(
 			pageName = "Home",
-			siteName = "Organization Name 1",
-			siteTemplate = "Community");
+			siteName = "Organization Name 1");
 
 		Navigator.openSiteURL(siteName = "Organization Name 2");
 
 		Page.viewDefaultSiteTemplatePagesPG(
 			pageName = "Home",
-			siteName = "Organization Name 2",
-			siteTemplate = "Intranet");
+			siteName = "Organization Name 2");
 
 		Navigator.openSiteURL(siteName = "Organization Name 2");
 
@@ -228,20 +276,21 @@ definition {
 		Navigator.openSpecificURL(url = "${baseURL}/web/organization-name-2");
 
 		Page.viewInactiveRequestMessage(resource = "site");
-
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
 	}
 
 	@priority = "3"
 	test MySitesDropDownDoesNotShowUserOrganizationOnTop {
 		property testray.component.names = "Site Administration,Users and Organization";
 
+		SiteTemplates.addCP(siteTemplateName = "Site Template Name");
+
 		for (var siteNameListsCount : list "Site1 Name,Site2 Name,Site3 Name,Site4 Name,Site5 Name,Site6 Name,Site7 Name,Site8 Name,Site9 Name,Site10 Name") {
 			Site.openSitesAdmin();
 
-			Site.addCommunityCP(siteName = "${siteNameListsCount}");
+			Site.addCP(
+				siteName = "${siteNameListsCount}",
+				siteTemplateName = "Site Template Name",
+				siteType = "Site Template");
 		}
 
 		JSONOrganization.addOrganization(organizationName = "Site Organization Name");
@@ -251,14 +300,14 @@ definition {
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 
 		Organization.addSiteCP(
-			organizationSite = "Community Site",
-			orgName = "Site Organization Name");
+			orgName = "Site Organization Name",
+			siteTemplateName = "Site Template Name");
 
 		User.openUsersAdmin();
 
 		UsersAndOrganizationsNavigator.gotoOrganizations();
 
-		Organization.addMemberCP(
+		Organization.assignUser(
 			orgName = "Site Organization Name",
 			userFirstName = "Test",
 			userLastName = "Test",
@@ -270,6 +319,7 @@ definition {
 
 	@priority = "3"
 	test OnlySiteOwnersCanAssignSiteRolesToUserGroups {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property testray.component.names = "Site Administration,User Groups";
 
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
@@ -313,11 +363,10 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea@liferay.com",
-			userScreenName = "usersn");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
 		User.openUsersAdmin();
 
@@ -352,6 +401,7 @@ definition {
 
 	@priority = "4"
 	test PrivateVirtualHostUrlDoesNotRedirectUserToLoginPage {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property testray.component.names = "Site Administration";
 
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
@@ -382,11 +432,10 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea@liferay.com",
-			userScreenName = "usersn");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
 		User.openUsersAdmin();
 
@@ -394,18 +443,14 @@ definition {
 			siteName = "${siteName}",
 			userScreenName = "usersn");
 
-		User.firstLoginPG(
-			password = "test",
+		User.firstLoginUI(
+			specificURL = "http://www.able.com:8080/test-private-page",
 			userEmailAddress = "userea@liferay.com",
-			virtualHostsURL = "http://www.able.com:8080/test-private-page");
+			userPassword = "test");
 
 		Navigator.openSpecificURL(url = "http://www.able.com:8080/test-private-page");
 
 		AssertLocation(value1 = "http://www.able.com:8080/test-private-page");
-
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
 	}
 
 	@priority = "3"
@@ -508,20 +553,29 @@ definition {
 			emailVerification = "${emailVerification}",
 			userEmailAddress = PropsUtil.get("email.address.3"));
 
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
+		User.firstLoginUI(specificURL = "http://www.able.com:8080/");
 
-		PortalSettings.gotoConfiguration(
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "Instance Settings");
+
+		SystemSettings.gotoConfiguration(
 			configurationCategory = "Email",
 			configurationName = "Email Verification Notification",
 			configurationScope = "Virtual Instance Scope");
 
-		PortalSettings.editConfigurationUsersEmailVerificationNotificationsCP(emailVerificationURL = "true");
+		Type.typeCKEditor(
+			locator1 = "CKEditor#BODY_FIELD",
+			value1 = "[$EMAIL_VERIFICATION_URL$]");
+
+		PortletEntry.save();
 
 		Navigator.openSpecificURL(url = "http://www.baker.com:8080/");
 
-		User.editEmailViaMyAccount(userEmailAddress = PropsUtil.get("email.address.4"));
+		Navigator.gotoAccountSettings();
+
+		User.editUserInformation(userEmailAddressEdit = PropsUtil.get("email.address.4"));
 
 		Gmail.logoutAndLogin(
 			userEmailAddress = PropsUtil.get("email.address.4"),
@@ -538,7 +592,7 @@ definition {
 
 		Click(locator1 = "Gmail#EMAIL_ADDRESS_VERIFICATION_URL");
 
-		SelectWindow(locator1 = "title=Verify Email Address - ${siteName}");
+		SelectWindow(locator1 = "title=Verify Email Address - Site Name - ${siteName}");
 
 		AssertLocation(value1 = "${emailAddressVerificationURL}");
 
@@ -549,7 +603,9 @@ definition {
 
 	@priority = "3"
 	test SiteFriendlyURLLayoutImporter {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property testray.component.names = "Site Administration";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		UserGroup.openUserGroupsAdmin();
@@ -572,11 +628,10 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea@liferay.com",
-			userScreenName = "usersn");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
 		UserGroup.openUserGroupsAdmin();
 
@@ -615,6 +670,7 @@ definition {
 
 	@priority = "3"
 	test SitesDeactivated {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property test.name.skip.portal.instance = "SitesUsecase#SitesDeactivated";
 		property testray.component.names = "Site Administration";
 
@@ -629,13 +685,15 @@ definition {
 
 		SystemSettings.saveConfiguration();
 
+		SiteTemplates.addCP(siteTemplateName = "Site Template Name");
+
 		JSONGroup.addGroup(groupName = "Site1 Name");
 
 		Site.openSiteSettingsAdmin(siteURLKey = "site1-name");
 
 		Site.selectPageType(
 			selectPublicPages = "true",
-			siteTemplate = "Community Site");
+			siteTemplate = "Site Template Name");
 
 		JSONGroup.addGroup(groupName = "Site2 Name");
 
@@ -651,11 +709,10 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea@liferay.com",
-			userScreenName = "usersn");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
 		User.openUsersAdmin();
 
@@ -691,14 +748,11 @@ definition {
 		Navigator.openSpecificURL(url = "${baseURL}/web/site1-name");
 
 		Page.viewInactiveRequestMessage(resource = "site");
-
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
 	}
 
 	@priority = "4"
 	test SitesDemoSiteManagement {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property portal.release = "true";
 		property test.name.skip.portal.instance = "SitesUsecase#SitesDemoSiteManagement";
 		property testray.component.names = "Site Administration,Site Pages Administration";
@@ -713,6 +767,10 @@ definition {
 			siteDetails = "true",
 			siteName = "World Cup - Russia 2018");
 
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			portlet = "Site Settings");
+
 		for (var tagName : list "World Cup,Russia,2018") {
 			Tag.addViaSiteCP(tagName = "${tagName}");
 		}
@@ -722,6 +780,8 @@ definition {
 			privateVirtualHosts = "true",
 			publicPageVirtualHostURL = "www.able.com",
 			publicVirtualHosts = "true");
+
+		Navigator.gotoBack();
 
 		Site.editFriendlyURLCP(siteFriendlyURLEdit = "/russia2018");
 
@@ -798,11 +858,10 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea@liferay.com",
-			userScreenName = "usersn");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
 		User.openUsersAdmin();
 
@@ -816,17 +875,21 @@ definition {
 			siteRoleName = "Site Administrator",
 			userScreenName = "usersn");
 
-		User.firstLoginPG(
-			password = "test",
-			samlEnabled = "true",
-			userEmailAddress = "userea@liferay.com",
-			virtualHostsURL = "www.baker.com:8080/group/russia2018");
+		User.logoutPG();
 
-		Navigator.openSpecificURL(url = "http://www.baker.com:8080/group/russia2018");
+		User.viewLoggedOutPG();
+
+		User.firstLoginUI(
+			password = "test",
+			specificURL = "http://www.baker.com:8080/group/russia2018",
+			userEmailAddress = "userea@liferay.com");
 
 		Page.viewSpecificPG(pageNameList = "Accomodations,Maps");
 
-		Navigator.openSpecificURL(url = "${portalURL}/web/russia2018");
+		User.firstLoginUI(
+			password = "test",
+			specificURL = "${portalURL}/web/russia2018",
+			userEmailAddress = "userea@liferay.com");
 
 		ProductMenu.gotoPortlet(
 			category = "Publishing",
@@ -868,6 +931,7 @@ definition {
 
 	@priority = "4"
 	test SiteTeamsPermissions {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property testray.component.names = "Permissions,Site Administration";
 
 		JSONGroup.addGroup(groupName = "Site Name");
@@ -884,11 +948,10 @@ definition {
 			userLastName = "userln1",
 			userScreenName = "usersn1");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea1@liferay.com",
-			userScreenName = "usersn1");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea1@liferay.com");
 
 		User.openUsersAdmin();
 
@@ -902,11 +965,10 @@ definition {
 			userLastName = "userln2",
 			userScreenName = "usersn2");
 
-		User.openUsersAdmin();
-
-		User.editPasswordCP(
-			userEmailAddress = "userea2@liferay.com",
-			userScreenName = "usersn2");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea2@liferay.com");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
@@ -1019,10 +1081,66 @@ definition {
 		AssertHTMLSourceTextPresent(value1 = "${escapedScript}");
 	}
 
+	@description = "This is a test for LPS-102711. The changes of site scope configuration in Instance Settings should be applied to the site."
+	@priority = "4"
+	test ViewChangesOfSiteScopeConfigurationDefinedInInstanceSettings {
+		task ("Add a new site") {
+			JSONGroup.addGroup(groupName = "Test Site Name");
+		}
+
+		task ("Navigate to Site Settings admin in new site") {
+			Site.openSiteSettingsAdmin(siteURLKey = "Test Site Name");
+		}
+
+		task ("Navigate to Message Boards configuration") {
+			Click(
+				key_itemName = "Message Boards",
+				locator1 = "ListGroupItem#ITEM_TEXT");
+		}
+
+		task ("View the checkbox of Message Boards is unchecked") {
+			AssertNotChecked.assertNotCheckedNotVisible(
+				checkboxName = "Enable Message Boards Moderation",
+				locator1 = "Checkbox#ANY_CHECKBOX");
+		}
+
+		task ("Navigate to Message Boards configuration in Instance Settings") {
+			PortalSettings.gotoConfiguration(
+				configurationCategory = "Message Boards",
+				configurationName = "Message Boards Moderation Workflow",
+				configurationScope = "Site Scope");
+		}
+
+		task ("Check the Enable Message Boards Moderation") {
+			Check.checkNotVisible(
+				checkboxName = "Enable Message Boards Moderation",
+				locator1 = "Checkbox#ANY_CHECKBOX");
+
+			SystemSettings.saveConfiguration();
+		}
+
+		task ("Navigate to Site Settings admin in new site") {
+			Site.openSiteSettingsAdmin(siteURLKey = "Test Site Name");
+		}
+
+		task ("Navigate to Message Boards configuration") {
+			Click(
+				key_itemName = "Message Boards",
+				locator1 = "ListGroupItem#ITEM_TEXT");
+		}
+
+		task ("View the checkbox of Message Boards is checked") {
+			AssertChecked.assertCheckedNotVisible(
+				checkboxName = "Enable Message Boards Moderation",
+				locator1 = "Checkbox#ANY_CHECKBOX");
+		}
+	}
+
 	@description = "This ensures that the custom site logo can be viewed in cards and list views."
 	@priority = "4"
 	test ViewSiteLogo {
 		property portal.upstream = "true";
+
 		JSONGroup.addGroup(groupName = "Site Name");
 
 		JSONLayout.addPublicLayout(

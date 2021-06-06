@@ -12,13 +12,42 @@
  * details.
  */
 
-import middlewares from './middlewares/defaults';
+import {
+	FLUSH_INTERVAL,
+	HEADER_PROJECT_ID,
+	LIMIT_FAILED_ATTEMPTS,
+	QUEUE_PRIORITY_DEFAULT,
+	REQUEST_TIMEOUT,
+} from './utils/constants';
+import {getRetryDelay} from './utils/delay';
+
+/**
+ * A Queue Config.
+ *
+ * @typedef {Object} QueueConfig
+ * @property {string} endpointUrl - Url to send the items
+ * @property {string} name - The name to idetify the queue, it must be unique.
+ * @property {number} [priority=1] - Priority of this queue.
+ */
 
 /**
  * Client used to abstract communication with the Analytics Endpoint. It exposes the send
- * and use methods as only valid entry points for sending and modifying requests.
+ * as only valid entry point for sending and modifying requests.
+ * It process queues to send messages to the server. It will periodically run a task to
+ * process messages in its queue.
  */
 class Client {
+	constructor(config = {}) {
+		this.attemptNumber = 1;
+		this.initialDelay = config.delay || FLUSH_INTERVAL;
+		this.processing = false;
+		this.projectId = config.projectId;
+		this.queues = [];
+
+		this.delay = this.initialDelay;
+
+		this._startsFlushLoop();
+	}
 
 	/**
 	 * Returns a Request object with all data from the analytics instance
@@ -29,9 +58,11 @@ class Client {
 	 * @returns {Object} Parameters of the request to be sent.
 	 */
 	_getRequestParameters() {
-		const headers = new Headers();
+		const headers = {'Content-Type': 'application/json'};
 
-		headers.append('Content-Type', 'application/json');
+		if (this.projectId) {
+			Object.assign(headers, {[HEADER_PROJECT_ID]: this.projectId});
+		}
 
 		return {
 			cache: 'default',
@@ -73,10 +104,13 @@ class Client {
 	 * Send a request with given payload and url.
 	 */
 	send({payload, url}) {
-		return fetch(url, {
-			...this._getRequestParameters(),
+		const parameters = this._getRequestParameters();
+
+		Object.assign(parameters, {
 			body: JSON.stringify(payload),
-		}).then(this._validateResponse);
+		});
+
+		return fetch(url, parameters).then(this._validateResponse);
 	}
 
 	/**
@@ -89,21 +123,150 @@ class Client {
 	}
 
 	/**
-	 * Adds a middleware function to provide ability to transform the request
-	 * that is sent to the endpoint
-	 * @param {Function} middleware A function to alter request
-	 * @example
-	 * Client.use(
-	 *   (req, analytics) => {
-	 *     req.firstEvent = analytics.events[0];
-	 *     req.myMetaInfo = 'myMetaInfo';
-	 *
-	 *     return req;
-	 *   }
-	 * );
+	 * Add a queue to be processed by the client
+	 * @param {MessageQueue} queueInstance
+	 * @param {QueueConfig} config
 	 */
-	use(middleware) {
-		middlewares.push(middleware);
+	addQueue(queueInstance, config) {
+		this.queues.push(Object.assign(config, {instance: queueInstance}));
+		this.queues.sort(this._prioritize);
+	}
+
+	/**
+	 * Remove a queue
+	 * @param {string} queueName
+	 */
+	removeQueue(queueName) {
+		this.queues = this.queues.filter(({name}) => queueName !== name);
+	}
+
+	/**
+	 * Function to order queues by priority
+	 * @param {Object} queueA
+	 * @param {Object} queueB
+	 */
+	_prioritize(
+		{priority: pA = QUEUE_PRIORITY_DEFAULT},
+		{priority: pB = QUEUE_PRIORITY_DEFAULT}
+	) {
+		return pB - pA;
+	}
+
+	/**
+	 * Increase the interval time and restart processing loop
+	 */
+	onRequestFail() {
+		this.delay = getRetryDelay(++this.attemptNumber, LIMIT_FAILED_ATTEMPTS);
+		this._startsFlushLoop();
+	}
+
+	/**
+	 * Reset interval time and restart processing loop
+	 */
+	onRequestSuccess() {
+		this.attemptNumber = 1;
+
+		if (this.delay !== this.initialDelay) {
+			this.delay = this.initialDelay;
+			this._startsFlushLoop();
+		}
+	}
+
+	/**
+	 * Go through queues and send their messages.
+	 * If a queue fail, the processing loop is delayed
+	 * and the next queues are not processed.
+	 *
+	 * Note: Because we are using a ProcessLock, no other process should
+	 * be able to acquire a lock for a particular key to run its callback
+	 * until the process with the active lock releases it.
+	 *
+	 */
+	flush() {
+		if (this.processing) {
+			return;
+		}
+
+		this.queues
+			.reduce((previousPromise, {endpointUrl, instance: queue}) => {
+				return previousPromise
+					.then(() => {
+						if (!queue.hasMessages()) {
+							return Promise.resolve();
+						}
+
+						return queue.acquireLock().then((success) => {
+							if (!success) {
+								return Promise.resolve();
+							}
+
+							this.processing = true;
+							const messages = queue.getMessages();
+							const releaseLock = () =>
+								queue.releaseLock().then(() => {
+									this.processing = false;
+								});
+
+							if (!messages.length) {
+								releaseLock();
+
+								return Promise.resolve();
+							}
+
+							return Promise.all(
+								messages.map((payload) =>
+									this.sendWithTimeout({
+										payload,
+										timeout: REQUEST_TIMEOUT,
+										url: endpointUrl,
+									}).then(() => {
+										queue._dequeue(payload.id);
+									})
+								)
+							)
+								.then(() => {
+									this.onRequestSuccess();
+									releaseLock();
+
+									return Promise.resolve();
+								})
+								.catch(() => {
+									releaseLock();
+
+									return Promise.reject();
+								});
+						});
+					})
+					.catch(() => {
+						this.onRequestFail();
+
+						return Promise.reject();
+					});
+			}, Promise.resolve())
+			.catch(() => {});
+	}
+
+	/**
+	 * Start a timer to process messages at a specified interval.
+	 */
+	_startsFlushLoop() {
+		if (this.processInterval) {
+			clearInterval(this.processInterval);
+		}
+
+		this.processInterval = setInterval(() => this.flush(), this.delay);
+	}
+
+	/**
+	 * Method for clearing queues and any scheduled processing.
+	 */
+	dispose() {
+		if (this.processInterval) {
+			clearInterval(this.processInterval);
+		}
+
+		this.delay = this.initialDelay;
+		this.queues = [];
 	}
 }
 

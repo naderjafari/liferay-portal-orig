@@ -78,7 +78,6 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 		setUpDDMFormJSONDeserializer();
 		setUpDDMFormJSONSerializer();
 		setUpDDMStructureLocalServiceUtil();
-		setUpHtmlUtil();
 		setUpJSONFactoryUtil();
 		setUpLanguageUtil();
 		setUpPortalUtil();
@@ -296,19 +295,19 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 			ddmFormValues.getDDMFormFieldValues();
 
 		DDMFormFieldValue nameDDMFormFieldValue1 = createDDMFormFieldValue(
-			"rztm", "Name",
+			ddmFormValues, "rztm", "Name",
 			createLocalizedValue("Name 1", "Nome 1", LocaleUtil.US));
 
 		ddmFormFieldValues.add(nameDDMFormFieldValue1);
 
 		DDMFormFieldValue nameDDMFormFieldValue2 = createDDMFormFieldValue(
-			"uayd", "Name",
+			ddmFormValues, "uayd", "Name",
 			createLocalizedValue("Name 2", "Nome 2", LocaleUtil.US));
 
 		ddmFormFieldValues.add(nameDDMFormFieldValue2);
 
 		DDMFormFieldValue nameDDMFormFieldValue3 = createDDMFormFieldValue(
-			"pamh", "Name",
+			ddmFormValues, "pamh", "Name",
 			createLocalizedValue("Name 3", "Nome 3", LocaleUtil.US));
 
 		ddmFormFieldValues.add(nameDDMFormFieldValue3);
@@ -387,13 +386,6 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 
 	@Test
 	public void testConversionWithTransientField1() throws Exception {
-		DDMForm ddmForm = createDDMForm();
-
-		addDDMFormFields(
-			ddmForm, createTextDDMFormField("Name", "", true, true, false));
-
-		DDMStructure ddmStructure = createStructure("Test Structure", ddmForm);
-
 		DDMForm templateDDMForm = createDDMForm();
 
 		DDMFormField paragraphDDMFormField = createParagraphDDMFormField(
@@ -404,6 +396,9 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 
 		addDDMFormFields(templateDDMForm, paragraphDDMFormField);
 
+		DDMStructure ddmStructure = createStructure(
+			"Test Structure", templateDDMForm);
+
 		DDMFormValues templateDDMFormValues = createDDMFormValues(
 			templateDDMForm, _availableLocales, LocaleUtil.US);
 
@@ -411,17 +406,17 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 			templateDDMFormValues.getDDMFormFieldValues();
 
 		DDMFormFieldValue paragraphDDMFormFieldValue = createDDMFormFieldValue(
-			"rztm", "Paragraph", null);
+			templateDDMFormValues, "rztm", "Paragraph", null);
 
 		DDMFormFieldValue nameDDMFormFieldValue1 = createDDMFormFieldValue(
-			"uayd", "Name",
+			templateDDMFormValues, "uayd", "Name",
 			createLocalizedValue("Name 1", "Nome 1", LocaleUtil.US));
 
 		paragraphDDMFormFieldValue.addNestedDDMFormFieldValue(
 			nameDDMFormFieldValue1);
 
 		DDMFormFieldValue nameDDMFormFieldValue2 = createDDMFormFieldValue(
-			"pamh", "Name",
+			templateDDMFormValues, "pamh", "Name",
 			createLocalizedValue("Name 2", "Nome 2", LocaleUtil.US));
 
 		paragraphDDMFormFieldValue.addNestedDDMFormFieldValue(
@@ -450,14 +445,6 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 
 	@Test
 	public void testConversionWithTransientField2() throws Exception {
-		DDMForm ddmForm = createDDMForm();
-
-		addDDMFormFields(
-			ddmForm, createTextDDMFormField("Name", "", true, false, false),
-			createTextDDMFormField("Phone", "", true, true, false));
-
-		DDMStructure ddmStructure = createStructure("Test Structure", ddmForm);
-
 		DDMForm templateDDMForm = createDDMForm();
 
 		DDMFormField separatorDDMFormField = createSeparatorDDMFormField(
@@ -470,6 +457,9 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 			templateDDMForm, separatorDDMFormField,
 			createTextDDMFormField("Phone", "", true, true, false));
 
+		DDMStructure ddmStructure = createStructure(
+			"Test Structure", templateDDMForm);
+
 		DDMFormValues templateDDMFormValues = createDDMFormValues(
 			templateDDMForm, _availableLocales, LocaleUtil.US);
 
@@ -477,10 +467,10 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 			templateDDMFormValues.getDDMFormFieldValues();
 
 		DDMFormFieldValue separatorDDMFormFieldValue1 = createDDMFormFieldValue(
-			"rztm", "Separator", null);
+			templateDDMFormValues, "rztm", "Separator", null);
 
 		DDMFormFieldValue nameDDMFormFieldValue1 = createDDMFormFieldValue(
-			"uayd", "Name",
+			templateDDMFormValues, "uayd", "Name",
 			createLocalizedValue("Name 1", "Nome 1", LocaleUtil.US));
 
 		separatorDDMFormFieldValue1.addNestedDDMFormFieldValue(
@@ -489,10 +479,10 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 		ddmFormFieldValues.add(separatorDDMFormFieldValue1);
 
 		DDMFormFieldValue separatorDDMFormFieldValue2 = createDDMFormFieldValue(
-			"abpg", "Separator", null);
+			templateDDMFormValues, "abpg", "Separator", null);
 
 		DDMFormFieldValue nameDDMFormFieldValue2 = createDDMFormFieldValue(
-			"pamh", "Name",
+			templateDDMFormValues, "pamh", "Name",
 			createLocalizedValue("Name 2", "Nome 2", LocaleUtil.US));
 
 		separatorDDMFormFieldValue2.addNestedDDMFormFieldValue(
@@ -501,13 +491,13 @@ public class DDMFormValuesToFieldsConverterTest extends BaseDDMTestCase {
 		ddmFormFieldValues.add(separatorDDMFormFieldValue2);
 
 		DDMFormFieldValue phoneDDMFormFieldValue1 = createDDMFormFieldValue(
-			"prft", "Phone",
+			templateDDMFormValues, "prft", "Phone",
 			createLocalizedValue("Phone 1", "Telefone 1", LocaleUtil.US));
 
 		ddmFormFieldValues.add(phoneDDMFormFieldValue1);
 
 		DDMFormFieldValue phoneDDMFormFieldValue2 = createDDMFormFieldValue(
-			"goik", "Phone",
+			templateDDMFormValues, "goik", "Phone",
 			createLocalizedValue("Phone 2", "Telefone 2", LocaleUtil.US));
 
 		ddmFormFieldValues.add(phoneDDMFormFieldValue2);

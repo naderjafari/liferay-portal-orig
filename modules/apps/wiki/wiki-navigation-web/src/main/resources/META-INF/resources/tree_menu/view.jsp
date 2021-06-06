@@ -19,11 +19,11 @@
 <%
 String title = ParamUtil.getString(request, "title", wikiGroupServiceConfiguration.frontPageName());
 
-String portletId = PortletProviderUtil.getPortletId(WikiPage.class.getName(), PortletProvider.Action.VIEW);
-
-PortletURL viewURL = liferayPortletResponse.createRenderURL(portletId);
-
-viewURL.setParameter("mvcRenderCommandName", "/wiki/view_page");
+PortletURL viewURL = PortletURLBuilder.createRenderURL(
+	liferayPortletResponse, PortletProviderUtil.getPortletId(WikiPage.class.getName(), PortletProvider.Action.VIEW)
+).setMVCRenderCommandName(
+	"/wiki/view_page"
+).build();
 
 List<MenuItem> menuItems = MenuItem.fromWikiNode(selNodeId, depth, viewURL);
 %>
@@ -46,7 +46,7 @@ List<MenuItem> menuItems = MenuItem.fromWikiNode(selNodeId, depth, viewURL);
 
 				selectedChild.expand();
 
-				selectedChild.eachParent(function (node) {
+				selectedChild.eachParent((node) => {
 					if (node instanceof A.TreeNode) {
 						node.expand();
 					}

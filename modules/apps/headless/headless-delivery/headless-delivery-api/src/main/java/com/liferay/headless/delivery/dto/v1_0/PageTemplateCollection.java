@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -46,16 +48,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("PageTemplateCollection")
+@GraphQLName(
+	description = "Represents a Page template collection.",
+	value = "PageTemplateCollection"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "PageTemplateCollection")
-public class PageTemplateCollection {
+public class PageTemplateCollection implements Serializable {
 
 	public static PageTemplateCollection toDTO(String json) {
 		return ObjectMapperUtil.readValue(PageTemplateCollection.class, json);
 	}
 
-	@Schema
+	@Schema(description = "The page template collection's creator.")
 	@Valid
 	public Creator getCreator() {
 		return creator;
@@ -80,11 +85,11 @@ public class PageTemplateCollection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template collection's creator.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(description = "The page template collection's creation date.")
 	public Date getDateCreated() {
 		return dateCreated;
 	}
@@ -108,11 +113,11 @@ public class PageTemplateCollection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template collection's creation date.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateCreated;
 
-	@Schema
+	@Schema(description = "The last time the page template collection changed.")
 	public Date getDateModified() {
 		return dateModified;
 	}
@@ -136,11 +141,13 @@ public class PageTemplateCollection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The last time the page template collection changed."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateModified;
 
-	@Schema
+	@Schema(description = "The page template collection's description.")
 	public String getDescription() {
 		return description;
 	}
@@ -164,11 +171,11 @@ public class PageTemplateCollection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template collection's description.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String description;
 
-	@Schema
+	@Schema(description = "The page template collection's ID.")
 	public Long getId() {
 		return id;
 	}
@@ -190,11 +197,11 @@ public class PageTemplateCollection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template collection's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long id;
 
-	@Schema
+	@Schema(description = "The page template collection's name.")
 	public String getName() {
 		return name;
 	}
@@ -216,7 +223,7 @@ public class PageTemplateCollection {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The page template collection's name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String name;
 
@@ -377,6 +384,7 @@ public class PageTemplateCollection {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.PageTemplateCollection",
 		name = "x-class-name"
 	)
@@ -412,7 +420,7 @@ public class PageTemplateCollection {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -451,7 +459,7 @@ public class PageTemplateCollection {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

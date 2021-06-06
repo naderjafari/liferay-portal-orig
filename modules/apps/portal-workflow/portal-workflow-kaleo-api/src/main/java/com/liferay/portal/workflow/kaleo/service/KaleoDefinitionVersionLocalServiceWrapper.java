@@ -146,6 +146,16 @@ public class KaleoDefinitionVersionLocalServiceWrapper
 
 	@Override
 	public void deleteKaleoDefinitionVersions(
+			com.liferay.portal.workflow.kaleo.model.KaleoDefinition
+				kaleoDefinition)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		_kaleoDefinitionVersionLocalService.deleteKaleoDefinitionVersions(
+			kaleoDefinition);
+	}
+
+	@Override
+	public void deleteKaleoDefinitionVersions(
 			java.util.List
 				<com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion>
 					kaleoDefinitionVersions)
@@ -178,6 +188,13 @@ public class KaleoDefinitionVersionLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _kaleoDefinitionVersionLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _kaleoDefinitionVersionLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override

@@ -1,10 +1,11 @@
 @component-name = "portal-calendar"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}company.default.time.zone=America/Los_Angeles";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}company.default.time.zone=America/Los_Angeles";
 	property testray.main.component.name = "Calendar";
+
 	var pageName = "Calendar Page";
 	var portletName = "Calendar";
 
@@ -121,7 +122,7 @@ definition {
 	@description = "This is a use case for LPS-45062."
 	@priority = "5"
 	test ResizeAddedEventsViaEventBlock {
-		property portal.release = "false";
+		property portal.acceptance = "true";
 
 		CalendarNavigator.gotoView(viewType = "Day");
 

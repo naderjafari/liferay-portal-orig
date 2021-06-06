@@ -1,9 +1,9 @@
 @component-name = "portal-workflow"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}company.default.time.zone=America/Los_Angeles";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}company.default.time.zone=America/Los_Angeles";
 	property testray.main.component.name = "Workflow";
 
 	setUp {
@@ -273,7 +273,6 @@ definition {
 
 	@priority = "4"
 	test RejectEventWithInvitedUser {
-
 		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
 		CalendarNavigator.gotoView(viewType = "Week");
@@ -318,7 +317,7 @@ definition {
 			userCalendarName = "Test Test");
 	}
 
-	@priority = "2"
+	@priority = "3"
 	test ViewPendingStatusInEventDetails {
 		CalendarNavigator.gotoView(viewType = "Week");
 

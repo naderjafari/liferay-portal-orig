@@ -17,10 +17,11 @@ package com.liferay.portal.upgrade.v7_0_0;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.settings.LocalizedValuesMap;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
-import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.language.LanguageResources;
 import com.liferay.portal.upgrade.v7_0_0.util.GroupTable;
+import com.liferay.portal.util.PropsValues;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,17 +35,11 @@ import java.util.Locale;
  */
 public class UpgradeGroup extends UpgradeProcess {
 
-	protected void createIndex() throws Exception {
-		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			runSQL("create index IX_8257E37B on Group_ (classNameId, classPK)");
-		}
-	}
-
 	@Override
 	protected void doUpgrade() throws Exception {
 		alter(GroupTable.class, new AlterColumnType("name", "STRING null"));
 
-		createIndex();
+		updateIndexes(GroupTable.class);
 
 		updateGlobalGroupName();
 	}
@@ -52,12 +47,12 @@ public class UpgradeGroup extends UpgradeProcess {
 	protected void updateGlobalGroupName() throws Exception {
 		List<Long> companyIds = new ArrayList<>();
 
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId from Company")) {
 
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					long companyId = rs.getLong("companyId");
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				while (resultSet.next()) {
+					long companyId = resultSet.getLong("companyId");
 
 					companyIds.add(companyId);
 				}
@@ -67,8 +62,8 @@ public class UpgradeGroup extends UpgradeProcess {
 		for (Long companyId : companyIds) {
 			LocalizedValuesMap localizedValuesMap = new LocalizedValuesMap();
 
-			for (Locale locale :
-					LanguageUtil.getCompanyAvailableLocales(companyId)) {
+			for (String languageId : PropsValues.LOCALES_ENABLED) {
+				Locale locale = LocaleUtil.fromLanguageId(languageId);
 
 				localizedValuesMap.put(
 					locale,
@@ -79,14 +74,15 @@ public class UpgradeGroup extends UpgradeProcess {
 			String nameXML = LocalizationUtil.getXml(
 				localizedValuesMap, "global");
 
-			try (PreparedStatement ps = connection.prepareStatement(
-					"update Group_ set name = ? where companyId = ? and " +
-						"friendlyURL = '/global'")) {
+			try (PreparedStatement preparedStatement =
+					connection.prepareStatement(
+						"update Group_ set name = ? where companyId = ? and " +
+							"friendlyURL = '/global'")) {
 
-				ps.setString(1, nameXML);
-				ps.setLong(2, companyId);
+				preparedStatement.setString(1, nameXML);
+				preparedStatement.setLong(2, companyId);
 
-				ps.executeUpdate();
+				preparedStatement.executeUpdate();
 			}
 		}
 	}

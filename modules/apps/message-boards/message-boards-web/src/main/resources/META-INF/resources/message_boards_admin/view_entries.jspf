@@ -18,7 +18,7 @@
 MBCategoryDisplay categoryDisplay = new MBCategoryDisplay(scopeGroupId, categoryId);
 %>
 
-<div class="container-fluid-1280 view-entries-container">
+<div class="container-fluid container-fluid-max-xl container-view view-entries-container">
 	<c:if test="<%= category != null %>">
 
 		<%
@@ -46,8 +46,6 @@ MBCategoryDisplay categoryDisplay = new MBCategoryDisplay(scopeGroupId, category
 		<%
 		portletDisplay.setShowBackIcon(true);
 		portletDisplay.setURLBack(backURL.toString());
-
-		renderResponse.setTitle(category.getName());
 		%>
 
 	</c:if>
@@ -273,7 +271,7 @@ MBCategoryDisplay categoryDisplay = new MBCategoryDisplay(scopeGroupId, category
 							</c:if>
 
 							<div>
-								<aui:workflow-status bean="<%= message %>" markupView="lexicon" model="<%= MBMessage.class %>" showIcon="<%= false %>" showLabel="<%= false %>" status="<%= message.getStatus() %>" />
+								<aui:workflow-status markupView="lexicon" showIcon="<%= false %>" showLabel="<%= false %>" status="<%= message.getStatus() %>" />
 
 								<c:if test="<%= thread.isLocked() %>">
 									<aui:icon image="lock" markupView="lexicon" />
@@ -306,5 +304,5 @@ MBCategoryDisplay categoryDisplay = new MBCategoryDisplay(scopeGroupId, category
 </div>
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("com_liferay_message_boards_web.message_boards_admin.view_entries_jspf");
+private static final Log _log = LogFactoryUtil.getLog("com_liferay_message_boards_web.message_boards_admin.view_entries_jspf");
 %>

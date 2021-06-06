@@ -12,30 +12,14 @@
  * details.
  */
 
-export const containsFieldSet = (dataDefinition, dataDefinitionId) => {
-	let hasFieldSet = false;
+import {addItem, updateItem} from './client.es';
+import {getLocalizedValue} from './lang.es';
+import {normalizeDataDefinition, normalizeDataLayout} from './normalizers.es';
 
-	forEachDataDefinitionField(dataDefinition, (dataDefinitionField) => {
-		const {customProperties, fieldType} = dataDefinitionField;
-
-		if (
-			fieldType === 'fieldset' &&
-			customProperties &&
-			customProperties.ddmStructureId == dataDefinitionId
-		) {
-			hasFieldSet = true;
-		}
-
-		return hasFieldSet;
-	});
-
-	return hasFieldSet;
-};
-
-export const forEachDataDefinitionField = (
+export function forEachDataDefinitionField(
 	dataDefinition = {dataDefinitionFields: []},
 	fn
-) => {
+) {
 	const {dataDefinitionFields = []} = dataDefinition;
 
 	for (let i = 0; i < dataDefinitionFields.length; i++) {
@@ -59,12 +43,12 @@ export const forEachDataDefinitionField = (
 	}
 
 	return false;
-};
+}
 
-export const getDataDefinitionField = (
+export function getDataDefinitionField(
 	dataDefinition = {dataDefinitionFields: []},
 	fieldName
-) => {
+) {
 	let field = null;
 
 	forEachDataDefinitionField(dataDefinition, (currentField) => {
@@ -78,30 +62,72 @@ export const getDataDefinitionField = (
 	});
 
 	return field;
-};
+}
 
-export const getFieldLabel = (dataDefinition, fieldName) => {
+export function getFieldLabel(dataDefinition, fieldName) {
 	const field = getDataDefinitionField(dataDefinition, fieldName);
 
 	if (field) {
-		return (
-			field.label[Liferay.ThemeDisplay.getLanguageId()] ||
-			field.label[dataDefinition.defaultLanguageId]
-		);
+		return getLocalizedValue(dataDefinition.defaultLanguageId, field.label);
 	}
 
 	return fieldName;
-};
+}
 
-export const getOptionLabel = (options = {}, value) => {
-	return (options[themeDisplay.getLanguageId()] || []).reduce(
-		(result, option) => {
-			if (option.value === value) {
-				return option.label;
-			}
+export function getOptionLabel(
+	options = {},
+	value,
+	defaultLanguageId = themeDisplay.getDefaultLanguageId(),
+	languageId = themeDisplay.getLanguageId()
+) {
+	const getLabel = (languageId) => {
+		if (options[languageId]) {
+			return options[languageId].find((option) => option.value === value)
+				?.label;
+		}
+	};
 
-			return result;
-		},
-		value
+	return getLabel(languageId) || getLabel(defaultLanguageId) || value;
+}
+
+export function saveDataDefinition({
+	dataDefinition,
+	dataDefinitionId,
+	dataLayout,
+	dataLayoutId,
+}) {
+	const {defaultLanguageId} = dataDefinition;
+
+	const normalizedDataDefinition = normalizeDataDefinition(
+		dataDefinition,
+		defaultLanguageId,
+		false
 	);
-};
+
+	const normalizedDataLayout = normalizeDataLayout(
+		dataLayout,
+		defaultLanguageId
+	);
+
+	const updateDefinition = () =>
+		updateItem(
+			`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}`,
+			normalizedDataDefinition
+		);
+
+	if (dataLayoutId) {
+		return updateDefinition().then(() =>
+			updateItem(
+				`/o/data-engine/v2.0/data-layouts/${dataLayoutId}`,
+				normalizedDataLayout
+			)
+		);
+	}
+
+	return updateDefinition().then(() =>
+		addItem(
+			`/o/data-engine/v2.0/data-definitions/${dataDefinitionId}/data-layouts`,
+			normalizedDataLayout
+		)
+	);
+}

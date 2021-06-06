@@ -16,12 +16,17 @@ package com.liferay.layout.content.page.editor.web.internal.portlet.action;
 
 import com.liferay.asset.info.display.contributor.util.ContentAccessor;
 import com.liferay.document.library.kernel.model.DLFileEntryConstants;
+import com.liferay.fragment.entry.processor.helper.FragmentEntryProcessorHelper;
+import com.liferay.info.exception.NoSuchInfoItemException;
 import com.liferay.info.field.InfoField;
 import com.liferay.info.field.InfoFieldValue;
-import com.liferay.info.item.InfoItemClassPKReference;
+import com.liferay.info.item.ClassPKInfoItemIdentifier;
 import com.liferay.info.item.InfoItemFieldValues;
+import com.liferay.info.item.InfoItemIdentifier;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
+import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.info.list.renderer.DefaultInfoListRendererContext;
 import com.liferay.info.list.renderer.InfoListRenderer;
 import com.liferay.info.list.renderer.InfoListRendererTracker;
@@ -46,11 +51,12 @@ import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.taglib.servlet.PipingServletResponse;
 
 import java.util.List;
 import java.util.Locale;
@@ -72,7 +78,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ContentPageEditorPortletKeys.CONTENT_PAGE_EDITOR_PORTLET,
-		"mvc.command.name=/content_layout/get_collection_field"
+		"mvc.command.name=/layout_content_page_editor/get_collection_field"
 	},
 	service = MVCResourceCommand.class
 )
@@ -89,6 +95,9 @@ public class GetCollectionFieldMVCResourceCommand
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
+		String languageId = ParamUtil.getString(
+			resourceRequest, "languageId", themeDisplay.getLanguageId());
+
 		String layoutObjectReference = ParamUtil.getString(
 			resourceRequest, "layoutObjectReference");
 		String listStyle = ParamUtil.getString(resourceRequest, "listStyle");
@@ -96,16 +105,14 @@ public class GetCollectionFieldMVCResourceCommand
 			resourceRequest, "listItemStyle");
 		String templateKey = ParamUtil.getString(
 			resourceRequest, "templateKey");
-		long segmentsExperienceId = ParamUtil.getLong(
-			resourceRequest, "segmentsExperienceId");
 		int size = ParamUtil.getInteger(resourceRequest, "size");
 
 		try {
 			jsonObject = _getCollectionFieldsJSONObject(
 				_portal.getHttpServletRequest(resourceRequest),
-				_portal.getHttpServletResponse(resourceResponse),
+				_portal.getHttpServletResponse(resourceResponse), languageId,
 				layoutObjectReference, listStyle, listItemStyle, templateKey,
-				themeDisplay.getLocale(), segmentsExperienceId, size);
+				size);
 		}
 		catch (Exception exception) {
 			_log.error("Unable to get collection field", exception);
@@ -122,10 +129,9 @@ public class GetCollectionFieldMVCResourceCommand
 
 	private JSONObject _getCollectionFieldsJSONObject(
 			HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse,
+			HttpServletResponse httpServletResponse, String languageId,
 			String layoutObjectReference, String listStyle,
-			String listItemStyle, String templateKey, Locale locale,
-			long segmentsExperienceId, int size)
+			String listItemStyle, String templateKey, int size)
 		throws PortalException {
 
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
@@ -148,11 +154,15 @@ public class GetCollectionFieldMVCResourceCommand
 					defaultLayoutListRetrieverContext =
 						new DefaultLayoutListRetrieverContext();
 
+				Object infoItem = _getInfoItem(httpServletRequest);
+
+				if (infoItem != null) {
+					defaultLayoutListRetrieverContext.setContextObject(
+						infoItem);
+				}
+
 				defaultLayoutListRetrieverContext.setPagination(
 					Pagination.of(size, 0));
-				defaultLayoutListRetrieverContext.
-					setSegmentsExperienceIdsOptional(
-						new long[] {segmentsExperienceId});
 
 				ListObjectReference listObjectReference =
 					listObjectReferenceFactory.getListObjectReference(
@@ -177,7 +187,7 @@ public class GetCollectionFieldMVCResourceCommand
 				if (infoItemFieldValuesProvider == null) {
 					if (_log.isWarnEnabled()) {
 						_log.warn(
-							"Unable to get info item form provdier for class " +
+							"Unable to get info item form provider for class " +
 								itemType);
 					}
 
@@ -192,7 +202,8 @@ public class GetCollectionFieldMVCResourceCommand
 				for (Object object : list) {
 					jsonArray.put(
 						_getDisplayObjectJSONObject(
-							infoItemFieldValuesProvider, object, locale));
+							infoItemFieldValuesProvider, object,
+							LocaleUtil.fromLanguageId(languageId)));
 				}
 
 				InfoListRenderer<Object> infoListRenderer =
@@ -254,10 +265,24 @@ public class GetCollectionFieldMVCResourceCommand
 
 				value = contentAccessor.getContent();
 			}
-			else if (value instanceof WebImage) {
+
+			if (value instanceof WebImage) {
 				WebImage webImage = (WebImage)value;
 
 				value = webImage.toJSONObject();
+
+				long fileEntryId = _getFileEntryId(webImage);
+
+				if (fileEntryId != 0) {
+					JSONObject valueJSONObject = (JSONObject)value;
+
+					valueJSONObject.put(
+						"fileEntryId", String.valueOf(fileEntryId));
+				}
+			}
+			else {
+				value = _fragmentEntryProcessorHelper.formatMappedValue(
+					value, locale);
 			}
 
 			InfoField infoField = infoFieldValue.getInfoField();
@@ -265,22 +290,84 @@ public class GetCollectionFieldMVCResourceCommand
 			displayObjectJSONObject.put(infoField.getName(), value);
 		}
 
-		InfoItemClassPKReference infoItemClassPKReference =
-			infoItemFieldValues.getInfoItemClassPKReference();
+		InfoItemReference infoItemReference =
+			infoItemFieldValues.getInfoItemReference();
 
-		if (infoItemClassPKReference != null) {
+		if (infoItemReference != null) {
 			displayObjectJSONObject.put(
-				"className", infoItemClassPKReference.getClassName()
+				"className", infoItemReference.getClassName()
 			).put(
-				"classPK", infoItemClassPKReference.getClassPK()
+				"classPK", infoItemReference.getClassPK()
 			);
 		}
 
 		return displayObjectJSONObject;
 	}
 
+	private long _getFileEntryId(WebImage webImage) {
+		InfoItemReference infoItemReference = webImage.getInfoItemReference();
+
+		if ((infoItemReference == null) ||
+			!Objects.equals(
+				infoItemReference.getClassName(), FileEntry.class.getName())) {
+
+			return 0;
+		}
+
+		InfoItemIdentifier fileEntryInfoItemIdentifier =
+			infoItemReference.getInfoItemIdentifier();
+
+		if (!(fileEntryInfoItemIdentifier instanceof
+				ClassPKInfoItemIdentifier)) {
+
+			return 0;
+		}
+
+		ClassPKInfoItemIdentifier classPKInfoItemIdentifier =
+			(ClassPKInfoItemIdentifier)fileEntryInfoItemIdentifier;
+
+		return classPKInfoItemIdentifier.getClassPK();
+	}
+
+	private Object _getInfoItem(HttpServletRequest httpServletRequest) {
+		long classNameId = ParamUtil.getLong(httpServletRequest, "classNameId");
+		long classPK = ParamUtil.getLong(httpServletRequest, "classPK");
+
+		if ((classNameId <= 0) && (classPK <= 0)) {
+			return null;
+		}
+
+		InfoItemObjectProvider<Object> infoItemObjectProvider =
+			(InfoItemObjectProvider<Object>)
+				_infoItemServiceTracker.getFirstInfoItemService(
+					InfoItemObjectProvider.class,
+					_portal.getClassName(classNameId));
+
+		if (infoItemObjectProvider == null) {
+			return null;
+		}
+
+		ClassPKInfoItemIdentifier classPKInfoItemIdentifier =
+			new ClassPKInfoItemIdentifier(classPK);
+
+		try {
+			return infoItemObjectProvider.getInfoItem(
+				classPKInfoItemIdentifier);
+		}
+		catch (NoSuchInfoItemException noSuchInfoItemException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchInfoItemException, noSuchInfoItemException);
+			}
+		}
+
+		return null;
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		GetCollectionFieldMVCResourceCommand.class);
+
+	@Reference
+	private FragmentEntryProcessorHelper _fragmentEntryProcessorHelper;
 
 	@Reference
 	private InfoItemServiceTracker _infoItemServiceTracker;

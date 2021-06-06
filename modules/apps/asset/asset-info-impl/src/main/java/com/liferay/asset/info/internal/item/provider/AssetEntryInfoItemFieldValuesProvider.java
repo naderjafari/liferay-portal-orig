@@ -14,12 +14,13 @@
 
 package com.liferay.asset.info.internal.item.provider;
 
+import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.info.internal.item.AssetEntryInfoItemFields;
 import com.liferay.asset.info.item.provider.AssetEntryInfoItemFieldSetProvider;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.info.field.InfoFieldValue;
-import com.liferay.info.item.InfoItemClassPKReference;
 import com.liferay.info.item.InfoItemFieldValues;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.info.type.WebImage;
 import com.liferay.petra.string.StringPool;
@@ -33,6 +34,7 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
+import com.liferay.portal.kernel.util.Portal;
 
 import java.text.Format;
 
@@ -58,8 +60,8 @@ public class AssetEntryInfoItemFieldValuesProvider
 			_assetEntryInfoItemFieldSetProvider.getInfoFieldValues(assetEntry)
 		).infoFieldValues(
 			_getAssetEntryInfoFieldValues(assetEntry)
-		).infoItemClassPKReference(
-			new InfoItemClassPKReference(
+		).infoItemReference(
+			new InfoItemReference(
 				AssetEntry.class.getName(), assetEntry.getEntryId())
 		).build();
 	}
@@ -95,6 +97,9 @@ public class AssetEntryInfoItemFieldValuesProvider
 				AssetEntryInfoItemFields.viewCountInfoField,
 				assetEntry::getViewCount),
 			new InfoFieldValue<>(
+				AssetEntryInfoItemFields.displayPageURLInfoField,
+				_getDisplayPageURL(assetEntry)),
+			new InfoFieldValue<>(
 				AssetEntryInfoItemFields.urlInfoField, assetEntry.getUrl()),
 			new InfoFieldValue<>(
 				AssetEntryInfoItemFields.userProfileImage,
@@ -112,6 +117,27 @@ public class AssetEntryInfoItemFieldValuesProvider
 			locale);
 
 		return dateFormatDateTime.format(date);
+	}
+
+	private String _getDisplayPageURL(AssetEntry assetEntry) {
+		ThemeDisplay themeDisplay = _getThemeDisplay();
+
+		if (themeDisplay == null) {
+			return null;
+		}
+
+		try {
+			return _assetDisplayPageFriendlyURLProvider.getFriendlyURL(
+				_portal.getClassName(assetEntry.getClassNameId()),
+				assetEntry.getClassPK(), themeDisplay);
+		}
+		catch (PortalException portalException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(portalException, portalException);
+			}
+		}
+
+		return null;
 	}
 
 	private ThemeDisplay _getThemeDisplay() {
@@ -157,8 +183,15 @@ public class AssetEntryInfoItemFieldValuesProvider
 		AssetEntryInfoItemFieldValuesProvider.class);
 
 	@Reference
+	private AssetDisplayPageFriendlyURLProvider
+		_assetDisplayPageFriendlyURLProvider;
+
+	@Reference
 	private AssetEntryInfoItemFieldSetProvider
 		_assetEntryInfoItemFieldSetProvider;
+
+	@Reference
+	private Portal _portal;
 
 	@Reference
 	private UserLocalService _userLocalService;

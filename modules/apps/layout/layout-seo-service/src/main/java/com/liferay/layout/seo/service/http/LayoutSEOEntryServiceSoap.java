@@ -61,9 +61,32 @@ import java.util.Map;
  *
  * @author Brian Wing Shun Chan
  * @see LayoutSEOEntryServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class LayoutSEOEntryServiceSoap {
+
+	public static com.liferay.layout.seo.model.LayoutSEOEntrySoap
+			updateCustomMetaTags(
+				long groupId, boolean privateLayout, long layoutId,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws RemoteException {
+
+		try {
+			com.liferay.layout.seo.model.LayoutSEOEntry returnValue =
+				LayoutSEOEntryServiceUtil.updateCustomMetaTags(
+					groupId, privateLayout, layoutId, serviceContext);
+
+			return com.liferay.layout.seo.model.LayoutSEOEntrySoap.toSoapModel(
+				returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
 
 	public static com.liferay.layout.seo.model.LayoutSEOEntrySoap
 			updateLayoutSEOEntry(

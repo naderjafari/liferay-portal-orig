@@ -12,10 +12,8 @@
  * details.
  */
 
-(function (A, Liferay) {
+(function (A) {
 	A.use('aui-base-lang');
-
-	var AArray = A.Array;
 
 	var Lang = A.Lang;
 
@@ -44,9 +42,9 @@
 
 	var TPL_LEXICON_ICON =
 		'<svg class="lexicon-icon lexicon-icon-{0} {1}" focusable="false" role="image">' +
-		'<use data-href="' +
+		'<use href="' +
 		themeDisplay.getPathThemeImages() +
-		'/lexicon/icons.svg#{0}" />' +
+		'/clay/icons.svg#{0}" />' +
 		'</svg>';
 
 	var Window = {
@@ -353,6 +351,12 @@
 
 			if (currentElement) {
 				const url = currentElement.getAttribute('href');
+
+				// LPS-127302
+
+				if (url === 'javascript:;') {
+					return;
+				}
 
 				const newWindow =
 					currentElement.getAttribute('target') == '_blank';
@@ -1108,31 +1112,42 @@
 
 			event.win.focus();
 
-			var detachEventHandles = function () {
-				AArray.invoke(eventHandles, 'detach');
+			var iframeWindow = event.win;
 
-				iframeDocument.purge(true);
-			};
-
-			var eventHandles = [
-				iframeBody.delegate('submit', detachEventHandles, 'form'),
-
-				iframeBody.delegate(
-					EVENT_CLICK,
-					(event) => {
-						dialog.set(
-							'visible',
-							false,
-							event.currentTarget.hasClass('lfr-hide-dialog')
-								? SRC_HIDE_LINK
-								: null
+			if (iframeWindow.Liferay.SPA) {
+				var beforeScreenFlipHandler = iframeWindow.Liferay.on(
+					'beforeScreenFlip',
+					() => {
+						iframeWindow.document.body.classList.add(
+							'dialog-iframe-popup'
 						);
+					}
+				);
 
-						detachEventHandles();
-					},
-					'.btn-cancel,.lfr-hide-dialog'
-				),
-			];
+				iframeWindow.onunload = () => {
+					if (beforeScreenFlipHandler) {
+						iframeWindow.Liferay.detach(beforeScreenFlipHandler);
+					}
+				};
+			}
+
+			var cancelEventHandler = iframeBody.delegate(
+				EVENT_CLICK,
+				(event) => {
+					dialog.set(
+						'visible',
+						false,
+						event.currentTarget.hasClass('lfr-hide-dialog')
+							? SRC_HIDE_LINK
+							: null
+					);
+
+					cancelEventHandler.detach();
+
+					iframeDocument.purge(true);
+				},
+				'.btn-cancel,.lfr-hide-dialog'
+			);
 
 			Liferay.fire('modalIframeLoaded', {
 				src: event.dialog.iframe.node.getAttribute('src'),
@@ -1513,29 +1528,30 @@
 					'.lfr-search-container-wrapper .selector-button'
 				);
 
-				A.each(selectorButtons, (item) => {
-					var assetEntryId =
-						item.attr('data-entityid') ||
-						item.attr('data-entityname');
+				if (selectedData) {
+					A.each(selectorButtons, (item) => {
+						var assetEntryId =
+							item.attr('data-entityid') ||
+							item.attr('data-entityname');
 
-					var assetGroupId = item.attr('data-groupid');
+						var assetGroupId = item.attr('data-groupid');
 
-					if (assetGroupId) {
-						assetEntryId = assetGroupId + '-' + assetEntryId;
-					}
+						if (assetGroupId) {
+							assetEntryId = assetGroupId + '-' + assetEntryId;
+						}
 
-					var disabled =
-						selectedData && selectedData.includes(assetEntryId);
+						var disabled = selectedData.includes(assetEntryId);
 
-					if (disabled) {
-						item.attr('data-prevent-selection', true);
-					}
-					else {
-						item.removeAttribute('data-prevent-selection');
-					}
+						if (disabled) {
+							item.attr('data-prevent-selection', true);
+						}
+						else {
+							item.removeAttribute('data-prevent-selection');
+						}
 
-					Util.toggleDisabled(item, disabled);
-				});
+						Util.toggleDisabled(item, disabled);
+					});
+				}
 			};
 
 			if (dialog) {
@@ -1702,4 +1718,4 @@
 		TOOLTIP: 10000,
 		WINDOW: 1200,
 	};
-})(AUI(), Liferay);
+})(AUI());

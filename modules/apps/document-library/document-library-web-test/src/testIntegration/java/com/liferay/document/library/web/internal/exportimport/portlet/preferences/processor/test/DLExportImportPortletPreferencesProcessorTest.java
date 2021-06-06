@@ -187,9 +187,9 @@ public class DLExportImportPortletPreferencesProcessorTest {
 			primaryKeys.toString(),
 			primaryKeys.contains(
 				StringBundler.concat(
-					String.class.getName(), StringPool.POUND,
-					"com.liferay.message.boards.model.MBMessage",
-					StringPool.POUND, commentPrimaryKey)));
+					String.class.getName(),
+					"#com.liferay.message.boards.model.MBMessage#",
+					commentPrimaryKey)));
 	}
 
 	@Test
@@ -276,10 +276,10 @@ public class DLExportImportPortletPreferencesProcessorTest {
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 		return _dlAppLocalService.addFileEntry(
-			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			null, TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, fileName,
 			ContentTypes.TEXT_PLAIN, RandomTestUtil.randomString(),
-			StringPool.BLANK, StringPool.BLANK, content.getBytes(),
+			StringPool.BLANK, StringPool.BLANK, content.getBytes(), null, null,
 			serviceContext);
 	}
 

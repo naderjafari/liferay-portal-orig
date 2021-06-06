@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.deploy.hot.HotDeployEvent;
 import com.liferay.portal.kernel.deploy.hot.HotDeployException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.FileAvailabilityUtil;
 import com.liferay.portal.kernel.servlet.WebDirDetector;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -29,7 +30,6 @@ import com.liferay.portal.kernel.util.ServerDetector;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.tools.WebXMLBuilder;
 import com.liferay.portal.util.ExtRegistry;
-import com.liferay.taglib.FileAvailabilityUtil;
 import com.liferay.util.ant.CopyTask;
 
 import java.io.File;
@@ -58,10 +58,10 @@ public class ExtHotDeployListener extends BaseHotDeployListener {
 		try {
 			doInvokeDeploy(hotDeployEvent);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			throwHotDeployException(
 				hotDeployEvent, "Error registering extension environment for ",
-				t);
+				throwable);
 		}
 	}
 
@@ -72,18 +72,16 @@ public class ExtHotDeployListener extends BaseHotDeployListener {
 		try {
 			doInvokeUndeploy(hotDeployEvent);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			throwHotDeployException(
 				hotDeployEvent,
-				"Error unregistering extension environment for ", t);
+				"Error unregistering extension environment for ", throwable);
 		}
 	}
 
 	protected void copyJar(
 			ServletContext servletContext, String dir, String jarName)
 		throws Exception {
-
-		String servletContextName = servletContext.getServletContextName();
 
 		String jarFullName = StringBundler.concat(
 			"/WEB-INF/", jarName, "/", jarName, ".jar");
@@ -96,7 +94,8 @@ public class ExtHotDeployListener extends BaseHotDeployListener {
 		}
 
 		String newJarFullName = StringBundler.concat(
-			dir, "ext-", servletContextName, jarName.substring(3), ".jar");
+			dir, "ext-", servletContext.getServletContextName(),
+			jarName.substring(3), ".jar");
 
 		StreamUtil.transfer(
 			inputStream, new FileOutputStream(new File(newJarFullName)));

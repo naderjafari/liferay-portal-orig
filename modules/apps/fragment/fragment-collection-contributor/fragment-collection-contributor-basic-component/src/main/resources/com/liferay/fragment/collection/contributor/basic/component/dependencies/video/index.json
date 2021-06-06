@@ -40,13 +40,13 @@
 				{
 					"defaultValue": "",
 					"label": "Width",
-					"name": "width",
+					"name": "videoWidth",
 					"type": "text"
 				},
 				{
 					"defaultValue": "",
 					"label": "Height",
-					"name": "height",
+					"name": "videoHeight",
 					"type": "text"
 				},
 				{
@@ -68,35 +68,6 @@
 							{
 								"label": "right",
 								"value": "flex-end"
-							}
-						]
-					}
-				},
-				{
-					"dataType": "string",
-					"defaultValue": "3",
-					"label": "margin-bottom",
-					"name": "marginBottom",
-					"type": "select",
-					"typeOptions": {
-						"validValues": [
-							{
-								"value": "0"
-							},
-							{
-								"value": "1"
-							},
-							{
-								"value": "2"
-							},
-							{
-								"value": "3"
-							},
-							{
-								"value": "4"
-							},
-							{
-								"value": "5"
 							}
 						]
 					}

@@ -24,8 +24,10 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class StyleBookEntryVersionSoap implements Serializable {
 
 	public static StyleBookEntryVersionSoap toSoapModel(
@@ -33,20 +35,24 @@ public class StyleBookEntryVersionSoap implements Serializable {
 
 		StyleBookEntryVersionSoap soapModel = new StyleBookEntryVersionSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setStyleBookEntryVersionId(
 			model.getStyleBookEntryVersionId());
 		soapModel.setVersion(model.getVersion());
+		soapModel.setUuid(model.getUuid());
 		soapModel.setStyleBookEntryId(model.getStyleBookEntryId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setUserId(model.getUserId());
 		soapModel.setUserName(model.getUserName());
 		soapModel.setCreateDate(model.getCreateDate());
+		soapModel.setModifiedDate(model.getModifiedDate());
 		soapModel.setDefaultStyleBookEntry(model.isDefaultStyleBookEntry());
+		soapModel.setFrontendTokensValues(model.getFrontendTokensValues());
 		soapModel.setName(model.getName());
 		soapModel.setPreviewFileEntryId(model.getPreviewFileEntryId());
 		soapModel.setStyleBookEntryKey(model.getStyleBookEntryKey());
-		soapModel.setTokensValues(model.getTokensValues());
 
 		return soapModel;
 	}
@@ -109,6 +115,22 @@ public class StyleBookEntryVersionSoap implements Serializable {
 		setStyleBookEntryVersionId(pk);
 	}
 
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
+	}
+
 	public long getStyleBookEntryVersionId() {
 		return _styleBookEntryVersionId;
 	}
@@ -123,6 +145,14 @@ public class StyleBookEntryVersionSoap implements Serializable {
 
 	public void setVersion(int version) {
 		_version = version;
+	}
+
+	public String getUuid() {
+		return _uuid;
+	}
+
+	public void setUuid(String uuid) {
+		_uuid = uuid;
 	}
 
 	public long getStyleBookEntryId() {
@@ -173,6 +203,14 @@ public class StyleBookEntryVersionSoap implements Serializable {
 		_createDate = createDate;
 	}
 
+	public Date getModifiedDate() {
+		return _modifiedDate;
+	}
+
+	public void setModifiedDate(Date modifiedDate) {
+		_modifiedDate = modifiedDate;
+	}
+
 	public boolean getDefaultStyleBookEntry() {
 		return _defaultStyleBookEntry;
 	}
@@ -183,6 +221,14 @@ public class StyleBookEntryVersionSoap implements Serializable {
 
 	public void setDefaultStyleBookEntry(boolean defaultStyleBookEntry) {
 		_defaultStyleBookEntry = defaultStyleBookEntry;
+	}
+
+	public String getFrontendTokensValues() {
+		return _frontendTokensValues;
+	}
+
+	public void setFrontendTokensValues(String frontendTokensValues) {
+		_frontendTokensValues = frontendTokensValues;
 	}
 
 	public String getName() {
@@ -209,26 +255,22 @@ public class StyleBookEntryVersionSoap implements Serializable {
 		_styleBookEntryKey = styleBookEntryKey;
 	}
 
-	public String getTokensValues() {
-		return _tokensValues;
-	}
-
-	public void setTokensValues(String tokensValues) {
-		_tokensValues = tokensValues;
-	}
-
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _styleBookEntryVersionId;
 	private int _version;
+	private String _uuid;
 	private long _styleBookEntryId;
 	private long _groupId;
 	private long _companyId;
 	private long _userId;
 	private String _userName;
 	private Date _createDate;
+	private Date _modifiedDate;
 	private boolean _defaultStyleBookEntry;
+	private String _frontendTokensValues;
 	private String _name;
 	private long _previewFileEntryId;
 	private String _styleBookEntryKey;
-	private String _tokensValues;
 
 }

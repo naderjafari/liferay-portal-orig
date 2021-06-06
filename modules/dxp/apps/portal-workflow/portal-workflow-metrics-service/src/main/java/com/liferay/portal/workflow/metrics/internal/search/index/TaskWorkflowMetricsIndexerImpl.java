@@ -14,13 +14,17 @@
 
 package com.liferay.portal.workflow.metrics.internal.search.index;
 
-import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.document.Document;
 import com.liferay.portal.search.document.DocumentBuilder;
+import com.liferay.portal.search.engine.adapter.document.UpdateByQueryDocumentRequest;
+import com.liferay.portal.search.engine.adapter.document.UpdateDocumentRequest;
 import com.liferay.portal.search.query.BooleanQuery;
+import com.liferay.portal.search.script.ScriptBuilder;
+import com.liferay.portal.search.script.ScriptType;
+import com.liferay.portal.workflow.metrics.internal.search.index.util.WorkflowMetricsIndexerUtil;
 import com.liferay.portal.workflow.metrics.search.index.TaskWorkflowMetricsIndexer;
 
 import java.time.Duration;
@@ -78,9 +82,7 @@ public class TaskWorkflowMetricsIndexerImpl
 		documentBuilder.setDate(
 			"createDate", getDate(createDate)
 		).setValue(
-			Field.getSortableFieldName(
-				StringBundler.concat(
-					"createDate", StringPool.UNDERLINE, "Number")),
+			Field.getSortableFieldName("createDate_Number"),
 			createDate.getTime()
 		).setValue(
 			"deleted", false
@@ -120,7 +122,48 @@ public class TaskWorkflowMetricsIndexerImpl
 
 		Document document = documentBuilder.build();
 
-		workflowMetricsPortalExecutor.execute(() -> addDocument(document));
+		workflowMetricsPortalExecutor.execute(
+			() -> {
+				addDocument(document);
+
+				if (completed) {
+					return;
+				}
+
+				ScriptBuilder builder = scripts.builder();
+
+				UpdateDocumentRequest updateDocumentRequest =
+					new UpdateDocumentRequest(
+						_instanceWorkflowMetricsIndex.getIndexName(companyId),
+						WorkflowMetricsIndexerUtil.digest(
+							_instanceWorkflowMetricsIndex.getIndexType(),
+							companyId, instanceId),
+						builder.idOrCode(
+							StringUtil.read(
+								getClass(),
+								"dependencies/workflow-metrics-add-task-" +
+									"script.painless")
+						).language(
+							"painless"
+						).putParameter(
+							"task",
+							HashMapBuilder.<String, Object>put(
+								"assigneeIds", assigneeIds
+							).put(
+								"assigneeType", assigneeType
+							).put(
+								"taskId", taskId
+							).put(
+								"taskName", name
+							).build()
+						).scriptType(
+							ScriptType.INLINE
+						).build());
+
+				updateDocumentRequest.setScriptedUpsert(true);
+
+				searchEngineAdapter.execute(updateDocumentRequest);
+			});
 
 		return document;
 	}
@@ -158,6 +201,8 @@ public class TaskWorkflowMetricsIndexerImpl
 			() -> {
 				updateDocument(document);
 
+				_deleteTask(companyId, taskId);
+
 				BooleanQuery booleanQuery = queries.booleanQuery();
 
 				booleanQuery.addMustQueryClauses(
@@ -190,7 +235,11 @@ public class TaskWorkflowMetricsIndexerImpl
 		);
 
 		workflowMetricsPortalExecutor.execute(
-			() -> deleteDocument(documentBuilder));
+			() -> {
+				deleteDocument(documentBuilder);
+
+				_deleteTask(companyId, taskId);
+			});
 	}
 
 	@Override
@@ -255,9 +304,54 @@ public class TaskWorkflowMetricsIndexerImpl
 						"assigneeType", assigneeType
 					).build(),
 					booleanQuery);
+
+				ScriptBuilder builder = scripts.builder();
+
+				searchEngineAdapter.execute(
+					new UpdateByQueryDocumentRequest(
+						queries.nested(
+							"tasks", queries.term("tasks.taskId", taskId)),
+						builder.idOrCode(
+							StringUtil.read(
+								getClass(),
+								"dependencies/workflow-metrics-update-task-" +
+									"script.painless")
+						).language(
+							"painless"
+						).putParameter(
+							"assigneeIds", assigneeIds
+						).putParameter(
+							"assigneeType", assigneeType
+						).putParameter(
+							"taskId", taskId
+						).scriptType(
+							ScriptType.INLINE
+						).build(),
+						_instanceWorkflowMetricsIndex.getIndexName(companyId)));
 			});
 
 		return document;
+	}
+
+	private void _deleteTask(long companyId, long taskId) {
+		ScriptBuilder builder = scripts.builder();
+
+		searchEngineAdapter.execute(
+			new UpdateByQueryDocumentRequest(
+				queries.nested("tasks", queries.term("tasks.taskId", taskId)),
+				builder.idOrCode(
+					StringUtil.read(
+						getClass(),
+						"dependencies/workflow-metrics-delete-task-" +
+							"script.painless")
+				).language(
+					"painless"
+				).putParameter(
+					"taskId", taskId
+				).scriptType(
+					ScriptType.INLINE
+				).build(),
+				_instanceWorkflowMetricsIndex.getIndexName(companyId)));
 	}
 
 	private long _getDuration(Date completionDate, Date createDate) {
@@ -266,6 +360,9 @@ public class TaskWorkflowMetricsIndexerImpl
 
 		return duration.toMillis();
 	}
+
+	@Reference(target = "(workflow.metrics.index.entity.name=instance)")
+	private WorkflowMetricsIndex _instanceWorkflowMetricsIndex;
 
 	@Reference
 	private SLATaskResultWorkflowMetricsIndexer

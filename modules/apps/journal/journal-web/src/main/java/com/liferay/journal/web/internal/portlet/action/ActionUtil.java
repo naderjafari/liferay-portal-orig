@@ -15,13 +15,10 @@
 package com.liferay.journal.web.internal.portlet.action;
 
 import com.liferay.dynamic.data.mapping.exception.TemplateScriptException;
-import com.liferay.dynamic.data.mapping.model.DDMForm;
-import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureServiceUtil;
 import com.liferay.journal.constants.JournalArticleConstants;
 import com.liferay.journal.constants.JournalFolderConstants;
-import com.liferay.journal.exception.InvalidDDMStructureFieldNameException;
 import com.liferay.journal.exception.NoSuchArticleException;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.model.JournalFeed;
@@ -35,9 +32,10 @@ import com.liferay.journal.web.internal.portlet.JournalPortlet;
 import com.liferay.journal.web.internal.security.permission.resource.JournalPermission;
 import com.liferay.journal.web.internal.util.JournalHelperUtil;
 import com.liferay.journal.web.internal.util.JournalUtil;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.diff.CompareVersionsException;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -47,7 +45,6 @@ import com.liferay.portal.kernel.upload.UploadPortletRequest;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -56,11 +53,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.kernel.xml.Document;
-import com.liferay.portal.kernel.xml.Element;
-import com.liferay.portal.kernel.xml.Node;
-import com.liferay.portal.kernel.xml.SAXReaderUtil;
-import com.liferay.portal.kernel.xml.XPath;
 
 import java.io.File;
 
@@ -68,7 +60,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import javax.portlet.ActionRequest;
@@ -267,10 +258,6 @@ public class ActionUtil {
 		long classNameId = ParamUtil.getLong(httpServletRequest, "classNameId");
 		long classPK = ParamUtil.getLong(httpServletRequest, "classPK");
 		String articleId = ParamUtil.getString(httpServletRequest, "articleId");
-		long ddmStructureId = ParamUtil.getLong(
-			httpServletRequest, "ddmStructureId");
-		String ddmStructureKey = ParamUtil.getString(
-			httpServletRequest, "ddmStructureKey");
 		int status = ParamUtil.getInteger(
 			httpServletRequest, "status", WorkflowConstants.STATUS_ANY);
 
@@ -298,10 +285,19 @@ public class ActionUtil {
 					groupId, className, classPK);
 			}
 			catch (NoSuchArticleException noSuchArticleException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchArticleException, noSuchArticleException);
+				}
+
 				return null;
 			}
 		}
 		else {
+			long ddmStructureId = ParamUtil.getLong(
+				httpServletRequest, "ddmStructureId");
+			String ddmStructureKey = ParamUtil.getString(
+				httpServletRequest, "ddmStructureKey");
+
 			DDMStructure ddmStructure = null;
 
 			if (Validator.isNotNull(ddmStructureKey)) {
@@ -315,6 +311,9 @@ public class ActionUtil {
 						ddmStructureId);
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 
@@ -327,8 +326,9 @@ public class ActionUtil {
 					ddmStructure.getGroupId(), DDMStructure.class.getName(),
 					ddmStructure.getStructureId());
 
-				article.getTitleMap();
+				article.getContent();
 				article.getDescriptionMap();
+				article.getTitleMap();
 
 				article.setNew(true);
 				article.setId(0);
@@ -340,6 +340,10 @@ public class ActionUtil {
 				article.setVersion(0);
 			}
 			catch (NoSuchArticleException noSuchArticleException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchArticleException, noSuchArticleException);
+				}
+
 				return null;
 			}
 		}
@@ -381,30 +385,21 @@ public class ActionUtil {
 	public static JournalFeed getFeed(HttpServletRequest httpServletRequest)
 		throws Exception {
 
-		long groupId = ParamUtil.getLong(httpServletRequest, "groupId");
 		String feedId = ParamUtil.getString(httpServletRequest, "feedId");
 
 		JournalFeed feed = null;
 
 		if (Validator.isNotNull(feedId)) {
+			long groupId = ParamUtil.getLong(httpServletRequest, "groupId");
+
 			feed = JournalFeedServiceUtil.getFeed(groupId, feedId);
 		}
 
 		return feed;
 	}
 
-	public static JournalFeed getFeed(PortletRequest portletRequest)
-		throws Exception {
-
-		return getFeed(PortalUtil.getHttpServletRequest(portletRequest));
-	}
-
 	public static JournalFolder getFolder(HttpServletRequest httpServletRequest)
 		throws PortalException {
-
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
 
 		long folderId = ParamUtil.getLong(httpServletRequest, "folderId");
 
@@ -416,6 +411,10 @@ public class ActionUtil {
 			folder = JournalFolderServiceUtil.fetchFolder(folderId);
 		}
 		else {
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
+
 			JournalPermission.check(
 				themeDisplay.getPermissionChecker(),
 				themeDisplay.getScopeGroup(), ActionKeys.VIEW);
@@ -443,23 +442,6 @@ public class ActionUtil {
 		}
 
 		return folders;
-	}
-
-	public static JournalArticle getPreviewArticle(
-			PortletRequest portletRequest)
-		throws Exception {
-
-		long groupId = ParamUtil.getLong(portletRequest, "groupId");
-		String articleId = ParamUtil.getString(portletRequest, "articleId");
-		double version = ParamUtil.getDouble(
-			portletRequest, "version", JournalArticleConstants.VERSION_DEFAULT);
-
-		JournalArticle article = JournalArticleServiceUtil.getArticle(
-			groupId, articleId, version);
-
-		JournalUtil.addRecentArticle(portletRequest, article);
-
-		return article;
 	}
 
 	public static String getScript(UploadPortletRequest uploadPortletRequest)
@@ -507,43 +489,6 @@ public class ActionUtil {
 		}
 
 		return true;
-	}
-
-	public static void validateFieldNames(DDMForm ddmForm) throws Exception {
-		Map<String, DDMFormField> ddmFormFieldsMap =
-			ddmForm.getDDMFormFieldsMap(true);
-
-		for (String reservedFieldName : _RESERVED_FIELD_NAMES) {
-			if (ddmFormFieldsMap.containsKey(reservedFieldName)) {
-				throw new InvalidDDMStructureFieldNameException(
-					"Dynamic data mapping structure field name " +
-						reservedFieldName + " is a reserved name",
-					reservedFieldName);
-			}
-		}
-	}
-
-	protected static String getElementInstanceId(
-			String content, String fieldName, int index)
-		throws Exception {
-
-		Document document = SAXReaderUtil.read(content);
-
-		String xPathExpression =
-			"//dynamic-element[@name = " +
-				HtmlUtil.escapeXPathAttribute(fieldName) + "]";
-
-		XPath xPath = SAXReaderUtil.createXPath(xPathExpression);
-
-		List<Node> nodes = xPath.selectNodes(document);
-
-		if (index > nodes.size()) {
-			return StringPool.BLANK;
-		}
-
-		Element dynamicElementElement = (Element)nodes.get(index);
-
-		return dynamicElementElement.attributeValue("instance-id");
 	}
 
 	protected static String getLanguageId(
@@ -618,8 +563,6 @@ public class ActionUtil {
 		return false;
 	}
 
-	private static final String[] _RESERVED_FIELD_NAMES = {
-		"attributes", "data", "name", "options", "optionsMap", "type"
-	};
+	private static final Log _log = LogFactoryUtil.getLog(ActionUtil.class);
 
 }

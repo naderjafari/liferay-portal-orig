@@ -23,6 +23,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -164,7 +165,7 @@ public class WorkflowTaskDisplayContext {
 			classPK, getTaskContentLocale());
 
 		if (title != null) {
-			return HtmlUtil.escape(title);
+			return title;
 		}
 
 		return getAssetType(workflowTask);
@@ -211,11 +212,11 @@ public class WorkflowTaskDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = _getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			_getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public String getCreateDate(WorkflowLog workflowLog) {
@@ -240,7 +241,7 @@ public class WorkflowTaskDisplayContext {
 	public String getDisplayStyle() {
 		if (_displayStyle == null) {
 			_displayStyle = WorkflowTaskPortletUtil.getWorkflowTaskDisplayStyle(
-				_liferayPortletRequest, _getDisplayViews());
+				_liferayPortletRequest, _DISPLAY_VIEWS);
 		}
 
 		return _displayStyle;
@@ -344,14 +345,19 @@ public class WorkflowTaskDisplayContext {
 	public String getPreviewOfTitle(WorkflowTask workflowTask)
 		throws PortalException {
 
-		String className = _getWorkflowContextEntryClassName(workflowTask);
+		HttpServletRequest httpServletRequest =
+			_workflowTaskRequestHelper.getRequest();
 
-		String modelResource = ResourceActionsUtil.getModelResource(
-			getTaskContentLocale(), className);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return LanguageUtil.format(
-			_workflowTaskRequestHelper.getRequest(), "preview-of-x",
-			modelResource, false);
+			themeDisplay.getLocale(), "preview-of-x",
+			ResourceActionsUtil.getModelResource(
+				themeDisplay.getLocale(),
+				_getWorkflowContextEntryClassName(workflowTask)),
+			false);
 	}
 
 	public String getPreviousAssigneeMessageArguments(WorkflowLog workflowLog) {
@@ -363,32 +369,32 @@ public class WorkflowTaskDisplayContext {
 	}
 
 	public String getSearchURL() {
-		PortletURL portletURL = _getPortletURL();
+		return PortletURLBuilder.create(
+			_getPortletURL()
+		).setParameter(
+			"groupId",
+			() -> {
+				ThemeDisplay themeDisplay =
+					_workflowTaskRequestHelper.getThemeDisplay();
 
-		ThemeDisplay themeDisplay =
-			_workflowTaskRequestHelper.getThemeDisplay();
-
-		portletURL.setParameter(
-			"groupId", String.valueOf(themeDisplay.getScopeGroupId()));
-
-		return portletURL.toString();
+				return themeDisplay.getScopeGroupId();
+			}
+		).buildString();
 	}
 
 	public String getSortingURL() {
-		LiferayPortletResponse liferayPortletResponse =
-			_workflowTaskRequestHelper.getLiferayPortletResponse();
-
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("navigation", _getNavigation());
-		portletURL.setParameter("tabs1", _getTabs1());
-		portletURL.setParameter("orderByCol", _getOrderByCol());
-
-		portletURL.setParameter(
+		return PortletURLBuilder.createRenderURL(
+			_workflowTaskRequestHelper.getLiferayPortletResponse()
+		).setNavigation(
+			_getNavigation()
+		).setTabs1(
+			_getTabs1()
+		).setParameter(
+			"orderByCol", _getOrderByCol()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return portletURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public String getState(WorkflowTask workflowTask) throws PortalException {
@@ -407,26 +413,26 @@ public class WorkflowTaskDisplayContext {
 	public String getTaglibEditURL(WorkflowTask workflowTask)
 		throws PortalException, PortletException {
 
-		PortletURL editPortletURL = _getEditPortletURL(workflowTask);
-
-		editPortletURL.setParameter(
-			"hideDefaultSuccessMessage", Boolean.TRUE.toString());
-
 		ThemeDisplay themeDisplay =
 			_workflowTaskRequestHelper.getThemeDisplay();
 
-		editPortletURL.setParameter("redirect", themeDisplay.getURLCurrent());
-
-		editPortletURL.setParameter("portletResource", getPortletResource());
-		editPortletURL.setParameter(
-			"refererPlid", String.valueOf(themeDisplay.getPlid()));
-
-		editPortletURL.setParameter(
-			"workflowTaskId", String.valueOf(workflowTask.getWorkflowTaskId()));
-		editPortletURL.setPortletMode(PortletMode.VIEW);
-		editPortletURL.setWindowState(LiferayWindowState.NORMAL);
-
-		return editPortletURL.toString();
+		return PortletURLBuilder.create(
+			_getEditPortletURL(workflowTask)
+		).setRedirect(
+			themeDisplay.getURLCurrent()
+		).setParameter(
+			"hideDefaultSuccessMessage", Boolean.TRUE.toString()
+		).setParameter(
+			"portletResource", getPortletResource()
+		).setParameter(
+			"refererPlid", themeDisplay.getPlid()
+		).setParameter(
+			"workflowTaskId", workflowTask.getWorkflowTaskId()
+		).setPortletMode(
+			PortletMode.VIEW
+		).setWindowState(
+			LiferayWindowState.NORMAL
+		).buildString();
 	}
 
 	public String getTaglibViewDiffsURL(WorkflowTask workflowTask)
@@ -445,15 +451,19 @@ public class WorkflowTaskDisplayContext {
 
 		sb.append("', uri:'");
 
-		PortletURL viewDiffsPortletURL = _getViewDiffsPortletURL(workflowTask);
-
-		viewDiffsPortletURL.setParameter("redirect", getCurrentURL());
-		viewDiffsPortletURL.setParameter(
-			"hideControls", Boolean.TRUE.toString());
-		viewDiffsPortletURL.setWindowState(LiferayWindowState.POP_UP);
-		viewDiffsPortletURL.setPortletMode(PortletMode.VIEW);
-
-		sb.append(HtmlUtil.escapeJS(viewDiffsPortletURL.toString()));
+		sb.append(
+			HtmlUtil.escapeJS(
+				PortletURLBuilder.create(
+					_getViewDiffsPortletURL(workflowTask)
+				).setRedirect(
+					getCurrentURL()
+				).setParameter(
+					"hideControls", Boolean.TRUE.toString()
+				).setPortletMode(
+					PortletMode.VIEW
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString()));
 
 		sb.append("'});");
 
@@ -793,10 +803,6 @@ public class WorkflowTaskDisplayContext {
 		return curParam;
 	}
 
-	private String[] _getDisplayViews() {
-		return _DISPLAY_VIEWS;
-	}
-
 	private PortletURL _getEditPortletURL(WorkflowTask workflowTask)
 		throws PortalException {
 
@@ -864,9 +870,11 @@ public class WorkflowTaskDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("tabs1", _getTabs1());
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setTabs1(
+			_getTabs1()
+		).build();
 
 		String navigation = ParamUtil.getString(
 			_httpServletRequest, "navigation");

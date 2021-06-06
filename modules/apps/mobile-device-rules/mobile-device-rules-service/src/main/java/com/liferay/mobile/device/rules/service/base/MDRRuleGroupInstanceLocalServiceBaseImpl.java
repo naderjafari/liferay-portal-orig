@@ -21,6 +21,7 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.mobile.device.rules.model.MDRRuleGroupInstance;
 import com.liferay.mobile.device.rules.service.MDRRuleGroupInstanceLocalService;
+import com.liferay.mobile.device.rules.service.MDRRuleGroupInstanceLocalServiceUtil;
 import com.liferay.mobile.device.rules.service.persistence.MDRRuleGroupInstancePersistence;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
@@ -52,10 +53,13 @@ import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -77,7 +81,7 @@ public abstract class MDRRuleGroupInstanceLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>MDRRuleGroupInstanceLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.mobile.device.rules.service.MDRRuleGroupInstanceLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>MDRRuleGroupInstanceLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>MDRRuleGroupInstanceLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -155,6 +159,13 @@ public abstract class MDRRuleGroupInstanceLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return mdrRuleGroupInstancePersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -428,6 +439,7 @@ public abstract class MDRRuleGroupInstanceLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -446,6 +458,7 @@ public abstract class MDRRuleGroupInstanceLocalServiceBaseImpl
 			(MDRRuleGroupInstance)persistedModel);
 	}
 
+	@Override
 	public BasePersistence<MDRRuleGroupInstance> getBasePersistence() {
 		return mdrRuleGroupInstancePersistence;
 	}
@@ -557,6 +570,11 @@ public abstract class MDRRuleGroupInstanceLocalServiceBaseImpl
 		return mdrRuleGroupInstancePersistence.update(mdrRuleGroupInstance);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -569,6 +587,8 @@ public abstract class MDRRuleGroupInstanceLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		mdrRuleGroupInstanceLocalService =
 			(MDRRuleGroupInstanceLocalService)aopProxy;
+
+		_setLocalServiceUtilService(mdrRuleGroupInstanceLocalService);
 	}
 
 	/**
@@ -611,6 +631,23 @@ public abstract class MDRRuleGroupInstanceLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		MDRRuleGroupInstanceLocalService mdrRuleGroupInstanceLocalService) {
+
+		try {
+			Field field =
+				MDRRuleGroupInstanceLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, mdrRuleGroupInstanceLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

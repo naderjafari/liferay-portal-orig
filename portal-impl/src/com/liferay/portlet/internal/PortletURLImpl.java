@@ -185,7 +185,7 @@ public class PortletURLImpl
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Layout cannot be found for " + _plid);
+					_log.warn("Layout cannot be found for " + _plid, exception);
 				}
 			}
 		}
@@ -1244,6 +1244,10 @@ public class PortletURLImpl
 			return URLCodec.encodeURL(Encryptor.encrypt(key, value));
 		}
 		catch (EncryptorException encryptorException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(encryptorException, encryptorException);
+			}
+
 			return value;
 		}
 	}
@@ -1263,6 +1267,7 @@ public class PortletURLImpl
 		_layout = layout;
 		_lifecycle = lifecycle;
 		_copy = copy;
+
 		_parametersIncludedInPath = Collections.emptySet();
 
 		PortletApp portletApp = portlet.getPortletApp();
@@ -1569,9 +1574,6 @@ public class PortletURLImpl
 				plid = _layout.getPlid();
 			}
 
-			Map<String, String[]> publicRenderParametersMap =
-				PublicRenderParametersPool.get(_httpServletRequest, plid);
-
 			publicRenderParameterNames = new HashSet<>();
 
 			if (MimeResponse.Copy.ALL.equals(_copy) ||
@@ -1589,6 +1591,9 @@ public class PortletURLImpl
 					mutableRenderParameterMap = new LinkedHashMap<>(
 						privateRenderParameterMap);
 				}
+
+				Map<String, String[]> publicRenderParametersMap =
+					PublicRenderParametersPool.get(_httpServletRequest, plid);
 
 				Set<PublicRenderParameter> publicRenderParameters =
 					_portlet.getPublicRenderParameters();

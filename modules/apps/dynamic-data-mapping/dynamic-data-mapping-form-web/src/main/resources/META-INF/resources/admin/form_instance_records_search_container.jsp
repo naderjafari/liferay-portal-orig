@@ -22,14 +22,23 @@ DDMFormViewFormInstanceRecordsDisplayContext ddmFormViewFormInstanceRecordsDispl
 PortletURL portletURL = ddmFormViewFormInstanceRecordsDisplayContext.getPortletURL();
 %>
 
+<portlet:actionURL name="/dynamic_data_mapping_form/delete_form_instance_record" var="deleteFormInstanceRecordURL">
+	<portlet:param name="mvcPath" value="/admin/view_form_instance_records.jsp" />
+	<portlet:param name="redirect" value="<%= currentURL %>" />
+</portlet:actionURL>
+
 <clay:management-toolbar
 	actionDropdownItems="<%= ddmFormViewFormInstanceRecordsDisplayContext.getActionItemsDropdownItems() %>"
+	additionalProps='<%=
+		HashMapBuilder.<String, Object>put(
+			"deleteFormInstanceRecordURL", deleteFormInstanceRecordURL.toString()
+		).build()
+	%>'
 	clearResultsURL="<%= ddmFormViewFormInstanceRecordsDisplayContext.getClearResultsURL() %>"
-	componentId="ddmFormInstanceRecordsManagementToolbar"
 	disabled="<%= ddmFormViewFormInstanceRecordsDisplayContext.isDisabledManagementBar() %>"
 	filterDropdownItems="<%= ddmFormViewFormInstanceRecordsDisplayContext.getFilterItemsDropdownItems() %>"
 	itemsTotal="<%= ddmFormViewFormInstanceRecordsDisplayContext.getTotalItems() %>"
-	namespace="<%= liferayPortletResponse.getNamespace() %>"
+	propsTransformer="admin/js/DDMFormViewFormInstanceRecordsManagementToolbarPropsTransformer"
 	searchActionURL="<%= ddmFormViewFormInstanceRecordsDisplayContext.getSearchActionURL() %>"
 	searchContainerId="<%= ddmFormViewFormInstanceRecordsDisplayContext.getSearchContainerId() %>"
 	searchFormName="fm"
@@ -50,10 +59,25 @@ PortletURL portletURL = ddmFormViewFormInstanceRecordsDisplayContext.getPortletU
 		>
 			<liferay-ui:search-container-row
 				className="com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecord"
-				cssClass="entry-display-style selectable"
 				keyProperty="formInstanceRecordId"
 				modelVar="formInstanceRecord"
 			>
+				<c:if test="<%= ddmFormViewFormInstanceRecordsDisplayContext.getAvailableLocalesCount() > 1 %>">
+					<liferay-ui:search-container-column-text
+						name="language"
+					>
+
+						<%
+						String w3cLanguageId = StringUtil.toLowerCase(LocaleUtil.toW3cLanguageId(ddmFormViewFormInstanceRecordsDisplayContext.getDefaultLocale(formInstanceRecord)));
+						%>
+
+						<div class="search-container-column-language">
+							<svg class="h4 lexicon-icon lexicon-icon-<%= w3cLanguageId %> reference-mark">
+								<use xlink:href="<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg#<%= w3cLanguageId %>" />
+							</svg>
+						</div>
+					</liferay-ui:search-container-column-text>
+				</c:if>
 
 				<%
 				Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesMap = ddmFormViewFormInstanceRecordsDisplayContext.getDDMFormFieldValues(formInstanceRecord);
@@ -61,6 +85,11 @@ PortletURL portletURL = ddmFormViewFormInstanceRecordsDisplayContext.getPortletU
 				DDMForm ddmForm = ddmFormViewFormInstanceRecordsDisplayContext.getDDMForm(formInstanceRecord);
 
 				Map<String, DDMFormField> ddmFormFieldsMap = ddmForm.getDDMFormFieldsMap(true);
+
+				row.setData(
+					HashMapBuilder.<String, Object>put(
+						"actions", StringUtil.merge(ddmFormViewFormInstanceRecordsDisplayContext.getAvailableActions(permissionChecker))
+					).build());
 
 				for (DDMFormField ddmFormField : ddmFormViewFormInstanceRecordsDisplayContext.getDDMFormFields()) {
 				%>
@@ -87,7 +116,7 @@ PortletURL portletURL = ddmFormViewFormInstanceRecordsDisplayContext.getPortletU
 
 				<liferay-ui:search-container-column-status
 					name="status"
-					status="<%= ddmFormViewFormInstanceRecordsDisplayContext.getStatus(formInstanceRecord) %>"
+					property="status"
 				/>
 
 				<liferay-ui:search-container-column-date
@@ -117,59 +146,9 @@ PortletURL portletURL = ddmFormViewFormInstanceRecordsDisplayContext.getPortletU
 
 <clay:container-fluid>
 	<liferay-ui:search-paginator
+		markupView="lexicon"
 		searchContainer="<%= ddmFormViewFormInstanceRecordsDisplayContext.getSearch() %>"
 	/>
 </clay:container-fluid>
 
 <%@ include file="/admin/export_form_instance.jspf" %>
-
-<aui:script sandbox="<%= true %>">
-	var deleteRecords = function () {
-		if (
-			confirm(
-				'<%= UnicodeLanguageUtil.get(request, "are-you-sure-you-want-to-delete-this") %>'
-			)
-		) {
-			var searchContainer = document.getElementById(
-				'<portlet:namespace />ddmFormInstanceRecord'
-			);
-
-			if (searchContainer) {
-				Liferay.Util.postForm(
-					document.<portlet:namespace />searchContainerForm,
-					{
-						data: {
-							deleteFormInstanceRecordIds: Liferay.Util.listCheckedExcept(
-								searchContainer,
-								'<portlet:namespace />allRowIds'
-							),
-						},
-
-						<portlet:actionURL name="deleteFormInstanceRecord" var="deleteFormInstanceRecordURL">
-							<portlet:param name="mvcPath" value="/admin/view_form_instance_records.jsp" />
-							<portlet:param name="redirect" value="<%= currentURL %>" />
-						</portlet:actionURL>
-
-						url: '<%= deleteFormInstanceRecordURL %>',
-					}
-				);
-			}
-		}
-	};
-
-	var ACTIONS = {
-		deleteRecords: deleteRecords,
-	};
-
-	Liferay.componentReady('ddmFormInstanceRecordsManagementToolbar').then(
-		function (managementToolbar) {
-			managementToolbar.on(['actionItemClicked'], function (event) {
-				var itemData = event.data.item.data;
-
-				if (itemData && itemData.action && ACTIONS[itemData.action]) {
-					ACTIONS[itemData.action]();
-				}
-			});
-		}
-	);
-</aui:script>

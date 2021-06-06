@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -44,10 +46,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("AssigneeMetricBulkSelection")
+@GraphQLName(
+	description = "https://schema.org/AssigneeMetricBulkSelection",
+	value = "AssigneeMetricBulkSelection"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "AssigneeMetricBulkSelection")
-public class AssigneeMetricBulkSelection {
+public class AssigneeMetricBulkSelection implements Serializable {
 
 	public static AssigneeMetricBulkSelection toDTO(String json) {
 		return ObjectMapperUtil.readValue(
@@ -404,6 +409,7 @@ public class AssigneeMetricBulkSelection {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.AssigneeMetricBulkSelection",
 		name = "x-class-name"
 	)
@@ -439,7 +445,7 @@ public class AssigneeMetricBulkSelection {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -478,7 +484,7 @@ public class AssigneeMetricBulkSelection {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

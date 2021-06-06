@@ -53,9 +53,12 @@ import org.osgi.annotation.versioning.ProviderType;
  *
  * @author Brian Wing Shun Chan
  * @see DDMContentLocalServiceUtil
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ DDMFieldLocalServiceImpl}
  * @generated
  */
 @CTAware
+@Deprecated
 @ProviderType
 @Transactional(
 	isolation = Isolation.PORTAL,
@@ -68,7 +71,7 @@ public interface DDMContentLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link DDMContentLocalServiceUtil} to access the ddm content local service. Add custom service methods to <code>com.liferay.dynamic.data.mapping.service.impl.DDMContentLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.dynamic.data.mapping.service.impl.DDMContentLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the ddm content local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link DDMContentLocalServiceUtil} if injection and service tracking are not available.
 	 */
 	public DDMContent addContent(
 			long userId, long groupId, String name, String description,
@@ -143,6 +146,9 @@ public interface DDMContentLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();

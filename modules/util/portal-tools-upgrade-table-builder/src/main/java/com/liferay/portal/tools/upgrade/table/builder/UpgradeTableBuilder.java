@@ -14,6 +14,7 @@
 
 package com.liferay.portal.tools.upgrade.table.builder;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ArgumentsUtil;
@@ -167,9 +168,8 @@ public class UpgradeTableBuilder {
 
 		String author = _getAuthor(content);
 
-		Path indexesFilePath = _getIndexesFilePath(upgradeFileVersion);
-
-		String[] addIndexes = _getAddIndexes(indexesFilePath, tableName);
+		String[] addIndexes = _getAddIndexes(
+			_getIndexesFilePath(upgradeFileVersion), tableName);
 
 		content = _getContent(
 			packagePath, className, upgradeFileContent, author, addIndexes);
@@ -285,7 +285,7 @@ public class UpgradeTableBuilder {
 			content = StringUtil.replace(content, "\n\n", "\n");
 		}
 
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler();
 
 		sb.append(_getCopyright());
 

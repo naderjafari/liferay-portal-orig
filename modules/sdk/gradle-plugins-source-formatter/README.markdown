@@ -4,7 +4,7 @@ The Source Formatter Gradle plugin lets you format project files using the
 [Liferay Source Formatter](https://github.com/liferay/liferay-portal/tree/master/modules/util/source-formatter)
 tool.
 
-The plugin has been successfully tested with Gradle 5.6.4.
+The plugin has been successfully tested with Gradle 5.6.4 and 6.6.1.
 
 ## Usage
 
@@ -13,7 +13,7 @@ To use the plugin, include it in your build script:
 ```gradle
 buildscript {
 	dependencies {
-		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.source.formatter", version: "4.0.10"
+		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.source.formatter", version: "5.1.19"
 	}
 
 	repositories {
@@ -93,6 +93,8 @@ Property Name | Type | Default Value | Description
 `autoFix` | `boolean` | `false` | Whether to automatically fix source formatting errors. It sets the `source.auto.fix` argument.
 `baseDir` | `File` | | The Source Formatter base directory. It sets the `source.base.dir` argument. *(Read-only)*
 `baseDirName` | `String` | `"./"` | The name of the Source Formatter base directory, relative to the project directory.
+`checkCategoryNames` | `List<String>` | `null` | The check categories to run. It sets the `source.check.category.names` argument.
+`checkNames` | `List<String>` | `null` | The checks to run. It sets the `source.check.names` argument.
 `failOnAutoFix` | `boolean` | `false` | Whether to fail the build if formatting errors are found that were automatically fixed. It sets the `source.fail.on.auto.fix` argument.
 `failOnHasWarning` | `boolean` | `true` | Whether to fail the build if formatting errors are found that were not automatically fixed. It sets the `source.fail.on.has.warning` argument.
 `fileExtensions` | `List<String>` | `[]` | The file extensions to format. If empty, all file extensions will be formatted. It sets the `source.file.extensions` argument.
@@ -123,7 +125,7 @@ manually adding a dependency to the `sourceFormatter` configuration:
 
 ```gradle
 dependencies {
-	sourceFormatter group: "com.liferay", name: "com.liferay.source.formatter", version: "1.0.1026"
+	sourceFormatter group: "com.liferay", name: "com.liferay.source.formatter", version: "1.0.1120"
 }
 ```
 

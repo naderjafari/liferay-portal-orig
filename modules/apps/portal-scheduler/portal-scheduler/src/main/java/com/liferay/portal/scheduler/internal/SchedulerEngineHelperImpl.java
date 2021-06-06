@@ -47,7 +47,7 @@ import com.liferay.portal.kernel.scheduler.messaging.SchedulerEventMessageListen
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerEventMessageListenerWrapper;
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.InetAddressUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -197,15 +197,14 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 				recurrence.setInterval(dailyInterval);
 			}
 			else {
-				DayAndPosition[] dayPos = {
-					new DayAndPosition(Calendar.MONDAY, 0),
-					new DayAndPosition(Calendar.TUESDAY, 0),
-					new DayAndPosition(Calendar.WEDNESDAY, 0),
-					new DayAndPosition(Calendar.THURSDAY, 0),
-					new DayAndPosition(Calendar.FRIDAY, 0)
-				};
-
-				recurrence.setByDay(dayPos);
+				recurrence.setByDay(
+					new DayAndPosition[] {
+						new DayAndPosition(Calendar.MONDAY, 0),
+						new DayAndPosition(Calendar.TUESDAY, 0),
+						new DayAndPosition(Calendar.WEDNESDAY, 0),
+						new DayAndPosition(Calendar.THURSDAY, 0),
+						new DayAndPosition(Calendar.FRIDAY, 0)
+					});
 			}
 		}
 		else if (recurrenceType == Recurrence.WEEKLY) {
@@ -251,11 +250,10 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 				int monthlyDay = ParamUtil.getInteger(
 					portletRequest, "monthlyDay1");
 
-				DayAndPosition[] dayPos = {
-					new DayAndPosition(monthlyDay, monthlyPos)
-				};
-
-				recurrence.setByDay(dayPos);
+				recurrence.setByDay(
+					new DayAndPosition[] {
+						new DayAndPosition(monthlyDay, monthlyPos)
+					});
 
 				int monthlyInterval = ParamUtil.getInteger(
 					portletRequest, "monthlyInterval1", 1);
@@ -288,11 +286,10 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 				int yearlyMonth = ParamUtil.getInteger(
 					portletRequest, "yearlyMonth1");
 
-				DayAndPosition[] dayPos = {
-					new DayAndPosition(yearlyDay, yearlyPos)
-				};
-
-				recurrence.setByDay(dayPos);
+				recurrence.setByDay(
+					new DayAndPosition[] {
+						new DayAndPosition(yearlyDay, yearlyPos)
+					});
 
 				recurrence.setByMonth(new int[] {yearlyMonth});
 
@@ -566,9 +563,10 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 		MessageListener messageListener, SchedulerEntry schedulerEntry,
 		String destinationName) {
 
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("destination.name", destinationName);
+		Dictionary<String, Object> properties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"destination.name", destinationName
+			).build();
 
 		Class<?> messageListenerClass = messageListener.getClass();
 
@@ -852,9 +850,10 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 		Destination destination = _destinationFactory.createDestination(
 			destinationConfiguration);
 
-		Dictionary<String, Object> dictionary = new HashMapDictionary<>();
-
-		dictionary.put("destination.name", destination.getName());
+		Dictionary<String, Object> dictionary =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"destination.name", destination.getName()
+			).build();
 
 		ServiceRegistration<Destination> serviceRegistration =
 			bundleContext.registerService(
@@ -990,14 +989,11 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 					return null;
 				}
 
-				Dictionary<String, Object> properties =
-					new HashMapDictionary<>();
-
-				properties.put("destination.name", destinationName);
-
 				serviceRegistration = bundleContext.registerService(
 					MessageListener.class, schedulerEventMessageListener,
-					properties);
+					HashMapDictionaryBuilder.<String, Object>put(
+						"destination.name", destinationName
+					).build());
 
 				_messageListenerServiceRegistrations.put(
 					schedulerEntry.getEventListenerClass(),

@@ -31,6 +31,7 @@ definition {
 
 	@description = "This makes sure that the user can edit OG image tag."
 	@priority = "5"
+	@refactorneeded
 	test ChangeImageTag {
 		var portalURL = PropsUtil.get("portal.url");
 
@@ -46,7 +47,10 @@ definition {
 			customImage = "true",
 			uploadFileName = "Document_1.jpg");
 
-		Click(locator1 = "Button#CLEAR_OPEN_GRAPH_IMAGE");
+		Click(
+			key_fieldLabel = "Image",
+			key_text = "Clear",
+			locator1 = "Button#ANY_WITH_LABEL");
 
 		OpenGraph.configureOpenGraph(
 			customImage = "true",
@@ -63,20 +67,20 @@ definition {
 
 	@description = "This makes sure that the user can change the default image for OpenGraph at the site level."
 	@priority = "5"
+	@refactorneeded
 	test ChangeSiteImage {
 		property portal.acceptance = "true";
 
 		var portalURL = PropsUtil.get("portal.url");
 
 		for (var imageNumber : list "1,2") {
-			SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+			Site.openSiteSettingsAdmin(siteURLKey = "test-site-name");
 
-			ProductMenu.gotoPortlet(
-				category = "Configuration",
-				panel = "Site Administration",
-				portlet = "Settings");
+			Click(
+				key_itemName = "Pages",
+				locator1 = "ListGroupItem#ITEM_TEXT");
 
-			Panel.expandPanel(panel = "Open Graph");
+			Navigator.gotoNavTab(navTab = "Open Graph");
 
 			OpenGraph.configureOpenGraph(
 				customImage = "true",
@@ -110,17 +114,17 @@ definition {
 
 	@description = "This makes sure that the previously added image can be cleared at the page level."
 	@priority = "5"
+	@refactorneeded
 	test ClearImageAtPageLevel {
 		var portalURL = PropsUtil.get("portal.url");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+		Site.openSiteSettingsAdmin(siteURLKey = "test-site-name");
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Site Administration",
-			portlet = "Settings");
+		Click(
+			key_itemName = "Pages",
+			locator1 = "ListGroupItem#ITEM_TEXT");
 
-		Panel.expandPanel(panel = "Open Graph");
+		Navigator.gotoNavTab(navTab = "Open Graph");
 
 		AssertElementPresent(locator1 = "TextInput#OPEN_GRAPH_CUSTOM_IMAGE_DEFAULT_VALUE");
 
@@ -146,7 +150,10 @@ definition {
 			customImage = "true",
 			uploadFileName = "Document_2.jpg");
 
-		Click(locator1 = "Button#CLEAR_OPEN_GRAPH_IMAGE");
+		Click(
+			key_fieldLabel = "Image",
+			key_text = "Clear",
+			locator1 = "Button#ANY_WITH_LABEL");
 
 		Button.click(button = "Save");
 
@@ -169,17 +176,17 @@ definition {
 
 	@description = "This makes sure that it will apply the OG image of the page when images are set at both the site level and the page level."
 	@priority = "5"
+	@refactorneeded
 	test ClearImageAtSiteLevel {
 		var portalURL = PropsUtil.get("portal.url");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+		Site.openSiteSettingsAdmin(siteURLKey = "test-site-name");
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Site Administration",
-			portlet = "Settings");
+		Click(
+			key_itemName = "Pages",
+			locator1 = "ListGroupItem#ITEM_TEXT");
 
-		Panel.expandPanel(panel = "Open Graph");
+		Navigator.gotoNavTab(navTab = "Open Graph");
 
 		OpenGraph.configureOpenGraph(
 			customImage = "true",
@@ -203,16 +210,18 @@ definition {
 			key_imageName = "Document_1.jpg",
 			locator1 = "SitePagesEditPage#PREVIEW_IMAGE");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+		Site.openSiteSettingsAdmin(siteURLKey = "test-site-name");
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Site Administration",
-			portlet = "Settings");
+		Click(
+			key_itemName = "Pages",
+			locator1 = "ListGroupItem#ITEM_TEXT");
 
-		Panel.expandPanel(panel = "Open Graph");
+		Navigator.gotoNavTab(navTab = "Open Graph");
 
-		Click(locator1 = "Button#CLEAR_OPEN_GRAPH_IMAGE");
+		Click(
+			key_fieldLabel = "Image",
+			key_text = "Clear",
+			locator1 = "Button#ANY_WITH_LABEL");
 
 		Button.click(button = "Save");
 
@@ -241,17 +250,17 @@ definition {
 
 	@description = "This ensures that the OG image alt description configuration at page level overrides its configuration at the site level."
 	@priority = "4"
+	@refactorneeded
 	test ConfigurePageSpecificAltDescription {
 		var portalURL = PropsUtil.get("portal.url");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+		Site.openSiteSettingsAdmin(siteURLKey = "test-site-name");
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Site Administration",
-			portlet = "Settings");
+		Click(
+			key_itemName = "Pages",
+			locator1 = "ListGroupItem#ITEM_TEXT");
 
-		Panel.expandPanel(panel = "Open Graph");
+		Navigator.gotoNavTab(navTab = "Open Graph");
 
 		OpenGraph.configureOpenGraph(
 			altDescription = "This is image alternative description",
@@ -288,17 +297,17 @@ definition {
 
 	@description = "This makes sure that it will apply the OG image of the page when images are set at both the site level and the page level."
 	@priority = "5"
+	@refactorneeded
 	test ConfigurePageSpecificImage {
 		var portalURL = PropsUtil.get("portal.url");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+		Site.openSiteSettingsAdmin(siteURLKey = "test-site-name");
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Site Administration",
-			portlet = "Settings");
+		Click(
+			key_itemName = "Pages",
+			locator1 = "ListGroupItem#ITEM_TEXT");
 
-		Panel.expandPanel(panel = "Open Graph");
+		Navigator.gotoNavTab(navTab = "Open Graph");
 
 		AssertElementPresent(locator1 = "TextInput#OPEN_GRAPH_CUSTOM_IMAGE_DEFAULT_VALUE");
 
@@ -326,14 +335,13 @@ definition {
 			key_imageName = "Document_2.jpg",
 			locator1 = "SitePagesEditPage#PREVIEW_IMAGE");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+		Site.openSiteSettingsAdmin(siteURLKey = "test-site-name");
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Site Administration",
-			portlet = "Settings");
+		Click(
+			key_itemName = "Pages",
+			locator1 = "ListGroupItem#ITEM_TEXT");
 
-		Panel.expandPanel(panel = "Open Graph");
+		Navigator.gotoNavTab(navTab = "Open Graph");
 
 		AssertVisible(
 			key_imageName = "Document_1.jpg",
@@ -350,6 +358,7 @@ definition {
 
 	@description = "This ensures that the OG image tags will not appear when the HTTPS user disables Open Graph."
 	@priority = "5"
+	@refactorneeded
 	test DisableAfterAddingImage {
 		property test.name.skip.portal.instance = "OpenGraphImages#DisableAfterAddingImage";
 
@@ -394,6 +403,7 @@ definition {
 
 	@description = "This ensures that users can introduce an alternative text for the image."
 	@priority = "5"
+	@refactorneeded
 	test EditAltDescription {
 		property portal.acceptance = "true";
 
@@ -431,6 +441,7 @@ definition {
 
 	@description = "This ensures that the HTTPS users can customize OG image tags and generate special tags."
 	@priority = "5"
+	@refactorneeded
 	test ViewImageWithMetaTags {
 		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "OpenGraphImages#ViewImageWithMetaTags";
@@ -462,6 +473,7 @@ definition {
 
 	@description = "This ensures that the users can introduce an alternative text with translated language for the image."
 	@priority = "4"
+	@refactorneeded
 	test ViewTranslatedAltDescription {
 		var portalURL = PropsUtil.get("portal.url");
 

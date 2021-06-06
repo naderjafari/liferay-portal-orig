@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -47,7 +49,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("Index")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Index")
-public class Index {
+public class Index implements Serializable {
 
 	public static Index toDTO(String json) {
 		return ObjectMapperUtil.readValue(Index.class, json);
@@ -218,6 +220,7 @@ public class Index {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.Index",
 		name = "x-class-name"
 	)
@@ -287,7 +290,7 @@ public class Index {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -326,7 +329,7 @@ public class Index {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

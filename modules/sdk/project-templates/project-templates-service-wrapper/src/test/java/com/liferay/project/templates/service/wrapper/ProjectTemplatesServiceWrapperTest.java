@@ -14,6 +14,9 @@
 
 package com.liferay.project.templates.service.wrapper;
 
+import aQute.bnd.version.Version;
+import aQute.bnd.version.VersionRange;
+
 import com.liferay.maven.executor.MavenExecutor;
 import com.liferay.project.templates.BaseProjectTemplatesTestCase;
 import com.liferay.project.templates.extensions.util.Validator;
@@ -48,7 +51,9 @@ public class ProjectTemplatesServiceWrapperTest
 	@Parameterized.Parameters(name = "Testcase-{index}: testing {0}")
 	public static Iterable<Object[]> data() {
 		return Arrays.asList(
-			new Object[][] {{"7.0.6"}, {"7.1.3"}, {"7.2.1"}, {"7.3.2"}});
+			new Object[][] {
+				{"7.0.6"}, {"7.1.3"}, {"7.2.1"}, {"7.3.6"}, {"7.4.0"}
+			});
 	}
 
 	@BeforeClass
@@ -90,8 +95,21 @@ public class ProjectTemplatesServiceWrapperTest
 
 		testExists(gradleProjectDir, "bnd.bnd");
 
-		testContains(
-			gradleProjectDir, "build.gradle", DEPENDENCY_PORTAL_KERNEL);
+		Version version = Version.parseVersion(_liferayVersion);
+
+		VersionRange versionRange = new VersionRange("[7.0,7.3)");
+
+		if (versionRange.includes(version)) {
+			testContains(
+				gradleProjectDir, "build.gradle",
+				DEPENDENCY_ORG_OSGI_ANNOTATIONS);
+		}
+		else {
+			testContains(
+				gradleProjectDir, "build.gradle",
+				DEPENDENCY_RELEASE_PORTAL_API);
+		}
+
 		testContains(
 			gradleProjectDir,
 			"src/main/java/serviceoverride/Serviceoverride.java",
@@ -121,7 +139,7 @@ public class ProjectTemplatesServiceWrapperTest
 			File gradleOutputDir = new File(gradleProjectDir, "build/libs");
 			File mavenOutputDir = new File(mavenProjectDir, "target");
 
-			if (_liferayVersion.equals("7.3.2")) {
+			if (_liferayVersion.equals("7.3.5")) {
 				File buildGradleFile = testExists(
 					gradleProjectDir, "build.gradle");
 				File pomXmlFile = testExists(mavenProjectDir, "pom.xml");

@@ -28,9 +28,9 @@ import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -88,13 +88,14 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 	}
 
 	public static void deleteFiles() {
-		long[] companyIds = PortalUtil.getCompanyIds();
+		CompanyLocalServiceUtil.forEachCompanyId(
+			companyId -> {
+				DLStoreUtil.deleteDirectory(
+					companyId, REPOSITORY_ID, PREVIEW_PATH);
 
-		for (long companyId : companyIds) {
-			DLStoreUtil.deleteDirectory(companyId, REPOSITORY_ID, PREVIEW_PATH);
-			DLStoreUtil.deleteDirectory(
-				companyId, REPOSITORY_ID, THUMBNAIL_PATH);
-		}
+				DLStoreUtil.deleteDirectory(
+					companyId, REPOSITORY_ID, THUMBNAIL_PATH);
+			});
 	}
 
 	@Override
@@ -337,6 +338,9 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 			DLStoreUtil.deleteFile(companyId, REPOSITORY_ID, thumbnailFilePath);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 	}
 
@@ -399,6 +403,9 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 			return fileNames.length;
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return 0;
@@ -535,12 +542,12 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 			fileIndex++;
 		}
 
-		try (InputStream is = doGetPreviewAsStream(
+		try (InputStream inputStream = doGetPreviewAsStream(
 				fileVersion, fileIndex, previewType)) {
 
 			exportBinary(
-				portletDataContext, fileEntryElement, fileVersion, is, binPath,
-				binPathName);
+				portletDataContext, fileEntryElement, fileVersion, inputStream,
+				binPath, binPathName);
 		}
 	}
 
@@ -565,14 +572,16 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 			return;
 		}
 
-		try (InputStream is = doGetThumbnailAsStream(fileVersion, index)) {
+		try (InputStream inputStream = doGetThumbnailAsStream(
+				fileVersion, index)) {
+
 			String binPath = getBinPath(portletDataContext, fileEntry, index);
 
 			fileEntryElement.addAttribute(binPathName, binPath);
 
 			exportBinary(
-				portletDataContext, fileEntryElement, fileVersion, is, binPath,
-				binPathName);
+				portletDataContext, fileEntryElement, fileVersion, inputStream,
+				binPath, binPathName);
 		}
 		catch (IOException ioException) {
 			if (_log.isWarnEnabled()) {
@@ -996,12 +1005,12 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 				fileIndex++;
 			}
 
-			try (InputStream is = doGetPreviewAsStream(
+			try (InputStream inputStream = doGetPreviewAsStream(
 					fileVersion, fileIndex, previewType)) {
 
 				addFileToStore(
 					portletDataContext.getCompanyId(), PREVIEW_PATH,
-					previewFilePath, is);
+					previewFilePath, inputStream);
 			}
 		}
 	}
@@ -1034,10 +1043,10 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 
 		String binPath = fileEntryElement.attributeValue(binPathName);
 
-		try (InputStream is = portletDataContext.getZipEntryAsInputStream(
-				binPath)) {
+		try (InputStream inputStream =
+				portletDataContext.getZipEntryAsInputStream(binPath)) {
 
-			if (is == null) {
+			if (inputStream == null) {
 				return;
 			}
 
@@ -1053,7 +1062,7 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 
 			addFileToStore(
 				portletDataContext.getCompanyId(), PREVIEW_PATH,
-				previewFilePath, is);
+				previewFilePath, inputStream);
 		}
 	}
 
@@ -1079,7 +1088,9 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 				return;
 			}
 
-			try (InputStream is = doGetThumbnailAsStream(fileVersion, index)) {
+			try (InputStream inputStream = doGetThumbnailAsStream(
+					fileVersion, index)) {
+
 				FileVersion importedFileVersion =
 					importedFileEntry.getFileVersion();
 
@@ -1089,7 +1100,7 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 
 				addFileToStore(
 					portletDataContext.getCompanyId(), THUMBNAIL_PATH,
-					thumbnailFilePath, is);
+					thumbnailFilePath, inputStream);
 			}
 		}
 	}
@@ -1103,10 +1114,10 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 
 		String binPath = fileEntryElement.attributeValue(binPathName);
 
-		try (InputStream is = portletDataContext.getZipEntryAsInputStream(
-				binPath)) {
+		try (InputStream inputStream =
+				portletDataContext.getZipEntryAsInputStream(binPath)) {
 
-			if (is == null) {
+			if (inputStream == null) {
 				return;
 			}
 
@@ -1115,7 +1126,7 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 
 			addFileToStore(
 				portletDataContext.getCompanyId(), THUMBNAIL_PATH,
-				thumbnailFilePath, is);
+				thumbnailFilePath, inputStream);
 		}
 	}
 
@@ -1174,9 +1185,9 @@ public abstract class DLPreviewableProcessor implements DLProcessor {
 		String destinationName, FileVersion sourceFileVersion,
 		FileVersion destinationFileVersion) {
 
-		Object[] payload = {sourceFileVersion, destinationFileVersion};
-
-		MessageBusUtil.sendMessage(destinationName, payload);
+		MessageBusUtil.sendMessage(
+			destinationName,
+			new Object[] {sourceFileVersion, destinationFileVersion});
 	}
 
 	protected void storeThumbnailImage(

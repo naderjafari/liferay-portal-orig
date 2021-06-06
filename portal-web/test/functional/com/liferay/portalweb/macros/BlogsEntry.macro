@@ -46,15 +46,32 @@ definition {
 
 			Click(locator1 = "AlloyEditor#CONTENT_ADD_MENUBAR_VIDEO");
 
-			Type(
-				locator1 = "AlloyEditor#TEXT_FORMATTING_LINK_INPUT",
-				value1 = "${embedVideo}");
+			if ("${navTab}" == "Documents and Media") {
+				ItemSelector.addVideoFromDM(
+					depotName = "${depotName}",
+					navTab = "${navTab}",
+					videoShortcutPreview = "${videoShortcutPreview}",
+					videoShortcutTitle = "${videoShortcutTitle}");
 
-			Click(locator1 = "AlloyEditor#TEXT_FORMATTING_LINK_INPUT_CONFIRM");
+				if (isSet(viewInternalVideoPreview)) {
+					Pause(locator1 = "5000");
 
-			AssertTextEquals.assertPartialText(
-				locator1 = "BlogsEntry#VIDEO_EMBED_HELP_MESSAGE",
-				value1 = "Video playback is disabled during edit mode");
+					DMDocument.viewInternalVideoPreview(videoName = "${videoName}");
+				}
+			}
+			else if (isSet(videoURL)) {
+				ItemSelector.addVideo(
+					extractedVideoShortcutTitle = "${extractedVideoShortcutTitle}",
+					videoShortcutDescription = "${videoShortcutDescription}",
+					videoShortcutPreview = "${videoShortcutPreview}",
+					videoShortcutTitle = "${videoShortcutTitle}",
+					videoURL = "${videoURL}");
+			}
+			else {
+				ItemSelector.addVideoFromURL(
+					navTab = "${navTab}",
+					videoSourceURL = "${embedVideo}");
+			}
 		}
 	}
 
@@ -82,6 +99,8 @@ definition {
 	}
 
 	macro addRelatedAsset {
+		Panel.expandPanel(panel = "Related Assets");
+
 		AssertClick(
 			locator1 = "AssetRelatedAssets#RELATED_ASSETS_SELECT",
 			value1 = "Select");
@@ -94,21 +113,64 @@ definition {
 
 		var key_assetTitle = "${assetTitle}";
 
-		SelectFrame(locator1 = "AssetRelatedAssets#SELECT_ASSET_IFRAME");
+		SelectFrame(value1 = "relative=top");
 
-		AssertClick(
-			locator1 = "AssetRelatedAssets#ASSET_TABLE_CHOOSE",
-			value1 = "${assetTitle}");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		if (isSet(depotName)) {
+			AssertClick(
+				key_breadcrumbName = "Sites and Libraries",
+				locator1 = "Breadcrumb#BREADCRUMB_ENTRY",
+				value1 = "Sites and Libraries");
+
+			AssertClick(
+				key_groupTab = "Asset Library",
+				locator1 = "ItemSelector#NAVIGATION_GROUP_TAB",
+				value1 = "Asset Library");
+
+			LexiconCard.clickCard(card = "${depotName}");
+		}
+
+		Click(
+			key_assetTitle = "${assetTitle}",
+			locator1 = "AssetRelatedAssets#ASSET_TABLE_CHECKBOX");
 
 		SelectFrame(value1 = "relative=top");
+
+		Button.clickDone();
 	}
 
 	macro addSmallImage {
-		Click(locator1 = "Button#SELECT_FILE_SMALL_IMAGE");
+		if (isSet(browseImage)) {
+			Click(locator1 = "BlogsEntry#SMALL_IMAGE_BROWSE_IMAGE");
+		}
+		else {
+			Click(locator1 = "Button#SELECT_FILE_SMALL_IMAGE");
+		}
 
-		ItemSelector.uploadFile(
-			navTab = "${navTab}",
-			uploadFileName = "${uploadFileName}");
+		if ("${navTab}" == "Documents and Media") {
+			if (isSet(depotName)) {
+				ItemSelector.selectRepositoryImage(
+					depotName = "${depotName}",
+					imageFileName = "${imageFileName}",
+					navTab = "${navTab}");
+			}
+			else if (isSet(currentSiteImage)) {
+				ItemSelector.selectDMImage(
+					imageFileName = "${imageFileName}",
+					navTab = "${navTab}");
+			}
+			else {
+				ItemSelector.uploadFile(
+					navTab = "${navTab}",
+					uploadFileName = "${uploadFileName}");
+			}
+		}
+		else {
+			ItemSelector.uploadFile(
+				navTab = "${navTab}",
+				uploadFileName = "${uploadFileName}");
+		}
 	}
 
 	macro addSubtitle {
@@ -129,15 +191,6 @@ definition {
 		BlogsNavigator.gotoEntryPG(
 			entryContent = "${entryContent}",
 			entryTitle = "${entryTitle}");
-
-		var key_entryContent = "${entryContent}";
-		var key_entryTitle = "${entryTitle}";
-
-		BlogsEntry.viewPG(
-			entryContent = "${entryContent}",
-			entryTitle = "${entryTitle}");
-
-		Pause(locator1 = "3000");
 
 		Copy(locator1 = "BlogsEntry#COMMENTS_TRACKBACK_URL");
 
@@ -199,7 +252,11 @@ definition {
 	macro editContentViaCardViewPG {
 		MouseOver(locator1 = "Portlet#PORTLET_CONTENT");
 
-		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Edit");
+		Click(
+			key_entryTitle = "${entryTitle}",
+			locator1 = "Blogs#WIDGET_VIEW_ENTRY_ELLIPSIS");
+
+		MenuItem.clickNoError(menuItem = "Edit");
 
 		BlogsEntry.editContent(
 			entryContent = "${entryContent}",
@@ -301,16 +358,10 @@ definition {
 		}
 
 		if (isSet(permissionDefinitionKey)) {
-			if (IsNotVisible(locator1 = "AssetPermissions#HIDE_OPTIONS_LINK")) {
-				AssertClick.assertPartialTextClickAt(
-					locator1 = "AssetPermissions#MORE_OPTIONS_LINK",
-					value1 = "More Options");
-			}
-
-			var key_permissionDefinitionKey = "${permissionDefinitionKey}";
-			var key_roleTitle = "${roleTitle}";
-
-			Check(locator1 = "AssetPermissions#PERMISSIONS_CHECKBOX");
+			PermissionsInline.addOrRemoveEntryPermissionsFromAllRoles(
+				addOrRemoveViewPermission = "${addOrRemoveViewPermission}",
+				key_roleTitle = "${roleTitle}",
+				permissionDefinitionKeyList = "${permissionDefinitionKey}");
 		}
 	}
 
@@ -440,11 +491,7 @@ definition {
 			locator1 = "Button#PUBLISH",
 			value1 = "Publish");
 
-		Alert.viewRequestFailedToComplete();
-
-		AssertTextEquals.assertPartialText(
-			locator1 = "Message#ERROR_ENTER_A_VALID_TITLE",
-			value1 = "Please enter a valid title.");
+		Alert.viewSuccessMessage();
 	}
 
 	macro publishWithWorkflow {
@@ -457,16 +504,25 @@ definition {
 		Alert.viewSuccessMessage();
 	}
 
-	macro removeSmallImage {
+	macro removeCoverImage {
 		Click(locator1 = "Button#REMOVE_IMAGE");
+
+		AssertElementNotPresent(
+			key_coverImageName = "${coverImageName}",
+			locator1 = "BlogsEntry#ENTRY_COVER_IMAGE_UNPUBLISHED");
+	}
+
+	macro removeSmallImage {
+		if (isSet(images)) {
+			Click(locator1 = "Button#REMOVE_IMAGE_LAST");
+		}
+		else {
+			Click(locator1 = "Button#REMOVE_IMAGE");
+		}
 
 		AssertElementNotPresent(
 			key_smallImage = "${uploadFileName}",
 			locator1 = "BlogsEntry#SMALL_IMAGE");
-
-		AssertTextEquals(
-			locator1 = "Button#SELECT",
-			value1 = "Select File");
 	}
 
 	macro removeViewPermissionsPG {
@@ -493,9 +549,7 @@ definition {
 	}
 
 	macro saveAsDraft {
-		AssertClick(
-			locator1 = "Button#SAVE_AS_DRAFT",
-			value1 = "Save as Draft");
+		Click(locator1 = "Button#SAVE_AS_DRAFT");
 
 		Alert.viewSuccessMessage();
 	}
@@ -540,7 +594,17 @@ definition {
 		var key_entryContent = "${entryContent}";
 		var key_entryTitle = "${entryTitle}";
 
-		Search.searchCP(searchTerm = "${entrySearchTerm}");
+		AssertElementPresent(locator1 = "Blogs#SEARCH_KEYWORDS");
+
+		Type(
+			locator1 = "Blogs#SEARCH_KEYWORDS",
+			value1 = "${entrySearchTerm}");
+
+		KeyPress(
+			locator1 = "Blogs#SEARCH_KEYWORDS",
+			value1 = "\RETURN");
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
 
 		Blogs.viewEntryTitle(entryTitle = "${entryTitle}");
 	}
@@ -549,7 +613,17 @@ definition {
 		var key_entryContent = "${entryContent}";
 		var key_entryTitle = "${entryTitle}";
 
-		Search.searchCP(searchTerm = "${entrySearchTerm}");
+		AssertElementPresent(locator1 = "Blogs#SEARCH_KEYWORDS");
+
+		Type(
+			locator1 = "Blogs#SEARCH_KEYWORDS",
+			value1 = "${entrySearchTerm}");
+
+		KeyPress(
+			locator1 = "Blogs#SEARCH_KEYWORDS",
+			value1 = "\RETURN");
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
 
 		AssertTextEquals(
 			locator1 = "Message#EMPTY_INFO",
@@ -717,9 +791,14 @@ definition {
 		}
 
 		if (isSet(embedVideo)) {
-			AssertElementPresent(
-				key_service = "youtube",
-				locator1 = "BlogsEntry#CONTENT_VIDEO");
+			if ("${internalVideo}" == "true") {
+				DMDocument.viewInternalVideoPreview(videoName = "${videoName}");
+			}
+			else {
+				AssertElementPresent(
+					key_service = "youtube",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
 		}
 
 		if (isSet(entryContent)) {
@@ -768,17 +847,17 @@ definition {
 	}
 
 	macro viewEntryPG {
-		var key_entryContent = "${entryContent}";
-		var key_entrySubtitle = "${entrySubtitle}";
 		var key_entryTitle = "${entryTitle}";
 
-		Pause(locator1 = "3000");
+		AssertElementPresent(locator1 = "BlogsEntry#TITLE");
 
 		AssertTextEquals(
 			locator1 = "BlogsEntry#TITLE",
 			value1 = "${entryTitle}");
 
 		if (isSet(entrySubtitle)) {
+			var key_entrySubtitle = "${entrySubtitle}";
+
 			AssertTextEquals(
 				locator1 = "BlogsEntry#SUBTITLE",
 				value1 = "${entrySubtitle}");
@@ -791,12 +870,29 @@ definition {
 		}
 
 		if (isSet(embedVideo)) {
-			AssertElementPresent(
-				key_service = "youtube",
-				locator1 = "BlogsEntry#CONTENT_VIDEO");
+			if ("${embedVideo}" == "twitch") {
+				AssertElementPresent(
+					key_service = "twitch",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
+			else if ("${embedVideo}" == "vimeo") {
+				AssertVisible(
+					key_service = "vimeo",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
+			else if ("${internalVideo}" == "true") {
+				DMDocument.viewInternalVideoPreview(videoName = "${videoName}");
+			}
+			else {
+				AssertElementPresent(
+					key_service = "youtube",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
 		}
 
 		if (isSet(entryContent)) {
+			var key_entryContent = "${entryContent}";
+
 			AssertTextEquals(
 				locator1 = "BlogsEntry#CONTENT",
 				value1 = "${entryContent}");
@@ -819,7 +915,7 @@ definition {
 				locator1 = "BlogsEntry#CONTENT_LINK",
 				value1 = "${entryContent}");
 
-			AssertLocation(value1 = "${entryExternalURL}/");
+			AssertLocation.assertPartialLocation(value1 = "${entryExternalURL}");
 		}
 
 		if (isSet(entryInlineImage)) {
@@ -852,7 +948,7 @@ definition {
 		AssetPublisherPortlet.clickAssetTitle(assetTitle = "${entryTitle}");
 
 		AssertTextEquals.assertPartialText(
-			locator1 = "APAsset#ASSET_TITLE_HEADER",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
 			value1 = "${entryTitle}");
 
 		AssertTextEquals.assertPartialText(
@@ -948,7 +1044,11 @@ definition {
 	macro viewPermissionsPG {
 		Portlet.mouseOverPortletTitle(portletTitleName = "Blogs");
 
-		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Permissions");
+		Click(
+			key_entryTitle = "${entryTitle}",
+			locator1 = "Blogs#WIDGET_VIEW_ENTRY_ELLIPSIS");
+
+		MenuItem.clickNoError(menuItem = "Permissions");
 
 		IFrame.selectPermissionsFrame();
 
@@ -959,9 +1059,17 @@ definition {
 		var key_entryContent = "${entryContent}";
 		var key_entryTitle = "${entryTitle}";
 
-		AssertTextEquals(
-			locator1 = "BlogsEntry#TITLE",
-			value1 = "${entryTitle}");
+		if (isSet(entryCardTitle)) {
+			AssertTextEquals(
+				key_entryTitle = "${entryCardTitle}",
+				locator1 = "BlogsEntry#TITLE_CARD",
+				value1 = "${entryCardTitle}");
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "BlogsEntry#TITLE",
+				value1 = "${entryTitle}");
+		}
 
 		if (isSet(entrySubtitle)) {
 			AssertTextEquals(
@@ -1003,7 +1111,7 @@ definition {
 			value1 = "${entryTitle}");
 
 		AssertTextEquals.assertPartialText(
-			locator1 = "APAsset#ASSET_TITLE_HEADER",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
 			value1 = "${entryTitle}");
 
 		AssertTextEquals.assertPartialText(
@@ -1076,7 +1184,11 @@ definition {
 		}
 
 		else {
-			AssertElementPresent(locator1 = "Comments#COMMENT_FIELD");
+			SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
+			AssertElementPresent(locator1 = "CKEditor#BODY");
+
+			SelectFrame(value1 = "relative=top");
 		}
 
 		var key_entryTitle = "${entryTitle}";
@@ -1200,8 +1312,6 @@ definition {
 		AssertClick(
 			locator1 = "BlogsEntry#TITLE_LINK",
 			value1 = "${entryTitle}");
-
-		Pause(locator1 = "3000");
 
 		AssertTextEquals(
 			locator1 = "BlogsEntry#TITLE",

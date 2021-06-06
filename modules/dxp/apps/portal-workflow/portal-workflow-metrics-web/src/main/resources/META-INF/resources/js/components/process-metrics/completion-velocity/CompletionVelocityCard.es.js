@@ -10,9 +10,10 @@
  */
 
 import ClayLayout from '@clayui/layout';
+import ClayPanel from '@clayui/panel';
 import React, {useMemo} from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
+import PanelHeaderWithOptions from '../../../shared/components/panel-header-with-options/PanelHeaderWithOptions.es';
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
 import {useFetch} from '../../../shared/hooks/useFetch.es';
 import {useFilter} from '../../../shared/hooks/useFilter.es';
@@ -20,9 +21,9 @@ import TimeRangeFilter from '../../filter/TimeRangeFilter.es';
 import VelocityUnitFilter from '../../filter/VelocityUnitFilter.es';
 import {getTimeRangeParams} from '../../filter/util/timeRangeUtil.es';
 import {getVelocityUnits} from '../../filter/util/velocityUnitUtil.es';
-import {Body} from './CompletionVelocityCardBody.es';
+import Body from './CompletionVelocityCardBody.es';
 
-const CompletionVelocityCard = ({routeParams}) => {
+function CompletionVelocityCard({routeParams}) {
 	const {processId} = routeParams;
 	const filterKeys = ['timeRange', 'velocityUnit'];
 	const prefixKey = 'completion';
@@ -46,19 +47,13 @@ const CompletionVelocityCard = ({routeParams}) => {
 		timeRange,
 	]);
 
-	const defaultUnit = useMemo(
-		() => velocityUnits.find((unit) => unit.defaultVelocityUnit) || {},
-		[velocityUnits]
-	);
+	const defaultUnit =
+		velocityUnits.find((unit) => unit.defaultVelocityUnit) || {};
 
-	const velocityUnit = useMemo(
-		() => velocityUnits.find((unit) => unit.key === velocity),
-		[velocity, velocityUnits]
-	);
+	const velocityUnit =
+		velocityUnits.find((unit) => unit.key === velocity) || defaultUnit;
 
-	const currentVelocityUnit = velocityUnit || defaultUnit;
-
-	const {key: unit} = currentVelocityUnit;
+	const {key: unit} = velocityUnit;
 
 	const {data, fetchData} = useFetch({
 		params: {
@@ -78,7 +73,7 @@ const CompletionVelocityCard = ({routeParams}) => {
 
 	return (
 		<PromisesResolver promises={promises}>
-			<Panel>
+			<ClayPanel className="mt-4">
 				<CompletionVelocityCard.Header
 					disableFilters={filtersError}
 					prefixKey={prefixKey}
@@ -88,20 +83,20 @@ const CompletionVelocityCard = ({routeParams}) => {
 				<CompletionVelocityCard.Body
 					data={data}
 					timeRange={timeRange}
-					velocityUnit={currentVelocityUnit}
+					velocityUnit={velocityUnit}
 				/>
-			</Panel>
+			</ClayPanel>
 		</PromisesResolver>
 	);
-};
+}
 
-const Header = ({disableFilters, prefixKey, timeRange}) => {
+function Header({disableFilters, prefixKey, timeRange}) {
 	return (
-		<Panel.HeaderWithOptions
+		<PanelHeaderWithOptions
+			className="dashboard-panel-header pb-0"
 			description={Liferay.Language.get(
 				'completion-velocity-description'
 			)}
-			elementClasses="dashboard-panel-header pb-0"
 			title={Liferay.Language.get('completion-velocity')}
 		>
 			<ClayLayout.ContentCol className="m-0 management-bar management-bar-light navbar">
@@ -113,16 +108,16 @@ const Header = ({disableFilters, prefixKey, timeRange}) => {
 					/>
 
 					<VelocityUnitFilter
-						className={'pl-3'}
+						className="pl-3"
 						disabled={disableFilters}
 						prefixKey={prefixKey}
 						timeRange={timeRange}
 					/>
 				</ul>
 			</ClayLayout.ContentCol>
-		</Panel.HeaderWithOptions>
+		</PanelHeaderWithOptions>
 	);
-};
+}
 
 CompletionVelocityCard.Header = Header;
 CompletionVelocityCard.Body = Body;

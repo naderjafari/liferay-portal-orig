@@ -18,11 +18,11 @@ import {useFetch} from '../../../shared/hooks/useFetch.es';
 import {usePageTitle} from '../../../shared/hooks/usePageTitle.es';
 import {SLAContext} from '../SLAContainer.es';
 import BlockedSLAInfo from './BlockedSLAInfo.es';
-import {Body} from './SLAListPageBody.es';
-import {Header} from './SLAListPageHeader.es';
+import Body from './SLAListPageBody.es';
+import Header from './SLAListPageHeader.es';
 import DeleteSLAModal from './modal/DeleteSLAModal.es';
 
-const SLAListPage = ({page, pageSize, processId}) => {
+function SLAListPage({page, pageSize, processId}) {
 	const {SLAUpdated, setSLAUpdated} = useContext(SLAContext);
 
 	const [itemToRemove, setItemToRemove] = useState(null);
@@ -62,7 +62,6 @@ const SLAListPage = ({page, pageSize, processId}) => {
 
 				{SLAUpdated && (
 					<ClayAlert
-						data-testid="updateAlert"
 						displayType="info"
 						onClose={() => setSLAUpdated(false)}
 						title={Liferay.Language.get('info')}
@@ -89,7 +88,7 @@ const SLAListPage = ({page, pageSize, processId}) => {
 			</ClayLayout.ContainerFluid>
 		</SLAListPageContext.Provider>
 	);
-};
+}
 
 const SLAListPageContext = createContext();
 

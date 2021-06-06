@@ -26,6 +26,20 @@ public class PluginsTopLevelBuild
 	}
 
 	@Override
+	public String getBaseGitRepositoryName() {
+		return "liferay-plugins-ee";
+	}
+
+	@Override
+	public String getBranchName() {
+		return getParameterValue("TEST_PLUGINS_BRANCH_NAME");
+	}
+
+	public String getPluginName() {
+		return getParameterValue("TEST_PLUGIN_NAME");
+	}
+
+	@Override
 	public BranchInformation getPluginsBranchInformation() {
 		return getBranchInformation("plugins");
 	}
@@ -48,6 +62,11 @@ public class PluginsTopLevelBuild
 	@Override
 	public BranchInformation getPortalBranchInformation() {
 		return getBranchInformation("portal");
+	}
+
+	@Override
+	public String getTestSuiteName() {
+		return getPluginName();
 	}
 
 }

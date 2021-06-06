@@ -12,7 +12,7 @@
  * details.
  */
 
-(function (A, Liferay) {
+(function (A) {
 	var Lang = A.Lang;
 
 	var Util = Liferay.Util;
@@ -412,7 +412,6 @@
 
 					Liferay.Util.openToast({
 						message,
-						title: Liferay.Language.get('error'),
 						type: 'danger',
 					});
 				});
@@ -677,4 +676,4 @@
 	};
 
 	Liferay.Portlet = Portlet;
-})(AUI(), Liferay);
+})(AUI());

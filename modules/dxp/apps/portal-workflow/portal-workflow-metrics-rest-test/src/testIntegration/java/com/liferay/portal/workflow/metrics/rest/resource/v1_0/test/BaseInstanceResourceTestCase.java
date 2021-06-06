@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 
+import com.liferay.petra.function.UnsafeTriConsumer;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -52,11 +53,14 @@ import com.liferay.portal.workflow.metrics.rest.client.serdes.v1_0.InstanceSerDe
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +72,7 @@ import javax.annotation.Generated;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang.time.DateUtils;
 
@@ -109,7 +114,9 @@ public abstract class BaseInstanceResourceTestCase {
 
 		InstanceResource.Builder builder = InstanceResource.builder();
 
-		instanceResource = builder.locale(
+		instanceResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -199,9 +206,9 @@ public abstract class BaseInstanceResourceTestCase {
 	@Test
 	public void testGetProcessInstancesPage() throws Exception {
 		Page<Instance> page = instanceResource.getProcessInstancesPage(
-			testGetProcessInstancesPage_getProcessId(), null, null, null,
+			testGetProcessInstancesPage_getProcessId(), null, null,
 			RandomTestUtil.nextDate(), RandomTestUtil.nextDate(), null, null,
-			Pagination.of(1, 2));
+			null, Pagination.of(1, 2), null);
 
 		Assert.assertEquals(0, page.getTotalCount());
 
@@ -209,14 +216,14 @@ public abstract class BaseInstanceResourceTestCase {
 		Long irrelevantProcessId =
 			testGetProcessInstancesPage_getIrrelevantProcessId();
 
-		if ((irrelevantProcessId != null)) {
+		if (irrelevantProcessId != null) {
 			Instance irrelevantInstance =
 				testGetProcessInstancesPage_addInstance(
 					irrelevantProcessId, randomIrrelevantInstance());
 
 			page = instanceResource.getProcessInstancesPage(
 				irrelevantProcessId, null, null, null, null, null, null, null,
-				Pagination.of(1, 2));
+				Pagination.of(1, 2), null);
 
 			Assert.assertEquals(1, page.getTotalCount());
 
@@ -234,7 +241,7 @@ public abstract class BaseInstanceResourceTestCase {
 
 		page = instanceResource.getProcessInstancesPage(
 			processId, null, null, null, null, null, null, null,
-			Pagination.of(1, 2));
+			Pagination.of(1, 2), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -259,7 +266,7 @@ public abstract class BaseInstanceResourceTestCase {
 
 		Page<Instance> page1 = instanceResource.getProcessInstancesPage(
 			processId, null, null, null, null, null, null, null,
-			Pagination.of(1, 2));
+			Pagination.of(1, 2), null);
 
 		List<Instance> instances1 = (List<Instance>)page1.getItems();
 
@@ -267,7 +274,7 @@ public abstract class BaseInstanceResourceTestCase {
 
 		Page<Instance> page2 = instanceResource.getProcessInstancesPage(
 			processId, null, null, null, null, null, null, null,
-			Pagination.of(2, 2));
+			Pagination.of(2, 2), null);
 
 		Assert.assertEquals(3, page2.getTotalCount());
 
@@ -277,11 +284,129 @@ public abstract class BaseInstanceResourceTestCase {
 
 		Page<Instance> page3 = instanceResource.getProcessInstancesPage(
 			processId, null, null, null, null, null, null, null,
-			Pagination.of(1, 3));
+			Pagination.of(1, 3), null);
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(instance1, instance2, instance3),
 			(List<Instance>)page3.getItems());
+	}
+
+	@Test
+	public void testGetProcessInstancesPageWithSortDateTime() throws Exception {
+		testGetProcessInstancesPageWithSort(
+			EntityField.Type.DATE_TIME,
+			(entityField, instance1, instance2) -> {
+				BeanUtils.setProperty(
+					instance1, entityField.getName(),
+					DateUtils.addMinutes(new Date(), -2));
+			});
+	}
+
+	@Test
+	public void testGetProcessInstancesPageWithSortInteger() throws Exception {
+		testGetProcessInstancesPageWithSort(
+			EntityField.Type.INTEGER,
+			(entityField, instance1, instance2) -> {
+				BeanUtils.setProperty(instance1, entityField.getName(), 0);
+				BeanUtils.setProperty(instance2, entityField.getName(), 1);
+			});
+	}
+
+	@Test
+	public void testGetProcessInstancesPageWithSortString() throws Exception {
+		testGetProcessInstancesPageWithSort(
+			EntityField.Type.STRING,
+			(entityField, instance1, instance2) -> {
+				Class<?> clazz = instance1.getClass();
+
+				String entityFieldName = entityField.getName();
+
+				Method method = clazz.getMethod(
+					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
+
+				Class<?> returnType = method.getReturnType();
+
+				if (returnType.isAssignableFrom(Map.class)) {
+					BeanUtils.setProperty(
+						instance1, entityFieldName,
+						Collections.singletonMap("Aaa", "Aaa"));
+					BeanUtils.setProperty(
+						instance2, entityFieldName,
+						Collections.singletonMap("Bbb", "Bbb"));
+				}
+				else if (entityFieldName.contains("email")) {
+					BeanUtils.setProperty(
+						instance1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+					BeanUtils.setProperty(
+						instance2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+				}
+				else {
+					BeanUtils.setProperty(
+						instance1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+					BeanUtils.setProperty(
+						instance2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+				}
+			});
+	}
+
+	protected void testGetProcessInstancesPageWithSort(
+			EntityField.Type type,
+			UnsafeTriConsumer<EntityField, Instance, Instance, Exception>
+				unsafeTriConsumer)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
+
+		if (entityFields.isEmpty()) {
+			return;
+		}
+
+		Long processId = testGetProcessInstancesPage_getProcessId();
+
+		Instance instance1 = randomInstance();
+		Instance instance2 = randomInstance();
+
+		for (EntityField entityField : entityFields) {
+			unsafeTriConsumer.accept(entityField, instance1, instance2);
+		}
+
+		instance1 = testGetProcessInstancesPage_addInstance(
+			processId, instance1);
+
+		instance2 = testGetProcessInstancesPage_addInstance(
+			processId, instance2);
+
+		for (EntityField entityField : entityFields) {
+			Page<Instance> ascPage = instanceResource.getProcessInstancesPage(
+				processId, null, null, null, null, null, null, null,
+				Pagination.of(1, 2), entityField.getName() + ":asc");
+
+			assertEquals(
+				Arrays.asList(instance1, instance2),
+				(List<Instance>)ascPage.getItems());
+
+			Page<Instance> descPage = instanceResource.getProcessInstancesPage(
+				processId, null, null, null, null, null, null, null,
+				Pagination.of(1, 2), entityField.getName() + ":desc");
+
+			assertEquals(
+				Arrays.asList(instance2, instance1),
+				(List<Instance>)descPage.getItems());
+		}
 	}
 
 	protected Instance testGetProcessInstancesPage_addInstance(
@@ -507,7 +632,7 @@ public abstract class BaseInstanceResourceTestCase {
 		}
 	}
 
-	protected void assertValid(Instance instance) {
+	protected void assertValid(Instance instance) throws Exception {
 		boolean valid = true;
 
 		if (instance.getDateCreated() == null) {
@@ -694,7 +819,7 @@ public abstract class BaseInstanceResourceTestCase {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
 		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+				getDeclaredFields(
 					com.liferay.portal.workflow.metrics.rest.dto.v1_0.Instance.
 						class)) {
 
@@ -729,7 +854,7 @@ public abstract class BaseInstanceResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -983,9 +1108,22 @@ public abstract class BaseInstanceResourceTestCase {
 					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected Field[] getDeclaredFields(Class clazz) throws Exception {
+		Stream<Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -1347,12 +1485,12 @@ public abstract class BaseInstanceResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1362,10 +1500,10 @@ public abstract class BaseInstanceResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}

@@ -12,11 +12,14 @@
  * details.
  */
 
+import {addItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {
+	errorToast,
+	successToast,
+} from 'data-engine-js-components-web/js/utils/toast.es';
 import {DataLayoutBuilderActions} from 'data-engine-taglib';
 import {useContext} from 'react';
 
-import {addItem} from '../../utils/client.es';
-import {errorToast, successToast} from '../../utils/toast.es';
 import FormViewContext from './FormViewContext.es';
 
 export default ({dataLayoutBuilder}) => {
@@ -70,6 +73,7 @@ export default ({dataLayoutBuilder}) => {
 		)
 			.then((dataDefinitionFieldSet) => {
 				const ddmStructureId = dataDefinitionFieldSet.id;
+
 				dispatch({
 					payload: {
 						fieldSets: [...fieldSets, dataDefinitionFieldSet],
@@ -106,11 +110,14 @@ export default ({dataLayoutBuilder}) => {
 					type: DataLayoutBuilderActions.UPDATE_DATA_DEFINITION,
 				});
 
-				dataLayoutBuilder.dispatch('fieldEdited', {
-					fieldName,
-					propertyName: 'ddmStructureId',
-					propertyValue: ddmStructureId,
-				});
+				dataLayoutBuilder.formBuilderWithLayoutProvider.refs.layoutProvider?.dispatch?.(
+					'fieldEdited',
+					{
+						fieldName,
+						propertyName: 'ddmStructureId',
+						propertyValue: ddmStructureId,
+					}
+				);
 
 				successToast(Liferay.Language.get('fieldset-saved'));
 			})

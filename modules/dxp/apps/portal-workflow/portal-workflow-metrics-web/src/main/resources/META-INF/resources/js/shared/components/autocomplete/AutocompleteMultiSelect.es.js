@@ -22,12 +22,12 @@ import {
 import {Autocomplete} from './Autocomplete.es';
 
 const AutocompleteMultiSelect = ({
-	items,
 	fieldId = 'id',
 	fieldName = 'name',
 	id = '',
-	placeholder = Liferay.Language.get('select-or-type-an-option'),
+	items,
 	onChange,
+	placeholder = Liferay.Language.get('select-or-type-an-option'),
 	selectedItems = [],
 }) => {
 	const [active, setActive] = useState(false);
@@ -44,8 +44,8 @@ const AutocompleteMultiSelect = ({
 
 	const handleBlur = () => {
 		setActive(false);
-		setHighlighted(false);
 		setCurrentIndex(-1);
+		setHighlighted(false);
 		setSearch('');
 	};
 
@@ -59,9 +59,18 @@ const AutocompleteMultiSelect = ({
 	);
 
 	const handleFocus = () => {
-		setHighlighted(true);
 		setActive(true);
+		setHighlighted(true);
 	};
+
+	const handleSelect = useCallback(
+		(item) => {
+			const newSelectedItems = [...selectedItems, item];
+
+			handleChange(newSelectedItems);
+		},
+		[handleChange, selectedItems]
+	);
 
 	const handleKeyDown = useCallback(
 		({keyCode}) => {
@@ -72,23 +81,20 @@ const AutocompleteMultiSelect = ({
 
 			const item = filteredItems[currentIndex];
 
-			if (keyCode === keyTab) {
-				handleBlur();
-			}
-
-			if (keyCode === keyEnter && item) {
-				handleSelect(item);
-			}
-
-			if (keyCode === keyArrowUp && currentIndex > 0) {
-				setCurrentIndex(currentIndex - 1);
-			}
-
 			if (
 				keyCode === keyArrowDown &&
 				currentIndex < filteredItems.length - 1
 			) {
 				setCurrentIndex(currentIndex + 1);
+			}
+			else if (keyCode === keyArrowUp && currentIndex > 0) {
+				setCurrentIndex(currentIndex - 1);
+			}
+			else if (keyCode === keyEnter && item) {
+				handleSelect(item);
+			}
+			else if (keyCode === keyTab) {
+				handleBlur();
 			}
 		},
 		[currentIndex, filteredItems, handleSelect]
@@ -104,15 +110,6 @@ const AutocompleteMultiSelect = ({
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[fieldId, selectedItems]
-	);
-
-	const handleSelect = useCallback(
-		(item) => {
-			const newSelectedItems = [...selectedItems, item];
-
-			handleChange(newSelectedItems);
-		},
-		[handleChange, selectedItems]
 	);
 
 	useEffect(() => {
@@ -167,7 +164,6 @@ const AutocompleteMultiSelect = ({
 
 					<input
 						className="form-control-inset"
-						data-testid="multiSelectInput"
 						onChange={({target}) => setSearch(target.value)}
 						onFocus={handleFocus}
 						onKeyDown={handleKeyDown}
@@ -202,20 +198,15 @@ const AutocompleteMultiSelect = ({
 	);
 };
 
-const Item = ({key, name, onRemove}) => {
+const Item = ({name, onRemove}) => {
 	return (
-		<span
-			className="label label-dismissible label-secondary"
-			data-testid="multiSelectItem"
-			key={key}
-		>
+		<span className="label label-dismissible label-secondary">
 			<span className="label-item label-item-expand">{name}</span>
 
 			<span className="label-item label-item-after">
 				<button
 					aria-label="Close"
 					className="close"
-					data-testid="multiSelectItemRemove"
 					onClick={onRemove}
 					type="button"
 				>

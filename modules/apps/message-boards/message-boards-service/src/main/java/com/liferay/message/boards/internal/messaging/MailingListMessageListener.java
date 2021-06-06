@@ -99,12 +99,18 @@ public class MailingListMessageListener extends BaseMessageListener {
 						messages, new Flags(Flags.Flag.DELETED), true);
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 
 				try {
 					folder.close(true);
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
 				}
 			}
 
@@ -113,6 +119,9 @@ public class MailingListMessageListener extends BaseMessageListener {
 					store.close();
 				}
 				catch (MessagingException messagingException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(messagingException, messagingException);
+					}
 				}
 			}
 		}
@@ -180,7 +189,6 @@ public class MailingListMessageListener extends BaseMessageListener {
 		}
 
 		long companyId = mailingListRequest.getCompanyId();
-		long groupId = mailingListRequest.getGroupId();
 
 		long categoryId = mailingListRequest.getCategoryId();
 
@@ -235,6 +243,7 @@ public class MailingListMessageListener extends BaseMessageListener {
 		serviceContext.setAddGroupPermissions(true);
 		serviceContext.setAddGuestPermissions(true);
 
+		long groupId = mailingListRequest.getGroupId();
 		String portletId = PortletProviderUtil.getPortletId(
 			MBMessage.class.getName(), PortletProvider.Action.VIEW);
 

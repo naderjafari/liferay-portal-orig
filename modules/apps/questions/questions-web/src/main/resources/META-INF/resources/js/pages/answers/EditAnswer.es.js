@@ -12,17 +12,21 @@
  * details.
  */
 
-import {useLazyQuery, useMutation} from '@apollo/client';
 import ClayButton from '@clayui/button';
 import ClayForm from '@clayui/form';
 import ClayIcon from '@clayui/icon';
+import {useMutation} from 'graphql-hooks';
 import React, {useContext, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../../AppContext.es';
 import QuestionsEditor from '../../components/QuestionsEditor';
 import TextLengthValidation from '../../components/TextLengthValidation.es';
-import {getMessageQuery, updateMessageQuery} from '../../utils/client.es';
+import {
+	client,
+	getMessageQuery,
+	updateMessageQuery,
+} from '../../utils/client.es';
 import {getContextLink, stripHTML} from '../../utils/utils.es';
 
 export default withRouter(
@@ -34,98 +38,94 @@ export default withRouter(
 	}) => {
 		const context = useContext(AppContext);
 
-		const [getMessage, {data}] = useLazyQuery(getMessageQuery, {
-			fetchPolicy: 'network-only',
-			variables: {friendlyUrlPath: answerId, siteKey: context.siteKey},
-		});
-
 		const [articleBody, setArticleBody] = useState('');
 
-		const [addUpdateMessage] = useMutation(updateMessageQuery, {
-			context: getContextLink(`${sectionTitle}/${questionId}`),
-			onCompleted() {
-				history.goBack();
-			},
-		});
+		const [addUpdateMessage] = useMutation(updateMessageQuery);
+
+		const [data, setData] = useState();
 
 		return (
 			<section className="c-mt-5 questions-section questions-sections-answer">
-				<div className="questions-container">
-					<div className="row">
-						<div className="c-mx-auto col-xl-10">
-							<h1>{Liferay.Language.get('edit-answer')}</h1>
+				<div className="questions-container row">
+					<div className="c-mx-auto col-xl-10">
+						<h1>{Liferay.Language.get('edit-answer')}</h1>
 
-							<ClayForm>
-								<ClayForm.Group className="c-mt-4">
-									<label htmlFor="basicInput">
-										{Liferay.Language.get('answer')}
+						<ClayForm>
+							<ClayForm.Group className="c-mt-4">
+								<label htmlFor="basicInput">
+									{Liferay.Language.get('answer')}
 
-										<span className="c-ml-2 reference-mark">
-											<ClayIcon symbol="asterisk" />
-										</span>
-									</label>
+									<span className="c-ml-2 reference-mark">
+										<ClayIcon symbol="asterisk" />
+									</span>
+								</label>
 
-									<QuestionsEditor
-										contents={
-											data &&
-											data
-												.messageBoardMessageByFriendlyUrlPath
-												.articleBody
-										}
-										onChange={(event) =>
-											setArticleBody(
-												event.editor.getData()
-											)
-										}
-										onInstanceReady={() => getMessage()}
-									/>
-
-									<ClayForm.FeedbackGroup>
-										<ClayForm.FeedbackItem>
-											<span className="small text-secondary">
-												{Liferay.Language.get(
-													'include-all-the-information-someone-would-need-to-answer-your-question'
-												)}
-											</span>
-											<TextLengthValidation
-												text={articleBody}
-											/>
-										</ClayForm.FeedbackItem>
-									</ClayForm.FeedbackGroup>
-								</ClayForm.Group>
-							</ClayForm>
-
-							<div className="c-mt-4 d-flex flex-column-reverse flex-sm-row">
-								<ClayButton
-									className="c-mt-4 c-mt-sm-0"
-									disabled={
-										!articleBody ||
-										stripHTML(articleBody).length < 15
+								<QuestionsEditor
+									contents={
+										data &&
+										data
+											.messageBoardMessageByFriendlyUrlPath
+											.articleBody
 									}
-									displayType="primary"
-									onClick={() => {
-										addUpdateMessage({
-											variables: {
-												articleBody,
-												messageBoardMessageId:
-													data
-														.messageBoardMessageByFriendlyUrlPath
-														.id,
-											},
-										});
+									onChange={(event) =>
+										setArticleBody(event.editor.getData())
+									}
+									onInstanceReady={() => {
+										client
+											.request({
+												query: getMessageQuery,
+												variables: {
+													friendlyUrlPath: answerId,
+													siteKey: context.siteKey,
+												},
+											})
+											.then(({data}) => setData(data));
 									}}
-								>
-									{Liferay.Language.get('update-your-answer')}
-								</ClayButton>
+								/>
 
-								<ClayButton
-									className="c-ml-sm-3"
-									displayType="secondary"
-									onClick={() => history.goBack()}
-								>
-									{Liferay.Language.get('cancel')}
-								</ClayButton>
-							</div>
+								<ClayForm.FeedbackGroup>
+									<ClayForm.FeedbackItem>
+										<TextLengthValidation
+											text={articleBody}
+										/>
+									</ClayForm.FeedbackItem>
+								</ClayForm.FeedbackGroup>
+							</ClayForm.Group>
+						</ClayForm>
+
+						<div className="c-mt-4 d-flex flex-column-reverse flex-sm-row">
+							<ClayButton
+								className="c-mt-4 c-mt-sm-0"
+								disabled={
+									!articleBody ||
+									stripHTML(articleBody).length < 15
+								}
+								displayType="primary"
+								onClick={() => {
+									addUpdateMessage({
+										fetchOptionsOverrides: getContextLink(
+											`${sectionTitle}/${questionId}`
+										),
+										variables: {
+											articleBody,
+											messageBoardMessageId:
+												data
+													.messageBoardMessageByFriendlyUrlPath
+													.id,
+										},
+									}).then(() => history.goBack());
+								}}
+							>
+								{Liferay.Language.get('update-your-answer')}
+							</ClayButton>
+
+							<ClayButton
+								className="c-ml-sm-3"
+								displayType="secondary"
+								onClick={() => history.goBack()}
+							>
+								{Liferay.Language.get('cancel')}
+							</ClayButton>
 						</div>
 					</div>
 				</div>

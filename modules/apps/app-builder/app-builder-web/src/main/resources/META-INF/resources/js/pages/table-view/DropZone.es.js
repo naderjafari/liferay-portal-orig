@@ -14,16 +14,24 @@
 
 import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
-import {ClayTooltipProvider} from '@clayui/tooltip';
 import classNames from 'classnames';
+import Table from 'data-engine-js-components-web/js/components/table/Table.es';
 import {DragTypes} from 'data-engine-taglib';
 import React, {useContext, useLayoutEffect, useRef, useState} from 'react';
 import {useDrop} from 'react-dnd';
 
-import Table from '../../components/table/Table.es';
 import ColumnOverlay from './ColumnOverlay.es';
 import DropZonePlaceholder from './DropZonePlaceholder.es';
 import EditTableViewContext from './EditTableViewContext.es';
+
+const generateItem = (columns) =>
+	columns.reduce(
+		(acc, column) => ({
+			...acc,
+			[column]: `-`,
+		}),
+		{}
+	);
 
 const generateItems = (columns, rows = 10) => {
 	const items = [];
@@ -35,18 +43,9 @@ const generateItems = (columns, rows = 10) => {
 	return items;
 };
 
-const generateItem = (columns) =>
-	columns.reduce(
-		(acc, column) => ({
-			...acc,
-			[column]: `-`,
-		}),
-		{}
-	);
-
 const DropZone = ({fields, onAddFieldName, onRemoveFieldName}) => {
 	const [{canDrop, overTarget}, drop] = useDrop({
-		accept: DragTypes.DRAG_FIELD_TYPE,
+		accept: DragTypes.DRAG_FIELD_TYPE_ADD,
 		collect: (monitor) => ({
 			canDrop: monitor.canDrop(),
 			overTarget: monitor.isOver(),
@@ -68,7 +67,9 @@ const DropZone = ({fields, onAddFieldName, onRemoveFieldName}) => {
 
 	const [
 		{
+			dataDefinition: {defaultLanguageId},
 			dataListView: {appliedFilters},
+			editingLanguageId,
 		},
 	] = useContext(EditTableViewContext);
 
@@ -93,6 +94,9 @@ const DropZone = ({fields, onAddFieldName, onRemoveFieldName}) => {
 		);
 	}
 
+	const getLocalizableValue = (label) =>
+		label[editingLanguageId] || label[defaultLanguageId];
+
 	return (
 		<div ref={containerRef}>
 			<Table
@@ -104,32 +108,30 @@ const DropZone = ({fields, onAddFieldName, onRemoveFieldName}) => {
 						<ClayLayout.ContainerFluid className="p-0">
 							<ClayLayout.ContentRow verticalAlign="center">
 								<ClayLayout.ContentCol expand>
-									{label ? label.en_US : ''}
+									{getLocalizableValue(label)}
 								</ClayLayout.ContentCol>
 
 								{Object.prototype.hasOwnProperty.call(
 									appliedFilters,
 									name
 								) && (
-									<ClayTooltipProvider>
-										<ClayLayout.ContentCol>
-											<ClayIcon
-												data-tooltip-align="top"
-												data-tooltip-delay="200"
-												symbol="filter"
-												title={Liferay.Language.get(
-													'this-column-has-applied-filters'
-												)}
-											/>
-										</ClayLayout.ContentCol>
-									</ClayTooltipProvider>
+									<ClayLayout.ContentCol>
+										<ClayIcon
+											data-tooltip-align="top"
+											data-tooltip-delay="200"
+											symbol="filter"
+											title={Liferay.Language.get(
+												'this-column-has-applied-filters'
+											)}
+										/>
+									</ClayLayout.ContentCol>
 								)}
 							</ClayLayout.ContentRow>
 						</ClayLayout.ContainerFluid>
 					),
 				}))}
 				items={generateItems(
-					fields.map(({label}) => (label ? label.en_US : ''))
+					fields.map(({label}) => getLocalizableValue(label))
 				)}
 				ref={drop}
 			/>

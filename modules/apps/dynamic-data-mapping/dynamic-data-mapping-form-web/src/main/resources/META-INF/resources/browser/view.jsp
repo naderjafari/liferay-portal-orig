@@ -26,7 +26,6 @@
 	disabled="<%= ddmFormBrowserDisplayContext.isDisabledManagementBar() %>"
 	filterDropdownItems="<%= ddmFormBrowserDisplayContext.getFilterItemsDropdownItems() %>"
 	itemsTotal="<%= ddmFormBrowserDisplayContext.getTotalItems() %>"
-	namespace="<%= liferayPortletResponse.getNamespace() %>"
 	searchActionURL="<%= ddmFormBrowserDisplayContext.getSearchActionURL() %>"
 	searchContainerId="<%= ddmFormBrowserDisplayContext.getSearchContainerId() %>"
 	searchFormName="searchFm"
@@ -44,25 +43,25 @@
 		>
 			<liferay-ui:search-container-row
 				className="com.liferay.dynamic.data.mapping.model.DDMFormInstance"
-				cssClass="entry-display-style"
 				keyProperty="formInstanceId"
 				modelVar="formInstance"
 			>
-
-				<%
-				Map<String, Object> data = HashMapBuilder.<String, Object>put(
-					"forminstanceid", formInstance.getFormInstanceId()
-				).put(
-					"forminstancename", formInstance.getName(locale)
-				).build();
-				%>
-
 				<liferay-ui:search-container-column-text
 					cssClass="content-column title-column"
 					name="name"
 					truncate="<%= true %>"
 				>
-					<aui:a cssClass="selector-button" data="<%= data %>" href="javascript:;">
+					<aui:a
+						cssClass="selector-button"
+						data='<%=
+							HashMapBuilder.<String, Object>put(
+								"forminstanceid", formInstance.getFormInstanceId()
+							).put(
+								"forminstancename", formInstance.getName(locale)
+							).build()
+						%>'
+						href="javascript:;"
+					>
 						<%= HtmlUtil.escape(formInstance.getName(locale)) %>
 					</aui:a>
 				</liferay-ui:search-container-column-text>
@@ -88,10 +87,3 @@
 		</liferay-ui:search-container>
 	</aui:form>
 </clay:container-fluid>
-
-<aui:script>
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />selectDDMFormFm',
-		'<%= HtmlUtil.escapeJS(ddmFormBrowserDisplayContext.getEventName()) %>'
-	);
-</aui:script>

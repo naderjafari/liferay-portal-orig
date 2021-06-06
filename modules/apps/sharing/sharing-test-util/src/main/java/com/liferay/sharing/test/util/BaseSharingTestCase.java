@@ -178,14 +178,14 @@ public abstract class BaseSharingTestCase<T extends ClassedModel> {
 			ServiceContextTestUtil.getServiceContext(
 				_group.getGroupId(), _user.getUserId());
 
-		T model = getModel(_user, _group);
+		T model1 = getModel(_user, _group);
 
-		long classNameId = _classNameLocalService.getClassNameId(
-			model.getModelClassName());
-		long classPK = (Long)model.getPrimaryKeyObj();
+		long classNameId1 = _classNameLocalService.getClassNameId(
+			model1.getModelClassName());
+		long classPK1 = (Long)model1.getPrimaryKeyObj();
 
 		_sharingEntryLocalService.addSharingEntry(
-			_user.getUserId(), _groupUser.getUserId(), classNameId, classPK,
+			_user.getUserId(), _groupUser.getUserId(), classNameId1, classPK1,
 			_group.getGroupId(), true,
 			Arrays.asList(SharingEntryAction.UPDATE, SharingEntryAction.VIEW),
 			null, serviceContext);
@@ -209,7 +209,7 @@ public abstract class BaseSharingTestCase<T extends ClassedModel> {
 		Assert.assertEquals(
 			toUserSharingEntries.toString(), 2, toUserSharingEntries.size());
 
-		deleteModel(model);
+		deleteModel(model1);
 
 		toUserSharingEntries =
 			_sharingEntryLocalService.getToUserSharingEntries(

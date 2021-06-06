@@ -20,6 +20,8 @@ import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -44,25 +46,41 @@ public class StyleBookEntryVersionWrapper
 	public Map<String, Object> getModelAttributes() {
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
+		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("styleBookEntryVersionId", getStyleBookEntryVersionId());
 		attributes.put("version", getVersion());
+		attributes.put("uuid", getUuid());
 		attributes.put("styleBookEntryId", getStyleBookEntryId());
 		attributes.put("groupId", getGroupId());
 		attributes.put("companyId", getCompanyId());
 		attributes.put("userId", getUserId());
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
+		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("defaultStyleBookEntry", isDefaultStyleBookEntry());
+		attributes.put("frontendTokensValues", getFrontendTokensValues());
 		attributes.put("name", getName());
 		attributes.put("previewFileEntryId", getPreviewFileEntryId());
 		attributes.put("styleBookEntryKey", getStyleBookEntryKey());
-		attributes.put("tokensValues", getTokensValues());
 
 		return attributes;
 	}
 
 	@Override
 	public void setModelAttributes(Map<String, Object> attributes) {
+		Long mvccVersion = (Long)attributes.get("mvccVersion");
+
+		if (mvccVersion != null) {
+			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
+		}
+
 		Long styleBookEntryVersionId = (Long)attributes.get(
 			"styleBookEntryVersionId");
 
@@ -74,6 +92,12 @@ public class StyleBookEntryVersionWrapper
 
 		if (version != null) {
 			setVersion(version);
+		}
+
+		String uuid = (String)attributes.get("uuid");
+
+		if (uuid != null) {
+			setUuid(uuid);
 		}
 
 		Long styleBookEntryId = (Long)attributes.get("styleBookEntryId");
@@ -112,11 +136,24 @@ public class StyleBookEntryVersionWrapper
 			setCreateDate(createDate);
 		}
 
+		Date modifiedDate = (Date)attributes.get("modifiedDate");
+
+		if (modifiedDate != null) {
+			setModifiedDate(modifiedDate);
+		}
+
 		Boolean defaultStyleBookEntry = (Boolean)attributes.get(
 			"defaultStyleBookEntry");
 
 		if (defaultStyleBookEntry != null) {
 			setDefaultStyleBookEntry(defaultStyleBookEntry);
+		}
+
+		String frontendTokensValues = (String)attributes.get(
+			"frontendTokensValues");
+
+		if (frontendTokensValues != null) {
+			setFrontendTokensValues(frontendTokensValues);
 		}
 
 		String name = (String)attributes.get("name");
@@ -135,12 +172,6 @@ public class StyleBookEntryVersionWrapper
 
 		if (styleBookEntryKey != null) {
 			setStyleBookEntryKey(styleBookEntryKey);
-		}
-
-		String tokensValues = (String)attributes.get("tokensValues");
-
-		if (tokensValues != null) {
-			setTokensValues(tokensValues);
 		}
 	}
 
@@ -165,6 +196,16 @@ public class StyleBookEntryVersionWrapper
 	}
 
 	/**
+	 * Returns the ct collection ID of this style book entry version.
+	 *
+	 * @return the ct collection ID of this style book entry version
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
+	}
+
+	/**
 	 * Returns the default style book entry of this style book entry version.
 	 *
 	 * @return the default style book entry of this style book entry version
@@ -175,6 +216,16 @@ public class StyleBookEntryVersionWrapper
 	}
 
 	/**
+	 * Returns the frontend tokens values of this style book entry version.
+	 *
+	 * @return the frontend tokens values of this style book entry version
+	 */
+	@Override
+	public String getFrontendTokensValues() {
+		return model.getFrontendTokensValues();
+	}
+
+	/**
 	 * Returns the group ID of this style book entry version.
 	 *
 	 * @return the group ID of this style book entry version
@@ -182,6 +233,26 @@ public class StyleBookEntryVersionWrapper
 	@Override
 	public long getGroupId() {
 		return model.getGroupId();
+	}
+
+	/**
+	 * Returns the modified date of this style book entry version.
+	 *
+	 * @return the modified date of this style book entry version
+	 */
+	@Override
+	public Date getModifiedDate() {
+		return model.getModifiedDate();
+	}
+
+	/**
+	 * Returns the mvcc version of this style book entry version.
+	 *
+	 * @return the mvcc version of this style book entry version
+	 */
+	@Override
+	public long getMvccVersion() {
+		return model.getMvccVersion();
 	}
 
 	/**
@@ -245,16 +316,6 @@ public class StyleBookEntryVersionWrapper
 	}
 
 	/**
-	 * Returns the tokens values of this style book entry version.
-	 *
-	 * @return the tokens values of this style book entry version
-	 */
-	@Override
-	public String getTokensValues() {
-		return model.getTokensValues();
-	}
-
-	/**
 	 * Returns the user ID of this style book entry version.
 	 *
 	 * @return the user ID of this style book entry version
@@ -282,6 +343,16 @@ public class StyleBookEntryVersionWrapper
 	@Override
 	public String getUserUuid() {
 		return model.getUserUuid();
+	}
+
+	/**
+	 * Returns the uuid of this style book entry version.
+	 *
+	 * @return the uuid of this style book entry version
+	 */
+	@Override
+	public String getUuid() {
+		return model.getUuid();
 	}
 
 	/**
@@ -325,6 +396,16 @@ public class StyleBookEntryVersionWrapper
 	}
 
 	/**
+	 * Sets the ct collection ID of this style book entry version.
+	 *
+	 * @param ctCollectionId the ct collection ID of this style book entry version
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
+	}
+
+	/**
 	 * Sets whether this style book entry version is default style book entry.
 	 *
 	 * @param defaultStyleBookEntry the default style book entry of this style book entry version
@@ -335,6 +416,16 @@ public class StyleBookEntryVersionWrapper
 	}
 
 	/**
+	 * Sets the frontend tokens values of this style book entry version.
+	 *
+	 * @param frontendTokensValues the frontend tokens values of this style book entry version
+	 */
+	@Override
+	public void setFrontendTokensValues(String frontendTokensValues) {
+		model.setFrontendTokensValues(frontendTokensValues);
+	}
+
+	/**
 	 * Sets the group ID of this style book entry version.
 	 *
 	 * @param groupId the group ID of this style book entry version
@@ -342,6 +433,26 @@ public class StyleBookEntryVersionWrapper
 	@Override
 	public void setGroupId(long groupId) {
 		model.setGroupId(groupId);
+	}
+
+	/**
+	 * Sets the modified date of this style book entry version.
+	 *
+	 * @param modifiedDate the modified date of this style book entry version
+	 */
+	@Override
+	public void setModifiedDate(Date modifiedDate) {
+		model.setModifiedDate(modifiedDate);
+	}
+
+	/**
+	 * Sets the mvcc version of this style book entry version.
+	 *
+	 * @param mvccVersion the mvcc version of this style book entry version
+	 */
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		model.setMvccVersion(mvccVersion);
 	}
 
 	/**
@@ -405,16 +516,6 @@ public class StyleBookEntryVersionWrapper
 	}
 
 	/**
-	 * Sets the tokens values of this style book entry version.
-	 *
-	 * @param tokensValues the tokens values of this style book entry version
-	 */
-	@Override
-	public void setTokensValues(String tokensValues) {
-		model.setTokensValues(tokensValues);
-	}
-
-	/**
 	 * Sets the user ID of this style book entry version.
 	 *
 	 * @param userId the user ID of this style book entry version
@@ -445,6 +546,16 @@ public class StyleBookEntryVersionWrapper
 	}
 
 	/**
+	 * Sets the uuid of this style book entry version.
+	 *
+	 * @param uuid the uuid of this style book entry version
+	 */
+	@Override
+	public void setUuid(String uuid) {
+		model.setUuid(uuid);
+	}
+
+	/**
 	 * Sets the version of this style book entry version.
 	 *
 	 * @param version the version of this style book entry version
@@ -452,6 +563,20 @@ public class StyleBookEntryVersionWrapper
 	@Override
 	public void setVersion(int version) {
 		model.setVersion(version);
+	}
+
+	@Override
+	public Map<String, Function<StyleBookEntryVersion, Object>>
+		getAttributeGetterFunctions() {
+
+		return model.getAttributeGetterFunctions();
+	}
+
+	@Override
+	public Map<String, BiConsumer<StyleBookEntryVersion, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override

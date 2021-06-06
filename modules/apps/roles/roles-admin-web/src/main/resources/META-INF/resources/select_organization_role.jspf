@@ -37,7 +37,9 @@ if (step == 1) {
 	if (organizations.size() == 1) {
 		step = 2;
 
-		uniqueOrganizationId = organizations.get(0).getOrganizationId();
+		Organization organization = organizations.get(0);
+
+		uniqueOrganizationId = organization.getOrganizationId();
 	}
 }
 
@@ -154,10 +156,12 @@ else {
 				/>
 			</liferay-ui:search-container>
 
-			<aui:script require="metal-dom/src/dom as dom">
+			<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule">
 				var form = document.<portlet:namespace />selectOrganizationRoleFm;
 
-				dom.delegate(form, 'click', '.organization-selector-button', function (event) {
+				var delegate = delegateModule.default;
+
+				delegate(form, 'click', '.organization-selector-button', (event) => {
 					Liferay.Util.postForm(form, {
 						data: {
 							organizationId: event.delegateTarget.dataset.organizationid,
@@ -180,11 +184,11 @@ else {
 			<%
 			portletURL.setParameter("step", "1");
 
-			String breadcrumbs = "<a href=\"" + portletURL.toString() + "\">" + LanguageUtil.get(request, "organizations") + "</a> &raquo; " + HtmlUtil.escape(selectedOrganization.getName());
+			String taglibBreadcrumbs = "<a href=\"" + portletURL.toString() + "\">" + LanguageUtil.get(request, "organizations") + "</a> &raquo; " + HtmlUtil.escape(selectedOrganization.getName());
 			%>
 
 			<div class="breadcrumbs">
-				<%= breadcrumbs %>
+				<%= taglibBreadcrumbs %>
 			</div>
 
 			<%
@@ -217,12 +221,14 @@ else {
 						<c:if test="<%= Validator.isNull(p_u_i_d) || OrganizationMembershipPolicyUtil.isRoleAllowed((selUser != null) ? selUser.getUserId() : 0, selectedOrganization.getOrganizationId(), role.getRoleId()) %>">
 
 							<%
+							Group selectedOrganizationGroup = selectedOrganization.getGroup();
+
 							Map<String, Object> data = HashMapBuilder.<String, Object>put(
 								"entityid", role.getRoleId()
 							).put(
 								"entityname", role.getTitle(locale)
 							).put(
-								"groupdescriptivename", selectedOrganization.getGroup().getDescriptiveName(locale)
+								"groupdescriptivename", selectedOrganizationGroup.getDescriptiveName(locale)
 							).put(
 								"groupid", selectedOrganization.getGroupId()
 							).put(
@@ -256,10 +262,3 @@ else {
 		</c:when>
 	</c:choose>
 </aui:form>
-
-<aui:script use="aui-base">
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />selectOrganizationRoleFm',
-		'<%= HtmlUtil.escapeJS(eventName) %>'
-	);
-</aui:script>

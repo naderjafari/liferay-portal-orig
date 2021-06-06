@@ -15,23 +15,21 @@
 import {ClayButtonWithIcon, default as ClayButton} from '@clayui/button';
 import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
-import {ClayTooltipProvider} from '@clayui/tooltip';
+import {useIsMounted, useStateSafe} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {useIsMounted} from 'frontend-js-react-web';
 import React from 'react';
+import {createPortal} from 'react-dom';
 
 import useLazy from '../../core/hooks/useLazy';
 import useLoad from '../../core/hooks/useLoad';
 import usePlugins from '../../core/hooks/usePlugins';
-import useStateSafe from '../../core/hooks/useStateSafe';
 import * as Actions from '../actions/index';
 import {config} from '../config/index';
+import {useSelectItem} from '../contexts/ControlsContext';
+import {useDispatch, useSelector} from '../contexts/StoreContext';
 import selectAvailablePanels from '../selectors/selectAvailablePanels';
-import selectAvailableSidebarPanels from '../selectors/selectAvailableSidebarPanels';
-import {useDispatch, useSelector} from '../store/index';
-import {useDropClear} from '../utils/useDragAndDrop';
+import {useDropClear} from '../utils/drag-and-drop/useDragAndDrop';
 import {useId} from '../utils/useId';
-import {useSelectItem} from './Controls';
 
 const {Suspense, useCallback, useEffect} = React;
 
@@ -40,6 +38,29 @@ const {Suspense, useCallback, useEffect} = React;
  * rejected promises silently.
  */
 const swallow = [(value) => value, (_error) => undefined];
+
+/**
+ * Load the first available panel if the selected sidebar panel ID is not found.
+ * This may happen because the list of panels is modified depending on the user permissions.
+ *
+ * @param {string} panelId
+ * @param {Array} panels
+ * @param {object} sidebarPanels
+ */
+const getActivePanelData = ({panelId, panels, sidebarPanels}) => {
+	let sidebarPanelId = panelId;
+
+	let panel = panels.some((panel) => panel.includes(sidebarPanelId))
+		? sidebarPanels[sidebarPanelId]
+		: null;
+
+	if (!panel) {
+		sidebarPanelId = panels[0][0];
+		panel = sidebarPanels[sidebarPanelId];
+	}
+
+	return {panel, sidebarPanelId};
+};
 
 export default function Sidebar() {
 	const dropClearRef = useDropClear();
@@ -53,13 +74,13 @@ export default function Sidebar() {
 	const store = useSelector((state) => state);
 
 	const panels = useSelector(selectAvailablePanels(config.panels));
-	const sidebarPanels = useSelector(
-		selectAvailableSidebarPanels(config.sidebarPanels)
-	);
 	const sidebarOpen = store.sidebar.open;
-	const sidebarPanelId = store.sidebar.panelId;
+	const {panel, sidebarPanelId} = getActivePanelData({
+		panelId: store.sidebar.panelId,
+		panels,
+		sidebarPanels: config.sidebarPanels,
+	});
 
-	const panel = sidebarPanels[sidebarPanelId];
 	const promise = panel
 		? load(sidebarPanelId, panel.pluginEntryPoint)
 		: Promise.resolve();
@@ -76,6 +97,27 @@ export default function Sidebar() {
 	if (sidebarPanelId && panel) {
 		registerPanel = register(sidebarPanelId, promise, {app, panel});
 	}
+
+	const togglePlugin = () => {
+		if (hasError) {
+			setHasError(false);
+		}
+
+		if (registerPanel) {
+			registerPanel.then((plugin) => {
+				if (
+					plugin &&
+					typeof plugin.activate === 'function' &&
+					isMounted()
+				) {
+					plugin.activate();
+				}
+				else if (!plugin) {
+					setHasError(true);
+				}
+			});
+		}
+	};
 
 	useEffect(
 		() => {
@@ -160,149 +202,129 @@ export default function Sidebar() {
 		);
 	};
 
-	const togglePlugin = () => {
-		if (hasError) {
-			setHasError(false);
-		}
+	return createPortal(
+		<div
+			className="page-editor__sidebar page-editor__theme-adapter-forms"
+			ref={dropClearRef}
+		>
+			<div
+				className={classNames('page-editor__sidebar__buttons', {
+					light: true,
+				})}
+				onClick={deselectItem}
+			>
+				{panels.reduce((elements, group, groupIndex) => {
+					const buttons = group.map((panelId) => {
+						const panel = config.sidebarPanels[panelId];
 
-		if (registerPanel) {
-			registerPanel.then((plugin) => {
-				if (
-					plugin &&
-					typeof plugin.activate === 'function' &&
-					isMounted()
-				) {
-					plugin.activate();
-				}
-				else if (!plugin) {
-					setHasError(true);
-				}
-			});
-		}
-	};
+						const active =
+							sidebarOpen && sidebarPanelId === panelId;
+						const {
+							icon,
+							isLink,
+							label,
+							pluginEntryPoint,
+							url,
+						} = panel;
 
-	return (
-		<ClayTooltipProvider>
-			<div className="page-editor__sidebar" ref={dropClearRef}>
-				<div
-					className={classNames('page-editor__sidebar__buttons', {
-						light: true,
-					})}
-					onClick={deselectItem}
-				>
-					{panels.reduce((elements, group, groupIndex) => {
-						const buttons = group.map((panelId) => {
-							const panel = sidebarPanels[panelId];
-
-							const active =
-								sidebarOpen && sidebarPanelId === panelId;
-							const {
-								icon,
-								isLink,
-								label,
-								pluginEntryPoint,
-								url,
-							} = panel;
-
-							if (isLink) {
-								return (
-									<a
-										className={classNames({active})}
-										data-tooltip-align="left"
-										href={url}
-										key={panel.sidebarPanelId}
-										title={label}
-									>
-										<ClayIcon symbol={icon} />
-									</a>
-								);
-							}
-
-							const prefetch = () =>
-								load(
-									panel.sidebarPanelId,
-									pluginEntryPoint
-								).then(...swallow);
-
+						if (isLink) {
 							return (
-								<ClayButtonWithIcon
-									aria-pressed={active}
+								<a
 									className={classNames({active})}
 									data-tooltip-align="left"
-									displayType="unstyled"
-									id={`${sidebarId}${panel.sidebarPanelId}`}
+									href={url}
 									key={panel.sidebarPanelId}
-									onClick={() => handleClick(panel)}
-									onFocus={prefetch}
-									onMouseEnter={prefetch}
-									small={true}
-									symbol={icon}
 									title={label}
-								/>
+								>
+									<ClayIcon symbol={icon} />
+								</a>
 							);
-						});
-
-						// Add separator between groups.
-
-						if (groupIndex === panels.length - 1) {
-							return elements.concat(buttons);
 						}
-						else {
-							return elements.concat([
-								...buttons,
-								<hr key={`separator-${groupIndex}`} />,
-							]);
-						}
-					}, [])}
-				</div>
-				<div
-					className={classNames({
-						'page-editor__sidebar__content': true,
-						'page-editor__sidebar__content--open': sidebarOpen,
-						rtl:
-							config.languageDirection[
-								themeDisplay?.getLanguageId()
-							] === 'rtl',
-					})}
-					onClick={deselectItem}
-				>
-					{hasError ? (
-						<div>
-							<ClayButton
-								block
-								displayType="secondary"
-								onClick={() => {
-									dispatch(
-										Actions.switchSidebarPanel({
-											sidebarOpen: false,
-											sidebarPanelId:
-												panels[0] && panels[0][0],
-										})
-									);
-									setHasError(false);
-								}}
-								small
-							>
-								{Liferay.Language.get('refresh')}
-							</ClayButton>
-						</div>
-					) : (
-						<ErrorBoundary
-							handleError={() => {
-								setHasError(true);
-							}}
-						>
-							<Suspense fallback={<ClayLoadingIndicator />}>
-								<SidebarPanel
-									getInstance={getInstance}
-									pluginId={sidebarPanelId}
-								/>
-							</Suspense>
-						</ErrorBoundary>
-					)}
-				</div>
+
+						const prefetch = () =>
+							load(panel.sidebarPanelId, pluginEntryPoint).then(
+								...swallow
+							);
+
+						return (
+							<ClayButtonWithIcon
+								aria-pressed={active}
+								className={classNames({active})}
+								data-tooltip-align="left"
+								displayType="unstyled"
+								id={`${sidebarId}${panel.sidebarPanelId}`}
+								key={panel.sidebarPanelId}
+								onClick={() => handleClick(panel)}
+								onFocus={prefetch}
+								onMouseEnter={prefetch}
+								small={true}
+								symbol={icon}
+								title={label}
+							/>
+						);
+					});
+
+					// Add separator between groups.
+
+					if (groupIndex === panels.length - 1) {
+						return elements.concat(buttons);
+					}
+					else {
+						return elements.concat([
+							...buttons,
+							<hr key={`separator-${groupIndex}`} />,
+						]);
+					}
+				}, [])}
 			</div>
-		</ClayTooltipProvider>
+			<div
+				className={classNames({
+					'page-editor__sidebar__content': true,
+					'page-editor__sidebar__content--open': sidebarOpen,
+					rtl:
+						Liferay.Language.direction[
+							themeDisplay?.getLanguageId()
+						] === 'rtl',
+				})}
+				onClick={deselectItem}
+			>
+				{hasError ? (
+					<div>
+						<ClayButton
+							block
+							displayType="secondary"
+							onClick={() => {
+								dispatch(
+									Actions.switchSidebarPanel({
+										sidebarOpen: false,
+										sidebarPanelId:
+											panels[0] && panels[0][0],
+									})
+								);
+								setHasError(false);
+							}}
+							small
+						>
+							{Liferay.Language.get('refresh')}
+						</ClayButton>
+					</div>
+				) : (
+					<ErrorBoundary
+						handleError={() => {
+							setHasError(true);
+						}}
+					>
+						<Suspense fallback={<ClayLoadingIndicator />}>
+							<SidebarPanel
+								getInstance={getInstance}
+								pluginId={sidebarPanelId}
+							/>
+						</Suspense>
+					</ErrorBoundary>
+				)}
+			</div>
+		</div>,
+		document.body
 	);
 }
 

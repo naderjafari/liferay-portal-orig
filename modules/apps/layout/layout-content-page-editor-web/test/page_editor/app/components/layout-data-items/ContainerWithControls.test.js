@@ -18,14 +18,23 @@ import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
 import {ContainerWithControls} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
+
+jest.mock(
+	'../../../../../src/main/resources/META-INF/resources/page_editor/app/config',
+	() => ({
+		config: {
+			frontendTokens: {},
+		},
+	})
+);
 
 const renderContainer = ({
 	activeItemId = 'container',
@@ -34,7 +43,7 @@ const renderContainer = ({
 } = {}) => {
 	const container = {
 		children: [],
-		config: {},
+		config: {styles: {}},
 		itemId: 'container',
 		parentId: null,
 		type: LAYOUT_DATA_ITEM_TYPES.container,
@@ -75,14 +84,6 @@ const renderContainer = ({
 
 describe('ContainerWithControls', () => {
 	afterEach(cleanup);
-
-	it('hides FloatingToolbar if user has no permissions', () => {
-		const {baseElement} = renderContainer({hasUpdatePermissions: false});
-
-		expect(
-			baseElement.querySelector('.page-editor__floating-toolbar')
-		).toBe(null);
-	});
 
 	it('does not add container class if user has no permissions', () => {
 		const {baseElement} = renderContainer({hasUpdatePermissions: false});

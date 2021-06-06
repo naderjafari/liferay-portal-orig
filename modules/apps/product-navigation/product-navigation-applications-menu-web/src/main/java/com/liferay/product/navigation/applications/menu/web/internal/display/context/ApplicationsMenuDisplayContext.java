@@ -20,10 +20,12 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.product.navigation.applications.menu.web.internal.constants.ProductNavigationApplicationsMenuPortletKeys;
 
 import java.util.Map;
@@ -53,13 +55,24 @@ public class ApplicationsMenuDisplayContext {
 		Company company = themeDisplay.getCompany();
 
 		return HashMapBuilder.<String, Object>put(
-			"companyName", HtmlUtil.escape(company.getName())
+			"liferayLogoURL",
+			() -> {
+				LiferayPortletURL applicationsMenuLiferayLogoURL =
+					PortletURLFactoryUtil.create(
+						_httpServletRequest,
+						ProductNavigationApplicationsMenuPortletKeys.
+							PRODUCT_NAVIGATION_APPLICATIONS_MENU,
+						PortletRequest.RESOURCE_PHASE);
+
+				applicationsMenuLiferayLogoURL.setResourceID(
+					"/applications_menu/liferay_logo");
+
+				return applicationsMenuLiferayLogoURL.toString();
+			}
 		).put(
-			"logoURL",
-			StringBundler.concat(
-				themeDisplay.getPathImage(), "/company_logo?img_id=",
-				company.getLogoId(), "&t=",
-				WebServerServletTokenUtil.getToken(company.getLogoId()))
+			"liferayName",
+			GetterUtil.getString(
+				PropsValues.APPLICATIONS_MENU_DEFAULT_LIFERAY_NAME, "Liferay")
 		).put(
 			"panelAppsURL",
 			() -> {
@@ -72,11 +85,28 @@ public class ApplicationsMenuDisplayContext {
 
 				applicationsMenuPanelAppsURL.setResourceID(
 					"/applications_menu/panel_apps");
+				applicationsMenuPanelAppsURL.setParameter(
+					"selectedPortletId", themeDisplay.getPpid());
 
 				return applicationsMenuPanelAppsURL.toString();
 			}
 		).put(
 			"selectedPortletId", themeDisplay.getPpid()
+		).put(
+			"virtualInstance",
+			HashMapBuilder.<String, Object>put(
+				"label", company.getName()
+			).put(
+				"logoURL",
+				StringBundler.concat(
+					themeDisplay.getPathImage(), "/company_logo?img_id=",
+					company.getLogoId(), "&t=",
+					WebServerServletTokenUtil.getToken(company.getLogoId()))
+			).put(
+				"url",
+				PortalUtil.addPreservedParameters(
+					themeDisplay, themeDisplay.getURLPortal(), false, true)
+			).build()
 		).build();
 	}
 

@@ -36,12 +36,10 @@ describe('Keywords', () => {
 				title: 'Organic',
 				value: 0,
 			},
-			view: 'traffic-source-detail',
+			view: 'organic',
 		};
 
-		const {getByText} = render(
-			<Keywords currentPage={mockCurrentPage} languageTag={'en-US'} />
-		);
+		const {getByText} = render(<Keywords currentPage={mockCurrentPage} />);
 
 		expect(getByText('there-are-no-best-keywords-yet')).toBeInTheDocument();
 	});

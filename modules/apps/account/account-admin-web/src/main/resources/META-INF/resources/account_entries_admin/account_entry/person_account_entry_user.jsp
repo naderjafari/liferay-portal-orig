@@ -23,7 +23,7 @@ AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)request.getAttrib
 <liferay-util:buffer
 	var="removeUserIcon"
 >
-	<a class="pull-right remove-user-link" href="javascript:;">
+	<a class="float-right remove-user-link" href="javascript:;">
 		<liferay-ui:icon
 			icon="times-circle"
 			markupView="lexicon"
@@ -100,19 +100,19 @@ AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)request.getAttrib
 			escapedModel="<%= true %>"
 		>
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="name"
 				property="fullName"
 			/>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="email-address"
 				property="emailAddress"
 			/>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="job-title"
 				property="jobTitle"
 			/>
@@ -140,28 +140,26 @@ AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)request.getAttrib
 	<portlet:param name="singleSelect" value="<%= Boolean.TRUE.toString() %>" />
 </portlet:renderURL>
 
-<%
-Map<String, Object> context = HashMapBuilder.<String, Object>put(
-	"container", "#personAccountUserContainer"
-).put(
-	"removeUserIconMarkup", removeUserIcon
-).put(
-	"removeUserLinkSelector", ".remove-user-link"
-).put(
-	"searchContainer", "personAccountEntryUserSearchContainer"
-).put(
-	"selectUserButton", "#selectUserButton"
-).put(
-	"selectUserEventName", "selectPersonAccountEntryUser"
-).put(
-	"selectUserURL", selectUserURL.toString()
-).put(
-	"userIdInput", "#personAccountEntryUserId"
-).build();
-%>
-
 <liferay-frontend:component
 	componentId="PersonAccountEntryEventHandler"
-	context="<%= context %>"
+	context='<%=
+		HashMapBuilder.<String, Object>put(
+			"container", "#personAccountUserContainer"
+		).put(
+			"removeUserIconMarkup", removeUserIcon
+		).put(
+			"removeUserLinkSelector", ".remove-user-link"
+		).put(
+			"searchContainer", "personAccountEntryUserSearchContainer"
+		).put(
+			"selectUserButton", "#selectUserButton"
+		).put(
+			"selectUserEventName", "selectPersonAccountEntryUser"
+		).put(
+			"selectUserURL", selectUserURL.toString()
+		).put(
+			"userIdInput", "#personAccountEntryUserId"
+		).build()
+	%>'
 	module="account_entries_admin/js/PersonAccountEntryEventHandler.es"
 />

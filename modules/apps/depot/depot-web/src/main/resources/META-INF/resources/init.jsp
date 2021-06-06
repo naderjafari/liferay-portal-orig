@@ -31,6 +31,7 @@ taglib uri="http://liferay.com/tld/util" prefix="liferay-util" %>
 page import="com.liferay.application.list.PanelCategory" %><%@
 page import="com.liferay.asset.auto.tagger.configuration.AssetAutoTaggerConfiguration" %><%@
 page import="com.liferay.depot.application.DepotApplication" %><%@
+page import="com.liferay.depot.exception.DepotEntryGroupRelToGroupException" %><%@
 page import="com.liferay.depot.exception.DepotEntryNameException" %><%@
 page import="com.liferay.depot.model.DepotEntry" %><%@
 page import="com.liferay.depot.model.DepotEntryGroupRel" %><%@
@@ -57,6 +58,7 @@ page import="com.liferay.portal.kernel.exception.LocaleException" %><%@
 page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
 page import="com.liferay.portal.kernel.model.Group" %><%@
 page import="com.liferay.portal.kernel.model.GroupConstants" %><%@
+page import="com.liferay.portal.kernel.model.User" %><%@
 page import="com.liferay.portal.kernel.util.GetterUtil" %><%@
 page import="com.liferay.portal.kernel.util.HashMapBuilder" %><%@
 page import="com.liferay.portal.kernel.util.HtmlUtil" %><%@
@@ -77,10 +79,10 @@ page import="com.liferay.sharing.configuration.SharingConfiguration" %>
 
 <%@ page import="java.util.Collection" %><%@
 page import="java.util.Collections" %><%@
-page import="java.util.HashMap" %><%@
 page import="java.util.List" %>
 
-<%@ page import="javax.portlet.ActionRequest" %>
+<%@ page import="javax.portlet.ActionRequest" %><%@
+page import="javax.portlet.PortletURL" %>
 
 <liferay-frontend:defineObjects />
 

@@ -267,6 +267,12 @@ public class DataDefinitionResourceTest
 	public void testPostDataDefinitionByContentType() throws Exception {
 		super.testPostDataDefinitionByContentType();
 
+		// Allow invalid field languages for app builder
+
+		assertValid(
+			DataDefinitionTestUtil.addDataDefinitionWithFieldset(
+				testGroup.getGroupId()));
+
 		// MustNotDuplicateFieldName
 
 		try {
@@ -388,33 +394,6 @@ public class DataDefinitionResourceTest
 			Assert.assertEquals("MustSetOptionsForField", problem.getType());
 		}
 
-		// MustSetValidAvailableLocalesForProperty
-
-		try {
-			dataDefinitionResource.postDataDefinitionByContentType(
-				_CONTENT_TYPE,
-				DataDefinition.toDTO(
-					DataDefinitionTestUtil.read(
-						"data-definition-must-set-valid-available-locales-" +
-							"for-property.json")));
-
-			Assert.fail("An exception must be thrown");
-		}
-		catch (Problem.ProblemException problemException) {
-			Problem problem = problemException.getProblem();
-
-			Assert.assertEquals(
-				JSONUtil.put(
-					"fieldName", "select1"
-				).put(
-					"property", "options"
-				).toJSONString(),
-				problem.getDetail());
-			Assert.assertEquals("BAD_REQUEST", problem.getStatus());
-			Assert.assertEquals(
-				"MustSetValidAvailableLocalesForProperty", problem.getType());
-		}
-
 		// MustSetValidCharactersForFieldName
 
 		try {
@@ -493,15 +472,33 @@ public class DataDefinitionResourceTest
 			Assert.assertEquals("MustSetValidName", problem.getType());
 		}
 
-		// Fill the data layout name with the data definition's name when no
-		// name is set
+		// MustSetValidType
+
+		try {
+			dataDefinitionResource.postDataDefinitionByContentType(
+				_CONTENT_TYPE,
+				DataDefinition.toDTO(
+					DataDefinitionTestUtil.read(
+						"data-definition-must-set-valid-field-type.json")));
+
+			Assert.fail("An exception must be thrown");
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals("BAD_REQUEST", problem.getStatus());
+			Assert.assertEquals("MustSetValidType", problem.getType());
+			Assert.assertEquals("string", problem.getDetail());
+		}
+
+		// Provide default layout name when none is informed
 
 		DataDefinition dataDefinition =
 			dataDefinitionResource.postSiteDataDefinitionByContentType(
 				testGroup.getGroupId(), _CONTENT_TYPE,
 				DataDefinition.toDTO(
 					DataDefinitionTestUtil.read(
-						"data-definition-must-set-data-layout-name.json")));
+						"data-definition-empty-data-layout-name.json")));
 
 		DataLayout dataLayout = dataDefinition.getDefaultDataLayout();
 
@@ -573,7 +570,7 @@ public class DataDefinitionResourceTest
 	public SearchTestRule searchTestRule = new SearchTestRule();
 
 	@Override
-	protected void assertValid(DataDefinition dataDefinition) {
+	protected void assertValid(DataDefinition dataDefinition) throws Exception {
 		super.assertValid(dataDefinition);
 
 		boolean valid = true;
@@ -697,6 +694,14 @@ public class DataDefinitionResourceTest
 	}
 
 	@Override
+	protected DataDefinition testPatchDataDefinition_addDataDefinition()
+		throws Exception {
+
+		return dataDefinitionResource.postSiteDataDefinitionByContentType(
+			testGroup.getGroupId(), _CONTENT_TYPE, randomDataDefinition());
+	}
+
+	@Override
 	protected DataDefinition
 			testPostDataDefinitionByContentType_addDataDefinition(
 				DataDefinition dataDefinition)
@@ -805,7 +810,7 @@ public class DataDefinitionResourceTest
 		dataDefinitionResource.deleteDataDefinition(dataDefinition.getId());
 	}
 
-	private static final String _CONTENT_TYPE = "app-builder";
+	private static final String _CONTENT_TYPE = "app-builder-fieldset";
 
 	@Inject(type = DataEngineNativeObjectTracker.class)
 	private DataEngineNativeObjectTracker _dataEngineNativeObjectTracker;

@@ -1,0 +1,165 @@
+definition {
+
+	macro addKeywords {
+		Click(locator1 = "ACSettings#KEYWORD_BUTTON");
+
+		Type(
+			locator1 = "ACSettings#KEYWORD_TEXTFIELD",
+			value1 = "${keyword}");
+
+		Click(locator1 = "ACSettings#KEYWORD_SEND_BUTTON");
+	}
+
+	macro assertKeywords {
+		var key_KeywordName = "${keyword}";
+
+		AssertTextEquals(
+			locator1 = "ACSettings#KEYWORD_NAME",
+			value1 = "${keyword}");
+	}
+
+	macro deleteAllProperties {
+		if (!(isSet(propertyList))) {
+			var propertyList = "Liferay DXP,Liferay DXP Combined Property";
+		}
+
+		for (var itemName : list "${propertyList}") {
+			ACSettings.deleteProperty(propertyName = "${itemName}");
+		}
+	}
+
+	@summary = "Deletes a specific data source \
+	@param dataSourceName the name of the data source you want to delete"
+	macro deleteDataSource {
+		var itemName = "${dataSourceName}";
+
+		if (IsElementNotPresent(locator1 = "ACSettings#EXIT_SETTINGS_BUTTON")) {
+			ACNavigation.goToSettings();
+		}
+
+		ACSettings.goToDataSources();
+
+		Click(locator1 = "ACSettings#SEARCH_BAR");
+
+		Type(
+			locator1 = "ACSettings#SEARCH_BAR",
+			value1 = "${dataSourceName}");
+
+		KeyPress(
+			locator1 = "ACSettings#SEARCH_BAR",
+			value1 = "\ENTER");
+
+		Click(locator1 = "ACSettings#ITEM_ON_LIST");
+
+		Click(locator1 = "ACSettings#GENERIC_DELETE_BUTTON");
+
+		Copy(locator1 = "ACSettings#DELETE_CONFIRMATION_MESSAGE");
+
+		Click(locator1 = "ACSettings#DELETE_CONFIRMATION_INPUT");
+
+		Paste(locator1 = "ACSettings#DELETE_CONFIRMATION_INPUT");
+
+		Click(locator1 = "ACSettings#DELETE_CONFIRMATION_BUTTON");
+	}
+
+	macro deleteKeywordCheckbox {
+		if (IsVisible(locator1 = "ACSettings#KEYWORD_NAME", value1 = "${keyword}")) {
+			Click(locator1 = "ACSettings#KEYWORD_DELETE_CHECKBOX");
+
+			Click(locator1 = "ACSettings#DELETE_FROM_TOOLBAR");
+
+			Click(locator1 = "ACSettings#CONTINUE_BUTTON");
+		}
+	}
+
+	macro deleteKeywordIcon {
+		if (IsVisible(locator1 = "ACSettings#KEYWORD_NAME", value1 = "${keyword}")) {
+			Click(locator1 = "ACSettings#KEYWORD_DELETE_ICON");
+
+			Click(locator1 = "ACSettings#CONTINUE_BUTTON");
+		}
+	}
+
+	@summary = "Deletes a specific property \
+	@param propertyName the name of the property you want to delete"
+	macro deleteProperty {
+		var itemName = "${propertyName}";
+
+		if (IsElementNotPresent(locator1 = "ACSettings#EXIT_SETTINGS_BUTTON")) {
+			ACNavigation.goToSettings();
+		}
+
+		ACSettings.goToProperties();
+
+		Click(locator1 = "ACSettings#SEARCH_BAR");
+
+		Type(
+			locator1 = "ACSettings#SEARCH_BAR",
+			value1 = "${propertyName}");
+
+		KeyPress(
+			locator1 = "ACSettings#SEARCH_BAR",
+			value1 = "\ENTER");
+
+		Click(locator1 = "ACSettings#ITEM_ON_LIST");
+
+		Click(locator1 = "ACSettings#GENERIC_DELETE_BUTTON");
+
+		Copy(locator1 = "ACSettings#DELETE_CONFIRMATION_MESSAGE");
+
+		Click(locator1 = "ACSettings#DELETE_CONFIRMATION_INPUT");
+
+		Paste(locator1 = "ACSettings#DELETE_CONFIRMATION_INPUT");
+
+		Click(locator1 = "ACSettings#DELETE_CONFIRMATION_BUTTON");
+	}
+
+	macro goToApis {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "apis");
+	}
+
+	macro goToDataControlAndPrivacy {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "data-privacy");
+	}
+
+	macro goToDataSources {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "data-source");
+	}
+
+	macro goToDefinitions {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "definitions");
+	}
+
+	macro goToProperties {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "properties");
+	}
+
+	macro goToSettingsNavigation {
+		var key_SettingsNavigation = "${settingsNavigation}";
+
+		Click(locator1 = "ACSettings#SETTINGS_NAVIGATION");
+	}
+
+	macro goToUsage {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "usage");
+	}
+
+	macro goToUserManagement {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "users");
+	}
+
+	macro goToWorkspace {
+		ACSettings.goToSettingsNavigation(settingsNavigation = "settings/workspace");
+	}
+
+	macro takeTokenFromAnalyticsCloud {
+		ACSettings.goToDataSources();
+
+		Click(locator1 = "ACDXPSettings#AC_GENERIC_ADD_OR_CONFIRMATION_BUTTON");
+
+		Click(locator1 = "ACSettings#DXP_DATA_SOURCE_OPTION");
+
+		Copy(locator1 = "ACSettings#TOKEN_INPUT_FIELD");
+	}
+
+}

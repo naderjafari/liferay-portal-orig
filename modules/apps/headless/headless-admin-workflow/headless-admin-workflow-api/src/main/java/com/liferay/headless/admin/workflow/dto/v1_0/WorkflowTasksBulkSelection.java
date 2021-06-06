@@ -26,6 +26,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -47,7 +49,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("WorkflowTasksBulkSelection")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WorkflowTasksBulkSelection")
-public class WorkflowTasksBulkSelection {
+public class WorkflowTasksBulkSelection implements Serializable {
 
 	public static WorkflowTasksBulkSelection toDTO(String json) {
 		return ObjectMapperUtil.readValue(
@@ -656,6 +658,7 @@ public class WorkflowTasksBulkSelection {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.WorkflowTasksBulkSelection",
 		name = "x-class-name"
 	)
@@ -691,7 +694,7 @@ public class WorkflowTasksBulkSelection {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -730,7 +733,7 @@ public class WorkflowTasksBulkSelection {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -28,6 +28,8 @@ import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -44,10 +46,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("HistogramMetric")
+@GraphQLName(
+	description = "https://www.schema.org/HistogramMetric",
+	value = "HistogramMetric"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "HistogramMetric")
-public class HistogramMetric {
+public class HistogramMetric implements Serializable {
 
 	public static HistogramMetric toDTO(String json) {
 		return ObjectMapperUtil.readValue(HistogramMetric.class, json);
@@ -223,6 +228,7 @@ public class HistogramMetric {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.portal.workflow.metrics.rest.dto.v1_0.HistogramMetric",
 		name = "x-class-name"
 	)
@@ -293,7 +299,7 @@ public class HistogramMetric {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -332,7 +338,7 @@ public class HistogramMetric {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

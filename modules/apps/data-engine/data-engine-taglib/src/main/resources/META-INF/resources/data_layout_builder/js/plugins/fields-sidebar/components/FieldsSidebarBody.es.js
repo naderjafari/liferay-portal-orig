@@ -12,49 +12,21 @@
  * details.
  */
 
-import React, {useContext} from 'react';
+import React from 'react';
 
-import AppContext from '../../../AppContext.es';
-import {dropLayoutBuilderField} from '../../../actions.es';
 import FieldSets from '../../../components/field-sets/FieldSets.es';
 import FieldTypeList from '../../../components/field-types/FieldTypeList.es';
 import Sidebar from '../../../components/sidebar/Sidebar.es';
-import DataLayoutBuilderContext from '../../../data-layout-builder/DataLayoutBuilderContext.es';
 
-export default function ({keywords, setKeywords}) {
-	const [dataLayoutBuilder] = useContext(DataLayoutBuilderContext);
-
-	const [
-		{
-			config: {allowFieldSets},
-		},
-	] = useContext(AppContext);
-
-	const onDoubleClick = ({name}) => {
-		const {activePage, pages} = dataLayoutBuilder.getStore();
-
-		dataLayoutBuilder.dispatch(
-			'fieldAdded',
-			dropLayoutBuilderField({
-				addedToPlaceholder: true,
-				dataLayoutBuilder,
-				fieldTypeName: name,
-				indexes: {
-					columnIndex: 0,
-					pageIndex: activePage,
-					rowIndex: pages[activePage].rows.length,
-				},
-			})
-		);
-	};
-
-	const fieldTypes = dataLayoutBuilder
-		.getFieldTypes()
-		.filter(({group}) => group === 'basic');
-
-	fieldTypes.sort(({displayOrder: a}, {displayOrder: b}) => a - b);
-
-	const tabs = [
+export default function ({
+	allowFieldSets,
+	fieldTypes,
+	keywords,
+	onDoubleClick,
+	setKeywords,
+	tabs = [],
+}) {
+	const sidebarTabs = [
 		{
 			label: Liferay.Language.get('fields'),
 			render: () => (
@@ -68,11 +40,19 @@ export default function ({keywords, setKeywords}) {
 	];
 
 	if (allowFieldSets) {
-		tabs.push({
+		sidebarTabs.push({
 			label: Liferay.Language.get('fieldsets'),
 			render: () => <FieldSets keywords={keywords} />,
 		});
 	}
 
-	return <Sidebar.Tabs setKeywords={setKeywords} tabs={tabs} />;
+	sidebarTabs.push(...tabs);
+
+	return (
+		<Sidebar.Tabs
+			searchTerm={keywords}
+			setKeywords={setKeywords}
+			tabs={sidebarTabs}
+		/>
+	);
 }
