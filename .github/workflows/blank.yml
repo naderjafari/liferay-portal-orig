@@ -10,6 +10,7 @@ jobs:
       - name: Cache Gradle packages
         uses: actions/cache@v2
         with:
+          key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle', '**/*.gradle.kts') }}
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
