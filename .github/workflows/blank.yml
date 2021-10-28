@@ -10,7 +10,7 @@ jobs:
       - name: Cache Gradle packages
         uses: actions/cache@v2
         with:
-          key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle', '**/*.gradle.kts') }}
+          key: ${{ runner.os }}-gradle-caches
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
@@ -35,4 +35,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Sain-Ext
-          path: ${{ github.workspace }}/bundles/osgi/modules/com.liferay.journal.*.jar
+          path: ../bundles/osgi/modules/com.liferay.journal.*.jar
