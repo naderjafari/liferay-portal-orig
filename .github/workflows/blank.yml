@@ -7,6 +7,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.liferay
+            .m2
+            .gradle
       - uses: actions/checkout@v2
       - name: Set up JDK 8
         uses: actions/setup-java@v2
