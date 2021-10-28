@@ -16,8 +16,8 @@ jobs:
       - name: Build with Ant
         run: ant compile install-portal-snapshots deploy
         env:
-          ANT_OPTS: "-Xmx2560m"
+          ANT_OPTS: "-Xmx8g"
       - uses: actions/upload-artifact@v2
         with:
-          name: Package
-          path: bundles/osgi/modules
+          name: Sain-Ext
+          path: bundles/osgi/modules/com.liferay.journal.*.jar
