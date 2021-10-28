@@ -37,8 +37,8 @@ const STRINGS = {
 	),
 };
 
-function addNamespace(obj, namespace) {
-	return Object.entries(obj).reduce((memo, [key, value]) => ({
+function addNamespace(object, namespace) {
+	return Object.entries(object).reduce((memo, [key, value]) => ({
 		...memo,
 		[`${namespace}${key}`]: value,
 	}));
@@ -315,9 +315,9 @@ export default class Blogs {
 			captionNode.classList.add(CSS_INVISIBLE);
 		}
 
-		window[`${this._config.namespace}coverImageCaptionEditor`].setHTML(
-			STR_BLANK
-		);
+		CKEDITOR.instances[
+			`${this._config.namespace}coverImageCaptionEditor`
+		].setData(STR_BLANK);
 	}
 
 	_saveEntry(draft, ajax) {
@@ -327,9 +327,10 @@ export default class Blogs {
 
 		const content = window[`${namespace}contentEditor`].getHTML();
 
-		const coverImageCaption = window[
+		const coverImageCaption = CKEDITOR.instances[
 			`${namespace}coverImageCaptionEditor`
-		].getHTML();
+		].getData();
+
 		const subtitle = this._getElementById('subtitle').value;
 		const title = this._getElementById('title').value;
 
@@ -544,26 +545,26 @@ export default class Blogs {
 			const tempImageId = image.getAttribute(attributeDataImageId);
 
 			if (tempImageId) {
-				const el = document.querySelector(
+				const element = document.querySelector(
 					`img[${attributeDataImageId}="${tempImageId}"]`
 				);
 
-				if (el) {
+				if (element) {
 					const finalImage = finalContentImages[i];
 
-					if (el.tagName === finalImage.tagName) {
-						el.removeAttribute('data-cke-saved-src');
+					if (element.tagName === finalImage.tagName) {
+						element.removeAttribute('data-cke-saved-src');
 
 						for (let j = 0; j < finalImage.attributes.length; j++) {
 							const attr = finalImage.attributes[j];
 
-							el.setAttribute(attr.name, attr.value);
+							element.setAttribute(attr.name, attr.value);
 						}
 
-						el.removeAttribute(attributeDataImageId);
+						element.removeAttribute(attributeDataImageId);
 					}
 					else {
-						el.replaceWith(finalContentImages[i]);
+						element.replaceWith(finalContentImages[i]);
 					}
 				}
 			}

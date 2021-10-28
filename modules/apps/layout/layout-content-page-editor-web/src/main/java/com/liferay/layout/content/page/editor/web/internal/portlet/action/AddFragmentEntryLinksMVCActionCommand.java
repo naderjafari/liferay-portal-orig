@@ -100,13 +100,20 @@ public class AddFragmentEntryLinksMVCActionCommand
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
-		long groupId = ParamUtil.getLong(actionRequest, "groupId");
 		String fragmentEntryKey = ParamUtil.getString(
 			actionRequest, "fragmentEntryKey");
 
 		FragmentComposition fragmentComposition =
-			_fragmentCompositionService.fetchFragmentComposition(
-				groupId, fragmentEntryKey);
+			_fragmentCollectionContributorTracker.getFragmentComposition(
+				fragmentEntryKey);
+
+		if (fragmentComposition == null) {
+			long groupId = ParamUtil.getLong(actionRequest, "groupId");
+
+			fragmentComposition =
+				_fragmentCompositionService.fetchFragmentComposition(
+					groupId, fragmentEntryKey);
+		}
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -125,8 +132,6 @@ public class AddFragmentEntryLinksMVCActionCommand
 
 		LayoutStructureItem layoutStructureItem =
 			layoutStructure.getLayoutStructureItem(parentItemId);
-
-		List<String> childrenItemIds = layoutStructureItem.getChildrenItemIds();
 
 		JSONObject fragmentEntryLinksJSONObject =
 			JSONFactoryUtil.createJSONObject();
@@ -170,7 +175,13 @@ public class AddFragmentEntryLinksMVCActionCommand
 			segmentsExperienceId);
 
 		return JSONUtil.put(
-			"addedItemId", childrenItemIds.get(position)
+			"addedItemId",
+			() -> {
+				List<String> childrenItemIds =
+					layoutStructureItem.getChildrenItemIds();
+
+				return childrenItemIds.get(position);
+			}
 		).put(
 			"fragmentEntryLinks", fragmentEntryLinksJSONObject
 		).put(

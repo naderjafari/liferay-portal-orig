@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.Autocomplete;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.asset.service.base.AssetTagServiceBaseImpl;
 import com.liferay.portlet.asset.service.permission.AssetTagsPermission;
@@ -194,7 +195,8 @@ public class AssetTagServiceImpl extends AssetTagServiceBaseImpl {
 
 		return sanitize(
 			assetTagPersistence.findByG_LikeN(
-				groupIds, name, start, end, orderByComparator));
+				groupIds, StringUtil.quote(name, StringPool.PERCENT), start,
+				end, orderByComparator));
 	}
 
 	@Override
@@ -208,7 +210,8 @@ public class AssetTagServiceImpl extends AssetTagServiceBaseImpl {
 			return assetTagPersistence.countByGroupId(groupId);
 		}
 
-		return assetTagPersistence.countByG_LikeN(groupId, name);
+		return assetTagPersistence.countByG_LikeN(
+			groupId, StringUtil.quote(name, StringPool.PERCENT));
 	}
 
 	@Override
@@ -217,7 +220,8 @@ public class AssetTagServiceImpl extends AssetTagServiceBaseImpl {
 			return assetTagPersistence.countByGroupId(groupIds);
 		}
 
-		return assetTagPersistence.countByG_LikeN(groupIds, name);
+		return assetTagPersistence.countByG_LikeN(
+			groupIds, StringUtil.quote(name, StringPool.PERCENT));
 	}
 
 	@Override
@@ -260,6 +264,26 @@ public class AssetTagServiceImpl extends AssetTagServiceBaseImpl {
 	public JSONArray search(long[] groupIds, String name, int start, int end) {
 		return Autocomplete.arrayToJSONArray(
 			getTags(groupIds, name, start, end), "name", "name");
+	}
+
+	@Override
+	public void subscribeTag(long userId, long groupId, long tagId)
+		throws PortalException {
+
+		AssetTagsPermission.check(
+			getPermissionChecker(), groupId, ActionKeys.SUBSCRIBE);
+
+		assetTagLocalService.subscribeTag(userId, groupId, tagId);
+	}
+
+	@Override
+	public void unsubscribeTag(long userId, long tagId) throws PortalException {
+		AssetTag tag = assetTagLocalService.getTag(tagId);
+
+		AssetTagsPermission.check(
+			getPermissionChecker(), tag.getGroupId(), ActionKeys.SUBSCRIBE);
+
+		assetTagLocalService.unsubscribeTag(userId, tagId);
 	}
 
 	@Override

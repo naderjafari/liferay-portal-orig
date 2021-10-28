@@ -37,7 +37,10 @@ definition {
 
 	@description = "This is a test for LPS-130453. Display video from Documents and Media in External Video fragment."
 	@priority = "5"
+	@uitest
 	test DisplayVideoFromDocumentsAndMediaInExternalVideo {
+		property portal.acceptance = "true";
+
 		task ("Add an external video shortcut") {
 			DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "test-site-name");
 
@@ -78,9 +81,7 @@ definition {
 		}
 
 		task ("View the video displayed in Preview modal") {
-			Click(locator1 = "PageEditor#PREVIEW");
-
-			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+			PageEditor.openPreviewMode();
 
 			WaitForElementPresent(locator1 = "YoutubePortlet#VIDEO_IFRAME");
 
@@ -89,6 +90,13 @@ definition {
 			IFrame.closeFrame();
 
 			WaitForElementPresent(locator1 = "YoutubePortlet#VIDEO_IFRAME");
+		}
+
+		task ("View the selected video name is shown in item selector input") {
+			AssertTextEquals(
+				key_fieldLabel = "Video",
+				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT",
+				value1 = "Liferay Digital Experience Platform");
 
 			PageEditor.clickPublish();
 		}
@@ -104,7 +112,10 @@ definition {
 
 	@description = "This is a test for LPS-130453. Display video from URL in External Video fragment."
 	@priority = "5"
+	@uitest
 	test DisplayVideoFromURLInExternalVideo {
+		property portal.acceptance = "true";
+
 		task ("Add an External Video fragment to page") {
 			ContentPagesNavigator.openEditContentPage(
 				pageName = "Content Page Name",
@@ -137,9 +148,7 @@ definition {
 		}
 
 		task ("View the video displayed in Preview modal") {
-			Click(locator1 = "PageEditor#PREVIEW");
-
-			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+			PageEditor.openPreviewMode();
 
 			WaitForElementPresent(locator1 = "YoutubePortlet#VIDEO_IFRAME");
 
@@ -148,6 +157,13 @@ definition {
 			IFrame.closeFrame();
 
 			WaitForElementPresent(locator1 = "YoutubePortlet#VIDEO_IFRAME");
+		}
+
+		task ("View the selected video name is shown in item selector input") {
+			AssertTextEquals(
+				key_fieldLabel = "Video",
+				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT",
+				value1 = "Liferay Digital Experience Platform");
 
 			PageEditor.clickPublish();
 		}

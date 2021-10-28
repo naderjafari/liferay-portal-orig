@@ -16,6 +16,7 @@ import React, {useCallback, useContext, useEffect, useRef} from 'react';
 
 import PreviewInfoBar from './PreviewInfoBar';
 import {StyleBookContext} from './StyleBookContext';
+import {config} from './config';
 
 export default function LayoutPreview() {
 	const iframeRef = useRef();
@@ -26,14 +27,12 @@ export default function LayoutPreview() {
 
 	const loadFrontendTokenValues = useCallback(() => {
 		if (iframeRef.current) {
-			const wrapper = iframeRef.current.contentDocument.querySelector(
-				'#wrapper'
-			);
+			const root = iframeRef.current.contentDocument.documentElement;
 
-			if (wrapper) {
+			if (root) {
 				Object.values(frontendTokensValues).forEach(
 					({cssVariableMapping, value}) => {
-						wrapper.style.setProperty(
+						root.style.setProperty(
 							`--${cssVariableMapping}`,
 							value
 						);
@@ -58,7 +57,7 @@ export default function LayoutPreview() {
 			<div className="style-book-editor__page-preview">
 				{previewLayout?.layoutURL ? (
 					<>
-						<PreviewInfoBar />
+						{!config.templatesPreviewEnabled && <PreviewInfoBar />}
 						<iframe
 							className="style-book-editor__page-preview-frame"
 							onLoad={() => {

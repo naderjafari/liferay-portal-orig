@@ -158,7 +158,7 @@ public class StructuredContentResourceImpl
 						BooleanClauseOccur.MUST);
 				}
 			},
-			filter, JournalArticle.class, search, pagination,
+			filter, JournalArticle.class.getName(), search, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ARTICLE_ID, Field.SCOPE_GROUP_ID,
 				Field.ROOT_ENTRY_CLASS_PK),
@@ -309,8 +309,8 @@ public class StructuredContentResourceImpl
 
 		return _toExtensionStructuredContent(
 			_journalArticleService.addArticle(
-				siteId, JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, 0, 0,
-				null, true, titleMap, descriptionMap, friendlyUrlMap,
+				null, siteId, JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+				0, 0, null, true, titleMap, descriptionMap, friendlyUrlMap,
 				StructuredContentUtil.getJournalArticleContent(
 					_ddm,
 					DDMFormValuesUtil.toDDMFormValues(

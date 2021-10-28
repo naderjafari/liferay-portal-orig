@@ -61,6 +61,10 @@ public class NavigationMenu implements Serializable {
 		return ObjectMapperUtil.readValue(NavigationMenu.class, json);
 	}
 
+	public static NavigationMenu unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(NavigationMenu.class, json);
+	}
+
 	@Schema(
 		description = "Block of actions allowed by the user making the request."
 	)
@@ -508,13 +512,17 @@ public class NavigationMenu implements Serializable {
 
 		@JsonCreator
 		public static NavigationType create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (NavigationType navigationType : values()) {
 				if (Objects.equals(navigationType.getValue(), value)) {
 					return navigationType;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

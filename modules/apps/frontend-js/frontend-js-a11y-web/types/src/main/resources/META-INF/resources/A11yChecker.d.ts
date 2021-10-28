@@ -28,7 +28,7 @@ declare type Selector<T> = (
 	this: void,
 	value: T,
 	index: number,
-	obj: Array<T>
+	object: Array<T>
 ) => unknown;
 
 /**
@@ -93,20 +93,12 @@ export declare class Scheduler<T> {
 	private workLoop;
 	scheduleCallback(callback: Function, target: T): void;
 }
-declare type Mutation = {
 
-	/**
-	 * Attributes are the attributes of a node. The array is considered a
-	 * conditional `or`, the same for the values of an attribute.
-	 */
-	attributes: Record<string, Array<string>>;
-
-	/**
-	 * NodeNames is an array of node names. This array is considered as a
-	 * conditional `or`.
-	 */
-	nodeNames: Array<string>;
-};
+/**
+ * Attributes are the attributes of a node. The array is considered a
+ * conditional `or`, the same for the values of an attribute.
+ */
+declare type Attributes = Record<string, Array<string>>;
 export interface A11yCheckerOptions {
 
 	/**
@@ -129,7 +121,7 @@ export interface A11yCheckerOptions {
 	 * Mutation is an optional list of criteria on which a new analysis will be
 	 * ignored.
 	 */
-	mutations?: Record<MutationRecordType, Mutation>;
+	mutations: Record<string, Attributes>;
 
 	/**
 	 * Targets is a list or element that represents the subtree(s) to be
@@ -141,7 +133,7 @@ export declare class A11yChecker {
 	private callback;
 	private scheduler;
 	private observers;
-	private mutations?;
+	private mutations;
 	readonly axeOptions: RunOptions;
 	readonly denylist?: Array<Array<string>>;
 	constructor({
@@ -153,6 +145,16 @@ export declare class A11yChecker {
 	}: A11yCheckerOptions);
 	private run;
 	private recordCallback;
+
+	/**
+	 * Search for any iframe that is within the element to monitor mutations
+	 * within the iframe that may trigger further analysis.
+	 *
+	 * Searching for iframes when the checker is initialized is not good
+	 * because iframes can appear at any time on the page, like opening a
+	 * Modal, we need to monitor iframes as they appear during their lifecycle.
+	 */
+	private observeIframes;
 	private mutationCallback;
 	observe(): void;
 	unobserve(): void;

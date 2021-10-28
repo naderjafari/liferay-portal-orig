@@ -37,6 +37,8 @@ public class JSPStylingCheck extends BaseStylingCheck {
 
 		content = _fixEmptyJavaSourceTag(content);
 
+		content = _fixIncorrectBacktick(content);
+
 		content = _fixIncorrectClosingTag(content);
 
 		content = _fixIncorrectSingleLineJavaSource(content);
@@ -76,11 +78,6 @@ public class JSPStylingCheck extends BaseStylingCheck {
 		return formatStyling(content);
 	}
 
-	@Override
-	protected boolean isJavaSource(String content, int pos) {
-		return JSPSourceUtil.isJavaSource(content, pos, true);
-	}
-
 	private String _combineJavaSourceBlocks(String content) {
 		Matcher matcher = _adjacentJavaBlocksPattern.matcher(content);
 
@@ -97,6 +94,20 @@ public class JSPStylingCheck extends BaseStylingCheck {
 
 		if (matcher.find()) {
 			return StringUtil.removeSubstring(content, matcher.group());
+		}
+
+		return content;
+	}
+
+	private String _fixIncorrectBacktick(String content) {
+		Matcher matcher = _incorrectBacktickPattern.matcher(content);
+
+		if (matcher.find() &&
+			JSPSourceUtil.isJSSource(content, matcher.start())) {
+
+			return StringUtil.replaceFirst(
+				content, matcher.group(), "'" + matcher.group(1) + "'",
+				matcher.start());
 		}
 
 		return content;
@@ -157,7 +168,7 @@ public class JSPStylingCheck extends BaseStylingCheck {
 		matcher = _incorrectLineBreakPattern2.matcher(content);
 
 		while (matcher.find()) {
-			if (JSPSourceUtil.isJavaSource(content, matcher.start())) {
+			if (isJavaSource(content, matcher.start())) {
 				return StringUtil.replaceFirst(
 					content, matcher.group(1), StringPool.SPACE,
 					matcher.start());
@@ -181,6 +192,8 @@ public class JSPStylingCheck extends BaseStylingCheck {
 		"\n\t*%>\n+\t*<%\n");
 	private static final Pattern _emptyJavaSourceTagPattern = Pattern.compile(
 		"\n\t*<%\\!?\n+\t*%>(\n|\\Z)");
+	private static final Pattern _incorrectBacktickPattern = Pattern.compile(
+		"`((.(?!\\{.+\\}))*)`");
 	private static final Pattern _incorrectClosingTagPattern = Pattern.compile(
 		"\n(\t*)\t((?!<\\w).)* />\n");
 	private static final Pattern _incorrectLineBreakPattern1 = Pattern.compile(

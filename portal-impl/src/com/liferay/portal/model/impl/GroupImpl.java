@@ -24,7 +24,6 @@ import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.Account;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
@@ -203,9 +202,7 @@ public class GroupImpl extends GroupBaseImpl {
 			Company company = CompanyLocalServiceUtil.getCompany(
 				getCompanyId());
 
-			Account account = company.getAccount();
-
-			name = account.getName();
+			name = company.getName();
 		}
 		else if (isLayout()) {
 			Layout layout = LayoutLocalServiceUtil.getLayout(getClassPK());
@@ -274,6 +271,14 @@ public class GroupImpl extends GroupBaseImpl {
 	public String getDisplayURL(
 		ThemeDisplay themeDisplay, boolean privateLayout) {
 
+		return getDisplayURL(themeDisplay, privateLayout, false);
+	}
+
+	@Override
+	public String getDisplayURL(
+		ThemeDisplay themeDisplay, boolean privateLayout,
+		boolean controlPanel) {
+
 		try {
 			LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
 				getGroupId(), privateLayout);
@@ -284,7 +289,7 @@ public class GroupImpl extends GroupBaseImpl {
 					 0))) {
 
 				String groupFriendlyURL = PortalUtil.getGroupFriendlyURL(
-					layoutSet, themeDisplay);
+					layoutSet, themeDisplay, false, controlPanel);
 
 				if (isUser()) {
 					return PortalUtil.addPreservedParameters(
@@ -441,15 +446,9 @@ public class GroupImpl extends GroupBaseImpl {
 		}
 
 		if (logoId > 0) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(themeDisplay.getPathImage());
-			sb.append("/layout_set_logo?img_id=");
-			sb.append(logoId);
-			sb.append("&t=");
-			sb.append(WebServerServletTokenUtil.getToken(logoId));
-
-			return sb.toString();
+			return StringBundler.concat(
+				themeDisplay.getPathImage(), "/layout_set_logo?img_id=", logoId,
+				"&t=", WebServerServletTokenUtil.getToken(logoId));
 		}
 
 		StringBundler sb = new StringBundler(5);
@@ -662,7 +661,7 @@ public class GroupImpl extends GroupBaseImpl {
 	@Override
 	public String getScopeSimpleName(ThemeDisplay themeDisplay) {
 		if (isDepot()) {
-			return themeDisplay.translate("asset-library");
+			return themeDisplay.translate("asset-library-group");
 		}
 
 		if (getGroupId() == themeDisplay.getCompanyGroupId()) {

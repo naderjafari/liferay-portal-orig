@@ -15,9 +15,9 @@
 import {fetch} from 'frontend-js-web';
 
 export default {
-	getLayoutReportsIssues(layoutReportsIssuesURL, namespace) {
+	getLayoutReportsIssues(layoutReportsIssuesURL, namespace, refreshCache) {
 		return fetchWithError(layoutReportsIssuesURL, {
-			body: getFormDataRequest({}, namespace),
+			body: getFormDataRequest({refreshCache}, namespace),
 			method: 'POST',
 		});
 	},
@@ -46,8 +46,8 @@ function fetchWithError(url, options = {}) {
 	return fetch(url, options)
 		.then((response) => response.json())
 		.then((objectResponse) => {
-			if (objectResponse.error) {
-				throw objectResponse.error;
+			if (objectResponse?.error) {
+				throw objectResponse;
 			}
 
 			return objectResponse;

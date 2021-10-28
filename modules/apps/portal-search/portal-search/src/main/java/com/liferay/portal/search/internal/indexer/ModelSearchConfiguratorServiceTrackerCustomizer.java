@@ -91,7 +91,7 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 		int serviceRanking = GetterUtil.getInteger(
 			serviceReference.getProperty(Constants.SERVICE_RANKING));
 
-		final ModelSearchConfigurator<T> modelSearchConfigurator =
+		ModelSearchConfigurator<T> modelSearchConfigurator =
 			_bundleContext.getService(serviceReference);
 
 		ServiceRegistrationHolder serviceRegistrationHolder =
@@ -102,15 +102,12 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 			(serviceRegistrationHolder._serviceRanking > serviceRanking)) {
 
 			if (_log.isWarnEnabled()) {
-				StringBundler sb = new StringBundler(5);
-
-				sb.append(ClassUtil.getClassName(serviceRegistrationHolder));
-				sb.append(" is already registered with a higher ranking of ");
-				sb.append(serviceRegistrationHolder._serviceRanking);
-				sb.append(" for: ");
-				sb.append(modelSearchConfigurator.getClassName());
-
-				_log.warn(sb.toString());
+				_log.warn(
+					StringBundler.concat(
+						ClassUtil.getClassName(serviceRegistrationHolder),
+						" is already registered with a higher ranking of ",
+						serviceRegistrationHolder._serviceRanking, " for: ",
+						modelSearchConfigurator.getClassName()));
 			}
 
 			return modelSearchConfigurator;
@@ -357,9 +354,6 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 	protected IndexWriterHelper indexWriterHelper;
 
 	@Reference
-	protected KeywordQueryContributorsHolder keywordQueryContributorsHolder;
-
-	@Reference
 	protected PreFilterContributorHelper preFilterContributorHelper;
 
 	@Reference
@@ -386,19 +380,16 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 		ModelSearchConfiguratorServiceTrackerCustomizer.class);
 
 	private BundleContext _bundleContext;
-	private ServiceTrackerList<DocumentContributor<?>, DocumentContributor<?>>
-		_documentContributors;
+	private ServiceTrackerList<DocumentContributor<?>> _documentContributors;
 	private ServiceTrackerMap<String, ModelResourcePermission<?>>
 		_modelResourcePermissionServiceTrackerMap;
 
 	@Reference(target = ModuleServiceLifecycle.PORTLETS_INITIALIZED)
 	private ModuleServiceLifecycle _moduleServiceLifecycle;
 
-	private ServiceTrackerList<QueryConfigContributor, QueryConfigContributor>
-		_queryConfigContributors;
-	private ServiceTrackerList
-		<SearchContextContributor, SearchContextContributor>
-			_searchContextContributors;
+	private ServiceTrackerList<QueryConfigContributor> _queryConfigContributors;
+	private ServiceTrackerList<SearchContextContributor>
+		_searchContextContributors;
 	private final Map<String, ServiceRegistrationHolder>
 		_serviceRegistrationHolders = new Hashtable<>();
 	private ServiceTracker

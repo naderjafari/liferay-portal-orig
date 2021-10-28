@@ -21,13 +21,22 @@ definition {
 			locator1 = "TextInput#SUBJECT",
 			value1 = "${threadSubject}");
 
-		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+		if (isSet(displayTextWithLink)) {
+			CKEditor.addTextWithLink(
+				displayText = "${displayText}",
+				dmDocumentTitle = "${dmDocumentTitle}",
+				fieldLabel = "${fieldLabel}",
+				pageName = "${pageName}");
+		}
+		else {
+			SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
 
-		Type(
-			locator1 = "CKEditor#BODY",
-			value1 = "${threadBody}");
+			Type(
+				locator1 = "CKEditor#BODY",
+				value1 = "${threadBody}");
 
-		SelectFrame(value1 = "relative=top");
+			SelectFrame(value1 = "relative=top");
+		}
 
 		if (isSet(categoryName)) {
 			Panel.expandPanel(panel = "Categorization");
@@ -89,11 +98,18 @@ definition {
 	}
 
 	macro addPG {
-		AssertClick(
-			locator1 = "Button#NEW_THREAD",
-			value1 = "New Thread");
-
-		Pause(locator1 = "3000");
+		if (isSet(siteURLKey)) {
+			MessageboardsThread.openToAddThread(
+				categoryName = "${categoryName}",
+				groupName = "${groupName}",
+				layoutName = "${layoutName}",
+				siteURLKey = "${siteURLKey}");
+		}
+		else {
+			AssertClick(
+				locator1 = "Button#NEW_THREAD",
+				value1 = "New Thread");
+		}
 
 		AssertElementPresent(locator1 = "TextInput#SUBJECT");
 
@@ -113,6 +129,10 @@ definition {
 				value1 = "${threadBody}");
 		}
 		else {
+			if ("${bold}" == "true") {
+				FormFields.toggleCKEditorContentStyle(optionTool = "Bold");
+			}
+
 			SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
 
 			Type(
@@ -122,7 +142,45 @@ definition {
 
 		SelectFrame(value1 = "relative=top");
 
-		PortletEntry.publish();
+		if (isSet(threadBodyImageName)) {
+			var key_imageFileName = "${threadBodyImageName}";
+
+			ItemSelector.gotoItemSelectorViaCKEditor();
+
+			SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+			Click(locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+		}
+
+		if (isSet(tagName)) {
+			Panel.expandPanel(panel = "Categorization");
+
+			AssetCategorization.addTag(tagName = "${tagName}");
+		}
+
+		if (isSet(mbAttachmentFileList)) {
+			Panel.expandPanel(panel = "Attachments");
+
+			AssertElementPresent(locator1 = "Button#SELECT_FILES");
+
+			for (var mbAttachmentFile : list "${mbAttachmentFileList}") {
+				UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
+					locator1 = "TextInput#FILE",
+					value1 = "${mbAttachmentFile}");
+			}
+		}
+
+		Button.clickPublish();
+
+		if ("${invalidCharacters}" == "true") {
+			AssertTextEquals.assertPartialText(
+				key_alertMessage = "One or more tags contains invalid characters.",
+				locator1 = "Message#ERROR_ENTER_A_VALID_VALUE",
+				value1 = "One or more tags contains invalid characters.");
+		}
+		else {
+			Alert.viewSuccessMessage();
+		}
 	}
 
 	macro addPGAsQuestion {
@@ -209,9 +267,11 @@ definition {
 	}
 
 	macro addPGWithPermissions {
-		AssertClick(
-			locator1 = "Button#NEW_THREAD",
-			value1 = "New Thread");
+		if (!(isSet(skipNavigation))) {
+			AssertClick(
+				locator1 = "Button#NEW_THREAD",
+				value1 = "New Thread");
+		}
 
 		Type(
 			locator1 = "TextInput#SUBJECT",
@@ -284,6 +344,19 @@ definition {
 
 	macro assertAlertNotPresent {
 		AssertAlertNotPresent();
+	}
+
+	macro assertDownloadedFileNameFromTempFolder {
+		var downloadedFileName = TestCase.getDownloadedTempFileName(fileNamePattern = "${attachmentFileName}.jpg");
+
+		echo("## downloadedFileName: ${downloadedFileName}");
+
+		if (contains("${downloadedFileName}", "${attachmentFileName}")) {
+			echo("This is a correct file.");
+		}
+		else {
+			fail("FAIL!");
+		}
 	}
 
 	macro banUser {
@@ -359,13 +432,22 @@ definition {
 	}
 
 	macro downloadAttachmentPG {
-		Click(locator1 = "MessageBoardsThread#MESSAGE_BODY_ATTACHMENT_1");
+		if (isSet(attachmentsList)) {
+			Click(
+				index = "${index}",
+				locator1 = "MessageBoardsThread#MESSAGE_BODY_ATTACHMENT_LIST");
+		}
+		else {
+			Click(locator1 = "MessageBoardsThread#MESSAGE_BODY_ATTACHMENT_1");
+		}
 
 		DownloadTempFile();
 	}
 
 	macro editCP {
-		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Edit");
+		if (!(isSet(skipNavigation))) {
+			LexiconEntry.gotoEllipsisMenuItem(menuItem = "Edit");
+		}
 
 		if (isSet(threadBody)) {
 			SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
@@ -415,11 +497,21 @@ definition {
 	}
 
 	macro editPG {
-		Click(
-			key_threadSubject = "${threadSubject}",
-			locator1 = "MessageBoards#VERTICAL_ELLIPSIS");
+		if (isSet(siteURLKey)) {
+			MessageboardsThread.openToEditThread(
+				categoryName = "${categoryName}",
+				groupName = "${groupName}",
+				layoutName = "${layoutName}",
+				siteURLKey = "${siteURLKey}",
+				threadSubject = "${threadSubject}");
+		}
+		else {
+			Click(
+				key_threadSubject = "${threadSubject}",
+				locator1 = "MessageBoards#VERTICAL_ELLIPSIS");
 
-		MenuItem.click(menuItem = "Edit");
+			MenuItem.click(menuItem = "Edit");
+		}
 
 		if (isSet(threadSubjectEdit)) {
 			Type(
@@ -479,6 +571,49 @@ definition {
 		}
 
 		Alert.viewSuccessMessage();
+	}
+
+	macro editReplyViaAP {
+		MouseOver(locator1 = "Portlet#PORTLET_CONTENT");
+
+		Click(
+			key_threadReplySubject = "${threadReplySubject}",
+			locator1 = "MessageBoards#EDIT_THREAD_REPLY_VIA_AP",
+			value1 = "${threadReplySubject}");
+
+		Type(
+			locator1 = "TextInput#SUBJECT",
+			value1 = "${threadSubject}");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
+		Type(
+			locator1 = "CKEditor#BODY",
+			value1 = "${threadBody}");
+
+		SelectFrame(value1 = "relative=top");
+
+		if (isSet(mbAttachmentFile)) {
+			Panel.expandPanel(panel = "Attachments");
+
+			AssertElementPresent(locator1 = "Button#SELECT_FILES");
+
+			var key_attachmentFileName = "${mbAttachmentFile}";
+
+			UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
+				locator1 = "TextInput#FILE",
+				value1 = "${mbAttachmentFile}");
+
+			Pause(locator1 = "3000");
+
+			if (IsNotChecked.isNotCheckedNotVisible(key_fileName = "${mbAttachmentFile}", locator1 = "Checkbox#UPLOAD_FILE_ENTRY")) {
+				Check.checkNotVisible(
+					key_fileName = "${mbAttachmentFile}",
+					locator1 = "Checkbox#UPLOAD_FILE_ENTRY");
+			}
+		}
+
+		PortletEntry.publish();
 	}
 
 	macro editViaMyPosts {
@@ -652,6 +787,8 @@ definition {
 			value1 = "There are no threads or categories.");
 	}
 
+	// You can use this navigation when you need to access the configuration quickly without checking the UI.
+
 	macro openToAddThread {
 		var baseURL = "${baseURL}";
 
@@ -659,7 +796,43 @@ definition {
 			var baseURL = PropsUtil.get("portal.url");
 		}
 
-		Open(locator1 = "${baseURL}/group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_message_boards_web_portlet_MBAdminPortlet&_com_liferay_message_boards_web_portlet_MBAdminPortlet_mvcRenderCommandName=%2Fmessage_boards%2Fedit_message");
+		// Threads accessed in site pages will be redirected back to the page after publishing. Those accessed in admin will stay in admin after publishing.
+
+		if (isSet(layoutName)) {
+			if (isSet(categoryName)) {
+				var categoryId = JSONMBMessage.getCategoryIdByName(
+					groupName = "${groupName}",
+					categoryName = "${categoryName}");
+
+				Open(locator1 = "${baseURL}/web/${siteURLKey}/${layoutName}?p_p_id=com_liferay_message_boards_web_portlet_MBPortlet&_com_liferay_message_boards_web_portlet_MBPortlet_mvcRenderCommandName=%2Fmessage_boards%2Fedit_message&_com_liferay_message_boards_web_portlet_MBPortlet_redirect=http%3A%2F%2F${baseURL}%3A8080%2Fweb%2F${siteURLKey}%2F${layoutName}%2F-%2Fmessage_boards%2Fcategory%2F${categoryId}&_com_liferay_message_boards_web_portlet_MBPortlet_mbCategoryId=${categoryId}");
+			}
+			else {
+				Open(locator1 = "${baseURL}/web/${siteURLKey}/${layoutName}?p_p_id=com_liferay_message_boards_web_portlet_MBPortlet&_com_liferay_message_boards_web_portlet_MBPortlet_mvcRenderCommandName=%2Fmessage_boards%2Fedit_message&_com_liferay_message_boards_web_portlet_MBPortlet_redirect=http%3A%2F%2F${baseURL}%3A8080%2Fweb%2F${siteURLKey}%2F${layoutName}");
+			}
+		}
+		else {
+			Open(locator1 = "${baseURL}/group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_message_boards_web_portlet_MBAdminPortlet&_com_liferay_message_boards_web_portlet_MBAdminPortlet_mvcRenderCommandName=%2Fmessage_boards%2Fedit_message");
+		}
+	}
+
+	macro openToEditThread {
+		var messageId = JSONMBMessage.getMessageIdByName(
+			categoryName = "${categoryName}",
+			groupName = "${groupName}",
+			threadSubject = "${threadSubject}");
+
+		if (isSet(layoutName)) {
+			var baseURL = "${baseURL}";
+
+			if (contains("${baseURL}", "{baseURL}")) {
+				var baseURL = PropsUtil.get("portal.url");
+			}
+
+			Open(locator1 = "${baseURL}/web/${siteURLKey}/${layoutName}?p_p_id=com_liferay_message_boards_web_portlet_MBPortlet&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_com_liferay_message_boards_web_portlet_MBPortlet_mvcRenderCommandName=%2Fmessage_boards%2Fedit_message&_com_liferay_message_boards_web_portlet_MBPortlet_redirect=http%3A%2F%2F${baseURL}%3A8080%2Fweb%2F${siteURLKey}%2F${layoutName}%2F-%2Fmessage_boards%2Fmessage%2F${messageId}&_com_liferay_message_boards_web_portlet_MBPortlet_messageId=${messageId}");
+		}
+		else {
+			Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_message_boards_web_portlet_MBAdminPortlet&_com_liferay_message_boards_web_portlet_MBAdminPortlet_mvcRenderCommandName=%2Fmessage_boards%2Fedit_message&_com_liferay_message_boards_web_portlet_MBAdminPortlet_messageId=${messageId}");
+		}
 	}
 
 	macro openToStatistics {
@@ -717,9 +890,11 @@ definition {
 		else {
 			var key_threadSubject = "${threadSubject}";
 
-			AssertClick.assertPartialTextClickAt(
-				locator1 = "MessageBoards#THREAD_LIST_THREAD",
-				value1 = "${threadSubject}");
+			if (!(isSet(skipNavigation))) {
+				AssertClick.assertPartialTextClickAt(
+					locator1 = "MessageBoards#THREAD_LIST_THREAD",
+					value1 = "${threadSubject}");
+			}
 		}
 
 		if (isSet(threadReplySpecific)) {
@@ -833,11 +1008,11 @@ definition {
 	}
 
 	macro saveNewThreadAsDraft {
-		AssertClick(
-			locator1 = "Button#NEW_THREAD",
-			value1 = "New Thread");
-
-		Pause(locator1 = "3000");
+		if (!(isSet(skipNavigation))) {
+			AssertClick(
+				locator1 = "Button#NEW_THREAD",
+				value1 = "New Thread");
+		}
 
 		Type(
 			locator1 = "TextInput#SUBJECT",
@@ -938,13 +1113,7 @@ definition {
 			VerifyElementPresent(locator1 = "Message#SUCCESS");
 		}
 
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Recycle Bin",
-			portlet = "Recycle Bin");
-
-		RecycleBin.emptyCP();
+		JSONRecycleBin.emptyRecycleBin();
 	}
 
 	macro unlockPG {
@@ -1126,6 +1295,49 @@ definition {
 		AssertElementNotPresent(locator1 = "MessageBoards#THREAD_LIST_LAST_POST");
 	}
 
+	macro viewDraftThread {
+		var key_threadStatus = "Draft";
+		var key_threadSubject = "${threadSubject}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "MessageBoards#THREAD_LIST_THREAD",
+			value1 = "${threadSubject}");
+
+		AssertTextEquals(
+			locator1 = "MessageBoards#THREAD_LIST_WORKFLOW_STATUS",
+			value1 = "Draft");
+
+		AssertClick(
+			locator1 = "MessageBoards#NAVIGATION_MY_POSTS",
+			value1 = "My Posts");
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "MessageBoards#THREAD_LIST_THREAD",
+			value1 = "${threadSubject}");
+
+		AssertTextEquals(
+			locator1 = "MessageBoards#THREAD_LIST_WORKFLOW_STATUS",
+			value1 = "Draft");
+	}
+
+	macro viewLinkedEntry {
+		Click(
+			key_text = "${linkedEntry}",
+			locator1 = "Link#ANY");
+
+		if (isSet(imageFileName)) {
+			AssertElementPresent(
+				key_imageSourceURL = "${imageFileName}",
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_VIEWPORT_PREVIEW");
+		}
+
+		if (isSet(pageName)) {
+			AssertVisible(
+				key_pageName = "${pageName}",
+				locator1 = "Home#PAGE_ACTIVE");
+		}
+	}
+
 	macro viewLockedPG {
 		var key_threadStatus = "Locked";
 		var key_threadSubject = "${threadSubject}";
@@ -1158,16 +1370,12 @@ definition {
 			value1 = "Unlock");
 	}
 
-	macro viewMarkAsQuestionCheckedCP {
+	macro viewMarkAsQuestionChecked {
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
+
 		LexiconEntry.gotoAdd();
 
 		MenuItem.click(menuItem = "Thread");
-
-		AssertVisible(locator1 = "Button#PUBLISH");
-
-		Type(
-			locator1 = "TextInput#SUBJECT",
-			value1 = "${threadSubject}");
 
 		Panel.expandPanel(panel = "More Settings");
 
@@ -1178,16 +1386,12 @@ definition {
 			value1 = "Cancel");
 	}
 
-	macro viewMarkAsQuestionNotCheckedCP {
+	macro viewMarkAsQuestionNotChecked {
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
+
 		LexiconEntry.gotoAdd();
 
 		MenuItem.click(menuItem = "Thread");
-
-		AssertVisible(locator1 = "Button#PUBLISH");
-
-		Type(
-			locator1 = "TextInput#SUBJECT",
-			value1 = "${threadSubject}");
 
 		Panel.expandPanel(panel = "More Settings");
 
@@ -1299,9 +1503,24 @@ definition {
 			locator1 = "MessageBoardsThread#THREAD_SUBJECT",
 			value1 = "${threadSubject}");
 
-		AssertTextEquals(
-			locator1 = "MessageBoardsThread#THREAD_BODY",
-			value1 = "${threadBody}");
+		if ("${bold}" == "true") {
+			AssertTextEquals(
+				locator1 = "MessageBoardsThread#THREAD_BODY_BOLD",
+				value1 = "${threadBody}");
+		}
+
+		else {
+			AssertTextEquals(
+				locator1 = "MessageBoardsThread#THREAD_BODY",
+				value1 = "${threadBody}");
+		}
+
+		if (isSet(threadBodyImageName)) {
+			AssertVisible(
+				key_imageFileName = "${threadBodyImageName}",
+				key_threadBody = "${threadBody}",
+				locator1 = "MessageBoardsThread#THREAD_BODY_IMAGE");
+		}
 
 		if (isSet(fontSize)) {
 			AssertTextEquals(
@@ -1678,6 +1897,47 @@ definition {
 		AssertElementPresent(locator1 = "MessageBoardsStatistics#TOP_POSTERS_AUTHOR_JOIN_DATE");
 
 		AssertElementPresent(locator1 = "MessageBoardsStatistics#TOP_POSTERS_AUTHOR_LAST_POST_DATE");
+	}
+
+	macro viewThreadAttachment {
+		for (var mbThreadAttachment : list "${mbAttachmentFileList}") {
+			AssertTextEquals.assertPartialText(
+				key_mbThreadAttachment = "${mbThreadAttachment}",
+				locator1 = "MessageBoardsThread#MESSAGE_ATTACHMENT_IMAGE",
+				value1 = "${mbThreadAttachment}");
+		}
+	}
+
+	macro viewThreadSubscribeLink {
+		var key_threadSubject = "${threadSubject}";
+
+		if (isSet(disabledEmailConfiguration)) {
+			Click(locator1 = "MessageBoards#VERTICAL_ELLIPSIS");
+
+			MenuItem.viewNotPresent(menuItem = "Unsubscribe");
+
+			AssertClick(
+				locator1 = "MessageBoards#THREAD_LIST_THREAD",
+				value1 = "${threadSubject}");
+
+			Click(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
+
+			MenuItem.viewNotPresent(menuItem = "Unsubscribe");
+		}
+
+		else {
+			Click(locator1 = "MessageBoards#VERTICAL_ELLIPSIS");
+
+			MenuItem.viewPresent(menuItem = "Unsubscribe");
+
+			AssertClick(
+				locator1 = "MessageBoards#THREAD_LIST_THREAD",
+				value1 = "${threadSubject}");
+
+			Click(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
+
+			MenuItem.viewPresent(menuItem = "Unsubscribe");
+		}
 	}
 
 	macro viewWithWorkflowPG {

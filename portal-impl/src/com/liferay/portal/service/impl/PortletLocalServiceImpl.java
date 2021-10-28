@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.image.SpriteProcessor;
 import com.liferay.portal.kernel.image.SpriteProcessorUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.EventDefinition;
 import com.liferay.portal.kernel.model.Portlet;
@@ -49,6 +50,7 @@ import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.portlet.PortletDependencyFactoryUtil;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.plugin.PluginPackage;
 import com.liferay.portal.kernel.portlet.FriendlyURLMapper;
 import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
@@ -68,7 +70,12 @@ import com.liferay.portal.kernel.scheduler.Trigger;
 import com.liferay.portal.kernel.scheduler.TriggerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
+import com.liferay.portal.kernel.service.ResourceLocalService;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
@@ -103,12 +110,6 @@ import com.liferay.portlet.PortletBagFactory;
 import com.liferay.portlet.UndeployedPortlet;
 import com.liferay.portlet.extra.config.ExtraPortletAppConfig;
 import com.liferay.portlet.extra.config.ExtraPortletAppConfigRegistry;
-import com.liferay.registry.Filter;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceReference;
-import com.liferay.registry.ServiceTracker;
-import com.liferay.registry.ServiceTrackerCustomizer;
 import com.liferay.util.JS;
 
 import java.net.URL;
@@ -135,6 +136,11 @@ import javax.portlet.PreferencesValidator;
 import javax.portlet.WindowState;
 
 import javax.servlet.ServletContext;
+
+import org.osgi.framework.Filter;
+import org.osgi.framework.ServiceReference;
+import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 /**
  * @author Brian Wing Shun Chan
@@ -175,20 +181,19 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
 
-		Registry registry = RegistryUtil.getRegistry();
-
-		Filter filter = registry.getFilter(
+		Filter filter = SystemBundleUtil.createFilter(
 			"(objectClass=" + FriendlyURLMapper.class.getName() + ")");
 
-		_serviceTracker = registry.trackServices(
-			filter, new FriendlyURLMapperServiceTrackerCustomizer());
+		_serviceTracker = new ServiceTracker<>(
+			SystemBundleUtil.getBundleContext(), filter,
+			new FriendlyURLMapperServiceTrackerCustomizer());
 
 		_serviceTracker.open();
 	}
 
 	@Override
 	public void checkPortlet(Portlet portlet) throws PortalException {
-		resourcePermissionLocalService.initPortletDefaultPermissions(portlet);
+		_resourcePermissionLocalService.initPortletDefaultPermissions(portlet);
 
 		initPortletAddToPagePermissions(portlet);
 	}
@@ -240,12 +245,12 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 
 		String rootPortletId = PortletIdCodec.decodePortletName(portletId);
 
-		resourceLocalService.deleteResource(
+		_resourceLocalService.deleteResource(
 			companyId, rootPortletId, ResourceConstants.SCOPE_INDIVIDUAL,
 			PortletPermissionUtil.getPrimaryKey(plid, portletId));
 
 		List<PortletPreferences> portletPreferencesList =
-			portletPreferencesLocalService.getPortletPreferences(
+			_portletPreferencesLocalService.getPortletPreferences(
 				plid, portletId);
 
 		Portlet portlet = getPortletById(companyId, portletId);
@@ -284,7 +289,7 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 				}
 			}
 			else {
-				portletPreferencesLocalService.deletePortletPreferences(
+				_portletPreferencesLocalService.deletePortletPreferences(
 					portletPreferences.getPortletPreferencesId());
 			}
 		}
@@ -324,6 +329,35 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 	}
 
 	@Override
+	public Portlet deployRemotePortlet(
+			long[] companyIds, Portlet portlet, String[] categoryNames,
+			boolean eagerDestroy, boolean clearCache)
+		throws PortalException {
+
+		_portletsMap.put(portlet.getRootPortletId(), portlet);
+
+		if (eagerDestroy) {
+			PortletInstanceFactoryUtil.clear(portlet, false);
+
+			PortletConfigFactoryUtil.destroy(portlet);
+		}
+
+		if (clearCache) {
+			clearCache();
+		}
+
+		_companyLocalService.forEachCompanyId(
+			companyId -> {
+				_deployRemotePortlet(companyId, portlet, categoryNames);
+
+				portletPersistence.flush();
+			},
+			companyIds);
+
+		return portlet;
+	}
+
+	@Override
 	public Portlet deployRemotePortlet(Portlet portlet, String categoryName)
 		throws PortalException {
 
@@ -342,22 +376,11 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 			Portlet portlet, String[] categoryNames, boolean eagerDestroy)
 		throws PortalException {
 
-		_portletsMap.put(portlet.getRootPortletId(), portlet);
+		long[] companyIds = ListUtil.toLongArray(
+			_companyLocalService.getCompanies(false), Company::getCompanyId);
 
-		if (eagerDestroy) {
-			PortletInstanceFactoryUtil.clear(portlet, false);
-
-			PortletConfigFactoryUtil.destroy(portlet);
-		}
-
-		clearCache();
-
-		companyLocalService.forEachCompanyId(
-			companyId -> {
-				_deployRemotePortlet(portlet, categoryNames, companyId);
-
-				portletPersistence.flush();
-			});
+		deployRemotePortlet(
+			companyIds, portlet, categoryNames, eagerDestroy, true);
 
 		return portlet;
 	}
@@ -521,11 +544,7 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 	public Portlet getPortletById(long companyId, String portletId) {
 		Portlet portlet = fetchPortletById(companyId, portletId);
 
-		if (portlet != null) {
-			return portlet;
-		}
-
-		if (portletId.equals(PortletKeys.LIFERAY_PORTAL)) {
+		if ((portlet != null) || portletId.equals(PortletKeys.LIFERAY_PORTAL)) {
 			return portlet;
 		}
 
@@ -957,6 +976,12 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		Map<String, Portlet> portletsMap = new ConcurrentHashMap<>();
 
 		for (Portlet portlet : _portletsMap.values()) {
+			if ((portlet.getCompanyId() != CompanyConstants.SYSTEM) &&
+				(portlet.getCompanyId() != companyId)) {
+
+				continue;
+			}
+
 			portlet = (Portlet)portlet.clone();
 
 			portlet.setCompanyId(companyId);
@@ -1195,7 +1220,7 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 					continue;
 				}
 
-				Role role = roleLocalService.fetchRole(
+				Role role = _roleLocalService.fetchRole(
 					portlet.getCompanyId(), roleName);
 
 				if (role == null) {
@@ -1211,7 +1236,7 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 					continue;
 				}
 
-				resourcePermissionLocalService.addResourcePermission(
+				_resourcePermissionLocalService.addResourcePermission(
 					portlet.getCompanyId(), portlet.getRootPortletId(),
 					ResourceConstants.SCOPE_COMPANY,
 					String.valueOf(portlet.getCompanyId()), role.getRoleId(),
@@ -1279,12 +1304,11 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 
 		Document document = UnsecureSAXReaderUtil.read(xml, true);
 
-		Element rootElement = document.getRootElement();
-
 		Set<String> portletIds = new HashSet<>();
 
 		readLiferayDisplay(
-			servletContextName, rootElement, portletCategory, portletIds);
+			servletContextName, document.getRootElement(), portletCategory,
+			portletIds);
 
 		// Portlets that do not belong to any categories should default to the
 		// Undefined category
@@ -2701,7 +2725,7 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 	}
 
 	private void _deployRemotePortlet(
-			Portlet portlet, String[] categoryNames, Long companyId)
+			long companyId, Portlet portlet, String[] categoryNames)
 		throws PortalException {
 
 		Portlet companyPortletModel = (Portlet)portlet.clone();
@@ -2823,11 +2847,26 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 	private static final Map<Long, Map<String, Portlet>> _portletsMaps =
 		new ConcurrentHashMap<>();
 
+	@BeanReference(type = CompanyLocalService.class)
+	private CompanyLocalService _companyLocalService;
+
 	private final AtomicReference<String[]> _friendlyURLMapperRootPortletIds =
 		new AtomicReference<>(new String[0]);
 
 	@BeanReference(type = LayoutLocalService.class)
 	private LayoutLocalService _layoutLocalService;
+
+	@BeanReference(type = PortletPreferencesLocalService.class)
+	private PortletPreferencesLocalService _portletPreferencesLocalService;
+
+	@BeanReference(type = ResourceLocalService.class)
+	private ResourceLocalService _resourceLocalService;
+
+	@BeanReference(type = ResourcePermissionLocalService.class)
+	private ResourcePermissionLocalService _resourcePermissionLocalService;
+
+	@BeanReference(type = RoleLocalService.class)
+	private RoleLocalService _roleLocalService;
 
 	private ServiceTracker<FriendlyURLMapper, String[]> _serviceTracker;
 

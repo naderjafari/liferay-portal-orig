@@ -1,5 +1,95 @@
 # Poshi Runner Change Log
 
+## 1.0.316
+
+### Other
+
+* [LPS-105380](https://issues.liferay.com/browse/LPS-105380) - SourceFormatter Improvements
+
+### PQL
+
+* [POSHI-191](https://issues.liferay.com/browse/POSHI-191) - The @ignore attribute will only ignore a test if it is set to 'true'
+
+### Utils
+
+* [POSHI-180](https://issues.liferay.com/browse/POSHI-180) - As a test engineer, I would like to get a value in list from a specified index
+* [POSHI-196](https://issues.liferay.com/browse/POSHI-196) - BrowserMob proxy not working when running more than one test
+
+### Validation
+
+* [POSHI-195](https://issues.liferay.com/browse/POSHI-195) - Add validation for Url -> URL
+
+### WebDriver
+
+* [POSHI-190](https://issues.liferay.com/browse/POSHI-190) - Add support to interact with shadow-root elements
+
+## 1.0.313
+
+### PQL
+
+* [POSHI-191](https://issues.liferay.com/browse/POSHI-191) - The @ignore attribute will only ignore a test if it is set to 'true'
+
+### Utils
+
+* [POSHI-180](https://issues.liferay.com/browse/POSHI-180) - As a test engineer, I would like to get a value in list from a specified index
+
+### WebDriver
+
+* [POSHI-167](https://issues.liferay.com/browse/POSHI-167) - Add right click method
+* [POSHI-185](https://issues.liferay.com/browse/POSHI-185) - Catch 'NoSuchWindowException' when taking screenshots
+
+## 1.0.311
+
+### Core
+
+* [POSHI-188](https://issues.liferay.com/browse/POSHI-188) - Ignore priority property when grouping tests
+
+### Other
+
+* [LRCI-2468](https://issues.liferay.com/browse/LRCI-2468) - Create poshi property groups to help reduce redundant properties
+
+### WebDriver
+
+* [POSHI-186](https://issues.liferay.com/browse/POSHI-186) - Improve StringUtil.matches() method
+
+## 1.0.310
+
+### Other
+
+* [LPS-138138](https://issues.liferay.com/browse/LPS-138138) - Make data guard usable in functional tests
+
+## 1.0.309
+
+### PQL
+
+* [POSHI-177](https://issues.liferay.com/browse/POSHI-177) - Fix null values for PQL when it is not set anywhere
+
+### WebDriver
+
+* [POSHI-179](https://issues.liferay.com/browse/POSHI-179) - WebElement.clear() doesn't work on React input boxes in Chrome 86
+
+## 1.0.307
+
+### Other
+
+* [LRCI-2320](https://issues.liferay.com/browse/LRCI-2320) - SF Failures in test.cloud-10-0-10-111.lax.liferay.com.properties, test.case.method.names.properties and sql.profile-dxp.properties
+
+### Utils
+
+* [POSHI-171](https://issues.liferay.com/browse/POSHI-171) - Allow JSONCurlUtil to pass along URLs as parameters in the curl
+* [POSHI-172](https://issues.liferay.com/browse/POSHI-172) - Add JSONCurlUtil method that removes quotes from the json-path query result
+* [POSHI-173](https://issues.liferay.com/browse/POSHI-173) - Provide easy and clean delimited String lists usage in Poshi
+
+## 1.0.306
+
+### PQL
+
+* [LRCI-2310](https://issues.liferay.com/browse/LRCI-2310) - Add ability to create PQL to match by class name & case name
+
+### Utils
+
+* [POSHI-169](https://issues.liferay.com/browse/POSHI-169) - As a test engineer, it should be possible to process/parse a Har file returned from BrowerMob
+
 ## 1.0.304
 
 ### Core

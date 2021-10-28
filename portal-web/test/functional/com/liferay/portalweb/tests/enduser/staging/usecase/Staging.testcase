@@ -222,6 +222,8 @@ definition {
 	@priority = "3"
 	@uitest
 	test ConfigureDDMStructureViaAPWhenNotStagedAssets {
+		property testray.component.name = "Data Engine";
+
 		Navigator.openSiteURL(siteName = "Site Name");
 
 		Portlet.addPG(portletName = "Asset Publisher");
@@ -271,11 +273,7 @@ definition {
 	@priority = "3"
 	@uitest
 	test CreateWidgetTemplateWhenNotStagedADT {
-		Navigator.openSiteURL(siteName = "Site Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Design",
-			portlet = "Widget Templates");
+		ApplicationDisplayTemplates.openWidgetTemplatesAdmin(siteURLKey = "site-name");
 
 		AssertVisible(locator1 = "Button#PLUS");
 
@@ -283,37 +281,31 @@ definition {
 
 		Staging.activateStagingCP(
 			siteName = "Site Name",
-			uncheckContent = "Widget Templates");
+			uncheckContent = "Templates");
 
 		Navigator.gotoStagedSitePage(
 			pageName = "Staging Test Page",
 			siteName = "Site Name");
 
-		ProductMenu.gotoPortlet(
-			category = "Design",
-			portlet = "Widget Templates");
+		ApplicationDisplayTemplates.openWidgetTemplatesAdmin(siteURLKey = "site-name-staging");
 
 		ApplicationDisplayTemplates.addADTWithFieldEntryCP(
 			fieldName = "Asset Entry",
 			portletName = "Asset Publisher");
 
-		AssertTextEquals(
-			locator1 = "ApplicationDisplayTemplates#ADT_TABLE_NAME_1",
-			value1 = "Asset Publisher Test ADT");
+		AssertVisible(
+			key_tableEntry = "Asset Publisher Test ADT",
+			locator1 = "LexiconTable#TABLE_ENTRY_TITLE");
 
-		Navigator.openSiteURL(siteName = "Site Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Design",
-			portlet = "Widget Templates");
+		ApplicationDisplayTemplates.openWidgetTemplatesAdmin(siteURLKey = "site-name");
 
 		ApplicationDisplayTemplates.addADTWithFieldEntryCP(
 			fieldName = "Blog Entries",
 			portletName = "Blogs");
 
-		AssertTextEquals(
-			locator1 = "ApplicationDisplayTemplates#ADT_TABLE_NAME_2",
-			value1 = "Blogs Test ADT");
+		AssertVisible(
+			key_tableEntry = "Blogs Test ADT",
+			locator1 = "LexiconTable#TABLE_ENTRY_TITLE");
 	}
 
 	@priority = "4"
@@ -428,29 +420,52 @@ definition {
 	@priority = "4"
 	test EnableStagingWithWebContentReferencedFromDeletedSite {
 		JSONWebcontent.addWebContent(
-			content = "WC Content",
+			content = "WC Content 1",
 			groupName = "Site Name",
-			title = "WC Title");
+			title = "WC Title 1");
 
-		JSONGroup.addGroup(groupName = "Site B Name");
+		JSONGroup.addGroup(groupName = "Site B");
 
-		JSONLayout.addPublicLayout(
-			groupName = "Site B Name",
-			layoutName = "Site B Test Page");
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-b");
 
-		Navigator.gotoSitePage(
-			pageName = "Site B Test Page",
-			siteName = "Site B Name");
+		NavItem.gotoStructures();
 
-		Portlet.addPG(portletName = "Web Content Display");
+		WebContentStructures.addCP(
+			structureDescription = "Structure Description",
+			structureName = "Structure Name");
 
-		WebContentDisplayPortlet.selectOtherSiteWebContent(
+		DataEngine.addField(
+			fieldFieldLabel = "Web Content",
+			fieldName = "Web Content");
+
+		WebContentStructures.saveCP(structureName = "Structure Name");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-b");
+
+		NavItem.gotoTemplates();
+
+		WebContentTemplates.addCP(
+			structureName = "Structure Name",
+			templateDescription = "Template Description",
+			templateFieldNames = "Web Content",
+			templateName = "Template Name");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-b");
+
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "Structure Name");
+
+		WebContent.addWithStructureCP(
 			otherSiteName = "Site Name",
-			webContentTitle = "WC Title");
+			structureName = "Structure Name",
+			templateName = "Template Name",
+			webContentTitle = "WC Title 2",
+			webContentWebContent = "WC Title 1");
+
+		PortletEntry.publish();
 
 		JSONGroup.deleteGroupByName(groupName = "Site Name");
 
-		JSONStaging.enableLocalStaging(groupName = "Site B Name");
+		JSONStaging.enableLocalStaging(groupName = "Site B");
 	}
 
 	@priority = "5"
@@ -460,6 +475,7 @@ definition {
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
 
 		LAR.importPortlet(
+			filePath = "enduser/staging/usecase",
 			importSchemaVersionMismatching = "true",
 			larFileName = "7.0.10.14_webcontent.lar",
 			portletName = "Web Content",
@@ -494,7 +510,7 @@ definition {
 		Staging.viewAddButtonExists();
 	}
 
-	@description = "This is a use case for LPS-124180."
+	@description = "This is a use case for LPS-124180 and LPS-136025."
 	@priority = "4"
 	test PublishChildPageWithoutItsParentPage {
 		property test.name.skip.portal.instance = "Staging#PublishChildPageWithoutItsParentPage";
@@ -538,7 +554,14 @@ definition {
 
 		Staging.configurePublishToLive(checkPageName = "Child Page");
 
-		Staging.publishToLive();
+		Staging.publishToLive(publicationName = "summCheck");
+
+		Staging.openStagingAdmin(siteURLKey = "site-name-staging");
+
+		Staging.viewPublicationSummary(
+			pagesNotToPublish = '''<div>Staging Test Page</div>''',
+			pagesToPublish = '''/Child Page''',
+			publicationTitle = "summCheck");
 
 		Navigator.gotoSitePage(
 			pageName = "Staging Test Page",
@@ -562,8 +585,9 @@ definition {
 		property custom.properties = "tunneling.servlet.shared.secret=1234567890123456${line.separator}auth.verifier.TunnelAuthVerifier.hosts.allowed=";
 		property databases.size = "1";
 		property test.name.skip.portal.instance = "Staging#PublishChildSiteViaRemoteStagingWithParentStructure";
+		property testray.component.name = "Data Engine";
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			groupName = "Child SiteName",
 			parentGroupName = "Site Name");
 
@@ -679,7 +703,7 @@ definition {
 
 		Navigator.openWithAppendToBaseURL(urlAppend = "web/site-name-staging/test-content-page");
 
-		ContentPages.clickPencil();
+		ContentPages.gotoPageEditor();
 
 		PageEditor.addWidget(portletName = "Web Content Display");
 

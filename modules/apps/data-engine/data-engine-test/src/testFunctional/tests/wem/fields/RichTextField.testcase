@@ -235,9 +235,8 @@ definition {
 
 		WebContentNavigator.gotoEditStructure(structureName = "WC Structure Name");
 
-		DataEngine.viewFieldReference(
-			fieldFieldLabel = "Rich Text",
-			fieldName = "Rich Text",
+		DEBuilder.assertFieldReference(
+			fieldLabel = "Rich Text",
 			fieldReference = "TestValidReference");
 
 		DataEngine.editFieldReference(
@@ -249,9 +248,8 @@ definition {
 
 		WebContentNavigator.gotoEditStructure(structureName = "WC Structure Name");
 
-		DataEngine.viewFieldReference(
-			fieldFieldLabel = "Rich Text",
-			fieldName = "Rich Text",
+		DEBuilder.assertFieldReference(
+			fieldLabel = "Rich Text",
 			fieldReference = "TestInvalidReference");
 	}
 
@@ -274,34 +272,6 @@ definition {
 			fieldFieldLabel = "Rich Text Edited",
 			fieldHelp = "Help Text",
 			fieldName = "Rich Text");
-	}
-
-	@description = "This test verifies that a user can toggle hide/show the field label."
-	@priority = "3"
-	test ShowAndHideRichTextLabel {
-		DataEngine.editShowOrHideLabel(
-			fieldFieldLabel = "Rich Text",
-			showLabel = "true");
-
-		WebContentStructures.saveCP();
-
-		WebContentNavigator.gotoEditStructure(structureName = "WC Structure Name");
-
-		AssertVisible(
-			key_fieldFieldLabel = "Rich Text",
-			locator1 = "DDMEditStructure#FORM_FIELD_CONTAINER_LABEL");
-
-		DataEngine.editShowOrHideLabel(
-			fieldFieldLabel = "Rich Text",
-			showLabel = "false");
-
-		WebContentStructures.saveCP();
-
-		WebContentNavigator.gotoEditStructure(structureName = "WC Structure Name");
-
-		AssertElementNotPresent(
-			key_fieldFieldLabel = "Rich Text",
-			locator1 = "DDMEditStructure#FORM_FIELD_CONTAINER_LABEL");
 	}
 
 	@description = "This test verifies that a user can see the Tip(Help Text) if it was defined."

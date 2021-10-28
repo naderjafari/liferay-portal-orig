@@ -25,38 +25,49 @@ import {selectPageContentDropdownItems} from '../../app/selectors/selectPageCont
 import {useId} from '../../app/utils/useId';
 import {openItemSelector} from '../../core/openItemSelector';
 
+const DEFAULT_PREVENT_ITEM_SELECT = () => false;
+
+const DEFAULT_OPTIONS_MENU_ITEMS = [];
+
+const DEFAULT_QUICK_MAPPED_INFO_ITEMS = [];
+
 export default function ItemSelector({
+	className,
 	eventName,
 	itemSelectorURL,
 	label,
-	onItemSelect,
-	quickMappedInfoItems = [],
 	modalProps,
+	onItemSelect,
+	optionsMenuItems = DEFAULT_OPTIONS_MENU_ITEMS,
+	quickMappedInfoItems = DEFAULT_QUICK_MAPPED_INFO_ITEMS,
 	selectedItem,
-	showAddButton = true,
+	shouldPreventItemSelect = DEFAULT_PREVENT_ITEM_SELECT,
+	showEditControls = true,
 	showMappedItems = true,
 	transformValueCallback,
 }) {
 	const itemSelectorInputId = useId();
 
-	const openModal = useCallback(
-		() =>
-			openItemSelector({
-				callback: onItemSelect,
-				eventName:
-					eventName || `${config.portletNamespace}selectInfoItem`,
-				itemSelectorURL: itemSelectorURL || config.infoItemSelectorURL,
-				modalProps,
-				transformValueCallback,
-			}),
-		[
-			eventName,
-			itemSelectorURL,
+	const openModal = useCallback(() => {
+		if (shouldPreventItemSelect()) {
+			return;
+		}
+
+		openItemSelector({
+			callback: onItemSelect,
+			eventName: eventName || `${config.portletNamespace}selectInfoItem`,
+			itemSelectorURL: itemSelectorURL || config.infoItemSelectorURL,
 			modalProps,
-			onItemSelect,
 			transformValueCallback,
-		]
-	);
+		});
+	}, [
+		eventName,
+		itemSelectorURL,
+		modalProps,
+		onItemSelect,
+		shouldPreventItemSelect,
+		transformValueCallback,
+	]);
 
 	const mappedItemsMenu = useSelectorCallback(
 		(state) => {
@@ -67,9 +78,9 @@ export default function ItemSelector({
 			}
 
 			const transformMappedItem = (item) => ({
-				itemId: `${item.classNameId}-${item.classPK}`,
-				label: item.title,
-				onClick: () => onItemSelect(item),
+				'data-item-id': `${item.classNameId}-${item.classPK}`,
+				'label': item.title,
+				'onClick': () => onItemSelect(item),
 			});
 
 			if (quickMappedInfoItems.length > 0) {
@@ -77,8 +88,8 @@ export default function ItemSelector({
 					transformMappedItem
 				);
 			}
-			else if (state.mappedInfoItems?.length > 0) {
-				transformedMappedItems = state.mappedInfoItems.map(
+			else if (state.pageContents?.length > 0) {
+				transformedMappedItems = state.pageContents.map(
 					transformMappedItem
 				);
 			}
@@ -103,22 +114,31 @@ export default function ItemSelector({
 		[onItemSelect, openModal, quickMappedInfoItems, showMappedItems],
 		(a, b) =>
 			a.length === b.length &&
-			a.every((item, index) => item.itemId === b[index].itemId)
+			a.every(
+				(item, index) =>
+					item['data-item-id'] === b[index]['data-item-id']
+			)
 	);
 
 	const optionsMenu = useSelectorCallback(
 		(state) => {
 			const menuItems = [];
 
-			if (config.contentBrowsingEnabled && selectedItem?.classPK) {
+			if (selectedItem?.classPK) {
 				const contentMenuItems = selectPageContentDropdownItems(
 					selectedItem.classPK,
 					label
-				)(state);
+				)(state)?.filter(
+					(item) => item.label !== Liferay.Language.get('edit-image')
+				);
 
 				if (contentMenuItems?.length) {
 					menuItems.push(...contentMenuItems, {type: 'divider'});
 				}
+			}
+
+			if (optionsMenuItems.length) {
+				menuItems.push(...optionsMenuItems, {type: 'divider'});
 			}
 
 			menuItems.push({
@@ -131,7 +151,29 @@ export default function ItemSelector({
 
 			return menuItems;
 		},
-		[label, onItemSelect, selectedItem]
+		[label, onItemSelect, optionsMenuItems, selectedItem]
+	);
+
+	const selectedItemTitle = useSelectorCallback(
+		(state) => {
+			if (!selectedItem) {
+				return '';
+			}
+
+			return (
+				[
+					...(quickMappedInfoItems || []),
+					...(state.pageContents || []),
+				].find(
+					(item) =>
+						item.classNameId === selectedItem.classNameId &&
+						item.classPK === selectedItem.classPK
+				)?.title ||
+				selectedItem.title ||
+				''
+			);
+		},
+		[quickMappedInfoItems, selectedItem]
 	);
 
 	const selectContentButtonIcon = selectedItem?.title ? 'change' : 'plus';
@@ -144,88 +186,121 @@ export default function ItemSelector({
 	);
 
 	return (
-		<ClayForm.Group className="mb-2" small>
+		<ClayForm.Group className={className}>
 			<label htmlFor={itemSelectorInputId}>{label}</label>
 
-			<div className="d-flex">
-				<ClayInput
-					className={classNames('mr-2', {
-						'page-editor__item-selector__content-input': showAddButton,
-					})}
-					id={itemSelectorInputId}
-					onClick={() => {
-						if (showAddButton) {
-							openModal();
-						}
-					}}
-					placeholder={Liferay.Util.sub(
-						Liferay.Language.get('select-x'),
-						label
-					)}
-					readOnly
-					sizing="sm"
-					type="text"
-					value={selectedItem?.title || ''}
-				/>
+			<ClayInput.Group small>
+				<ClayInput.GroupItem>
+					<ClayInput
+						className={classNames({
+							'page-editor__item-selector__content-input': showEditControls,
+						})}
+						id={itemSelectorInputId}
+						onClick={() => {
+							if (showEditControls) {
+								openModal();
+							}
+						}}
+						placeholder={Liferay.Util.sub(
+							Liferay.Language.get('select-x'),
+							label
+						)}
+						readOnly
+						sizing="sm"
+						type="text"
+						value={selectedItemTitle}
+					/>
+				</ClayInput.GroupItem>
 
-				{showAddButton &&
+				{showEditControls &&
 					(mappedItemsMenu.length > 0 ? (
+						<ClayInput.GroupItem shrink>
+							<ClayDropDownWithItems
+								items={mappedItemsMenu}
+								menuElementAttrs={{
+									containerProps: {
+										className: 'cadmin',
+									},
+								}}
+								trigger={
+									<ClayButtonWithIcon
+										aria-label={selectContentButtonLabel}
+										displayType="secondary"
+										small
+										symbol={selectContentButtonIcon}
+										title={selectContentButtonLabel}
+									/>
+								}
+							/>
+						</ClayInput.GroupItem>
+					) : (
+						<ClayInput.GroupItem shrink>
+							<ClayButtonWithIcon
+								aria-label={selectContentButtonLabel}
+								displayType="secondary"
+								onClick={openModal}
+								small
+								symbol={selectContentButtonIcon}
+								title={selectContentButtonLabel}
+							/>
+						</ClayInput.GroupItem>
+					))}
+
+				{showEditControls && selectedItem?.title && (
+					<ClayInput.GroupItem shrink>
 						<ClayDropDownWithItems
-							items={mappedItemsMenu}
+							items={optionsMenu}
+							menuElementAttrs={{
+								containerProps: {
+									className: 'cadmin',
+								},
+							}}
 							trigger={
 								<ClayButtonWithIcon
-									aria-label={selectContentButtonLabel}
-									className="page-editor__item-selector__content-button"
+									aria-label={Liferay.Util.sub(
+										Liferay.Language.get('view-x-options'),
+										label
+									)}
 									displayType="secondary"
 									small
-									symbol={selectContentButtonIcon}
-									title={selectContentButtonLabel}
+									symbol="ellipsis-v"
+									title={Liferay.Util.sub(
+										Liferay.Language.get('view-x-options'),
+										label
+									)}
 								/>
 							}
 						/>
-					) : (
-						<ClayButtonWithIcon
-							aria-label={selectContentButtonLabel}
-							className="page-editor__item-selector__content-button"
-							displayType="secondary"
-							onClick={openModal}
-							small
-							symbol={selectContentButtonIcon}
-							title={selectContentButtonLabel}
-						/>
-					))}
-
-				{selectedItem?.title && (
-					<ClayDropDownWithItems
-						items={optionsMenu}
-						trigger={
-							<ClayButtonWithIcon
-								aria-label={Liferay.Util.sub(
-									Liferay.Language.get('view-x-options'),
-									label
-								)}
-								className="ml-2 page-editor__item-selector__content-button"
-								displayType="secondary"
-								small
-								symbol="ellipsis-v"
-								title={Liferay.Util.sub(
-									Liferay.Language.get('view-x-options'),
-									label
-								)}
-							/>
-						}
-					/>
+					</ClayInput.GroupItem>
 				)}
-			</div>
+			</ClayInput.Group>
 		</ClayForm.Group>
 	);
 }
 
 ItemSelector.propTypes = {
+	className: PropTypes.string,
 	eventName: PropTypes.string,
 	itemSelectorURL: PropTypes.string,
 	label: PropTypes.string.isRequired,
+	modalProps: PropTypes.object,
 	onItemSelect: PropTypes.func.isRequired,
+	optionsMenuItems: PropTypes.arrayOf(
+		PropTypes.shape({
+			label: PropTypes.string.isRequired,
+			onClick: PropTypes.func.isRequired,
+		})
+	),
+	quickMappedInfoItems: PropTypes.arrayOf(
+		PropTypes.shape({
+			classNameId: PropTypes.string,
+			classPK: PropTypes.string,
+			title: PropTypes.string,
+		})
+	),
 	selectedItem: PropTypes.shape({title: PropTypes.string}),
+	shouldPreventItemSelect: PropTypes.func,
+	showEditControls: PropTypes.bool,
+	showMappedItems: PropTypes.bool,
 	transformValueCallback: PropTypes.func.isRequired,
 };

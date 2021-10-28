@@ -28,7 +28,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -50,7 +49,6 @@ import com.liferay.portal.workflow.metrics.rest.client.pagination.Page;
 import com.liferay.portal.workflow.metrics.rest.client.resource.v1_0.ProcessResource;
 import com.liferay.portal.workflow.metrics.rest.client.serdes.v1_0.ProcessSerDes;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -350,6 +348,20 @@ public abstract class BaseProcessResourceTestCase {
 			"This method needs to be implemented");
 	}
 
+	protected void assertContains(Process process, List<Process> processes) {
+		boolean contains = false;
+
+		for (Process item : processes) {
+			if (equals(process, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(processes + " does not contain " + process, contains);
+	}
+
 	protected void assertHttpResponseStatusCode(
 		int expectedHttpResponseStatusCode,
 		HttpInvoker.HttpResponse actualHttpResponse) {
@@ -496,7 +508,7 @@ public abstract class BaseProcessResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.portal.workflow.metrics.rest.dto.v1_0.Process.
 						class)) {
@@ -513,12 +525,13 @@ public abstract class BaseProcessResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -678,14 +691,16 @@ public abstract class BaseProcessResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -991,8 +1006,8 @@ public abstract class BaseProcessResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseProcessResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseProcessResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

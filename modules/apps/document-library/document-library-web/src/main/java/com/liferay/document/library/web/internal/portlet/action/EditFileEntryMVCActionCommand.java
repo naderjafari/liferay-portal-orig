@@ -43,7 +43,6 @@ import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.document.library.kernel.service.DLTrashService;
 import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.document.library.kernel.util.DLValidator;
-import com.liferay.document.library.web.internal.configuration.util.FFExpirationDateReviewDateConfigurationUtil;
 import com.liferay.document.library.web.internal.exception.FileEntryExpirationDateException;
 import com.liferay.document.library.web.internal.exception.FileEntryReviewDateException;
 import com.liferay.document.library.web.internal.exception.FileNameExtensionException;
@@ -110,6 +109,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.util.RepositoryUtil;
 import com.liferay.trash.service.TrashEntryService;
 import com.liferay.upload.UploadResponseHandler;
 
@@ -372,15 +372,24 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 		UploadPortletRequest uploadPortletRequest =
 			_portal.getUploadPortletRequest(actionRequest);
 
+		long repositoryId = ParamUtil.getLong(
+			uploadPortletRequest, "repositoryId");
+
+		boolean neverExpireDefaultValue = false;
+
+		if (RepositoryUtil.isExternalRepository(repositoryId)) {
+			neverExpireDefaultValue = true;
+		}
+
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
 		User user = _userLocalService.getUser(themeDisplay.getUserId());
 
 		Date expirationDate = _getExpirationDate(
-			uploadPortletRequest, user.getTimeZone());
+			uploadPortletRequest, neverExpireDefaultValue, user.getTimeZone());
 		Date reviewDate = _getReviewDate(
-			uploadPortletRequest, user.getTimeZone());
+			uploadPortletRequest, neverExpireDefaultValue, user.getTimeZone());
 
 		for (String selectedFileName : selectedFileNames) {
 			_addMultipleFileEntries(
@@ -392,16 +401,13 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (KeyValuePair validFileNameKVP : validFileNameKVPs) {
-			String fileName = validFileNameKVP.getKey();
-			String originalFileName = validFileNameKVP.getValue();
-
 			jsonArray.put(
 				JSONUtil.put(
 					"added", Boolean.TRUE
 				).put(
-					"fileName", fileName
+					"fileName", validFileNameKVP.getKey()
 				).put(
-					"originalFileName", originalFileName
+					"originalFileName", validFileNameKVP.getValue()
 				));
 		}
 
@@ -865,17 +871,12 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	private Date _getExpirationDate(
-			UploadPortletRequest uploadPortletRequest, TimeZone timeZone)
+			UploadPortletRequest uploadPortletRequest,
+			boolean neverExpireDefaultValue, TimeZone timeZone)
 		throws PortalException {
 
-		if (!FFExpirationDateReviewDateConfigurationUtil.
-				expirationDateEnabled()) {
-
-			return null;
-		}
-
 		boolean neverExpire = ParamUtil.getBoolean(
-			uploadPortletRequest, "neverExpire");
+			uploadPortletRequest, "neverExpire", neverExpireDefaultValue);
 
 		if (!PropsValues.SCHEDULER_ENABLED || neverExpire) {
 			return null;
@@ -898,22 +899,26 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 			expirationDateHour += 12;
 		}
 
-		return _portal.getDate(
+		Date expirationDate = _portal.getDate(
 			expirationDateMonth, expirationDateDay, expirationDateYear,
 			expirationDateHour, expirationDateMinute, timeZone,
 			FileEntryExpirationDateException.class);
+
+		if ((expirationDate != null) && expirationDate.before(new Date())) {
+			throw new FileEntryExpirationDateException(
+				"Expiration date " + expirationDate + " is in the past");
+		}
+
+		return expirationDate;
 	}
 
 	private Date _getReviewDate(
-			UploadPortletRequest uploadPortletRequest, TimeZone timeZone)
+			UploadPortletRequest uploadPortletRequest,
+			boolean neverReviewDefaultValue, TimeZone timeZone)
 		throws PortalException {
 
-		if (!FFExpirationDateReviewDateConfigurationUtil.reviewDateEnabled()) {
-			return null;
-		}
-
 		boolean neverReview = ParamUtil.getBoolean(
-			uploadPortletRequest, "neverReview");
+			uploadPortletRequest, "neverReview", neverReviewDefaultValue);
 
 		if (!PropsValues.SCHEDULER_ENABLED || neverReview) {
 			return null;
@@ -1197,10 +1202,18 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 
 			User user = _userLocalService.getUser(themeDisplay.getUserId());
 
+			boolean addDynamic = false;
+
+			if (cmd.equals(Constants.ADD_DYNAMIC) ||
+				RepositoryUtil.isExternalRepository(repositoryId)) {
+
+				addDynamic = true;
+			}
+
 			Date expirationDate = _getExpirationDate(
-				uploadPortletRequest, user.getTimeZone());
+				uploadPortletRequest, addDynamic, user.getTimeZone());
 			Date reviewDate = _getReviewDate(
-				uploadPortletRequest, user.getTimeZone());
+				uploadPortletRequest, addDynamic, user.getTimeZone());
 
 			ServiceContext serviceContext = _createServiceContext(
 				uploadPortletRequest);
@@ -1288,16 +1301,12 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 	private void _validateFileName(String sourceFileName, String extension)
 		throws FileNameExtensionException {
 
-		if (Validator.isNotNull(extension)) {
-			if (Validator.isNull(sourceFileName)) {
-				throw new FileNameExtensionException(
-					"The file name cannot be empty or without extension");
-			}
+		if (Validator.isNotNull(extension) &&
+			(Validator.isNull(sourceFileName) ||
+			 Validator.isNull(FileUtil.getExtension(sourceFileName)))) {
 
-			if (Validator.isNull(FileUtil.getExtension(sourceFileName))) {
-				throw new FileNameExtensionException(
-					"The file name cannot be empty or without extension");
-			}
+			throw new FileNameExtensionException(
+				"The file name cannot be empty or without extension");
 		}
 	}
 

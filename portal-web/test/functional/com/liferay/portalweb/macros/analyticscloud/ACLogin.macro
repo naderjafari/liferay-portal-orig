@@ -1,9 +1,7 @@
 definition {
 
 	macro loginAs {
-		if (!(isSet(emailAddress))) {
-			emailAddress = "test@liferay.com";
-		}
+		WaitForPageLoad();
 
 		if (!(isSet(password))) {
 			password = "test";

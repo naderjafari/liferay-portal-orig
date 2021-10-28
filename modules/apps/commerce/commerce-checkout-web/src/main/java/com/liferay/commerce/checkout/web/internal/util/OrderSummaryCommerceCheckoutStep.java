@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.checkout.web.internal.util;
 
+import com.liferay.commerce.checkout.helper.CommerceCheckoutStepHttpHelper;
 import com.liferay.commerce.checkout.web.internal.display.context.OrderSummaryCheckoutStepDisplayContext;
 import com.liferay.commerce.constants.CommerceCheckoutWebKeys;
 import com.liferay.commerce.discount.exception.CommerceDiscountLimitationTimesException;
@@ -42,11 +43,13 @@ import com.liferay.commerce.util.BaseCommerceCheckoutStep;
 import com.liferay.commerce.util.CommerceCheckoutStep;
 import com.liferay.commerce.util.CommerceShippingHelper;
 import com.liferay.frontend.taglib.servlet.taglib.util.JSPRenderer;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.URLCodec;
@@ -61,6 +64,7 @@ import javax.portlet.ActionResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -104,7 +108,8 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 			_validateCommerceOrder(actionRequest, commerceOrderUuid);
 
 			_checkoutCommerceOrder(
-				_portal.getHttpServletRequest(actionRequest));
+				_portal.getHttpServletRequest(actionRequest),
+				_portal.getHttpServletResponse(actionResponse));
 		}
 		catch (Exception exception) {
 			Throwable throwable = exception.getCause();
@@ -138,9 +143,9 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 					_commerceChannelLocalService, _commerceOrderHttpHelper,
 					_commerceOrderPriceCalculation,
 					_commerceOrderValidatorRegistry, _commercePaymentEngine,
-					_commerceProductPriceCalculation, _cpInstanceHelper,
-					_commerceOptionValueHelper, _percentageFormatter,
-					httpServletRequest);
+					_commerceProductPriceCalculation,
+					_commerceOptionValueHelper, _cpInstanceHelper,
+					httpServletRequest, _percentageFormatter, _portal);
 
 		CommerceOrder commerceOrder =
 			orderSummaryCheckoutStepDisplayContext.getCommerceOrder();
@@ -151,7 +156,7 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 		if (!commerceOrder.isOpen()) {
 			httpServletRequest.setAttribute(
 				CommerceCheckoutWebKeys.COMMERCE_CHECKOUT_STEP_ORDER_DETAIL_URL,
-				_commerceCheckoutStepHelper.getOrderDetailURL(
+				_commerceCheckoutStepHttpHelper.getOrderDetailURL(
 					httpServletRequest, commerceOrder));
 
 			_jspRenderer.renderJSP(
@@ -211,7 +216,9 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 		}
 	}
 
-	private void _checkoutCommerceOrder(HttpServletRequest httpServletRequest)
+	private void _checkoutCommerceOrder(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws Exception {
 
 		CommerceOrder commerceOrder =
@@ -219,8 +226,27 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 				CommerceCheckoutWebKeys.COMMERCE_ORDER);
 
 		if (commerceOrder.isOpen()) {
-			_commerceOrderEngine.checkoutCommerceOrder(
-				commerceOrder, _portal.getUserId(httpServletRequest));
+			CommerceOrder checkedOutCommerceOrder =
+				_commerceOrderEngine.checkoutCommerceOrder(
+					commerceOrder, _portal.getUserId(httpServletRequest));
+
+			if (!checkedOutCommerceOrder.isOpen()) {
+				CookieKeys.deleteCookies(
+					httpServletRequest, httpServletResponse,
+					CookieKeys.getDomain(httpServletRequest),
+					CommerceOrder.class.getName() + StringPool.POUND +
+						commerceOrder.getGroupId());
+
+				HttpServletRequest originalHttpServletRequest =
+					_portal.getOriginalServletRequest(httpServletRequest);
+
+				HttpSession httpSession =
+					originalHttpServletRequest.getSession();
+
+				httpSession.removeAttribute(
+					CommerceOrder.class.getName() + StringPool.POUND +
+						commerceOrder.getGroupId());
+			}
 		}
 	}
 
@@ -246,15 +272,15 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 			actionRequest);
 
 		if ((commerceOrder.getBillingAddressId() <= 0) &&
-			_commerceCheckoutStepHelper.
+			_commerceCheckoutStepHttpHelper.
 				isActiveBillingAddressCommerceCheckoutStep(
-					httpServletRequest)) {
+					httpServletRequest, commerceOrder)) {
 
 			throw new CommerceOrderBillingAddressException();
 		}
 
 		if ((commerceOrder.getCommerceShippingMethodId() <= 0) &&
-			_commerceCheckoutStepHelper.
+			_commerceCheckoutStepHttpHelper.
 				isActiveShippingMethodCommerceCheckoutStep(
 					httpServletRequest)) {
 
@@ -265,8 +291,9 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 			commerceOrder.getCommercePaymentMethodKey();
 
 		if (commercePaymentMethodKey.isEmpty() &&
-			_commerceCheckoutStepHelper.
-				isActivePaymentMethodCommerceCheckoutStep(httpServletRequest)) {
+			_commerceCheckoutStepHttpHelper.
+				isActivePaymentMethodCommerceCheckoutStep(
+					httpServletRequest, commerceOrder)) {
 
 			throw new CommerceOrderPaymentMethodException();
 		}
@@ -304,7 +331,7 @@ public class OrderSummaryCommerceCheckoutStep extends BaseCommerceCheckoutStep {
 	private CommerceChannelLocalService _commerceChannelLocalService;
 
 	@Reference
-	private CommerceCheckoutStepHelper _commerceCheckoutStepHelper;
+	private CommerceCheckoutStepHttpHelper _commerceCheckoutStepHttpHelper;
 
 	@Reference
 	private CommerceOptionValueHelper _commerceOptionValueHelper;

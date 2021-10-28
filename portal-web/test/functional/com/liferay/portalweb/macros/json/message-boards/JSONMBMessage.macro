@@ -162,6 +162,10 @@ definition {
 
 		var portalURL = JSONCompany.getPortalURL();
 
+		var serviceContext = JSONServiceContextUtil.setServiceContext(
+			addGroupPermissions = "true",
+			addGuestPermissions = "${addGuestPermissions}");
+
 		var curl = '''
 			${portalURL}/api/jsonws/mb.mbmessage/add-message \
 				-u test@liferay.com:test \
@@ -173,6 +177,7 @@ definition {
 				-d anonymous=${anonymous} \
 				-d priority=0 \
 				-d allowPingbacks=true \
+				-d serviceContext=${serviceContext}
 		''';
 
 		echo("## Adding a 'Message' with the following info using JSONWS:");
@@ -251,7 +256,7 @@ definition {
 
 		var categoryId = JSONCurlUtil.post("${curl}", "$.[?(@['name'] == '${categoryName}')]['categoryId']");
 
-		if ("${categoryId}" == "[]") {
+		if ("${categoryId}" == "") {
 			fail("FAIL. Cannot find category.");
 		}
 
@@ -295,7 +300,7 @@ definition {
 
 		var messageId = JSONCurlUtil.post("${curl}", "$.[?(@['title'] == '${threadSubject}')]['rootMessageId']");
 
-		if ("${messageId}" == "[]") {
+		if ("${messageId}" == "") {
 			fail("FAIL. Cannot find category.");
 		}
 
@@ -330,7 +335,7 @@ definition {
 
 		var threadId = JSONCurlUtil.post("${curl}", "$.[?(@['title'] == '${threadSubject}')]['threadId']");
 
-		if ("${threadId}" == "[]") {
+		if ("${threadId}" == "") {
 			fail("FAIL. Cannot find category.");
 		}
 
@@ -367,6 +372,53 @@ definition {
 			${portalURL}/api/jsonws/mb.mbthread/move-thread-to-trash \
 				-u test@liferay.com:test \
 				-d threadId=${threadId} \
+		''';
+
+		com.liferay.poshi.runner.util.JSONCurlUtil.post("${curl}");
+	}
+
+	@summary = "This calls the JSON WS API to split a thread"
+	macro splitThread {
+		var messageId = JSONMBMessage.getMessageIdByName(
+			categoryName = "${categoryName}",
+			groupName = "${groupName}",
+			threadSubject = "${threadSubject}");
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/mb.mbthread/split-thread \
+				-u test@liferay.com:test \
+				-d messageId=${messageId} \
+				-d subject=${threadSplitSubject}
+		''';
+
+		com.liferay.poshi.runner.util.JSONCurlUtil.post("${curl}");
+	}
+
+	@summary = "This calls the JSON WS API to subscribe to a message"
+	macro subscribeToMessage {
+		Variables.assertDefined(parameterList = "${threadSubject},${groupName}");
+
+		var messageId = JSONMBMessage.getMessageIdByName(
+			categoryName = "${categoryName}",
+			groupName = "${groupName}",
+			threadSubject = "${threadSubject}");
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		if (!(isSet(userEmailAddress))) {
+			var userEmailAddress = "test@liferay.com";
+		}
+
+		if (!(isSet(userPassword))) {
+			var userPassword = "test";
+		}
+
+		var curl = '''
+			${portalURL}/api/jsonws/mb.mbmessage/subscribe-message \
+				-u ${userEmailAddress}:${userPassword} \
+				-d messageId=${messageId} \
 		''';
 
 		com.liferay.poshi.runner.util.JSONCurlUtil.post("${curl}");

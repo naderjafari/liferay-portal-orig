@@ -20,20 +20,26 @@ import React, {
 	useMemo,
 	useReducer,
 	useRef,
+	useState,
 } from 'react';
 import {useDrag, useDrop} from 'react-dnd';
 import {getEmptyImage} from 'react-dnd-html5-backend';
 
 import {LAYOUT_DATA_ITEM_TYPES} from '../../config/constants/layoutDataItemTypes';
-import {useCollectionItemIndex} from '../../contexts/CollectionItemContext';
+import {
+	useCollectionItemIndex,
+	useParentToControlsId,
+	useToControlsId,
+} from '../../contexts/CollectionItemContext';
 import {useSelectItem} from '../../contexts/ControlsContext';
 import {useSelector} from '../../contexts/StoreContext';
 import {DRAG_DROP_TARGET_TYPE} from './constants/dragDropTargetType';
 import {TARGET_POSITIONS} from './constants/targetPositions';
 import defaultComputeHover from './defaultComputeHover';
-import toControlsId from './toControlsId';
 
 export const initialDragDrop = {
+	canDrag: true,
+
 	dispatch: null,
 
 	layoutDataRef: {
@@ -41,6 +47,8 @@ export const initialDragDrop = {
 			items: [],
 		},
 	},
+
+	setCanDrag: () => {},
 
 	state: {
 
@@ -92,12 +100,14 @@ export const initialDragDrop = {
 
 const DragAndDropContext = React.createContext(initialDragDrop);
 
+export const useSetCanDrag = () => useContext(DragAndDropContext).setCanDrag;
+
 export const NotDraggableArea = ({children}) => (
 	<div
 		draggable
-		onDragStart={(e) => {
-			e.preventDefault();
-			e.stopPropagation();
+		onDragStart={(event) => {
+			event.preventDefault();
+			event.stopPropagation();
 		}}
 	>
 		{children}
@@ -106,13 +116,17 @@ export const NotDraggableArea = ({children}) => (
 
 export function useDragItem(sourceItem, onDragEnd, onBegin = () => {}) {
 	const getSourceItem = useCallback(() => sourceItem, [sourceItem]);
-	const {dispatch, layoutDataRef, state} = useContext(DragAndDropContext);
+	const {canDrag, dispatch, layoutDataRef, state} = useContext(
+		DragAndDropContext
+	);
 	const sourceRef = useRef(null);
 
 	const [{isDraggingSource}, handlerRef, previewRef] = useDrag({
 		begin() {
 			onBegin();
 		},
+
+		canDrag,
 
 		collect: (monitor) => ({
 			isDraggingSource: monitor.isDragging(),
@@ -188,6 +202,9 @@ export function useDropClear() {
 
 export function useDropTarget(_targetItem, computeHover = defaultComputeHover) {
 	const collectionItemIndex = useCollectionItemIndex();
+	const toControlsId = useToControlsId();
+	const parentToControlsId = useParentToControlsId();
+
 	const {dispatch, layoutDataRef, state, targetRefs} = useContext(
 		DragAndDropContext
 	);
@@ -197,15 +214,17 @@ export function useDropTarget(_targetItem, computeHover = defaultComputeHover) {
 		() => ({
 			..._targetItem,
 			collectionItemIndex,
+			parentToControlsId,
+			toControlsId,
 		}),
-		[_targetItem, collectionItemIndex]
+		[_targetItem, collectionItemIndex, toControlsId, parentToControlsId]
 	);
 
 	const isOverTarget =
 		state.dropTargetItem &&
 		targetItem &&
-		toControlsId(layoutDataRef, state.dropTargetItem) ===
-			toControlsId(layoutDataRef, targetItem);
+		state.dropTargetItem.toControlsId(state.dropTargetItem.itemId) ===
+			targetItem.toControlsId(targetItem.itemId);
 
 	const [, setDropTargetRef] = useDrop({
 		accept: Object.values(LAYOUT_DATA_ITEM_TYPES),
@@ -220,19 +239,20 @@ export function useDropTarget(_targetItem, computeHover = defaultComputeHover) {
 				sourceItem: getSourceItem(),
 				targetItem,
 				targetRefs,
+				toControlsId,
 			});
 		},
 	});
 
 	useEffect(() => {
-		const itemId = toControlsId(layoutDataRef, targetItem);
+		const itemId = toControlsId(targetItem.itemId);
 
 		targetRefs.set(itemId, targetRef);
 
 		return () => {
 			targetRefs.delete(itemId);
 		};
-	}, [layoutDataRef, targetItem, targetRef, targetRefs]);
+	}, [layoutDataRef, targetItem, targetRef, targetRefs, toControlsId]);
 
 	const setTargetRef = useCallback(
 		(element) => {
@@ -244,7 +264,6 @@ export function useDropTarget(_targetItem, computeHover = defaultComputeHover) {
 	);
 
 	return {
-		canDropOverTarget: state.droppable,
 		isOverTarget,
 		sourceItem: state.dropItem,
 		targetPosition: state.targetPositionWithMiddle,
@@ -256,6 +275,8 @@ export const DragAndDropContextProvider = ({children}) => {
 	const layoutDataRef = useRef({
 		items: [],
 	});
+
+	const [canDrag, setCanDrag] = useState(true);
 
 	const [state, reducerDispatch] = useReducer(
 		(state, nextState) =>
@@ -279,12 +300,14 @@ export const DragAndDropContextProvider = ({children}) => {
 
 	const dragAndDropContext = useMemo(
 		() => ({
+			canDrag,
 			dispatch,
 			layoutDataRef,
+			setCanDrag,
 			state,
 			targetRefs,
 		}),
-		[dispatch, layoutDataRef, state, targetRefs]
+		[canDrag, dispatch, layoutDataRef, state, targetRefs, setCanDrag]
 	);
 
 	return (

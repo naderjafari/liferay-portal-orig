@@ -19,9 +19,12 @@ import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidation;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidationExpression;
+import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.model.DDMFormRule;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
+import com.liferay.dynamic.data.mapping.test.util.DDMFormLayoutTestUtil;
 import com.liferay.dynamic.data.mapping.util.DDMFormFactory;
+import com.liferay.dynamic.data.mapping.util.DDMFormLayoutFactory;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -89,6 +92,11 @@ public class NumericDDMFormFieldTypeSettingsTest
 		Assert.assertNotNull(dataTypeDDMFormField.getLabel());
 		Assert.assertEquals("radio", dataTypeDDMFormField.getType());
 
+		DDMFormField requiredErrorMessage = ddmFormFieldsMap.get(
+			"requiredErrorMessage");
+
+		Assert.assertNotNull(requiredErrorMessage);
+
 		LocalizedValue predefinedValue =
 			dataTypeDDMFormField.getPredefinedValue();
 
@@ -108,6 +116,13 @@ public class NumericDDMFormFieldTypeSettingsTest
 			"[\"vertical\"]",
 			directionPredefinedValue.getString(
 				directionPredefinedValue.getDefaultLocale()));
+
+		DDMFormField hideFieldDDMFormField = ddmFormFieldsMap.get("hideField");
+
+		Assert.assertNotNull(hideFieldDDMFormField);
+		Assert.assertNotNull(hideFieldDDMFormField.getLabel());
+		Assert.assertEquals(
+			"true", hideFieldDDMFormField.getProperty("showAsSwitcher"));
 
 		DDMFormField inputMaskDDMFormField = ddmFormFieldsMap.get("inputMask");
 
@@ -131,13 +146,21 @@ public class NumericDDMFormFieldTypeSettingsTest
 			ddmFormFieldValidationExpression.getValue());
 
 		Assert.assertEquals("text", inputMaskFormatDDMFormField.getType());
-		Assert.assertEquals(true, inputMaskFormatDDMFormField.isRequired());
+		Assert.assertTrue(inputMaskFormatDDMFormField.isRequired());
 		Assert.assertNotNull(inputMaskFormatDDMFormField.getLabel());
+		Assert.assertNotNull(
+			inputMaskFormatDDMFormField.getProperty("invalidCharacters"));
 		Assert.assertNotNull(
 			inputMaskFormatDDMFormField.getProperty("placeholder"));
 		Assert.assertNotNull(
 			inputMaskFormatDDMFormField.getProperty("tooltip"));
 		Assert.assertNotNull(inputMaskFormatDDMFormField.getTip());
+
+		DDMFormField numericInputMaskDDMFormField = ddmFormFieldsMap.get(
+			"numericInputMask");
+
+		Assert.assertNotNull(numericInputMaskDDMFormField);
+		Assert.assertNotNull(numericInputMaskDDMFormField.getPredefinedValue());
 
 		DDMFormField placeholderDDMFormField = ddmFormFieldsMap.get(
 			"placeholder");
@@ -171,61 +194,139 @@ public class NumericDDMFormFieldTypeSettingsTest
 
 		List<DDMFormRule> ddmFormRules = ddmForm.getDDMFormRules();
 
-		Assert.assertEquals(ddmFormRules.toString(), 2, ddmFormRules.size());
+		Assert.assertEquals(ddmFormRules.toString(), 4, ddmFormRules.size());
 
 		DDMFormRule ddmFormRule0 = ddmFormRules.get(0);
 
 		Assert.assertEquals(
-			"equals(getValue('dataType'), 'double')",
+			"equals(getValue('hideField'), FALSE)",
 			ddmFormRule0.getCondition());
 
 		List<String> actions = ddmFormRule0.getActions();
 
-		Assert.assertEquals(actions.toString(), 2, actions.size());
-		Assert.assertEquals("setValue('inputMask', FALSE)", actions.get(0));
-		Assert.assertEquals("setVisible('inputMask', FALSE)", actions.get(1));
+		Assert.assertEquals(actions.toString(), 6, actions.size());
+		Assert.assertEquals("setVisible('inputMask', TRUE)", actions.get(0));
+		Assert.assertEquals("setVisible('repeatable', TRUE)", actions.get(1));
+		Assert.assertEquals(
+			"setVisible('requireConfirmation', TRUE)", actions.get(2));
+		Assert.assertEquals("setVisible('required', TRUE)", actions.get(3));
+		Assert.assertEquals("setVisible('showLabel', TRUE)", actions.get(4));
+		Assert.assertEquals("setVisible('validation', TRUE)", actions.get(5));
 
 		DDMFormRule ddmFormRule1 = ddmFormRules.get(1);
 
-		Assert.assertEquals("TRUE", ddmFormRule1.getCondition());
+		Assert.assertEquals(
+			"equals(getValue('hideField'), TRUE)", ddmFormRule1.getCondition());
 
 		actions = ddmFormRule1.getActions();
 
-		Assert.assertEquals(actions.toString(), 10, actions.size());
+		Assert.assertEquals(actions.toString(), 11, actions.size());
+		Assert.assertEquals("setValue('inputMask', FALSE)", actions.get(0));
+		Assert.assertEquals("setValue('repeatable', FALSE)", actions.get(1));
+		Assert.assertEquals(
+			"setValue('requireConfirmation', FALSE)", actions.get(2));
+		Assert.assertEquals("setValue('required', FALSE)", actions.get(3));
+		Assert.assertEquals("setValue('showLabel', TRUE)", actions.get(4));
+		Assert.assertEquals("setVisible('inputMask', FALSE)", actions.get(5));
+		Assert.assertEquals("setVisible('repeatable', FALSE)", actions.get(6));
+		Assert.assertEquals(
+			"setVisible('requireConfirmation', FALSE)", actions.get(7));
+		Assert.assertEquals("setVisible('required', FALSE)", actions.get(8));
+		Assert.assertEquals("setVisible('showLabel', FALSE)", actions.get(9));
+		Assert.assertEquals("setVisible('validation', FALSE)", actions.get(10));
 
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains(
-				"setDataType('predefinedValue', getValue('dataType'))"));
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains(
-				"setValidationDataType('validation', getValue('dataType'))"));
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains(
-				"setValidationFieldName('validation', getValue('name'))"));
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains(
-				"setVisible('confirmationErrorMessage', getValue(" +
-					"'requireConfirmation'))"));
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains(
-				"setVisible('confirmationLabel', getValue(" +
-					"'requireConfirmation'))"));
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains(
-				"setVisible('direction', getValue('requireConfirmation'))"));
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains(
-				"setVisible('inputMaskFormat', getValue('inputMask'))"));
-		Assert.assertTrue(
-			actions.toString(),
-			actions.contains("setVisible('tooltip', false)"));
+		DDMFormRule ddmFormRule2 = ddmFormRules.get(2);
+
+		Assert.assertEquals(
+			"hasObjectField(getValue('objectFieldName'))",
+			ddmFormRule2.getCondition());
+
+		actions = ddmFormRule2.getActions();
+
+		Assert.assertEquals(actions.toString(), 1, actions.size());
+		Assert.assertEquals(
+			"setValue('required', isRequiredObjectField(getValue(" +
+				"'objectFieldName')))",
+			actions.get(0));
+
+		DDMFormRule ddmFormRule3 = ddmFormRules.get(3);
+
+		Assert.assertEquals("TRUE", ddmFormRule3.getCondition());
+
+		actions = ddmFormRule3.getActions();
+
+		Assert.assertEquals(actions.toString(), 15, actions.size());
+		Assert.assertEquals(
+			"setDataType('predefinedValue', getValue('dataType'))",
+			actions.get(0));
+		Assert.assertEquals(
+			"setEnabled('required', not(hasObjectField(" +
+				"getValue('objectFieldName'))))",
+			actions.get(1));
+		Assert.assertEquals(
+			"setPropertyValue('predefinedValue', 'inputMask', " +
+				"getValue('inputMask'))",
+			actions.get(2));
+		Assert.assertEquals(
+			"setPropertyValue('predefinedValue', 'inputMaskFormat', " +
+				"getLocalizedValue('inputMaskFormat'))",
+			actions.get(3));
+		Assert.assertEquals(
+			"setPropertyValue('predefinedValue', 'numericInputMask', " +
+				"getLocalizedValue('numericInputMask'))",
+			actions.get(4));
+		Assert.assertEquals(
+			"setValidationDataType('validation', getValue('dataType'))",
+			actions.get(5));
+		Assert.assertEquals(
+			"setValidationFieldName('validation', getValue('name'))",
+			actions.get(6));
+		Assert.assertEquals(
+			"setVisible('characterOptions', equals(getValue('dataType'), " +
+				"'integer') and equals(getValue('inputMask'), TRUE))",
+			actions.get(7));
+		Assert.assertEquals(
+			"setVisible('confirmationErrorMessage', getValue(" +
+				"'requireConfirmation'))",
+			actions.get(8));
+		Assert.assertEquals(
+			"setVisible('confirmationLabel', getValue('requireConfirmation'))",
+			actions.get(9));
+		Assert.assertEquals(
+			"setVisible('direction', getValue('requireConfirmation'))",
+			actions.get(10));
+		Assert.assertEquals(
+			"setVisible('inputMaskFormat', equals(getValue('dataType'), " +
+				"'integer') and equals(getValue('inputMask'), TRUE))",
+			actions.get(11));
+		Assert.assertEquals(
+			"setVisible('numericInputMask', equals(getValue('dataType'), " +
+				"'double') and equals(getValue('inputMask'), TRUE))",
+			actions.get(12));
+		Assert.assertEquals(
+			"setVisible('requiredErrorMessage', getValue('required'))",
+			actions.get(13));
+		Assert.assertEquals("setVisible('tooltip', false)", actions.get(14));
+	}
+
+	@Test
+	public void testCreateNumericDDMFormFieldTypeSettingsDDMFormLayout() {
+		assertDDMFormLayout(
+			DDMFormLayoutFactory.create(NumericDDMFormFieldTypeSettings.class),
+			DDMFormLayoutTestUtil.createDDMFormLayout(
+				DDMFormLayout.TABBED_MODE,
+				DDMFormLayoutTestUtil.createDDMFormLayoutPage(
+					"label", "placeholder", "tip", "dataType", "required",
+					"requiredErrorMessage"),
+				DDMFormLayoutTestUtil.createDDMFormLayoutPage(
+					"name", "fieldReference", "predefinedValue",
+					"objectFieldName", "visibilityExpression", "fieldNamespace",
+					"indexType", "labelAtStructureLevel", "localizable",
+					"nativeField", "readOnly", "type", "hideField", "showLabel",
+					"repeatable", "requireConfirmation", "direction",
+					"confirmationLabel", "confirmationErrorMessage",
+					"validation", "tooltip", "inputMask", "inputMaskFormat",
+					"characterOptions", "numericInputMask")));
 	}
 
 	@Override

@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.product.internal.upgrade;
 
+import com.liferay.account.settings.AccountEntryGroupSettings;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.commerce.product.internal.upgrade.v1_10_1.CommerceSiteTypeUpgradeProcess;
 import com.liferay.commerce.product.internal.upgrade.v1_11_0.CPAttachmentFileEntryGroupUpgradeProcess;
@@ -38,6 +39,7 @@ import com.liferay.commerce.product.internal.upgrade.v2_2_0.CPDefinitionOptionVa
 import com.liferay.commerce.product.internal.upgrade.v2_3_0.CommerceChannelUpgradeProcess;
 import com.liferay.commerce.product.internal.upgrade.v2_5_0.FriendlyURLEntryUpgradeProcess;
 import com.liferay.commerce.product.internal.upgrade.v3_1_0.CPTaxCategoryUpgradeProcess;
+import com.liferay.commerce.product.internal.upgrade.v3_3_0.CPAttachmentFileEntryCDNUpgradeProcess;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -190,6 +192,15 @@ public class CommerceProductUpgradeStepRegistrator
 
 		registry.register("3.2.0", "3.2.1", new DummyUpgradeProcess());
 
+		registry.register(
+			"3.2.1", "3.3.0", new CPAttachmentFileEntryCDNUpgradeProcess());
+
+		registry.register(
+			"3.3.0", "3.4.0",
+			new com.liferay.commerce.product.internal.upgrade.v3_4_0.
+				CommerceChannelUpgradeProcess(
+					_accountEntryGroupSettings, _configurationProvider));
+
 		if (_log.isInfoEnabled()) {
 			_log.info("Commerce product upgrade step registrator finished");
 		}
@@ -197,6 +208,9 @@ public class CommerceProductUpgradeStepRegistrator
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		CommerceProductUpgradeStepRegistrator.class);
+
+	@Reference
+	private AccountEntryGroupSettings _accountEntryGroupSettings;
 
 	@Reference
 	private AssetCategoryLocalService _assetCategoryLocalService;

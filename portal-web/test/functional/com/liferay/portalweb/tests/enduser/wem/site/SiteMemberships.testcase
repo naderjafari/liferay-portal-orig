@@ -122,7 +122,7 @@ definition {
 				panel = "Control Panel",
 				portlet = "Search");
 
-			SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+			SearchAdministration.executeSearchActions(actionsDescription = "Reindex search indexes.");
 		}
 
 		Site.openSiteMembershipsAdmin(siteURLKey = "site-name");
@@ -194,7 +194,7 @@ definition {
 
 		JSONGroup.addGroup(groupName = "Site Name");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			groupName = "Child SiteName",
 			parentGroupName = "Site Name");
 
@@ -277,7 +277,7 @@ definition {
 			panel = "Control Panel",
 			portlet = "Search");
 
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+		SearchAdministration.executeSearchActions(actionsDescription = "Reindex search indexes.");
 
 		JSONOrganization.addOrganization(
 			organizationName = "Organization Name 1",
@@ -694,7 +694,7 @@ definition {
 		for (var i : list "1,2") {
 			JSONGroup.addGroup(
 				groupName = "Site Name ${i}",
-				type = "Restricted");
+				membershipType = "Restricted");
 		}
 
 		JSONUser.addUser(

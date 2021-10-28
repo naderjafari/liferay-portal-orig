@@ -36,6 +36,34 @@ definition {
 		fail("${message}");
 	}
 
+	macro getElementTextContent {
+		WaitForSPARefresh();
+
+		var javascript = '''
+var element = document.evaluate("${element}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+
+return element.textContent;
+		''';
+
+		var textContent = selenium.getEval("${javascript}");
+
+		return "${textContent}";
+	}
+
+	macro hardRefresh {
+		var mac = OSDetector.isApple();
+
+		if ("${mac}" == "true") {
+			RobotType.robotTypeShortcut(locator1 = "Shift + Command + r");
+		}
+
+		else {
+			RobotType.robotTypeShortcut(locator1 = "Ctrl + Shift + r");
+		}
+
+		WaitForPageLoad();
+	}
+
 	macro isGreaterThan {
 		echo("${expected}");
 

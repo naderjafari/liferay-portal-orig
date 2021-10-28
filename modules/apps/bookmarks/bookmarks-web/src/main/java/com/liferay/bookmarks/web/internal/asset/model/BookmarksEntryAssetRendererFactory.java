@@ -114,8 +114,8 @@ public class BookmarksEntryAssetRendererFactory
 		).setParameter(
 			"folderId", BookmarksFolderConstants.DEFAULT_PARENT_FOLDER_ID
 		).setParameter(
-			"showFolderSelector", Boolean.TRUE.toString()
-		).build();
+			"showFolderSelector", true
+		).buildPortletURL();
 	}
 
 	@Override

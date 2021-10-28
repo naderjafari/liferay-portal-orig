@@ -18,6 +18,7 @@ import React, {useEffect, useState} from 'react';
 import LayoutPreview from './LayoutPreview';
 import Sidebar from './Sidebar';
 import {StyleBookContextProvider} from './StyleBookContext';
+import Toolbar from './Toolbar';
 import {config, initializeConfig} from './config';
 import {DRAFT_STATUS} from './constants/draftStatusConstants';
 import {useCloseProductMenu} from './useCloseProductMenu';
@@ -69,9 +70,13 @@ const StyleBookEditor = ({
 				setPreviewLayout,
 			}}
 		>
-			<div className="style-book-editor">
-				<LayoutPreview />
-				<Sidebar />
+			<div className="cadmin style-book-editor">
+				{config.templatesPreviewEnabled && <Toolbar />}
+
+				<div className="d-flex">
+					<LayoutPreview />
+					<Sidebar />
+				</div>
 			</div>
 		</StyleBookContextProvider>
 	);
@@ -87,6 +92,7 @@ export default function ({
 	redirectURL,
 	saveDraftURL,
 	styleBookEntryId,
+	templatesPreviewEnabled,
 	themeName,
 } = {}) {
 	initializeConfig({
@@ -98,6 +104,7 @@ export default function ({
 		redirectURL,
 		saveDraftURL,
 		styleBookEntryId,
+		templatesPreviewEnabled,
 		themeName,
 	});
 

@@ -23,8 +23,15 @@ import {useSyncValue} from '../hooks/useSyncValue.es';
 
 const DIGIT_REGEX = /\d/i;
 const LETTER_REGEX = /[a-z]/i;
+const LETTER_DIGIT_REGEX = /[A-Z0-9]/gi;
+const NOT_LETTER_REGEX = /[^a-z]/gi;
+const YEARS_INDEX = 6;
 
 const getDateMask = (dateDelimiter, dateFormat) => {
+	const lastSymbol = dateFormat.slice(-1).match(NOT_LETTER_REGEX);
+
+	dateFormat = lastSymbol ? dateFormat.slice(0, -1) : dateFormat;
+
 	return dateFormat
 		.split(dateDelimiter)
 		.map((item) => {
@@ -91,7 +98,15 @@ const getDateFormat = (locale) => {
 	};
 };
 
-const transformToDate = (
+const getInitialMonth = (value) => {
+	if (moment(value).isValid()) {
+		return moment(value).toDate();
+	}
+
+	return moment().toDate();
+};
+
+const getInitialValue = (
 	defaultLanguageId,
 	date,
 	locale,
@@ -102,24 +117,16 @@ const transformToDate = (
 			return moment(date, [
 				getLocaleDateFormat(locale),
 				'YYYY-MM-DD',
-			]).toDate();
+			]).format(getLocaleDateFormat(locale));
 		}
 
 		return moment(date, [
 			getLocaleDateFormat(defaultLanguageId),
 			'YYYY-MM-DD',
-		]).toDate();
+		]).format(getLocaleDateFormat(defaultLanguageId));
 	}
 
 	return date;
-};
-
-const getInitialMonth = (value) => {
-	if (moment(value).isValid()) {
-		return moment(value).toDate();
-	}
-
-	return moment().toDate();
 };
 
 const getValueForHidden = (value, locale) => {
@@ -136,13 +143,41 @@ const getValueForHidden = (value, locale) => {
 	return '';
 };
 
+const Months = [
+	Liferay.Language.get('january'),
+	Liferay.Language.get('february'),
+	Liferay.Language.get('march'),
+	Liferay.Language.get('april'),
+	Liferay.Language.get('may'),
+	Liferay.Language.get('june'),
+	Liferay.Language.get('july'),
+	Liferay.Language.get('august'),
+	Liferay.Language.get('september'),
+	Liferay.Language.get('october'),
+	Liferay.Language.get('november'),
+	Liferay.Language.get('december'),
+];
+
+const WeekdayShort = [
+	Liferay.Language.get('weekday-short-sunday'),
+	Liferay.Language.get('weekday-short-monday'),
+	Liferay.Language.get('weekday-short-tuesday'),
+	Liferay.Language.get('weekday-short-wednesday'),
+	Liferay.Language.get('weekday-short-thursday'),
+	Liferay.Language.get('weekday-short-friday'),
+	Liferay.Language.get('weekday-short-saturday'),
+];
+
 const DatePicker = ({
 	defaultLanguageId,
 	disabled,
 	formatInEditingLocale,
 	locale,
+	localizedValue: localizedValueInitial = {},
 	name,
+	onBlur,
 	onChange,
+	onFocus,
 	spritemap,
 	value: initialValue,
 }) => {
@@ -151,11 +186,11 @@ const DatePicker = ({
 
 	const [expanded, setExpand] = useState(false);
 
-	const [localizedValue, setLocalizedValue] = useState({});
+	const [localizedValue, setLocalizedValue] = useState(localizedValueInitial);
 
 	const initialValueMemoized = useMemo(
 		() =>
-			transformToDate(
+			getInitialValue(
 				defaultLanguageId,
 				initialValue,
 				locale,
@@ -187,26 +222,45 @@ const DatePicker = ({
 				showMask: true,
 			});
 
-			if (localizedValue[locale]) {
-				if (typeof localizedValue[locale] === 'string') {
-					inputRef.current.value = localizedValue[locale];
-				}
-				else {
-					inputRef.current.value = moment(
-						localizedValue[locale]
-					).format(dateMask.toUpperCase());
+			const currentValue = localizedValue[locale];
+
+			if (currentValue) {
+				if (
+					currentValue !== inputRef.current.value ||
+					!/[//.-]/.test(currentValue)
+				) {
+					inputRef.current.value = moment(currentValue).format(
+						dateMask.toUpperCase()
+					);
 				}
 			}
 			else if (initialValueMemoized) {
-				inputRef.current.value = moment(initialValueMemoized).format(
-					dateMask.toUpperCase()
+				var year = parseInt(
+					initialValueMemoized.substr(YEARS_INDEX),
+					10
 				);
+
+				const date = moment(initialValueMemoized);
+
+				if (year <= 50) {
+					date.subtract(2000, 'years');
+				}
+				else if (year > 50 && year < 100) {
+					date.subtract(1900, 'years');
+				}
+
+				inputRef.current.value = date.format(dateMask.toUpperCase());
 			}
 			else {
 				inputRef.current.value = '';
 			}
 
-			maskInstance.current.update(inputRef.current.value);
+			if (
+				inputRef.current.value.match(LETTER_DIGIT_REGEX) ||
+				inputRef.current.value === ''
+			) {
+				maskInstance.current.update(inputRef.current.value);
+			}
 		}
 	}, [
 		dateMask,
@@ -230,20 +284,21 @@ const DatePicker = ({
 		<>
 			<input
 				aria-hidden="true"
-				id={name + '_fieldDetails'}
 				name={name}
 				type="hidden"
 				value={getValueForHidden(value, locale)}
 			/>
 			<ClayDatePicker
-				aria-labelledby={name + '_fieldDetails'}
 				dateFormat={dateMask}
 				disabled={disabled}
 				expanded={expanded}
 				initialMonth={getInitialMonth(value)}
+				months={Months}
+				onBlur={onBlur}
 				onExpandedChange={(expand) => {
 					setExpand(expand);
 				}}
+				onFocus={onFocus}
 				onInput={(event) => {
 					maskInstance.current.update(event.target.value);
 					setLocalizedValue({
@@ -272,17 +327,20 @@ const DatePicker = ({
 						return onChange('');
 					}
 
-					if (moment(value).isValid()) {
-						onChange(
-							moment(value, getLocaleDateFormat(locale)).format(
-								'L'
-							)
-						);
+					if (
+						moment(
+							value,
+							getLocaleDateFormat(locale),
+							true
+						).isValid()
+					) {
+						onChange(getValueForHidden(value, locale));
 					}
 				}}
 				ref={inputRef}
 				spritemap={spritemap}
 				value={value}
+				weekdaysShort={WeekdayShort}
 				years={years}
 			/>
 		</>
@@ -294,7 +352,9 @@ const Main = ({
 	locale = themeDisplay.getDefaultLanguageId(),
 	localizedValue,
 	name,
+	onBlur,
 	onChange,
+	onFocus,
 	placeholder,
 	predefinedValue,
 	readOnly,
@@ -316,8 +376,11 @@ const Main = ({
 				localizedValue && localizedValue[locale] != undefined
 			}
 			locale={locale}
+			localizedValue={localizedValue}
 			name={name}
+			onBlur={onBlur}
 			onChange={(value) => onChange({}, value)}
+			onFocus={onFocus}
 			placeholder={placeholder}
 			spritemap={spritemap}
 			value={value ? value : predefinedValue}

@@ -23,7 +23,6 @@ import {fromControlsId} from '../../../../../app/components/layout-data-items/Co
 import {ITEM_ACTIVATION_ORIGINS} from '../../../../../app/config/constants/itemActivationOrigins';
 import {ITEM_TYPES} from '../../../../../app/config/constants/itemTypes';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../app/config/constants/layoutDataItemTypes';
-import {useToControlsId} from '../../../../../app/contexts/CollectionItemContext';
 import {
 	useActivationOrigin,
 	useActiveItemId,
@@ -49,13 +48,14 @@ import getDropTargetPosition from '../../../../../app/utils/drag-and-drop/getDro
 import getTargetData from '../../../../../app/utils/drag-and-drop/getTargetData';
 import getTargetPositions from '../../../../../app/utils/drag-and-drop/getTargetPositions';
 import itemIsAncestor from '../../../../../app/utils/drag-and-drop/itemIsAncestor';
-import toControlsId from '../../../../../app/utils/drag-and-drop/toControlsId';
 import {
 	initialDragDrop,
 	useDragItem,
 	useDropTarget,
 } from '../../../../../app/utils/drag-and-drop/useDragAndDrop';
+import getFirstControlsId from '../../../../../app/utils/getFirstControlsId';
 import getMappingFieldsKey from '../../../../../app/utils/getMappingFieldsKey';
+import updateItemStyle from '../../../../../app/utils/updateItemStyle';
 
 const HOVER_EXPAND_DELAY = 1000;
 
@@ -173,11 +173,19 @@ function StructureTreeNodeContent({
 	const canUpdatePageStructure = useSelector(selectCanUpdatePageStructure);
 	const dispatch = useDispatch();
 	const hoverItem = useHoverItem();
-	const isDisabled = !node.activable || node.disabled;
 	const nodeRef = useRef();
+	const layoutDataRef = useRef();
 	const segmentsExperienceId = useSelector(selectSegmentsExperienceId);
+	const selectedViewportSize = useSelector(
+		(state) => state.selectedViewportSize
+	);
 	const selectItem = useSelectItem();
-	const toControlsId = useToControlsId();
+
+	useSelector((store) => {
+		layoutDataRef.current = store.layoutData;
+
+		return null;
+	});
 
 	const item = {
 		children: node.children,
@@ -237,7 +245,7 @@ function StructureTreeNodeContent({
 
 	return (
 		<div
-			aria-disabled={isDisabled}
+			aria-disabled={node.isMasterItem || !node.activable}
 			aria-selected={isActive}
 			className={classNames('page-editor__page-structure__tree-node', {
 				'drag-over-bottom':
@@ -246,12 +254,14 @@ function StructureTreeNodeContent({
 					isOverTarget && targetPosition === TARGET_POSITIONS.MIDDLE,
 				'drag-over-top':
 					isOverTarget && targetPosition === TARGET_POSITIONS.TOP,
-				dragged: isDraggingSource,
-				'page-editor__page-structure__tree-node--activable':
+				'dragged': isDraggingSource,
+				'font-weight-semi-bold':
 					node.activable && node.itemType !== ITEM_TYPES.editable,
 				'page-editor__page-structure__tree-node--active': isActive,
 				'page-editor__page-structure__tree-node--hovered': isHovered,
 				'page-editor__page-structure__tree-node--mapped': isMapped,
+				'page-editor__page-structure__tree-node--master-item':
+					node.isMasterItem,
 			})}
 			onMouseLeave={(event) => {
 				if (!isDraggingSource && isHovered) {
@@ -276,8 +286,13 @@ function StructureTreeNodeContent({
 					event.stopPropagation();
 					event.target.focus();
 
+					const itemId = getFirstControlsId({
+						item: node,
+						layoutData: layoutDataRef.current,
+					});
+
 					if (node.activable) {
-						selectItem(toControlsId(node.id), {
+						selectItem(itemId, {
 							itemType: node.itemType,
 							origin: ITEM_ACTIVATION_ORIGINS.sidebar,
 						});
@@ -289,30 +304,47 @@ function StructureTreeNodeContent({
 			/>
 
 			<NameLabel
-				disabled={node.disabled}
+				hidden={node.hidden || node.hiddenAncestor}
 				icon={node.icon}
 				isActive={isActive}
 				isMapped={isMapped}
+				isMasterItem={node.isMasterItem}
 				name={node.name}
 				ref={nodeRef}
 			/>
 
-			{node.removable && canUpdatePageStructure && (
-				<RemoveButton node={node} visible={isHovered || isSelected} />
-			)}
+			<div>
+				{(node.removable || node.hidden) && (
+					<VisibilityButton
+						dispatch={dispatch}
+						node={node}
+						segmentsExperienceId={segmentsExperienceId}
+						selectedViewportSize={selectedViewportSize}
+						visible={node.hidden || isHovered || isSelected}
+					/>
+				)}
+
+				{node.removable && canUpdatePageStructure && (
+					<RemoveButton
+						node={node}
+						visible={isHovered || isSelected}
+					/>
+				)}
+			</div>
 		</div>
 	);
 }
 
 const NameLabel = React.forwardRef(
-	({disabled, icon, isActive, isMapped, name}, ref) => (
+	({hidden, icon, isActive, isMapped, isMasterItem, name}, ref) => (
 		<div
 			className={classNames(
 				'page-editor__page-structure__tree-node__name',
 				{
 					'page-editor__page-structure__tree-node__name--active': isActive,
-					'page-editor__page-structure__tree-node__name--disabled': disabled,
+					'page-editor__page-structure__tree-node__name--hidden': hidden,
 					'page-editor__page-structure__tree-node__name--mapped': isMapped,
+					'page-editor__page-structure__tree-node__name--master-item': isMasterItem,
 				}
 			)}
 			ref={ref}
@@ -324,10 +356,48 @@ const NameLabel = React.forwardRef(
 	)
 );
 
+const VisibilityButton = ({
+	dispatch,
+	node,
+	segmentsExperienceId,
+	selectedViewportSize,
+	visible,
+}) => {
+	return (
+		<ClayButton
+			aria-label={Liferay.Util.sub(
+				node.hidden
+					? Liferay.Language.get('show-x')
+					: Liferay.Language.get('hide-x'),
+				[node.name]
+			)}
+			className={classNames(
+				'page-editor__page-structure__tree-node__visibility-button',
+				{
+					'page-editor__page-structure__tree-node__visibility-button--visible': visible,
+				}
+			)}
+			disabled={node.isMasterItem}
+			displayType="unstyled"
+			onClick={() =>
+				updateItemStyle({
+					dispatch,
+					itemId: node.id,
+					segmentsExperienceId,
+					selectedViewportSize,
+					styleName: 'display',
+					styleValue: node.hidden ? 'block' : 'none',
+				})
+			}
+		>
+			<ClayIcon symbol={node.hidden ? 'hidden' : 'view'} />
+		</ClayButton>
+	);
+};
+
 const RemoveButton = ({node, visible}) => {
 	const dispatch = useDispatch();
 	const selectItem = useSelectItem();
-	const store = useSelector((state) => state);
 
 	return (
 		<ClayButton
@@ -344,7 +414,7 @@ const RemoveButton = ({node, visible}) => {
 			onClick={(event) => {
 				event.stopPropagation();
 
-				dispatch(deleteItem({itemId: node.id, selectItem, store}));
+				dispatch(deleteItem({itemId: node.id, selectItem}));
 			}}
 		>
 			<ClayIcon symbol="times-circle" />
@@ -387,12 +457,7 @@ function computeHover({
 		targetPositionWithMiddle,
 		targetPositionWithoutMiddle,
 		elevation,
-	] = getItemPosition(
-		siblingItem || targetItem,
-		monitor,
-		layoutDataRef,
-		targetRefs
-	);
+	] = getItemPosition(siblingItem || targetItem, monitor, targetRefs);
 
 	// Drop inside target
 
@@ -420,7 +485,7 @@ function computeHover({
 		return dispatch({
 			dropItem: sourceItem,
 			dropTargetItem: targetItem,
-			droppable: checkAllowedChild(sourceItem, targetItem, layoutDataRef),
+			droppable: checkAllowedChild(sourceItem, targetItem),
 			elevate: null,
 			targetPositionWithMiddle,
 			targetPositionWithoutMiddle,
@@ -432,10 +497,7 @@ function computeHover({
 	// - dropItem should be child of dropTargetItem
 	// - dropItem should be sibling of siblingItem
 
-	if (
-		siblingItem &&
-		checkAllowedChild(sourceItem, targetItem, layoutDataRef)
-	) {
+	if (siblingItem && checkAllowedChild(sourceItem, targetItem)) {
 		return dispatch({
 			dropItem: sourceItem,
 			dropTargetItem: siblingItem,
@@ -462,21 +524,19 @@ function computeHover({
 				const [targetPosition] = getItemPosition(
 					target,
 					monitor,
-					layoutDataRef,
 					targetRefs
 				);
 
 				const [parentPosition] = getItemPosition(
 					parent,
 					monitor,
-					layoutDataRef,
 					targetRefs
 				);
 
 				if (
 					(targetPosition === targetPositionWithMiddle ||
 						parentPosition === targetPositionWithMiddle) &&
-					checkAllowedChild(sourceItem, parent, layoutDataRef)
+					checkAllowedChild(sourceItem, parent)
 				) {
 					return [parent, target];
 				}
@@ -505,8 +565,8 @@ function computeHover({
 
 const ELEVATION_BORDER_SIZE = 5;
 
-function getItemPosition(item, monitor, layoutDataRef, targetRefs) {
-	const targetRef = targetRefs.get(toControlsId(layoutDataRef, item));
+function getItemPosition(item, monitor, targetRefs) {
+	const targetRef = targetRefs.get(item.itemId);
 
 	if (!targetRef || !targetRef.current) {
 		return [null, null];

@@ -15,10 +15,10 @@
 import React, {useCallback, useContext, useReducer} from 'react';
 
 import switchSidebarPanel from '../actions/switchSidebarPanel';
+import {fromControlsId} from '../components/layout-data-items/Collection';
 import {ITEM_ACTIVATION_ORIGINS} from '../config/constants/itemActivationOrigins';
 import {ITEM_TYPES} from '../config/constants/itemTypes';
-import {config} from '../config/index';
-import {useFromControlsId, useToControlsId} from './CollectionItemContext';
+import {useToControlsId} from './CollectionItemContext';
 import {useDispatch, useSelector} from './StoreContext';
 
 const ACTIVE_INITIAL_STATE = {
@@ -106,12 +106,12 @@ const useActivationOrigin = () =>
 	useContext(ActiveStateContext).activationOrigin;
 
 const useActiveItemId = () =>
-	useFromControlsId()(useContext(ActiveStateContext).activeItemId);
+	fromControlsId(useContext(ActiveStateContext).activeItemId);
 
 const useActiveItemType = () => useContext(ActiveStateContext).activeItemType;
 
 const useHoveredItemId = () =>
-	useFromControlsId()(useContext(HoverStateContext).hoveredItemId);
+	fromControlsId(useContext(HoverStateContext).hoveredItemId);
 
 const useHoveredItemType = () => useContext(HoverStateContext).hoveredItemType;
 
@@ -186,21 +186,11 @@ const useSelectItem = () => {
 				type: SELECT_ITEM,
 			});
 
-			if (
-				itemId &&
-				![
-					config.contentBrowsingEnabled
-						? 'browser'
-						: 'page-structure',
-					'comments',
-				].includes(sidebarPanelId)
-			) {
+			if (itemId && !['browser', 'comments'].includes(sidebarPanelId)) {
 				storeDispatch(
 					switchSidebarPanel({
 						sidebarOpen: true,
-						sidebarPanelId: config.contentBrowsingEnabled
-							? 'browser'
-							: 'page-structure',
+						sidebarPanelId: 'browser',
 					})
 				);
 			}

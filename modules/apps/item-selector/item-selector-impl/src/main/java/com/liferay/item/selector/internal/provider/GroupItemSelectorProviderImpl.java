@@ -90,6 +90,8 @@ public class GroupItemSelectorProviderImpl
 		return _groupService.searchCount(
 			companyId, _classNameIds, keywords,
 			LinkedHashMapBuilder.<String, Object>put(
+				"actionId", ActionKeys.VIEW
+			).put(
 				"site", Boolean.TRUE
 			).build());
 	}
@@ -128,6 +130,7 @@ public class GroupItemSelectorProviderImpl
 
 		for (Group group : groups) {
 			if (group.isCompany() ||
+				permissionChecker.isGroupAdmin(group.getGroupId()) ||
 				GroupPermissionUtil.contains(
 					permissionChecker, group, ActionKeys.VIEW)) {
 

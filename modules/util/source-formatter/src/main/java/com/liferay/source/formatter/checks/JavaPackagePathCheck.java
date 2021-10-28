@@ -23,6 +23,7 @@ import com.liferay.source.formatter.BNDSettings;
 import com.liferay.source.formatter.checks.util.BNDSourceUtil;
 import com.liferay.source.formatter.parser.JavaClass;
 import com.liferay.source.formatter.parser.JavaTerm;
+import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.IOException;
 
@@ -63,7 +64,7 @@ public class JavaPackagePathCheck extends BaseJavaTermCheck {
 			fileName, absolutePath, packageName, javaClass.getName());
 
 		if (isModulesFile(absolutePath) && !isModulesApp(absolutePath, true)) {
-			_checkModulePackageName(fileName, packageName);
+			_checkModulePackageName(fileName, absolutePath, packageName);
 		}
 
 		_checkPackageNameByClassName(
@@ -84,7 +85,8 @@ public class JavaPackagePathCheck extends BaseJavaTermCheck {
 
 			if (array.length == 2) {
 				_checkInternalPackageName(
-					fileName, javaClass, array[0], packageName, array[1]);
+					fileName, absolutePath, javaClass, array[0], packageName,
+					array[1]);
 			}
 		}
 
@@ -97,15 +99,21 @@ public class JavaPackagePathCheck extends BaseJavaTermCheck {
 	}
 
 	private void _checkInternalPackageName(
-			String fileName, JavaClass javaClass, String implementedClassName,
-			String packageName, String expectedPackageName)
+			String fileName, String absolutePath, JavaClass javaClass,
+			String implementedClassName, String packageName,
+			String expectedPackageName)
 		throws IOException {
+
+		if (absolutePath.contains("/test/")) {
+			return;
+		}
 
 		List<String> implementedClassNames =
 			javaClass.getImplementedClassNames();
 
 		if (!packageName.contains(".internal.") &&
-			!packageName.endsWith(".internal")) {
+			!packageName.endsWith(".internal") &&
+			absolutePath.matches(".*/modules(/dxp)?/apps/.*")) {
 
 			String className = javaClass.getName();
 
@@ -131,6 +139,19 @@ public class JavaPackagePathCheck extends BaseJavaTermCheck {
 
 			if (!extendedClassNames.contains("Base" + implementedClassName)) {
 				return;
+			}
+		}
+		else {
+			if (implementedClassNames.size() != 1) {
+				return;
+			}
+
+			for (String extendedClassName : javaClass.getExtendedClassNames()) {
+				if (extendedClassName.startsWith("Base") &&
+					!extendedClassName.endsWith(implementedClassName)) {
+
+					return;
+				}
 			}
 		}
 
@@ -190,7 +211,8 @@ public class JavaPackagePathCheck extends BaseJavaTermCheck {
 		}
 	}
 
-	private void _checkModulePackageName(String fileName, String packageName)
+	private void _checkModulePackageName(
+			String fileName, String absolutePath, String packageName)
 		throws IOException {
 
 		if (!packageName.startsWith("com.liferay")) {
@@ -208,6 +230,29 @@ public class JavaPackagePathCheck extends BaseJavaTermCheck {
 
 		if (!bundleSymbolicName.startsWith("com.liferay")) {
 			return;
+		}
+
+		if (isAttributeValue(_CHECK_SERVICE_PATH_KEY, absolutePath) &&
+			bundleSymbolicName.endsWith(".service") &&
+			packageName.contains(bundleSymbolicName + ".internal")) {
+
+			int x = absolutePath.lastIndexOf("-service/");
+
+			if ((x != -1) &&
+				FileUtil.exists(
+					absolutePath.substring(0, x + 9) + "service.xml")) {
+
+				addMessage(
+					fileName,
+					StringBundler.concat(
+						"Package should not contain '", bundleSymbolicName,
+						"'. It should contain '",
+						bundleSymbolicName.substring(
+							0, bundleSymbolicName.length() - 8),
+						"' (without .service)"));
+
+				return;
+			}
 		}
 
 		bundleSymbolicName = bundleSymbolicName.replaceAll(
@@ -339,6 +384,8 @@ public class JavaPackagePathCheck extends BaseJavaTermCheck {
 
 	private static final String _ALLOWED_INTERNAL_PACKAGE_DIR_NAMES_KEY =
 		"allowedInternalPackageDirNames";
+
+	private static final String _CHECK_SERVICE_PATH_KEY = "checkServicePath";
 
 	private static final String _EXPECTED_INTERNAL_IMPLEMENTS_DATA_KEY =
 		"expectedInternalImplementsData";

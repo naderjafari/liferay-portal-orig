@@ -21,8 +21,6 @@ import com.liferay.jenkins.results.parser.GitWorkingDirectory;
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 import com.liferay.jenkins.results.parser.PortalGitWorkingDirectory;
 import com.liferay.jenkins.results.parser.PortalTestClassJob;
-import com.liferay.jenkins.results.parser.SubrepositoryGitWorkingDirectory;
-import com.liferay.jenkins.results.parser.SubrepositoryTestClassJob;
 
 import java.io.File;
 import java.io.IOException;
@@ -399,23 +397,10 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 			_includeUnstagedTestClassFiles = false;
 		}
 
-		if (portalTestClassJob instanceof SubrepositoryTestClassJob) {
-			SubrepositoryTestClassJob subrepositoryTestClassJob =
-				(SubrepositoryTestClassJob)portalTestClassJob;
+		PortalGitWorkingDirectory portalGitWorkingDirectory =
+			portalTestClassJob.getPortalGitWorkingDirectory();
 
-			SubrepositoryGitWorkingDirectory subrepositoryGitWorkingDirectory =
-				subrepositoryTestClassJob.getSubrepositoryGitWorkingDirectory();
-
-			_rootWorkingDirectory =
-				subrepositoryGitWorkingDirectory.getWorkingDirectory();
-		}
-		else {
-			PortalGitWorkingDirectory portalGitWorkingDirectory =
-				portalTestClassJob.getPortalGitWorkingDirectory();
-
-			_rootWorkingDirectory =
-				portalGitWorkingDirectory.getWorkingDirectory();
-		}
+		_rootWorkingDirectory = portalGitWorkingDirectory.getWorkingDirectory();
 
 		_setAutoBalanceTestFiles();
 
@@ -563,7 +548,8 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 
 					@Override
 					public FileVisitResult preVisitDirectory(
-							Path filePath, BasicFileAttributes attrs)
+							Path filePath,
+							BasicFileAttributes basicFileAttributes)
 						throws IOException {
 
 						if (JenkinsResultsParserUtil.isFileExcluded(
@@ -578,7 +564,8 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 
 					@Override
 					public FileVisitResult visitFile(
-							Path filePath, BasicFileAttributes attrs)
+							Path filePath,
+							BasicFileAttributes basicFileAttributes)
 						throws IOException {
 
 						if (JenkinsResultsParserUtil.isFileIncluded(

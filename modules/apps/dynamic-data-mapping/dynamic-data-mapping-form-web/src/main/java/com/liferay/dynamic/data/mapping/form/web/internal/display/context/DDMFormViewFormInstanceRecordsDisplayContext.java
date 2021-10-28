@@ -17,6 +17,7 @@ package com.liferay.dynamic.data.mapping.form.web.internal.display.context;
 import com.liferay.dynamic.data.mapping.constants.DDMPortletKeys;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTypeServicesTracker;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRenderer;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.form.web.internal.search.DDMFormInstanceRecordSearch;
 import com.liferay.dynamic.data.mapping.form.web.internal.security.permission.resource.DDMFormInstancePermission;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
@@ -173,7 +174,8 @@ public class DDMFormViewFormInstanceRecordsDisplayContext {
 	}
 
 	public String getColumnValue(
-		DDMFormField ddmFormField, List<DDMFormFieldValue> ddmFormFieldValues) {
+		DDMFormField ddmFormField, String ddmFormFieldName,
+		List<DDMFormFieldValue> ddmFormFieldValues) {
 
 		if ((ddmFormField == null) || (ddmFormFieldValues == null)) {
 			return StringPool.BLANK;
@@ -192,6 +194,14 @@ public class DDMFormViewFormInstanceRecordsDisplayContext {
 				@Override
 				public String apply(DDMFormFieldValue ddmFormFieldValue) {
 					Value value = ddmFormFieldValue.getValue();
+
+					if (ddmFormFieldType.equals(
+							DDMFormFieldTypeConstants.SEARCH_LOCATION)) {
+
+						return ddmFormFieldValueRenderer.render(
+							ddmFormFieldName, ddmFormFieldValue,
+							value.getDefaultLocale());
+					}
 
 					return ddmFormFieldValueRenderer.render(
 						ddmFormFieldValue, value.getDefaultLocale());
@@ -265,6 +275,24 @@ public class DDMFormViewFormInstanceRecordsDisplayContext {
 					LanguageUtil.get(httpServletRequest, "order-by"));
 			}
 		).build();
+	}
+
+	public String getLocalizedColumnValues(String columnValues) {
+		ThemeDisplay themeDisplay = (ThemeDisplay)_renderRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		Stream<String> stream = Arrays.stream(
+			columnValues.split(StringPool.COMMA_AND_SPACE));
+
+		return StringUtil.merge(
+			stream.map(
+				value -> value.toLowerCase()
+			).map(
+				value -> LanguageUtil.get(themeDisplay.getLocale(), value)
+			).toArray(
+				String[]::new
+			),
+			StringPool.COMMA_AND_SPACE);
 	}
 
 	public List<NavigationItem> getNavigationItems() {
@@ -375,7 +403,7 @@ public class DDMFormViewFormInstanceRecordsDisplayContext {
 			getPortletURL()
 		).setParameter(
 			"displayStyle", getDisplayStyle()
-		).build();
+		).buildPortletURL();
 
 		DDMFormInstanceRecordSearch ddmFormInstanceRecordSearch =
 			new DDMFormInstanceRecordSearch(
@@ -454,12 +482,25 @@ public class DDMFormViewFormInstanceRecordsDisplayContext {
 		return searchContainer.getTotal();
 	}
 
-	public boolean isDisabledManagementBar() {
-		if (hasResults()) {
-			return false;
-		}
+	public List<String> getVisibleFields(DDMFormField ddmFormField) {
+		LocalizedValue visibleFields = (LocalizedValue)ddmFormField.getProperty(
+			"visibleFields");
 
-		if (isSearch()) {
+		return Stream.of(
+			StringUtil.split(
+				StringUtil.removeChars(
+					visibleFields.getString(_renderRequest.getLocale()),
+					CharPool.CLOSE_BRACKET, CharPool.OPEN_BRACKET,
+					CharPool.QUOTE))
+		).map(
+			String::trim
+		).collect(
+			Collectors.toList()
+		);
+	}
+
+	public boolean isDisabledManagementBar() {
+		if (hasResults() || isSearch()) {
 			return false;
 		}
 

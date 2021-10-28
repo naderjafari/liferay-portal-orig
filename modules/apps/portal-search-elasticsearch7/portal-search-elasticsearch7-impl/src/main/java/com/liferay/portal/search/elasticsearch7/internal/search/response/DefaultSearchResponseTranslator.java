@@ -52,7 +52,7 @@ import java.util.Map;
 import org.apache.lucene.search.TotalHits;
 
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -109,7 +109,11 @@ public class DefaultSearchResponseTranslator
 		Document document, Map<String, HighlightField> highlightFields,
 		String fieldName, Locale locale) {
 
-		String snippetFieldName = Field.getLocalizedName(locale, fieldName);
+		String snippetFieldName = fieldName;
+
+		if (!fieldName.startsWith("nestedFieldArray.")) {
+			snippetFieldName = Field.getLocalizedName(locale, fieldName);
+		}
 
 		HighlightField highlightField = highlightFields.get(snippetFieldName);
 
@@ -125,10 +129,11 @@ public class DefaultSearchResponseTranslator
 
 		Object[] array = highlightField.fragments();
 
-		document.addText(
-			StringBundler.concat(
-				Field.SNIPPET, StringPool.UNDERLINE, snippetFieldName),
-			StringUtil.merge(array, StringPool.TRIPLE_PERIOD));
+		document.add(
+			new Field(
+				StringBundler.concat(
+					Field.SNIPPET, StringPool.UNDERLINE, snippetFieldName),
+				StringUtil.merge(array, StringPool.TRIPLE_PERIOD)));
 	}
 
 	protected void addSnippets(
@@ -169,11 +174,7 @@ public class DefaultSearchResponseTranslator
 
 		Field uidField = document.getField(Field.UID);
 
-		if (uidField != null) {
-			return;
-		}
-
-		if (Validator.isNull(alternateUidFieldName)) {
+		if ((uidField != null) || Validator.isNull(alternateUidFieldName)) {
 			return;
 		}
 

@@ -36,7 +36,6 @@ import com.liferay.portal.kernel.json.JSONDeserializer;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -55,7 +54,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -416,16 +414,15 @@ public abstract class BaseNavigationMenuResourceTestCase {
 
 	@Test
 	public void testGetSiteNavigationMenusPage() throws Exception {
-		Page<NavigationMenu> page =
-			navigationMenuResource.getSiteNavigationMenusPage(
-				testGetSiteNavigationMenusPage_getSiteId(),
-				Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long siteId = testGetSiteNavigationMenusPage_getSiteId();
 		Long irrelevantSiteId =
 			testGetSiteNavigationMenusPage_getIrrelevantSiteId();
+
+		Page<NavigationMenu> page =
+			navigationMenuResource.getSiteNavigationMenusPage(
+				siteId, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantSiteId != null) {
 			NavigationMenu irrelevantNavigationMenu =
@@ -452,7 +449,7 @@ public abstract class BaseNavigationMenuResourceTestCase {
 				siteId, randomNavigationMenu());
 
 		page = navigationMenuResource.getSiteNavigationMenusPage(
-			siteId, Pagination.of(1, 2));
+			siteId, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -542,7 +539,7 @@ public abstract class BaseNavigationMenuResourceTestCase {
 			new HashMap<String, Object>() {
 				{
 					put("page", 1);
-					put("pageSize", 2);
+					put("pageSize", 10);
 
 					put("siteKey", "\"" + siteId + "\"");
 				}
@@ -565,7 +562,7 @@ public abstract class BaseNavigationMenuResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/navigationMenus");
 
-		Assert.assertEquals(2, navigationMenusJSONObject.get("totalCount"));
+		Assert.assertEquals(2, navigationMenusJSONObject.getLong("totalCount"));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(navigationMenu1, navigationMenu2),
@@ -679,7 +676,9 @@ public abstract class BaseNavigationMenuResourceTestCase {
 
 				Class<?> clazz = object.getClass();
 
-				for (Field field : getDeclaredFields(clazz.getSuperclass())) {
+				for (java.lang.reflect.Field field :
+						getDeclaredFields(clazz.getSuperclass())) {
+
 					arraySB.append(field.getName());
 					arraySB.append(": ");
 
@@ -723,7 +722,9 @@ public abstract class BaseNavigationMenuResourceTestCase {
 
 		StringBuilder sb = new StringBuilder("{");
 
-		for (Field field : getDeclaredFields(NavigationMenu.class)) {
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(NavigationMenu.class)) {
+
 			if (!ArrayUtil.contains(
 					getAdditionalAssertFieldNames(), field.getName())) {
 
@@ -762,6 +763,23 @@ public abstract class BaseNavigationMenuResourceTestCase {
 						graphQLFields)),
 				"JSONObject/data", "JSONObject/createSiteNavigationMenu"),
 			NavigationMenu.class);
+	}
+
+	protected void assertContains(
+		NavigationMenu navigationMenu, List<NavigationMenu> navigationMenus) {
+
+		boolean contains = false;
+
+		for (NavigationMenu item : navigationMenus) {
+			if (equals(navigationMenu, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			navigationMenus + " does not contain " + navigationMenu, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -917,7 +935,7 @@ public abstract class BaseNavigationMenuResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.NavigationMenu.
 						class)) {
@@ -934,12 +952,13 @@ public abstract class BaseNavigationMenuResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1105,14 +1124,16 @@ public abstract class BaseNavigationMenuResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1412,8 +1433,8 @@ public abstract class BaseNavigationMenuResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseNavigationMenuResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseNavigationMenuResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

@@ -21,15 +21,18 @@ import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.action.UpdateLanguageAction;
+import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.model.VirtualLayoutConstants;
+import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -201,6 +204,58 @@ public class UpdateLanguageActionTest {
 				_getFriendlyURLSeparatorPart(_targetLocale), "?queryString"),
 			updateLanguageAction.getRedirect(
 				mockHttpServletRequest, themeDisplay, _targetLocale));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testGetRedirectWithInvalidRedirectParameter() throws Exception {
+		UpdateLanguageAction updateLanguageAction = new UpdateLanguageAction();
+
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setParameter(
+			"redirect",
+			RandomTestUtil.randomString() + " " +
+				RandomTestUtil.randomString());
+
+		updateLanguageAction.getRedirect(
+			mockHttpServletRequest, new ThemeDisplay(), _targetLocale);
+	}
+
+	@Test(expected = NoSuchLayoutException.class)
+	public void testGetRedirectWithNoSuchLayoutRedirectParameter()
+		throws Exception {
+
+		UpdateLanguageAction updateLanguageAction = new UpdateLanguageAction();
+
+		String testURLSeparator = null;
+
+		for (String urlSeparator :
+				FriendlyURLResolverRegistryUtil.getURLSeparators()) {
+
+			if (!Portal.FRIENDLY_URL_SEPARATOR.equals(urlSeparator) &&
+				!VirtualLayoutConstants.CANONICAL_URL_SEPARATOR.equals(
+					urlSeparator)) {
+
+				testURLSeparator = urlSeparator;
+
+				break;
+			}
+		}
+
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setParameter("p_l_id", "0");
+		mockHttpServletRequest.setParameter(
+			"redirect", testURLSeparator + "no-such-page");
+
+		ThemeDisplay themeDisplay = new ThemeDisplay();
+
+		themeDisplay.setLayout(_layout);
+
+		updateLanguageAction.getRedirect(
+			mockHttpServletRequest, themeDisplay, _targetLocale);
 	}
 
 	private void _assertRedirect(

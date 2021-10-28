@@ -62,18 +62,13 @@ public class BlogsContentEditorConfigContributor
 		ThemeDisplay themeDisplay,
 		RequestBackedPortletURLFactory requestBackedPortletURLFactory) {
 
-		StringBundler sb = new StringBundler(7);
-
-		sb.append("a[*](*); ");
-		sb.append(_getAllowedContentText());
-		sb.append(
-			" div[*](*); figcaption; figure; iframe[*](*); img[*](*){*}; ");
-		sb.append(_getAllowedContentLists());
-		sb.append(" p[*](*){text-align}; ");
-		sb.append(_getAllowedContentTable());
-		sb.append(" video[*](*);");
-
-		jsonObject.put("allowedContent", sb.toString());
+		jsonObject.put(
+			"allowedContent",
+			StringBundler.concat(
+				"a[*](*); ", _getAllowedContentText(),
+				" div[*](*); figcaption; figure; iframe[*](*); img[*](*){*}; ",
+				_getAllowedContentLists(), " p[*](*){text-align}; ",
+				_getAllowedContentTable(), " video[*](*);"));
 
 		String namespace = GetterUtil.getString(
 			inputEditorTaglibAttributes.get(
@@ -106,8 +101,10 @@ public class BlogsContentEditorConfigContributor
 	}
 
 	private String _getAllowedContentTable() {
-		return "table[border, cellpadding, cellspacing] {width}; tbody td " +
-			"th[scope]; thead tr[scope];";
+		return StringBundler.concat(
+			"col[span]; colgroup[span]; table[border, cellpadding, ",
+			"cellspacing]{width}; tbody td[colspan, headers, rowspan]{*}; ",
+			"th[abbr, colspan, headers, rowspan, scope, sorted]{*}; thead tr;");
 	}
 
 	private String _getAllowedContentText() {

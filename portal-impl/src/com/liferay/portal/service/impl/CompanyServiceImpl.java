@@ -14,10 +14,10 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceMode;
-import com.liferay.portal.kernel.model.Account;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.EmailAddress;
@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.model.Website;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.service.base.CompanyServiceBaseImpl;
 import com.liferay.portal.util.PrefsPropsUtil;
@@ -97,7 +98,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	 */
 	@Override
 	public void deleteLogo(long companyId) throws PortalException {
-		if (!roleLocalService.hasUserRole(
+		if (!_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
 
 			throw new PrincipalException();
@@ -187,7 +188,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	public void removePreferences(long companyId, String[] keys)
 		throws PortalException {
 
-		if (!roleLocalService.hasUserRole(
+		if (!_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
 
 			throw new PrincipalException();
@@ -257,7 +258,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 			String tickerSymbol, String industry, String type, String size)
 		throws PortalException {
 
-		if (!roleLocalService.hasUserRole(
+		if (!_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
 
 			throw new PrincipalException();
@@ -330,16 +331,16 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 			companyId, oldCompanyPortletPreferences, unicodeProperties);
 
 		UsersAdminUtil.updateAddresses(
-			Account.class.getName(), company.getAccountId(), addresses);
+			Company.class.getName(), company.getCompanyId(), addresses);
 
 		UsersAdminUtil.updateEmailAddresses(
-			Account.class.getName(), company.getAccountId(), emailAddresses);
+			Company.class.getName(), company.getCompanyId(), emailAddresses);
 
 		UsersAdminUtil.updatePhones(
-			Account.class.getName(), company.getAccountId(), phones);
+			Company.class.getName(), company.getCompanyId(), phones);
 
 		UsersAdminUtil.updateWebsites(
-			Account.class.getName(), company.getAccountId(), websites);
+			Company.class.getName(), company.getCompanyId(), websites);
 
 		return company;
 	}
@@ -356,7 +357,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 			long companyId, String languageId, String timeZoneId)
 		throws PortalException {
 
-		if (!roleLocalService.hasUserRole(
+		if (!_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
 
 			throw new PrincipalException();
@@ -376,7 +377,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	public Company updateLogo(long companyId, byte[] bytes)
 		throws PortalException {
 
-		if (!roleLocalService.hasUserRole(
+		if (!_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
 
 			throw new PrincipalException();
@@ -397,7 +398,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	public Company updateLogo(long companyId, InputStream inputStream)
 		throws PortalException {
 
-		if (!roleLocalService.hasUserRole(
+		if (!_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
 
 			throw new PrincipalException();
@@ -419,9 +420,9 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 			long companyId, UnicodeProperties unicodeProperties)
 		throws PortalException {
 
-		if (!(roleLocalService.hasUserRole(
+		if (!(_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true) ||
-			  roleLocalService.hasUserRole(
+			  _roleLocalService.hasUserRole(
 				  getUserId(), companyId, RoleConstants.ANALYTICS_ADMINISTRATOR,
 				  true))) {
 
@@ -457,7 +458,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 			boolean strangersVerify, boolean siteLogo)
 		throws PortalException {
 
-		if (!roleLocalService.hasUserRole(
+		if (!_roleLocalService.hasUserRole(
 				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
 
 			throw new PrincipalException();
@@ -467,5 +468,8 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 			companyId, authType, autoLogin, sendPassword, strangers,
 			strangersWithMx, strangersVerify, siteLogo);
 	}
+
+	@BeanReference(type = RoleLocalService.class)
+	private RoleLocalService _roleLocalService;
 
 }

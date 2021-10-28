@@ -148,12 +148,14 @@ public class UpgradeModules extends UpgradeProcess {
 		"com.liferay.invitation.web", "com.liferay.item.selector.web",
 		"com.liferay.journal.content.search.web",
 		"com.liferay.journal.content.web", "com.liferay.journal.service",
-		"com.liferay.journal.web", "com.liferay.layout.admin.web",
-		"com.liferay.license.manager.web", "com.liferay.loan.calculator.web",
-		"com.liferay.login.web", "com.liferay.message.boards.web",
+		"com.liferay.journal.web", "com.liferay.knowledge.base.web",
+		"com.liferay.layout.admin.web", "com.liferay.license.manager.web",
+		"com.liferay.loan.calculator.web", "com.liferay.login.web",
+		"com.liferay.message.boards.web",
 		"com.liferay.mobile.device.rules.service",
 		"com.liferay.mobile.device.rules.web", "com.liferay.my.account.web",
-		"com.liferay.nested.portlets.web", "com.liferay.network.utilities.web",
+		"com.liferay.my.subscriptions.web", "com.liferay.nested.portlets.web",
+		"com.liferay.network.utilities.web",
 		"com.liferay.password.generator.web", "com.liferay.plugins.admin.web",
 		"com.liferay.polls.service",
 		"com.liferay.portal.background.task.service",
@@ -175,11 +177,12 @@ public class UpgradeModules extends UpgradeProcess {
 		"com.liferay.social.activities.web", "com.liferay.social.activity.web",
 		"com.liferay.social.group.statistics.web",
 		"com.liferay.social.requests.web",
-		"com.liferay.social.user.statistics.web", "com.liferay.staging.bar.web",
+		"com.liferay.social.user.statistics.web",
+		"com.liferay.softwarecatalog.service", "com.liferay.staging.bar.web",
 		"com.liferay.translator.web", "com.liferay.trash.web",
 		"com.liferay.unit.converter.web", "com.liferay.web.proxy.web",
-		"com.liferay.wiki.service", "com.liferay.wiki.web",
-		"com.liferay.xsl.content.web"
+		"com.liferay.wiki.navigation.web", "com.liferay.wiki.service",
+		"com.liferay.wiki.web", "com.liferay.xsl.content.web"
 	};
 
 	private static final String[][] _CONVERTED_LEGACY_MODULES = {
@@ -201,6 +204,7 @@ public class UpgradeModules extends UpgradeProcess {
 			"Marketplace"
 		},
 		{"microblogs-portlet", "com.liferay.microblogs.service", "Microblogs"},
+		{"opensocial-portlet", "opensocial-portlet", "OpenSocial"},
 		{
 			"private-messaging-portlet",
 			"com.liferay.social.privatemessaging.service", "PM"

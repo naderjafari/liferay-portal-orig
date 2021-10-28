@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.PortletConstants;
 import com.liferay.portal.kernel.model.PortletPreferencesIds;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.LiferayPortletMode;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
@@ -313,11 +314,14 @@ public class PortletPreferencesFactoryImpl
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
+		User user = themeDisplay.getRealUser();
+
 		long userId = themeDisplay.getUserId();
 
 		String doAsUserId = themeDisplay.getDoAsUserId();
 
-		if (Validator.isNotNull(doAsUserId) &&
+		if ((user != null) && !user.isDefaultUser() &&
+			Validator.isNotNull(doAsUserId) &&
 			!Objects.equals(String.valueOf(userId), doAsUserId)) {
 
 			Company company = themeDisplay.getCompany();
@@ -327,7 +331,14 @@ public class PortletPreferencesFactoryImpl
 					Encryptor.decrypt(company.getKeyObj(), doAsUserId), userId);
 			}
 			catch (EncryptorException encryptorException) {
-				_log.error("Unable to decrypt user ID", encryptorException);
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Unable to decrypt user ID from " + doAsUserId,
+						encryptorException);
+				}
+				else if (_log.isWarnEnabled()) {
+					_log.warn("Unable to decrypt user ID from " + doAsUserId);
+				}
 			}
 		}
 
@@ -337,7 +348,7 @@ public class PortletPreferencesFactoryImpl
 
 	@Override
 	public PortalPreferences getPortalPreferences(
-		HttpSession session, long userId, boolean signedIn) {
+		HttpSession httpSession, long userId, boolean signedIn) {
 
 		PortalPreferences portalPreferences = null;
 
@@ -351,8 +362,8 @@ public class PortletPreferencesFactoryImpl
 				portalPreferencesWrapper.getPortalPreferencesImpl();
 		}
 		else {
-			if (session != null) {
-				portalPreferences = (PortalPreferences)session.getAttribute(
+			if (httpSession != null) {
+				portalPreferences = (PortalPreferences)httpSession.getAttribute(
 					WebKeys.PORTAL_PREFERENCES);
 			}
 
@@ -360,8 +371,8 @@ public class PortletPreferencesFactoryImpl
 				portalPreferences =
 					portalPreferencesWrapper.getPortalPreferencesImpl();
 
-				if (session != null) {
-					session.setAttribute(
+				if (httpSession != null) {
+					httpSession.setAttribute(
 						WebKeys.PORTAL_PREFERENCES, portalPreferences);
 				}
 			}
@@ -410,8 +421,6 @@ public class PortletPreferencesFactoryImpl
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		long siteGroupId = themeDisplay.getSiteGroupId();
-
 		LayoutTypePortlet layoutTypePortlet =
 			themeDisplay.getLayoutTypePortlet();
 
@@ -428,8 +437,9 @@ public class PortletPreferencesFactoryImpl
 		}
 
 		return _getPortletPreferencesIds(
-			themeDisplay, siteGroupId, PortalUtil.getUserId(httpServletRequest),
-			layout, portletId, modeEditGuest);
+			themeDisplay, themeDisplay.getSiteGroupId(),
+			PortalUtil.getUserId(httpServletRequest), layout, portletId,
+			modeEditGuest);
 	}
 
 	@Override

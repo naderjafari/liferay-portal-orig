@@ -190,11 +190,9 @@ public abstract class BaseCORSClientTestCase {
 					public void updated(
 						String pid, Dictionary<String, ?> updatedProperties) {
 
-						if (updatedProperties == null) {
-							return;
-						}
+						if ((updatedProperties == null) ||
+							(properties.size() > updatedProperties.size())) {
 
-						if (properties.size() > updatedProperties.size()) {
 							return;
 						}
 
@@ -302,7 +300,6 @@ public abstract class BaseCORSClientTestCase {
 			arguments.add("-Djvm.debug=true");
 		}
 
-		arguments.add("-Dliferay.mode=test");
 		arguments.add("-Dsun.net.http.allowRestrictedHeaders=true");
 		arguments.add("-Dsun.zip.disableMemoryMapping=true");
 

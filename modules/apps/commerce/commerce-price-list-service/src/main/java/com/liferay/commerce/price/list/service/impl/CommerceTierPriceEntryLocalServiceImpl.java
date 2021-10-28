@@ -27,9 +27,9 @@ import com.liferay.commerce.price.list.model.CommerceTierPriceEntry;
 import com.liferay.commerce.price.list.service.base.CommerceTierPriceEntryLocalServiceBaseImpl;
 import com.liferay.commerce.price.list.service.persistence.CommercePriceEntryPersistence;
 import com.liferay.commerce.price.list.util.comparator.CommerceTierPriceEntryMinQuantityComparator;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -61,6 +61,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
+import com.liferay.portal.spring.extender.service.ServiceReference;
 
 import java.io.Serializable;
 
@@ -150,7 +151,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 			externalReferenceCode, serviceContext.getCompanyId());
 
 		Date expirationDate = null;
-		Date now = new Date();
+		Date date = new Date();
 
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
@@ -185,7 +186,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 		commerceTierPriceEntry.setExpandoBridgeAttributes(serviceContext);
 		commerceTierPriceEntry.setDisplayDate(displayDate);
 
-		if ((expirationDate == null) || expirationDate.after(now)) {
+		if ((expirationDate == null) || expirationDate.after(date)) {
 			commerceTierPriceEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
 		}
 		else {
@@ -195,7 +196,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 		commerceTierPriceEntry.setExpirationDate(expirationDate);
 		commerceTierPriceEntry.setStatusByUserId(user.getUserId());
 		commerceTierPriceEntry.setStatusDate(
-			serviceContext.getModifiedDate(now));
+			serviceContext.getModifiedDate(date));
 
 		commerceTierPriceEntry = commerceTierPriceEntryPersistence.update(
 			commerceTierPriceEntry);
@@ -352,16 +353,11 @@ public class CommerceTierPriceEntryLocalServiceImpl
 				expirationDateMinute, neverExpire, serviceContext);
 		}
 
-		StringBundler sb = new StringBundler(6);
-
-		sb.append("{commercePriceEntryId=");
-		sb.append(commercePriceEntryId);
-		sb.append(StringPool.COMMA_AND_SPACE);
-		sb.append("priceEntryExternalReferenceCode=");
-		sb.append(priceEntryExternalReferenceCode);
-		sb.append(CharPool.CLOSE_CURLY_BRACE);
-
-		throw new NoSuchPriceEntryException(sb.toString());
+		throw new NoSuchPriceEntryException(
+			StringBundler.concat(
+				"{commercePriceEntryId=", commercePriceEntryId,
+				", priceEntryExternalReferenceCode=",
+				priceEntryExternalReferenceCode, CharPool.CLOSE_CURLY_BRACE));
 	}
 
 	/**
@@ -481,7 +477,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(
+		_expandoRowLocalService.deleteRows(
 			commerceTierPriceEntry.getCommerceTierPriceEntryId());
 
 		return commerceTierPriceEntry;
@@ -528,7 +524,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 
 		try {
 			commerceTierPriceEntry =
-				commerceTierPriceEntryPersistence.findByC_LtM_S_First(
+				commerceTierPriceEntryPersistence.findByC_LteM_S_First(
 					commercePriceEntryId, quantity,
 					WorkflowConstants.STATUS_APPROVED,
 					new CommerceTierPriceEntryMinQuantityComparator(false));
@@ -548,7 +544,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 	public List<CommerceTierPriceEntry> findCommerceTierPriceEntries(
 		long commercePriceEntryId, int quantity) {
 
-		return commerceTierPriceEntryPersistence.findByC_LtM_S(
+		return commerceTierPriceEntryPersistence.findByC_LteM_S(
 			commercePriceEntryId, quantity, WorkflowConstants.STATUS_APPROVED,
 			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new CommerceTierPriceEntryMinQuantityComparator(true));
@@ -647,7 +643,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 			commerceTierPriceEntry.getCommercePriceEntryId(), minQuantity);
 
 		Date expirationDate = null;
-		Date now = new Date();
+		Date date = new Date();
 
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
@@ -673,7 +669,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 
 		commerceTierPriceEntry.setDisplayDate(displayDate);
 
-		if ((expirationDate == null) || expirationDate.after(now)) {
+		if ((expirationDate == null) || expirationDate.after(date)) {
 			commerceTierPriceEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
 		}
 		else {
@@ -683,7 +679,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 		commerceTierPriceEntry.setExpirationDate(expirationDate);
 		commerceTierPriceEntry.setStatusByUserId(user.getUserId());
 		commerceTierPriceEntry.setStatusDate(
-			serviceContext.getModifiedDate(now));
+			serviceContext.getModifiedDate(date));
 
 		// Commerce price entry
 
@@ -765,7 +761,7 @@ public class CommerceTierPriceEntryLocalServiceImpl
 		throws PortalException {
 
 		User user = userLocalService.getUser(userId);
-		Date now = new Date();
+		Date date = new Date();
 
 		CommerceTierPriceEntry commerceTierPriceEntry =
 			commerceTierPriceEntryPersistence.findByPrimaryKey(
@@ -773,23 +769,23 @@ public class CommerceTierPriceEntryLocalServiceImpl
 
 		if ((status == WorkflowConstants.STATUS_APPROVED) &&
 			(commerceTierPriceEntry.getDisplayDate() != null) &&
-			now.before(commerceTierPriceEntry.getDisplayDate())) {
+			date.before(commerceTierPriceEntry.getDisplayDate())) {
 
 			status = WorkflowConstants.STATUS_SCHEDULED;
 		}
 
-		Date modifiedDate = serviceContext.getModifiedDate(now);
+		Date modifiedDate = serviceContext.getModifiedDate(date);
 
 		if (status == WorkflowConstants.STATUS_APPROVED) {
 			Date expirationDate = commerceTierPriceEntry.getExpirationDate();
 
-			if ((expirationDate != null) && expirationDate.before(now)) {
+			if ((expirationDate != null) && expirationDate.before(date)) {
 				commerceTierPriceEntry.setExpirationDate(null);
 			}
 		}
 
 		if (status == WorkflowConstants.STATUS_EXPIRED) {
-			commerceTierPriceEntry.setExpirationDate(now);
+			commerceTierPriceEntry.setExpirationDate(date);
 		}
 
 		commerceTierPriceEntry.setStatus(status);
@@ -1050,5 +1046,8 @@ public class CommerceTierPriceEntryLocalServiceImpl
 
 	@BeanReference(type = CommercePriceEntryPersistence.class)
 	private CommercePriceEntryPersistence _commercePriceEntryPersistence;
+
+	@ServiceReference(type = ExpandoRowLocalService.class)
+	private ExpandoRowLocalService _expandoRowLocalService;
 
 }

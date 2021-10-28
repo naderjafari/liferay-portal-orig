@@ -14,8 +14,13 @@
 
 package com.liferay.fragment.internal.util.configuration;
 
+import com.liferay.fragment.constants.FragmentConfigurationFieldDataType;
 import com.liferay.fragment.util.configuration.FragmentConfigurationField;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
+import com.liferay.frontend.token.definition.FrontendToken;
+import com.liferay.frontend.token.definition.FrontendTokenDefinition;
+import com.liferay.frontend.token.definition.FrontendTokenDefinitionRegistry;
+import com.liferay.frontend.token.definition.FrontendTokenMapping;
 import com.liferay.info.item.ClassPKInfoItemIdentifier;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
@@ -34,12 +39,16 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -77,6 +86,38 @@ public class FragmentEntryConfigurationParserImpl
 		}
 
 		return defaultValuesJSONObject;
+	}
+
+	@Override
+	public Object getConfigurationFieldValue(
+		String editableValues, String fieldName,
+		FragmentConfigurationFieldDataType fragmentConfigurationFieldDataType) {
+
+		try {
+			JSONObject editableValuesJSONObject =
+				JSONFactoryUtil.createJSONObject(editableValues);
+
+			JSONObject configurationValuesJSONObject =
+				editableValuesJSONObject.getJSONObject(
+					_KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR);
+
+			if (configurationValuesJSONObject == null) {
+				return null;
+			}
+
+			return _getFieldValue(
+				fragmentConfigurationFieldDataType,
+				configurationValuesJSONObject.getString(fieldName));
+		}
+		catch (JSONException jsonException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					"Unable to parse configuration JSON: " + editableValues,
+					jsonException);
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -244,7 +285,8 @@ public class FragmentEntryConfigurationParserImpl
 		if (StringUtil.equalsIgnoreCase(
 				fragmentConfigurationField.getType(), "checkbox")) {
 
-			return _getFieldValue("bool", value);
+			return _getFieldValue(
+				FragmentConfigurationFieldDataType.BOOLEAN, value);
 		}
 		else if (StringUtil.equalsIgnoreCase(
 					fragmentConfigurationField.getType(),
@@ -255,13 +297,22 @@ public class FragmentEntryConfigurationParserImpl
 		else if (StringUtil.equalsIgnoreCase(
 					fragmentConfigurationField.getType(), "colorPalette")) {
 
-			JSONObject jsonObject = (JSONObject)_getFieldValue("object", value);
+			JSONObject jsonObject = (JSONObject)_getFieldValue(
+				FragmentConfigurationFieldDataType.OBJECT, value);
 
 			if (jsonObject.isNull("color") && !jsonObject.isNull("cssClass")) {
 				jsonObject.put("color", jsonObject.getString("cssClass"));
 			}
 
 			return jsonObject;
+		}
+		else if (StringUtil.equalsIgnoreCase(
+					fragmentConfigurationField.getType(), "colorPicker")) {
+
+			String fieldValue = (String)_getFieldValue(
+				FragmentConfigurationFieldDataType.STRING, value);
+
+			return _getColorPickerCssVariable(fieldValue);
 		}
 		else if (StringUtil.equalsIgnoreCase(
 					fragmentConfigurationField.getType(), "itemSelector")) {
@@ -273,16 +324,20 @@ public class FragmentEntryConfigurationParserImpl
 				 StringUtil.equalsIgnoreCase(
 					 fragmentConfigurationField.getType(), "text")) {
 
-			String dataType = fragmentConfigurationField.getDataType();
+			FragmentConfigurationFieldDataType
+				fragmentConfigurationFieldDataType =
+					fragmentConfigurationField.
+						getFragmentConfigurationFieldDataType();
 
-			if (Validator.isNull(dataType)) {
-				dataType = "string";
+			if (fragmentConfigurationFieldDataType == null) {
+				fragmentConfigurationFieldDataType =
+					FragmentConfigurationFieldDataType.STRING;
 			}
 
-			return _getFieldValue(dataType, value);
+			return _getFieldValue(fragmentConfigurationFieldDataType, value);
 		}
 
-		return _getFieldValue("string", value);
+		return _getFieldValue(FragmentConfigurationFieldDataType.STRING, value);
 	}
 
 	/**
@@ -458,6 +513,58 @@ public class FragmentEntryConfigurationParserImpl
 		return jsonObject.toString();
 	}
 
+	private String _getColorPickerCssVariable(String fieldValue) {
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		if ((serviceContext == null) || Validator.isNull(fieldValue)) {
+			return fieldValue;
+		}
+
+		ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
+
+		FrontendTokenDefinition frontendTokenDefinition =
+			_frontendTokenDefinitionRegistry.getFrontendTokenDefinition(
+				themeDisplay.getThemeId());
+
+		if (frontendTokenDefinition == null) {
+			return fieldValue;
+		}
+
+		Collection<FrontendToken> frontendTokens =
+			frontendTokenDefinition.getFrontendTokens();
+
+		for (FrontendToken frontendToken : frontendTokens) {
+			try {
+				JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
+					frontendToken.getJSON(LocaleUtil.getMostRelevantLocale()));
+
+				if (!Objects.equals(jsonObject.getString("name"), fieldValue)) {
+					continue;
+				}
+
+				List<FrontendTokenMapping> frontendTokenMappings =
+					new ArrayList<>(
+						frontendToken.getFrontendTokenMappings(
+							FrontendTokenMapping.TYPE_CSS_VARIABLE));
+
+				if (frontendTokenMappings.isEmpty()) {
+					return fieldValue;
+				}
+
+				FrontendTokenMapping frontendTokenMapping =
+					frontendTokenMappings.get(0);
+
+				return "var(--" + frontendTokenMapping.getValue() + ")";
+			}
+			catch (JSONException jsonException) {
+				return fieldValue;
+			}
+		}
+
+		return fieldValue;
+	}
+
 	private JSONArray _getFieldSetsJSONArray(String configuration) {
 		try {
 			JSONObject configurationJSONObject =
@@ -476,17 +583,42 @@ public class FragmentEntryConfigurationParserImpl
 		return null;
 	}
 
-	private Object _getFieldValue(String dataType, String value) {
-		if (StringUtil.equalsIgnoreCase(dataType, "bool")) {
+	private Object _getFieldValue(
+		FragmentConfigurationFieldDataType fragmentConfigurationFieldDataType,
+		String value) {
+
+		if (fragmentConfigurationFieldDataType ==
+				FragmentConfigurationFieldDataType.ARRAY) {
+
+			try {
+				return JSONFactoryUtil.createJSONArray(value);
+			}
+			catch (JSONException jsonException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Unable to parse configuration JSON: " + value,
+						jsonException);
+				}
+			}
+		}
+		else if (fragmentConfigurationFieldDataType ==
+					FragmentConfigurationFieldDataType.BOOLEAN) {
+
 			return GetterUtil.getBoolean(value);
 		}
-		else if (StringUtil.equalsIgnoreCase(dataType, "double")) {
+		else if (fragmentConfigurationFieldDataType ==
+					FragmentConfigurationFieldDataType.DOUBLE) {
+
 			return GetterUtil.getDouble(value);
 		}
-		else if (StringUtil.equalsIgnoreCase(dataType, "int")) {
+		else if (fragmentConfigurationFieldDataType ==
+					FragmentConfigurationFieldDataType.INTEGER) {
+
 			return GetterUtil.getInteger(value);
 		}
-		else if (StringUtil.equalsIgnoreCase(dataType, "object")) {
+		else if (fragmentConfigurationFieldDataType ==
+					FragmentConfigurationFieldDataType.OBJECT) {
+
 			try {
 				return JSONFactoryUtil.createJSONObject(value);
 			}
@@ -498,7 +630,9 @@ public class FragmentEntryConfigurationParserImpl
 				}
 			}
 		}
-		else if (StringUtil.equalsIgnoreCase(dataType, "string")) {
+		else if (fragmentConfigurationFieldDataType ==
+					FragmentConfigurationFieldDataType.STRING) {
+
 			return value;
 		}
 
@@ -724,6 +858,9 @@ public class FragmentEntryConfigurationParserImpl
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		FragmentEntryConfigurationParserImpl.class);
+
+	@Reference
+	private FrontendTokenDefinitionRegistry _frontendTokenDefinitionRegistry;
 
 	@Reference
 	private InfoItemServiceTracker _infoItemServiceTracker;

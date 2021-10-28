@@ -53,6 +53,19 @@ public class BatchPlannerMappingLocalServiceWrapper
 			batchPlannerMapping);
 	}
 
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerMapping
+			addBatchPlannerMapping(
+				long userId, long batchPlannerPlanId, String externalFieldName,
+				String externalFieldType, String internalFieldName,
+				String internalFieldType, String script)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerMappingLocalService.addBatchPlannerMapping(
+			userId, batchPlannerPlanId, externalFieldName, externalFieldType,
+			internalFieldName, internalFieldType, script);
+	}
+
 	/**
 	 * Creates a new batch planner mapping with the primary key. Does not add the batch planner mapping to the database.
 	 *
@@ -117,6 +130,17 @@ public class BatchPlannerMappingLocalServiceWrapper
 
 		return _batchPlannerMappingLocalService.deleteBatchPlannerMapping(
 			batchPlannerMappingId);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerMapping
+			deleteBatchPlannerMapping(
+				long batchPlannerPlanId, String externalFieldName,
+				String internalFieldName)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerMappingLocalService.deleteBatchPlannerMapping(
+			batchPlannerPlanId, externalFieldName, internalFieldName);
 	}
 
 	/**
@@ -284,6 +308,14 @@ public class BatchPlannerMappingLocalServiceWrapper
 			start, end);
 	}
 
+	@Override
+	public java.util.List<com.liferay.batch.planner.model.BatchPlannerMapping>
+		getBatchPlannerMappings(long batchPlannerPlanId) {
+
+		return _batchPlannerMappingLocalService.getBatchPlannerMappings(
+			batchPlannerPlanId);
+	}
+
 	/**
 	 * Returns the number of batch planner mappings.
 	 *
@@ -342,6 +374,18 @@ public class BatchPlannerMappingLocalServiceWrapper
 
 		return _batchPlannerMappingLocalService.updateBatchPlannerMapping(
 			batchPlannerMapping);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerMapping
+			updateBatchPlannerMapping(
+				long batchPlannerMappingId, String externalFieldName,
+				String externalFieldType, String script)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerMappingLocalService.updateBatchPlannerMapping(
+			batchPlannerMappingId, externalFieldName, externalFieldType,
+			script);
 	}
 
 	@Override

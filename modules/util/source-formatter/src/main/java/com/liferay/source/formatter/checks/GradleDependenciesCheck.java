@@ -64,6 +64,16 @@ public class GradleDependenciesCheck extends BaseFileCheck {
 
 			String dependencies = dependenciesBlock.substring(x, y + 1);
 
+			if (isAttributeValue(
+					_CHECK_TEST_INTEGRATION_COMPILE_DEPENDENCIES_KEY,
+					absolutePath)) {
+
+				content = _formatTestIntegrationCompileDependencies(
+					content, dependencies, _petraPattern);
+				content = _formatTestIntegrationCompileDependencies(
+					content, dependencies, _portalKernelPattern);
+			}
+
 			content = _formatDependencies(
 				content, SourceUtil.getIndent(dependenciesBlock), dependencies,
 				releasePortalAPIVersion);
@@ -73,9 +83,52 @@ public class GradleDependenciesCheck extends BaseFileCheck {
 
 				_checkPetraDependencies(fileName, content, dependencies);
 			}
+
+			_checkCommerceDependencies(
+				fileName, absolutePath, content, dependencies,
+				getAttributeValues(
+					_ALLOWED_COMMERCE_DEPENDENCIES_MODULE_PATH_NAMES,
+					absolutePath));
 		}
 
 		return content;
+	}
+
+	private void _checkCommerceDependencies(
+		String fileName, String absolutePath, String content,
+		String dependencies,
+		List<String> allowedCommerceDependenciesModulePathNames) {
+
+		if (!isModulesFile(absolutePath) ||
+			absolutePath.contains("/commerce/")) {
+
+			return;
+		}
+
+		for (String line : StringUtil.splitLines(dependencies)) {
+			if (Validator.isNull(line) ||
+				!line.matches(
+					"\\s*compileOnly project\\(\".*?:apps:commerce.+?\"\\)")) {
+
+				continue;
+			}
+
+			for (String allowedCommerceDependenciesModulePathName :
+					allowedCommerceDependenciesModulePathNames) {
+
+				if (absolutePath.contains(
+						allowedCommerceDependenciesModulePathName)) {
+
+					return;
+				}
+			}
+
+			addMessage(
+				fileName,
+				"Modules that are outside of Commerce are not allowed to " +
+					"depend on Commerce modules",
+				SourceUtil.getLineNumber(content, content.indexOf(line)));
+		}
 	}
 
 	private void _checkPetraDependencies(
@@ -182,6 +235,20 @@ public class GradleDependenciesCheck extends BaseFileCheck {
 		return StringUtil.replace(content, dependencies, sb.toString());
 	}
 
+	private String _formatTestIntegrationCompileDependencies(
+		String content, String dependencies, Pattern pattern) {
+
+		Matcher matcher = pattern.matcher(dependencies);
+
+		if (matcher.find()) {
+			return StringUtil.replace(
+				content, dependencies,
+				StringUtil.removeSubstring(dependencies, matcher.group()));
+		}
+
+		return content;
+	}
+
 	private String _sortDependencyAttributes(String dependency) {
 		Matcher matcher = _dependencyPattern.matcher(dependency);
 
@@ -215,8 +282,16 @@ public class GradleDependenciesCheck extends BaseFileCheck {
 		return sb.toString();
 	}
 
+	private static final String
+		_ALLOWED_COMMERCE_DEPENDENCIES_MODULE_PATH_NAMES =
+			"allowedCommerceDependenciesModulePathNames";
+
 	private static final String _CHECK_PETRA_DEPENDENCIES_KEY =
 		"checkPetraDependencies";
+
+	private static final String
+		_CHECK_TEST_INTEGRATION_COMPILE_DEPENDENCIES_KEY =
+			"checkTestIntegrationCompileDependencies";
 
 	private static final String _RELEASE_PORTAL_API_VERSION_KEY =
 		"releasePortalAPIVersion";
@@ -231,6 +306,10 @@ public class GradleDependenciesCheck extends BaseFileCheck {
 			Pattern.DOTALL);
 	private static final Pattern _incorrectWhitespacePattern = Pattern.compile(
 		"(:|\",)[^ \n]");
+	private static final Pattern _petraPattern = Pattern.compile(
+		"testIntegrationCompile project\\(\":core:petra:.*");
+	private static final Pattern _portalKernelPattern = Pattern.compile(
+		"testIntegrationCompile.* name: \"com\\.liferay\\.portal\\.kernel\".*");
 
 	private class GradleDependencyComparator
 		implements Comparator<String>, Serializable {

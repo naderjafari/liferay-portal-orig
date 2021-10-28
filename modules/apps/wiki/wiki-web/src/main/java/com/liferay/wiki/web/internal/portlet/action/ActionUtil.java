@@ -242,15 +242,18 @@ public class ActionUtil {
 		LiferayPortletResponse liferayPortletResponse =
 			PortalUtil.getLiferayPortletResponse(portletResponse);
 
-		WikiNode sourceNode = sourcePage.getNode();
-
 		PortletURL viewPageURL = PortletURLBuilder.createRenderURL(
 			liferayPortletResponse
 		).setMVCRenderCommandName(
 			"wiki/view"
 		).setParameter(
-			"nodeName", sourceNode.getName()
-		).build();
+			"nodeName",
+			() -> {
+				WikiNode sourceNode = sourcePage.getNode();
+
+				return sourceNode.getName();
+			}
+		).buildPortletURL();
 
 		PortletURL editPageURL = PortletURLBuilder.createRenderURL(
 			liferayPortletResponse
@@ -260,7 +263,7 @@ public class ActionUtil {
 			"nodeId", nodeId
 		).setParameter(
 			"title", title
-		).build();
+		).buildPortletURL();
 
 		String attachmentURLPrefix = WikiUtil.getAttachmentURLPrefix(
 			themeDisplay.getPathMain(), themeDisplay.getPlid(), nodeId, title);

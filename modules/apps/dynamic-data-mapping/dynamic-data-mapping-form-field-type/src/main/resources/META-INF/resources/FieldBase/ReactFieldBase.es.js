@@ -16,6 +16,7 @@ import './FieldBase.scss';
 
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
+import ClayLabel from '@clayui/label';
 import ClayPopover from '@clayui/popover';
 import classNames from 'classnames';
 import {
@@ -93,27 +94,33 @@ const getFieldDetails = (props) => {
 	return fieldDetails;
 };
 
-const FieldProperties = ({required, showPopover, tooltip}) => {
+const HideFieldProperty = () => {
 	return (
-		<>
-			{required && (
-				<span className="ddm-label-required reference-mark">
-					<ClayIcon symbol="asterisk" />
-				</span>
-			)}
+		<ClayLabel className="ml-1" displayType="secondary">
+			{Liferay.Language.get('hidden')}
+		</ClayLabel>
+	);
+};
 
-			{tooltip && (
-				<>
-					{showPopover ? (
-						<Popover tooltip={tooltip} />
-					) : (
-						<span className="ddm-tooltip" title={tooltip}>
-							<ClayIcon symbol="question-circle-full" />
-						</span>
-					)}
-				</>
-			)}
-		</>
+const LabelProperty = ({hideField, label}) => {
+	return hideField ? <span className="text-secondary">{label}</span> : label;
+};
+
+const RequiredProperty = () => {
+	return (
+		<span className="ddm-label-required reference-mark">
+			<ClayIcon symbol="asterisk" />
+		</span>
+	);
+};
+
+const TooltipProperty = ({showPopover, tooltip}) => {
+	return showPopover ? (
+		<Popover tooltip={tooltip} />
+	) : (
+		<span className="ddm-tooltip" title={tooltip}>
+			<ClayIcon symbol="question-circle-full" />
+		</span>
 	);
 };
 
@@ -155,10 +162,13 @@ const Popover = ({tooltip}) => {
 };
 
 function FieldBase({
+	accessible = true,
 	children,
 	displayErrors,
 	errorMessage,
 	fieldName,
+	hideField,
+	hideEditedFlag,
 	id,
 	label,
 	localizedValue = {},
@@ -191,8 +201,12 @@ function FieldBase({
 		tip,
 	});
 
-	const fieldDetailsId = id ? id + '_fieldDetails' : name + '_fieldDetails';
+	let fieldDetailsId = id ?? name;
 
+	fieldDetailsId = fieldDetailsId + '_fieldDetails';
+
+	const accessibleProps =
+		accessible && fieldDetails ? {'aria-labelledby': fieldDetailsId} : null;
 	const hiddenTranslations = useMemo(() => {
 		const array = [];
 
@@ -215,7 +229,7 @@ function FieldBase({
 
 	const inputEditedName = name + '_edited';
 	const renderLabel =
-		(label && showLabel) || required || tooltip || repeatable;
+		(label && showLabel) || hideField || repeatable || required || tooltip;
 	const repeatedIndex = useMemo(() => getRepeatedIndex(name), [name]);
 	const showLegend =
 		type &&
@@ -230,7 +244,7 @@ function FieldBase({
 			aria-labelledby={!renderLabel ? fieldDetailsId : null}
 			className={classNames('form-group', {
 				'has-error': hasError,
-				hide: !visible,
+				'hide': !visible,
 			})}
 			data-field-name={name}
 			onClick={onClick}
@@ -241,6 +255,10 @@ function FieldBase({
 				<div className="lfr-ddm-form-field-repeatable-toolbar">
 					{repeatable && repeatedIndex > 0 && (
 						<ClayButton
+							aria-label={Liferay.Util.sub(
+								Liferay.Language.get('remove-duplicate-field'),
+								label ? label : type
+							)}
 							className="ddm-form-field-repeatable-delete-button p-0"
 							disabled={readOnly}
 							onClick={() =>
@@ -258,6 +276,10 @@ function FieldBase({
 					)}
 
 					<ClayButton
+						aria-label={Liferay.Util.sub(
+							Liferay.Language.get('add-duplicate-field'),
+							label ? label : type
+						)}
 						className={classNames(
 							'ddm-form-field-repeatable-add-button p-0',
 							{
@@ -285,39 +307,61 @@ function FieldBase({
 					{showLegend ? (
 						<fieldset>
 							<legend
-								aria-labelledby={fieldDetailsId}
+								{...accessibleProps}
 								className="lfr-ddm-legend"
 								tabIndex="0"
 							>
-								{label && showLabel && label}
+								{showLabel && label}
 
-								<FieldProperties
-									required={required}
-									showPopover={showPopover}
-									tooltip={tooltip}
-								/>
+								{required && <RequiredProperty />}
+
+								{tooltip && (
+									<TooltipProperty
+										showPopover={showPopover}
+										tooltip={tooltip}
+									/>
+								)}
 							</legend>
 							{children}
 						</fieldset>
 					) : (
 						<>
 							<label
-								aria-describedby={fieldDetailsId}
+								{...accessibleProps}
 								className={classNames({
 									'ddm-empty': !showLabel && !required,
 									'ddm-label': showLabel || required,
 								})}
+								htmlFor={id ?? name}
 								tabIndex="0"
 							>
-								{label && showLabel && label}
+								{showLabel && label && (
+									<LabelProperty
+										hideField={hideField}
+										label={label}
+									/>
+								)}
 
-								<FieldProperties
-									required={required}
+								{required && <RequiredProperty />}
+
+								{hideField && <HideFieldProperty />}
+
+								{showLabel && tooltip && (
+									<TooltipProperty
+										showPopover={showPopover}
+										tooltip={tooltip}
+									/>
+								)}
+							</label>
+
+							{children}
+
+							{!showLabel && tooltip && (
+								<TooltipProperty
 									showPopover={showPopover}
 									tooltip={tooltip}
 								/>
-							</label>
-							{children}
+							)}
 						</>
 					)}
 				</>
@@ -343,7 +387,7 @@ function FieldBase({
 					/>
 				))}
 
-			{type !== 'captcha' && (
+			{!hideEditedFlag && (
 				<input
 					key={inputEditedName}
 					name={inputEditedName}
@@ -366,7 +410,7 @@ function FieldBase({
 				</span>
 			)}
 
-			{fieldDetails && (
+			{accessible && fieldDetails && (
 				<span
 					className="sr-only"
 					dangerouslySetInnerHTML={{

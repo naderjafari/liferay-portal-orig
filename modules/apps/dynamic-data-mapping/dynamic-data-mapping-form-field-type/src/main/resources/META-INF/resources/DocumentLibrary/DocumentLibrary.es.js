@@ -71,7 +71,7 @@ function transformFileEntryProperties({fileEntryTitle, fileEntryURL, value}) {
 				fileEntryURL = fileEntry.url;
 			}
 		}
-		catch (e) {
+		catch (error) {
 			console.warn('Unable to parse JSON', value);
 		}
 	}
@@ -86,7 +86,9 @@ const DocumentLibrary = ({
 	id,
 	message,
 	name,
+	onBlur,
 	onClearButtonClicked,
+	onFocus,
 	onSelectButtonClicked,
 	placeholder,
 	readOnly,
@@ -119,7 +121,9 @@ const DocumentLibrary = ({
 							disabled={readOnly}
 							id={`${name}inputFile`}
 							lang={editingLanguageId}
+							onBlur={onBlur}
 							onClick={onSelectButtonClicked}
+							onFocus={onFocus}
 							value={transformedFileEntryTitle || ''}
 						/>
 					</ClayInput.GroupItem>
@@ -173,7 +177,9 @@ const GuestUploadFile = ({
 	id,
 	message,
 	name,
+	onBlur,
 	onClearButtonClicked,
+	onFocus,
 	onUploadSelectButtonClicked,
 	placeholder,
 	progress,
@@ -197,7 +203,9 @@ const GuestUploadFile = ({
 					<ClayInput
 						className="bg-light"
 						disabled={readOnly}
+						onBlur={onBlur}
 						onClick={onUploadSelectButtonClicked}
+						onFocus={onFocus}
 						type="text"
 						value={transformedFileEntryTitle || ''}
 					/>
@@ -269,9 +277,12 @@ const Main = ({
 	maximumSubmissionLimitReached,
 	message,
 	name,
+	onBlur,
 	onChange,
+	onFocus,
 	placeholder,
 	readOnly,
+	showUploadPermissionMessage,
 	valid: initialValid,
 	value = '{}',
 	...otherProps
@@ -285,10 +296,12 @@ const Main = ({
 	const [valid, setValid] = useState(initialValid);
 	const [progress, setProgress] = useState(0);
 
+	const isSignedIn = Liferay.ThemeDisplay.isSignedIn();
+
 	const getErrorMessages = (errorMessage, isSignedIn) => {
 		const errorMessages = [errorMessage];
 
-		if (!isSignedIn && !allowGuestUsers) {
+		if (!allowGuestUsers && !isSignedIn) {
 			errorMessages.push(
 				Liferay.Language.get(
 					'you-need-to-be-signed-in-to-edit-this-field'
@@ -302,11 +315,28 @@ const Main = ({
 				)
 			);
 		}
+		else if (showUploadPermissionMessage) {
+			errorMessages.push(
+				Liferay.Language.get(
+					'you-need-to-be-assigned-to-the-same-site-where-the-form-was-created-to-use-this-field'
+				)
+			);
+		}
 
 		return errorMessages.join(' ');
 	};
 
-	const isSignedIn = Liferay.ThemeDisplay.isSignedIn();
+	useEffect(() => {
+		if ((!allowGuestUsers && !isSignedIn) || showUploadPermissionMessage) {
+			const ddmFormUploadPermissionMessage = document.querySelector(
+				`.ddm-form-upload-permission-message`
+			);
+
+			if (ddmFormUploadPermissionMessage) {
+				ddmFormUploadPermissionMessage.classList.remove('hide');
+			}
+		}
+	}, [allowGuestUsers, isSignedIn, showUploadPermissionMessage]);
 
 	useEffect(() => {
 		setCurrentValue(value);
@@ -447,7 +477,9 @@ const Main = ({
 	};
 
 	const hasCustomError =
-		(!isSignedIn && !allowGuestUsers) || maximumSubmissionLimitReached;
+		(!isSignedIn && !allowGuestUsers) ||
+		maximumSubmissionLimitReached ||
+		showUploadPermissionMessage;
 
 	return (
 		<FieldBase
@@ -469,6 +501,7 @@ const Main = ({
 					id={id}
 					message={message}
 					name={name}
+					onBlur={onBlur}
 					onClearButtonClicked={(event) => {
 						setCurrentValue(null);
 
@@ -482,6 +515,7 @@ const Main = ({
 							guestUploadInput.value = '';
 						}
 					}}
+					onFocus={onFocus}
 					onUploadSelectButtonClicked={(event) =>
 						handleUploadSelectButtonClicked(event)
 					}
@@ -498,11 +532,13 @@ const Main = ({
 					id={id}
 					message={message}
 					name={name}
+					onBlur={onBlur}
 					onClearButtonClicked={(event) => {
 						setCurrentValue(null);
 
 						onChange(event, '{}');
 					}}
+					onFocus={onFocus}
 					onSelectButtonClicked={() =>
 						handleSelectButtonClicked({
 							itemSelectorURL,

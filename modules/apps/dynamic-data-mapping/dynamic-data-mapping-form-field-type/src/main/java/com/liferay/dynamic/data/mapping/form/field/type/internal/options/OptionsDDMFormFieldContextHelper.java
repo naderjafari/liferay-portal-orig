@@ -17,6 +17,7 @@ package com.liferay.dynamic.data.mapping.form.field.type.internal.options;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.render.DDMFormFieldRenderingContext;
+import com.liferay.dynamic.data.mapping.util.DDMFormFieldUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -24,10 +25,10 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.security.RandomUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -58,19 +59,25 @@ public class OptionsDDMFormFieldContextHelper {
 	}
 
 	public Map<String, Object> getValue() {
-		Map<String, Object> localizedValue = new HashMap<>();
+		Map<String, Object> changedProperties =
+			(Map<String, Object>)_ddmFormFieldRenderingContext.getProperty(
+				"changedProperties");
+
+		if (MapUtil.isNotEmpty(changedProperties)) {
+			Map<String, Object> changedLocalizedValues =
+				(Map<String, Object>)changedProperties.get("value");
+
+			if (MapUtil.isNotEmpty(changedLocalizedValues)) {
+				return changedLocalizedValues;
+			}
+		}
+
+		Map<String, Object> localizedValues = new HashMap<>();
 
 		if (Validator.isNull(_value)) {
-			Locale locale = _ddmFormFieldRenderingContext.getLocale();
+			localizedValues.put(_getLanguageId(), createDefaultOptions());
 
-			if (locale == null) {
-				locale = LocaleUtil.getSiteDefault();
-			}
-
-			localizedValue.put(
-				LocaleUtil.toLanguageId(locale), createDefaultOptions());
-
-			return localizedValue;
+			return localizedValues;
 		}
 
 		try {
@@ -84,22 +91,23 @@ public class OptionsDDMFormFieldContextHelper {
 				List<Object> options = createOptions(
 					jsonObject.getJSONArray(languageId));
 
-				localizedValue.put(languageId, options);
+				localizedValues.put(languageId, options);
 			}
 
-			return localizedValue;
+			return localizedValues;
 		}
 		catch (JSONException jsonException) {
 			_log.error("Unable to parse JSON array", jsonException);
 
-			return localizedValue;
+			return localizedValues;
 		}
 	}
 
 	protected List<Object> createDefaultOptions() {
 		String defaultOptionLabel = getDefaultOptionLabel();
 
-		String defaultOptionValue = getDefaultOptionValue(defaultOptionLabel);
+		String defaultOptionValue = DDMFormFieldUtil.getDDMFormFieldName(
+			defaultOptionLabel);
 
 		return ListUtil.fromArray(
 			createOption(
@@ -142,15 +150,6 @@ public class OptionsDDMFormFieldContextHelper {
 		return LanguageUtil.get(resourceBundle, "option");
 	}
 
-	protected String getDefaultOptionValue(String defaultOptionValue) {
-		for (int i = 0; i < _DEFAULT_OPTION_VALUE_RANDOM_NUMBERS_LENGTH; i++) {
-			defaultOptionValue = defaultOptionValue.concat(
-				String.valueOf(RandomUtil.nextInt(10)));
-		}
-
-		return defaultOptionValue;
-	}
-
 	protected ResourceBundle getResourceBundle(Locale locale) {
 		Class<?> clazz = getClass();
 
@@ -158,7 +157,15 @@ public class OptionsDDMFormFieldContextHelper {
 			"content.Language", locale, clazz.getClassLoader());
 	}
 
-	private static final int _DEFAULT_OPTION_VALUE_RANDOM_NUMBERS_LENGTH = 8;
+	private String _getLanguageId() {
+		Locale locale = _ddmFormFieldRenderingContext.getLocale();
+
+		if (locale == null) {
+			locale = LocaleUtil.getSiteDefault();
+		}
+
+		return LocaleUtil.toLanguageId(locale);
+	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		OptionsDDMFormFieldContextHelper.class);

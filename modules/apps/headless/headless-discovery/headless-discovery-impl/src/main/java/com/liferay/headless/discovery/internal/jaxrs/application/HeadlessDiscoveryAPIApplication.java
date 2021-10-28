@@ -174,6 +174,12 @@ public class HeadlessDiscoveryAPIApplication extends Application {
 			@PathParam("parameter") String parameter)
 		throws Exception {
 
+		if (parameter.contains("..")) {
+			return Response.status(
+				Response.Status.FORBIDDEN
+			).build();
+		}
+
 		URL url = _getURL(parameter);
 
 		if (url == null) {
@@ -299,7 +305,7 @@ public class HeadlessDiscoveryAPIApplication extends Application {
 		return null;
 	}
 
-	private BundleContext _bundleContext;
+	private volatile BundleContext _bundleContext;
 	private volatile HeadlessDiscoveryConfiguration
 		_headlessDiscoveryConfiguration;
 

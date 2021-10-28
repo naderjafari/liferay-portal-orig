@@ -241,18 +241,17 @@ public class EditAssetListDisplayContext {
 		JSONArray rulesJSONArray = JSONFactoryUtil.createJSONArray();
 
 		for (int queryLogicIndex : queryLogicIndexes) {
-			boolean queryAndOperator = PropertiesParamUtil.getBoolean(
-				_unicodeProperties, _httpServletRequest,
-				"queryAndOperator" + queryLogicIndex);
-
 			JSONObject ruleJSONObject = JSONUtil.put(
-				"queryAndOperator", queryAndOperator);
-
-			boolean queryContains = PropertiesParamUtil.getBoolean(
-				_unicodeProperties, _httpServletRequest,
-				"queryContains" + queryLogicIndex, true);
-
-			ruleJSONObject.put("queryContains", queryContains);
+				"queryAndOperator",
+				PropertiesParamUtil.getBoolean(
+					_unicodeProperties, _httpServletRequest,
+					"queryAndOperator" + queryLogicIndex)
+			).put(
+				"queryContains",
+				PropertiesParamUtil.getBoolean(
+					_unicodeProperties, _httpServletRequest,
+					"queryContains" + queryLogicIndex, true)
+			);
 
 			String queryValues = _unicodeProperties.getProperty(
 				"queryValues" + queryLogicIndex, StringPool.BLANK);
@@ -433,6 +432,30 @@ public class EditAssetListDisplayContext {
 		);
 
 		return _availableSegmentsEntries;
+	}
+
+	public String getBackURL() {
+		if (Validator.isNotNull(_backURL)) {
+			return _backURL;
+		}
+
+		String redirect = ParamUtil.getString(_httpServletRequest, "redirect");
+		String backURL = ParamUtil.getString(_httpServletRequest, "backURL");
+
+		if (Validator.isNotNull(backURL)) {
+			_backURL = backURL;
+		}
+		else if (Validator.isNotNull(redirect)) {
+			_backURL = redirect;
+		}
+		else {
+			LiferayPortletResponse liferayPortletResponse =
+				PortalUtil.getLiferayPortletResponse(_portletResponse);
+
+			_backURL = String.valueOf(liferayPortletResponse.createRenderURL());
+		}
+
+		return _backURL;
 	}
 
 	public String getCategorySelectorURL() {
@@ -622,8 +645,8 @@ public class EditAssetListDisplayContext {
 			_itemSelector.getItemSelectorURL(
 				RequestBackedPortletURLFactoryUtil.create(_httpServletRequest),
 				getSelectGroupEventName(), itemSelectorCriterion)
-		).setParameter(
-			"portletResource", AssetListPortletKeys.ASSET_LIST
+		).setPortletResource(
+			AssetListPortletKeys.ASSET_LIST
 		).buildString();
 	}
 
@@ -638,7 +661,7 @@ public class EditAssetListDisplayContext {
 			new AssetRendererFactoryTypeNameComparator(
 				_themeDisplay.getLocale()));
 
-		for (AssetRendererFactory<?> curRendererFactory :
+		for (AssetRendererFactory<?> curAssetRendererFactory :
 				assetRendererFactories) {
 
 			AssetListEntry assetListEntry = getAssetListEntry();
@@ -648,17 +671,18 @@ public class EditAssetListDisplayContext {
 					AssetEntry.class.getName()) &&
 				!Objects.equals(
 					assetListEntry.getAssetEntryType(),
-					curRendererFactory.getClassName())) {
+					curAssetRendererFactory.getClassName())) {
 
 				continue;
 			}
 
-			if (!curRendererFactory.isSupportsClassTypes()) {
+			if (!curAssetRendererFactory.isSupportsClassTypes()) {
 				manualAddIconDataMap.put(
-					curRendererFactory.getTypeName(_themeDisplay.getLocale()),
+					curAssetRendererFactory.getTypeName(
+						_themeDisplay.getLocale()),
 					_getDataMap(
-						curRendererFactory,
-						curRendererFactory.getTypeName(
+						curAssetRendererFactory,
+						curAssetRendererFactory.getTypeName(
 							_themeDisplay.getLocale()),
 						_DEFAULT_SUBTYPE_SELECTION_ID));
 
@@ -666,7 +690,7 @@ public class EditAssetListDisplayContext {
 			}
 
 			ClassTypeReader classTypeReader =
-				curRendererFactory.getClassTypeReader();
+				curAssetRendererFactory.getClassTypeReader();
 
 			List<ClassType> assetAvailableClassTypes =
 				classTypeReader.getAvailableClassTypes(
@@ -688,7 +712,8 @@ public class EditAssetListDisplayContext {
 				manualAddIconDataMap.put(
 					assetAvailableClassType.getName(),
 					_getDataMap(
-						curRendererFactory, assetAvailableClassType.getName(),
+						curAssetRendererFactory,
+						assetAvailableClassType.getName(),
 						assetAvailableClassType.getClassTypeId()));
 			}
 		}
@@ -751,26 +776,7 @@ public class EditAssetListDisplayContext {
 			"assetListEntryId", getAssetListEntryId()
 		).setParameter(
 			"segmentsEntryId", getSegmentsEntryId()
-		).build();
-	}
-
-	public String getRedirectURL() {
-		if (Validator.isNotNull(_redirect)) {
-			return _redirect;
-		}
-
-		String redirect = ParamUtil.getString(_httpServletRequest, "redirect");
-
-		if (Validator.isNull(redirect)) {
-			LiferayPortletResponse liferayPortletResponse =
-				PortalUtil.getLiferayPortletResponse(_portletResponse);
-
-			redirect = String.valueOf(liferayPortletResponse.createRenderURL());
-		}
-
-		_redirect = redirect;
-
-		return _redirect;
+		).buildPortletURL();
 	}
 
 	public long[] getReferencedModelsGroupIds() throws PortalException {
@@ -1147,7 +1153,7 @@ public class EditAssetListDisplayContext {
 	}
 
 	private PortletURL _getAssetEntryItemSelectorPortletURL(
-		AssetRendererFactory<?> rendererFactory, long subtypeSelectionId) {
+		AssetRendererFactory<?> assetRendererFactory, long subtypeSelectionId) {
 
 		AssetEntryItemSelectorCriterion assetEntryItemSelectorCriterion =
 			new AssetEntryItemSelectorCriterion();
@@ -1161,7 +1167,7 @@ public class EditAssetListDisplayContext {
 		assetEntryItemSelectorCriterion.setSubtypeSelectionId(
 			subtypeSelectionId);
 		assetEntryItemSelectorCriterion.setTypeSelection(
-			rendererFactory.getClassName());
+			assetRendererFactory.getClassName());
 
 		return _itemSelector.getItemSelectorURL(
 			RequestBackedPortletURLFactoryUtil.create(_portletRequest),
@@ -1202,7 +1208,7 @@ public class EditAssetListDisplayContext {
 	}
 
 	private Map<String, Object> _getDataMap(
-		AssetRendererFactory<?> rendererFactory, String type,
+		AssetRendererFactory<?> assetRendererFactory, String type,
 		long subtypeSelectionId) {
 
 		return HashMapBuilder.<String, Object>put(
@@ -1213,7 +1219,7 @@ public class EditAssetListDisplayContext {
 			"href",
 			String.valueOf(
 				_getAssetEntryItemSelectorPortletURL(
-					rendererFactory, subtypeSelectionId))
+					assetRendererFactory, subtypeSelectionId))
 		).put(
 			"title",
 			HtmlUtil.escape(
@@ -1238,6 +1244,7 @@ public class EditAssetListDisplayContext {
 		_assetRendererFactoryClassProvider;
 	private List<Long> _availableClassNameIds;
 	private List<SegmentsEntry> _availableSegmentsEntries;
+	private String _backURL;
 	private long[] _classNameIds;
 	private long[] _classTypeIds;
 	private String _ddmStructureDisplayFieldValue;
@@ -1253,7 +1260,6 @@ public class EditAssetListDisplayContext {
 	private String _orderByType2;
 	private final PortletRequest _portletRequest;
 	private final PortletResponse _portletResponse;
-	private String _redirect;
 	private long[] _referencedModelsGroupIds;
 	private SearchContainer<AssetListEntryAssetEntryRel> _searchContainer;
 	private SegmentsEntry _segmentsEntry;

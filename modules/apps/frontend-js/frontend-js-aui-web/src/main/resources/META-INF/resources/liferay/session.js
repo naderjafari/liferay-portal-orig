@@ -33,6 +33,8 @@ AUI.add(
 			src: SRC,
 		};
 
+		const TOAST_ID = 'sessionToast';
+
 		var URL_BASE = themeDisplay.getPathMain() + '/portal/';
 
 		var SessionBase = A.Component.create({
@@ -52,6 +54,10 @@ AUI.add(
 				},
 				sessionState: {
 					value: 'active',
+				},
+				sessionTimeoutOffset: {
+					getter: '_getLengthInMillis',
+					value: 0,
 				},
 				timestamp: {
 					getter: '_getTimestamp',
@@ -233,6 +239,11 @@ AUI.add(
 					var instance = this;
 
 					var sessionLength = instance.get('sessionLength');
+
+					var sessionTimeoutOffset = instance.get(
+						'sessionTimeoutOffset'
+					);
+
 					var warningTime = instance.get('warningTime');
 
 					var registered = instance._registered;
@@ -277,19 +288,26 @@ AUI.add(
 						var warningMoment = false;
 
 						var hasExpired = elapsed >= sessionLength;
+						var hasExpiredTimeoutOffset =
+							elapsed >= sessionLength - sessionTimeoutOffset;
 						var hasWarned = elapsed >= warningTime;
 
-						if (hasWarned) {
+						if (hasExpiredTimeoutOffset || hasWarned) {
 							if (timestamp == 'expired') {
 								expirationMoment = true;
 								extend = false;
 								hasExpired = true;
+								hasExpiredTimeoutOffset = true;
 							}
 
-							if (hasExpired && sessionState != 'expired') {
-								if (extend) {
+							if (
+								hasExpiredTimeoutOffset &&
+								sessionState != 'expired'
+							) {
+								if (extend && !hasExpired) {
 									expirationMoment = false;
 									hasExpired = false;
+									hasExpiredTimeoutOffset = false;
 									hasWarned = false;
 									warningMoment = false;
 
@@ -303,7 +321,7 @@ AUI.add(
 							}
 							else if (
 								hasWarned &&
-								!hasExpired &&
+								!hasExpiredTimeoutOffset &&
 								!extend &&
 								sessionState != 'warned'
 							) {
@@ -319,6 +337,7 @@ AUI.add(
 								interval,
 								hasWarned,
 								hasExpired,
+								hasExpiredTimeoutOffset,
 								warningMoment,
 								expirationMoment
 							);
@@ -467,18 +486,16 @@ AUI.add(
 						remainingTime = warningLength;
 					}
 
-					var banner = instance._getBanner();
+					instance._getBanner();
 
-					var counterTextNode = banner
-						.one('.countdown-timer')
-						.getDOMNode();
+					const counterTextNode = document.querySelector(
+						`#${TOAST_ID} .countdown-timer`
+					);
 
 					instance._uiSetRemainingTime(
 						remainingTime,
 						counterTextNode
 					);
-
-					banner.show();
 
 					instance._intervalId = host.registerInterval(
 						(
@@ -496,8 +513,6 @@ AUI.add(
 									if (remainingTime <= 0) {
 										remainingTime = warningLength;
 									}
-
-									banner.show();
 								}
 
 								elapsed =
@@ -519,10 +534,16 @@ AUI.add(
 				},
 
 				_destroyBanner() {
-					var instance = this;
+					const instance = this;
 
-					if (Lang.isFunction(instance._banner.destroy)) {
-						instance._banner.destroy();
+					const toast = document.getElementById(TOAST_ID);
+
+					const toastRootElement = toast?.parentElement;
+
+					Liferay.destroyComponent(TOAST_ID);
+
+					if (toastRootElement) {
+						toastRootElement.remove();
 					}
 
 					instance._banner = false;
@@ -566,7 +587,6 @@ AUI.add(
 
 					if (!banner) {
 						var openToast = instance.get('openToast');
-						var toastId = 'sessionToast';
 
 						var toastDefaultConfig = {
 							onClick({event}) {
@@ -578,17 +598,12 @@ AUI.add(
 									instance._host.extend();
 								}
 							},
-							onClose({event}) {
-								event.preventDefault();
-
-								A.one(`#${toastId}`).toggleClass('hide', true);
-							},
 							renderData: {
-								componentId: toastId,
+								componentId: TOAST_ID,
 							},
 							toastProps: {
 								autoClose: false,
-								id: toastId,
+								id: TOAST_ID,
 								role: 'alert',
 							},
 						};
@@ -599,20 +614,16 @@ AUI.add(
 							...toastDefaultConfig,
 						});
 
-						var toastComponent = Liferay.component(toastId);
+						var toastComponent = Liferay.component(TOAST_ID);
 
 						banner = {
-							one: A.one(`#${toastId}`).one,
-							setAttrs(attrs) {
-								toastComponent.destroy();
+							open(props) {
+								instance._destroyBanner();
 
 								openToast({
-									...attrs,
+									...props,
 									...toastDefaultConfig,
 								});
-							},
-							show() {
-								A.one(`#${toastId}`).toggleClass('hide', false);
 							},
 							...toastComponent,
 						};
@@ -638,9 +649,7 @@ AUI.add(
 
 					instance._host.unregisterInterval(instance._intervalId);
 
-					var banner = instance._getBanner();
-
-					if (banner) {
+					if (instance._banner) {
 						instance._destroyBanner();
 					}
 				},
@@ -650,7 +659,7 @@ AUI.add(
 
 					var banner = instance._getBanner();
 
-					banner.setAttrs({
+					banner.open({
 						message: instance._expiredText,
 						title: Liferay.Language.get('danger'),
 						type: 'danger',

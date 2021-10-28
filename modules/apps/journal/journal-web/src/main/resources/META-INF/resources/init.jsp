@@ -172,6 +172,7 @@ page import="com.liferay.portal.kernel.security.permission.ActionKeys" %><%@
 page import="com.liferay.portal.kernel.service.*" %><%@
 page import="com.liferay.portal.kernel.servlet.BrowserSnifferUtil" %><%@
 page import="com.liferay.portal.kernel.servlet.MultiSessionMessages" %><%@
+page import="com.liferay.portal.kernel.theme.ThemeDisplay" %><%@
 page import="com.liferay.portal.kernel.upload.LiferayFileItemException" %><%@
 page import="com.liferay.portal.kernel.util.ArrayUtil" %><%@
 page import="com.liferay.portal.kernel.util.Constants" %><%@
@@ -201,8 +202,7 @@ page import="com.liferay.portal.model.impl.*" %><%@
 page import="com.liferay.portal.upload.LiferayFileItem" %><%@
 page import="com.liferay.rss.util.RSSUtil" %><%@
 page import="com.liferay.taglib.search.ResultRow" %><%@
-page import="com.liferay.taglib.util.CustomAttributesUtil" %><%@
-page import="com.liferay.translation.exception.XLIFFFileException" %>
+page import="com.liferay.taglib.util.CustomAttributesUtil" %>
 
 <%@ page import="java.text.Format" %>
 

@@ -132,42 +132,40 @@ public class Sidecar {
 			_log.info("Stopping sidecar Elasticsearch");
 		}
 
-		PathUtil.deleteDir(_sidecarTempDirPath);
+		if (_processChannel != null) {
+			NoticeableFuture<Serializable> noticeableFuture =
+				_processChannel.getProcessNoticeableFuture();
 
-		if (_processChannel == null) {
-			return;
-		}
+			noticeableFuture.removeFutureListener(_restartFutureListener);
 
-		NoticeableFuture<Serializable> noticeableFuture =
-			_processChannel.getProcessNoticeableFuture();
+			_processChannel.write(new StopSidecarProcessCallable());
 
-		noticeableFuture.removeFutureListener(_restartFutureListener);
-
-		_processChannel.write(new StopSidecarProcessCallable());
-
-		try {
-			noticeableFuture.get(
-				_elasticsearchConfigurationWrapper.sidecarShutdownTimeout(),
-				TimeUnit.MILLISECONDS);
-		}
-		catch (Exception exception) {
-			if (!noticeableFuture.isDone()) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(
-						StringBundler.concat(
-							"Forcibly shutdown sidecar Elasticsearch process ",
-							"because it did not shut down in ",
-							_elasticsearchConfigurationWrapper.
-								sidecarShutdownTimeout(),
-							" ms"),
-						exception);
-				}
-
-				noticeableFuture.cancel(true);
+			try {
+				noticeableFuture.get(
+					_elasticsearchConfigurationWrapper.sidecarShutdownTimeout(),
+					TimeUnit.MILLISECONDS);
 			}
+			catch (Exception exception) {
+				if (!noticeableFuture.isDone()) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							StringBundler.concat(
+								"Forcibly shutdown sidecar Elasticsearch ",
+								"process because it did not shut down in ",
+								_elasticsearchConfigurationWrapper.
+									sidecarShutdownTimeout(),
+								" ms"),
+							exception);
+					}
+
+					noticeableFuture.cancel(true);
+				}
+			}
+
+			_processChannel = null;
 		}
 
-		_processChannel = null;
+		PathUtil.deleteDir(_sidecarTempDirPath);
 	}
 
 	protected static void addFutureListener(
@@ -426,6 +424,10 @@ public class Sidecar {
 			return new Elasticsearch790Distribution();
 		}
 
+		if (versionNumber.equals("7.10.2")) {
+			return new Elasticsearch_7_10_2_Distribution();
+		}
+
 		throw new IllegalArgumentException(
 			"Unsupported Elasticsearch version: " + versionNumber);
 	}
@@ -475,7 +477,7 @@ public class Sidecar {
 					"logger.deprecation.name=org.elasticsearch.deprecation",
 					"logger.deprecation.level=error", getLogProperties(),
 					ResourceUtil.getResourceAsString(
-						Sidecar.class, "/log4j2.properties")));
+						Sidecar.class, "/log4j2-sidecar.properties")));
 		}
 		catch (IOException ioException) {
 			_log.error(
@@ -530,6 +532,16 @@ public class Sidecar {
 				"org.elasticsearch.common.settings.KeyStoreWrapper",
 				ClassModificationUtil.getModifiedClassBytes(
 					"org.elasticsearch.common.settings.KeyStoreWrapper", "save",
+					methodVisitor -> {
+						methodVisitor.visitCode();
+						methodVisitor.visitInsn(Opcodes.RETURN);
+					},
+					classLoader));
+
+			modifiedClasses.put(
+				"org.elasticsearch.bootstrap.Security",
+				ClassModificationUtil.getModifiedClassBytes(
+					"org.elasticsearch.bootstrap.Security", "configure",
 					methodVisitor -> {
 						methodVisitor.visitCode();
 						methodVisitor.visitInsn(Opcodes.RETURN);

@@ -169,23 +169,31 @@ definition {
 		Navigator.gotoNavTab(navTab = "Site URL");
 
 		if (isSet(publicVirtualHosts)) {
-			AssertTextEquals(
-				locator1 = "SiteSettingsSiteURL#SITE_URL_VIRTUAL_HOSTS_PUBLIC_PAGES_LABEL",
-				value1 = "Public Pages Virtual Host");
-
 			Type(
-				locator1 = "TextInput#PUBLIC_VIRTUAL_HOST_URL",
+				key_text = "Public Pages Virtual Host",
+				locator1 = "TextInput#ANY",
 				value1 = "${publicPageVirtualHostURL}");
 		}
 
 		if (isSet(privateVirtualHosts)) {
-			AssertTextEquals(
-				locator1 = "SiteSettingsSiteURL#SITE_URL_VIRTUAL_HOSTS_PRIVATE_PAGES_LABEL",
-				value1 = "Private Pages Virtual Host");
-
 			Type(
-				locator1 = "TextInput#PRIVATE_VIRTUAL_HOST_URL",
+				key_text = "Private Pages Virtual Host",
+				locator1 = "TextInput#ANY",
 				value1 = "${privatePageVirtualHostURL}");
+		}
+
+		if (isSet(stagingPublicPages)) {
+			Type(
+				key_text = "Staging Public Pages",
+				locator1 = "TextInput#ANY",
+				value1 = "${stagingPublicPages}");
+		}
+
+		if (isSet(stagingPrivatePages)) {
+			Type(
+				key_text = "Staging Private Pages",
+				locator1 = "TextInput#ANY",
+				value1 = "${stagingPrivatePages}");
 		}
 
 		PortletEntry.save();
@@ -212,9 +220,13 @@ definition {
 			locator1 = "SiteMembershipsViewMembershipRequests#USER_NAME",
 			value1 = "${userFirstName} ${userLastName}");
 
+		if (!(isSet(memebershipComment))) {
+			memebershipComment= "Please allow me to join the Restricted Site.";
+		}
+
 		AssertTextEquals(
 			locator1 = "SiteMembershipsViewMembershipRequests#USER_COMMENTS",
-			value1 = "Please allow me to join the Restricted Site.");
+			value1 = "${memebershipComment}");
 
 		LexiconTable.clickEllipsisItem(
 			item = "Reply",
@@ -495,13 +507,13 @@ definition {
 			locator1 = "SiteSettingsDisplaySettings#LANGUAGES_RADIO");
 
 		if (isSet(currentSiteLanguages)) {
-			while (IsElementPresent(index = "1", key_position = "right", locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_OPTION")) {
+			while (IsElementPresent(index = "1", key_position = "left", locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_OPTION")) {
 				Click(
 					index = "1",
-					key_position = "right",
+					key_position = "left",
 					locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_OPTION");
 
-				Click(locator1 = "SiteSettingsDisplaySettings#MOVE_AVAILABLE_TO_CURRENT_BUTTON");
+				Click(locator1 = "SiteSettingsDisplaySettings#TRANSFER_ITEM_LEFT_TO_RIGHT");
 			}
 
 			var defaultSiteLanguage = "${defaultSiteLanguage}";
@@ -510,24 +522,24 @@ definition {
 				locator1 = "SiteSettingsDisplaySettings#DEFAULT_LANGUAGE_SELECT_FIELD",
 				value1 = "${defaultSiteLanguage}");
 
-			while (IsElementPresent(index = "2", key_position = "left", locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_OPTION")) {
-				var currentSiteLanguage = selenium.getText("//div[contains(@class,'listbox-left')]//select/option");
+			while (IsElementPresent(index = "2", key_position = "right", locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_OPTION")) {
+				var currentSiteLanguage = selenium.getText("//div[contains(@class,'listbox-right')]//select/option");
 
 				if ("${currentSiteLanguage}" == "${defaultSiteLanguage}") {
 					Click(
 						index = "2",
-						key_position = "left",
+						key_position = "right",
 						locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_OPTION");
 
-					Click(locator1 = "SiteSettingsDisplaySettings#MOVE_CURRENT_TO_AVAILABLE_BUTTON");
+					Click(locator1 = "SiteSettingsDisplaySettings#TRANSFER_ITEM_RIGHT_TO_LEFT");
 				}
 				else {
 					Click(
 						index = "1",
-						key_position = "left",
+						key_position = "right",
 						locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_OPTION");
 
-					Click(locator1 = "SiteSettingsDisplaySettings#MOVE_CURRENT_TO_AVAILABLE_BUTTON");
+					Click(locator1 = "SiteSettingsDisplaySettings#TRANSFER_ITEM_RIGHT_TO_LEFT");
 				}
 			}
 
@@ -535,13 +547,13 @@ definition {
 				if ("${currentSiteLanguage}" != "${defaultSiteLanguage}") {
 					DoubleClick(
 						key_optionValue = "${currentSiteLanguage}",
-						key_position = "right",
+						key_position = "left",
 						locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_SPECIFIC_OPTION");
 
-					Click(locator1 = "SiteSettingsDisplaySettings#MOVE_AVAILABLE_TO_CURRENT_BUTTON");
+					Click(locator1 = "SiteSettingsDisplaySettings#TRANSFER_ITEM_LEFT_TO_RIGHT");
 
 					AssertTextEquals.assertPartialText(
-						key_position = "left",
+						key_position = "right",
 						locator1 = "SiteSettingsDisplaySettings#LANGUAGES_SELECT_FIELD",
 						value1 = "${currentSiteLanguage}");
 				}
@@ -729,7 +741,15 @@ definition {
 			locator1 = "TextInput#PIWIK",
 			value1 = "${piwik}");
 
-		PortletEntry.save();
+		Button.click(button = "Save");
+
+		if (isSet(confirmationText)) {
+			AssertConfirm(value1 = "${confirmationText}");
+		}
+
+		Alert.viewSuccessMessage();
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
 	}
 
 	macro getSiteId {
@@ -753,12 +773,6 @@ definition {
 	}
 
 	macro importSiteFromTempFolder {
-		AssertClick(
-			locator1 = "Button#SELECT_FILE",
-			value1 = "Select File");
-
-		SikuliClick(locator1 = "OS#FILE_DIALOG_BOX_TYPE_FILE_NAME_ICON_PNG");
-
 		var siteLARFileName = TestCase.getDownloadedTempFileName(fileNamePattern = "Public_Pages-*.lar");
 
 		UploadTempFile.uploadTempFileHiddenNoMouseOver(
@@ -818,9 +832,12 @@ definition {
 				listEntry = "${siteName}",
 				userRole = "${userRole}");
 
+			if (!(isSet(memebershipComment))) {
+				memebershipComment= "Please allow me to join the Restricted Site.";
+			}
 			Type(
 				locator1 = "TextArea#COMMENTS",
-				value1 = "Please allow me to join the Restricted Site.");
+				value1 = "${memebershipComment}");
 
 			Button.clickSave();
 
@@ -955,6 +972,18 @@ definition {
 
 	macro openSiteTeamsAdmin {
 		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage/-/site_teams");
+	}
+
+	macro openToSiteSettingsPages {
+		if ("${portlet}" == "Open Graph") {
+			var configurationScreenKey = "site-configuration-open-graph";
+		}
+
+		if ("${portlet}" == "Pages") {
+			var configurationScreenKey = "site-configuration-pages";
+		}
+
+		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage/-/site/settings?_com_liferay_site_admin_web_portlet_SiteSettingsPortlet_mvcRenderCommandName=%2Fconfiguration_admin%2Fview_configuration_screen&_com_liferay_site_admin_web_portlet_SiteSettingsPortlet_configurationScreenKey=${configurationScreenKey}");
 	}
 
 	macro removeMemberCP {
@@ -1398,7 +1427,7 @@ definition {
 			value1 = "Please allow me to join the Restricted Site.");
 	}
 
-	macro viewPrivateVirtualHostUrlUserLoginRedirect {
+	macro viewPrivateVirtualHostURLUserLoginRedirect {
 		AssertTextEquals(
 			locator1 = "TextInput#EMAIL_ADDRESS",
 			value1 = "${userEmailAddress}");

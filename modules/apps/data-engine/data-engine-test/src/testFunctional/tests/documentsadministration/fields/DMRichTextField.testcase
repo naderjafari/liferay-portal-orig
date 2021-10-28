@@ -45,7 +45,7 @@ definition {
 
 		PortletEntry.save();
 
-		Navigator.gotoNavTab(navTab = "Documents and Media");
+		Navigator.gotoNavTab(navTab = "Files");
 
 		DMNavigator.gotoAddDocumentTypeCP(dmDocumentTypeName = "DM Document Type");
 
@@ -116,7 +116,7 @@ definition {
 
 		DDLDataDefinition.save();
 
-		DMNavigator.gotoDocumentsAndMedia();
+		Navigator.gotoNavItem(navItem = "Files");
 
 		DMNavigator.gotoAddDocumentTypeCP(dmDocumentTypeName = "DM Document Type");
 
@@ -149,9 +149,8 @@ definition {
 
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Type");
 
-		DataEngine.viewFieldReference(
-			fieldFieldLabel = "Rich Text",
-			fieldName = "Rich Text",
+		DEBuilder.assertFieldReference(
+			fieldLabel = "Rich Text",
 			fieldReference = "TestValidReference");
 
 		DataEngine.editFieldReference(
@@ -163,9 +162,8 @@ definition {
 
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Type");
 
-		DataEngine.viewFieldReference(
-			fieldFieldLabel = "Rich Text",
-			fieldName = "Rich Text",
+		DEBuilder.assertFieldReference(
+			fieldLabel = "Rich Text",
 			fieldReference = "TestInvalidReference");
 	}
 
@@ -219,9 +217,7 @@ definition {
 	@description = "This is a test for LPS-98076. Verify that a user can hide/show the field label"
 	@priority = "3"
 	test ShowAndHideRichTextLabel {
-		DataEngine.editShowOrHideLabel(
-			fieldFieldLabel = "Rich Text",
-			showLabel = "false");
+		DataEngine.toggleShowLabel(fieldLabel = "Rich Text");
 
 		DDLDataDefinition.save();
 
@@ -231,9 +227,7 @@ definition {
 			key_fieldFieldLabel = "Rich Text",
 			locator1 = "DDMEditStructure#FORM_FIELD_CONTAINER_LABEL");
 
-		DataEngine.editShowOrHideLabel(
-			fieldLabelHidden = "true",
-			showLabel = "true");
+		DataEngine.toggleShowLabel();
 
 		DDLDataDefinition.save();
 
@@ -253,7 +247,7 @@ definition {
 
 		DDLDataDefinition.save();
 
-		DMNavigator.gotoDocumentsAndMedia();
+		Navigator.gotoNavItem(navItem = "Files");
 
 		DMNavigator.gotoAddDocumentTypeCP(dmDocumentTypeName = "DM Document Type");
 
@@ -285,7 +279,7 @@ definition {
 
 		DDLDataDefinition.save();
 
-		DMNavigator.gotoDocumentsAndMedia();
+		Navigator.gotoNavItem(navItem = "Files");
 
 		DMNavigator.gotoAddDocumentTypeCP(dmDocumentTypeName = "DM Document Type");
 

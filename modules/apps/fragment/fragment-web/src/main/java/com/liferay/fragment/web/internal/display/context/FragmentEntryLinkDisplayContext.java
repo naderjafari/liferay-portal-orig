@@ -25,6 +25,7 @@ import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeCon
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
 import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -35,7 +36,6 @@ import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -115,9 +115,7 @@ public class FragmentEntryLinkDisplayContext {
 		Layout layout = LayoutLocalServiceUtil.fetchLayout(
 			fragmentEntryLink.getPlid());
 
-		if (Validator.isNotNull(layout.getClassNameId()) &&
-			(layout.getClassPK() > 0)) {
-
+		if (layout.isDraftLayout()) {
 			layoutPageTemplateEntryPlid = layout.getClassPK();
 		}
 
@@ -140,15 +138,10 @@ public class FragmentEntryLinkDisplayContext {
 			return name;
 		}
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(name);
-		sb.append(StringPool.SPACE);
-		sb.append(StringPool.OPEN_PARENTHESIS);
-		sb.append(LanguageUtil.get(themeDisplay.getLocale(), "draft"));
-		sb.append(StringPool.CLOSE_PARENTHESIS);
-
-		return sb.toString();
+		return StringBundler.concat(
+			name, StringPool.SPACE, StringPool.OPEN_PARENTHESIS,
+			LanguageUtil.get(themeDisplay.getLocale(), "draft"),
+			StringPool.CLOSE_PARENTHESIS);
 	}
 
 	public String getFragmentEntryLinkTypeLabel(
@@ -159,9 +152,7 @@ public class FragmentEntryLinkDisplayContext {
 		Layout layout = LayoutLocalServiceUtil.fetchLayout(
 			fragmentEntryLink.getPlid());
 
-		if (Validator.isNotNull(layout.getClassNameId()) &&
-			(layout.getClassPK() > 0)) {
-
+		if (layout.isDraftLayout()) {
 			layoutPageTemplateEntryPlid = layout.getClassPK();
 		}
 
@@ -262,7 +253,7 @@ public class FragmentEntryLinkDisplayContext {
 			"fragmentCollectionId", getFragmentCollectionId()
 		).setParameter(
 			"fragmentEntryId", getFragmentEntryId()
-		).build();
+		).buildPortletURL();
 	}
 
 	public String getRedirect() {

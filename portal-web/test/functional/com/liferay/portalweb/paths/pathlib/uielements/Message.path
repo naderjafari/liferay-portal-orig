@@ -2,15 +2,22 @@
 <head>
 <title>Message</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">Message</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ALERT_DISMISSIBLE</td>
 	<td>//div[contains(@class,'alert-dismissible')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ASSET_INFO</td>
+	<td>//*[contains(@class,'sheet-title')][.//*[normalize-space(text())='${assetTitle}']]/parent::div//*[contains(@class,'mb-2') or contains(@class,'mr-2')][normalize-space()='${info}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -90,7 +97,7 @@
 </tr>
 <tr>
 	<td>ERROR</td>
-	<td>//div[contains(@class,'alert') and (contains(@class,'alert-error') or contains(@class,'alert-danger'))]</td>
+	<td>//div[contains(@class,'alert') and (contains(@class,'alert-error') or contains(@class,'alert-danger'))][not(contains(@style,'display: none'))]</td>
 	<td></td>
 </tr>
 <tr>
@@ -314,11 +321,6 @@
 	<td></td>
 </tr>
 <tr>
-	<td>MAX_FILESIZE_ALERT</td>
-	<td>//div[(@class='maxFileSize') and (@role='alert')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>NO_COMMENTS</td>
 	<td>//div[contains(.,'No comments yet')]</td>
 	<td></td>
@@ -381,6 +383,11 @@
 <tr>
 	<td>SUCCESS_RESTORE_LOCATION</td>
 	<td>//div[@class='portlet-body']/div/em[2]/a[contains(.,'${key_assetRestoreLocation}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SUCCESS_SPECIFIC_FORM_FIELD_REQUIRED</td>
+	<td>//div[@class='form-group' and contains(.,'${key_fieldName}')]//div[contains(@class,'form-feedback-item')]</td>
 	<td></td>
 </tr>
 <tr>

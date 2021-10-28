@@ -582,7 +582,7 @@ AUI.add(
 
 					entryNode.attr({
 						'data-title': name,
-						id: A.guid(),
+						'id': A.guid(),
 					});
 
 					if (displayStyle == CSS_ICON) {
@@ -991,7 +991,7 @@ AUI.add(
 					try {
 						responseData = JSON.parse(responseData);
 					}
-					catch (e) {}
+					catch (error) {}
 
 					if (Lang.isObject(responseData)) {
 						error =

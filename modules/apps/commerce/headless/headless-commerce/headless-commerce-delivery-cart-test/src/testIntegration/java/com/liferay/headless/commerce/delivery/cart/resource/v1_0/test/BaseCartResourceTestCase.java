@@ -34,7 +34,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -51,7 +50,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -186,6 +184,7 @@ public abstract class BaseCartResourceTestCase {
 		cart.setAuthor(regex);
 		cart.setCouponCode(regex);
 		cart.setCurrencyCode(regex);
+		cart.setOrderTypeExternalReferenceCode(regex);
 		cart.setOrderUUID(regex);
 		cart.setPaymentMethod(regex);
 		cart.setPaymentMethodLabel(regex);
@@ -206,6 +205,7 @@ public abstract class BaseCartResourceTestCase {
 		Assert.assertEquals(regex, cart.getAuthor());
 		Assert.assertEquals(regex, cart.getCouponCode());
 		Assert.assertEquals(regex, cart.getCurrencyCode());
+		Assert.assertEquals(regex, cart.getOrderTypeExternalReferenceCode());
 		Assert.assertEquals(regex, cart.getOrderUUID());
 		Assert.assertEquals(regex, cart.getPaymentMethod());
 		Assert.assertEquals(regex, cart.getPaymentMethodLabel());
@@ -402,21 +402,25 @@ public abstract class BaseCartResourceTestCase {
 
 	@Test
 	public void testGetChannelCartsPage() throws Exception {
-		Page<Cart> page = cartResource.getChannelCartsPage(
-			testGetChannelCartsPage_getChannelId(), Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
+		Long accountId = testGetChannelCartsPage_getAccountId();
+		Long irrelevantAccountId =
+			testGetChannelCartsPage_getIrrelevantAccountId();
 		Long channelId = testGetChannelCartsPage_getChannelId();
 		Long irrelevantChannelId =
 			testGetChannelCartsPage_getIrrelevantChannelId();
 
-		if (irrelevantChannelId != null) {
+		Page<Cart> page = cartResource.getChannelCartsPage(
+			accountId, channelId, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if ((irrelevantAccountId != null) && (irrelevantChannelId != null)) {
 			Cart irrelevantCart = testGetChannelCartsPage_addCart(
-				irrelevantChannelId, randomIrrelevantCart());
+				irrelevantAccountId, irrelevantChannelId,
+				randomIrrelevantCart());
 
 			page = cartResource.getChannelCartsPage(
-				irrelevantChannelId, Pagination.of(1, 2));
+				irrelevantAccountId, irrelevantChannelId, Pagination.of(1, 2));
 
 			Assert.assertEquals(1, page.getTotalCount());
 
@@ -425,11 +429,14 @@ public abstract class BaseCartResourceTestCase {
 			assertValid(page);
 		}
 
-		Cart cart1 = testGetChannelCartsPage_addCart(channelId, randomCart());
+		Cart cart1 = testGetChannelCartsPage_addCart(
+			accountId, channelId, randomCart());
 
-		Cart cart2 = testGetChannelCartsPage_addCart(channelId, randomCart());
+		Cart cart2 = testGetChannelCartsPage_addCart(
+			accountId, channelId, randomCart());
 
-		page = cartResource.getChannelCartsPage(channelId, Pagination.of(1, 2));
+		page = cartResource.getChannelCartsPage(
+			accountId, channelId, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -444,23 +451,27 @@ public abstract class BaseCartResourceTestCase {
 
 	@Test
 	public void testGetChannelCartsPageWithPagination() throws Exception {
+		Long accountId = testGetChannelCartsPage_getAccountId();
 		Long channelId = testGetChannelCartsPage_getChannelId();
 
-		Cart cart1 = testGetChannelCartsPage_addCart(channelId, randomCart());
+		Cart cart1 = testGetChannelCartsPage_addCart(
+			accountId, channelId, randomCart());
 
-		Cart cart2 = testGetChannelCartsPage_addCart(channelId, randomCart());
+		Cart cart2 = testGetChannelCartsPage_addCart(
+			accountId, channelId, randomCart());
 
-		Cart cart3 = testGetChannelCartsPage_addCart(channelId, randomCart());
+		Cart cart3 = testGetChannelCartsPage_addCart(
+			accountId, channelId, randomCart());
 
 		Page<Cart> page1 = cartResource.getChannelCartsPage(
-			channelId, Pagination.of(1, 2));
+			accountId, channelId, Pagination.of(1, 2));
 
 		List<Cart> carts1 = (List<Cart>)page1.getItems();
 
 		Assert.assertEquals(carts1.toString(), 2, carts1.size());
 
 		Page<Cart> page2 = cartResource.getChannelCartsPage(
-			channelId, Pagination.of(2, 2));
+			accountId, channelId, Pagination.of(2, 2));
 
 		Assert.assertEquals(3, page2.getTotalCount());
 
@@ -469,16 +480,29 @@ public abstract class BaseCartResourceTestCase {
 		Assert.assertEquals(carts2.toString(), 1, carts2.size());
 
 		Page<Cart> page3 = cartResource.getChannelCartsPage(
-			channelId, Pagination.of(1, 3));
+			accountId, channelId, Pagination.of(1, 3));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(cart1, cart2, cart3), (List<Cart>)page3.getItems());
 	}
 
-	protected Cart testGetChannelCartsPage_addCart(Long channelId, Cart cart)
+	protected Cart testGetChannelCartsPage_addCart(
+			Long accountId, Long channelId, Cart cart)
 		throws Exception {
 
-		return cartResource.postChannelCart(channelId, cart);
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	protected Long testGetChannelCartsPage_getAccountId() throws Exception {
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	protected Long testGetChannelCartsPage_getIrrelevantAccountId()
+		throws Exception {
+
+		return null;
 	}
 
 	protected Long testGetChannelCartsPage_getChannelId() throws Exception {
@@ -510,6 +534,20 @@ public abstract class BaseCartResourceTestCase {
 	protected Cart testGraphQLCart_addCart() throws Exception {
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(Cart cart, List<Cart> carts) {
+		boolean contains = false;
+
+		for (Cart item : carts) {
+			if (equals(cart, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(carts + " does not contain " + cart, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -696,6 +734,25 @@ public abstract class BaseCartResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"orderTypeExternalReferenceCode",
+					additionalAssertFieldName)) {
+
+				if (cart.getOrderTypeExternalReferenceCode() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("orderTypeId", additionalAssertFieldName)) {
+				if (cart.getOrderTypeId() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("orderUUID", additionalAssertFieldName)) {
 				if (cart.getOrderUUID() == null) {
 					valid = false;
@@ -876,7 +933,7 @@ public abstract class BaseCartResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.commerce.delivery.cart.dto.v1_0.Cart.
 						class)) {
@@ -893,12 +950,13 @@ public abstract class BaseCartResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1097,6 +1155,30 @@ public abstract class BaseCartResourceTestCase {
 				if (!Objects.deepEquals(
 						cart1.getOrderStatusInfo(),
 						cart2.getOrderStatusInfo())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"orderTypeExternalReferenceCode",
+					additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						cart1.getOrderTypeExternalReferenceCode(),
+						cart2.getOrderTypeExternalReferenceCode())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("orderTypeId", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						cart1.getOrderTypeId(), cart2.getOrderTypeId())) {
 
 					return false;
 				}
@@ -1323,14 +1405,16 @@ public abstract class BaseCartResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1561,6 +1645,19 @@ public abstract class BaseCartResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("orderTypeExternalReferenceCode")) {
+			sb.append("'");
+			sb.append(String.valueOf(cart.getOrderTypeExternalReferenceCode()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("orderTypeId")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("orderUUID")) {
 			sb.append("'");
 			sb.append(String.valueOf(cart.getOrderUUID()));
@@ -1730,6 +1827,9 @@ public abstract class BaseCartResourceTestCase {
 				id = RandomTestUtil.randomLong();
 				lastPriceUpdateDate = RandomTestUtil.nextDate();
 				modifiedDate = RandomTestUtil.nextDate();
+				orderTypeExternalReferenceCode = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				orderTypeId = RandomTestUtil.randomLong();
 				orderUUID = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				paymentMethod = StringUtil.toLowerCase(
@@ -1841,8 +1941,8 @@ public abstract class BaseCartResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseCartResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseCartResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

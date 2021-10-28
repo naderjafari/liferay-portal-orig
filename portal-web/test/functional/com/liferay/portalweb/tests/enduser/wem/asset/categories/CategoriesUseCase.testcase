@@ -113,6 +113,171 @@ definition {
 		}
 	}
 
+	@description = "LPS-134960 When in Blogs, search by category or to assign a category to an item, all categories, regardless the visibility of the vocabularies they belong to, are available."
+	@priority = "4"
+	test AddCategoryOfAnyVisibilityToBlogs {
+		task ("Create public vocabulary") {
+			JSONCategory.addVocabulary(
+				groupName = "Test Site Name",
+				title = "Public Vocabulary Name");
+		}
+
+		task ("Add category to public vocabulary") {
+			JSONCategory.addCategory(
+				groupName = "Test Site Name",
+				title = "Public Category Name",
+				vocabularyName = "Public Vocabulary Name");
+		}
+
+		task ("Create internal vocabulary") {
+			Category.openCategoriesAdmin(siteURLKey = "test-site-name");
+
+			Vocabulary.addInternalVocabulary(vocabularyName = "Internal Vocabulary Name");
+		}
+
+		task ("Add categories to internal vocabulary") {
+			JSONCategory.addCategory(
+				groupName = "Test Site Name",
+				title = "Internal Category Name",
+				vocabularyName = "Internal Vocabulary Name");
+		}
+
+		task ("Create a new blog") {
+			HeadlessBlog.addBlogEntry(
+				content = "Blogs Entry Content",
+				groupName = "Test Site Name",
+				title = "Blogs Entry Title");
+		}
+
+		task ("Add public and internal categories to Blogs") {
+			BlogsNavigator.openBlogsAdmin(siteURLKey = "test-site-name");
+
+			BlogsNavigator.gotoEditCP(entryTitle = "Blogs Entry Title");
+
+			Panel.expandPanel(panel = "Categorization");
+
+			AssetCategorization.addCategory(
+				categoryName = "Public Category Name",
+				vocabularyName = "Public Vocabulary Name");
+
+			AssetCategorization.addCategory(
+				categoryName = "Internal Category Name",
+				vocabularyName = "Internal Vocabulary Name");
+
+			PortletEntry.publish();
+		}
+	}
+
+	@description = "LPS-134960 When in Documents & Media, search by category or to assign a category to an item, all categories, regardless the visibility of the vocabularies they belong to, are available."
+	@priority = "4"
+	test AddCategoryOfAnyVisibilityToDocsAndMedia {
+		task ("Create public vocabulary") {
+			JSONCategory.addVocabulary(
+				groupName = "Test Site Name",
+				title = "Public Vocabulary Name");
+		}
+
+		task ("Add category to public vocabulary") {
+			JSONCategory.addCategory(
+				groupName = "Test Site Name",
+				title = "Public Category Name",
+				vocabularyName = "Public Vocabulary Name");
+		}
+
+		task ("Create internal vocabulary") {
+			Category.openCategoriesAdmin(siteURLKey = "test-site-name");
+
+			Vocabulary.addInternalVocabulary(vocabularyName = "Internal Vocabulary Name");
+		}
+
+		task ("Add categories to internal vocabulary") {
+			JSONCategory.addCategory(
+				groupName = "Test Site Name",
+				title = "Internal Category Name",
+				vocabularyName = "Internal Vocabulary Name");
+		}
+
+		task ("Create a new Document") {
+			JSONDocument.addFile(
+				dmDocumentDescription = "DM Document Description",
+				dmDocumentTitle = "DM Document Title",
+				groupName = "Test Site Name");
+		}
+
+		task ("Add public and internal categories to Document") {
+			DMDocument.openDocumentsAndMediaAdmin(siteURLKey = "test-site-name");
+
+			LexiconEntry.gotoEntryMenuItem(
+				menuItem = "Edit",
+				rowEntry = "DM Document Title");
+
+			DMDocument.addCategories(
+				categoryNameList = "Public Category Name",
+				vocabularyName = "Public Vocabulary Name");
+
+			DMDocument.addCategories(
+				categoryNameList = "Internal Category Name",
+				vocabularyName = "Internal Vocabulary Name");
+
+			Button.clickSubmitButton();
+
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	@description = "LPS-134960 When in Web Content, search by category or to assign a category to an item, all categories, regardless the visibility of the vocabularies they belong to, are available."
+	@priority = "4"
+	test AddCategoryOfAnyVisibilityToWebContent {
+		task ("Create public vocabulary") {
+			JSONCategory.addVocabulary(
+				groupName = "Test Site Name",
+				title = "Public Vocabulary Name");
+		}
+
+		task ("Add category to public vocabulary") {
+			JSONCategory.addCategory(
+				groupName = "Test Site Name",
+				title = "Public Category Name",
+				vocabularyName = "Public Vocabulary Name");
+		}
+
+		task ("Create internal vocabulary") {
+			Category.openCategoriesAdmin(siteURLKey = "test-site-name");
+
+			Vocabulary.addInternalVocabulary(vocabularyName = "Internal Vocabulary Name");
+		}
+
+		task ("Add categories to internal vocabulary") {
+			JSONCategory.addCategory(
+				groupName = "Test Site Name",
+				title = "Internal Category Name",
+				vocabularyName = "Internal Vocabulary Name");
+		}
+
+		task ("Create a new web content") {
+			JSONWebcontent.addWebContent(
+				content = "Web Content Content",
+				groupName = "Test Site Name",
+				title = "Web Content Title");
+		}
+
+		task ("Add public and internal categories to web content") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
+
+			WebContent.selectCategory(
+				categoryName = "Public Category Name",
+				vocabularyName = "Public Vocabulary Name");
+
+			WebContent.selectCategory(
+				categoryName = "Internal Category Name",
+				vocabularyName = "Internal Vocabulary Name");
+
+			PortletEntry.publish();
+		}
+	}
+
 	@description = "Add a web content with a category from parent site."
 	@priority = "4"
 	test AddWebContentWithCategoryFromParentSite {
@@ -130,7 +295,7 @@ definition {
 		}
 
 		task ("Add a child site") {
-			JSONGroup.addChildSite(
+			JSONGroup.addChildGroup(
 				groupName = "Child SiteName",
 				parentGroupName = "Test Site Name");
 		}
@@ -1165,7 +1330,7 @@ definition {
 		}
 	}
 
-	@description = "View vocabulary for specific Asset Types in asset editor."
+	@description = "This is a test for LPS-131984. View vocabulary for specific Asset Types in asset editor."
 	@priority = "4"
 	test ViewVocabularyForSpecificAssetTypesInAssetEditor {
 		task ("Add a vocabulary for specific assets types") {
@@ -1175,9 +1340,7 @@ definition {
 
 			PortletEntry.inputName(name = "Vocabulary Name");
 
-			Vocabulary.addAssociatedAssetType(
-				assetType = "Blogs Entry",
-				required = "true");
+			Vocabulary.addAssociatedAssetType(assetType = "Blogs Entry");
 
 			Button.clickAddRow();
 
@@ -1191,6 +1354,13 @@ definition {
 			AssertConfirm.assertPartialConfirmation(value1 = "Are you sure you want to create this vocabulary with public visibility?");
 
 			Alert.viewSuccessMessage();
+		}
+
+		task ("View associated asset types of vocabulary in Categories admin") {
+			AssertVisible(
+				assetTitle = "Vocabulary Name",
+				info = "Asset Types: Blogs Entry, Web Content Article *(Required)",
+				locator1 = "Message#ASSET_INFO");
 		}
 
 		task ("Add a category") {

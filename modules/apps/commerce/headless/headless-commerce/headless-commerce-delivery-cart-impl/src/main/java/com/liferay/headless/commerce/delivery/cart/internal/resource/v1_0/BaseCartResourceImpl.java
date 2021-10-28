@@ -18,6 +18,7 @@ import com.liferay.headless.commerce.delivery.cart.dto.v1_0.Cart;
 import com.liferay.headless.commerce.delivery.cart.dto.v1_0.CouponCode;
 import com.liferay.headless.commerce.delivery.cart.resource.v1_0.CartResource;
 import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
@@ -28,6 +29,9 @@ import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.odata.entity.EntityModel;
+import com.liferay.portal.odata.filter.ExpressionConvert;
+import com.liferay.portal.odata.filter.FilterParser;
+import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.batch.engine.VulcanBatchEngineTaskItemDelegate;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
@@ -36,13 +40,6 @@ import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.TransformUtil;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.tags.Tags;
 
 import java.io.Serializable;
 
@@ -56,19 +53,6 @@ import javax.annotation.Generated;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import javax.validation.constraints.NotNull;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.PATCH;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -79,7 +63,7 @@ import javax.ws.rs.core.UriInfo;
  * @generated
  */
 @Generated("")
-@Path("/v1.0")
+@javax.ws.rs.Path("/v1.0")
 public abstract class BaseCartResourceImpl
 	implements CartResource, EntityModelResource,
 			   VulcanBatchEngineTaskItemDelegate<Cart> {
@@ -89,14 +73,26 @@ public abstract class BaseCartResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}'  -u 'test@liferay.com:test'
 	 */
-	@DELETE
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "cartId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.DELETE
+	@javax.ws.rs.Path("/carts/{cartId}")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@Override
-	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "cartId")})
-	@Path("/carts/{cartId}")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "Cart")})
 	public Response deleteCart(
-			@NotNull @Parameter(hidden = true) @PathParam("cartId") Long cartId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("cartId")
+			Long cartId)
 		throws Exception {
 
 		Response.ResponseBuilder responseBuilder = Response.ok();
@@ -109,18 +105,26 @@ public abstract class BaseCartResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/batch'  -u 'test@liferay.com:test'
 	 */
-	@Consumes("application/json")
-	@DELETE
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "callbackURL"
+			)
+		}
 	)
-	@Path("/carts/batch")
-	@Produces("application/json")
-	@Tags(value = {@Tag(name = "Cart")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.Consumes("application/json")
+	@javax.ws.rs.DELETE
+	@javax.ws.rs.Path("/carts/batch")
+	@javax.ws.rs.Produces("application/json")
+	@Override
 	public Response deleteCartBatch(
-			@Parameter(hidden = true) @QueryParam("callbackURL") String
-				callbackURL,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.ws.rs.QueryParam("callbackURL")
+			String callbackURL,
 			Object object)
 		throws Exception {
 
@@ -145,15 +149,29 @@ public abstract class BaseCartResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}'  -u 'test@liferay.com:test'
 	 */
-	@GET
-	@Operation(description = "Retrive information of the given Cart.")
+	@io.swagger.v3.oas.annotations.Operation(
+		description = "Retrive information of the given Cart."
+	)
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "cartId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path("/carts/{cartId}")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@Override
-	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "cartId")})
-	@Path("/carts/{cartId}")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "Cart")})
 	public Cart getCart(
-			@NotNull @Parameter(hidden = true) @PathParam("cartId") Long cartId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("cartId")
+			Long cartId)
 		throws Exception {
 
 		return new Cart();
@@ -162,17 +180,29 @@ public abstract class BaseCartResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}' -d $'{"accountId": ___, "billingAddress": ___, "billingAddressId": ___, "cartItems": ___, "couponCode": ___, "currencyCode": ___, "errorMessages": ___, "notes": ___, "paymentMethod": ___, "printedNote": ___, "shippingAddress": ___, "shippingAddressId": ___, "shippingMethod": ___, "shippingOption": ___, "summary": ___, "useAsBilling": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}' -d $'{"accountId": ___, "billingAddress": ___, "billingAddressId": ___, "cartItems": ___, "couponCode": ___, "currencyCode": ___, "customFields": ___, "errorMessages": ___, "notes": ___, "orderTypeExternalReferenceCode": ___, "orderTypeId": ___, "paymentMethod": ___, "printedNote": ___, "shippingAddress": ___, "shippingAddressId": ___, "shippingMethod": ___, "shippingOption": ___, "summary": ___, "useAsBilling": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "cartId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.PATCH
+	@javax.ws.rs.Path("/carts/{cartId}")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@Override
-	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "cartId")})
-	@PATCH
-	@Path("/carts/{cartId}")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "Cart")})
 	public Cart patchCart(
-			@NotNull @Parameter(hidden = true) @PathParam("cartId") Long cartId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("cartId")
+			Long cartId,
 			Cart cart)
 		throws Exception {
 
@@ -224,6 +254,15 @@ public abstract class BaseCartResourceImpl
 
 		if (cart.getModifiedDate() != null) {
 			existingCart.setModifiedDate(cart.getModifiedDate());
+		}
+
+		if (cart.getOrderTypeExternalReferenceCode() != null) {
+			existingCart.setOrderTypeExternalReferenceCode(
+				cart.getOrderTypeExternalReferenceCode());
+		}
+
+		if (cart.getOrderTypeId() != null) {
+			existingCart.setOrderTypeId(cart.getOrderTypeId());
 		}
 
 		if (cart.getOrderUUID() != null) {
@@ -286,17 +325,29 @@ public abstract class BaseCartResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PUT' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}' -d $'{"accountId": ___, "billingAddress": ___, "billingAddressId": ___, "cartItems": ___, "couponCode": ___, "currencyCode": ___, "errorMessages": ___, "notes": ___, "paymentMethod": ___, "printedNote": ___, "shippingAddress": ___, "shippingAddressId": ___, "shippingMethod": ___, "shippingOption": ___, "summary": ___, "useAsBilling": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PUT' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}' -d $'{"accountId": ___, "billingAddress": ___, "billingAddressId": ___, "cartItems": ___, "couponCode": ___, "currencyCode": ___, "customFields": ___, "errorMessages": ___, "notes": ___, "orderTypeExternalReferenceCode": ___, "orderTypeId": ___, "paymentMethod": ___, "printedNote": ___, "shippingAddress": ___, "shippingAddressId": ___, "shippingMethod": ___, "shippingOption": ___, "summary": ___, "useAsBilling": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "cartId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.Path("/carts/{cartId}")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@javax.ws.rs.PUT
 	@Override
-	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "cartId")})
-	@Path("/carts/{cartId}")
-	@Produces({"application/json", "application/xml"})
-	@PUT
-	@Tags(value = {@Tag(name = "Cart")})
 	public Cart putCart(
-			@NotNull @Parameter(hidden = true) @PathParam("cartId") Long cartId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("cartId")
+			Long cartId,
 			Cart cart)
 		throws Exception {
 
@@ -308,18 +359,26 @@ public abstract class BaseCartResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/batch'  -u 'test@liferay.com:test'
 	 */
-	@Consumes("application/json")
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "callbackURL"
+			)
+		}
 	)
-	@Path("/carts/batch")
-	@Produces("application/json")
-	@PUT
-	@Tags(value = {@Tag(name = "Cart")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.Consumes("application/json")
+	@javax.ws.rs.Path("/carts/batch")
+	@javax.ws.rs.Produces("application/json")
+	@javax.ws.rs.PUT
+	@Override
 	public Response putCartBatch(
-			@Parameter(hidden = true) @QueryParam("callbackURL") String
-				callbackURL,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.ws.rs.QueryParam("callbackURL")
+			String callbackURL,
 			Object object)
 		throws Exception {
 
@@ -344,14 +403,26 @@ public abstract class BaseCartResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}/checkout'  -u 'test@liferay.com:test'
 	 */
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "cartId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.Path("/carts/{cartId}/checkout")
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@Override
-	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "cartId")})
-	@Path("/carts/{cartId}/checkout")
-	@POST
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "Cart")})
 	public Cart postCartCheckout(
-			@NotNull @Parameter(hidden = true) @PathParam("cartId") Long cartId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("cartId")
+			Long cartId)
 		throws Exception {
 
 		return new Cart();
@@ -362,18 +433,30 @@ public abstract class BaseCartResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/carts/{cartId}/coupon-code' -d $'{"code": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Add new Items to a Cart, return the whole Cart updated."
 	)
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "cartId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.Path("/carts/{cartId}/coupon-code")
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@Override
-	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "cartId")})
-	@Path("/carts/{cartId}/coupon-code")
-	@POST
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "Cart")})
 	public Cart postCartCouponCode(
-			@NotNull @Parameter(hidden = true) @PathParam("cartId") Long cartId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("cartId")
+			Long cartId,
 			CouponCode couponCode)
 		throws Exception {
 
@@ -383,27 +466,48 @@ public abstract class BaseCartResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'GET' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/channels/{channelId}/carts'  -u 'test@liferay.com:test'
+	 * curl -X 'GET' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/channels/{channelId}/account/{accountId}/carts'  -u 'test@liferay.com:test'
 	 */
-	@GET
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Retrieves carts for specific account in the given channel."
 	)
-	@Override
-	@Parameters(
+	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
-			@Parameter(in = ParameterIn.PATH, name = "channelId"),
-			@Parameter(in = ParameterIn.QUERY, name = "page"),
-			@Parameter(in = ParameterIn.QUERY, name = "pageSize")
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "accountId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "channelId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "page"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "pageSize"
+			)
 		}
 	)
-	@Path("/channels/{channelId}/carts")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "Cart")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path("/channels/{channelId}/account/{accountId}/carts")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public Page<Cart> getChannelCartsPage(
-			@NotNull @Parameter(hidden = true) @PathParam("channelId") Long
-				channelId,
-			@Context Pagination pagination)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("accountId")
+			Long accountId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("channelId")
+			Long channelId,
+			@javax.ws.rs.core.Context Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
@@ -412,18 +516,29 @@ public abstract class BaseCartResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/channels/{channelId}/carts' -d $'{"accountId": ___, "billingAddress": ___, "billingAddressId": ___, "cartItems": ___, "couponCode": ___, "currencyCode": ___, "errorMessages": ___, "notes": ___, "paymentMethod": ___, "printedNote": ___, "shippingAddress": ___, "shippingAddressId": ___, "shippingMethod": ___, "shippingOption": ___, "summary": ___, "useAsBilling": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-delivery-cart/v1.0/channels/{channelId}/carts' -d $'{"accountId": ___, "billingAddress": ___, "billingAddressId": ___, "cartItems": ___, "couponCode": ___, "currencyCode": ___, "customFields": ___, "errorMessages": ___, "notes": ___, "orderTypeExternalReferenceCode": ___, "orderTypeId": ___, "paymentMethod": ___, "printedNote": ___, "shippingAddress": ___, "shippingAddressId": ___, "shippingMethod": ___, "shippingOption": ___, "summary": ___, "useAsBilling": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "channelId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "Cart")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.Path("/channels/{channelId}/carts")
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@Override
-	@Parameters(value = {@Parameter(in = ParameterIn.PATH, name = "channelId")})
-	@Path("/channels/{channelId}/carts")
-	@POST
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "Cart")})
 	public Cart postChannelCart(
-			@NotNull @Parameter(hidden = true) @PathParam("channelId") Long
-				channelId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("channelId")
+			Long channelId,
 			Cart cart)
 		throws Exception {
 
@@ -541,12 +656,61 @@ public abstract class BaseCartResourceImpl
 		this.contextUser = contextUser;
 	}
 
+	public void setExpressionConvert(
+		ExpressionConvert<Filter> expressionConvert) {
+
+		this.expressionConvert = expressionConvert;
+	}
+
+	public void setFilterParserProvider(
+		FilterParserProvider filterParserProvider) {
+
+		this.filterParserProvider = filterParserProvider;
+	}
+
 	public void setGroupLocalService(GroupLocalService groupLocalService) {
 		this.groupLocalService = groupLocalService;
 	}
 
+	public void setResourceActionLocalService(
+		ResourceActionLocalService resourceActionLocalService) {
+
+		this.resourceActionLocalService = resourceActionLocalService;
+	}
+
+	public void setResourcePermissionLocalService(
+		ResourcePermissionLocalService resourcePermissionLocalService) {
+
+		this.resourcePermissionLocalService = resourcePermissionLocalService;
+	}
+
 	public void setRoleLocalService(RoleLocalService roleLocalService) {
 		this.roleLocalService = roleLocalService;
+	}
+
+	@Override
+	public Filter toFilter(
+		String filterString, Map<String, List<String>> multivaluedMap) {
+
+		try {
+			EntityModel entityModel = getEntityModel(multivaluedMap);
+
+			FilterParser filterParser = filterParserProvider.provide(
+				entityModel);
+
+			com.liferay.portal.odata.filter.Filter oDataFilter =
+				new com.liferay.portal.odata.filter.Filter(
+					filterParser.parse(filterString));
+
+			return expressionConvert.convert(
+				oDataFilter.getExpression(),
+				contextAcceptLanguage.getPreferredLocale(), entityModel);
+		}
+		catch (Exception exception) {
+			_log.error("Invalid filter " + filterString, exception);
+		}
+
+		return null;
 	}
 
 	protected Map<String, String> addAction(
@@ -621,11 +785,16 @@ public abstract class BaseCartResourceImpl
 	protected Object contextScopeChecker;
 	protected UriInfo contextUriInfo;
 	protected com.liferay.portal.kernel.model.User contextUser;
+	protected ExpressionConvert<Filter> expressionConvert;
+	protected FilterParserProvider filterParserProvider;
 	protected GroupLocalService groupLocalService;
 	protected ResourceActionLocalService resourceActionLocalService;
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
 	protected RoleLocalService roleLocalService;
 	protected VulcanBatchEngineImportTaskResource
 		vulcanBatchEngineImportTaskResource;
+
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseCartResourceImpl.class);
 
 }

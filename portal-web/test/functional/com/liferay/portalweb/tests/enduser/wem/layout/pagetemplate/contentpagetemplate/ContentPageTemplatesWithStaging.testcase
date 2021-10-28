@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Layout Page Templates";
+	property testray.main.component.name = "Content Page Templates";
 
 	setUp {
 		task ("Set up instance and sign in") {
@@ -17,9 +17,10 @@ definition {
 		}
 
 		task ("Activate local live staging") {
-			Staging.openStagingAdmin(siteURLKey = "test-site-name");
-
-			Staging.activateStagingCP(siteName = "Test Site Name");
+			JSONStaging.enableLocalStaging(
+				branchingPrivate = "false",
+				branchingPublic = "false",
+				groupName = "Test Site Name");
 		}
 
 		task ("Add a page template collection") {
@@ -122,17 +123,17 @@ definition {
 		}
 
 		task ("View the Heading fragment in view mode") {
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Heading Example");
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Heading Example");
 		}
 
 		task ("View the Paragraph fragment in view mode") {
-			AssertTextEquals(
-				key_fragmentName = "paragraph",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "A paragraph is a self-contained unit of a discourse in writing dealing with a particular point or idea. Paragraphs are usually an expected part of formal writing, used to organize longer prose.");
+			ContentPages.viewFragmentText(
+				fragmentName = "paragraph",
+				id = "element-text",
+				text = "A paragraph is a self-contained unit of a discourse in writing dealing with a particular point or idea. Paragraphs are usually an expected part of formal writing, used to organize longer prose.");
 		}
 
 		task ("View the no resource shown in the live site") {
@@ -156,17 +157,17 @@ definition {
 		}
 
 		task ("View the Heading fragment") {
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Heading Example");
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Heading Example");
 		}
 
 		task ("View the Paragraph fragment") {
-			AssertTextEquals(
-				key_fragmentName = "paragraph",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "A paragraph is a self-contained unit of a discourse in writing dealing with a particular point or idea. Paragraphs are usually an expected part of formal writing, used to organize longer prose.");
+			ContentPages.viewFragmentText(
+				fragmentName = "paragraph",
+				id = "element-text",
+				text = "A paragraph is a self-contained unit of a discourse in writing dealing with a particular point or idea. Paragraphs are usually an expected part of formal writing, used to organize longer prose.");
 		}
 	}
 
@@ -216,7 +217,10 @@ definition {
 				locator1 = "Icon#ANY");
 
 			AssertCssValue(
-				locator1 = "//div[contains(@class,'page-editor__topper__bar') and contains(.,'Button')]//following-sibling::div[contains(@class,'page-editor__topper__content')]//div[contains(@class,'page-editor__fragment-content')]",
+				fragmentName = "button",
+				id = "link",
+				index = "1",
+				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_TEXT",
 				locator2 = "text-align",
 				value1 = "start");
 
@@ -224,7 +228,7 @@ definition {
 				key_text = "undo",
 				locator1 = "Icon#ANY");
 
-			PageEditor.viewNoFragment(fragmentName = "Button");
+			PageEditor.viewFragmentNotPresent(fragmentName = "Button");
 		}
 
 		task ("View Undo button is disabled when back to original state") {

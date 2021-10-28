@@ -14,12 +14,12 @@
 
 package com.liferay.portal.upgrade.v7_4_x;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ListType;
 import com.liferay.portal.kernel.model.ListTypeConstants;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.sql.PreparedStatement;
@@ -36,15 +36,11 @@ public class UpgradeListType extends UpgradeProcess {
 	}
 
 	private void _addListType(String name, String type) throws Exception {
-		StringBundler sb = new StringBundler(4);
-
-		sb.append("select * from ListType where name = ");
-		sb.append(StringUtil.quote(name));
-		sb.append("and type_ = ");
-		sb.append(StringUtil.quote(type));
-
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				sb.toString())) {
+				StringBundler.concat(
+					"select * from ListType where name = ",
+					StringUtil.quote(name), "and type_ = ",
+					StringUtil.quote(type)))) {
 
 			ResultSet resultSet = preparedStatement.executeQuery();
 

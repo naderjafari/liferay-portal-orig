@@ -65,14 +65,13 @@ public class CPDisplayLayoutServiceSoap {
 
 	public static com.liferay.commerce.product.model.CPDisplayLayoutSoap
 			addCPDisplayLayout(
-				long userId, long groupId, Class<?> clazz, long classPK,
-				String layoutUuid)
+				long groupId, Class<?> clazz, long classPK, String layoutUuid)
 		throws RemoteException {
 
 		try {
 			com.liferay.commerce.product.model.CPDisplayLayout returnValue =
 				CPDisplayLayoutServiceUtil.addCPDisplayLayout(
-					userId, groupId, clazz, classPK, layoutUuid);
+					groupId, clazz, classPK, layoutUuid);
 
 			return com.liferay.commerce.product.model.CPDisplayLayoutSoap.
 				toSoapModel(returnValue);
@@ -117,13 +116,14 @@ public class CPDisplayLayoutServiceSoap {
 	}
 
 	public static com.liferay.commerce.product.model.CPDisplayLayoutSoap
-			updateCPDisplayLayout(long cpDisplayLayoutId, String layoutUuid)
+			updateCPDisplayLayout(
+				long cpDisplayLayoutId, long classPK, String layoutUuid)
 		throws RemoteException {
 
 		try {
 			com.liferay.commerce.product.model.CPDisplayLayout returnValue =
 				CPDisplayLayoutServiceUtil.updateCPDisplayLayout(
-					cpDisplayLayoutId, layoutUuid);
+					cpDisplayLayoutId, classPK, layoutUuid);
 
 			return com.liferay.commerce.product.model.CPDisplayLayoutSoap.
 				toSoapModel(returnValue);

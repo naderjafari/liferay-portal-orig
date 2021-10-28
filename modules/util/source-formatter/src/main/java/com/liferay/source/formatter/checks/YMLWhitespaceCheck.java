@@ -262,11 +262,9 @@ public class YMLWhitespaceCheck extends WhitespaceCheck {
 
 			String[] lines = s.split("\n");
 
-			if (lines.length <= 1) {
-				continue;
-			}
+			if ((lines.length <= 1) ||
+				StringUtil.startsWith(lines[0].trim(), "- '")) {
 
-			if (StringUtil.startsWith(lines[0].trim(), "- '")) {
 				continue;
 			}
 
@@ -305,9 +303,16 @@ public class YMLWhitespaceCheck extends WhitespaceCheck {
 
 			while ((line = unsyncBufferedReader.readLine()) != null) {
 				line = formatIncorrectSyntax(line, "{ ", "{", false);
-				line = formatIncorrectSyntax(line, " }", "}", false);
-				line = formatIncorrectSyntax(line, " ]", "]", false);
 				line = formatIncorrectSyntax(line, "[ ", "[", false);
+
+				String trimmedLine = StringUtil.trimLeading(line);
+
+				if (!trimmedLine.startsWith("}") &&
+					!trimmedLine.startsWith("]")) {
+
+					line = formatIncorrectSyntax(line, " }", "}", false);
+					line = formatIncorrectSyntax(line, " ]", "]", false);
+				}
 
 				sb.append(line);
 

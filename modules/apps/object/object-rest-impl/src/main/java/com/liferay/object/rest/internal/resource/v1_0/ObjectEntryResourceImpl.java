@@ -16,12 +16,14 @@ package com.liferay.object.rest.internal.resource.v1_0;
 
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.rest.dto.v1_0.ObjectEntry;
-import com.liferay.object.rest.internal.dto.v1_0.converter.ObjectEntryDTOConverter;
-import com.liferay.object.rest.internal.manager.v1_0.ObjectEntryManager;
 import com.liferay.object.rest.internal.odata.entity.v1_0.ObjectEntryEntityModel;
+import com.liferay.object.rest.manager.v1_0.ObjectEntryManager;
 import com.liferay.object.rest.resource.v1_0.ObjectEntryResource;
+import com.liferay.object.scope.ObjectScopeProvider;
+import com.liferay.object.scope.ObjectScopeProviderRegistry;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -35,7 +37,6 @@ import com.liferay.portal.vulcan.pagination.Pagination;
 import java.io.Serializable;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 import javax.ws.rs.NotFoundException;
@@ -63,7 +64,21 @@ public class ObjectEntryResourceImpl extends BaseObjectEntryResourceImpl {
 
 		_loadObjectDefinition(parameters);
 
-		super.create(objectEntries, parameters);
+		ObjectScopeProvider objectScopeProvider =
+			_objectScopeProviderRegistry.getObjectScopeProvider(
+				_objectDefinition.getScope());
+
+		UnsafeConsumer<ObjectEntry, Exception> unsafeConsumer =
+			this::postObjectEntry;
+
+		if (objectScopeProvider.isGroupAware()) {
+			unsafeConsumer = objectEntry -> postScopeScopeKey(
+				(String)parameters.get("scopeKey"), objectEntry);
+		}
+
+		for (ObjectEntry objectEntry : objectEntries) {
+			unsafeConsumer.accept(objectEntry);
+		}
 	}
 
 	@Override
@@ -78,8 +93,36 @@ public class ObjectEntryResourceImpl extends BaseObjectEntryResourceImpl {
 	}
 
 	@Override
+	public void deleteByExternalReferenceCode(String externalReferenceCode)
+		throws Exception {
+
+		_objectEntryManager.deleteObjectEntry(
+			externalReferenceCode, contextCompany.getCompanyId(),
+			_objectDefinition, null);
+	}
+
+	@Override
 	public void deleteObjectEntry(Long objectEntryId) throws Exception {
 		_objectEntryManager.deleteObjectEntry(objectEntryId);
+	}
+
+	@Override
+	public void deleteScopeScopeKeyByExternalReferenceCode(
+			String scopeKey, String externalReferenceCode)
+		throws Exception {
+
+		_objectEntryManager.deleteObjectEntry(
+			externalReferenceCode, contextCompany.getCompanyId(),
+			_objectDefinition, scopeKey);
+	}
+
+	@Override
+	public ObjectEntry getByExternalReferenceCode(String externalReferenceCode)
+		throws Exception {
+
+		return _objectEntryManager.getObjectEntry(
+			_getDTOConverterContext(null), externalReferenceCode,
+			contextCompany.getCompanyId(), _objectDefinition, null);
 	}
 
 	@Override
@@ -100,15 +143,38 @@ public class ObjectEntryResourceImpl extends BaseObjectEntryResourceImpl {
 		throws Exception {
 
 		return _objectEntryManager.getObjectEntries(
-			contextCompany.getCompanyId(),
-			_objectDefinition.getObjectDefinitionId(), aggregation,
+			contextCompany.getCompanyId(), _objectDefinition, null, aggregation,
 			_getDTOConverterContext(null), filter, pagination, search, sorts);
 	}
 
 	@Override
 	public ObjectEntry getObjectEntry(Long objectEntryId) throws Exception {
 		return _objectEntryManager.getObjectEntry(
-			_getDTOConverterContext(objectEntryId), objectEntryId);
+			_getDTOConverterContext(objectEntryId), _objectDefinition,
+			objectEntryId);
+	}
+
+	@Override
+	public ObjectEntry getScopeScopeKeyByExternalReferenceCode(
+			String scopeKey, String externalReferenceCode)
+		throws Exception {
+
+		return _objectEntryManager.getObjectEntry(
+			_getDTOConverterContext(null), externalReferenceCode,
+			contextCompany.getCompanyId(), _objectDefinition, scopeKey);
+	}
+
+	@Override
+	public Page<ObjectEntry> getScopeScopeKeyPage(
+			String scopeKey, Boolean flatten, String search,
+			Aggregation aggregation, Filter filter, Pagination pagination,
+			Sort[] sorts)
+		throws Exception {
+
+		return _objectEntryManager.getObjectEntries(
+			contextCompany.getCompanyId(), _objectDefinition, scopeKey,
+			aggregation, _getDTOConverterContext(null), filter, pagination,
+			search, sorts);
 	}
 
 	@Override
@@ -116,8 +182,28 @@ public class ObjectEntryResourceImpl extends BaseObjectEntryResourceImpl {
 		throws Exception {
 
 		return _objectEntryManager.addObjectEntry(
-			_getDTOConverterContext(null), contextUser.getUserId(),
-			_objectDefinition.getObjectDefinitionId(), objectEntry);
+			_getDTOConverterContext(null), _objectDefinition, objectEntry,
+			null);
+	}
+
+	@Override
+	public ObjectEntry postScopeScopeKey(
+			String scopeKey, ObjectEntry objectEntry)
+		throws Exception {
+
+		return _objectEntryManager.addObjectEntry(
+			_getDTOConverterContext(null), _objectDefinition, objectEntry,
+			scopeKey);
+	}
+
+	@Override
+	public ObjectEntry putByExternalReferenceCode(
+			String externalReferenceCode, ObjectEntry objectEntry)
+		throws Exception {
+
+		return _objectEntryManager.addOrUpdateObjectEntry(
+			_getDTOConverterContext(null), externalReferenceCode,
+			_objectDefinition, objectEntry, null);
 	}
 
 	@Override
@@ -126,8 +212,43 @@ public class ObjectEntryResourceImpl extends BaseObjectEntryResourceImpl {
 		throws Exception {
 
 		return _objectEntryManager.updateObjectEntry(
-			_getDTOConverterContext(objectEntryId), contextUser.getUserId(),
+			_getDTOConverterContext(objectEntryId), _objectDefinition,
 			objectEntryId, objectEntry);
+	}
+
+	@Override
+	public ObjectEntry putScopeScopeKeyByExternalReferenceCode(
+			String scopeKey, String externalReferenceCode,
+			ObjectEntry objectEntry)
+		throws Exception {
+
+		return _objectEntryManager.addOrUpdateObjectEntry(
+			_getDTOConverterContext(null), externalReferenceCode,
+			_objectDefinition, objectEntry, scopeKey);
+	}
+
+	@Override
+	public Page<ObjectEntry> read(
+			Filter filter, Pagination pagination, Sort[] sorts,
+			Map<String, Serializable> parameters, String search)
+		throws Exception {
+
+		_loadObjectDefinition(parameters);
+
+		ObjectScopeProvider objectScopeProvider =
+			_objectScopeProviderRegistry.getObjectScopeProvider(
+				_objectDefinition.getScope());
+
+		if (objectScopeProvider.isGroupAware()) {
+			return getScopeScopeKeyPage(
+				(String)parameters.get("scopeKey"),
+				Boolean.parseBoolean((String)parameters.get("flatten")), search,
+				null, filter, pagination, sorts);
+		}
+
+		return getObjectEntriesPage(
+			Boolean.parseBoolean((String)parameters.get("flatten")), search,
+			null, filter, pagination, sorts);
 	}
 
 	@Override
@@ -145,16 +266,27 @@ public class ObjectEntryResourceImpl extends BaseObjectEntryResourceImpl {
 		Long objectEntryId) {
 
 		return new DefaultDTOConverterContext(
-			contextAcceptLanguage.isAcceptAllLanguages(),
-			Collections.singletonMap(
-				"delete", Collections.singletonMap("delete", "")),
-			null, contextHttpServletRequest, objectEntryId,
+			contextAcceptLanguage.isAcceptAllLanguages(), null, null,
+			contextHttpServletRequest, objectEntryId,
 			contextAcceptLanguage.getPreferredLocale(), contextUriInfo,
 			contextUser);
 	}
 
 	private void _loadObjectDefinition(Map<String, Serializable> parameters)
 		throws Exception {
+
+		String taskItemDelegateName = (String)parameters.get(
+			"taskItemDelegateName");
+
+		if (taskItemDelegateName != null) {
+			_objectDefinition =
+				_objectDefinitionLocalService.fetchObjectDefinition(
+					contextCompany.getCompanyId(), "C_" + taskItemDelegateName);
+
+			if (_objectDefinition != null) {
+				return;
+			}
+		}
 
 		String parameterValue = (String)parameters.get("objectDefinitionId");
 
@@ -183,12 +315,12 @@ public class ObjectEntryResourceImpl extends BaseObjectEntryResourceImpl {
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
 
 	@Reference
-	private ObjectEntryDTOConverter _objectEntryDTOConverter;
-
-	@Reference
 	private ObjectEntryManager _objectEntryManager;
 
 	@Reference
 	private ObjectFieldLocalService _objectFieldLocalService;
+
+	@Reference
+	private ObjectScopeProviderRegistry _objectScopeProviderRegistry;
 
 }

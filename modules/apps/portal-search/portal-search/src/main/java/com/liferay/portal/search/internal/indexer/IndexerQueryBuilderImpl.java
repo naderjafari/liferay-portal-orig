@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.indexer.IndexerQueryBuilder;
 import com.liferay.portal.search.internal.expando.ExpandoQueryContributorHelper;
+import com.liferay.portal.search.internal.util.SearchStringUtil;
 import com.liferay.portal.search.spi.model.query.contributor.KeywordQueryContributor;
 import com.liferay.portal.search.spi.model.query.contributor.SearchContextContributor;
 import com.liferay.portal.search.spi.model.query.contributor.helper.KeywordQueryContributorHelper;
@@ -42,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -132,8 +134,14 @@ public class IndexerQueryBuilderImpl<T extends BaseModel<?>>
 		}
 
 		contribute(
-			_modelKeywordQueryContributorsHolder.getAll(), booleanQuery,
-			searchContext);
+			_modelKeywordQueryContributorsHolder.stream(
+				getStrings(
+					"search.full.query.clause.contributors.includes",
+					searchContext),
+				getStrings(
+					"search.full.query.clause.contributors.excludes",
+					searchContext)),
+			booleanQuery, searchContext);
 	}
 
 	protected void contribute(
@@ -228,6 +236,15 @@ public class IndexerQueryBuilderImpl<T extends BaseModel<?>>
 		return booleanQuery;
 	}
 
+	protected Collection<String> getStrings(
+		String string, SearchContext searchContext) {
+
+		return Arrays.asList(
+			SearchStringUtil.splitAndUnquote(
+				Optional.ofNullable(
+					(String)searchContext.getAttribute(string))));
+	}
+
 	protected void postProcessFullQuery(
 		BooleanQuery booleanQuery, SearchContext searchContext) {
 
@@ -314,11 +331,9 @@ public class IndexerQueryBuilderImpl<T extends BaseModel<?>>
 		for (String entryClassName : entryClassNames) {
 			Indexer<?> indexer = _indexerRegistry.getIndexer(entryClassName);
 
-			if (indexer == null) {
-				continue;
-			}
+			if ((indexer == null) ||
+				!searchEngineId.equals(indexer.getSearchEngineId())) {
 
-			if (!searchEngineId.equals(indexer.getSearchEngineId())) {
 				continue;
 			}
 

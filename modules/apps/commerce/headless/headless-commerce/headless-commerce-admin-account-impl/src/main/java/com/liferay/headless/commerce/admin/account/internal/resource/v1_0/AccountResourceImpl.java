@@ -74,6 +74,7 @@ import com.liferay.portal.vulcan.util.SearchUtil;
 
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -115,7 +116,7 @@ public class AccountResourceImpl
 
 		if (commerceAccount == null) {
 			throw new NoSuchAccountException(
-				"Unable to find Account with externalReferenceCode: " +
+				"Unable to find account with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -138,7 +139,7 @@ public class AccountResourceImpl
 
 		if (commerceAccountGroup == null) {
 			throw new NoSuchAccountGroupException(
-				"Unable to find AccountGroup with externalReferenceCode: " +
+				"Unable to find account group with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -188,7 +189,7 @@ public class AccountResourceImpl
 
 		if (commerceAccount == null) {
 			throw new NoSuchAccountException(
-				"Unable to find Account with externalReferenceCode: " +
+				"Unable to find account with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -204,8 +205,9 @@ public class AccountResourceImpl
 		throws Exception {
 
 		return SearchUtil.search(
+			Collections.emptyMap(),
 			booleanQuery -> booleanQuery.getPreBooleanFilter(), filter,
-			AccountEntry.class, search, pagination,
+			AccountEntry.class.getName(), search, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
 			new UnsafeConsumer() {
@@ -217,10 +219,10 @@ public class AccountResourceImpl
 				}
 
 			},
+			sorts,
 			document -> _toAccount(
 				_commerceAccountService.fetchCommerceAccount(
-					GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK)))),
-			sorts);
+					GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK)))));
 	}
 
 	@Override
@@ -250,7 +252,7 @@ public class AccountResourceImpl
 
 		if (commerceAccount == null) {
 			throw new NoSuchAccountException(
-				"Unable to find Account with externalReferenceCode: " +
+				"Unable to find account with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -271,7 +273,8 @@ public class AccountResourceImpl
 				GetterUtil.get(
 					account.getType(),
 					CommerceAccountConstants.ACCOUNT_TYPE_PERSONAL),
-				true, account.getExternalReferenceCode(),
+				GetterUtil.getBoolean(account.getActive(), true),
+				account.getExternalReferenceCode(),
 				_serviceContextHelper.getServiceContext());
 
 		if (_isValidId(account.getDefaultBillingAccountAddressId())) {
@@ -319,7 +322,7 @@ public class AccountResourceImpl
 
 		if (commerceAccount == null) {
 			throw new NoSuchAccountException(
-				"Unable to find Account with externalReferenceCode: " +
+				"Unable to find account with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -341,7 +344,7 @@ public class AccountResourceImpl
 
 		if (commerceAccountGroup == null) {
 			throw new NoSuchAccountGroupException(
-				"Unable to find AccountGroup with externalReferenceCode: " +
+				"Unable to find account group with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -481,7 +484,8 @@ public class AccountResourceImpl
 			commerceAccount.getCommerceAccountId(), account.getName(), true,
 			null, _getEmailAddress(account, commerceAccount),
 			GetterUtil.get(account.getTaxId(), commerceAccount.getTaxId()),
-			commerceAccount.isActive(),
+			GetterUtil.getBoolean(
+				account.getActive(), commerceAccount.isActive()),
 			GetterUtil.getLong(
 				account.getDefaultBillingAccountAddressId(),
 				commerceAccount.getDefaultBillingAddressId()),

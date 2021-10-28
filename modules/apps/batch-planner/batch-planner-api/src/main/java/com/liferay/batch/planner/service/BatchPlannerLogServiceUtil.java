@@ -14,6 +14,12 @@
 
 package com.liferay.batch.planner.service;
 
+import com.liferay.batch.planner.model.BatchPlannerLog;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.util.OrderByComparator;
+
+import java.util.List;
+
 /**
  * Provides the remote service utility for BatchPlannerLog. This utility wraps
  * <code>com.liferay.batch.planner.service.impl.BatchPlannerLogServiceImpl</code> and is an
@@ -33,13 +39,80 @@ public class BatchPlannerLogServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.batch.planner.service.impl.BatchPlannerLogServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
+	public static BatchPlannerLog addBatchPlannerLog(
+			long batchPlannerPlanId, String batchEngineExportERC,
+			String batchEngineImportERC, String dispatchTriggerERC, int size,
+			int status)
+		throws PortalException {
+
+		return getService().addBatchPlannerLog(
+			batchPlannerPlanId, batchEngineExportERC, batchEngineImportERC,
+			dispatchTriggerERC, size, status);
+	}
+
+	public static BatchPlannerLog deleteBatchPlannerLog(long batchPlannerLogId)
+		throws PortalException {
+
+		return getService().deleteBatchPlannerLog(batchPlannerLogId);
+	}
+
+	public static BatchPlannerLog getBatchPlannerLog(long batchPlannerLogId)
+		throws PortalException {
+
+		return getService().getBatchPlannerLog(batchPlannerLogId);
+	}
+
+	public static int getBatchPlannerLogsCount(long batchPlannerPlanId)
+		throws PortalException {
+
+		return getService().getBatchPlannerLogsCount(batchPlannerPlanId);
+	}
+
+	public static BatchPlannerLog getBatchPlannerPlanBatchPlannerLog(
+			long batchPlannerPlanId)
+		throws PortalException {
+
+		return getService().getBatchPlannerPlanBatchPlannerLog(
+			batchPlannerPlanId);
+	}
+
+	public static List<BatchPlannerLog> getCompanyBatchPlannerLogs(
+			long companyId, boolean export, int start, int end,
+			OrderByComparator<BatchPlannerLog> orderByComparator)
+		throws PortalException {
+
+		return getService().getCompanyBatchPlannerLogs(
+			companyId, export, start, end, orderByComparator);
+	}
+
+	public static List<BatchPlannerLog> getCompanyBatchPlannerLogs(
+			long companyId, int start, int end,
+			OrderByComparator<BatchPlannerLog> orderByComparator)
+		throws PortalException {
+
+		return getService().getCompanyBatchPlannerLogs(
+			companyId, start, end, orderByComparator);
+	}
+
+	public static int getCompanyBatchPlannerLogsCount(long companyId)
+		throws PortalException {
+
+		return getService().getCompanyBatchPlannerLogsCount(companyId);
+	}
+
+	public static int getCompanyBatchPlannerLogsCount(
+			long companyId, boolean export)
+		throws PortalException {
+
+		return getService().getCompanyBatchPlannerLogsCount(companyId, export);
+	}
 
 	/**
 	 * Returns the OSGi service identifier.
 	 *
 	 * @return the OSGi service identifier
 	 */
-	public static java.lang.String getOSGiServiceIdentifier() {
+	public static String getOSGiServiceIdentifier() {
 		return getService().getOSGiServiceIdentifier();
 	}
 

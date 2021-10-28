@@ -23,6 +23,10 @@ import {
 	useFormState,
 } from 'data-engine-js-components-web';
 import {EVENT_TYPES as CORE_EVENT_TYPES} from 'data-engine-js-components-web/js/core/actions/eventTypes.es';
+import {
+	addObjectFields,
+	updateObjectFields,
+} from 'data-engine-js-components-web/js/utils/objectFields';
 import {DragLayer, MultiPanelSidebar} from 'data-engine-taglib';
 import React, {
 	useCallback,
@@ -34,13 +38,17 @@ import React, {
 
 import {FormInfo} from '../components/FormInfo.es';
 import {ManagementToolbar} from '../components/ManagementToolbar.es';
+import ModalObjectRestrictionsBody from '../components/ModalObjectRestrictionsBody';
 import {TranslationManager} from '../components/TranslationManager.es';
+import FormSettings from '../components/form-settings/FormSettings';
 import {ShareFormModalBody} from '../components/share-form/ShareFormModalBody.es';
 import {useAutoSave} from '../hooks/useAutoSave.es';
 import {useToast} from '../hooks/useToast.es';
+import {useValidateFormWithObjects} from '../hooks/useValidateFormWithObjects';
 import fieldDelete from '../thunks/fieldDelete.es';
 import {createFormURL} from '../util/form.es';
 import {submitEmailContent} from '../util/submitEmailContent.es';
+import ErrorList from './ErrorList';
 
 export const FormBuilder = () => {
 	const {
@@ -49,7 +57,6 @@ export const FormBuilder = () => {
 		publishFormInstanceURL,
 		published,
 		redirectURL,
-		restrictedFormURL,
 		shareFormInstanceURL,
 		sharedFormURL,
 		showPublishAlert,
@@ -60,16 +67,25 @@ export const FormBuilder = () => {
 	const {
 		activePage,
 		focusedField,
+		formSettingsContext,
 		localizedName,
+		objectFields,
 		pages,
 		rules,
 	} = useFormState();
+
+	const {dataDefinition} = useFormState({schema: ['dataDefinition']});
+
+	const [errorList, setErrorList] = useState([]);
+
 	const [{onClose}, modalDispatch] = useContext(ModalContext);
 
 	const [{sidebarOpen, sidebarPanelId}, setSidebarState] = useState({
 		sidebarOpen: true,
 		sidebarPanelId: 'fields',
 	});
+
+	const [visibleFormSettings, setVisibleFormSettings] = useState(false);
 
 	const dispatch = useForm();
 
@@ -85,6 +101,35 @@ export const FormBuilder = () => {
 	const {doSave, doSyncInput} = useAutoSave();
 
 	const addToast = useToast();
+
+	// This hook is used to validate the Forms when the storage type object
+	// is selected in the Forms settings
+
+	const validateFormWithObjects = useValidateFormWithObjects();
+
+	const removeErrorMessage = useCallback(
+		(index) => {
+			const errorMessages = [...errorList].splice(index, 1);
+
+			setErrorList(errorMessages);
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[setErrorList]
+	);
+
+	useEffect(() => {
+		const sessionLength = Liferay.Session
+			? Liferay.Session.get('sessionLength')
+			: 60000;
+
+		const interval = setInterval(() => {
+			if (Liferay.Session) {
+				Liferay.Session.extend();
+			}
+		}, sessionLength / 2);
+
+		return () => clearInterval(interval);
+	}, []);
 
 	/**
 	 * Opens the sidebar whenever a field is focused
@@ -133,28 +178,16 @@ export const FormBuilder = () => {
 
 	const getFormUrl = useCallback(
 		async (path) => {
-			const settingsDDMForm = await Liferay.componentReady(
-				'settingsDDMForm'
-			);
-
-			const fields = settingsDDMForm.reactComponentRef.current.getFields();
-
-			const {value: requireAuthentication} = fields.find(
-				({fieldName}) => fieldName === 'requireAuthentication'
-			);
-
 			const formInstanceId = document.querySelector(
 				`#${portletNamespace}formInstanceId`
 			).value;
 
 			return createFormURL(path, {
 				formInstanceId,
-				requireAuthentication,
-				restrictedFormURL,
 				sharedFormURL,
 			});
 		},
-		[portletNamespace, restrictedFormURL, sharedFormURL]
+		[portletNamespace, sharedFormURL]
 	);
 
 	useEffect(() => {
@@ -185,6 +218,18 @@ export const FormBuilder = () => {
 		async (event) => {
 			event.preventDefault();
 
+			if (!dataDefinition.dataDefinitionFields.length) {
+				setErrorList([
+					Liferay.Language.get('please-add-at-least-one-field'),
+				]);
+
+				return;
+			}
+
+			if (errorList.length) {
+				setErrorList([]);
+			}
+
 			try {
 				await doSave(true);
 
@@ -202,16 +247,50 @@ export const FormBuilder = () => {
 				});
 			}
 		},
-		[addToast, doSave, getFormUrl]
+		[addToast, dataDefinition, doSave, errorList, getFormUrl]
 	);
 
 	const subtmitForm = useCallback(
-		(form) => {
+		async (form) => {
+			const openModalObjectRestrictions = (props) => {
+				modalDispatch({
+					payload: {
+						body: <ModalObjectRestrictionsBody {...props} />,
+						footer: [
+							null,
+							null,
+							<ClayButton
+								displayType="secondary"
+								key={1}
+								onClick={() => onClose()}
+							>
+								{Liferay.Language.get('close')}
+							</ClayButton>,
+						],
+						header: Liferay.Language.get(
+							'unmapped-object-required-fields'
+						),
+						status: 'danger',
+					},
+					type: 1,
+				});
+			};
+
 			doSyncInput();
 
-			window.submitForm(form);
+			const isValidToSubmitForm = await validateFormWithObjects(
+
+				// This callback will be rendered when the Forms
+				// validation result is false
+
+				openModalObjectRestrictions
+			);
+
+			if (isValidToSubmitForm) {
+				window.submitForm(form);
+			}
 		},
-		[doSyncInput]
+		[doSyncInput, modalDispatch, onClose, validateFormWithObjects]
 	);
 
 	const onPublishClick = useCallback(
@@ -295,16 +374,30 @@ export const FormBuilder = () => {
 		shareFormInstanceURL,
 	]);
 
+	useEffect(() => {
+		if (!objectFields.length) {
+			addObjectFields(dispatch);
+		}
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
 	return (
 		<>
 			<ManagementToolbar
 				onPreviewClick={onPreviewClick}
 				onPublishClick={onPublishClick}
 				onSaveClick={onSaveClick}
+				onSettingsClick={() => setVisibleFormSettings(true)}
 				onShareClick={onShareClick}
 				portletNamespace={portletNamespace}
 			/>
 			<TranslationManager />
+			<ErrorList
+				errorMessages={errorList}
+				onRemove={removeErrorMessage}
+				sidebarOpen={sidebarOpen}
+			/>
 			<FormInfo />
 			<div className="ddm-form-builder">
 				<div className="container ddm-paginated-builder top">
@@ -391,6 +484,15 @@ export const FormBuilder = () => {
 					</div>
 				</div>
 			)}
+
+			<FormSettings
+				{...formSettingsContext}
+				onCloseFormSettings={() => {
+					setVisibleFormSettings(false);
+					updateObjectFields(dispatch);
+				}}
+				visibleFormSettings={visibleFormSettings}
+			/>
 		</>
 	);
 };

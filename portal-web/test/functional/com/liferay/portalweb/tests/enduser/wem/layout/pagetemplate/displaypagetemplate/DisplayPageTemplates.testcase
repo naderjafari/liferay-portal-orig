@@ -37,10 +37,10 @@ definition {
 		}
 	}
 
-	@description = "User cannot delete a display page template used by an asset."
+	@description = "User cannot delete a display page template with usage."
 	@priority = "4"
 	@uitest
-	test CannotDeleteDisplayPageTemplateUsedByItems {
+	test CannotDeleteDisplayPageTemplateWithUsage {
 		task ("Publish the display page template") {
 			PageEditor.clickPublish();
 		}
@@ -74,6 +74,59 @@ definition {
 				value1 = "Error:You cannot delete display page templates that are used by one or more items. Please view the usages and try to unassign them.");
 
 			DisplayPageTemplatesAdmin.viewDisplayPagePresent(displayPageName = "Display Page Name");
+		}
+	}
+
+	@description = "This is a test for LPS-129360. The user could change the display style of Documents and Media in display page template."
+	@priority = "4"
+	test ChangeDisplayStyleOfDocumentsAndMediaInDisplayPageTemplate {
+		task ("Add a Documents and Media widget to the display page template") {
+			PageEditor.addWidget(portletName = "Documents and Media");
+
+			PageEditor.clickPublish();
+		}
+
+		task ("Mark the display page template as default") {
+			DisplayPageTemplatesAdmin.markDisplayPageAsDefault(displayPageName = "Display Page Name");
+		}
+
+		task ("Add a document entry") {
+			JSONDocument.addFileWithUploadedFile(
+				dmDocumentTitle = "Document Title",
+				groupName = "Test Site Name",
+				mimeType = "image/jpeg",
+				sourceFileName = "Document_4.jpg");
+		}
+
+		task ("Add a web content") {
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name",
+				title = "Webcontent Title");
+		}
+
+		task ("Navigate to display page template at view mode") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEntryMenuItem(
+				entry = "Webcontent Title",
+				menuItem = "View Content");
+		}
+
+		task ("View the document entry displayed as Cards style") {
+			DMDocument.viewCardTitle(dmDocumentTitle = "Document Title");
+
+			LexiconEntry.viewActiveDisplayStyle(displayStyle = "cards");
+		}
+
+		task ("Change to List display style") {
+			LexiconEntry.changeDisplayStyle(displayStyle = "list");
+		}
+
+		task ("View the document entry displayed as List style") {
+			LexiconList.viewListEntryTitle(listEntry = "Document Title");
+
+			LexiconEntry.viewActiveDisplayStyle(displayStyle = "list");
 		}
 	}
 
@@ -174,7 +227,7 @@ definition {
 		}
 
 		task ("View the Classic theme is shown") {
-			AssertVisible(locator1 = "//link[contains(@href,'classic-theme')]");
+			AssertElementPresent(locator1 = "//link[contains(@href,'classic-theme')]");
 
 			AssertElementNotPresent(locator1 = "//link[contains(@href,'test-theme')]");
 		}
@@ -200,13 +253,61 @@ definition {
 		}
 
 		task ("View the Fjord theme is shown") {
-			AssertVisible(locator1 = "//link[contains(@href,'test-theme')]");
+			AssertElementPresent(locator1 = "//link[contains(@href,'test-theme')]");
 
 			AssertElementNotPresent(locator1 = "//link[contains(@href,'classic-theme')]");
 		}
 	}
 
-	@description = "User can delete display pages."
+	@description = "User can delete default display page template."
+	@priority = "5"
+	@uitest
+	test DeleteDefaultDisplayPageTemplate {
+		property portal.acceptance = "true";
+
+		task ("Publish the display page template") {
+			PageEditor.clickPublish();
+		}
+
+		task ("Mark the display page template as default") {
+			DisplayPageTemplatesAdmin.markDisplayPageAsDefault(displayPageName = "Display Page Name");
+		}
+
+		task ("Add a web content") {
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name",
+				title = "Webcontent Title");
+		}
+
+		task ("View the default page template is selected in web content") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Webcontent Title");
+
+			WebContent.viewSelectedDisplayPageTemplateCP(
+				displayPageTemplateName = "Display Page Name",
+				displayPageTemplateType = "Default");
+		}
+
+		task ("Delete the default display page template") {
+			DisplayPageTemplatesAdmin.openDisplayPagesAdmin(siteURLKey = "test-site-name");
+
+			DisplayPageTemplatesAdmin.gotoDisplayPageEllipsisItem(
+				displayPageName = "Display Page Name",
+				item = "Delete");
+
+			AssertConfirm(value1 = "Are you sure you want to delete the default display page template? All related display pages will be deleted.");
+
+			Alert.viewSuccessMessageText(successMessage = "You successfully deleted 1 display page template(s).");
+		}
+
+		task ("View the default display page template not shown") {
+			DisplayPageTemplatesAdmin.viewDisplayPageNotPresent(displayPageName = "DisplayPage Name");
+		}
+	}
+
+	@description = "User can delete display page template."
 	@priority = "5"
 	@uitest
 	test DeleteDisplayPageTemplate {
@@ -395,7 +496,7 @@ definition {
 		}
 
 		task ("View the Button is not shown") {
-			PageEditor.viewNoFragment(fragmentName = "Button");
+			PageEditor.viewFragmentNotPresent(fragmentName = "Button");
 		}
 
 		task ("View the Heading and HTML fragments are shown") {
@@ -405,9 +506,10 @@ definition {
 				id = "element-text");
 
 			AssertTextEquals.assertPartialText(
+				fragmentName = "html",
 				id = "element-html",
-				key_fragmentName = "HTML",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
+				index = "1",
+				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_TEXT",
 				value1 = "HTML Example");
 		}
 	}
@@ -443,8 +545,66 @@ definition {
 	@priority = "4"
 	@uitest
 	test ViewAssetTypeOnlySelectableOnce {
-		task ("View the plus button of Content field no longer shown in Mapping tab") {
+		task ("View the plus button of Item field no longer shown in Mapping tab") {
 			PageEditorMapping.assertAssetTypeUnselectable();
+		}
+	}
+
+	@description = "This is a test for LPS-133350. View master page after renaming display page template within custom master page."
+	@priority = "4"
+	test ViewMasterPageAfterRenamingDisplayPageTemplateWithinCustomMasterPage {
+		task ("Add a custom master page and publish") {
+			JSONLayoutpagetemplate.addMasterPageTemplateEntry(
+				groupName = "Test Site Name",
+				masterPageTemplateEntryName = "TestMaster");
+
+			MastersPageTemplatesAdmin.openMastersAdmin(siteURLKey = "test-site-name");
+
+			MastersPageTemplatesAdmin.gotoMasters(masterLayoutName = "TestMaster");
+
+			Button.click(button = "Publish Master");
+
+			Alert.viewSuccessMessage();
+		}
+
+		task ("Add a display page template with created master page") {
+			DisplayPageTemplatesAdmin.openDisplayPagesAdmin(siteURLKey = "test-site-name");
+
+			DisplayPageTemplatesAdmin.addDisplayPage(
+				contentType = "Web Content Article",
+				displayPageName = "Display Page Name 2",
+				masterLayoutName = "TestMaster",
+				subType = "Basic Web Content");
+
+			DisplayPageTemplatesAdmin.openDisplayPagesAdmin(siteURLKey = "test-site-name");
+
+			DisplayPageTemplatesAdmin.gotoDisplayPage(displayPageName = "Display Page Name 2");
+
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			Navigator.gotoNavTab(navTab = "Master");
+
+			AssertElementPresent(
+				key_card = "TestMaster",
+				locator1 = "Card#CARD_SELECTED");
+		}
+
+		task ("Go to display page template and rename") {
+			DisplayPageTemplatesAdmin.openDisplayPagesAdmin(siteURLKey = "test-site-name");
+
+			DisplayPageTemplatesAdmin.renameDisplayPage(
+				displayPageName = "Display Page Name 2",
+				newDisplayPageName = "Display Page Name New");
+		}
+
+		task ("View the master page after renaming") {
+			DisplayPageTemplatesAdmin.gotoDisplayPage(displayPageName = "Display Page Name New");
+
+			PageEditor.gotoTab(tabName = "Page Design Options");
+
+			AssertElementPresent(
+				key_card = "TestMaster",
+				locator1 = "Card#CARD_SELECTED");
 		}
 	}
 

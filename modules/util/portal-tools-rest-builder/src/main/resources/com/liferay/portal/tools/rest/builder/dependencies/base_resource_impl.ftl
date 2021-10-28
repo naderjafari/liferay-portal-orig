@@ -6,8 +6,10 @@ package ${configYAML.apiPackagePath}.internal.resource.${escapedVersion};
 
 import ${configYAML.apiPackagePath}.resource.${escapedVersion}.${schemaName}Resource;
 
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.search.Sort;
@@ -26,6 +28,9 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.odata.entity.EntityModel;
+import com.liferay.portal.odata.filter.ExpressionConvert;
+import com.liferay.portal.odata.filter.FilterParser;
+import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.batch.engine.VulcanBatchEngineTaskItemDelegate;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
@@ -43,13 +48,6 @@ import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.LocalDateTimeUtil;
 import com.liferay.portal.vulcan.util.TransformUtil;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.tags.Tags;
-
 import java.io.Serializable;
 
 import java.util.Collections;
@@ -62,23 +60,6 @@ import javax.annotation.Generated;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import javax.validation.constraints.NotNull;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.PATCH;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -90,15 +71,15 @@ import javax.ws.rs.core.UriInfo;
  */
 @Generated("")
 <#if configYAML.application??>
-	@Path("/${openAPIYAML.info.version}")
+	@javax.ws.rs.Path("/${openAPIYAML.info.version}")
 </#if>
 public abstract class Base${schemaName}ResourceImpl
 	implements ${schemaName}Resource
 
 	<#assign
-		javaDataType = freeMarkerTool.getJavaDataType(configYAML, openAPIYAML, schemaName)
+		javaDataType = freeMarkerTool.getJavaDataType(configYAML, openAPIYAML, schemaName)!""
 
-		generateBatch = configYAML.generateBatch && javaDataType??
+		generateBatch = configYAML.generateBatch && javaDataType?has_content
 	/>
 
 	<#if generateBatch>
@@ -121,15 +102,19 @@ public abstract class Base${schemaName}ResourceImpl
 		<#if stringUtil.equals(javaMethodSignature.methodName, "delete" + schemaName)>
 			<#assign deleteBatchJavaMethodSignature = javaMethodSignature />
 		<#elseif stringUtil.equals(javaMethodSignature.methodName, "get" + parentSchemaName + schemaName + "sPage")>
-			<#if !getBatchJavaMethodSignature??>
-				<#assign getBatchJavaMethodSignature = javaMethodSignature />
+			<#if stringUtil.equals(javaMethodSignature.methodName, "getAssetLibrary" + schemaName + "sPage")>
+				<#assign getAssetLibraryBatchJavaMethodSignature = javaMethodSignature />
 			<#elseif stringUtil.equals(javaMethodSignature.methodName, "getSite" + schemaName + "sPage")>
+				<#assign getSiteBatchJavaMethodSignature = javaMethodSignature />
+			<#elseif !getBatchJavaMethodSignature??>
 				<#assign getBatchJavaMethodSignature = javaMethodSignature />
 			</#if>
 		<#elseif stringUtil.equals(javaMethodSignature.methodName, "post" + parentSchemaName + schemaName)>
-			<#if !postBatchJavaMethodSignature??>
-				<#assign postBatchJavaMethodSignature = javaMethodSignature />
+			<#if stringUtil.equals(javaMethodSignature.methodName, "postAssetLibrary" + schemaName)>
+				<#assign postAssetLibraryBatchJavaMethodSignature = javaMethodSignature />
 			<#elseif stringUtil.equals(javaMethodSignature.methodName, "postSite" + schemaName)>
+				<#assign postSiteBatchJavaMethodSignature = javaMethodSignature />
+			<#elseif !postBatchJavaMethodSignature??>
 				<#assign postBatchJavaMethodSignature = javaMethodSignature />
 			</#if>
 		<#elseif stringUtil.equals(javaMethodSignature.methodName, "put" + schemaName)>
@@ -153,7 +138,7 @@ public abstract class Base${schemaName}ResourceImpl
 				vulcanBatchEngineImportTaskResource.setContextUriInfo(contextUriInfo);
 				vulcanBatchEngineImportTaskResource.setContextUser(contextUser);
 
-				Response.ResponseBuilder responseBuilder = Response.accepted();
+				javax.ws.rs.core.Response.ResponseBuilder responseBuilder = javax.ws.rs.core.Response.accepted();
 
 				return responseBuilder.entity(
 					vulcanBatchEngineImportTaskResource.deleteImportTask(${javaDataType}.class.getName(), callbackURL, object)
@@ -165,7 +150,7 @@ public abstract class Base${schemaName}ResourceImpl
 				vulcanBatchEngineImportTaskResource.setContextUriInfo(contextUriInfo);
 				vulcanBatchEngineImportTaskResource.setContextUser(contextUser);
 
-				Response.ResponseBuilder responseBuilder = Response.accepted();
+				javax.ws.rs.core.Response.ResponseBuilder responseBuilder = javax.ws.rs.core.Response.accepted();
 
 				return responseBuilder.entity(
 					vulcanBatchEngineImportTaskResource.postImportTask(${javaDataType}.class.getName(), callbackURL, null, object)
@@ -177,7 +162,7 @@ public abstract class Base${schemaName}ResourceImpl
 				vulcanBatchEngineImportTaskResource.setContextUriInfo(contextUriInfo);
 				vulcanBatchEngineImportTaskResource.setContextUser(contextUser);
 
-				Response.ResponseBuilder responseBuilder = Response.accepted();
+				javax.ws.rs.core.Response.ResponseBuilder responseBuilder = javax.ws.rs.core.Response.accepted();
 
 				return responseBuilder.entity(
 					vulcanBatchEngineImportTaskResource.putImportTask(${javaDataType}.class.getName(), callbackURL, object)
@@ -303,7 +288,7 @@ public abstract class Base${schemaName}ResourceImpl
 			<#elseif stringUtil.equals(javaMethodSignature.returnType, "java.util.Date")>
 				return new java.util.Date();
 			<#elseif stringUtil.equals(javaMethodSignature.returnType, "javax.ws.rs.core.Response")>
-				Response.ResponseBuilder responseBuilder = Response.ok();
+				javax.ws.rs.core.Response.ResponseBuilder responseBuilder = javax.ws.rs.core.Response.ok();
 
 				return responseBuilder.build();
 			<#elseif stringUtil.equals(javaMethodSignature.returnType, "void")>
@@ -348,23 +333,46 @@ public abstract class Base${schemaName}ResourceImpl
 		@Override
 		@SuppressWarnings("PMD.UnusedLocalVariable")
 		public void create(java.util.Collection<${javaDataType}> ${schemaVarNames}, Map<String, Serializable> parameters) throws Exception {
-			<#if postBatchJavaMethodSignature??>
-				for (${javaDataType} ${schemaVarName} : ${schemaVarNames}) {
-					post${postBatchJavaMethodSignature.parentSchemaName!}${schemaName}(
-						<#list postBatchJavaMethodSignature.javaMethodParameters as javaMethodParameter>
-							<#if stringUtil.equals(javaMethodParameter.parameterName, schemaVarName)>
-								${schemaVarName}
-							<#elseif stringUtil.equals(javaMethodParameter.parameterName, postBatchJavaMethodSignature.parentSchemaName!?uncap_first + "Id")>
-								<@castParameters
-									type=javaMethodParameter.parameterType
-									value="${postBatchJavaMethodSignature.parentSchemaName!?uncap_first}Id"
-								/>
-							<#else>
-								null
-							</#if>
-							<#sep>, </#sep>
-						</#list>
+			<#if postAssetLibraryBatchJavaMethodSignature?? || postSiteBatchJavaMethodSignature?? || postBatchJavaMethodSignature??>
+				UnsafeConsumer<${javaDataType}, Exception> ${schemaVarName}UnsafeConsumer =
+				<#if postBatchJavaMethodSignature??>
+					${schemaVarName} -> ${postBatchJavaMethodSignature.methodName}(
+						<@getPOSTBatchJavaMethodParameters
+							javaMethodParameters=postBatchJavaMethodSignature.javaMethodParameters
+							schemaVarName=schemaVarName
+						/>
 					);
+				<#else>
+					${schemaVarName} -> {};
+				</#if>
+
+				<#if postAssetLibraryBatchJavaMethodSignature??>
+					if (parameters.containsKey("assetLibraryId")) {
+						${schemaVarName}UnsafeConsumer = ${schemaVarName} -> ${postAssetLibraryBatchJavaMethodSignature.methodName}(
+							<@getPOSTBatchJavaMethodParameters
+								javaMethodParameters=postAssetLibraryBatchJavaMethodSignature.javaMethodParameters
+								schemaVarName=schemaVarName
+							/>
+						);
+					}
+				</#if>
+
+				<#if postSiteBatchJavaMethodSignature??>
+					<#if postAssetLibraryBatchJavaMethodSignature??>
+						else
+					</#if>
+					if (parameters.containsKey("siteId")) {
+						${schemaVarName}UnsafeConsumer = ${schemaVarName} -> ${postSiteBatchJavaMethodSignature.methodName}(
+							<@getPOSTBatchJavaMethodParameters
+								javaMethodParameters=postSiteBatchJavaMethodSignature.javaMethodParameters
+								schemaVarName=schemaVarName
+							/>
+						);
+					}
+				</#if>
+
+				for (${javaDataType} ${schemaVarName} : ${schemaVarNames}) {
+					${schemaVarName}UnsafeConsumer.accept(${schemaVarName});
 				}
 			</#if>
 		}
@@ -396,22 +404,42 @@ public abstract class Base${schemaName}ResourceImpl
 
 		@Override
 		public Page<${javaDataType}> read(Filter filter, Pagination pagination, Sort[] sorts, Map<String, Serializable> parameters, String search) throws Exception {
-			<#if getBatchJavaMethodSignature??>
-				return get${getBatchJavaMethodSignature.parentSchemaName!}${schemaName}sPage(
-					<#list getBatchJavaMethodSignature.javaMethodParameters as javaMethodParameter>
-						<#if stringUtil.equals(javaMethodParameter.parameterName, "aggregation")>
-							null
-						<#elseif stringUtil.equals(javaMethodParameter.parameterName, "filter") || stringUtil.equals(javaMethodParameter.parameterName, "pagination") || stringUtil.equals(javaMethodParameter.parameterName, "search") || stringUtil.equals(javaMethodParameter.parameterName, "sorts") || stringUtil.equals(javaMethodParameter.parameterName, "user")>
-							${javaMethodParameter.parameterName}
-						<#else>
-							<@castParameters
-								type=javaMethodParameter.parameterType
-								value=javaMethodParameter.parameterName
-							/>
-						</#if>
-						<#sep>, </#sep>
-					</#list>
+			<#if getAssetLibraryBatchJavaMethodSignature?? || getBatchJavaMethodSignature?? || getSiteBatchJavaMethodSignature??>
+				<#if getAssetLibraryBatchJavaMethodSignature??>
+					if (parameters.containsKey("assetLibraryId")) {
+						return ${getAssetLibraryBatchJavaMethodSignature.methodName}(
+							<@getGETBatchJavaMethodParameters javaMethodParameters=getAssetLibraryBatchJavaMethodSignature.javaMethodParameters />
+						);
+					}
+					else
+				</#if>
+
+				<#if getSiteBatchJavaMethodSignature??>
+					if (parameters.containsKey("siteId")) {
+						return ${getSiteBatchJavaMethodSignature.methodName}(
+							<@getGETBatchJavaMethodParameters javaMethodParameters=getSiteBatchJavaMethodSignature.javaMethodParameters />
+						);
+					}
+					else
+				</#if>
+
+				<#if getBatchJavaMethodSignature??>
+					<#if getAssetLibraryBatchJavaMethodSignature?? || getSiteBatchJavaMethodSignature??>
+						{
+					</#if>
+
+					return ${getBatchJavaMethodSignature.methodName}(
+						<@getGETBatchJavaMethodParameters javaMethodParameters=getBatchJavaMethodSignature.javaMethodParameters />
 					);
+
+					<#if getAssetLibraryBatchJavaMethodSignature?? || getSiteBatchJavaMethodSignature??>
+						}
+					</#if>
+				<#else>
+					{
+						return null;
+					}
+				</#if>
 			<#else>
 				return null;
 			</#if>
@@ -472,6 +500,7 @@ public abstract class Base${schemaName}ResourceImpl
 							<#else>
 								${javaMethodParameter.parameterName}
 							</#if>
+
 							<#sep>, </#sep>
 						</#list>
 					);
@@ -528,13 +557,11 @@ public abstract class Base${schemaName}ResourceImpl
 		this.contextCompany = contextCompany;
 	}
 
-	public void setContextHttpServletRequest(
-		HttpServletRequest contextHttpServletRequest) {
+	public void setContextHttpServletRequest(HttpServletRequest contextHttpServletRequest) {
 		this.contextHttpServletRequest = contextHttpServletRequest;
 	}
 
-	public void setContextHttpServletResponse(
-		HttpServletResponse contextHttpServletResponse) {
+	public void setContextHttpServletResponse(HttpServletResponse contextHttpServletResponse) {
 		this.contextHttpServletResponse = contextHttpServletResponse;
 	}
 
@@ -546,13 +573,49 @@ public abstract class Base${schemaName}ResourceImpl
 		this.contextUser = contextUser;
 	}
 
+	public void setExpressionConvert(ExpressionConvert<Filter> expressionConvert) {
+		this.expressionConvert = expressionConvert;
+	}
+
+	public void setFilterParserProvider(FilterParserProvider filterParserProvider) {
+		this.filterParserProvider = filterParserProvider;
+	}
+
 	public void setGroupLocalService(GroupLocalService groupLocalService) {
 		this.groupLocalService = groupLocalService;
+	}
+
+	public void setResourceActionLocalService(ResourceActionLocalService resourceActionLocalService) {
+		this.resourceActionLocalService = resourceActionLocalService;
+	}
+
+	public void setResourcePermissionLocalService(ResourcePermissionLocalService resourcePermissionLocalService) {
+		this.resourcePermissionLocalService = resourcePermissionLocalService;
 	}
 
 	public void setRoleLocalService(RoleLocalService roleLocalService) {
 		this.roleLocalService = roleLocalService;
 	}
+
+	<#if generateBatch>
+		@Override
+		public Filter toFilter(String filterString, Map<String, List<String>> multivaluedMap) {
+			try {
+				EntityModel entityModel = getEntityModel(multivaluedMap);
+
+				FilterParser filterParser = filterParserProvider.provide(entityModel);
+
+				com.liferay.portal.odata.filter.Filter oDataFilter = new com.liferay.portal.odata.filter.Filter(filterParser.parse(filterString));
+
+				return expressionConvert.convert(oDataFilter.getExpression(), contextAcceptLanguage.getPreferredLocale(), entityModel);
+			}
+			catch (Exception exception) {
+				_log.error("Invalid filter " + filterString, exception);
+			}
+
+			return null;
+		}
+	</#if>
 
 	protected Map<String, String> addAction(String actionName, GroupedModel groupedModel, String methodName) {
 		return ActionUtil.addAction(actionName, getClass(), groupedModel, methodName, contextScopeChecker, contextUriInfo);
@@ -598,6 +661,8 @@ public abstract class Base${schemaName}ResourceImpl
 	protected Object contextScopeChecker;
 	protected UriInfo contextUriInfo;
 	protected com.liferay.portal.kernel.model.User contextUser;
+	protected ExpressionConvert<Filter> expressionConvert;
+	protected FilterParserProvider filterParserProvider;
 	protected GroupLocalService groupLocalService;
 	protected ResourceActionLocalService resourceActionLocalService;
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
@@ -607,13 +672,17 @@ public abstract class Base${schemaName}ResourceImpl
 		protected VulcanBatchEngineImportTaskResource vulcanBatchEngineImportTaskResource;
 	</#if>
 
+	private static final com.liferay.portal.kernel.log.Log _log = LogFactoryUtil.getLog(Base${schemaName}ResourceImpl.class);
+
 }
 
 <#macro castParameters
 	type
 	value
 >
-	<#if stringUtil.startsWith(type, "[L")>
+	<#if stringUtil.equals(value, "assetLibraryId") || stringUtil.equals(value, "siteId")>
+		(Long)parameters.get("${value}")
+	<#elseif stringUtil.startsWith(type, "[L")>
 		(
 
 		<#if type?contains("java.lang.Boolean")>
@@ -631,6 +700,8 @@ public abstract class Base${schemaName}ResourceImpl
 		</#if>
 
 		)parameters.get("${value}")
+	<#elseif !stringUtil.startsWith(type, "java")>
+		(${type})parameters.get("${value}")
 	<#else>
 		<#if type?contains("java.lang.Boolean")>
 			Boolean.parseBoolean(
@@ -662,6 +733,43 @@ public abstract class Base${schemaName}ResourceImpl
 	).put(
 		"replace", addAction(ActionKeys.PERMISSIONS, "put${source}Permission", ${resourceName}, ${resourceId})
 	).build()
+</#macro>
+
+<#macro getGETBatchJavaMethodParameters
+	javaMethodParameters
+>
+	<#list javaMethodParameters as javaMethodParameter>
+		<#if stringUtil.equals(javaMethodParameter.parameterName, "aggregation")>
+			null
+		<#elseif stringUtil.equals(javaMethodParameter.parameterName, "filter") || stringUtil.equals(javaMethodParameter.parameterName, "pagination") || stringUtil.equals(javaMethodParameter.parameterName, "search") || stringUtil.equals(javaMethodParameter.parameterName, "sorts") || stringUtil.equals(javaMethodParameter.parameterName, "user")>
+			${javaMethodParameter.parameterName}
+		<#else>
+			<@castParameters
+				type=javaMethodParameter.parameterType
+				value=javaMethodParameter.parameterName
+			/>
+		</#if>
+
+		<#sep>, </#sep>
+	</#list>
+</#macro>
+
+<#macro getPOSTBatchJavaMethodParameters
+	javaMethodParameters
+	schemaVarName
+>
+	<#list javaMethodParameters as javaMethodParameter>
+		<#if stringUtil.equals(javaMethodParameter.parameterName, schemaVarName)>
+			${schemaVarName}
+		<#else>
+			<@castParameters
+				type=javaMethodParameter.parameterType
+				value=javaMethodParameter.parameterName
+			/>
+		</#if>
+
+		<#sep>, </#sep>
+	</#list>
 </#macro>
 
 <#macro updateResourcePermissions

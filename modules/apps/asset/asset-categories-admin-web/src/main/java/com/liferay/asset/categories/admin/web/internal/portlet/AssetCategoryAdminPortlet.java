@@ -22,8 +22,10 @@ import com.liferay.asset.category.property.exception.CategoryPropertyValueExcept
 import com.liferay.asset.category.property.model.AssetCategoryProperty;
 import com.liferay.asset.category.property.service.AssetCategoryPropertyLocalService;
 import com.liferay.asset.display.page.portlet.AssetDisplayPageEntryFormProcessor;
+import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvider;
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.NoSuchClassTypeException;
+import com.liferay.asset.kernel.exception.AssetCategoryLimitException;
 import com.liferay.asset.kernel.exception.AssetCategoryNameException;
 import com.liferay.asset.kernel.exception.DuplicateCategoryException;
 import com.liferay.asset.kernel.exception.DuplicateCategoryPropertyException;
@@ -39,9 +41,9 @@ import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.model.AssetVocabularyConstants;
 import com.liferay.asset.kernel.model.ClassTypeReader;
+import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetCategoryService;
 import com.liferay.asset.kernel.service.AssetVocabularyService;
-import com.liferay.layout.display.page.LayoutDisplayPageProviderTracker;
 import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -67,6 +69,7 @@ import com.liferay.portlet.asset.util.AssetVocabularySettingsHelper;
 
 import java.io.IOException;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -320,6 +323,31 @@ public class AssetCategoryAdminPortlet extends MVCPortlet {
 			categoryId, parentCategoryId, vocabularyId, serviceContext);
 	}
 
+	public void setCategoryDisplayPageTemplate(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		long[] categoryIds = ParamUtil.getLongValues(
+			actionRequest, "categoryIds");
+
+		for (long categoryId : categoryIds) {
+			AssetCategory category = _assetCategoryLocalService.getCategory(
+				categoryId);
+
+			_assetDisplayPageEntryFormProcessor.process(
+				AssetCategory.class.getName(), category.getCategoryId(),
+				actionRequest);
+
+			category.setModifiedDate(new Date());
+
+			_assetCategoryLocalService.updateAssetCategory(category);
+		}
+
+		String redirect = ParamUtil.getString(actionRequest, "redirect");
+
+		actionRequest.setAttribute(WebKeys.REDIRECT, redirect);
+	}
+
 	@Activate
 	@Modified
 	protected void activate(Map<String, Object> properties) {
@@ -349,8 +377,9 @@ public class AssetCategoryAdminPortlet extends MVCPortlet {
 			AssetCategoriesAdminWebKeys.ASSET_CATEGORIES_ADMIN_CONFIGURATION,
 			_assetCategoriesAdminWebConfiguration);
 		renderRequest.setAttribute(
-			AssetCategoriesAdminWebKeys.LAYOUT_DISPLAY_PAGE_PROVIDER_TRACKER,
-			_layoutDisplayPageProviderTracker);
+			AssetCategoriesAdminWebKeys.
+				ASSET_DISPLAY_PAGE_FRIENDLY_URL_PROVIDER,
+			_assetDisplayPageFriendlyURLProvider);
 
 		super.doDispatch(renderRequest, renderResponse);
 	}
@@ -463,7 +492,8 @@ public class AssetCategoryAdminPortlet extends MVCPortlet {
 
 	@Override
 	protected boolean isSessionErrorException(Throwable throwable) {
-		if (throwable instanceof AssetCategoryNameException ||
+		if (throwable instanceof AssetCategoryLimitException ||
+			throwable instanceof AssetCategoryNameException ||
 			throwable instanceof CategoryPropertyKeyException ||
 			throwable instanceof CategoryPropertyValueException ||
 			throwable instanceof DuplicateCategoryException ||
@@ -499,6 +529,9 @@ public class AssetCategoryAdminPortlet extends MVCPortlet {
 		_assetCategoriesAdminWebConfiguration;
 
 	@Reference
+	private AssetCategoryLocalService _assetCategoryLocalService;
+
+	@Reference
 	private AssetCategoryPropertyLocalService
 		_assetCategoryPropertyLocalService;
 
@@ -510,10 +543,11 @@ public class AssetCategoryAdminPortlet extends MVCPortlet {
 		_assetDisplayPageEntryFormProcessor;
 
 	@Reference
-	private AssetVocabularyService _assetVocabularyService;
+	private AssetDisplayPageFriendlyURLProvider
+		_assetDisplayPageFriendlyURLProvider;
 
 	@Reference
-	private LayoutDisplayPageProviderTracker _layoutDisplayPageProviderTracker;
+	private AssetVocabularyService _assetVocabularyService;
 
 	@Reference
 	private Portal _portal;

@@ -27,8 +27,9 @@ import com.liferay.fragment.renderer.FragmentRendererController;
 import com.liferay.fragment.renderer.FragmentRendererTracker;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
 import com.liferay.frontend.token.definition.FrontendTokenDefinitionRegistry;
+import com.liferay.info.collection.provider.InfoCollectionProvider;
+import com.liferay.info.collection.provider.SingleFormVariationInfoCollectionProvider;
 import com.liferay.info.item.InfoItemServiceTracker;
-import com.liferay.info.list.provider.InfoListProvider;
 import com.liferay.info.list.provider.item.selector.criterion.InfoListProviderItemSelectorReturnType;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.InfoListItemSelectorReturnType;
@@ -41,7 +42,6 @@ import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructureRel;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalServiceUtil;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureRelLocalServiceUtil;
-import com.liferay.petra.reflect.GenericUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.comment.CommentManager;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -63,7 +63,6 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.segments.constants.SegmentsEntryConstants;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
@@ -74,22 +73,13 @@ import com.liferay.segments.service.SegmentsEntryServiceUtil;
 import com.liferay.segments.service.SegmentsExperienceLocalServiceUtil;
 import com.liferay.staging.StagingGroupHelper;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.portlet.PortletRequest;
@@ -152,7 +142,6 @@ public class ContentPageLayoutEditorDisplayContext
 			"addSegmentsExperienceURL",
 			getFragmentEntryActionURL(
 				"/layout_content_page_editor/add_segments_experience"));
-		configContext.put("availableLanguages", _getAvailableLanguages());
 		configContext.put(
 			"availableSegmentsEntries", _getAvailableSegmentsEntries());
 		configContext.put(
@@ -328,59 +317,6 @@ public class ContentPageLayoutEditorDisplayContext
 			));
 	}
 
-	private Map<String, Map<String, Object>> _getAvailableLanguages() {
-		Set<Locale> locales = LanguageUtil.getAvailableLocales(
-			themeDisplay.getSiteGroupId());
-
-		Stream<Locale> stream = locales.stream();
-
-		return stream.map(
-			locale -> new AbstractMap.SimpleEntry<String, Map<String, Object>>(
-				LocaleUtil.toLanguageId(locale),
-				HashMapBuilder.<String, Object>put(
-					"default",
-					Objects.equals(LocaleUtil.getSiteDefault(), locale)
-				).put(
-					"displayName",
-					locale.getDisplayName(themeDisplay.getLocale())
-				).put(
-					"languageIcon",
-					StringUtil.toLowerCase(LocaleUtil.toW3cLanguageId(locale))
-				).put(
-					"languageId", LocaleUtil.toLanguageId(locale)
-				).put(
-					"w3cLanguageId", LocaleUtil.toW3cLanguageId(locale)
-				).build())
-		).sorted(
-			(Comparator<Map.Entry<String, Map<String, Object>>>)
-				(entry1, entry2) -> {
-					Map<String, Object> value1 = entry1.getValue();
-
-					if ((boolean)value1.get("default")) {
-						return -1;
-					}
-
-					Map<String, Object> value2 = entry2.getValue();
-
-					if ((boolean)value2.get("default")) {
-						return 1;
-					}
-
-					String displayName1 = String.valueOf(
-						value1.get("displayName"));
-
-					String displayName2 = String.valueOf(
-						value2.get("displayName"));
-
-					return displayName1.compareToIgnoreCase(displayName2);
-				}
-		).collect(
-			Collectors.toMap(
-				Map.Entry::getKey, Map.Entry::getValue,
-				(oldValue, newValue) -> oldValue, LinkedHashMap::new)
-		);
-	}
-
 	private Map<String, Object> _getAvailableSegmentsEntries() {
 		Map<String, Object> availableSegmentsEntries = new HashMap<>();
 
@@ -412,24 +348,6 @@ public class ContentPageLayoutEditorDisplayContext
 		return availableSegmentsEntries;
 	}
 
-	private String _getClassName(InfoListProvider<?> infoListProvider) {
-		Class<?> clazz = infoListProvider.getClass();
-
-		Type[] genericInterfaceTypes = clazz.getGenericInterfaces();
-
-		for (Type genericInterfaceType : genericInterfaceTypes) {
-			ParameterizedType parameterizedType =
-				(ParameterizedType)genericInterfaceType;
-
-			Class<?> typeClazz =
-				(Class<?>)parameterizedType.getActualTypeArguments()[0];
-
-			return typeClazz.getName();
-		}
-
-		return StringPool.BLANK;
-	}
-
 	private String _getEditSegmentsEntryURL() throws Exception {
 		if (_editSegmentsEntryURL != null) {
 			return _editSegmentsEntryURL;
@@ -451,30 +369,34 @@ public class ContentPageLayoutEditorDisplayContext
 		return _editSegmentsEntryURL;
 	}
 
-	private InfoListProvider<?> _getInfoListProvider(String collectionPK) {
-		List<InfoListProvider<?>> infoListProviders =
-			(List<InfoListProvider<?>>)
+	private InfoCollectionProvider<?> _getInfoCollectionProvider(
+		String collectionPK) {
+
+		List<InfoCollectionProvider<?>> infoCollectionProviders =
+			(List<InfoCollectionProvider<?>>)
 				(List<?>)infoItemServiceTracker.getAllInfoItemServices(
-					InfoListProvider.class);
+					InfoCollectionProvider.class);
 
-		Stream<InfoListProvider<?>> stream = infoListProviders.stream();
+		Stream<InfoCollectionProvider<?>> stream =
+			infoCollectionProviders.stream();
 
-		Optional<InfoListProvider<?>> infoListProviderOptional = stream.filter(
-			infoListProvider -> Objects.equals(
-				infoListProvider.getKey(), collectionPK)
-		).findFirst();
+		Optional<InfoCollectionProvider<?>> infoCollectionProviderOptional =
+			stream.filter(
+				infoCollectionProvider -> Objects.equals(
+					infoCollectionProvider.getKey(), collectionPK)
+			).findFirst();
 
-		if (infoListProviderOptional.isPresent()) {
-			return infoListProviderOptional.get();
+		if (infoCollectionProviderOptional.isPresent()) {
+			return infoCollectionProviderOptional.get();
 		}
 
 		return null;
 	}
 
-	private String _getInfoListProviderItemTypeLabel(
-		InfoListProvider<?> infoListProvider) {
+	private String _getInfoCollectionProviderItemTypeLabel(
+		InfoCollectionProvider<?> infoCollectionProvider) {
 
-		String className = _getClassName(infoListProvider);
+		String className = infoCollectionProvider.getCollectionItemClassName();
 
 		if (Objects.equals(className, AssetEntry.class.getName())) {
 			return LanguageUtil.get(httpServletRequest, "multiple-item-types");
@@ -488,16 +410,34 @@ public class ContentPageLayoutEditorDisplayContext
 		return StringPool.BLANK;
 	}
 
-	private JSONArray _getInfoListProviderLinkedCollectionJSONArray(
-		InfoListProvider<?> infoListProvider) {
+	private JSONArray _getInfoCollectionProviderLinkedCollectionJSONArray(
+		InfoCollectionProvider<?> infoCollectionProvider) {
 
 		return JSONUtil.put(
 			JSONUtil.put(
-				"itemType", GenericUtil.getGenericClassName(infoListProvider)
+				"itemSubtype",
+				() -> {
+					if (infoCollectionProvider instanceof
+							SingleFormVariationInfoCollectionProvider) {
+
+						SingleFormVariationInfoCollectionProvider<?>
+							singleFormVariationInfoCollectionProvider =
+								(SingleFormVariationInfoCollectionProvider<?>)
+									infoCollectionProvider;
+
+						return singleFormVariationInfoCollectionProvider.
+							getFormVariationKey();
+					}
+
+					return null;
+				}
 			).put(
-				"key", infoListProvider.getKey()
+				"itemType", infoCollectionProvider.getCollectionItemClassName()
 			).put(
-				"title", infoListProvider.getLabel(LocaleUtil.getDefault())
+				"key", infoCollectionProvider.getKey()
+			).put(
+				"title",
+				infoCollectionProvider.getLabel(LocaleUtil.getDefault())
 			).put(
 				"type", InfoListProviderItemSelectorReturnType.class.getName()
 			));
@@ -580,16 +520,16 @@ public class ContentPageLayoutEditorDisplayContext
 				collectionType,
 				InfoListProviderItemSelectorReturnType.class.getName())) {
 
-			InfoListProvider<?> infoListProvider = _getInfoListProvider(
-				collectionPK);
+			InfoCollectionProvider<?> infoCollectionProvider =
+				_getInfoCollectionProvider(collectionPK);
 
-			if (infoListProvider != null) {
-				itemTypeLabel = _getInfoListProviderItemTypeLabel(
-					infoListProvider);
+			if (infoCollectionProvider != null) {
+				itemTypeLabel = _getInfoCollectionProviderItemTypeLabel(
+					infoCollectionProvider);
 				linkedCollectionJSONArray =
-					_getInfoListProviderLinkedCollectionJSONArray(
-						infoListProvider);
-				subtypeLabel = infoListProvider.getLabel(
+					_getInfoCollectionProviderLinkedCollectionJSONArray(
+						infoCollectionProvider);
+				subtypeLabel = infoCollectionProvider.getLabel(
 					themeDisplay.getLocale());
 			}
 

@@ -30,9 +30,15 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 @DDMForm(
 	rules = {
 		@DDMFormRule(
+			actions = "setValue('required', isRequiredObjectField(getValue('objectFieldName')))",
+			condition = "hasObjectField(getValue('objectFieldName'))"
+		),
+		@DDMFormRule(
 			actions = {
+				"setEnabled('required', not(hasObjectField(getValue('objectFieldName'))))",
 				"setVisible('dataType', FALSE)",
-				"setVisible('requiredErrorMessage', false)"
+				"setVisible('requiredDescription', getValue('required'))",
+				"setVisible('requiredErrorMessage', getValue('required'))"
 			},
 			condition = "TRUE"
 		)
@@ -50,7 +56,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"label", "tip", "required",
-								"requiredErrorMessage"
+								"requiredDescription", "requiredErrorMessage"
 							}
 						)
 					}
@@ -66,9 +72,10 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"name", "fieldReference", "predefinedValue",
-								"visibilityExpression", "fieldNamespace",
-								"indexType", "localizable", "readOnly",
-								"dataType", "type", "showLabel", "repeatable"
+								"objectFieldName", "visibilityExpression",
+								"fieldNamespace", "indexType", "localizable",
+								"readOnly", "dataType", "type", "showLabel",
+								"repeatable"
 							}
 						)
 					}
@@ -97,5 +104,15 @@ public interface ImageDDMFormFieldTypeSettings
 	)
 	@Override
 	public LocalizedValue predefinedValue();
+
+	@DDMFormField(
+		label = "%required-description", predefinedValue = "true",
+		properties = {
+			"showAsSwitcher=true",
+			"tooltip=%an-image-description-will-be-required",
+			"visualProperty=true"
+		}
+	)
+	public boolean requiredDescription();
 
 }

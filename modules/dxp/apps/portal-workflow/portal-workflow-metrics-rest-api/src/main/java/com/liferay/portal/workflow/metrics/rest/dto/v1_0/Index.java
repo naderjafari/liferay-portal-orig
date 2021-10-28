@@ -55,6 +55,10 @@ public class Index implements Serializable {
 		return ObjectMapperUtil.readValue(Index.class, json);
 	}
 
+	public static Index unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(Index.class, json);
+	}
+
 	@Schema
 	@Valid
 	public Group getGroup() {
@@ -233,13 +237,17 @@ public class Index implements Serializable {
 
 		@JsonCreator
 		public static Group create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (Group group : values()) {
 				if (Objects.equals(group.getValue(), value)) {
 					return group;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

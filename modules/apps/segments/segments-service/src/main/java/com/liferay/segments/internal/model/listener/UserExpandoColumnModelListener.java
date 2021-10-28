@@ -112,7 +112,8 @@ public class UserExpandoColumnModelListener
 	}
 
 	@Override
-	public void onAfterUpdate(ExpandoColumn expandoColumn)
+	public void onAfterUpdate(
+			ExpandoColumn originalExpandoColumn, ExpandoColumn expandoColumn)
 		throws ModelListenerException {
 
 		if (expandoColumn == null) {
@@ -278,11 +279,8 @@ public class UserExpandoColumnModelListener
 		ExpandoTable expandoTable = _expandoTableLocalService.getTable(
 			expandoColumn.getTableId());
 
-		if (expandoTable.getClassNameId() != userClassNameId) {
-			return false;
-		}
-
-		if (!ExpandoTableConstants.DEFAULT_TABLE_NAME.equals(
+		if ((expandoTable.getClassNameId() != userClassNameId) ||
+			!ExpandoTableConstants.DEFAULT_TABLE_NAME.equals(
 				expandoTable.getName())) {
 
 			return false;

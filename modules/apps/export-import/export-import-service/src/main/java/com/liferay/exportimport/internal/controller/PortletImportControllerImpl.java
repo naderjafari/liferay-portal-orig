@@ -24,6 +24,7 @@ import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
 import com.liferay.expando.kernel.service.ExpandoTableLocalService;
 import com.liferay.expando.kernel.util.ExpandoConverterUtil;
 import com.liferay.exportimport.changeset.constants.ChangesetPortletKeys;
+import com.liferay.exportimport.configuration.ExportImportServiceConfiguration;
 import com.liferay.exportimport.constants.ExportImportConstants;
 import com.liferay.exportimport.controller.PortletImportController;
 import com.liferay.exportimport.internal.lar.DeletionSystemEventImporter;
@@ -53,6 +54,7 @@ import com.liferay.exportimport.kernel.lifecycle.ExportImportLifecycleManager;
 import com.liferay.exportimport.kernel.lifecycle.constants.ExportImportLifecycleConstants;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.staging.MergeLayoutPrototypesThreadLocal;
+import com.liferay.exportimport.kernel.staging.Staging;
 import com.liferay.exportimport.lar.PermissionImporter;
 import com.liferay.exportimport.portlet.data.handler.provider.PortletDataHandlerProvider;
 import com.liferay.exportimport.portlet.preferences.processor.Capability;
@@ -65,6 +67,7 @@ import com.liferay.portal.kernel.exception.LocaleException;
 import com.liferay.portal.kernel.exception.NoSuchPortletPreferencesException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.PortletIdException;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.lock.Lock;
 import com.liferay.portal.kernel.log.Log;
@@ -77,12 +80,14 @@ import com.liferay.portal.kernel.model.PortletItem;
 import com.liferay.portal.kernel.model.PortletPreferences;
 import com.liferay.portal.kernel.model.PortletPreferencesIds;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.plugin.Version;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactory;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.PortletItemLocalService;
@@ -372,14 +377,12 @@ public class PortletImportControllerImpl implements PortletImportController {
 			portletDataHandler.isDataPortletInstanceLevel()) {
 
 			if (_log.isDebugEnabled()) {
-				StringBundler sb = new StringBundler(4);
-
-				sb.append("Do not import portlet data for portlet ");
-				sb.append(portletDataContext.getPortletId());
-				sb.append(" because the portlet does not have a portlet data ");
-				sb.append("handler");
-
-				_log.debug(sb.toString());
+				_log.debug(
+					StringBundler.concat(
+						"Do not import portlet data for portlet ",
+						portletDataContext.getPortletId(),
+						" because the portlet does not have a portlet data ",
+						"handler"));
 			}
 
 			return null;
@@ -827,7 +830,25 @@ public class PortletImportControllerImpl implements PortletImportController {
 				missingReferences.getDependencyMissingReferences();
 
 			if (!dependencyMissingReferences.isEmpty()) {
-				throw new MissingReferenceException(missingReferences);
+				if (isValidateMissingReferences()) {
+					throw new MissingReferenceException(missingReferences);
+				}
+
+				if (_log.isWarnEnabled()) {
+					try {
+						JSONArray errorMessagesJSONArray =
+							_staging.getErrorMessagesJSONArray(
+								LocaleUtil.getDefault(),
+								dependencyMissingReferences);
+
+						_log.warn(
+							"Missing reference validation errors ignored: " +
+								errorMessagesJSONArray);
+					}
+					catch (Exception exception) {
+						_log.warn(exception, exception);
+					}
+				}
 			}
 
 			return missingReferences;
@@ -867,14 +888,12 @@ public class PortletImportControllerImpl implements PortletImportController {
 
 		if (portletDataHandler == null) {
 			if (_log.isDebugEnabled()) {
-				StringBundler sb = new StringBundler(4);
-
-				sb.append("Do not delete portlet data for portlet ");
-				sb.append(portletDataContext.getPortletId());
-				sb.append(" because the portlet does not have a ");
-				sb.append("PortletDataHandler");
-
-				_log.debug(sb.toString());
+				_log.debug(
+					StringBundler.concat(
+						"Do not delete portlet data for portlet ",
+						portletDataContext.getPortletId(),
+						" because the portlet does not have a ",
+						"PortletDataHandler"));
 			}
 
 			return null;
@@ -1059,6 +1078,18 @@ public class PortletImportControllerImpl implements PortletImportController {
 				_log.debug("Importing portlet permissions");
 			}
 
+			PortletDataHandler portletDataHandler =
+				_portletDataHandlerProvider.provide(
+					portletDataContext.getCompanyId(),
+					portletDataContext.getPortletId());
+
+			if ((portletDataHandler != null) &&
+				Validator.isNotNull(portletDataHandler.getResourceName())) {
+
+				portletDataContext.importPortletPermissions(
+					portletDataHandler.getResourceName());
+			}
+
 			_permissionImporter.importPortletPermissions(
 				portletDataContext.getCompanyId(),
 				portletDataContext.getGroupId(), userId, layout, portletElement,
@@ -1224,6 +1255,22 @@ public class PortletImportControllerImpl implements PortletImportController {
 			PROCESS_FLAG_PORTLET_IMPORT_IN_PROCESS;
 	}
 
+	protected boolean isValidateMissingReferences() {
+		try {
+			ExportImportServiceConfiguration configuration =
+				_configurationProvider.getCompanyConfiguration(
+					ExportImportServiceConfiguration.class,
+					CompanyThreadLocal.getCompanyId());
+
+			return configuration.validateMissingReferences();
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+		}
+
+		return true;
+	}
+
 	protected void populateDeletionStagedModelTypes(
 			PortletDataContext portletDataContext)
 		throws Exception {
@@ -1255,6 +1302,13 @@ public class PortletImportControllerImpl implements PortletImportController {
 		AssetLinkLocalService assetLinkLocalService) {
 
 		_assetLinkLocalService = assetLinkLocalService;
+	}
+
+	@Reference(unbind = "-")
+	protected void setConfigurationProvider(
+		ConfigurationProvider configurationProvider) {
+
+		_configurationProvider = configurationProvider;
 	}
 
 	@Reference(unbind = "-")
@@ -1529,6 +1583,7 @@ public class PortletImportControllerImpl implements PortletImportController {
 
 	private AssetEntryLocalService _assetEntryLocalService;
 	private AssetLinkLocalService _assetLinkLocalService;
+	private ConfigurationProvider _configurationProvider;
 	private final DeletionSystemEventImporter _deletionSystemEventImporter =
 		DeletionSystemEventImporter.getInstance();
 	private ExpandoColumnLocalService _expandoColumnLocalService;
@@ -1566,6 +1621,10 @@ public class PortletImportControllerImpl implements PortletImportController {
 	private PortletPreferencesFactory _portletPreferencesFactory;
 
 	private PortletPreferencesLocalService _portletPreferencesLocalService;
+
+	@Reference
+	private Staging _staging;
+
 	private UserLocalService _userLocalService;
 
 }

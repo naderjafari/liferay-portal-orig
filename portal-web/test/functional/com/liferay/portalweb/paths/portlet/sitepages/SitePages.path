@@ -2,15 +2,22 @@
 <head>
 <title>SitePages</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">SitePages</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>SITE_NAME</td>
 	<td>//span[contains(@class,'site-name') and contains(.,'${key_siteName}')] | //div[contains(@class,'site-name') and contains(.,'${key_siteName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_PENDING_STATUS</td>
+	<td>//span[contains(text(),'Pending')]</td>
 	<td></td>
 </tr>
 <tr>

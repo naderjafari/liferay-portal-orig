@@ -14,18 +14,19 @@
 
 package com.liferay.portal.kernel.deploy.auto;
 
+import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
+import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.deploy.auto.context.AutoDeploymentContext;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.registry.collections.ServiceTrackerCollections;
-import com.liferay.registry.collections.ServiceTrackerList;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,12 +57,7 @@ public class AutoDeployDir {
 		throws AutoDeployException {
 
 		if (_serviceTrackerList != null) {
-			Iterator<AutoDeployListener> iterator =
-				_serviceTrackerList.iterator();
-
-			while (iterator.hasNext()) {
-				AutoDeployListener autoDeployListener = iterator.next();
-
+			for (AutoDeployListener autoDeployListener : _serviceTrackerList) {
 				if (autoDeployListener.isDeployable(autoDeploymentContext)) {
 					autoDeployListener.deploy(autoDeploymentContext);
 
@@ -149,8 +145,6 @@ public class AutoDeployDir {
 		_interval = interval;
 
 		_autoDeployListeners = new CopyOnWriteArrayList<>(autoDeployListeners);
-
-		_blacklistFileTimestamps = new HashMap<>();
 	}
 
 	public File getDeployDir() {
@@ -376,13 +370,13 @@ public class AutoDeployDir {
 
 	private static AutoDeployScanner _autoDeployScanner;
 	private static final ServiceTrackerList<AutoDeployListener>
-		_serviceTrackerList = ServiceTrackerCollections.openList(
-			AutoDeployListener.class);
+		_serviceTrackerList = ServiceTrackerListFactory.open(
+			SystemBundleUtil.getBundleContext(), AutoDeployListener.class);
 	private static final Pattern _versionPattern = Pattern.compile(
 		"-[\\d]+((\\.[\\d]+)+(-.+)*)\\.war$");
 
 	private final List<AutoDeployListener> _autoDeployListeners;
-	private final Map<String, Long> _blacklistFileTimestamps;
+	private final Map<String, Long> _blacklistFileTimestamps = new HashMap<>();
 	private final File _deployDir;
 	private final File _destDir;
 	private final long _interval;

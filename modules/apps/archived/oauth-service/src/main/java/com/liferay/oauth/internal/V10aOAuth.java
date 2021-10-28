@@ -492,28 +492,18 @@ public class V10aOAuth implements IdentifiableOSGiService, OAuth {
 		}
 
 		private void _logDebug(String method, Serializable key, Object value) {
-			if (!_log.isDebugEnabled()) {
-				return;
-			}
-
-			if (!(value instanceof OAuthAccessor)) {
+			if (!_log.isDebugEnabled() || !(value instanceof OAuthAccessor)) {
 				return;
 			}
 
 			OAuthAccessor oAuthAccessor = (OAuthAccessor)value;
 
-			StringBundler sb = new StringBundler(7);
-
-			sb.append(method);
-			sb.append("  ");
-			sb.append(key);
-			sb.append(":");
-			sb.append(oAuthAccessor.getRequestToken());
-			sb.append(":");
-			sb.append(
-				oAuthAccessor.getProperty(OAuthAccessorConstants.AUTHORIZED));
-
-			_log.debug(sb.toString());
+			_log.debug(
+				StringBundler.concat(
+					method, "  ", key, ":", oAuthAccessor.getRequestToken(),
+					":",
+					oAuthAccessor.getProperty(
+						OAuthAccessorConstants.AUTHORIZED)));
 		}
 
 	}

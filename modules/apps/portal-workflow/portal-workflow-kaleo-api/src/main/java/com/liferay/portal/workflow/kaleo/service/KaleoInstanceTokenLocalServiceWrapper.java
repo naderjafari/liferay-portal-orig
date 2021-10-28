@@ -354,6 +354,15 @@ public class KaleoInstanceTokenLocalServiceWrapper
 	@Override
 	public java.util.List
 		<com.liferay.portal.workflow.kaleo.model.KaleoInstanceToken>
+			getKaleoInstanceTokens(long kaleoInstanceId) {
+
+		return _kaleoInstanceTokenLocalService.getKaleoInstanceTokens(
+			kaleoInstanceId);
+	}
+
+	@Override
+	public java.util.List
+		<com.liferay.portal.workflow.kaleo.model.KaleoInstanceToken>
 			getKaleoInstanceTokens(
 				long parentKaleoInstanceTokenId, java.util.Date completionDate,
 				com.liferay.portal.kernel.service.ServiceContext
@@ -440,14 +449,15 @@ public class KaleoInstanceTokenLocalServiceWrapper
 	public com.liferay.portal.kernel.search.Hits search(
 		Long userId, String assetClassName, String assetTitle,
 		String assetDescription, String currentKaleoNodeName,
-		String kaleoDefinitionName, Boolean completed, int start, int end,
+		String kaleoDefinitionName, Boolean completed,
+		boolean searchByActiveWorkflowHandlers, int start, int end,
 		com.liferay.portal.kernel.search.Sort[] sorts,
 		com.liferay.portal.kernel.service.ServiceContext serviceContext) {
 
 		return _kaleoInstanceTokenLocalService.search(
 			userId, assetClassName, assetTitle, assetDescription,
-			currentKaleoNodeName, kaleoDefinitionName, completed, start, end,
-			sorts, serviceContext);
+			currentKaleoNodeName, kaleoDefinitionName, completed,
+			searchByActiveWorkflowHandlers, start, end, sorts, serviceContext);
 	}
 
 	@Override
@@ -455,12 +465,13 @@ public class KaleoInstanceTokenLocalServiceWrapper
 		Long userId, String assetClassName, String assetTitle,
 		String assetDescription, String currentKaleoNodeName,
 		String kaleoDefinitionName, Boolean completed,
+		boolean searchByActiveWorkflowHandlers,
 		com.liferay.portal.kernel.service.ServiceContext serviceContext) {
 
 		return _kaleoInstanceTokenLocalService.searchCount(
 			userId, assetClassName, assetTitle, assetDescription,
 			currentKaleoNodeName, kaleoDefinitionName, completed,
-			serviceContext);
+			searchByActiveWorkflowHandlers, serviceContext);
 	}
 
 	/**

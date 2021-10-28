@@ -61,6 +61,10 @@ public class Account implements Serializable {
 		return ObjectMapperUtil.readValue(Account.class, json);
 	}
 
+	public static Account unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(Account.class, json);
+	}
+
 	@Schema
 	@Valid
 	public AccountAddress[] getAccountAddresses() {
@@ -152,6 +156,34 @@ public class Account implements Serializable {
 	@GraphQLField
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected AccountOrganization[] accountOrganizations;
+
+	@Schema
+	public Boolean getActive() {
+		return active;
+	}
+
+	public void setActive(Boolean active) {
+		this.active = active;
+	}
+
+	@JsonIgnore
+	public void setActive(
+		UnsafeSupplier<Boolean, Exception> activeUnsafeSupplier) {
+
+		try {
+			active = activeUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean active;
 
 	@Schema
 	@Valid
@@ -642,6 +674,16 @@ public class Account implements Serializable {
 			}
 
 			sb.append("]");
+		}
+
+		if (active != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"active\": ");
+
+			sb.append(active);
 		}
 
 		if (customFields != null) {

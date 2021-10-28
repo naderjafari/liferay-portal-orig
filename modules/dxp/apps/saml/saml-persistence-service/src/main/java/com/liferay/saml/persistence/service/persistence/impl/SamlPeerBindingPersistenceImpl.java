@@ -16,7 +16,6 @@ package com.liferay.saml.persistence.service.persistence.impl;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
-import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -27,14 +26,15 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.saml.persistence.exception.NoSuchPeerBindingException;
 import com.liferay.saml.persistence.model.SamlPeerBinding;
@@ -53,12 +53,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -1043,6 +1040,8 @@ public class SamlPeerBindingPersistenceImpl
 			samlPeerBinding);
 	}
 
+	private int _valueObjectFinderCacheListThreshold;
+
 	/**
 	 * Caches the saml peer bindings in the entity cache if it is enabled.
 	 *
@@ -1050,6 +1049,14 @@ public class SamlPeerBindingPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<SamlPeerBinding> samlPeerBindings) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (samlPeerBindings.size() >
+				 _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (SamlPeerBinding samlPeerBinding : samlPeerBindings) {
 			if (entityCache.getResult(
 					SamlPeerBindingImpl.class,
@@ -1231,12 +1238,12 @@ public class SamlPeerBindingPersistenceImpl
 		SamlPeerBindingModelImpl samlPeerBindingModelImpl =
 			(SamlPeerBindingModelImpl)samlPeerBinding;
 
-		ServiceContext serviceContext =
-			ServiceContextThreadLocal.getServiceContext();
-
-		Date date = new Date();
-
 		if (isNew && (samlPeerBinding.getCreateDate() == null)) {
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
+
+			Date date = new Date();
+
 			if (serviceContext == null) {
 				samlPeerBinding.setCreateDate(date);
 			}
@@ -1533,13 +1540,9 @@ public class SamlPeerBindingPersistenceImpl
 	 * Initializes the saml peer binding persistence.
 	 */
 	@Activate
-	public void activate(BundleContext bundleContext) {
-		_bundleContext = bundleContext;
-
-		_argumentsResolverServiceRegistration = _bundleContext.registerService(
-			ArgumentsResolver.class,
-			new SamlPeerBindingModelArgumentsResolver(),
-			new HashMapDictionary<>());
+	public void activate() {
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
@@ -1605,8 +1608,6 @@ public class SamlPeerBindingPersistenceImpl
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(SamlPeerBindingImpl.class.getName());
-
-		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -1634,8 +1635,6 @@ public class SamlPeerBindingPersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
-
-	private BundleContext _bundleContext;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -1671,96 +1670,8 @@ public class SamlPeerBindingPersistenceImpl
 		return finderCache;
 	}
 
-	private ServiceRegistration<ArgumentsResolver>
-		_argumentsResolverServiceRegistration;
-
-	private static class SamlPeerBindingModelArgumentsResolver
-		implements ArgumentsResolver {
-
-		@Override
-		public Object[] getArguments(
-			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
-			boolean original) {
-
-			String[] columnNames = finderPath.getColumnNames();
-
-			if ((columnNames == null) || (columnNames.length == 0)) {
-				if (baseModel.isNew()) {
-					return FINDER_ARGS_EMPTY;
-				}
-
-				return null;
-			}
-
-			SamlPeerBindingModelImpl samlPeerBindingModelImpl =
-				(SamlPeerBindingModelImpl)baseModel;
-
-			long columnBitmask = samlPeerBindingModelImpl.getColumnBitmask();
-
-			if (!checkColumn || (columnBitmask == 0)) {
-				return _getValue(
-					samlPeerBindingModelImpl, columnNames, original);
-			}
-
-			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
-				finderPath);
-
-			if (finderPathColumnBitmask == null) {
-				finderPathColumnBitmask = 0L;
-
-				for (String columnName : columnNames) {
-					finderPathColumnBitmask |=
-						samlPeerBindingModelImpl.getColumnBitmask(columnName);
-				}
-
-				_finderPathColumnBitmasksCache.put(
-					finderPath, finderPathColumnBitmask);
-			}
-
-			if ((columnBitmask & finderPathColumnBitmask) != 0) {
-				return _getValue(
-					samlPeerBindingModelImpl, columnNames, original);
-			}
-
-			return null;
-		}
-
-		@Override
-		public String getClassName() {
-			return SamlPeerBindingImpl.class.getName();
-		}
-
-		@Override
-		public String getTableName() {
-			return SamlPeerBindingTable.INSTANCE.getTableName();
-		}
-
-		private static Object[] _getValue(
-			SamlPeerBindingModelImpl samlPeerBindingModelImpl,
-			String[] columnNames, boolean original) {
-
-			Object[] arguments = new Object[columnNames.length];
-
-			for (int i = 0; i < arguments.length; i++) {
-				String columnName = columnNames[i];
-
-				if (original) {
-					arguments[i] =
-						samlPeerBindingModelImpl.getColumnOriginalValue(
-							columnName);
-				}
-				else {
-					arguments[i] = samlPeerBindingModelImpl.getColumnValue(
-						columnName);
-				}
-			}
-
-			return arguments;
-		}
-
-		private static final Map<FinderPath, Long>
-			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
-
-	}
+	@Reference
+	private SamlPeerBindingModelArgumentsResolver
+		_samlPeerBindingModelArgumentsResolver;
 
 }

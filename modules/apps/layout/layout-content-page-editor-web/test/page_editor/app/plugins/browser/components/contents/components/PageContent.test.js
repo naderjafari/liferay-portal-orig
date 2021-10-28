@@ -73,6 +73,19 @@ const contents = [
 		subtype: 'Collection',
 		title: 'Test Collection',
 	},
+	{
+		actions: {
+			editImage: {
+				editImageURL: '/editImageURL',
+				fileEntryId: '40571',
+				previewURL: '/previewURL',
+			},
+		},
+		classPK: '40571',
+		subtype: 'Basic Document',
+		title: 'image.png',
+		type: 'Document',
+	},
 ];
 
 const inlineText = {
@@ -80,9 +93,15 @@ const inlineText = {
 	title: 'Heading Example',
 };
 
-const renderPageContent = (props = contents[0], pageContents = contents) =>
+const renderPageContent = (props = contents[0]) =>
 	render(
-		<StoreContextProvider initialState={{pageContents}}>
+		<StoreContextProvider
+			initialState={{
+				layoutData: {items: {}},
+				pageContents: contents,
+				permissions: {UPDATE: true, UPDATE_LAYOUT_CONTENT: true},
+			}}
+		>
 			<PageContent {...props} />
 		</StoreContextProvider>
 	);
@@ -131,6 +150,19 @@ describe('PageContent', () => {
 		expect(
 			queryByText('Basic Web Content to be added')
 		).toBeInTheDocument();
+	});
+
+	it('open image editor modal when the Edit Image action is clicked', async () => {
+		const {baseElement, queryByText} = renderPageContent(contents[2]);
+
+		fireEvent.click(queryByText('open-actions-menu'));
+		fireEvent.click(queryByText('edit-image'));
+
+		await wait(() => {
+			expect(
+				baseElement.querySelector('.image-editor-modal')
+			).toBeInTheDocument();
+		});
 	});
 
 	it('shows the edit button if the content is inline text', () => {

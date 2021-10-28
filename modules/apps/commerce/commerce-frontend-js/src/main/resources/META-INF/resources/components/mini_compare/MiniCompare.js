@@ -89,7 +89,7 @@ function MiniCompare(props) {
 			};
 
 			updateItems((items) => {
-				const included = items.find((el) => el.id === id);
+				const included = items.find((element) => element.id === id);
 
 				toggleStatus(props.commerceChannelGroupId, id, !included);
 
@@ -112,14 +112,17 @@ function MiniCompare(props) {
 
 	useEffect(() => {
 		Liferay.fire(PRODUCT_COMPARISON_TOGGLED, {
-			disabled: items.length < props.itemsLimit,
+			disabled: items.length > props.itemsLimit,
 		});
 	}, [items, props.itemsLimit]);
 
 	return (
 		<ClayIconSpriteContext.Provider value={props.spritemap}>
 			<div
-				className={classnames('mini-compare', items.length && 'active')}
+				className={classnames(
+					'mini-compare',
+					!!items.length && 'active'
+				)}
 			>
 				{Array(props.itemsLimit)
 					.fill(null)
@@ -130,8 +133,8 @@ function MiniCompare(props) {
 							<Item
 								{...currentItem}
 								key={i}
-								onDelete={(e) => {
-									e.preventDefault();
+								onDelete={(event) => {
+									event.preventDefault();
 									updateItems(
 										items.filter(
 											(v) => v.id !== currentItem.id

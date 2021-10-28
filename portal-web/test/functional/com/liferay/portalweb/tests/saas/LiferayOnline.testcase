@@ -1,17 +1,18 @@
-@component-name = "portal-liferay-online"
+@component-name = "portal-lol"
 definition {
 
 	property database.types = "mysql";
 	property liferay.online.properties = "true";
 	property portal.release = "true";
-	property portal.upstream = "false";
-	property test.assert.warning.exceptions = "true";
-	property testray.main.component.name = "Liferay Online";
+	property portal.upstream = "true";
+	property testray.main.component.name = "LOL";
 
 	setUp {
 		TestCase.setUpPortalInstance();
 
-		SignIn.signInTestSetup();
+		User.firstLoginUI(
+			password = "test",
+			userEmailAddress = "test@liferay.com");
 	}
 
 	tearDown {
@@ -27,6 +28,33 @@ definition {
 		}
 	}
 
+	@description = "I can create a Virtual Instance with Default Initializer"
+	@ignore = "Test Stub"
+	@priority = "4"
+	test AddVirtualInstanceWithDefaultInitializer {
+
+		// TODO Create the automation about the LPS-135077.
+
+	}
+
+	@description = "I can create a New Virtual Instance with the initializer"
+	@ignore = "Test Stub"
+	@priority = "5"
+	test AddVirtualInstanceWithInitializer {
+
+		// TODO Create the automation about the LPS-135077.
+
+	}
+
+	@description = "Raylife initializer is not deployed and is not shown on inicializer list"
+	@ignore = "Test Stub"
+	@priority = "4"
+	test CannotSelectInitializerWithoutDeploy {
+
+		// TODO Create the automation about the LPS-135077.
+
+	}
+
 	@priority = "5"
 	test Smoke {
 		AssertConsoleTextPresent(value1 = "Stopping blacklisted bundle");
@@ -36,10 +64,10 @@ definition {
 			portalInstanceId = "www.able.com",
 			virtualHost = "www.able.com");
 
-		User.firstLoginPG(
+		User.firstLoginUI(
 			password = "test",
-			userEmailAddress = "test@liferay.com",
-			virtualHostsURL = "http://www.able.com:8080");
+			specificURL = "http://www.able.com:8080",
+			userEmailAddress = "test@liferay.com");
 
 		Smoke.viewWelcomeContentPage();
 

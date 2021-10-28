@@ -59,6 +59,10 @@ public class SLAResult implements Serializable {
 		return ObjectMapperUtil.readValue(SLAResult.class, json);
 	}
 
+	public static SLAResult unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(SLAResult.class, json);
+	}
+
 	@Schema
 	public Date getDateModified() {
 		return dateModified;
@@ -396,13 +400,17 @@ public class SLAResult implements Serializable {
 
 		@JsonCreator
 		public static Status create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (Status status : values()) {
 				if (Objects.equals(status.getValue(), value)) {
 					return status;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

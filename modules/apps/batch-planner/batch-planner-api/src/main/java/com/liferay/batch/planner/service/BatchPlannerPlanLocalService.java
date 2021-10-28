@@ -77,7 +77,9 @@ public interface BatchPlannerPlanLocalService
 		BatchPlannerPlan batchPlannerPlan);
 
 	public BatchPlannerPlan addBatchPlannerPlan(
-			long userId, String externalType, String name)
+			long userId, boolean export, String externalType,
+			String externalURL, String internalClassName, String name,
+			String taskItemDelegateName, boolean template)
 		throws PortalException;
 
 	/**
@@ -258,6 +260,10 @@ public interface BatchPlannerPlanLocalService
 	@Override
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
+		throws PortalException;
+
+	public BatchPlannerPlan updateActive(
+			long batchPlannerPlanId, boolean active)
 		throws PortalException;
 
 	/**

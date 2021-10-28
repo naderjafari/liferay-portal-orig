@@ -26,13 +26,11 @@ import com.liferay.portal.profile.PortalProfile;
 import com.liferay.portal.scheduler.quartz.internal.QuartzSchedulerEngine;
 import com.liferay.portal.scheduler.quartz.internal.QuartzSchemaManager;
 import com.liferay.portal.scheduler.quartz.internal.QuartzTriggerFactory;
-import com.liferay.portal.scheduler.quartz.internal.SchedulerLifecycleInitializer;
 import com.liferay.portal.scheduler.quartz.internal.messaging.proxy.QuartzSchedulerProxyMessageListener;
-import com.liferay.portal.scheduler.quartz.internal.upgrade.QuartzServiceUpgrade;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -50,10 +48,10 @@ public class ModulePortalProfile extends BaseDSModulePortalProfile {
 
 	@Activate
 	protected void activate(ComponentContext componentContext) {
-		Set<String> supportedPortalProfileNames = null;
+		List<String> supportedPortalProfileNames = null;
 
 		if (GetterUtil.getBoolean(_props.get(PropsKeys.SCHEDULER_ENABLED))) {
-			supportedPortalProfileNames = new HashSet<>();
+			supportedPortalProfileNames = new ArrayList<>();
 
 			supportedPortalProfileNames.add(
 				PortalProfile.PORTAL_PROFILE_NAME_CE);
@@ -61,7 +59,7 @@ public class ModulePortalProfile extends BaseDSModulePortalProfile {
 				PortalProfile.PORTAL_PROFILE_NAME_DXP);
 		}
 		else {
-			supportedPortalProfileNames = Collections.emptySet();
+			supportedPortalProfileNames = Collections.emptyList();
 
 			BundleContext bundleContext = componentContext.getBundleContext();
 
@@ -81,9 +79,7 @@ public class ModulePortalProfile extends BaseDSModulePortalProfile {
 			QuartzSchedulerEngine.class.getName(),
 			QuartzSchedulerProxyMessageListener.class.getName(),
 			QuartzSchemaManager.class.getName(),
-			QuartzServiceUpgrade.class.getName(),
-			QuartzTriggerFactory.class.getName(),
-			SchedulerLifecycleInitializer.class.getName());
+			QuartzTriggerFactory.class.getName());
 	}
 
 	@Deactivate

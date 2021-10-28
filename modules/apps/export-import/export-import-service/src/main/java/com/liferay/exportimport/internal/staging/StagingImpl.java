@@ -218,11 +218,7 @@ public class StagingImpl implements Staging {
 
 		Group group = _groupLocalService.fetchGroup(groupId);
 
-		if (group == null) {
-			return;
-		}
-
-		if (!_stagingGroupHelper.isStagingGroup(group)) {
+		if ((group == null) || !_stagingGroupHelper.isStagingGroup(group)) {
 			return;
 		}
 
@@ -1243,14 +1239,12 @@ public class StagingImpl implements Staging {
 			LayoutPrototypeException layoutPrototypeException =
 				(LayoutPrototypeException)exception;
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("the-lar-file-could-not-be-imported-because-it-");
-			sb.append("requires-page-templates-or-site-templates-that-could-");
-			sb.append("not-be-found.-please-import-the-following-templates-");
-			sb.append("manually");
-
-			errorMessage = LanguageUtil.get(resourceBundle, sb.toString());
+			errorMessage = LanguageUtil.get(
+				resourceBundle,
+				StringBundler.concat(
+					"the-lar-file-could-not-be-imported-because-it-requires-",
+					"page-templates-or-site-templates-that-could-not-be-",
+					"found.-please-import-the-following-templates-manually"));
 
 			errorMessagesJSONArray = JSONFactoryUtil.createJSONArray();
 
@@ -1258,26 +1252,16 @@ public class StagingImpl implements Staging {
 				layoutPrototypeException.getMissingLayoutPrototypes();
 
 			for (Tuple missingLayoutPrototype : missingLayoutPrototypes) {
-				String layoutPrototypeUuid =
-					(String)missingLayoutPrototype.getObject(1);
-
-				JSONObject errorMessageJSONObject = JSONUtil.put(
-					"info", layoutPrototypeUuid);
-
-				String layoutPrototypeName =
-					(String)missingLayoutPrototype.getObject(2);
-
-				errorMessageJSONObject.put("name", layoutPrototypeName);
-
-				String layoutPrototypeClassName =
-					(String)missingLayoutPrototype.getObject(0);
-
-				errorMessageJSONObject.put(
-					"type",
-					ResourceActionsUtil.getModelResource(
-						locale, layoutPrototypeClassName));
-
-				errorMessagesJSONArray.put(errorMessageJSONObject);
+				errorMessagesJSONArray.put(
+					JSONUtil.put(
+						"info", (String)missingLayoutPrototype.getObject(1)
+					).put(
+						"name", (String)missingLayoutPrototype.getObject(2)
+					).put(
+						"type",
+						ResourceActionsUtil.getModelResource(
+							locale, (String)missingLayoutPrototype.getObject(0))
+					));
 			}
 
 			errorType = ServletResponseConstants.SC_FILE_CUSTOM_EXCEPTION;
@@ -2005,31 +1989,36 @@ public class StagingImpl implements Staging {
 
 			MissingReference missingReference = entry.getValue();
 
-			Map<String, String> referrers = missingReference.getReferrers();
-
-			JSONObject errorMessageJSONObject =
-				JSONFactoryUtil.createJSONObject();
-
-			if (Validator.isNotNull(missingReference.getClassName())) {
-				errorMessageJSONObject.put(
+			warningMessagesJSONArray.put(
+				JSONUtil.put(
 					"info",
-					LanguageUtil.format(
-						locale,
-						"the-original-x-does-not-exist-in-the-current-" +
-							"environment",
-						ResourceActionsUtil.getModelResource(
-							locale, missingReference.getClassName()),
-						false));
-			}
+					() -> {
+						if (Validator.isNotNull(
+								missingReference.getClassName())) {
 
-			errorMessageJSONObject.put(
-				"size", referrers.size()
-			).put(
-				"type",
-				ResourceActionsUtil.getModelResource(locale, entry.getKey())
-			);
+							return LanguageUtil.format(
+								locale,
+								"the-original-x-does-not-exist-in-the-" +
+									"current-environment",
+								ResourceActionsUtil.getModelResource(
+									locale, missingReference.getClassName()),
+								false);
+						}
 
-			warningMessagesJSONArray.put(errorMessageJSONObject);
+						return null;
+					}
+				).put(
+					"size",
+					() -> {
+						Map<String, String> referrers =
+							missingReference.getReferrers();
+
+						return referrers.size();
+					}
+				).put(
+					"type",
+					ResourceActionsUtil.getModelResource(locale, entry.getKey())
+				));
 		}
 
 		return warningMessagesJSONArray;
@@ -3596,16 +3585,24 @@ public class StagingImpl implements Staging {
 			return 0;
 		}
 
+		long layoutBranchId = getRecentLayoutBranchId(
+			userId, layoutSetBranchId, plid);
+
 		RecentLayoutRevision recentLayoutRevision =
 			_recentLayoutRevisionLocalService.fetchRecentLayoutRevision(
 				userId, layoutSetBranchId, plid);
 
 		if (recentLayoutRevision != null) {
-			return recentLayoutRevision.getLayoutRevisionId();
-		}
+			LayoutRevision layoutRevision =
+				_layoutRevisionLocalService.fetchLayoutRevision(
+					recentLayoutRevision.getLayoutRevisionId());
 
-		long layoutBranchId = getRecentLayoutBranchId(
-			userId, layoutSetBranchId, plid);
+			if ((layoutRevision != null) &&
+				(layoutRevision.getLayoutBranchId() == layoutBranchId)) {
+
+				return layoutRevision.getLayoutRevisionId();
+			}
+		}
 
 		LayoutBranch layoutBranch = _layoutBranchLocalService.fetchLayoutBranch(
 			layoutBranchId);
@@ -4143,9 +4140,6 @@ public class StagingImpl implements Staging {
 	private WorkflowInstanceLinkLocalService _workflowInstanceLinkLocalService;
 
 	private class ScheduleInformation {
-
-		public ScheduleInformation() {
-		}
 
 		public String getCronText() {
 			return _cronText;

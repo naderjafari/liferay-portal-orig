@@ -32,21 +32,48 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 	rules = {
 		@DDMFormRule(
 			actions = {
-				"setValue('inputMask', FALSE)", "setVisible('inputMask', FALSE)"
+				"setVisible('inputMask', TRUE)",
+				"setVisible('repeatable', TRUE)",
+				"setVisible('requireConfirmation', TRUE)",
+				"setVisible('required', TRUE)", "setVisible('showLabel', TRUE)",
+				"setVisible('validation', TRUE)"
 			},
-			condition = "equals(getValue('dataType'), 'double')"
+			condition = "equals(getValue('hideField'), FALSE)"
+		),
+		@DDMFormRule(
+			actions = {
+				"setValue('inputMask', FALSE)", "setValue('repeatable', FALSE)",
+				"setValue('requireConfirmation', FALSE)",
+				"setValue('required', FALSE)", "setValue('showLabel', TRUE)",
+				"setVisible('inputMask', FALSE)",
+				"setVisible('repeatable', FALSE)",
+				"setVisible('requireConfirmation', FALSE)",
+				"setVisible('required', FALSE)",
+				"setVisible('showLabel', FALSE)",
+				"setVisible('validation', FALSE)"
+			},
+			condition = "equals(getValue('hideField'), TRUE)"
+		),
+		@DDMFormRule(
+			actions = "setValue('required', isRequiredObjectField(getValue('objectFieldName')))",
+			condition = "hasObjectField(getValue('objectFieldName'))"
 		),
 		@DDMFormRule(
 			actions = {
 				"setDataType('predefinedValue', getValue('dataType'))",
+				"setEnabled('required', not(hasObjectField(getValue('objectFieldName'))))",
+				"setPropertyValue('predefinedValue', 'inputMask', getValue('inputMask'))",
+				"setPropertyValue('predefinedValue', 'inputMaskFormat', getLocalizedValue('inputMaskFormat'))",
+				"setPropertyValue('predefinedValue', 'numericInputMask', getLocalizedValue('numericInputMask'))",
 				"setValidationDataType('validation', getValue('dataType'))",
 				"setValidationFieldName('validation', getValue('name'))",
-				"setVisible('characterOptions', getValue('inputMask'))",
+				"setVisible('characterOptions', equals(getValue('dataType'), 'integer') and equals(getValue('inputMask'), TRUE))",
 				"setVisible('confirmationErrorMessage', getValue('requireConfirmation'))",
 				"setVisible('confirmationLabel', getValue('requireConfirmation'))",
 				"setVisible('direction', getValue('requireConfirmation'))",
-				"setVisible('inputMaskFormat', getValue('inputMask'))",
-				"setVisible('requiredErrorMessage', false)",
+				"setVisible('inputMaskFormat', equals(getValue('dataType'), 'integer') and equals(getValue('inputMask'), TRUE))",
+				"setVisible('numericInputMask', equals(getValue('dataType'), 'double') and equals(getValue('inputMask'), TRUE))",
+				"setVisible('requiredErrorMessage', getValue('required'))",
 				"setVisible('tooltip', false)"
 			},
 			condition = "TRUE"
@@ -81,14 +108,16 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"name", "fieldReference", "predefinedValue",
-								"visibilityExpression", "fieldNamespace",
-								"indexType", "labelAtStructureLevel",
-								"localizable", "nativeField", "readOnly",
-								"type", "hideField", "showLabel", "repeatable",
+								"objectFieldName", "visibilityExpression",
+								"fieldNamespace", "indexType",
+								"labelAtStructureLevel", "localizable",
+								"nativeField", "readOnly", "type", "hideField",
+								"showLabel", "repeatable",
 								"requireConfirmation", "direction",
 								"confirmationLabel", "confirmationErrorMessage",
 								"validation", "tooltip", "inputMask",
-								"inputMaskFormat", "characterOptions"
+								"inputMaskFormat", "characterOptions",
+								"numericInputMask"
 							}
 						)
 					}
@@ -137,8 +166,7 @@ public interface NumericDDMFormFieldTypeSettings
 		properties = {
 			"showAsSwitcher=true",
 			"tooltip=%the-user-filling-the-form-will-not-be-able-to-see-this-field"
-		},
-		visibilityExpression = "FALSE"
+		}
 	)
 	public boolean hideField();
 
@@ -148,6 +176,7 @@ public interface NumericDDMFormFieldTypeSettings
 	@DDMFormField(
 		dataType = "string", label = "%format",
 		properties = {
+			"invalidCharacters=[1-8]",
 			"placeholder=%input-mask-format-placeholder",
 			"tooltip=%an-input-mask-helps-to-ensure-a-predefined-format"
 		},
@@ -158,6 +187,12 @@ public interface NumericDDMFormFieldTypeSettings
 		validationExpression = "match(inputMaskFormat, '^$|^(?=.*[09])([^1-8]+)$')"
 	)
 	public LocalizedValue inputMaskFormat();
+
+	@DDMFormField(
+		predefinedValue = "%{\"append\": \"\", \"appendType\": \"prefix\", \"decimalPlaces\": 2, \"symbols\": {\"decimalSymbol\": \".\", \"thousandsSeparator\": \"none\"}}",
+		type = "numeric_input_mask"
+	)
+	public LocalizedValue numericInputMask();
 
 	@DDMFormField(
 		dataType = "string", label = "%placeholder-text",

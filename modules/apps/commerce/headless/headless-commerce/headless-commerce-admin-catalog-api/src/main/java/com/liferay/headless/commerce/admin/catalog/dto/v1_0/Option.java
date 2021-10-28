@@ -59,6 +59,10 @@ public class Option implements Serializable {
 		return ObjectMapperUtil.readValue(Option.class, json);
 	}
 
+	public static Option unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(Option.class, json);
+	}
+
 	@Schema
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
@@ -639,13 +643,17 @@ public class Option implements Serializable {
 
 		@JsonCreator
 		public static FieldType create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (FieldType fieldType : values()) {
 				if (Objects.equals(fieldType.getValue(), value)) {
 					return fieldType;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

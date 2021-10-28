@@ -13,30 +13,31 @@
  */
 
 import {ClassicEditor} from 'frontend-editor-ckeditor-web';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef} from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
-import {useSyncValue} from '../hooks/useSyncValue.es';
 
 const RichText = ({
+	editable,
 	editingLanguageId,
 	editorConfig,
 	id,
 	name,
+	onBlur,
 	onChange,
-	predefinedValue,
+	onFocus,
+	predefinedValue = '',
 	readOnly,
 	value,
 	visible,
 	...otherProps
 }) => {
-	const [currentValue, setCurrentValue] = useSyncValue(
-		value ? value : predefinedValue
-	);
-
-	const [dirty, setDirty] = useState(false);
-
 	const editorRef = useRef();
+
+	const contents = useMemo(
+		() => (editable ? predefinedValue : value ?? predefinedValue),
+		[editable, predefinedValue, value]
+	);
 
 	useEffect(() => {
 		const editor = editorRef.current?.editor;
@@ -49,7 +50,7 @@ const RichText = ({
 
 			editor.setData(editor.getData());
 		}
-	}, [editingLanguageId, editorRef]);
+	}, [editingLanguageId]);
 
 	return (
 		<FieldBase
@@ -61,45 +62,26 @@ const RichText = ({
 			visible={visible}
 		>
 			<ClassicEditor
-				contents={currentValue}
-				data={currentValue}
+				contents={contents}
 				editorConfig={editorConfig}
 				name={name}
-				onChange={(data) => {
-					if (currentValue?.trim() !== data?.trim()) {
-						setCurrentValue(data);
-						setDirty(true);
-
-						onChange({}, data);
-					}
-					else if (!dirty) {
-						CKEDITOR.instances[name].resetUndo();
+				onBlur={onBlur}
+				onChange={(content) => {
+					if (contents !== content) {
+						onChange({target: {value: content}});
 					}
 				}}
-				onMode={({editor}) => {
-					if (editor.mode === 'source') {
-						editor.on('afterSetData', ({data}) => {
-							const {dataValue} = data;
-
-							setCurrentValue(dataValue);
-
-							onChange({}, dataValue);
-						});
-					}
-					else {
-						editor.removeListener('afterSetData');
+				onFocus={onFocus}
+				onSetData={({data: {dataValue: value}, editor: {mode}}) => {
+					if (mode === 'source') {
+						onChange({target: {value}});
 					}
 				}}
 				readOnly={readOnly}
 				ref={editorRef}
 			/>
 
-			<input
-				defaultValue={currentValue}
-				id={id || name}
-				name={name}
-				type="hidden"
-			/>
+			<input name={name} type="hidden" value={contents} />
 		</FieldBase>
 	);
 };

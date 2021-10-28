@@ -309,15 +309,9 @@ public class DDMDisplayContext {
 	}
 
 	public String getScopedStructureLabel() {
-		String scopeTitle = ParamUtil.getString(_renderRequest, "scopeTitle");
+		DDMDisplay ddmDisplay = getDDMDisplay();
 
-		if (Validator.isNull(scopeTitle)) {
-			DDMDisplay ddmDisplay = getDDMDisplay();
-
-			return ddmDisplay.getTitle(_ddmWebRequestHelper.getLocale());
-		}
-
-		return scopeTitle;
+		return ddmDisplay.getTitle(_ddmWebRequestHelper.getLocale());
 	}
 
 	public CreationMenu getSelectStructureCreationMenu()
@@ -339,7 +333,7 @@ public class DDMDisplayContext {
 					"eventName",
 					ParamUtil.getString(
 						_renderRequest, "eventName", "selectStructure")
-				).build();
+				).buildPortletURL();
 
 				dropdownItem.setHref(
 					_renderResponse.createRenderURL(), "mvcPath",
@@ -417,7 +411,7 @@ public class DDMDisplayContext {
 			"/view.jsp"
 		).setParameter(
 			"groupId", _ddmWebRequestHelper.getScopeGroupId()
-		).build();
+		).buildPortletURL();
 
 		return CreationMenuBuilder.addPrimaryDropdownItem(
 			getCreationMenuDropdownItem(
@@ -426,10 +420,10 @@ public class DDMDisplayContext {
 				).setMVCPath(
 					"/edit_structure.jsp"
 				).setRedirect(
-					redirectURL.toString()
+					redirectURL
 				).setParameter(
 					"groupId", _ddmWebRequestHelper.getScopeGroupId()
-				).build(),
+				).buildPortletURL(),
 				"add")
 		).build();
 	}
@@ -509,7 +503,7 @@ public class DDMDisplayContext {
 							"mode", getTemplateMode()
 						).setParameter(
 							"resourceClassNameId", getResourceClassNameId()
-						).build();
+						).buildPortletURL();
 
 					String message = "add";
 
@@ -561,7 +555,7 @@ public class DDMDisplayContext {
 							).setParameter(
 								"type",
 								DDMTemplateConstants.TEMPLATE_TYPE_DISPLAY
-							).build();
+							).buildPortletURL();
 
 						for (TemplateHandler templateHandler :
 								templateHandlers) {
@@ -834,8 +828,10 @@ public class DDMDisplayContext {
 			portletURL.setParameter("classNameId", String.valueOf(classNameId));
 		}
 
-		if (classNameId != 0) {
-			portletURL.setParameter("classPK", String.valueOf(getClassPK()));
+		long classPK = getClassPK();
+
+		if (classPK != 0) {
+			portletURL.setParameter("classPK", String.valueOf(classPK));
 		}
 
 		long resourceClassNameId = getResourceClassNameId();

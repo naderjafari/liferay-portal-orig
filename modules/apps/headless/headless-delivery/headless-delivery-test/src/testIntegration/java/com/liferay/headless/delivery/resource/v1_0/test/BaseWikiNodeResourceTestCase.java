@@ -37,7 +37,6 @@ import com.liferay.portal.kernel.json.JSONDeserializer;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -57,9 +56,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -209,14 +206,13 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 	@Test
 	public void testGetSiteWikiNodesPage() throws Exception {
-		Page<WikiNode> page = wikiNodeResource.getSiteWikiNodesPage(
-			testGetSiteWikiNodesPage_getSiteId(), RandomTestUtil.randomString(),
-			null, null, Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long siteId = testGetSiteWikiNodesPage_getSiteId();
 		Long irrelevantSiteId = testGetSiteWikiNodesPage_getIrrelevantSiteId();
+
+		Page<WikiNode> page = wikiNodeResource.getSiteWikiNodesPage(
+			siteId, null, null, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantSiteId != null) {
 			WikiNode irrelevantWikiNode = testGetSiteWikiNodesPage_addWikiNode(
@@ -240,7 +236,7 @@ public abstract class BaseWikiNodeResourceTestCase {
 			siteId, randomWikiNode());
 
 		page = wikiNodeResource.getSiteWikiNodesPage(
-			siteId, null, null, null, Pagination.of(1, 2), null);
+			siteId, null, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -382,7 +378,7 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -494,7 +490,7 @@ public abstract class BaseWikiNodeResourceTestCase {
 			new HashMap<String, Object>() {
 				{
 					put("page", 1);
-					put("pageSize", 2);
+					put("pageSize", 10);
 
 					put("siteKey", "\"" + siteId + "\"");
 				}
@@ -515,7 +511,7 @@ public abstract class BaseWikiNodeResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/wikiNodes");
 
-		Assert.assertEquals(2, wikiNodesJSONObject.get("totalCount"));
+		Assert.assertEquals(2, wikiNodesJSONObject.getLong("totalCount"));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(wikiNode1, wikiNode2),
@@ -686,6 +682,32 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 		assertEquals(randomWikiNode, getWikiNode);
 		assertValid(getWikiNode);
+
+		WikiNode newWikiNode =
+			testPutSiteWikiNodeByExternalReferenceCode_createWikiNode();
+
+		putWikiNode = wikiNodeResource.putSiteWikiNodeByExternalReferenceCode(
+			newWikiNode.getSiteId(), newWikiNode.getExternalReferenceCode(),
+			newWikiNode);
+
+		assertEquals(newWikiNode, putWikiNode);
+		assertValid(putWikiNode);
+
+		getWikiNode = wikiNodeResource.getSiteWikiNodeByExternalReferenceCode(
+			putWikiNode.getSiteId(), putWikiNode.getExternalReferenceCode());
+
+		assertEquals(newWikiNode, getWikiNode);
+
+		Assert.assertEquals(
+			newWikiNode.getExternalReferenceCode(),
+			putWikiNode.getExternalReferenceCode());
+	}
+
+	protected WikiNode
+			testPutSiteWikiNodeByExternalReferenceCode_createWikiNode()
+		throws Exception {
+
+		return randomWikiNode();
 	}
 
 	protected WikiNode testPutSiteWikiNodeByExternalReferenceCode_addWikiNode()
@@ -999,7 +1021,9 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 				Class<?> clazz = object.getClass();
 
-				for (Field field : getDeclaredFields(clazz.getSuperclass())) {
+				for (java.lang.reflect.Field field :
+						getDeclaredFields(clazz.getSuperclass())) {
+
 					arraySB.append(field.getName());
 					arraySB.append(": ");
 
@@ -1039,7 +1063,9 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 		StringBuilder sb = new StringBuilder("{");
 
-		for (Field field : getDeclaredFields(WikiNode.class)) {
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(WikiNode.class)) {
+
 			if (!ArrayUtil.contains(
 					getAdditionalAssertFieldNames(), field.getName())) {
 
@@ -1060,6 +1086,8 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 		List<GraphQLField> graphQLFields = getGraphQLFields();
 
+		graphQLFields.add(new GraphQLField("externalReferenceCode"));
+
 		graphQLFields.add(new GraphQLField("id"));
 
 		return jsonDeserializer.deserialize(
@@ -1078,6 +1106,21 @@ public abstract class BaseWikiNodeResourceTestCase {
 						graphQLFields)),
 				"JSONObject/data", "JSONObject/createSiteWikiNode"),
 			WikiNode.class);
+	}
+
+	protected void assertContains(WikiNode wikiNode, List<WikiNode> wikiNodes) {
+		boolean contains = false;
+
+		for (WikiNode item : wikiNodes) {
+			if (equals(wikiNode, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			wikiNodes + " does not contain " + wikiNode, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -1252,7 +1295,7 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.WikiNode.class)) {
 
@@ -1268,12 +1311,13 @@ public abstract class BaseWikiNodeResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1465,14 +1509,16 @@ public abstract class BaseWikiNodeResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1794,8 +1840,8 @@ public abstract class BaseWikiNodeResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseWikiNodeResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseWikiNodeResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

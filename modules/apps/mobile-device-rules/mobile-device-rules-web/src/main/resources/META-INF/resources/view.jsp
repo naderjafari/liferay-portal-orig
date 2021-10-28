@@ -25,8 +25,8 @@ String displayStyle = ParamUtil.getString(request, "displayStyle", "list");
 PortletURL portletURL = PortletURLBuilder.createRenderURL(
 	renderResponse
 ).setParameter(
-	"groupId", String.valueOf(groupId)
-).build();
+	"groupId", groupId
+).buildPortletURL();
 
 RuleGroupSearch ruleGroupSearch = new RuleGroupSearch(liferayPortletRequest, PortletURLUtil.clone(portletURL, renderResponse));
 
@@ -88,7 +88,7 @@ ruleGroupSearch.setResults(mdrRuleGroups);
 		PortletURLUtil.clone(portletURL, renderResponse)
 	).setParameter(
 		"displayStyle", displayStyle
-	).build();
+	).buildPortletURL();
 	%>
 
 	<liferay-frontend:management-bar-filters>

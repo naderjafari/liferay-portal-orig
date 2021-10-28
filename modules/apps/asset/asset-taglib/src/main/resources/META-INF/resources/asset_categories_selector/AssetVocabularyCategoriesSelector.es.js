@@ -46,21 +46,21 @@ function AssetVocabulariesCategoriesSelector({
 
 	const {refetch, resource} = useResource({
 		fetchOptions: {
-			body: new URLSearchParams({
+			'body': new URLSearchParams({
 				cmd: JSON.stringify({
 					'/assetcategory/search': {
 						'-obc': null,
-						end: 20,
+						'end': 20,
 						groupIds,
-						name: `%${inputValue.toLowerCase()}%`,
-						start: 0,
-						vocabularyIds: sourceItemsVocabularyIds,
+						'name': `%${inputValue.toLowerCase()}%`,
+						'start': 0,
+						'vocabularyIds': sourceItemsVocabularyIds,
 					},
 				}),
 				p_auth: Liferay.authToken,
 			}),
-			credentials: 'include',
-			method: 'POST',
+			'credentials': 'include',
+			'method': 'POST',
 			'x-csrf-token': Liferay.authToken,
 		},
 		link: `${window.location.origin}${themeDisplay.getPathContext()}
@@ -75,15 +75,15 @@ function AssetVocabulariesCategoriesSelector({
 		}
 	}, [inputValue, previousInputValue, refetch]);
 
-	const getUnique = (arr, property) => {
-		return arr
+	const getUnique = (array, property) => {
+		return array
 			.map((element) => element[property])
 			.map(
-				(element, index, array) =>
-					array.indexOf(element) === index && index
+				(element, index, initialArray) =>
+					initialArray.indexOf(element) === index && index
 			)
-			.filter((element) => arr[element])
-			.map((element) => arr[element]);
+			.filter((element) => array[element])
+			.map((element) => array[element]);
 	};
 
 	const handleItemsChange = (items) => {
@@ -132,7 +132,8 @@ function AssetVocabulariesCategoriesSelector({
 	};
 
 	const handleSelectButtonClick = () => {
-		const sub = (str, obj) => str.replace(/\{([^}]+)\}/g, (_, m) => obj[m]);
+		const sub = (str, object) =>
+			str.replace(/\{([^}]+)\}/g, (_, m) => object[m]);
 
 		const url = sub(decodeURIComponent(portletURL), {
 			selectedCategories: selectedItems.map((item) => item.value).join(),
@@ -142,6 +143,7 @@ function AssetVocabulariesCategoriesSelector({
 
 		openSelectionModal({
 			buttonAddLabel: Liferay.Language.get('done'),
+			iframeBodyCssClass: '',
 			multiple: true,
 			onSelect: (selectedItems) => {
 				if (selectedItems) {

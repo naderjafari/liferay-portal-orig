@@ -76,6 +76,22 @@ definition {
 			SiteSelector.selectSite(site = "${otherSite}");
 		}
 
+		if (isSet(depotName)) {
+			Click(locator1 = "Configuration#SCOPE_SELECT");
+
+			MenuItem.click(menuItem = "Other Site or Asset Library...");
+
+			SelectFrame(value1 = "relative=top");
+
+			SelectFrame(locator1 = "IFrame#SELECT_SITES");
+
+			Navigator.gotoNavTab(navTab = "Asset Libraries");
+
+			Click(
+				key_card = "${depotName}",
+				locator1 = "Card#CARD_TITLE");
+		}
+
 		if (isSet(defaultSite)) {
 			Click(locator1 = "Configuration#SCOPE_SELECT");
 
@@ -284,17 +300,31 @@ definition {
 
 		Panel.expandPanel(panel = "Asset Selection");
 
-		Click(locator1 = "APConfiguration#ASSET_SELECTION_INFO_LIST_PROVIDER");
+		Click(locator1 = "APConfiguration#ASSET_SELECTION_ASSET_LIST");
 
 		Alert.viewSuccessMessage();
 
-		Panel.expandPanel(panel = "Select Collection Provider");
+		Panel.expandPanel(panel = "Select Collection");
 
-		Select(
-			locator1 = "APConfiguration#SELECT_COLLECTION_PROVIDER_FIELD",
+		Alert.closeMessage(messageType = "SUCCESS");
+
+		Button.clickSelect();
+
+		WaitForElementPresent(locator1 = "IFrame#ASSET_LIST_DIALOG");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+
+		NavItem.click(navItem = "Collection Providers");
+
+		LexiconCard.clickCard(card = "${collectionProviderName}");
+
+		SelectFrameTop();
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+
+		AssertTextEquals(
+			locator1 = "APConfiguration#ASSET_SELECTION_ASSET_LIST_TITLE",
 			value1 = "${collectionProviderName}");
-
-		Pause(locator1 = "3000");
 
 		PortletEntry.save();
 
@@ -465,7 +495,7 @@ definition {
 			}
 		}
 
-		if (isSet(assetTitle)) {
+		if (isSet(assetTitle) || isSet(searchTerm)) {
 			Panel.expandPanel(panel = "Asset Entries");
 
 			if (isSet(depotName)) {
@@ -473,6 +503,7 @@ definition {
 					key_depotName = "${depotName}",
 					locator1 = "APConfiguration#ASSET_SELECTION_MANUAL_ASSET_ENTRIES_SELECT_IN_DEPOT");
 			}
+
 			else {
 				Click(locator1 = "APConfiguration#ASSET_SELECTION_MANUAL_ASSET_ENTRIES_SELECT_BUTTON");
 			}
@@ -487,30 +518,46 @@ definition {
 
 			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
-			var key_assetTitle = "${assetTitle}";
+			if (isSet(assetTitle)) {
+				var key_assetTitle = "${assetTitle}";
 
-			if (isSet(viewNoRelatedAsset)) {
-				AssertElementNotPresent(
-					key_rowEntry = "${assetTitle}",
-					locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
+				if (isSet(viewNoRelatedAsset)) {
+					AssertElementNotPresent(
+						key_rowEntry = "${assetTitle}",
+						locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
+				}
+
+				else {
+					WaitForElementPresent(
+						key_rowEntry = "${assetTitle}",
+						locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
+
+					Click(
+						key_rowEntry = "${assetTitle}",
+						locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
+				}
 			}
-			else {
-				WaitForElementPresent(
-					key_rowEntry = "${assetTitle}",
-					locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
 
-				Click(
-					key_rowEntry = "${assetTitle}",
-					locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
+			if (isSet(searchTerm)) {
+				Search.searchPG(
+					modal = "true",
+					portletName = "",
+					searchTerm = "${searchTerm}");
 
-				SelectFrameTop();
+				AssertTextEquals(
+					locator1 = "Search#SEARCH_INFO",
+					value1 = "${searchInfo}");
 
-				SelectFrame(locator1 = "IFrame#CONFIGURATION");
-
-				Button.clickAdd();
-
-				Alert.viewSuccessMessage();
+				PortletEntry.selectAll();
 			}
+
+			SelectFrameTop();
+
+			SelectFrame(locator1 = "IFrame#CONFIGURATION");
+
+			Button.clickAdd();
+
+			Alert.viewSuccessMessage();
 		}
 
 		SelectFrameTop();
@@ -810,6 +857,8 @@ definition {
 			value1 = "Enable RSS Subscription");
 
 		Check.checkToggleSwitch(locator1 = "APConfiguration#SUBSCRIPTIONS_ENABLE_RSS_SUBSCRIPTION");
+
+		PortletEntry.save();
 	}
 
 	macro enableUserSegementFilter {
@@ -935,11 +984,19 @@ definition {
 
 		Click(locator1 = "APConfiguration#ASSET_SELECTION_ASSET_LIST");
 
+		Alert.viewSuccessMessage();
+
 		Panel.expandPanel(panel = "Select Collection");
+
+		Alert.closeMessage(messageType = "SUCCESS");
 
 		Button.clickSelect();
 
-		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#ASSET_LIST_DIALOG");
+		WaitForElementPresent(locator1 = "IFrame#ASSET_LIST_DIALOG");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+
+		NavItem.click(navItem = "Collections");
 
 		if (isSet(depotName)) {
 			AssertClick(
@@ -966,15 +1023,13 @@ definition {
 
 		SelectFrameTop();
 
-		SelectFrame(locator1 = "IFrame#MODAL_BODY");
-
-		Pause(locator1 = "3000");
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 		AssertTextEquals(
 			locator1 = "APConfiguration#ASSET_SELECTION_ASSET_LIST_TITLE",
 			value1 = "${assetListName}");
 
-		Button.clickSave();
+		PortletEntry.save();
 
 		SelectFrameTop();
 	}
@@ -1021,13 +1076,13 @@ definition {
 	macro viewAssetNotPresentPG {
 		var key_assetTitle = "${assetTitle}";
 
-		AssertTextNotPresent(
-			locator1 = "AP#ASSET_ABSTRACT_TITLE",
-			value1 = "${assetTitle}");
+		AssertElementNotPresent(locator1 = "AP#ASSET_ABSTRACT_TITLE");
 
-		AssertTextNotPresent(
-			locator1 = "AP#ASSET_ABSTRACT_DESCRIPTION",
-			value1 = "${assetContent}");
+		if (isSet(assetContent)) {
+			AssertTextNotPresent(
+				locator1 = "AP#ASSET_ABSTRACT_DESCRIPTION",
+				value1 = "${assetContent}");
+		}
 	}
 
 	macro viewAssetOrderPG {
@@ -1046,13 +1101,22 @@ definition {
 	macro viewAssetPG {
 		var key_assetTitle = "${assetTitle}";
 
+		if (isSet(filteredByCategory)) {
+			AssertTextEquals.assertPartialText(
+				key_categoryName = "${categoryName}",
+				locator1 = "AP#CATEGORIES_FILTER_CATEGORY",
+				value1 = "${categoryName}");
+		}
+
 		AssertTextEquals(
 			locator1 = "AP#ASSET_ABSTRACT_TITLE",
 			value1 = "${assetTitle}");
 
-		AssertTextEquals.assertPartialText(
-			locator1 = "AP#ASSET_ABSTRACT_DESCRIPTION",
-			value1 = "${assetContent}");
+		if (isSet(assetContent)) {
+			AssertTextEquals.assertPartialText(
+				locator1 = "AP#ASSET_ABSTRACT_DESCRIPTION",
+				value1 = "${assetContent}");
+		}
 	}
 
 	macro viewAssetRelatedAssets {
@@ -1650,6 +1714,12 @@ definition {
 				locator1 = "AP#ASSET_ABSTRACT_TITLE",
 				value1 = "${nonTaggedAsset}");
 		}
+	}
+
+	macro viewVideoThumbnail {
+		AssertVisible(
+			key_thumbnailName = "${thumbnailName}",
+			locator1 = "AP#ASSET_ABSTRACT_DETAIL_EXTERNAL_VIDEO_THUMBNAIL");
 	}
 
 }

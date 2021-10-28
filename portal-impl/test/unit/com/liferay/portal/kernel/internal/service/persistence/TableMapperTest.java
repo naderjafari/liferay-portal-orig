@@ -1445,14 +1445,12 @@ public class TableMapperTest {
 	public void testReverseTableMapper() {
 		Class<?> clazz = TableMapper.class;
 
-		ClassLoader classLoader = clazz.getClassLoader();
-
 		RecordInvocationHandler recordInvocationHandler =
 			new RecordInvocationHandler();
 
 		TableMapper<Left, Right> tableMapper =
 			(TableMapper<Left, Right>)ProxyUtil.newProxyInstance(
-				classLoader, new Class<?>[] {TableMapper.class},
+				clazz.getClassLoader(), new Class<?>[] {TableMapper.class},
 				recordInvocationHandler);
 
 		ReverseTableMapper<Right, Left> reverseTableMapper =
@@ -2465,12 +2463,9 @@ public class TableMapperTest {
 					StringBundler.concat(
 						"DELETE FROM ", _TABLE_NAME, " WHERE ",
 						_RIGHT_COLUMN_NAME, " = ? AND ", _LEFT_COLUMN_NAME,
-						" = ?"))) {
+						" = ?")) ||
+				sql.contains("ctCollectionId")) {
 
-				return null;
-			}
-
-			if (sql.contains("ctCollectionId")) {
 				return null;
 			}
 

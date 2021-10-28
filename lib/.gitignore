@@ -37,6 +37,8 @@
 /development/jserrorcollector.jar
 /development/jsonassert.jar
 /development/jsp-api.jar
+/development/jstl-api.jar
+/development/jstl-impl.jar
 /development/junit.jar
 /development/mail.jar
 /development/mariadb.jar
@@ -48,6 +50,10 @@
 /development/ojdbc5.jar
 /development/ojdbc6.jar
 /development/osgi-annotation-versioning.jar
+/development/osgi-core.jar
+/development/osgi-service-cm.jar
+/development/osgi-service-component.jar
+/development/osgi-service-log.jar
 /development/p6spy.jar
 /development/portletmvc4spring-test.jar
 /development/postgresql.jar
@@ -58,10 +64,13 @@
 /development/powermock-module-junit4-common.jar
 /development/powermock-reflect.jar
 /development/qdox.jar
+/development/reflections.jar
 /development/saxpath.jar
 /development/sdk-addon-api-0.2.jar
 /development/servlet-api.jar
 /development/slf4j-simple.jar
+/development/sling-commons-osgi.jar
+/development/sling-testing-osgi-mock-core.jar
 /development/smtp.jar
 /development/spring-instrument.jar
 /development/spring-instrument-tomcat.jar
@@ -126,7 +135,6 @@
 /portal/crypt.jar
 /portal/curvesapi.jar
 /portal/daisydiff.jar
-/portal/displaytag.jar
 /portal/dom4j.jar
 /portal/eclipse-core-runtime.jar
 /portal/ecs.jar
@@ -142,6 +150,7 @@
 /portal/httpmime.jar
 /portal/ical4j.jar
 /portal/im4java.jar
+/portal/istack-commons-runtime.jar
 /portal/isoparser.jar
 /portal/jabsorb.jar
 /portal/jai-imageio-core.jar
@@ -157,7 +166,7 @@
 /portal/java-libpst.jar
 /portal/javassist.jar
 /portal/jaxb-api.jar
-/portal/jaxb-impl.jar
+/portal/jaxb-runtime.jar
 /portal/jaxen.jar
 /portal/jaxrpc.jar
 /portal/jaxrs-api.jar
@@ -168,7 +177,6 @@
 /portal/jcifs.jar
 /portal/jcl-over-slf4j.jar
 /portal/jcommon.jar
-/portal/jdom.jar
 /portal/jdom2.jar
 /portal/jempbox.jar
 /portal/jena.jar
@@ -186,8 +194,6 @@
 /portal/json-java.jar
 /portal/jrcs-diff.jar
 /portal/jsr107cache.jar
-/portal/jstl-api.jar
-/portal/jstl-impl.jar
 /portal/juh.jar
 /portal/juniversalchardet.jar
 /portal/jurt.jar
@@ -221,7 +227,6 @@
 /portal/rdffilter.jar
 /portal/rhino.jar
 /portal/rmi-api.jar
-/portal/rome.jar
 /portal/rometools-utils.jar
 /portal/rometools.jar
 /portal/saaj-api.jar

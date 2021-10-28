@@ -91,8 +91,8 @@ public class KBArticleURLHelper {
 		return PortletURLBuilder.create(
 			createViewURL(kbArticle)
 		).setParameter(
-			"expanded", Boolean.TRUE.toString()
-		).build();
+			"expanded", true
+		).buildPortletURL();
 	}
 
 	public PortletURL createViewWithRedirectURL(

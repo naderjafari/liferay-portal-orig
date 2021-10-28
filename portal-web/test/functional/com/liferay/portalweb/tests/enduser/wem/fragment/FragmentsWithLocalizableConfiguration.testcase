@@ -59,9 +59,7 @@ definition {
 		task ("Assert the fragment name is localized") {
 			PageEditor.clickConfigurableField(fragmentName = "Título");
 
-			AssertVisible(
-				key_fragmentName = "Título",
-				locator1 = "Fragment#FRAGMENT_HEADER");
+			PageEditor.viewFragmentHeaderVisible(fragmentName = "Título");
 		}
 
 		task ("Assert the field labels are localized") {
@@ -84,23 +82,15 @@ definition {
 					locator1 = "PageEditor#COMMON_STYLES_FIELDSET_LABEL");
 			}
 
-			AssertSelectedLabel(
-				key_fieldLabel = "Margen superior",
-				locator1 = "Select#GENERIC_SELECT_FIELD",
-				value1 = "0");
-
-			AssertSelectedLabel(
-				key_fieldLabel = "Relleno superior",
-				locator1 = "Select#GENERIC_SELECT_FIELD",
-				value1 = "0");
+			for (var fieldLabel : list "Margen,Relleno") {
+				AssertSelectedLabel(
+					key_fieldLabel = "${fieldLabel} superior",
+					locator1 = "Select#GENERIC_SELECT_FIELD",
+					value1 = "0");
+			}
 
 			AssertSelectedLabel(
 				key_fieldLabel = "Desbordamiento",
-				locator1 = "Select#GENERIC_SELECT_FIELD",
-				value1 = "Valor por defecto");
-
-			AssertSelectedLabel(
-				key_fieldLabel = "Familia de fuentes",
 				locator1 = "Select#GENERIC_SELECT_FIELD",
 				value1 = "Valor por defecto");
 

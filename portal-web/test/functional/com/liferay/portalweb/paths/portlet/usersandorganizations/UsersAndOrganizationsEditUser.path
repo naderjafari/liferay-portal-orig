@@ -2,11 +2,13 @@
 <head>
 <title>UsersAndOrganizationsEditUser</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">UsersAndOrganizationsEditUser</td></tr>
 </thead>
+
 <tbody>
 <!--DETAILS-->
 <tr>
@@ -191,7 +193,7 @@
 <!--USER_GROUPS-->
 <tr>
 	<td>USER_GROUPS_TABLE_NAME</td>
-	<td>//tr[contains(.,'${key_userGroupName}')]/td[1]</td>
+	<td>//tr[contains(.,'${key_userGroupName}')]/td</td>
 	<td></td>
 </tr>
 <tr>

@@ -1,19 +1,24 @@
 {
 	"dependencies": {
-		"@clayui/button": "3.6.0",
-		"@clayui/form": "3.29.0",
-		"@clayui/layout": "3.3.0",
-		"@clayui/modal": "3.29.0",
-		"@clayui/popover": "3.29.0",
-		"@clayui/table": "3.29.0",
+		"@clayui/autocomplete": "3.38.0",
+		"@clayui/button": "3.38.0",
+		"@clayui/data-provider": "3.38.0",
+		"@clayui/drop-down": "3.38.0",
+		"@clayui/form": "3.38.0",
+		"@clayui/icon": "3.38.0",
+		"@clayui/layout": "3.38.0",
+		"@clayui/modal": "3.38.0",
+		"@clayui/popover": "3.38.0",
+		"@clayui/shared": "3.38.0",
+		"@clayui/table": "3.38.0",
+		"@liferay/map-google-maps": "*",
+		"@liferay/map-openstreetmap": "*",
 		"axios": "0.21.1",
-		"classnames": "2.2.6",
-		"clay-icon": "2.22.2",
+		"classnames": "2.3.1",
+		"clay-icon": "2.22.4",
 		"frontend-editor-ckeditor-web": "*",
 		"frontend-js-web": "*",
-		"leaflet": "1.2.0",
-		"map-google-maps": "*",
-		"map-openstreetmap": "*",
+		"leaflet": "1.7.1",
 		"metal-component": "2.16.8",
 		"metal-drag-drop": "3.3.1",
 		"metal-soy": "2.16.9",
@@ -43,5 +48,5 @@
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test"
 	},
-	"version": "6.0.18"
+	"version": "6.0.50"
 }

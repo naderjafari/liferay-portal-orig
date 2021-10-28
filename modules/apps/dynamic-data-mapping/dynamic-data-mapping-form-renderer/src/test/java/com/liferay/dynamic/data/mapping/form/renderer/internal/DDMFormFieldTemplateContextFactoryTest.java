@@ -35,6 +35,7 @@ import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.language.constants.LanguageConstants;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.template.TemplateResource;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -57,15 +58,20 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 /**
  * @author Marcellus Tavares
  */
-public class DDMFormFieldTemplateContextFactoryTest {
+@RunWith(PowerMockRunner.class)
+public class DDMFormFieldTemplateContextFactoryTest extends PowerMockito {
 
 	@ClassRule
 	@Rule
@@ -136,8 +142,7 @@ public class DDMFormFieldTemplateContextFactoryTest {
 		Map<String, Object> fieldTemplateContext =
 			(Map<String, Object>)fields.get(0);
 
-		Assert.assertEquals(
-			true, MapUtil.getBoolean(fieldTemplateContext, "readOnly"));
+		Assert.assertTrue(MapUtil.getBoolean(fieldTemplateContext, "readOnly"));
 	}
 
 	@Test
@@ -198,8 +203,7 @@ public class DDMFormFieldTemplateContextFactoryTest {
 		Map<String, Object> fieldTemplateContext =
 			(Map<String, Object>)fields.get(0);
 
-		Assert.assertEquals(
-			true, MapUtil.getBoolean(fieldTemplateContext, "readOnly"));
+		Assert.assertTrue(MapUtil.getBoolean(fieldTemplateContext, "readOnly"));
 	}
 
 	@Test
@@ -222,6 +226,9 @@ public class DDMFormFieldTemplateContextFactoryTest {
 				"This is a tip.", _LOCALE));
 
 		ddmFormField.setProperty("displayStyle", "singleline");
+		ddmFormField.setRequiredErrorMessage(
+			DDMFormValuesTestUtil.createLocalizedValue(
+				"Custom required error message.", _LOCALE));
 
 		ddmForm.addDDMFormField(ddmFormField);
 
@@ -274,23 +281,23 @@ public class DDMFormFieldTemplateContextFactoryTest {
 			MapUtil.getString(fieldTemplateContext, "displayStyle"));
 		Assert.assertEquals(
 			"Field 1", MapUtil.getString(fieldTemplateContext, "label"));
+		Assert.assertFalse(
+			MapUtil.getBoolean(fieldTemplateContext, "readOnly"));
+		Assert.assertFalse(
+			MapUtil.getBoolean(fieldTemplateContext, "repeatable"));
+		Assert.assertTrue(MapUtil.getBoolean(fieldTemplateContext, "required"));
 		Assert.assertEquals(
-			false, MapUtil.getBoolean(fieldTemplateContext, "readOnly"));
-		Assert.assertEquals(
-			false, MapUtil.getBoolean(fieldTemplateContext, "repeatable"));
-		Assert.assertEquals(
-			true, MapUtil.getBoolean(fieldTemplateContext, "required"));
+			"Custom required error message.",
+			MapUtil.getString(fieldTemplateContext, "requiredErrorMessage"));
 		Assert.assertEquals(
 			"This is a tip.", MapUtil.getString(fieldTemplateContext, "tip"));
-		Assert.assertEquals(
-			true, MapUtil.getBoolean(fieldTemplateContext, "valid"));
+		Assert.assertTrue(MapUtil.getBoolean(fieldTemplateContext, "valid"));
 		Assert.assertEquals(
 			StringPool.BLANK,
 			MapUtil.getString(fieldTemplateContext, "validationErrorMessage"));
 		Assert.assertEquals(
 			"Value 1", MapUtil.getString(fieldTemplateContext, "value"));
-		Assert.assertEquals(
-			true, MapUtil.getBoolean(fieldTemplateContext, "visible"));
+		Assert.assertTrue(MapUtil.getBoolean(fieldTemplateContext, "visible"));
 
 		String expectedName = String.format(
 			_FIELD_NAME_FORMAT, "Field1", instanceId, 0, _LOCALE.toString());
@@ -323,7 +330,8 @@ public class DDMFormFieldTemplateContextFactoryTest {
 				ddmForm.getDDMFormFieldsMap(true), ddmFormFieldsPropertyChanges,
 				ddmFormFieldValues, ddmFormRenderingContext,
 				_ddmStructureLayoutLocalService, _ddmStructureLocalService,
-				new JSONFactoryImpl(), true, new DDMFormLayout());
+				_groupLocalService, new JSONFactoryImpl(), true,
+				new DDMFormLayout());
 
 		DDMFormFieldTypeServicesTracker ddmFormFieldTypeServicesTracker =
 			mockDDMFormFieldTypeServicesTracker(
@@ -450,6 +458,9 @@ public class DDMFormFieldTemplateContextFactoryTest {
 
 	@Mock
 	private DDMStructureLocalService _ddmStructureLocalService;
+
+	@Mock
+	private GroupLocalService _groupLocalService;
 
 	private HttpServletRequest _httpServletRequest;
 

@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Commerce";
+	property testray.main.component.name = "Product Info Management";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -14,20 +14,17 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		Navigator.openURL();
 
-		if ("${testPortalInstance}" == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			Navigator.openURL();
-
-			CommerceConfiguration.commerceAdminTearDown();
-
-			CommerceConfiguration.commerceInitializersTearDown();
-
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
 			User.logoutPG();
 		}
+
+		User.firstLoginPG();
+
+		CommerceConfiguration.commerceAdminTearDown();
+
+		CommerceConfiguration.commerceInitializersTearDown();
 	}
 
 	@description = "This is a test for COMMERCE-6066. AddANewProductGroup"
@@ -71,7 +68,6 @@ definition {
 	@priority = "3"
 	test AddAPreExistingProductGroup {
 		property portal.acceptance = "false";
-		property portal.upstream = "quarantine";
 
 		// TODO Review
 
@@ -116,16 +112,8 @@ definition {
 	@priority = "3"
 	test EditAProductGroup {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CPCommerceProductProductGroups#EditAProductGroup";
 
 		// TODO Review
-
-		ApplicationsMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "Search");
-
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 

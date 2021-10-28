@@ -72,7 +72,8 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 				continue;
 			}
 
-			visibilityExpression = _convertExpression(visibilityExpression);
+			visibilityExpression = _convertExpression(
+				ddmFormFieldsMap, visibilityExpression);
 
 			DDMFormRule ddmFormRule = new DDMFormRule(
 				Arrays.asList(
@@ -90,13 +91,9 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected void upgradeDDMStructureDefinition() throws Exception {
-		StringBundler sb = new StringBundler(2);
-
-		sb.append("select DDMStructure.definition, DDMStructure.structureId ");
-		sb.append("from DDMStructure");
-
 		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
-				sb.toString());
+				"select DDMStructure.definition, DDMStructure.structureId " +
+					"from DDMStructure");
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
@@ -123,14 +120,11 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected void upgradeDDMStructureVersionDefinition() throws Exception {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append("select DDMStructureVersion.definition, ");
-		sb.append("DDMStructureVersion.structureVersionId from ");
-		sb.append("DDMStructureVersion");
-
 		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
-				sb.toString());
+				StringBundler.concat(
+					"select DDMStructureVersion.definition, ",
+					"DDMStructureVersion.structureVersionId from ",
+					"DDMStructureVersion"));
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
@@ -156,34 +150,31 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 		}
 	}
 
-	private String _convertExpression(String visibilityExpression) {
+	private String _convertExpression(
+		Map<String, DDMFormField> ddmFormFieldsMap,
+		String visibilityExpression) {
+
+		StringBundler sb1 = new StringBundler();
+
 		List<String> parameterValues =
 			ExpressionParameterValueExtractor.extractParameterValues(
 				visibilityExpression);
 
-		StringBundler sb1 = new StringBundler();
-
 		for (String parameterValue : parameterValues) {
-			if (Validator.isNull(parameterValue) ||
-				Validator.isNumber(parameterValue) ||
-				StringUtil.startsWith(parameterValue, StringPool.QUOTE)) {
+			String unquotedParameterValue = StringUtil.unquote(parameterValue);
 
+			if (!ddmFormFieldsMap.containsKey(unquotedParameterValue)) {
 				continue;
 			}
-
-			StringBundler sb2 = new StringBundler(5);
-
-			sb2.append("getValue(");
-			sb2.append(StringPool.APOSTROPHE);
-			sb2.append(parameterValue);
-			sb2.append(StringPool.APOSTROPHE);
-			sb2.append(")");
 
 			int index = visibilityExpression.indexOf(parameterValue);
 
 			sb1.append(visibilityExpression.substring(0, index));
 
-			sb1.append(sb2.toString());
+			sb1.append(
+				StringBundler.concat(
+					"getValue(", StringUtil.quote(unquotedParameterValue),
+					")"));
 
 			visibilityExpression = visibilityExpression.substring(
 				index + parameterValue.length());

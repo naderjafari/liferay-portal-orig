@@ -217,6 +217,15 @@ public class DDMFormBuilderContextFactoryHelper {
 			new DDMFormRenderingContext();
 
 		ddmFormRenderingContext.setContainerId("settings");
+
+		if (_ddmStructureVersionOptional.isPresent()) {
+			DDMStructureVersion ddmStructureVersion =
+				_ddmStructureVersionOptional.get();
+
+			ddmFormRenderingContext.setGroupId(
+				ddmStructureVersion.getGroupId());
+		}
+
 		ddmFormRenderingContext.setHttpServletRequest(_httpServletRequest);
 		ddmFormRenderingContext.setHttpServletResponse(_httpServletResponse);
 		ddmFormRenderingContext.setLocale(_locale);
@@ -282,9 +291,15 @@ public class DDMFormBuilderContextFactoryHelper {
 			return doCreateDDMFormFieldValue(
 				(DDMFormFieldOptions)propertyValue, availableLocales);
 		}
-		else if (Objects.equals(
-					ddmFormFieldTypeSetting.getType(), "validation")) {
 
+		if (Objects.equals(
+				ddmFormFieldTypeSetting.getName(), "requiredDescription") &&
+			(propertyValue == null)) {
+
+			return new UnlocalizedValue(Boolean.TRUE.toString());
+		}
+
+		if (Objects.equals(ddmFormFieldTypeSetting.getType(), "validation")) {
 			return doCreateDDMFormFieldValue(
 				availableLocales, (DDMFormFieldValidation)propertyValue);
 		}
@@ -468,8 +483,8 @@ public class DDMFormBuilderContextFactoryHelper {
 			).put(
 				"pluginEntryPoint",
 				_npmResolver.resolveModuleName(
-					"dynamic-data-mapping-form-web/admin/js/plugins" +
-						"/field-sidebar/index.es")
+					"data-engine-taglib/data_layout_builder/js/plugins" +
+						"/fields-sidebar/index")
 			).put(
 				"sidebarPanelId", "fields"
 			).build()

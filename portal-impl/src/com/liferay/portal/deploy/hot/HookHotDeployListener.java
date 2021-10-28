@@ -48,6 +48,7 @@ import com.liferay.portal.kernel.lock.LockListener;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ModelListener;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.plugin.PluginPackage;
 import com.liferay.portal.kernel.portlet.ControlPanelEntry;
 import com.liferay.portal.kernel.resource.bundle.CacheResourceBundleLoader;
@@ -93,6 +94,7 @@ import com.liferay.portal.kernel.upgrade.util.UpgradeProcessUtil;
 import com.liferay.portal.kernel.url.ServletContextURLContainer;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.InstanceFactory;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PropertiesUtil;
@@ -117,9 +119,6 @@ import com.liferay.portal.spring.aop.AopInvocationHandler;
 import com.liferay.portal.util.JavaScriptBundleUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
 
 import java.io.InputStream;
 
@@ -143,6 +142,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.Filter;
 import javax.servlet.ServletContext;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Brian Wing Shun Chan
@@ -284,10 +286,14 @@ public class HookHotDeployListener
 		Map<Object, ServiceRegistration<?>> serviceRegistrations =
 			getServiceRegistrations(servletContextName);
 
-		Registry registry = RegistryUtil.getRegistry();
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
-		ServiceRegistration<T> serviceRegistration = registry.registerService(
-			clazz, service, properties);
+		ServiceRegistration<T> serviceRegistration =
+			bundleContext.registerService(
+				clazz, service,
+				HashMapDictionaryBuilder.putAll(
+					properties
+				).build());
 
 		serviceRegistrations.put(serviceRegistrationKey, serviceRegistration);
 	}
@@ -1700,9 +1706,7 @@ public class HookHotDeployListener
 					_log.debug(beanLocatorException, beanLocatorException);
 				}
 
-				Registry registry = RegistryUtil.getRegistry();
-
-				registry.callService(
+				SystemBundleUtil.callService(
 					serviceTypeClass,
 					registryServiceProxy -> {
 						try {

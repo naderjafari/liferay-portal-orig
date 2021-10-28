@@ -2,50 +2,17 @@
 <head>
 <title>DDMField</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">DDMField</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>BOOLEAN</td>
 	<td>//div[@data-field-name='${key_fieldName}']//label[contains(.,'Boolean')]//input[@type='checkbox']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>COLOR_PICKER</td>
-	<td>//label[normalize-space(text())='${key_fieldLabel}']/following-sibling::div[contains(@class,'color-picker')]//button[contains(@class,'clay-color-btn')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>COLOR_PICKER_CUSTOM_COLOR_BUTTON</td>
-	<td>//div[contains(@class, 'clay-color-dropdown-menu')]//button[contains(@class, 'component-action')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>COLOR_PICKER_GENERAL_INPUT</td>
-	<td>//label[normalize-space(text())='${key_fieldLabel}']/following-sibling::div[contains(@class,'color-picker')]/div[contains(@class,'clay-color')]//input</td>
-	<td></td>
-</tr>
-<tr>
-	<td>COLOR_PICKER_HEX_INPUT</td>
-	<td>//input[@data-testid='customHexInput']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>COLOR_PICKER_RGB_RED_INPUT</td>
-	<td>//input[@data-testId='rInput']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>COLOR_PICKER_RGB_GREEN_INPUT</td>
-	<td>//input[@data-testId='gInput']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>COLOR_PICKER_RGB_BLUE_INPUT</td>
-	<td>//input[@data-testId='bInput']</td>
 	<td></td>
 </tr>
 <tr>

@@ -78,7 +78,7 @@ public class BatchPlannerPlanCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(27);
+		StringBundler sb = new StringBundler(31);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -96,6 +96,8 @@ public class BatchPlannerPlanCacheModel
 		sb.append(modifiedDate);
 		sb.append(", active=");
 		sb.append(active);
+		sb.append(", export=");
+		sb.append(export);
 		sb.append(", externalType=");
 		sb.append(externalType);
 		sb.append(", externalURL=");
@@ -104,8 +106,10 @@ public class BatchPlannerPlanCacheModel
 		sb.append(internalClassName);
 		sb.append(", name=");
 		sb.append(name);
-		sb.append(", export=");
-		sb.append(export);
+		sb.append(", taskItemDelegateName=");
+		sb.append(taskItemDelegateName);
+		sb.append(", template=");
+		sb.append(template);
 		sb.append("}");
 
 		return sb.toString();
@@ -142,6 +146,7 @@ public class BatchPlannerPlanCacheModel
 		}
 
 		batchPlannerPlanImpl.setActive(active);
+		batchPlannerPlanImpl.setExport(export);
 
 		if (externalType == null) {
 			batchPlannerPlanImpl.setExternalType("");
@@ -171,7 +176,14 @@ public class BatchPlannerPlanCacheModel
 			batchPlannerPlanImpl.setName(name);
 		}
 
-		batchPlannerPlanImpl.setExport(export);
+		if (taskItemDelegateName == null) {
+			batchPlannerPlanImpl.setTaskItemDelegateName("");
+		}
+		else {
+			batchPlannerPlanImpl.setTaskItemDelegateName(taskItemDelegateName);
+		}
+
+		batchPlannerPlanImpl.setTemplate(template);
 
 		batchPlannerPlanImpl.resetOriginalValues();
 
@@ -192,12 +204,15 @@ public class BatchPlannerPlanCacheModel
 		modifiedDate = objectInput.readLong();
 
 		active = objectInput.readBoolean();
+
+		export = objectInput.readBoolean();
 		externalType = objectInput.readUTF();
 		externalURL = objectInput.readUTF();
 		internalClassName = objectInput.readUTF();
 		name = objectInput.readUTF();
+		taskItemDelegateName = objectInput.readUTF();
 
-		export = objectInput.readBoolean();
+		template = objectInput.readBoolean();
 	}
 
 	@Override
@@ -221,6 +236,8 @@ public class BatchPlannerPlanCacheModel
 		objectOutput.writeLong(modifiedDate);
 
 		objectOutput.writeBoolean(active);
+
+		objectOutput.writeBoolean(export);
 
 		if (externalType == null) {
 			objectOutput.writeUTF("");
@@ -250,7 +267,14 @@ public class BatchPlannerPlanCacheModel
 			objectOutput.writeUTF(name);
 		}
 
-		objectOutput.writeBoolean(export);
+		if (taskItemDelegateName == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(taskItemDelegateName);
+		}
+
+		objectOutput.writeBoolean(template);
 	}
 
 	public long mvccVersion;
@@ -261,10 +285,12 @@ public class BatchPlannerPlanCacheModel
 	public long createDate;
 	public long modifiedDate;
 	public boolean active;
+	public boolean export;
 	public String externalType;
 	public String externalURL;
 	public String internalClassName;
 	public String name;
-	public boolean export;
+	public String taskItemDelegateName;
+	public boolean template;
 
 }

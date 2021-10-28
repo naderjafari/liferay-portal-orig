@@ -14,7 +14,7 @@
 
 package com.liferay.dispatch.talend.web.internal.process;
 
-import com.liferay.dispatch.talend.web.internal.archive.TalendArchive;
+import com.liferay.dispatch.talend.archive.TalendArchive;
 import com.liferay.petra.process.PathHolder;
 import com.liferay.petra.process.ProcessConfig;
 import com.liferay.petra.string.CharPool;
@@ -57,15 +57,9 @@ public class TalendProcess {
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("{mainMethodArguments=");
-		sb.append(_mainMethodArguments.toString());
-		sb.append(", processConfig=");
-		sb.append(_processConfig.toString());
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{mainMethodArguments=", _mainMethodArguments.toString(),
+			", processConfig=", _processConfig.toString(), "}");
 	}
 
 	public static class Builder {

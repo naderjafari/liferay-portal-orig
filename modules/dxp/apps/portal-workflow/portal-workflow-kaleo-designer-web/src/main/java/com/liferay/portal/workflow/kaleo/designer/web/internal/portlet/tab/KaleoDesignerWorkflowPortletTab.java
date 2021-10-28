@@ -127,9 +127,7 @@ public class KaleoDesignerWorkflowPortletTab extends BaseWorkflowPortletTab {
 		if (_kaleoDesignerDisplayContext == null) {
 			_kaleoDesignerDisplayContext = new KaleoDesignerDisplayContext(
 				renderRequest, _kaleoDefinitionVersionLocalService,
-				ResourceBundleLoaderUtil.
-					getResourceBundleLoaderByBundleSymbolicName(
-						"com.liferay.portal.workflow.kaleo.designer.web"),
+				ResourceBundleLoaderUtil.getPortalResourceBundleLoader(),
 				_userLocalService);
 		}
 
@@ -196,7 +194,7 @@ public class KaleoDesignerWorkflowPortletTab extends BaseWorkflowPortletTab {
 	private static final Log _log = LogFactoryUtil.getLog(
 		KaleoDesignerWorkflowPortletTab.class);
 
-	private boolean _companyAdministratorCanPublish;
+	private volatile boolean _companyAdministratorCanPublish;
 	private KaleoDefinitionVersionLocalService
 		_kaleoDefinitionVersionLocalService;
 	private KaleoDesignerDisplayContext _kaleoDesignerDisplayContext;

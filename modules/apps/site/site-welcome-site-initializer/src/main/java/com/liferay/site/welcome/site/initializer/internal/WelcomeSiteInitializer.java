@@ -22,6 +22,9 @@ import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -46,6 +49,7 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -56,14 +60,14 @@ import com.liferay.segments.constants.SegmentsExperienceConstants;
 import com.liferay.site.exception.InitializationException;
 import com.liferay.site.initializer.SiteInitializer;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 
 import java.net.URL;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 
@@ -236,23 +240,24 @@ public class WelcomeSiteInitializer implements SiteInitializer {
 		FileEntry fileEntry = _portletFileRepository.fetchPortletFileEntry(
 			groupId, repository.getDlFolderId(), _FILE_NAME_TREE_IMAGE);
 
-		if (fileEntry == null) {
-			URL url = _bundle.getEntry(_PATH + _FILE_NAME_TREE_IMAGE);
-
-			File file = FileUtil.createTempFile(url.openStream());
-
-			byte[] bytes = null;
-
-			try (InputStream inputStream = new FileInputStream(file)) {
-				bytes = FileUtil.getBytes(inputStream);
-			}
-
-			fileEntry = _portletFileRepository.addPortletFileEntry(
-				groupId, userId, Layout.class.getName(), plid,
-				Layout.class.getName(), repository.getDlFolderId(), bytes,
-				_FILE_NAME_TREE_IMAGE,
-				MimeTypesUtil.getContentType(_FILE_NAME_TREE_IMAGE), false);
+		if (fileEntry != null) {
+			_portletFileRepository.deletePortletFileEntry(
+				fileEntry.getFileEntryId());
 		}
+
+		URL url = _bundle.getEntry(_PATH + _FILE_NAME_TREE_IMAGE);
+
+		byte[] bytes = null;
+
+		try (InputStream inputStream = url.openStream()) {
+			bytes = FileUtil.getBytes(inputStream);
+		}
+
+		fileEntry = _portletFileRepository.addPortletFileEntry(
+			groupId, userId, Layout.class.getName(), plid,
+			Layout.class.getName(), repository.getDlFolderId(), bytes,
+			_FILE_NAME_TREE_IMAGE,
+			MimeTypesUtil.getContentType(_FILE_NAME_TREE_IMAGE), false);
 
 		return fileEntry.getFileEntryId();
 	}
@@ -289,6 +294,31 @@ public class WelcomeSiteInitializer implements SiteInitializer {
 				layoutPageTemplateStructure.getData(
 					SegmentsExperienceConstants.ID_DEFAULT));
 
+			Class<?> clazz = getClass();
+
+			String pageElementJSON = StringUtil.replace(
+				StringUtil.read(
+					clazz.getClassLoader(), _PATH + "page-element.json"),
+				"\"[£", "£]\"",
+				HashMapBuilder.put(
+					"WELCOME_TO_LIFERAY_I18N_JSON_VALUE",
+					() -> {
+						JSONObject jsonObject =
+							JSONFactoryUtil.createJSONObject();
+
+						Set<Locale> locales = new HashSet<>(
+							LanguageUtil.getAvailableLocales());
+
+						for (Locale locale : locales) {
+							jsonObject.put(
+								LocaleUtil.toLanguageId(locale),
+								LanguageUtil.get(locale, "welcome-to-liferay"));
+						}
+
+						return jsonObject.toJSONString();
+					}
+				).build());
+
 			String releaseInfo = StringPool.BLANK;
 
 			if (_HTTP_HEADER_VERSION_VERBOSITY_PARTIAL) {
@@ -301,12 +331,8 @@ public class WelcomeSiteInitializer implements SiteInitializer {
 			releaseInfo = StringUtil.replace(
 				releaseInfo, CharPool.OPEN_PARENTHESIS, "<br>(");
 
-			Class<?> clazz = getClass();
-
-			String pageElementJSON = StringUtil.replace(
-				StringUtil.read(
-					clazz.getClassLoader(), _PATH + "page-element.json"),
-				"${", "}",
+			pageElementJSON = StringUtil.replace(
+				pageElementJSON, "[$", "$]",
 				HashMapBuilder.put(
 					"RELEASE_INFO", releaseInfo + "."
 				).put(

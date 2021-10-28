@@ -92,11 +92,15 @@ AUI.add(
 			'<span class="',
 			CSS_CALENDAR_LIST_ITEM_LABEL,
 			'">{[Liferay.Util.escapeHTML(parent.calendars[$i].getDisplayName())]}</span>',
-			'<div class="',
+			'<tpl if="parent.calendars[$i].get(\'hasMenuItems\')">',
+			'<div aria-label="' +
+				Liferay.Language.get('show-calendar-actions') +
+				'" class="',
 			CSS_CALENDAR_LIST_ITEM_ARROW,
-			'">',
+			'" role="button" tabindex="0">',
 			CSS_ICON_CARET_DOWN,
 			'</div>',
+			'</tpl>',
 			'</div>',
 			'</tpl>'
 		);

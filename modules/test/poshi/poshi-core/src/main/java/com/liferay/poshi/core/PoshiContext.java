@@ -127,7 +127,7 @@ public class PoshiContext {
 
 		sb.append("(");
 		sb.append(query);
-		sb.append(") AND (ignored != true)");
+		sb.append(") AND (ignored == null)");
 
 		if (Validator.isNotNull(PropsValues.TEST_RUN_ENVIRONMENT)) {
 			sb.append(" AND (test.run.environment == \"");
@@ -306,16 +306,35 @@ public class PoshiContext {
 	}
 
 	public static List<String> getPoshiPropertyNames() {
-		List<String> poshiPropertyNames = new ArrayList<>(_poshiPropertyNames);
+		Set<String> poshiPropertyNames = new HashSet<>(_poshiPropertyNames);
 
 		poshiPropertyNames.add("ignored");
 		poshiPropertyNames.add("known-issues");
 		poshiPropertyNames.add("priority");
+		poshiPropertyNames.add("property.group");
 		poshiPropertyNames.add("test.class.method.name");
 		poshiPropertyNames.add("test.class.name");
 		poshiPropertyNames.add("test.run.environment");
 
-		return poshiPropertyNames;
+		String testCaseAvailablePropertyNames =
+			PropsValues.TEST_CASE_AVAILABLE_PROPERTY_NAMES;
+
+		if (Validator.isNotNull(testCaseAvailablePropertyNames)) {
+			Collections.addAll(
+				poshiPropertyNames,
+				StringUtil.split(testCaseAvailablePropertyNames));
+		}
+
+		String testCaseRequiredPropertyNames =
+			PropsValues.TEST_CASE_REQUIRED_PROPERTY_NAMES;
+
+		if (Validator.isNotNull(testCaseRequiredPropertyNames)) {
+			Collections.addAll(
+				poshiPropertyNames,
+				StringUtil.split(testCaseRequiredPropertyNames));
+		}
+
+		return new ArrayList<>(poshiPropertyNames);
 	}
 
 	public static List<String> getRequiredPoshiPropertyNames() {
@@ -697,6 +716,65 @@ public class PoshiContext {
 		return _getPoshiURLs(null, includes, baseDirName);
 	}
 
+	private static String _getPropertyGroup(
+			Element rootElement, Element commandElement)
+		throws Exception {
+
+		List<Element> propertyElements = new ArrayList<>();
+
+		propertyElements.addAll(rootElement.elements("property"));
+
+		propertyElements.addAll(commandElement.elements("property"));
+
+		for (Element propertyElement : propertyElements) {
+			String propertyName = propertyElement.attributeValue("name");
+			String propertyValue = propertyElement.attributeValue("value");
+
+			if (propertyName.equals("property.group") &&
+				(propertyValue != null) && !propertyValue.isEmpty()) {
+
+				return propertyValue;
+			}
+		}
+
+		return null;
+	}
+
+	private static Properties _getPropertyGroupProperties(
+			Element rootElement, Element commandElement)
+		throws Exception {
+
+		String propertyGroup = _getPropertyGroup(rootElement, commandElement);
+
+		if ((propertyGroup == null) || propertyGroup.isEmpty()) {
+			return new Properties();
+		}
+
+		Properties propertyGroupProperties = new Properties();
+
+		String propertyGroupRegex =
+			"test.case.property.group\\[" + propertyGroup +
+				"\\]\\[([^\\]]+)\\]";
+
+		Properties poshiProperties = new Properties();
+
+		poshiProperties.putAll(System.getProperties());
+
+		poshiProperties.putAll(PropsUtil.getProperties());
+
+		for (String poshiPropertyName : poshiProperties.stringPropertyNames()) {
+			if (!poshiPropertyName.matches(propertyGroupRegex)) {
+				continue;
+			}
+
+			propertyGroupProperties.setProperty(
+				poshiPropertyName.replaceAll(propertyGroupRegex, "$1"),
+				poshiProperties.getProperty(poshiPropertyName));
+		}
+
+		return propertyGroupProperties;
+	}
+
 	private static void _initComponentCommandNamesMap() {
 		for (String testCaseNamespacedClassName :
 				_testCaseNamespacedClassNames) {
@@ -808,11 +886,9 @@ public class PoshiContext {
 				ignoreCommandNamesString.split(","));
 		}
 
-		if (ignorableCommandNames.contains(commandName)) {
-			return true;
-		}
+		if (ignorableCommandNames.contains(commandName) ||
+			(rootElement.attributeValue("ignore") != null)) {
 
-		if (rootElement.attributeValue("ignore") != null) {
 			return true;
 		}
 
@@ -1299,8 +1375,23 @@ public class PoshiContext {
 				}
 
 				if (classType.equals("test-case")) {
-					Properties properties = _getClassCommandNameProperties(
+					Properties commandProperties =
+						_getClassCommandNameProperties(
+							rootElement, commandElement);
+					String propertyGroup = _getPropertyGroup(
 						rootElement, commandElement);
+					Properties propertyGroupProperties =
+						_getPropertyGroupProperties(
+							rootElement, commandElement);
+
+					_validateCommandProperties(
+						commandProperties, propertyGroup,
+						propertyGroupProperties, filePath, classCommandName);
+
+					Properties properties = new Properties();
+
+					properties.putAll(commandProperties);
+					properties.putAll(propertyGroupProperties);
 
 					properties.setProperty(
 						"test.class.method.name", classCommandName);
@@ -1417,9 +1508,10 @@ public class PoshiContext {
 
 				Throwable causeThrowable = exception.getCause();
 
-				sb.append(causeThrowable.getMessage());
-
-				sb.append("\n\n");
+				if (causeThrowable != null) {
+					sb.append(causeThrowable.getMessage());
+					sb.append("\n");
+				}
 			}
 
 			System.out.println(sb.toString());
@@ -1428,8 +1520,39 @@ public class PoshiContext {
 		}
 	}
 
+	private static void _validateCommandProperties(
+		Properties commandProperties, String propertyGroup,
+		Properties propertyGroupProperties, String filePath,
+		String classCommandName) {
+
+		List<String> propertyNames = new ArrayList<>();
+
+		for (String propertyName :
+				propertyGroupProperties.stringPropertyNames()) {
+
+			if (commandProperties.containsKey(propertyName)) {
+				propertyNames.add(propertyName);
+			}
+		}
+
+		if (propertyNames.isEmpty()) {
+			return;
+		}
+
+		_exceptions.add(
+			new Exception(
+				StringUtil.combine(
+					filePath, " for \"", classCommandName,
+					"\" the properties \"",
+					StringUtil.join(propertyNames.toArray(new String[0]), ","),
+					"\" cannot be set as they are set in \"", propertyGroup,
+					"\"")));
+	}
+
 	private static void _writeTestCaseMethodNamesProperties() throws Exception {
 		StringBuilder sb = new StringBuilder();
+
+		sb.append("## Autogenerated\n\n");
 
 		if (PropsValues.TEST_BATCH_PROPERTY_QUERY != null) {
 			int maxSubgroupSize = PropsValues.TEST_BATCH_MAX_SUBGROUP_SIZE;
@@ -1577,6 +1700,8 @@ public class PoshiContext {
 
 	private static void _writeTestGeneratedProperties() throws Exception {
 		StringBuilder sb = new StringBuilder();
+
+		sb.append("## Autogenerated\n\n");
 
 		for (String testCaseNamespacedClassCommandName :
 				_testCaseNamespacedClassCommandNames) {

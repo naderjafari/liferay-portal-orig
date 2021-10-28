@@ -360,11 +360,10 @@ public class AddContentPanelDisplayContext {
 						curGroupId, _themeDisplay.getPlid(),
 						PortletURLBuilder.create(
 							assetPublisherAddItemHolder.getPortletURL()
-						).setParameter(
-							"portletResource",
+						).setPortletResource(
 							ProductNavigationControlMenuPortletKeys.
 								PRODUCT_NAVIGATION_CONTROL_MENU
-						).build(),
+						).buildPortletURL(),
 						false, _themeDisplay.getLayout());
 				}
 			).build()
@@ -677,8 +676,12 @@ public class AddContentPanelDisplayContext {
 		}
 
 		Set<String> layoutDecodedPortletNames = _getLayoutDecodedPortletNames();
+		LayoutTypePortlet layoutTypePortlet =
+			_themeDisplay.getLayoutTypePortlet();
 
-		if (layoutDecodedPortletNames.contains(portlet.getPortletId())) {
+		if (layoutDecodedPortletNames.contains(portlet.getPortletId()) ||
+			layoutTypePortlet.hasPortletId(portlet.getPortletId())) {
+
 			return true;
 		}
 

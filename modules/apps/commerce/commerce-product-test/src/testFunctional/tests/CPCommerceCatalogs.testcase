@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Commerce";
+	property testray.main.component.name = "Product Info Management";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -12,29 +12,23 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		Navigator.openURL();
 
-		if ("${testPortalInstance}" == "true") {
-			PortalInstances.tearDownCP();
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
+			User.logoutPG();
 		}
-		else {
-			Navigator.openURL();
 
-			CommerceNavigator.gotoPortlet(
-				category = "Produt Management",
-				portlet = "Catalogs");
+		User.firstLoginPG();
 
-			CommerceConfiguration.commerceCatalogsTearDown();
-		}
+		CommerceConfiguration.commerceAdminTearDown();
+
+		CommerceConfiguration.commerceInitializersTearDown();
 	}
 
 	@description = "This is a test for COMMERCE-6278. AddAnImageToCatalogAndRemove"
 	@priority = "3"
 	test AddAnImageToCatalogAndRemove {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CPCommerceCatalogs#CreateNewCatalog";
-
-		// TODO Review
 
 		CommerceNavigator.gotoPortlet(
 			category = "Product Management",
@@ -63,15 +57,31 @@ definition {
 
 		Alert.viewSuccessMessage();
 
-		Click(
+		Click.clickNoWaitForVisible(
 			key_value = "Test Catalog",
 			locator1 = "CommerceEntry#BODY_VERTICAL_ELLIPSIS");
 
 		MenuItem.click(menuItem = "Edit");
 
-		Click(
+		Click.clickNoMouseOver(
 			key_value = "Remove Image",
 			locator1 = "Button#SECONDARY_BY_TITLE");
+
+		AssertElementNotPresent(
+			key_imageTitle = "Commerce_Black.jpg",
+			locator1 = "WCPreview#PREVIEW_IMAGE");
+
+		Button.clickSave();
+
+		Click.clickNoWaitForVisible(
+			key_value = "Test Catalog",
+			locator1 = "CommerceEntry#BODY_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+
+		AssertElementNotPresent(
+			key_imageTitle = "Commerce_Black.jpg",
+			locator1 = "WCPreview#PREVIEW_IMAGE");
 	}
 
 	test CreateNewCatalog {
@@ -110,8 +120,6 @@ definition {
 	@priority = "3"
 	test EditACatalog {
 		property portal.acceptance = "false";
-
-		// TODO Review
 
 		CommerceNavigator.gotoPortlet(
 			category = "Product Management",
@@ -178,7 +186,7 @@ definition {
 			value1 = "Euro");
 
 		AssertElementPresent(
-			key_imageTitle = "Commerce_Black.jpg",
+			key_imageTitle = "Commerce_Black",
 			locator1 = "WCPreview#PREVIEW_IMAGE");
 	}
 
@@ -186,9 +194,6 @@ definition {
 	@priority = "3"
 	test EditAPermissionOnACatalog {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CPCommerceCatalogs#EditAPermissionOnACatalog";
-
-		// TODO Review
 
 		CommerceNavigator.gotoPortlet(
 			category = "Product Management",
@@ -267,13 +272,38 @@ definition {
 	}
 
 	@description = "This is a test for COMMERCE-6272. RemoveACatalog"
-	@ignore = "true"
 	@priority = "3"
 	test RemoveACatalog {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6272 RemoveACatalog
+		CommerceNavigator.gotoPortlet(
+			category = "Product Management",
+			portlet = "Catalogs");
 
+		Click(locator1 = "Button#PLUS");
+
+		CommerceEntry.addNewCatalogsEntry(
+			catalogCurrency = "US Dollar",
+			catalogLanguage = "English (United States)",
+			catalogName = "Test Catalog");
+
+		AssertClickNoError(
+			locator1 = "Button#SUBMIT",
+			value1 = "Submit");
+
+		Click(locator1 = "Icon#BACK");
+
+		ClickNoError(
+			key_entryName = "Test Catalog",
+			locator1 = "CommerceEntry#ENTRY_NAME_BODY_VERTICAL_ELLIPSIS");
+
+		CommerceEntry.clickNoError(menuItem = "Delete");
+
+		Alert.viewSuccessMessage();
+
+		AssertElementNotPresent(
+			key_entryName = "Test Catalog",
+			locator1 = "CommerceEntry#ENTRY_NAME_BODY_VERTICAL_ELLIPSIS");
 	}
 
 }

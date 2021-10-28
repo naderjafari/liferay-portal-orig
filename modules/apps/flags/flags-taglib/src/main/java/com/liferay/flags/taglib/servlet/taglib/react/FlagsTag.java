@@ -29,9 +29,9 @@ import com.liferay.portal.kernel.util.AggregateResourceBundle;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.language.LanguageResources;
 import com.liferay.taglib.util.IncludeTag;
 import com.liferay.taglib.util.TagResourceBundleUtil;
 
@@ -183,7 +183,7 @@ public class FlagsTag extends IncludeTag {
 					(ThemeDisplay)httpServletRequest.getAttribute(
 						WebKeys.THEME_DISPLAY);
 
-				Map<String, Object> props = HashMapBuilder.<String, Object>put(
+				return HashMapBuilder.<String, Object>put(
 					"baseData", _getDataJSONObject(themeDisplay)
 				).put(
 					"captchaURI", FlagsTagUtil.getCaptchaURI(httpServletRequest)
@@ -198,24 +198,29 @@ public class FlagsTag extends IncludeTag {
 					"disabled", !_enabled
 				).put(
 					"forceLogin", !FlagsTagUtil.isFlagsEnabled(themeDisplay)
-				).build();
+				).put(
+					"message",
+					() -> {
+						if (Validator.isNotNull(message)) {
+							return message;
+						}
 
-				if (Validator.isNotNull(message)) {
-					props.put("message", message);
-				}
-
-				props.put("onlyIcon", !_label);
-				props.put(
+						return null;
+					}
+				).put(
+					"onlyIcon", !_label
+				).put(
 					"pathTermsOfUse",
-					PortalUtil.getPathMain() + "/portal/terms_of_use");
-				props.put(
+					PortalUtil.getPathMain() + "/portal/terms_of_use"
+				).put(
 					"reasons",
 					FlagsTagUtil.getReasons(
-						themeDisplay.getCompanyId(), httpServletRequest));
-				props.put("signedIn", themeDisplay.isSignedIn());
-				props.put("uri", FlagsTagUtil.getURI(httpServletRequest));
-
-				return props;
+						themeDisplay.getCompanyId(), httpServletRequest)
+				).put(
+					"signedIn", themeDisplay.isSignedIn()
+				).put(
+					"uri", FlagsTagUtil.getURI(httpServletRequest)
+				).build();
 			}
 		).build();
 	}
@@ -229,7 +234,7 @@ public class FlagsTag extends IncludeTag {
 			contentURL = FlagsTagUtil.getCurrentURL(getRequest());
 		}
 
-		JSONObject dataJSONObject = JSONUtil.put(
+		return JSONUtil.put(
 			namespace + "className", _className
 		).put(
 			namespace + "classPK", _classPK
@@ -239,24 +244,25 @@ public class FlagsTag extends IncludeTag {
 			namespace + "contentURL", contentURL
 		).put(
 			namespace + "reportedUserId", _reportedUserId
+		).put(
+			namespace + "reporterEmailAddress",
+			() -> {
+				if (themeDisplay.isSignedIn()) {
+					User user = themeDisplay.getUser();
+
+					return user.getEmailAddress();
+				}
+
+				return null;
+			}
 		);
-
-		if (themeDisplay.isSignedIn()) {
-			User user = themeDisplay.getUser();
-
-			dataJSONObject.put(
-				namespace + "reporterEmailAddress", user.getEmailAddress());
-		}
-
-		return dataJSONObject;
 	}
 
 	private String _getMessage() {
 		ResourceBundle resourceBundle = new AggregateResourceBundle(
 			TagResourceBundleUtil.getResourceBundle(pageContext),
-			ResourceBundleUtil.getBundle(
-				PortalUtil.getLocale(getRequest()),
-				"com.liferay.flags.taglib"));
+			LanguageResources.getResourceBundle(
+				PortalUtil.getLocale(getRequest())));
 
 		if (Validator.isNotNull(_message)) {
 			return LanguageUtil.get(resourceBundle, _message);

@@ -93,11 +93,9 @@ export default function PageDesignOptionsSidebar() {
 	);
 
 	useEffect(() => {
-		const wrapper = document.getElementById('wrapper');
-
-		if (selectedStyleBook && wrapper) {
+		if (selectedStyleBook && document.documentElement) {
 			Object.values(selectedStyleBook.tokenValues).forEach((token) => {
-				wrapper.style.setProperty(
+				document.documentElement.style.setProperty(
 					`--${token.cssVariable}`,
 					token.value
 				);
@@ -152,7 +150,7 @@ export default function PageDesignOptionsSidebar() {
 							active={activeTabId === index}
 							innerProps={{
 								'aria-controls': getTabPanelId(index),
-								id: getTabId(index),
+								'id': getTabId(index),
 							}}
 							key={index}
 							onClick={() => setActiveTabId(index)}

@@ -6,10 +6,14 @@ dependencies {
 	compileOnly group: "org.apache.felix", name: "org.apache.felix.http.servlet-api", version: "1.1.2"
 	compileOnly group: "org.osgi", name: "org.osgi.service.component.annotations", version: "1.3.0"
 	compileOnly project(":apps:dynamic-data-mapping:dynamic-data-mapping-api")
+	compileOnly project(":apps:dynamic-data-mapping:dynamic-data-mapping-form-field-type-api")
 	compileOnly project(":apps:frontend-taglib:frontend-taglib")
 	compileOnly project(":apps:frontend-taglib:frontend-taglib-clay")
 	compileOnly project(":apps:frontend-taglib:frontend-taglib-react")
 	compileOnly project(":apps:frontend-taglib:frontend-taglib-soy")
 	compileOnly project(":core:petra:petra-function")
 	compileOnly project(":core:petra:petra-string")
+
+	testCompile group: "org.skyscreamer", name: "jsonassert", version: "1.2.3"
+	testCompile project(":apps:dynamic-data-mapping:dynamic-data-mapping-test-util")
 }

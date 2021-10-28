@@ -68,6 +68,10 @@ public class StructuredContent implements Serializable {
 		return ObjectMapperUtil.readValue(StructuredContent.class, json);
 	}
 
+	public static StructuredContent unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(StructuredContent.class, json);
+	}
+
 	@Schema(
 		description = "Block of actions allowed by the user making the request."
 	)
@@ -471,6 +475,36 @@ public class StructuredContent implements Serializable {
 	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, String> description_i18n;
+
+	@Schema(description = "The structured content's external reference code.")
+	public String getExternalReferenceCode() {
+		return externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		this.externalReferenceCode = externalReferenceCode;
+	}
+
+	@JsonIgnore
+	public void setExternalReferenceCode(
+		UnsafeSupplier<String, Exception> externalReferenceCodeUnsafeSupplier) {
+
+		try {
+			externalReferenceCode = externalReferenceCodeUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The structured content's external reference code."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String externalReferenceCode;
 
 	@Schema(
 		description = "A relative URL to the structured content's rendered content."
@@ -1207,6 +1241,20 @@ public class StructuredContent implements Serializable {
 			sb.append(_toJSON(description_i18n));
 		}
 
+		if (externalReferenceCode != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(externalReferenceCode));
+
+			sb.append("\"");
+		}
+
 		if (friendlyUrlPath != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -1460,13 +1508,17 @@ public class StructuredContent implements Serializable {
 
 		@JsonCreator
 		public static ViewableBy create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (ViewableBy viewableBy : values()) {
 				if (Objects.equals(viewableBy.getValue(), value)) {
 					return viewableBy;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

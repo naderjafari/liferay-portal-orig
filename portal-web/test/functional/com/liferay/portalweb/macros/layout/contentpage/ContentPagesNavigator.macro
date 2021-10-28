@@ -9,6 +9,12 @@ definition {
 		return "${key}";
 	}
 
+	macro goToTranslation {
+		SitePages.clickPageMenu(pageName = "${pageName}");
+
+		MenuItem.click(menuItem = "Translate");
+	}
+
 	macro openEditContentPage {
 		if (!(isSet(siteURLKey))) {
 			var siteURLKey = ContentPagesNavigator._convertNameToKey(name = "${siteName}");
@@ -18,7 +24,15 @@ definition {
 			var pageFriendlyUrl = ContentPagesNavigator._convertNameToKey(name = "${pageName}");
 		}
 
-		Navigator.openWithAppendToBaseURL(urlAppend = "web/${siteURLKey}/${pageFriendlyUrl}?p_l_mode=edit");
+		if ("${privateLayout}" == "true") {
+			var type = "group";
+		}
+
+		else {
+			var type = "web";
+		}
+
+		Navigator.openWithAppendToBaseURL(urlAppend = "${type}/${siteURLKey}/${pageFriendlyUrl}?p_l_mode=edit");
 
 		PageEditor.assertFragmentSidebarLoaded();
 	}
@@ -32,7 +46,21 @@ definition {
 			var pageFriendlyUrl = ContentPagesNavigator._convertNameToKey(name = "${pageName}");
 		}
 
-		Navigator.openWithAppendToBaseURL(urlAppend = "web/${siteURLKey}/${pageFriendlyUrl}");
+		if ("${privateLayout}" == "true") {
+			var type = "group";
+		}
+
+		else {
+			var type = "web";
+		}
+
+		if (isSet(locale)) {
+			Navigator.openWithAppendToBaseURL(urlAppend = "${locale}/${type}/${siteURLKey}/${pageFriendlyUrl}");
+		}
+
+		else {
+			Navigator.openWithAppendToBaseURL(urlAppend = "${type}/${siteURLKey}/${pageFriendlyUrl}");
+		}
 	}
 
 }

@@ -16,7 +16,10 @@ package com.liferay.portal.service.impl;
 
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetTag;
+import com.liferay.asset.kernel.service.AssetCategoryLocalService;
+import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.expando.kernel.model.ExpandoBridge;
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.EmailAddress;
@@ -209,6 +212,19 @@ public class OrganizationServiceImpl extends OrganizationServiceBaseImpl {
 		return organization;
 	}
 
+	@Override
+	public User addOrganizationUserByEmailAddress(
+			String emailAddress, long organizationId,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		OrganizationPermissionUtil.check(
+			getPermissionChecker(), organizationId, ActionKeys.ASSIGN_MEMBERS);
+
+		return organizationLocalService.addOrganizationUserByEmailAddress(
+			emailAddress, organizationId, serviceContext);
+	}
+
 	/**
 	 * Assigns the password policy to the organizations, removing any other
 	 * currently assigned password policies.
@@ -307,7 +323,7 @@ public class OrganizationServiceImpl extends OrganizationServiceBaseImpl {
 		long gtOrganizationId, long companyId, long parentOrganizationId,
 		int size) {
 
-		return organizationPersistence.filterFindByO_C_P(
+		return organizationPersistence.filterFindByGtO_C_P(
 			gtOrganizationId, companyId, parentOrganizationId, 0, size,
 			new OrganizationIdComparator(true));
 	}
@@ -635,10 +651,10 @@ public class OrganizationServiceImpl extends OrganizationServiceBaseImpl {
 		Organization oldOrganization = organization;
 
 		List<AssetCategory> oldAssetCategories =
-			assetCategoryLocalService.getCategories(
+			_assetCategoryLocalService.getCategories(
 				Organization.class.getName(), organizationId);
 
-		List<AssetTag> oldAssetTags = assetTagLocalService.getTags(
+		List<AssetTag> oldAssetTags = _assetTagLocalService.getTags(
 			Organization.class.getName(), organizationId);
 
 		ExpandoBridge oldExpandoBridge = oldOrganization.getExpandoBridge();
@@ -690,5 +706,11 @@ public class OrganizationServiceImpl extends OrganizationServiceBaseImpl {
 			countryId, statusId, comments, true, null, site, null, null, null,
 			null, null, serviceContext);
 	}
+
+	@BeanReference(type = AssetCategoryLocalService.class)
+	private AssetCategoryLocalService _assetCategoryLocalService;
+
+	@BeanReference(type = AssetTagLocalService.class)
+	private AssetTagLocalService _assetTagLocalService;
 
 }

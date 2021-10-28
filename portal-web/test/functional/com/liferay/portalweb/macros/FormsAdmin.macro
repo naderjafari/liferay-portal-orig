@@ -3,6 +3,18 @@ definition {
 	var formDescription = "Created Form Description";
 	var formName = "Created Form Name";
 
+	macro addForm {
+		if (!(isSet(groupName))) {
+			var groupName = "Guest";
+		}
+
+		var groupId = JSONGroupSetter.setGroupId(groupName = "${groupName}");
+
+		var _groupName = StringUtil.lowerCase("${groupName}");
+
+		Navigator.openSpecificURL(url = "/group/${_groupName}/~/control_panel/manage?p_p_id=com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet&p_p_lifecycle=0&p_p_state=maximized&p_p_mode=view&_com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet_mvcRenderCommandName=%2Fadmin%2Fedit_form_instance&_com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet_redirect=%2Fgroup%2F${_groupName}%2F~%2Fcontrol_panel%2Fmanage%3Fp_p_id%3Dcom_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet%26p_p_lifecycle%3D0%26p_p_state%3Dmaximized%26p_v_l_s_g_id%3D${groupId}&_com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet_groupId=${groupId}");
+	}
+
 	macro deleteForm {
 		FormsAdmin.viewForm(
 			formDescription = "",
@@ -62,14 +74,77 @@ definition {
 			outputParameterType2 = "${outputParameterType2}");
 	}
 
-	macro editDataProviderOutputParameter {
-		Type(
-			locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_PATH_FIELD",
-			value1 = "${outputParameterPath}");
+	macro editDataProviderLocalNetwork {
+		FormFields.editText(
+			fieldName = "DataProviderPortlet_name",
+			fieldValue = "${name}");
 
-		Type(
-			locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_LABEL_FIELD",
-			value1 = "${outputParameterLabel}");
+		FormFields.editText(
+			fieldName = "$url",
+			fieldValue = "${url}");
+
+		if (isSet(timeout)) {
+			FormFields.editText(
+				fieldName = "$timeout",
+				fieldValue = "${timeout}");
+		}
+
+		if (isSet(description)) {
+			FormFields.editTextMultiline(
+				fieldName = "description",
+				fieldValue = "${description}");
+		}
+
+		if (isSet(filterParameterName)) {
+			FormFields.enableCheckbox(fieldName = "$filterable");
+
+			FormFields.editText(
+				fieldName = "$filterParameterName",
+				fieldValue = "${filterParameterName}");
+		}
+
+		if (isSet(cacheable) && "${cacheable}" == "true") {
+			FormFields.enableCheckbox(fieldName = "$cacheable");
+		}
+
+		if (isSet(username)) {
+			FormFields.editText(
+				fieldName = "$username",
+				fieldValue = "${username}");
+		}
+
+		if (isSet(password)) {
+			var key_fieldName = "$password";
+
+			if (IsElementPresent(locator1 = "FormFields#PASSWORD_FIELD")) {
+				FormFields.editPassword(
+					fieldName = "$password",
+					fieldValue = "${password}");
+			}
+			else {
+				FormFields.editText(
+					fieldName = "$password",
+					fieldValue = "${password}");
+			}
+		}
+
+		FormsAdmin.editDataProviderOutputParameter(
+			outputParameterLabel = "${outputParameterLabel}",
+			outputParameterLabel2 = "${outputParameterLabel2}",
+			outputParameterPath = "${outputParameterPath}",
+			outputParameterPath2 = "${outputParameterPath2}",
+			outputParameterType = "${outputParameterType}",
+			outputParameterType2 = "${outputParameterType2}");
+	}
+
+	macro editDataProviderOutputParameter {
+		FormFields.editText(
+			fieldName = "outputParameterName",
+			fieldValue = "${outputParameterLabel}");
+
+		FormFields.editText(
+			fieldName = "outputParameterPath",
+			fieldValue = "${outputParameterPath}");
 
 		FormFields.selectDataProviderOutputType(outputParameterType = "${outputParameterType}");
 
@@ -109,6 +184,12 @@ definition {
 		WaitForElementPresent(locator1 = "Message#SUCCESS_DISMISSIBLE");
 
 		Alert.viewSuccessMessage();
+	}
+
+	macro openFormsAdmin {
+		Navigator.openWithAppendToBaseURL(
+			baseURL = "${baseURL}",
+			urlAppend = "group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet");
 	}
 
 	macro saveDataProvider {

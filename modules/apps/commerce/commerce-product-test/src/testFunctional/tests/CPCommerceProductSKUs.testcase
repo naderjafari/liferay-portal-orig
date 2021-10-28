@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Commerce";
+	property testray.main.component.name = "Product Info Management";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -14,20 +14,17 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		Navigator.openURL();
 
-		if ("${testPortalInstance}" == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			Navigator.openURL();
-
-			CommerceConfiguration.commerceAdminTearDown();
-
-			CommerceConfiguration.commerceInitializersTearDown();
-
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
 			User.logoutPG();
 		}
+
+		User.firstLoginPG();
+
+		CommerceConfiguration.commerceAdminTearDown();
+
+		CommerceConfiguration.commerceInitializersTearDown();
 	}
 
 	@description = "This is a test for COMMERCE-6021. AddASKU"
@@ -71,7 +68,6 @@ definition {
 	@priority = "3"
 	test AddASKUWithSubscriptions {
 		property portal.acceptance = "false";
-		property portal.upstream = "quarantine";
 
 		CommerceNavigator.gotoPortlet(
 			category = "Product Management",
@@ -211,13 +207,34 @@ definition {
 	}
 
 	@description = "This is a test for COMMERCE-6023. RemoveASKU"
-	@ignore = "true"
 	@priority = "3"
 	test RemoveASKU {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6023. RemoveASKU
+		// TODO Review
 
+		CommerceNavigator.gotoPortlet(
+			category = "Product Management",
+			portlet = "Products");
+
+		CPCommerceCatalog.newProductsEntry(
+			productCatalog = "Master",
+			productName = "Simple T-Shirt",
+			productType = "Simple");
+
+		CommerceEntry.gotoMenuTab(menuTab = "SKUs");
+
+		CommerceSKUs.addSKU(
+			noOption = "true",
+			optionValuesList = "BLACK:10.0");
+
+		Alert.viewSuccessMessage();
+
+		if (IsElementPresent(locator1 = "//a[contains(text(),'BLACKSKU')]")) {
+			CommerceEntry.deleteCommerceEntry();
+		}
+
+		Alert.viewSuccessMessage();
 	}
 
 }

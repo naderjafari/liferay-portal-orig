@@ -89,11 +89,13 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HtmlEscapableObject;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StreamUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SubscriptionSender;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -468,14 +470,11 @@ public class JournalArticleStagedModelDataHandler
 				}
 				else {
 					if (_log.isWarnEnabled()) {
-						StringBundler sb = new StringBundler(4);
-
-						sb.append("Unable to export small image ");
-						sb.append(article.getSmallImageId());
-						sb.append(" to article ");
-						sb.append(article.getArticleId());
-
-						_log.warn(sb.toString());
+						_log.warn(
+							StringBundler.concat(
+								"Unable to export small image ",
+								article.getSmallImageId(), " to article ",
+								article.getArticleId()));
 					}
 
 					article.setSmallImage(false);
@@ -651,20 +650,20 @@ public class JournalArticleStagedModelDataHandler
 			autoArticleId = false;
 		}
 
+		String externalReferenceCode = article.getExternalReferenceCode();
+
+		JournalArticle articleByERC =
+			_journalArticleLocalService.
+				fetchLatestArticleByExternalReferenceCode(
+					portletDataContext.getScopeGroupId(),
+					externalReferenceCode);
+
+		if (articleByERC != null) {
+			externalReferenceCode = newArticleId;
+		}
+
 		String content = portletDataContext.getZipEntryAsString(
 			ExportImportPathUtil.getModelPath(article, "journal-content-path"));
-
-		content =
-			_journalArticleExportImportContentProcessor.
-				replaceImportContentReferences(
-					portletDataContext, article, content);
-
-		String newContent = _journalCreationStrategy.getTransformedContent(
-			portletDataContext, article);
-
-		if (newContent != JournalCreationStrategy.ARTICLE_CONTENT_UNCHANGED) {
-			content = newContent;
-		}
 
 		Date displayDate = article.getDisplayDate();
 
@@ -929,7 +928,8 @@ public class JournalArticleStagedModelDataHandler
 
 				if (existingArticleVersion == null) {
 					importedArticle = _journalArticleLocalService.addArticle(
-						userId, portletDataContext.getScopeGroupId(), folderId,
+						externalReferenceCode, userId,
+						portletDataContext.getScopeGroupId(), folderId,
 						article.getClassNameId(), ddmStructureId, articleId,
 						autoArticleId, article.getVersion(),
 						article.getTitleMap(), article.getDescriptionMap(),
@@ -975,7 +975,8 @@ public class JournalArticleStagedModelDataHandler
 			}
 			else {
 				importedArticle = _journalArticleLocalService.addArticle(
-					userId, portletDataContext.getScopeGroupId(), folderId,
+					externalReferenceCode, userId,
+					portletDataContext.getScopeGroupId(), folderId,
 					article.getClassNameId(), ddmStructureId, articleId,
 					autoArticleId, article.getVersion(), article.getTitleMap(),
 					article.getDescriptionMap(), friendlyURLMap, content,
@@ -989,6 +990,53 @@ public class JournalArticleStagedModelDataHandler
 					article.isIndexable(), article.isSmallImage(),
 					article.getSmallImageURL(), smallFile, null, articleURL,
 					serviceContext);
+			}
+
+			Map<Long, Long> primaryKeys =
+				(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
+					JournalArticle.class);
+
+			primaryKeys.put(
+				article.getResourcePrimKey(),
+				importedArticle.getResourcePrimKey());
+
+			if (Validator.isNull(newArticleId)) {
+				articleIds.put(
+					article.getArticleId(), importedArticle.getArticleId());
+			}
+
+			StagedModelDataHandlerUtil.importReferenceStagedModels(
+				portletDataContext, article, Layout.class);
+
+			String replacedContent =
+				_journalArticleExportImportContentProcessor.
+					replaceImportContentReferences(
+						portletDataContext, article, content);
+
+			String newContent = _journalCreationStrategy.getTransformedContent(
+				portletDataContext, article);
+
+			if (newContent !=
+					JournalCreationStrategy.ARTICLE_CONTENT_UNCHANGED) {
+
+				replacedContent = newContent;
+			}
+
+			if (!StringUtil.equals(replacedContent, content)) {
+				importedArticle = _journalArticleLocalService.updateArticle(
+					userId, importedArticle.getGroupId(), folderId,
+					importedArticle.getArticleId(), article.getVersion(),
+					article.getTitleMap(), article.getDescriptionMap(),
+					friendlyURLMap, replacedContent, parentDDMStructureKey,
+					parentDDMTemplateKey, article.getLayoutUuid(),
+					displayDateMonth, displayDateDay, displayDateYear,
+					displayDateHour, displayDateMinute, expirationDateMonth,
+					expirationDateDay, expirationDateYear, expirationDateHour,
+					expirationDateMinute, neverExpire, reviewDateMonth,
+					reviewDateDay, reviewDateYear, reviewDateHour,
+					reviewDateMinute, neverReview, article.isIndexable(),
+					article.isSmallImage(), article.getSmallImageURL(),
+					smallFile, null, articleURL, serviceContext);
 			}
 
 			_journalArticleLocalService.updateAsset(
@@ -1234,7 +1282,7 @@ public class JournalArticleStagedModelDataHandler
 	protected String[] getSkipImportReferenceStagedModelNames() {
 		return new String[] {
 			AssetDisplayPageEntry.class.getName(),
-			FriendlyURLEntry.class.getName()
+			FriendlyURLEntry.class.getName(), Layout.class.getName()
 		};
 	}
 
@@ -1426,6 +1474,21 @@ public class JournalArticleStagedModelDataHandler
 
 		articleNewPrimaryKeys.put(
 			article.getResourcePrimKey(), importedArticle.getResourcePrimKey());
+
+		if (ListUtil.isEmpty(assetDisplayPageEntryElements)) {
+			AssetDisplayPageEntry existingAssetDisplayPageEntry =
+				_assetDisplayPageEntryLocalService.fetchAssetDisplayPageEntry(
+					importedArticle.getGroupId(),
+					_portal.getClassNameId(JournalArticle.class.getName()),
+					importedArticle.getResourcePrimKey());
+
+			if (existingAssetDisplayPageEntry != null) {
+				_assetDisplayPageEntryLocalService.deleteAssetDisplayPageEntry(
+					existingAssetDisplayPageEntry);
+			}
+
+			return;
+		}
 
 		for (Element assetDisplayPageEntryElement :
 				assetDisplayPageEntryElements) {

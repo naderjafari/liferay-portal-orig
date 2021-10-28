@@ -543,38 +543,76 @@ describe('Select', () => {
 		]);
 	});
 
-	it('adjusts dropdown menu position during scroll', async () => {
-		const {container} = render(
+	it('shows the options value if there are values', async () => {
+		const handleFieldEdited = jest.fn();
+
+		render(
 			<SelectWithProvider
 				dataSourceType="manual"
+				multiple={true}
+				onChange={handleFieldEdited}
 				options={createOptions(12)}
+				predefinedValue={['item1', 'item2']}
 				spritemap={spritemap}
+				value={['item3']}
 			/>
 		);
 
-		const dropdownTrigger = container.querySelector(
-			'.form-builder-select-field.input-group-container'
+		expect(
+			document.querySelector('span[value="item1"]')
+		).not.toBeInTheDocument();
+		expect(
+			document.querySelector('span[value="item2"]')
+		).not.toBeInTheDocument();
+		expect(
+			document.querySelector('span[value="item3"]')
+		).toBeInTheDocument();
+	});
+
+	it('shows the predefinedValues if there is no value', async () => {
+		const handleFieldEdited = jest.fn();
+
+		render(
+			<SelectWithProvider
+				dataSourceType="manual"
+				multiple={true}
+				onChange={handleFieldEdited}
+				options={createOptions(12)}
+				predefinedValue={['item1', 'item2']}
+				spritemap={spritemap}
+				value={[]}
+			/>
 		);
 
-		jest.spyOn(dropdownTrigger, 'getBoundingClientRect').mockImplementation(
-			() => {
-				return {
-					height: 40,
-					top: 50,
-				};
-			}
+		expect(
+			document.querySelector('span[value="item1"]')
+		).toBeInTheDocument();
+		expect(
+			document.querySelector('span[value="item2"]')
+		).toBeInTheDocument();
+	});
+
+	it('clear all values if the user has edited the field to clear the predefinedValue', async () => {
+		const handleFieldEdited = jest.fn();
+
+		render(
+			<SelectWithProvider
+				dataSourceType="manual"
+				localizedValueEdited={{en_US: true}}
+				multiple={true}
+				onChange={handleFieldEdited}
+				options={createOptions(12)}
+				predefinedValue={['item1', 'item2']}
+				spritemap={spritemap}
+				value={[]}
+			/>
 		);
 
-		window.pageYOffset = 100;
-
-		fireEvent.scroll(container);
-
-		act(() => {
-			jest.runAllTimers();
-		});
-
-		const dropdownMenu = container.querySelector('.ddm-select-dropdown');
-
-		expect(dropdownMenu.style).toHaveProperty('top', '190px');
+		expect(
+			document.querySelector('span[value="item1"]')
+		).not.toBeInTheDocument();
+		expect(
+			document.querySelector('span[value="item2"]')
+		).not.toBeInTheDocument();
 	});
 });

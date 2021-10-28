@@ -31,7 +31,7 @@ type Selector<T> = (
 	this: void,
 	value: T,
 	index: number,
-	obj: Array<T>
+	object: Array<T>
 ) => unknown;
 
 class Queue<T> {
@@ -158,6 +158,7 @@ export class Scheduler<T> {
 				// If there's more work, schedule the next callback at the
 				// end of the preceding one.
 
+				this.isCallbackScheduled = true;
 				this.requestHostCallback();
 			}
 		});
@@ -191,7 +192,15 @@ export class Scheduler<T> {
 				break;
 			}
 
-			await this.currentTask.callback(this.currentTask.target);
+			// Catch the exception of some error in the callback to avoid
+			// breaking the loop flow.
+
+			try {
+				await this.currentTask.callback(this.currentTask.target);
+			}
+			catch (error) {
+				console.error(error);
+			}
 
 			this.queue.dequeue();
 
@@ -221,20 +230,135 @@ export class Scheduler<T> {
 	}
 }
 
-type Mutation = {
+type ObserverObject = {
 
 	/**
-	 * Attributes are the attributes of a node. The array is considered a
-	 * conditional `or`, the same for the values of an attribute.
+	 * Element is the reference of an element in the DOM when the object is
+	 * initialized.
 	 */
-	attributes: Record<string, Array<string>>;
+	element: Element | null | undefined;
+
+	mutation: MutationObserver;
 
 	/**
-	 * NodeNames is an array of node names. This array is considered as a
-	 * conditional `or`.
+	 * Observed is a flag of the monitoring status. If the target and element
+	 * do not exist when the observation is started then `observed` is false.
 	 */
-	nodeNames: Array<string>;
+	observed: boolean;
+
+	/**
+	 * Target is the CSS selector that matches the element in the DOM.
+	 */
+	target: string;
 };
+
+type ObserverCallback = (records: Array<MutationRecord>) => void;
+
+/**
+ * Observer Pool is to maintain a list of elements being monitored, avoid
+ * duplicates and add elements on demand.
+ */
+class ObserverPool {
+	private observers: Array<ObserverObject>;
+	private callback: ObserverCallback;
+
+	constructor(targets: Array<string>, callback: ObserverCallback) {
+		this.callback = callback;
+		this.observers = targets.map((target: string) => ({
+			element: document.querySelector(target),
+			mutation: new MutationObserver(this.callback),
+			observed: false,
+			target,
+		}));
+	}
+
+	/**
+	 * Observe mutation in the element. If the element already exists and is
+	 * stale it will save the new reference and start the observation otherwise
+	 * it will add a new one.
+	 */
+	add(target: string) {
+		const hasTarget = this.observers.find(
+			(observer) => observer.target === target
+		);
+
+		const element = document.querySelector(target);
+
+		if (hasTarget && element !== hasTarget.element) {
+			hasTarget.mutation.disconnect();
+			hasTarget.observed = false;
+			hasTarget.element = element;
+		}
+		else if (!hasTarget) {
+			this.observers.push({
+				element,
+				mutation: new MutationObserver(this.callback),
+				observed: false,
+				target,
+			});
+		}
+
+		this.observe();
+	}
+
+	observe() {
+		this.observers = this.observers.map(
+			({element, mutation, observed, target}) => {
+				if (observed) {
+					return {
+						element,
+						mutation,
+						observed,
+						target,
+					};
+				}
+
+				element = element ?? document.querySelector(target);
+
+				// If the element is an iframe it monitors the body instead of
+				// monitoring the iframe element which will not detect
+				// mutations.
+
+				element =
+					element?.nodeName === 'IFRAME'
+						? (element as HTMLIFrameElement).contentDocument?.body
+						: element;
+
+				if (element) {
+					observed = true;
+
+					mutation.observe(element, {
+						attributes: true,
+						childList: true,
+						subtree: true,
+					});
+				}
+				else {
+					console.error(
+						`A11y: Target ${target} was not found in the DOM.`
+					);
+				}
+
+				return {
+					element,
+					mutation,
+					observed,
+					target,
+				};
+			}
+		);
+	}
+
+	unobserve() {
+		this.observers.forEach(({mutation}) => mutation.disconnect());
+	}
+}
+
+/**
+ * Attributes are the attributes of a node. The array is considered a
+ * conditional `or`, the same for the values of an attribute.
+ */
+type Attributes = Record<string, Array<string>>;
 
 export interface A11yCheckerOptions {
 
@@ -258,7 +382,7 @@ export interface A11yCheckerOptions {
 	 * Mutation is an optional list of criteria on which a new analysis will be
 	 * ignored.
 	 */
-	mutations?: Record<MutationRecordType, Mutation>;
+	mutations: Record<string, Attributes>;
 
 	/**
 	 * Targets is a list or element that represents the subtree(s) to be
@@ -270,11 +394,8 @@ export interface A11yCheckerOptions {
 export class A11yChecker {
 	private callback: A11yCheckerOptions['callback'];
 	private scheduler: Scheduler<Node>;
-	private observers: Array<{
-		target: string;
-		mutation: MutationObserver;
-	}>;
-	private mutations?: Record<MutationRecordType, Mutation>;
+	private observers: ObserverPool;
+	private mutations: Record<string, Attributes>;
 	readonly axeOptions: RunOptions;
 	readonly denylist?: Array<Array<string>>;
 
@@ -286,15 +407,24 @@ export class A11yChecker {
 		targets,
 	}: A11yCheckerOptions) {
 		const defaultOptions = {
-			absolutePaths: true,
 			reporter: 'v2',
 		} as const;
 
-		this.axeOptions = axeOptions ? axeOptions : defaultOptions;
+		const {runOnly, ...options} = axeOptions ?? {};
+
+		const runOnlyArray = Array.isArray(runOnly)
+			? runOnly.filter(Boolean)
+			: undefined;
+
+		this.axeOptions = {
+			...defaultOptions,
+			...options,
+			runOnly: runOnlyArray?.length ? runOnlyArray : undefined,
+		};
 
 		this.callback = callback;
 		this.denylist = denylist
-			? denylist.map((selector) => [selector])
+			? denylist.filter(Boolean).map((selector) => [selector])
 			: denylist;
 
 		// Scheduler can be a singleton to allow multiple instances of
@@ -305,10 +435,10 @@ export class A11yChecker {
 
 		this.mutations = mutations;
 
-		this.observers = targets.map((target: string) => ({
-			mutation: new MutationObserver(this.mutationCallback.bind(this)),
-			target,
-		}));
+		this.observers = new ObserverPool(
+			targets,
+			this.mutationCallback.bind(this)
+		);
 	}
 
 	private async run(target: HTMLElement) {
@@ -322,7 +452,7 @@ export class A11yChecker {
 		const context = this.denylist
 			? {
 					exclude: this.denylist,
-					include: target,
+					include: [target],
 			  }
 			: target;
 
@@ -350,73 +480,96 @@ export class A11yChecker {
 		}
 	}
 
-	private mutationCallback(records: Array<MutationRecord>) {
-		records.forEach((record) => {
-			if (this.mutations) {
-				const condition = this.mutations[record.type];
+	/**
+	 * Search for any iframe that is within the element to monitor mutations
+	 * within the iframe that may trigger further analysis.
+	 *
+	 * Searching for iframes when the checker is initialized is not good
+	 * because iframes can appear at any time on the page, like opening a
+	 * Modal, we need to monitor iframes as they appear during their lifecycle.
+	 */
+	private observeIframes(node: Node) {
 
-				if (condition && hasValidMutation(record, condition)) {
+		// The Node can be a text element without properties or attributes, we
+		// just ignored it for this case.
+
+		const iframes = (node as Element).querySelectorAll
+			? (node as Element).querySelectorAll('iframe')
+			: [];
+
+		iframes.forEach((iframe: HTMLIFrameElement) =>
+			this.observers.add(`#${iframe.getAttribute('id')}`)
+		);
+	}
+
+	private mutationCallback(records: Array<MutationRecord>) {
+		const denylistTargets = this.denylist?.map((selector) => [
+			...document.querySelectorAll(selector.join(' ')),
+		]);
+
+		records.forEach((record) => {
+			const {
+				addedNodes,
+				attributeName,
+				removedNodes,
+				target,
+				type,
+			} = record;
+
+			let node =
+				type === 'attributes' || removedNodes.length > 0
+					? target
+					: addedNodes[0];
+
+			if (type === 'attributes') {
+				const attributes =
+					this.mutations[node.nodeName.toLowerCase()] ??
+					this.mutations?.any;
+
+				const attributeValue = (node as Element).getAttribute(
+					attributeName as string
+				);
+
+				if (
+					attributes[attributeName as string]?.some((value) =>
+						value === '*' ? true : attributeValue?.includes(value)
+					)
+				) {
 					return;
 				}
 			}
 
-			this.recordCallback(record.target);
+			// Ignores the mutation if the target was through some element
+			// within the denylist.
+
+			const hasTargetInDenylist = denylistTargets?.some((targets) =>
+				targets?.some((target) => target.contains(node))
+			);
+
+			if (hasTargetInDenylist) {
+				return;
+			}
+
+			// If the node belongs to an iframe analyze the iframe instead of
+			// the element. `axe-core` cannot directly analyze the element.
+
+			if (node.ownerDocument !== document) {
+				node = ((node.ownerDocument as Document).defaultView as Window)
+					.frameElement as Node;
+			}
+
+			this.observeIframes(node);
+
+			this.recordCallback(node);
 		});
 	}
 
 	observe() {
-		this.observers.forEach(({mutation, target}) => {
-			const element = document.querySelector(target);
-
-			if (element) {
-				mutation.observe(element, {
-					attributes: true,
-					childList: true,
-					subtree: true,
-				});
-			}
-			else {
-				console.error(
-					`A11y: Target ${target} was not found in the DOM.`
-				);
-			}
-		});
+		this.observers.observe();
 	}
 
 	unobserve() {
 		this.scheduler.cancelHostCallback();
-		this.observers.forEach(({mutation}) => mutation.disconnect());
+		this.observers.unobserve();
 	}
-}
-
-function hasValidMutation(record: MutationRecord, mutation: Mutation) {
-	const {addedNodes, removedNodes, target} = record;
-	const {attributes, nodeNames} = mutation;
-
-	// Is a removal or added mutation with type childList
-
-	if (removedNodes.length > 0 || addedNodes.length > 0) {
-		const [node] = removedNodes.length > 0 ? removedNodes : addedNodes;
-
-		return (
-			nodeNames.includes(node.nodeName) &&
-			compareAttributes(node as Element, attributes)
-		);
-	}
-	else {
-		return compareAttributes(target as Element, attributes);
-	}
-}
-
-function compareAttributes(
-	node: Element,
-	attributes: Record<string, Array<string>>
-) {
-	const attributesNames = Object.keys(attributes);
-
-	return attributesNames.some((name) => {
-		const key = node.getAttribute(name);
-
-		return attributes[name].some((value) => key?.includes(value));
-	});
 }

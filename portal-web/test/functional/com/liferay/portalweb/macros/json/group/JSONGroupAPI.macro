@@ -2,27 +2,10 @@ definition {
 
 	@summary = "Directly calls the JSON WS API to add a group"
 	macro _addGroup {
-		Variables.assertDefined(parameterList = "${groupNameMap}");
+		Variables.assertDefined(parameterList = "${groupDescriptionMap},${groupNameMap},${manualMembership},${parentGroupId},${type}");
 
 		if (!(isSet(portalURL))) {
 			var portalURL = JSONCompany.getPortalURL();
-		}
-
-		if ("${type}" == "Private") {
-			var type = "3";
-		}
-		else if ("${type}" == "Restricted") {
-			var type = "2";
-		}
-		else {
-			var type = "1";
-		}
-
-		if ("${manualMembership}" == "false") {
-			var manualMembership = "false";
-		}
-		else {
-			var manualMembership = "true";
 		}
 
 		var curl = '''
@@ -41,7 +24,7 @@ definition {
 				-d active=true
 		''';
 
-		com.liferay.poshi.runner.util.JSONCurlUtil.post("${curl}");
+		JSONCurlUtil.post("${curl}");
 	}
 
 	@summary = "Directly calls the JSON WS API to assign a user a role"
@@ -95,7 +78,9 @@ definition {
 	macro _deleteGroup {
 		Variables.assertDefined(parameterList = "${groupId}");
 
-		var portalURL = JSONCompany.getPortalURL();
+		if (!(isSet(portalURL))) {
+			var portalURL = JSONCompany.getPortalURL();
+		}
 
 		var curl = '''
 			${portalURL}/api/jsonws/group/delete-group \
@@ -126,7 +111,7 @@ definition {
 
 		var depotEntryGroupRelId = JSONCurlUtil.post("${curl}", "$.[?(@['groupId'] == '${groupId}')]['depotEntryGroupRelId']");
 
-		if ("${depotEntryGroupRelId}" == "[]") {
+		if ("${depotEntryGroupRelId}" == "") {
 			fail("FAIL. Cannot find group.");
 		}
 
@@ -141,14 +126,23 @@ definition {
 
 		var portalURL = JSONCompany.getPortalURL();
 
+		if (!(isSet(defaultLocale))) {
+			var defaultLocale = "en_US";
+		}
+		else {
+			var defaultLocale = "${defaultLocale}";
+		}
+
+		var locale = '''default-locale=\"${defaultLocale}\"''';
+
 		var curl = '''
 			${portalURL}/api/jsonws/group/get-groups/company-id/${companyId}/parent-group-id/0/site/false \
 				-u test@liferay.com:test
 		''';
 
-		var depotId = JSONCurlUtil.get("${curl}", "$.[?(@['nameCurrentValue'] == '${depotName}')]['classPK']");
+		var depotId = JSONCurlUtil.get("${curl}", "$.[?(@['nameCurrentValue'] == '${depotName}' && @['name'] contains '${locale}')]['classPK']");
 
-		if ("${depotId}" == "[]") {
+		if ("${depotId}" == "") {
 			fail("FAIL. Cannot find group.");
 		}
 
@@ -177,7 +171,7 @@ definition {
 
 		var groupId = JSONCurlUtil.post("${curl}", "$.[?(@['nameCurrentValue'] == '${groupName}')]['groupId']");
 
-		if ("${groupId}" == "[]") {
+		if ("${groupId}" == "") {
 			fail("FAIL. Cannot find group.");
 		}
 
@@ -201,7 +195,7 @@ definition {
 
 		var groupId = JSONCurlUtil.get("${curl}", "$.[?(@['groupKey'] == '${groupKey}')]['groupId']");
 
-		if ("${groupId}" == "[]") {
+		if ("${groupId}" == "") {
 			fail("FAIL. Cannot find group.");
 		}
 
@@ -227,7 +221,7 @@ definition {
 
 		var groupId = JSONCurlUtil.get("${curl}", "$.[?(@['nameCurrentValue'] == '${groupName}')]['groupId']");
 
-		if ("${groupId}" == "[]") {
+		if ("${groupId}" == "") {
 			fail("FAIL. Cannot find group.");
 		}
 
@@ -271,7 +265,7 @@ definition {
 
 		var groupId = JSONCurlUtil.get("${curl}", "$.[?(@['nameCurrentValue'] == '${groupName}')]['groupId']");
 
-		if ("${groupId}" == "[]") {
+		if ("${groupId}" == "") {
 			fail("FAIL. Cannot find group.");
 		}
 
@@ -297,7 +291,7 @@ definition {
 
 		var groupId = JSONCurlUtil.post("${curl}", "$.[?(@['groupKey'] == '${groupName}')]['groupId']");
 
-		if ("${groupId}" == "[]") {
+		if ("${groupId}" == "") {
 			fail("FAIL. Cannot find group.");
 		}
 

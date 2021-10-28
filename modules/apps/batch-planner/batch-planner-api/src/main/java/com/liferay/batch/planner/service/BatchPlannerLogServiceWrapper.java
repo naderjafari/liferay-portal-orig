@@ -32,6 +32,93 @@ public class BatchPlannerLogServiceWrapper
 		_batchPlannerLogService = batchPlannerLogService;
 	}
 
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog addBatchPlannerLog(
+			long batchPlannerPlanId, String batchEngineExportERC,
+			String batchEngineImportERC, String dispatchTriggerERC, int size,
+			int status)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.addBatchPlannerLog(
+			batchPlannerPlanId, batchEngineExportERC, batchEngineImportERC,
+			dispatchTriggerERC, size, status);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog
+			deleteBatchPlannerLog(long batchPlannerLogId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.deleteBatchPlannerLog(batchPlannerLogId);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog getBatchPlannerLog(
+			long batchPlannerLogId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.getBatchPlannerLog(batchPlannerLogId);
+	}
+
+	@Override
+	public int getBatchPlannerLogsCount(long batchPlannerPlanId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.getBatchPlannerLogsCount(
+			batchPlannerPlanId);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog
+			getBatchPlannerPlanBatchPlannerLog(long batchPlannerPlanId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.getBatchPlannerPlanBatchPlannerLog(
+			batchPlannerPlanId);
+	}
+
+	@Override
+	public java.util.List<com.liferay.batch.planner.model.BatchPlannerLog>
+			getCompanyBatchPlannerLogs(
+				long companyId, boolean export, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.batch.planner.model.BatchPlannerLog>
+						orderByComparator)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.getCompanyBatchPlannerLogs(
+			companyId, export, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<com.liferay.batch.planner.model.BatchPlannerLog>
+			getCompanyBatchPlannerLogs(
+				long companyId, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.batch.planner.model.BatchPlannerLog>
+						orderByComparator)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.getCompanyBatchPlannerLogs(
+			companyId, start, end, orderByComparator);
+	}
+
+	@Override
+	public int getCompanyBatchPlannerLogsCount(long companyId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.getCompanyBatchPlannerLogsCount(
+			companyId);
+	}
+
+	@Override
+	public int getCompanyBatchPlannerLogsCount(long companyId, boolean export)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogService.getCompanyBatchPlannerLogsCount(
+			companyId, export);
+	}
+
 	/**
 	 * Returns the OSGi service identifier.
 	 *

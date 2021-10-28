@@ -58,6 +58,10 @@ public class HistogramMetric implements Serializable {
 		return ObjectMapperUtil.readValue(HistogramMetric.class, json);
 	}
 
+	public static HistogramMetric unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(HistogramMetric.class, json);
+	}
+
 	@Schema
 	@Valid
 	public Histogram[] getHistograms() {
@@ -242,13 +246,17 @@ public class HistogramMetric implements Serializable {
 
 		@JsonCreator
 		public static Unit create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (Unit unit : values()) {
 				if (Objects.equals(unit.getValue(), value)) {
 					return unit;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

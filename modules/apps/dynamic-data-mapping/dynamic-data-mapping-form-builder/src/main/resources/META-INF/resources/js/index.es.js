@@ -12,15 +12,5 @@
  * details.
  */
 
-import FormBuilderWithLayoutProvider from './components/FormBuilder/FormBuilderWithLayoutProvider.es';
-import RulesSupport from './components/RuleBuilder/RulesSupport.es';
-import * as FieldSupport from './util/fieldSupport.es';
-
-export default FormBuilderWithLayoutProvider;
-export {Token} from '../js/expressions/Token.es';
-export {Tokenizer} from '../js/expressions/Tokenizer.es';
-export * as SettingsContext from '../js/components/LayoutProvider/util/settingsContext.es';
-export * as RulesUtil from '../js/components/LayoutProvider/util/rules.es';
-export * as FieldUtil from '../js/components/LayoutProvider/util/fields.es';
-export * as FieldSetUtil from '../js/components/LayoutProvider/util/fieldset.es';
-export {FieldSupport, RulesSupport};
+export {Token} from './expressions/Token.es';
+export {Tokenizer} from './expressions/Tokenizer.es';

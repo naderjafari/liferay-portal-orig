@@ -63,6 +63,7 @@ import com.liferay.portal.kernel.util.CopyLayoutThreadLocal;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.exportimport.staging.StagingAdvicesThreadLocal;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
@@ -72,10 +73,12 @@ import com.liferay.sites.kernel.util.Sites;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -120,7 +123,7 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 			Layout sourceLayout, Layout targetLayout)
 		throws Exception {
 
-		if (_isDraft(sourceLayout)) {
+		if (sourceLayout.isDraftLayout()) {
 			return;
 		}
 
@@ -132,7 +135,7 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 
 		Layout layout = targetLayout;
 
-		if (_isDraft(targetLayout)) {
+		if (targetLayout.isDraftLayout()) {
 			layout = _layoutLocalService.getLayout(targetLayout.getClassPK());
 		}
 
@@ -143,6 +146,12 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 	private void _copyLayoutPageTemplateStructure(
 			Layout sourceLayout, Layout targetLayout)
 		throws Exception {
+
+		if (Objects.equals(
+				sourceLayout.getType(), LayoutConstants.TYPE_PORTLET)) {
+
+			return;
+		}
 
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			_layoutPageTemplateStructureLocalService.
@@ -295,22 +304,33 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 					fragmentEntryLink);
 
 			for (String portletId : portletIds) {
-				Group targetGroup = targetLayout.getGroup();
 				String resourceName = PortletIdCodec.decodePortletName(
 					portletId);
 				String sourceResourcePrimKey =
 					PortletPermissionUtil.getPrimaryKey(
 						sourceLayout.getPlid(), portletId);
-				String targetResourcePrimKey =
-					PortletPermissionUtil.getPrimaryKey(
-						targetLayout.getPlid(), portletId);
 				List<String> actionIds =
 					ResourceActionsUtil.getPortletResourceActions(resourceName);
 
-				List<Role> roles = _roleLocalService.getGroupRelatedRoles(
-					targetLayout.getGroupId());
+				Map<Long, Set<String>> sourceRoleIdsToActionIds =
+					_resourcePermissionLocalService.
+						getAvailableResourcePermissionActionIds(
+							targetLayout.getCompanyId(), resourceName,
+							ResourceConstants.SCOPE_INDIVIDUAL,
+							sourceResourcePrimKey, actionIds);
 
-				for (Role role : roles) {
+				if (sourceRoleIdsToActionIds.isEmpty()) {
+					continue;
+				}
+
+				Group targetGroup = targetLayout.getGroup();
+
+				Set<Long> roleIds = new HashSet<>();
+
+				for (Role role :
+						_roleLocalService.getGroupRelatedRoles(
+							targetLayout.getGroupId())) {
+
 					String roleName = role.getName();
 
 					if (roleName.equals(RoleConstants.ADMINISTRATOR) ||
@@ -321,20 +341,32 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 						continue;
 					}
 
-					List<String> actions =
-						_resourcePermissionLocalService.
-							getAvailableResourcePermissionActionIds(
-								targetLayout.getCompanyId(), resourceName,
-								ResourceConstants.SCOPE_INDIVIDUAL,
-								sourceResourcePrimKey, role.getRoleId(),
-								actionIds);
-
-					_resourcePermissionLocalService.setResourcePermissions(
-						targetLayout.getCompanyId(), resourceName,
-						ResourceConstants.SCOPE_INDIVIDUAL,
-						targetResourcePrimKey, role.getRoleId(),
-						actions.toArray(new String[0]));
+					roleIds.add(role.getRoleId());
 				}
+
+				Map<Long, String[]> targetRoleIdsToActionIds = new HashMap<>();
+
+				for (Map.Entry<Long, Set<String>> entry :
+						sourceRoleIdsToActionIds.entrySet()) {
+
+					Long roleId = entry.getKey();
+
+					if (roleIds.contains(roleId)) {
+						Set<String> sourceActionIds = entry.getValue();
+
+						targetRoleIdsToActionIds.put(
+							roleId, sourceActionIds.toArray(new String[0]));
+					}
+				}
+
+				String targetResourcePrimKey =
+					PortletPermissionUtil.getPrimaryKey(
+						targetLayout.getPlid(), portletId);
+
+				_resourcePermissionLocalService.setResourcePermissions(
+					targetLayout.getCompanyId(), resourceName,
+					ResourceConstants.SCOPE_INDIVIDUAL, targetResourcePrimKey,
+					targetRoleIdsToActionIds);
 			}
 		}
 	}
@@ -496,7 +528,7 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 				sourceLayout.getPlid());
 
 		for (SegmentsExperience segmentsExperience : segmentsExperiences) {
-			if (_isDraft(sourceLayout) &&
+			if (sourceLayout.isDraftLayout() &&
 				(sourceLayout.getClassPK() == targetLayout.getPlid())) {
 
 				segmentsExperienceIds.put(
@@ -508,7 +540,7 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 
 			long plid = targetLayout.getPlid();
 
-			if (_isDraft(targetLayout)) {
+			if (targetLayout.isDraftLayout()) {
 				plid = targetLayout.getClassPK();
 			}
 
@@ -581,20 +613,6 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 		}
 
 		return false;
-	}
-
-	private boolean _isDraft(Layout layout) {
-		if (layout.getClassPK() <= 0) {
-			return false;
-		}
-
-		if (layout.getClassNameId() != _portal.getClassNameId(
-				Layout.class.getName())) {
-
-			return false;
-		}
-
-		return true;
 	}
 
 	private JSONObject _processDataJSONObject(
@@ -768,14 +786,11 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 				_targetLayout.getLayoutId(),
 				_sourceLayout.getStyleBookEntryId());
 
-			UnicodeProperties unicodeProperties = new UnicodeProperties();
+			UnicodeProperties unicodeProperties = UnicodePropertiesBuilder.load(
+				_sourceLayout.getTypeSettings()
+			).build();
 
-			unicodeProperties.load(_sourceLayout.getTypeSettings());
-
-			if ((_sourceLayout.getClassNameId() == _portal.getClassNameId(
-					Layout.class)) &&
-				(_targetLayout.getPlid() == _sourceLayout.getClassPK())) {
-
+			if (_sourceLayout.isDraftLayout()) {
 				unicodeProperties.put("published", Boolean.TRUE.toString());
 
 				_layoutLocalService.updateLayout(
@@ -821,12 +836,13 @@ public class LayoutCopyHelperImpl implements LayoutCopyHelper {
 				}
 			}
 			else {
-				_layoutSEOEntryLocalService.updateLayoutSEOEntry(
+				_layoutSEOEntryLocalService.copyLayoutSEOEntry(
 					_targetLayout.getUserId(), _targetLayout.getGroupId(),
 					_targetLayout.isPrivateLayout(),
 					_targetLayout.getLayoutId(),
 					layoutSEOEntry.isCanonicalURLEnabled(),
 					layoutSEOEntry.getCanonicalURLMap(),
+					layoutSEOEntry.getDDMStorageId(),
 					layoutSEOEntry.isOpenGraphDescriptionEnabled(),
 					layoutSEOEntry.getOpenGraphDescriptionMap(),
 					layoutSEOEntry.getOpenGraphImageAltMap(),

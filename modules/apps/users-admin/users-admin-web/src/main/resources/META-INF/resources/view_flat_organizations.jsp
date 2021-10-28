@@ -36,7 +36,7 @@ PortletURL portletURL = PortletURLBuilder.create(
 	(PortletURL)request.getAttribute("view.jsp-portletURL")
 ).setParameter(
 	"displayStyle", displayStyle
-).build();
+).buildPortletURL();
 
 String keywords = ParamUtil.getString(request, "keywords");
 
@@ -55,6 +55,8 @@ if (filterManageableOrganizations) {
 	}
 }
 %>
+
+<liferay-ui:success key="userAdded" message="the-user-was-created-successfully" />
 
 <c:choose>
 	<c:when test="<%= showList %>">

@@ -1,9 +1,9 @@
 definition {
 
-	macro addFullDescriptionViaAlloyEditor {
-		AlloyEditor.typeEditor(
-			content = "${entryFullDescription}",
-			editor = "description");
+	macro addFullDescriptionViaCKEditor {
+		Type.typeCKEditor(
+			locator1 = "CKEditor#BODY_FIELD",
+			value1 = "${entryFullDescription}");
 	}
 
 	macro addNewAccountGroupsEntry {
@@ -23,7 +23,7 @@ definition {
 
 		Button.clickSave();
 
-		CommerceEntry.gotoNestedMenu(nestedMenu = "Users");
+		Navigator.gotoNavTab(navTab = "Users");
 
 		Click(locator1 = "Button#PLUS");
 
@@ -139,10 +139,35 @@ definition {
 			value1 = "${entryName}");
 
 		Type(
-			locator1 = "CommerceEntry#CODE_FIELD",
+			key_fieldLabel = "Code",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
 			value1 = "${code}");
 
-		Check.checkToggleSwitch(locator1 = "CommerceEntry#PRIMARY_CHECKBOX");
+		if (isSet(symbol)) {
+			Type(
+				key_fieldLabel = "Symbol",
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${symbol}");
+		}
+
+		if (isSet(formatPattern)) {
+			Type(
+				key_fieldLabel = "Format Pattern",
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${formatPattern}");
+		}
+
+		if (!(isSet(isPrimary)) || "${isPrimary}" == "true") {
+			Check.checkToggleSwitch(locator1 = "CommerceEntry#PRIMARY_CHECKBOX");
+		}
+		else {
+			if (isSet(exchangeRate)) {
+				Type(
+					key_fieldLabel = "Exchange Rate with US Dollar",
+					locator1 = "TextInput#GENERIC_TEXT_INPUT",
+					value1 = "${exchangeRate}");
+			}
+		}
 
 		Check.checkToggleSwitch(locator1 = "CommerceEntry#ACTIVE_CHECKBOX");
 	}
@@ -160,6 +185,8 @@ definition {
 	}
 
 	macro addNewDiscountsEntry {
+		Pause(locator1 = "3000");
+
 		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
 
 		Type(
@@ -249,6 +276,13 @@ definition {
 		Check.checkToggleSwitch(
 			key_toggleSwitchLabel = "Enabled",
 			locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH");
+
+		if (isSet(entryTo)) {
+			Type(
+				key_fieldLabel = "To",
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${entryTo}");
+		}
 
 		Type(
 			locator1 = "CommerceEntry#NOTIFICATION_TEMPLATE_FROM_ADDRESS_FIELD",
@@ -369,7 +403,7 @@ definition {
 			locator1 = "CommerceEntry#SHORT_DESCRIPTION_FIELD",
 			value1 = "${productShortDescription}");
 
-		CommerceEntry.addFullDescriptionViaAlloyEditor(entryFullDescription = "${productFullDescription}");
+		CommerceEntry.addFullDescriptionViaCKEditor(entryFullDescription = "${productFullDescription}");
 	}
 
 	macro AddShippingOptionSettingsVariableRate {
@@ -503,8 +537,15 @@ definition {
 		Click(locator1 = "Button#BACK");
 	}
 
+	macro changePinColor {
+		Type(
+			locator1 = "CommerceEntry#DEFAULT_DIAMETER_CUSTOM_COLOR_SELECTION",
+			value1 = "${color}");
+	}
+
 	macro checkImageName {
 		echo("number is: ${number} image is: ${image} uploadFileName is: ${uploadFileName}");
+
 		if ("${number}" != "") {
 			AssertElementPresent(
 				key_entry = "Commerce_${image} (${number}).jpg",
@@ -532,7 +573,7 @@ definition {
 
 	macro createNewAccountGroup {
 		ApplicationsMenu.gotoPortlet(
-			category = "Users",
+			category = "Accounts",
 			panel = "Control Panel",
 			portlet = "Accounts");
 
@@ -544,7 +585,7 @@ definition {
 			user = "${user}");
 
 		ApplicationsMenu.gotoPortlet(
-			category = "Users",
+			category = "Accounts",
 			panel = "Control Panel",
 			portlet = "Account Groups");
 
@@ -556,7 +597,7 @@ definition {
 
 		AssertElementPresent(locator1 = "Message#SUCCESS");
 
-		CommerceEntry.gotoNestedMenu(nestedMenu = "Accounts");
+		Navigator.gotoNavTab(navTab = "Accounts");
 
 		Click(locator1 = "Button#PLUS");
 
@@ -655,7 +696,7 @@ definition {
 	}
 
 	macro editEntryFullDescription {
-		CommerceEntry.addFullDescriptionViaAlloyEditor(entryFullDescription = "${newEntryFullDescription}");
+		CommerceEntry.addFullDescriptionViaCKEditor(entryFullDescription = "${newEntryFullDescription}");
 	}
 
 	macro editEntryName {
@@ -706,6 +747,18 @@ definition {
 			value1 = "${keyDescription}");
 
 		Click(locator1 = "Button#BACK");
+	}
+
+	macro getFileEntryIDFromProductMedia {
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		var fileEntryId = selenium.getElementValue("CommerceEntry#FILE_ENTRY_ID_FROM_PRODUCT_MEDIA");
+
+		Click(locator1 = "Icon#CLOSE");
+
+		IFrame.selectTopFrame();
+
+		return "${fileEntryId}";
 	}
 
 	macro gotoBreadcrumb {
@@ -885,9 +938,37 @@ definition {
 
 		SelectFrameTop();
 
-		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+		if ("${productType}" != "Diagram") {
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+		}
 
 		CommerceItemSelector.uploadSingleFile(uploadFileName = "${uploadFileName}");
+	}
+
+	macro verifyCostumRadiusWithCostumValue {
+		for (var number : list "${key_list}") {
+			KeyPress(
+				locator1 = "CommerceEntry#DEFAULT_DIAMETER_CUSTOM_RADIUS",
+				value1 = "\RIGHT");
+		}
+	}
+
+	macro verifyCostumRadiusWithDefaultValue {
+		for (var value : list "Small:10,Medium:20,Large:30") {
+			var dimension = StringUtil.extractFirst("${value}", ":");
+
+			var number = StringUtil.extractLast("${value}", ":");
+
+			Click(
+				key_optionValue = "${dimension}",
+				locator1 = "CommerceFrontStore#FS_PRODUCT_OPTION");
+
+			AssertElementPresent(
+				key_radius = "${number}",
+				locator1 = "CommerceEntry#VERIFY_PIN_RADIUS");
+
+			echo("Dimension: ${dimension} Radius: ${number} are present");
+		}
 	}
 
 	macro viewAccountsEntry {
@@ -895,12 +976,15 @@ definition {
 			locator1 = "TextInput#NAME",
 			value1 = "${accountName}");
 
-		AssertTextEquals(
-			locator1 = "TextInput#EMAIL",
-			value1 = "${accountEmail}");
+		var accountActualEmail = CommerceJSONAccountsAPI._getCommerceAccountEmail(accountName = "${accountName}", accountType = "${accountType}");
 
-		AssertSelectedLabel(
-			locator1 = "Select#TYPE",
+		TestUtils.assertEquals(
+			actual = "${accountActualEmail}",
+			expected = "${accountEmail}");
+
+		AssertTextEquals(
+			key_typeName = "${accountType}",
+			locator1 = "TextInput#TYPE",
 			value1 = "${accountType}");
 
 		if (isSet(accountVATNumber)) {
@@ -925,10 +1009,10 @@ definition {
 		}
 
 		if ("${isAccountActive}" == "true") {
-			AssertChecked(locator1 = "Checkbox#ACTIVE");
+			AssertChecked.assertCheckedNotVisible(locator1 = "ToggleSwitch#ACCOUNT_STATUS");
 		}
 		else {
-			AssertNotChecked(locator1 = "Checkbox#ACTIVE");
+			AssertNotChecked.assertNotCheckedNotVisible(locator1 = "ToggleSwitch#ACCOUNT_STATUS");
 		}
 	}
 

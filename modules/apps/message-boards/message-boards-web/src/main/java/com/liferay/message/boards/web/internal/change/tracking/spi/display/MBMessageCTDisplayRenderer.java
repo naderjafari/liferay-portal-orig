@@ -28,8 +28,6 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepository;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.GroupLocalService;
@@ -54,24 +52,6 @@ import org.osgi.service.component.annotations.Reference;
 @Component(immediate = true, service = CTDisplayRenderer.class)
 public class MBMessageCTDisplayRenderer
 	extends BaseCTDisplayRenderer<MBMessage> {
-
-	@Override
-	public String getContent(
-			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse, MBMessage mbMessage)
-		throws Exception {
-
-		if (mbMessage.isFormatBBCode()) {
-			ThemeDisplay themeDisplay =
-				(ThemeDisplay)liferayPortletRequest.getAttribute(
-					WebKeys.THEME_DISPLAY);
-
-			return MBUtil.getBBCodeHTML(
-				mbMessage.getBody(false), themeDisplay.getPathThemeImages());
-		}
-
-		return mbMessage.getBody(false);
-	}
 
 	@Override
 	public String getEditURL(
@@ -107,23 +87,31 @@ public class MBMessageCTDisplayRenderer
 	}
 
 	@Override
-	public String getPreviousContent(
-			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse,
-			MBMessage currentMBMessage, MBMessage previousMBMessage)
-		throws Exception {
-
-		return getContent(
-			liferayPortletRequest, liferayPortletResponse, previousMBMessage);
-	}
-
-	@Override
 	public String getTitle(Locale locale, MBMessage mbMessage) {
 		return mbMessage.getSubject();
 	}
 
 	@Override
-	public boolean hasContent() {
+	public String renderPreview(DisplayContext<MBMessage> displayContext) {
+		MBMessage mbMessage = displayContext.getModel();
+
+		if (mbMessage.isFormatBBCode()) {
+			HttpServletRequest httpServletRequest =
+				displayContext.getHttpServletRequest();
+
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
+
+			return MBUtil.getBBCodeHTML(
+				mbMessage.getBody(false), themeDisplay.getPathThemeImages());
+		}
+
+		return mbMessage.getBody(false);
+	}
+
+	@Override
+	public boolean showPreviewDiff() {
 		return true;
 	}
 

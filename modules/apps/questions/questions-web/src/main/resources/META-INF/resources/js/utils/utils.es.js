@@ -59,6 +59,17 @@ export function deleteCache() {
 	client.cache.clear();
 }
 
+export function deleteCacheKey(query, variables) {
+	const keyObj = {
+		operation: {
+			query,
+			variables,
+		},
+	};
+	keyObj.fetchOptions = {};
+	client.cache.delete(keyObj);
+}
+
 export function timeDifference(previous, current = new Date()) {
 	const msPerMinute = 60 * 1000;
 	const msPerHour = msPerMinute * 60;
@@ -98,6 +109,29 @@ export function timeDifference(previous, current = new Date()) {
 			Math.round(elapsed / msPerYear),
 		]);
 	}
+}
+
+export function getErrorObjectsByStatusCode(message, title) {
+	return [
+		{
+			code: 404,
+			message,
+			title,
+		},
+	];
+}
+
+export function getErrorObject(statusCode, message, title) {
+	const errorObject = getErrorObjectsByStatusCode(message, title).find(
+		(errorObject) => errorObject.code === statusCode
+	);
+
+	return errorObject
+		? errorObject
+		: {
+				code: statusCode,
+				message: Liferay.Language.get('error'),
+		  };
 }
 
 export function useDebounceCallback(callback, milliseconds) {
@@ -179,6 +213,28 @@ export function getBasePath(path) {
 	}
 
 	return href.substring(origin, href.indexOf(path));
+}
+
+export function getBasePathWithHistoryRouter(friendlyURLPath) {
+	const href = window.location.href;
+	const appPath = '/questions';
+
+	if (!href.includes(friendlyURLPath)) {
+		return normalizeUrl(href) + friendlyURLPath + appPath;
+	}
+	else if (!href.includes(appPath)) {
+		return normalizeUrl(href) + appPath;
+	}
+
+	return href;
+}
+
+function normalizeUrl(url) {
+	if (!url) {
+		return url;
+	}
+
+	return url[url.length - 1] === '/' ? url.substring(0, url.length - 1) : url;
 }
 
 export function getContextLink(url) {

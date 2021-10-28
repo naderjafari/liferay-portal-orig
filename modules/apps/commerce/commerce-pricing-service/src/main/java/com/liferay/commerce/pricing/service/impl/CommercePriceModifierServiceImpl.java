@@ -32,21 +32,20 @@ import java.util.List;
 
 /**
  * @author Riccardo Alberti
- * @see CommercePriceModifierServiceBaseImpl
  */
 public class CommercePriceModifierServiceImpl
 	extends CommercePriceModifierServiceBaseImpl {
 
 	@Override
 	public CommercePriceModifier addCommercePriceModifier(
-			long userId, long groupId, String title, String target,
-			long commercePriceListId, String modifierType,
-			BigDecimal modifierAmount, double priority, boolean active,
-			int displayDateMonth, int displayDateDay, int displayDateYear,
-			int displayDateHour, int displayDateMinute, int expirationDateMonth,
-			int expirationDateDay, int expirationDateYear,
-			int expirationDateHour, int expirationDateMinute,
-			boolean neverExpire, ServiceContext serviceContext)
+			long groupId, String title, String target, long commercePriceListId,
+			String modifierType, BigDecimal modifierAmount, double priority,
+			boolean active, int displayDateMonth, int displayDateDay,
+			int displayDateYear, int displayDateHour, int displayDateMinute,
+			int expirationDateMonth, int expirationDateDay,
+			int expirationDateYear, int expirationDateHour,
+			int expirationDateMinute, boolean neverExpire,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		_commercePriceListModelResourcePermission.check(
@@ -63,15 +62,15 @@ public class CommercePriceModifierServiceImpl
 
 	@Override
 	public CommercePriceModifier addOrUpdateCommercePriceModifier(
-			String externalReferenceCode, long userId,
-			long commercePriceModifierId, long groupId, String title,
-			String target, long commercePriceListId, String modifierType,
-			BigDecimal modifierAmount, double priority, boolean active,
-			int displayDateMonth, int displayDateDay, int displayDateYear,
-			int displayDateHour, int displayDateMinute, int expirationDateMonth,
-			int expirationDateDay, int expirationDateYear,
-			int expirationDateHour, int expirationDateMinute,
-			boolean neverExpire, ServiceContext serviceContext)
+			String externalReferenceCode, long commercePriceModifierId,
+			long groupId, String title, String target, long commercePriceListId,
+			String modifierType, BigDecimal modifierAmount, double priority,
+			boolean active, int displayDateMonth, int displayDateDay,
+			int displayDateYear, int displayDateHour, int displayDateMinute,
+			int expirationDateMonth, int expirationDateDay,
+			int expirationDateYear, int expirationDateHour,
+			int expirationDateMinute, boolean neverExpire,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		_commercePriceListModelResourcePermission.check(
@@ -79,8 +78,8 @@ public class CommercePriceModifierServiceImpl
 
 		return commercePriceModifierLocalService.
 			addOrUpdateCommercePriceModifier(
-				externalReferenceCode, userId, commercePriceModifierId, groupId,
-				title, target, commercePriceListId, modifierType,
+				externalReferenceCode, getUserId(), commercePriceModifierId,
+				groupId, title, target, commercePriceListId, modifierType,
 				modifierAmount, priority, active, displayDateMonth,
 				displayDateDay, displayDateYear, displayDateHour,
 				displayDateMinute, expirationDateMonth, expirationDateDay,

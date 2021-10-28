@@ -23,9 +23,11 @@ import QuestionRow from '../../components/QuestionRow.es';
 import UserIcon from '../../components/UserIcon.es';
 import useQueryParams from '../../hooks/useQueryParams.es';
 import {getUserActivityQuery} from '../../utils/client.es';
+import {historyPushWithSlug} from '../../utils/utils.es';
 
 export default withRouter(
 	({
+		history,
 		location,
 		match: {
 			params: {creatorId},
@@ -99,10 +101,15 @@ export default withRouter(
 			});
 		}, [fetchUserActivity, page, pageSize]);
 
-		const hrefConstructor = (page) =>
-			`${
-				context.historyRouterBasePath || '#'
-			}/questions/activity/${creatorId}?page=${page}&pagesize=${pageSize}`;
+		const historyPushParser = historyPushWithSlug(history.push);
+
+		function buildUrl(page, pageSize) {
+			return `/questions/activity/${creatorId}?page=${page}&pagesize=${pageSize}`;
+		}
+
+		function changePage(page, pageSize) {
+			historyPushParser(buildUrl(page, pageSize));
+		}
 
 		const addSectionToQuestion = (question) => {
 			return {
@@ -155,17 +162,25 @@ export default withRouter(
 						<PaginatedList
 							activeDelta={pageSize}
 							activePage={page}
-							changeDelta={setPageSize}
+							changeDelta={(pageSize) =>
+								changePage(page, pageSize)
+							}
+							changePage={(page) => changePage(page, pageSize)}
 							data={data && data.messageBoardMessages}
 							emptyState={
 								<ClayEmptyState
+									description={Liferay.Language.get(
+										'sorry-there-are-no-results-found'
+									)}
 									imgSrc={
 										context.includeContextPath +
 										'/assets/empty_questions_list.png'
 									}
+									title={Liferay.Language.get(
+										'there-are-no-results'
+									)}
 								/>
 							}
-							hrefConstructor={hrefConstructor}
 							loading={loading}
 							totalCount={totalCount}
 						>

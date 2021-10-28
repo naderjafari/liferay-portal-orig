@@ -21,7 +21,10 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 /**
  * @author Adolfo Pérez
  */
-@ExtendedObjectClassDefinition(category = "translation")
+@ExtendedObjectClassDefinition(
+	category = "translation",
+	scope = ExtendedObjectClassDefinition.Scope.COMPANY
+)
 @Meta.OCD(
 	id = "com.liferay.translation.google.cloud.translator.internal.configuration.GoogleCloudTranslatorConfiguration",
 	localization = "content/Language",
@@ -30,8 +33,9 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 public interface GoogleCloudTranslatorConfiguration {
 
 	@Meta.AD(
-		deflt = "false", description = "enabled-description", name = "enabled",
-		required = false
+		deflt = "false",
+		description = "enabled-description[google-cloud-translation]",
+		name = "enabled", required = false
 	)
 	public boolean enabled();
 

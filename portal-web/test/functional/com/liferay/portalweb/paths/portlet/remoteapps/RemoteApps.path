@@ -2,12 +2,19 @@
 <head>
 <title>RemoteApps</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">RemoteApps</td></tr>
 </thead>
+
 <tbody>
+<tr>
+	<td>REMOTE_APPS_HEADER</td>
+	<td>//span[contains(@data-qa-id,'headerTitle') and contains(@value,'Remote Apps')]</td>
+	<td></td>
+</tr>
 <tr>
 	<td>EMPTY_REMOTE_TABLE_MESSAGE</td>
 	<td>//div[contains(@class,'sheet-text') and contains(.,'No items were found.')]</td>
@@ -25,12 +32,12 @@
 </tr>
 <tr>
 	<td>TABLE_ENTRY_NAME</td>
-	<td>//table//tbody//td//*[contains(@class,'table-list-title')]//*[contains(text(),'${key_tableEntryName}')]</td>
+	<td>//table//tbody//td//*[contains(@class,'table-list-title')]//*[text() = '${key_tableEntryName}']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>TABLE_ENTRY_NAME_REMOTE_TABLE</td>
-	<td>//div[contains(@class,'dnd-td')]//div[contains(@class,'table-list-title')]//*[contains(text(),'${key_tableEntryName}')]</td>
+	<td>//div[contains(@class,'dnd-td')]//div[contains(@class,'table-list-title')]//*[text() = '${key_tableEntryName}']</td>
 	<td></td>
 </tr>
 <tr>

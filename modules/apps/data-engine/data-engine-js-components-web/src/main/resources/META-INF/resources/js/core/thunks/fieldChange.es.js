@@ -15,6 +15,7 @@
 import {evaluate, mergePages} from '../../utils/evaluation.es';
 import {PagesVisitor} from '../../utils/visitors.es';
 import {EVENT_TYPES} from '../actions/eventTypes.es';
+import {disableSubmitButton} from '../utils/submitButtonController.es';
 
 let REVALIDATE_UPDATES = [];
 
@@ -63,13 +64,15 @@ let lastEditedPages = [];
 export default function fieldChange({
 	defaultLanguageId,
 	editingLanguageId,
+	objectFields,
 	pages,
 	portletNamespace,
 	properties,
 	rules,
+	submitButtonId,
 	viewMode,
 }) {
-	return (dispatch) => {
+	return async (dispatch) => {
 		const {fieldInstance, key, value} = properties;
 		const {evaluable, fieldName} = fieldInstance;
 
@@ -88,72 +91,72 @@ export default function fieldChange({
 
 		dispatch({payload: editedPages, type: EVENT_TYPES.PAGE.UPDATE});
 
-		// We triggered a dispatch of FIELD_CHANGE just to propagate the event to
-		// the upper layers.
-
-		dispatch({payload: properties, type: EVENT_TYPES.FIELD.CHANGE});
-
 		if (evaluable) {
-			evaluate(fieldName, {
-				defaultLanguageId,
-				editingLanguageId,
-				pages: editedPages,
-				portletNamespace,
-				rules,
-				viewMode,
-			})
-				.then((evaluatedPages) => {
-					if (REVALIDATE_UPDATES.length > 0) {
+			try {
+				disableSubmitButton(submitButtonId);
 
-						// All non-evaluable operations that were performed after the request
-						// was sent are used here to revalidate the new data.
+				let evaluatedPages = await evaluate(fieldName, {
+					defaultLanguageId,
+					editingLanguageId,
+					objectFields,
+					pages: editedPages,
+					portletNamespace,
+					rules,
+					viewMode,
+				});
 
-						REVALIDATE_UPDATES.forEach((item) => {
-							evaluatedPages = getEditedPages({
-								...item,
-								pages: evaluatedPages,
-							});
+				dispatch({payload: properties, type: EVENT_TYPES.FIELD.CHANGE});
+
+				if (REVALIDATE_UPDATES.length > 0) {
+
+					// All nonevaluable operations that were performed after the request
+					// was sent are used here to revalidate the new data
+
+					REVALIDATE_UPDATES.forEach((item) => {
+						evaluatedPages = getEditedPages({
+							...item,
+							pages: evaluatedPages,
 						});
-
-						// Redefine the list of updates to avoid leaking memory and avoid
-						// more expensive operations in the next interactions
-
-						REVALIDATE_UPDATES = [];
-					}
-
-					return evaluatedPages;
-				})
-				.then((evaluatedPages) => {
-					if (fieldInstance.isDisposed()) {
-						return;
-					}
-
-					const mergedPages = mergePages(
-						defaultLanguageId,
-						editingLanguageId,
-						fieldName,
-						evaluatedPages,
-						lastEditedPages,
-						viewMode
-					);
-
-					dispatch({
-						payload: mergedPages,
-						type: EVENT_TYPES.PAGE.UPDATE,
 					});
-					dispatch({
-						payload: mergedPages,
-						type: EVENT_TYPES.FIELD.EVALUATE,
-					});
-				})
-				.catch((error) =>
-					dispatch({
-						payload: error,
-						type: EVENT_TYPES.FIELD_EVALUATION_ERROR,
-					})
+
+					// Redefine the list of updates to avoid leaking memory and avoid
+					// more expensive operations in the next interactions
+
+					REVALIDATE_UPDATES = [];
+				}
+				if (fieldInstance.isDisposed()) {
+					return;
+				}
+
+				const mergedPages = mergePages(
+					defaultLanguageId,
+					editingLanguageId,
+					fieldName,
+					evaluatedPages,
+					lastEditedPages,
+					viewMode
 				);
+
+				dispatch({
+					payload: mergedPages,
+					type: EVENT_TYPES.PAGE.UPDATE,
+				});
+
+				dispatch({
+					payload: mergedPages,
+					type: EVENT_TYPES.FIELD.EVALUATE,
+				});
+			}
+			catch (error) {
+				dispatch({
+					payload: error,
+					type: EVENT_TYPES.FIELD_EVALUATION_ERROR,
+				});
+			}
 		}
 		else {
+			dispatch({payload: properties, type: EVENT_TYPES.FIELD.CHANGE});
+
 			REVALIDATE_UPDATES.push({
 				editingLanguageId,
 				name: fieldInstance.name,

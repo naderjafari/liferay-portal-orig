@@ -80,7 +80,6 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletPreferences;
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -312,7 +311,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 				uploadPortletRequest, "autoArticleId");
 
 			article = _journalArticleService.addArticle(
-				groupId, folderId, classNameId, classPK, articleId,
+				null, groupId, folderId, classNameId, classPK, articleId,
 				autoArticleId, titleMap, descriptionMap, friendlyURLMap,
 				content, ddmStructureKey, ddmTemplateKey, layoutUuid,
 				displayDateMonth, displayDateDay, displayDateYear,
@@ -448,9 +447,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 			String redirect)
 		throws Exception {
 
-		String languageId = ParamUtil.getString(actionRequest, "languageId");
-
-		PortletURL portletURL = PortletURLBuilder.create(
+		return PortletURLBuilder.create(
 			PortletURLFactoryUtil.create(
 				actionRequest, JournalPortletKeys.JOURNAL,
 				PortletRequest.RENDER_PHASE)
@@ -458,6 +455,8 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 			"/edit_article.jsp"
 		).setRedirect(
 			redirect
+		).setPortletResource(
+			ParamUtil.getString(actionRequest, "portletResource")
 		).setParameter(
 			"articleId", article.getArticleId()
 		).setParameter(
@@ -465,8 +464,17 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 		).setParameter(
 			"groupId", article.getGroupId()
 		).setParameter(
-			"portletResource",
-			ParamUtil.getString(actionRequest, "portletResource")
+			"languageId",
+			() -> {
+				String languageId = ParamUtil.getString(
+					actionRequest, "languageId");
+
+				if (Validator.isNotNull(languageId)) {
+					return languageId;
+				}
+
+				return null;
+			}
 		).setParameter(
 			"referringPortletResource",
 			ParamUtil.getString(actionRequest, "referringPortletResource")
@@ -474,15 +482,9 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 			"resourcePrimKey", article.getResourcePrimKey()
 		).setParameter(
 			"version", article.getVersion()
-		).build();
-
-		if (Validator.isNotNull(languageId)) {
-			portletURL.setParameter("languageId", languageId);
-		}
-
-		portletURL.setWindowState(actionRequest.getWindowState());
-
-		return portletURL.toString();
+		).setWindowState(
+			actionRequest.getWindowState()
+		).buildString();
 	}
 
 	protected void sendEditArticleRedirect(
@@ -583,7 +585,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 
 			String currentFriendlyURL = entry.getValue();
 
-			if (!originalFriendlyURL.equals(StringPool.BLANK) &&
+			if (Validator.isNotNull(originalFriendlyURL) &&
 				!currentFriendlyURL.equals(normalizedOriginalFriendlyURL)) {
 
 				messages.add(

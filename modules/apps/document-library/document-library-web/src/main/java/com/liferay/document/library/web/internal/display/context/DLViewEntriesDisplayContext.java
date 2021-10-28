@@ -100,6 +100,8 @@ public class DLViewEntriesDisplayContext {
 		if (DLFileEntryPermission.contains(
 				permissionChecker, fileEntry, ActionKeys.UPDATE)) {
 
+			availableActions.add("collectDigitalSignature");
+
 			availableActions.add("move");
 
 			if (fileEntry.isCheckedOut()) {
@@ -307,10 +309,10 @@ public class DLViewEntriesDisplayContext {
 		if ((folderId != DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) &&
 			(folderId != _dlAdminDisplayContext.getRootFolderId())) {
 
-			return true;
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	public boolean isVersioningStrategyOverridable() {

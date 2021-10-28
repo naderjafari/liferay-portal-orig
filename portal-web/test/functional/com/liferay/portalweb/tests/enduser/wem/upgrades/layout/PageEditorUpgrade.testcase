@@ -17,7 +17,27 @@ definition {
 			panel = "Control Panel",
 			portlet = "Search");
 
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+		SearchAdministration.executeSearchActions(actionsDescription = "Reindex search indexes.");
+	}
+
+	@description = "This is a use case for LPS-130223. The user can edit a inline text of an OOTB Card fragment after Upgrade."
+	@priority = "4"
+	test CanEditInlineTextOfAnOOTBCardFragmentAfterUpgrade730 {
+		property data.archive.type = "data-archive-card-fragment";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.version = "7.3.0";
+
+		Upgrade.viewEditableCardFragment();
+	}
+
+	@description = "This is a use case for LPS-130223. The user can edit a inline text of an OOTB Card fragment after Upgrade."
+	@priority = "4"
+	test CanEditInlineTextOfAnOOTBCardFragmentAfterUpgrade73101 {
+		property data.archive.type = "data-archive-card-fragment";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
+		property portal.version = "7.3.10.1";
+
+		Upgrade.viewEditableCardFragment();
 	}
 
 	@description = "This is a use case for LPS-120693."
@@ -32,19 +52,19 @@ definition {
 				pageName = "Test Fragment Content Page",
 				siteName = "Test Site Name");
 
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Heading Example");
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Heading Example");
 
-			AssertTextEquals.assertPartialText(
-				key_fragmentName = "card",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Card Title Example");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "card",
+				text = "Card Title Example");
 		}
 
 		task ("View the outer Container styles in edit mode") {
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			AssertElementNotPresent(
 				key_contentDisplay = "",
@@ -150,19 +170,19 @@ definition {
 				pageName = "Test Fragment Content Page",
 				siteName = "Test Site Name");
 
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Heading Example");
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Heading Example");
 
-			AssertTextEquals.assertPartialText(
-				key_fragmentName = "card",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Card Title Example");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "card",
+				text = "Card Title Example");
 		}
 
 		task ("View the Container styles in edit mode") {
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			AssertElementNotPresent(
 				key_contentDisplay = "",
@@ -256,19 +276,19 @@ definition {
 				pageName = "Test Fragment Content Page",
 				siteName = "Test Site Name");
 
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Heading Example");
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Heading Example");
 
-			AssertTextEquals.assertPartialText(
-				key_fragmentName = "card",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Card Title Example");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "card",
+				text = "Card Title Example");
 		}
 
 		task ("View the outer Container styles in edit mode") {
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			AssertElementNotPresent(
 				key_contentDisplay = "",
@@ -374,19 +394,19 @@ definition {
 				pageName = "Test Fragment Content Page",
 				siteName = "Test Site Name");
 
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Heading Example");
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Heading Example");
 
-			AssertTextEquals.assertPartialText(
-				key_fragmentName = "card",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Card Title Example");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "card",
+				text = "Card Title Example");
 		}
 
 		task ("View the Container styles in edit mode") {
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			AssertElementNotPresent(
 				key_contentDisplay = "",
@@ -509,50 +529,146 @@ definition {
 		Upgrade.viewContributedFragmentStyle();
 	}
 
-	@description = "This is a use case for LPS-123098."
+	@description = "This is a use case for LPS-123098 and LPS-135373. View existing Banner Center fragment on page after upgrade from 7.2."
 	@priority = "4"
-	test ViewEditableFieldValueAfterUpgrade721 {
-		property data.archive.type = "data-archive-modify-editable-field-value";
+	test ViewEditedInlineContentOfBannerCenterAfterUpgrade721 {
+		property data.archive.type = "data-archive-banner-center";
 		property database.types = "mariadb,mysql,postgresql";
 		property portal.version = "7.2.1";
 
-		Navigator.gotoSitePage(
-			pageName = "Test Page Name",
-			siteName = "Guest");
+		task ("View the edited inline content at view mode") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Page Name",
+				siteName = "Guest");
 
-		AssertTextEquals(
-			locator1 = "//div[contains(@class,'banner')]//h1",
-			value1 = "Edited Banner Title");
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				AssertVisible(locator1 = "//div[contains(@class,'banner')]//*[normalize-space(text())='${text}']");
+			}
 
-		ContentPages.clickPencil();
+			AssertVisible(locator1 = "//div[contains(@class,'banner')][contains(@style,'Document_1.jpg')]");
+		}
 
-		PageEditor.viewFragmentEditableText(
-			editableText = "Edited Banner Title",
-			fragmentName = "Banner Center",
-			id = "01-title");
+		task ("View the edited inline content at edit mode") {
+			ContentPages.gotoPageEditor();
+
+			var n = "1";
+
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				ContentPages.viewFragmentText(
+					contributed = "false",
+					fragmentName = "banner",
+					position = "${n}",
+					text = "${text}");
+
+				var n = ${n} + 1;
+			}
+
+			ContentPages.viewFragmentBackgroundImage(image = "Document_1.jpg");
+		}
 	}
 
-	@description = "This is a use case for LPS-123098."
+	@description = "This is a use case for LPS-135373. View existing Banner Center fragment on page after upgrade from 7.3."
 	@priority = "4"
-	test ViewEditableFieldValueAfterUpgrade72101 {
-		property data.archive.type = "data-archive-modify-editable-field-value";
+	test ViewEditedInlineContentOfBannerCenterAfterUpgrade735 {
+		property data.archive.type = "data-archive-banner-center";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.version = "7.3.5";
+
+		task ("View the edited inline content at view mode") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				AssertVisible(locator1 = "//div[contains(@class,'banner')]//*[normalize-space(text())='${text}']");
+			}
+
+			AssertVisible(locator1 = "//div[contains(@class,'banner')][contains(@style,'Document_1.jpg')]");
+		}
+
+		task ("View the edited inline content at edit mode") {
+			ContentPages.gotoPageEditor();
+
+			PageEditor.viewFragment(fragmentName = "Element");
+
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				AssertVisible(locator1 = "//div[contains(@class,'banner')]//*[normalize-space(text())='${text}']");
+			}
+
+			AssertVisible(locator1 = "//div[contains(@class,'banner')][contains(@style,'Document_1.jpg')]");
+		}
+	}
+
+	@description = "This is a use case for LPS-123098 and LPS-135373. View existing Banner Center fragment on page after upgrade from 7.2."
+	@priority = "4"
+	test ViewEditedInlineContentOfBannerCenterAfterUpgrade72101 {
+		property data.archive.type = "data-archive-banner-center";
 		property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
 		property portal.version = "7.2.10.1";
 
-		Navigator.gotoSitePage(
-			pageName = "Test Page Name",
-			siteName = "Guest");
+		task ("View the edited inline content at view mode") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Page Name",
+				siteName = "Guest");
 
-		AssertTextEquals(
-			locator1 = "//div[contains(@class,'banner')]//h1",
-			value1 = "Edited Banner Title");
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				AssertVisible(locator1 = "//div[contains(@class,'banner')]//*[normalize-space(text())='${text}']");
+			}
 
-		ContentPages.clickPencil();
+			AssertVisible(locator1 = "//div[contains(@class,'banner')][contains(@style,'Document_1.jpg')]");
+		}
 
-		PageEditor.viewFragmentEditableText(
-			editableText = "Edited Banner Title",
-			fragmentName = "Banner Center",
-			id = "01-title");
+		task ("View the edited inline content at edit mode") {
+			ContentPages.gotoPageEditor();
+
+			PageEditor.viewFragment(fragmentName = "Element");
+
+			var n = "1";
+
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				ContentPages.viewFragmentText(
+					contributed = "false",
+					fragmentName = "banner",
+					position = "${n}",
+					text = "${text}");
+
+				var n = ${n} + 1;
+			}
+
+			ContentPages.viewFragmentBackgroundImage(image = "Document_1.jpg");
+		}
+	}
+
+	@description = "This is a use case for LPS-135373. View existing Banner Center fragment on page after upgrade from 7.3."
+	@priority = "4"
+	test ViewEditedInlineContentOfBannerCenterAfterUpgrade73101 {
+		property data.archive.type = "data-archive-banner-center";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
+		property portal.version = "7.3.10.1";
+
+		task ("View the edited inline content at view mode") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				AssertVisible(locator1 = "//div[contains(@class,'banner')]//*[normalize-space(text())='${text}']");
+			}
+
+			AssertVisible(locator1 = "//div[contains(@class,'banner')][contains(@style,'Document_1.jpg')]");
+		}
+
+		task ("View the edited inline content at edit mode") {
+			ContentPages.gotoPageEditor();
+
+			PageEditor.viewFragment(fragmentName = "Element");
+
+			for (var text : list "Edited Banner Title,Edited Banner Subtitle,Edited Banner Link") {
+				AssertVisible(locator1 = "//div[contains(@class,'banner')]//*[normalize-space(text())='${text}']");
+			}
+
+			AssertVisible(locator1 = "//div[contains(@class,'banner')][contains(@style,'Document_1.jpg')]");
+		}
 	}
 
 }

@@ -184,6 +184,48 @@ describe('Field Text', () => {
 	});
 
 	it('renders autocomplete dropdown menu', () => {
+		const onChange = jest.fn();
+
+		const props = {
+			autocomplete: true,
+			options: [
+				{label: 'Option 1', value: 'Option1'},
+				{label: 'Option 2', value: 'Option2'},
+			],
+			value: '',
+			...defaultTextConfig,
+		};
+
+		const {container} = render(
+			<div className="ddm-page-container-layout">
+				<TextWithProvider {...props} key="input" onChange={onChange} />
+			</div>
+		);
+
+		const input = container.querySelector('input');
+
+		fireEvent.change(input, {
+			target: {
+				value: 'Option',
+			},
+		});
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const autocompleteDropdownMenu = document.querySelector(
+			'.autocomplete-dropdown-menu'
+		);
+
+		expect(
+			autocompleteDropdownMenu.classList.contains('show')
+		).toBeTruthy();
+	});
+
+	it('hides autocomplete dropdown menu when input is empty', () => {
+		const onChange = jest.fn();
+
 		const props = {
 			autocomplete: true,
 			options: [
@@ -194,23 +236,79 @@ describe('Field Text', () => {
 			...defaultTextConfig,
 		};
 
-		render(
+		const {container} = render(
 			<div className="ddm-page-container-layout">
-				<TextWithProvider {...props} />
+				<TextWithProvider {...props} key="input" onChange={onChange} />
 			</div>
 		);
+
+		const input = container.querySelector('input');
+
+		fireEvent.change(input, {
+			target: {
+				value: '',
+			},
+		});
 
 		act(() => {
 			jest.runAllTimers();
 		});
 
-		const autocompleteDropdownMenu = document.body.querySelector(
+		const autocompleteDropdownMenu = document.querySelector(
 			'.autocomplete-dropdown-menu'
 		);
 
-		const classList = autocompleteDropdownMenu.classList;
+		expect(autocompleteDropdownMenu.classList.contains('show')).toBeFalsy();
+	});
 
-		expect(classList.contains('show')).toBeTruthy();
+	it('hides autocomplete dropdown menu when focus is changed', () => {
+		const onChange = jest.fn();
+
+		const props = {
+			autocomplete: true,
+			options: [
+				{label: 'Option 1', value: 'Option1'},
+				{label: 'Option 2', value: 'Option2'},
+			],
+			value: '',
+			...defaultTextConfig,
+		};
+
+		const {container} = render(
+			<div className="ddm-page-container-layout">
+				<TextWithProvider {...props} key="input" onChange={onChange} />
+			</div>
+		);
+
+		const input = container.querySelector('input');
+
+		fireEvent.change(input, {
+			target: {
+				value: 'Option',
+			},
+		});
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const autocompleteDropdownMenu = document.querySelector(
+			'.autocomplete-dropdown-menu'
+		);
+
+		expect(
+			autocompleteDropdownMenu.classList.contains('show')
+		).toBeTruthy();
+
+		const body = document.body;
+
+		fireEvent.mouseDown(body);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		expect(autocompleteDropdownMenu.classList.contains('show')).toBeFalsy();
 	});
 
 	it('renders Label if showLabel is true', () => {
@@ -263,14 +361,14 @@ describe('Field Text', () => {
 		expect(onChange).toHaveBeenCalled();
 	});
 
-	it('normalizes the field reference if it contains invalid characters', () => {
+	it('normalizes the field if it contains invalid characters', () => {
 		const onChange = jest.fn();
 
 		const {container} = render(
 			<TextWithProvider
 				{...defaultTextConfig}
-				fieldName="fieldReference"
 				key="input"
+				normalizeField={true}
 				onChange={onChange}
 			/>
 		);
@@ -290,13 +388,13 @@ describe('Field Text', () => {
 		expect(input.value).toEqual('FieldReference');
 	});
 
-	it('normalizes the value of the Format field if it contains invalid characters', () => {
+	it('normalizes the value of the field if it contains invalid characters', () => {
 		const onChange = jest.fn();
 
 		const {container} = render(
 			<TextWithProvider
 				{...defaultTextConfig}
-				fieldName="inputMaskFormat"
+				invalidCharacters="[1-8]"
 				key="input"
 				onChange={onChange}
 			/>
@@ -338,7 +436,7 @@ describe('Field Text', () => {
 			);
 
 			const confirmationField = document.getElementById(
-				'textFieldconfirmationField_fieldDetails'
+				'textFieldconfirmationField'
 			);
 
 			expect(confirmationField).not.toBeNull();

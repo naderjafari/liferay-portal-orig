@@ -117,6 +117,10 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 		return ObjectMapperUtil.readValue(${schemaName}.class, json);
 	}
 
+	public static ${schemaName} unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(${schemaName}.class, json);
+	}
+
 	<#assign
 		enumSchemas = freeMarkerTool.getDTOEnumSchemas(openAPIYAML, schema)
 		properties = freeMarkerTool.getDTOProperties(configYAML, openAPIYAML, schema)
@@ -358,13 +362,17 @@ public class ${schemaName} <#if dtoParentClassName?has_content>extends ${dtoPare
 
 		@JsonCreator
 		public static ${enumName} create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (${enumName} ${freeMarkerTool.getSchemaVarName(enumName)} : values()) {
 				if (Objects.equals(${freeMarkerTool.getSchemaVarName(enumName)}.getValue(), value)) {
 					return ${freeMarkerTool.getSchemaVarName(enumName)};
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

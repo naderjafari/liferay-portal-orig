@@ -19,12 +19,14 @@ import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.asset.kernel.service.persistence.AssetEntryQuery;
 import com.liferay.asset.test.util.AssetTestUtil;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.view.count.ViewCountManagerUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.ratings.test.util.RatingsTestUtil;
@@ -215,6 +217,24 @@ public class AssetEntryServiceTest {
 		validateAssetEntries(expectedAssetEntries, actualAssetEntries);
 	}
 
+	@Test
+	public void testGetTopViewedEntries() throws Exception {
+		AssetEntry assetEntry = AssetTestUtil.addAssetEntry(
+			_group.getGroupId(), new Date(), "testClass");
+
+		ViewCountManagerUtil.incrementViewCount(
+			assetEntry.getCompanyId(),
+			ClassNameLocalServiceUtil.getClassNameId(AssetEntry.class),
+			assetEntry.getEntryId(), 2);
+
+		List<AssetEntry> topViewEntries =
+			AssetEntryLocalServiceUtil.getTopViewedEntries(
+				"testClass", false, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+
+		Assert.assertEquals(
+			topViewEntries.toString(), 1, topViewEntries.size());
+	}
+
 	protected List<AssetEntry> createAssetEntries() throws Exception {
 		Calendar calendar = CalendarFactoryUtil.getCalendar();
 
@@ -262,14 +282,8 @@ public class AssetEntryServiceTest {
 		AssetEntry assetEntry4 = AssetTestUtil.addAssetEntry(
 			_group.getGroupId(), dayBeforeYesterday);
 
-		List<AssetEntry> assetEntries = new ArrayList<>(4);
-
-		assetEntries.add(assetEntry3);
-		assetEntries.add(assetEntry1);
-		assetEntries.add(assetEntry2);
-		assetEntries.add(assetEntry4);
-
-		return assetEntries;
+		return ListUtil.fromArray(
+			assetEntry3, assetEntry1, assetEntry2, assetEntry4);
 	}
 
 	protected void validateAssetEntries(

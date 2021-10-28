@@ -68,7 +68,6 @@ public interface ObjectEntryLocalService
 	 *
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.object.service.impl.ObjectEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the object entry local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link ObjectEntryLocalServiceUtil} if injection and service tracking are not available.
 	 */
-	@Indexable(type = IndexableType.REINDEX)
 	public ObjectEntry addObjectEntry(
 			long userId, long groupId, long objectDefinitionId,
 			Map<String, Serializable> values, ServiceContext serviceContext)
@@ -86,6 +85,12 @@ public interface ObjectEntryLocalService
 	 */
 	@Indexable(type = IndexableType.REINDEX)
 	public ObjectEntry addObjectEntry(ObjectEntry objectEntry);
+
+	public ObjectEntry addOrUpdateObjectEntry(
+			String externalReferenceCode, long userId, long groupId,
+			long objectDefinitionId, Map<String, Serializable> values,
+			ServiceContext serviceContext)
+		throws PortalException;
 
 	/**
 	 * Creates a new object entry with the primary key. Does not add the object entry to the database.
@@ -133,11 +138,19 @@ public interface ObjectEntryLocalService
 	public ObjectEntry deleteObjectEntry(ObjectEntry objectEntry)
 		throws PortalException;
 
+	public ObjectEntry deleteObjectEntry(
+			String externalReferenceCode, long companyId, long groupId)
+		throws PortalException;
+
 	/**
 	 * @throws PortalException
 	 */
 	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
+		throws PortalException;
+
+	public void deleteRelatedObjectEntries(
+			long groupId, long objectDefinitionId, long primaryKey)
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -236,6 +249,18 @@ public interface ObjectEntryLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery();
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<ObjectEntry> getManyToManyRelatedObjectEntries(
+			long groupId, long objectRelationshipId, long primaryKey,
+			boolean reverse, int start, int end)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getManyToManyRelatedObjectEntriesCount(
+			long groupId, long objectRelationshipId, long primaryKey,
+			boolean reverse)
+		throws PortalException;
+
 	/**
 	 * Returns a range of all the object entries.
 	 *
@@ -252,7 +277,7 @@ public interface ObjectEntryLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<ObjectEntry> getObjectEntries(
-			long objectDefinitionId, int start, int end)
+			long groupId, long objectDefinitionId, int start, int end)
 		throws PortalException;
 
 	/**
@@ -290,7 +315,7 @@ public interface ObjectEntryLocalService
 	public int getObjectEntriesCount();
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public int getObjectEntriesCount(long objectDefinitionId);
+	public int getObjectEntriesCount(long groupId, long objectDefinitionId);
 
 	/**
 	 * Returns the object entry with the primary key.
@@ -303,6 +328,11 @@ public interface ObjectEntryLocalService
 	public ObjectEntry getObjectEntry(long objectEntryId)
 		throws PortalException;
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectEntry getObjectEntry(
+			String externalReferenceCode, long companyId, long groupId)
+		throws PortalException;
+
 	/**
 	 * Returns the object entry matching the UUID and group.
 	 *
@@ -313,6 +343,17 @@ public interface ObjectEntryLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ObjectEntry getObjectEntryByUuidAndGroupId(String uuid, long groupId)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<ObjectEntry> getOneToManyRelatedObjectEntries(
+			long groupId, long objectRelationshipId, long primaryKey, int start,
+			int end)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getOneToManyRelatedObjectEntriesCount(
+			long groupId, long objectRelationshipId, long primaryKey)
 		throws PortalException;
 
 	/**
@@ -343,9 +384,15 @@ public interface ObjectEntryLocalService
 			long objectDefinitionId, int[] statuses, int start, int end)
 		throws PortalException;
 
+	public void insertIntoOrUpdateExtensionTable(
+			long objectDefinitionId, long primaryKey,
+			Map<String, Serializable> values)
+		throws PortalException;
+
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public BaseModelSearchResult<ObjectEntry> searchObjectEntries(
-			long objectDefinitionId, String keywords, int cur, int delta)
+			long groupId, long objectDefinitionId, String keywords, int cur,
+			int delta)
 		throws PortalException;
 
 	public void updateAsset(
@@ -353,7 +400,6 @@ public interface ObjectEntryLocalService
 			String[] assetTagNames, long[] assetLinkEntryIds, Double priority)
 		throws PortalException;
 
-	@Indexable(type = IndexableType.REINDEX)
 	public ObjectEntry updateObjectEntry(
 			long userId, long objectEntryId, Map<String, Serializable> values,
 			ServiceContext serviceContext)
@@ -372,11 +418,9 @@ public interface ObjectEntryLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public ObjectEntry updateObjectEntry(ObjectEntry objectEntry);
 
-	@Indexable(type = IndexableType.REINDEX)
 	public ObjectEntry updateStatus(
 			long userId, long objectEntryId, int status,
-			ServiceContext serviceContext,
-			Map<String, Serializable> workflowContext)
+			ServiceContext serviceContext)
 		throws PortalException;
 
 }

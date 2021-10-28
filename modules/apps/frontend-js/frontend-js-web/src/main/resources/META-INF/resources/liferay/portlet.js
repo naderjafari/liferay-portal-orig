@@ -523,6 +523,7 @@
 					var handle = portlet.on(events, () => {
 						Util.portletTitleEdit({
 							doAsUserId: themeDisplay.getDoAsUserIdEncoded(),
+							// eslint-disable-next-line @liferay/no-abbreviations
 							obj: portlet,
 							plid: themeDisplay.getPlid(),
 							portletId,
@@ -552,13 +553,18 @@
 	Liferay.provide(
 		Portlet,
 		'refresh',
-		function (portlet, data) {
+		function (portlet, data, mergeWithRefreshURLData) {
 			var instance = this;
 
 			portlet = A.one(portlet);
 
 			if (portlet) {
-				data = data || portlet.refreshURLData || {};
+				if (mergeWithRefreshURLData) {
+					data = A.merge(portlet.refreshURLData || {}, data || {});
+				}
+				else {
+					data = data || portlet.refreshURLData || {};
+				}
 
 				if (
 					!Object.prototype.hasOwnProperty.call(

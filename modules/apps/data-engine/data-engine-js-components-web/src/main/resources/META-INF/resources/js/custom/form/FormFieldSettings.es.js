@@ -12,8 +12,7 @@
  * details.
  */
 
-import {ClayIconSpriteContext} from '@clayui/icon';
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect} from 'react';
 
 import {EVENT_TYPES as CORE_EVENT_TYPES} from '../../core/actions/eventTypes.es';
 import {INITIAL_CONFIG_STATE} from '../../core/config/initialConfigState.es';
@@ -27,21 +26,24 @@ import {
 	pageValidationReducer,
 	pagesStructureReducer,
 } from '../../core/reducers/index.es';
-import {getConnectedReactComponentAdapter} from '../../utils/ReactComponentAdapter.es';
 import {parseProps} from '../../utils/parseProps.es';
-import {Form} from './FormView.es';
 import {EVENT_TYPES} from './eventTypes.es';
-import {paginationReducer, rulesReducer} from './reducers/index.es';
+import {
+	formBuilderReducer,
+	objectFieldsReducer,
+	paginationReducer,
+	rulesReducer,
+} from './reducers/index.es';
 
 /**
  * Updates the state of the FieldSettings when any value coming
  * from layers above changes.
  */
 const StateSync = ({
-	activePage,
 	defaultLanguageId,
 	editingLanguageId,
 	focusedField,
+	objectFields,
 	pages,
 	rules,
 }) => {
@@ -62,25 +64,25 @@ const StateSync = ({
 	}, [dispatch, pages]);
 
 	useEffect(() => {
-		dispatch({payload: {activePage}, type: CORE_EVENT_TYPES.PAGE.CHANGE});
-	}, [dispatch, activePage]);
-
-	useEffect(() => {
-		dispatch({
-			payload: {
-				activePage: focusedField?.settingsContext.currentPage,
-				field: focusedField,
-			},
-			type: CORE_EVENT_TYPES.FIELD.CLICK,
-		});
-	}, [dispatch, focusedField]);
-
-	useEffect(() => {
 		dispatch({
 			payload: {defaultLanguageId, editingLanguageId},
 			type: CORE_EVENT_TYPES.LANGUAGE.CHANGE,
 		});
 	}, [dispatch, defaultLanguageId, editingLanguageId]);
+
+	useEffect(() => {
+		dispatch({
+			payload: {objectFields},
+			type: EVENT_TYPES.OBJECT_FIELDS.ADD,
+		});
+	}, [dispatch, objectFields]);
+
+	useEffect(() => {
+		dispatch({
+			payload: {focusedField},
+			type: EVENT_TYPES.FORM_BUILDER.FOCUSED_FIELD.CHANGE,
+		});
+	}, [dispatch, focusedField]);
 
 	return null;
 };
@@ -96,12 +98,20 @@ export const FormFieldSettings = ({children, onAction, ...otherProps}) => {
 	return (
 		<ConfigProvider config={config} initialConfig={INITIAL_CONFIG_STATE}>
 			<FormProvider
-				initialState={INITIAL_STATE}
+				initialState={{
+					...INITIAL_STATE,
+					formBuilder: {
+						focusedField: {},
+						pages: [],
+					},
+				}}
 				onAction={onAction}
 				reducers={[
 					activePageReducer,
 					fieldReducer,
+					formBuilderReducer,
 					languageReducer,
+					objectFieldsReducer,
 					pagesStructureReducer,
 					pageValidationReducer,
 					paginationReducer,
@@ -117,25 +127,3 @@ export const FormFieldSettings = ({children, onAction, ...otherProps}) => {
 };
 
 FormFieldSettings.displayName = 'FormFieldSettings';
-
-/**
- * This component is temporary and for exclusive use for Sidebar
- * in Metal.js, this creates a form for editing the properties
- * of a field in Form Builder.
- */
-export const FormFieldSettingsAdapter = getConnectedReactComponentAdapter(
-	React.forwardRef(({instance, spritemap, ...otherProps}, ref) => {
-		const defaultRef = useRef(null);
-
-		return (
-			<ClayIconSpriteContext.Provider value={spritemap}>
-				<FormFieldSettings
-					{...otherProps}
-					onAction={({payload, type}) => instance.emit(type, payload)}
-				>
-					<Form ref={ref ?? defaultRef} />
-				</FormFieldSettings>
-			</ClayIconSpriteContext.Provider>
-		);
-	})
-);

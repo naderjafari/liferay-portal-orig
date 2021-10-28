@@ -17,14 +17,13 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 
-import {addMappedInfoItem, addMappingFields} from '../../app/actions/index';
+import {addMappingFields} from '../../app/actions/index';
 import {EDITABLE_TYPES} from '../../app/config/constants/editableTypes';
 import {LAYOUT_TYPES} from '../../app/config/constants/layoutTypes';
 import {config} from '../../app/config/index';
 import {useCollectionConfig} from '../../app/contexts/CollectionItemContext';
 import {useDispatch, useSelector} from '../../app/contexts/StoreContext';
 import {selectPageContents} from '../../app/selectors/selectPageContents';
-import CollectionService from '../../app/services/CollectionService';
 import InfoItemService from '../../app/services/InfoItemService';
 import isMapped from '../../app/utils/editable-value/isMapped';
 import isMappedToInfoItem from '../../app/utils/editable-value/isMappedToInfoItem';
@@ -33,6 +32,8 @@ import getMappingFieldsKey from '../../app/utils/getMappingFieldsKey';
 import itemSelectorValueToInfoItem from '../../app/utils/item-selector-value/itemSelectorValueToInfoItem';
 import {useId} from '../../app/utils/useId';
 import ItemSelector from './ItemSelector';
+
+const COLLECTION_TYPE_DIVIDER = ' - ';
 
 const MAPPING_SOURCE_TYPES = {
 	content: 'content',
@@ -110,12 +111,12 @@ export default function MappingSelectorWrapper({
 }) {
 	const collectionConfig = useCollectionConfig();
 	const [collectionFields, setCollectionFields] = useState([]);
-	const [
-		collectionItemSubtypeLabel,
-		setCollectionItemSubtypeLabel,
-	] = useState('');
-	const [collectionItemTypeLabel, setCollectionItemTypeLabel] = useState('');
+	const [collectionTypeLabels, setCollectionItemTypeLabels] = useState({
+		itemSubtype: '',
+		itemType: '',
+	});
 	const mappingFields = useSelector((state) => state.mappingFields);
+	const pageContents = useSelector(selectPageContents);
 
 	useEffect(() => {
 		if (!collectionConfig) {
@@ -138,43 +139,59 @@ export default function MappingSelectorWrapper({
 	}, [collectionConfig, mappingFields, fieldType]);
 
 	useEffect(() => {
-		if (!collectionConfig) {
+		if (!collectionConfig?.collection?.itemType) {
 			return;
 		}
 
-		CollectionService.getCollectionMappingFields({
-			itemSubtype: collectionConfig.collection.itemSubtype || '',
-			itemType: collectionConfig.collection.itemType,
-			onNetworkStatus: () => {},
-		})
-			.then((response) => {
-				setCollectionItemSubtypeLabel(response.itemSubtypeLabel);
-				setCollectionItemTypeLabel(response.itemTypeLabel);
-			})
-			.catch((error) => {
-				if (process.env.NODE_ENV === 'development') {
-					console.error(error);
-				}
+		const {
+			classNameId,
+			classPK,
+			key: collectionKey,
+		} = collectionConfig.collection;
+
+		const collection = pageContents.find((content) =>
+			collectionKey
+				? content.classPK === collectionKey
+				: content.classNameId === classNameId &&
+				  content.classPK === classPK
+		);
+
+		if (collection) {
+			const [typeLabel, subtypeLabel] =
+				collection?.subtype?.split(COLLECTION_TYPE_DIVIDER) || [];
+
+			setCollectionItemTypeLabels({
+				itemSubtype: subtypeLabel,
+				itemType: typeLabel,
 			});
-	});
+		}
+	}, [collectionConfig, pageContents]);
 
 	return collectionConfig ? (
 		<>
-			{collectionItemTypeLabel && (
-				<p className="mb-2 page-editor__mapping-panel__type-label">
+			{collectionTypeLabels.itemType && (
+				<p
+					className={classNames(
+						'page-editor__mapping-panel__type-label',
+						{
+							'mb-0': collectionTypeLabels.itemSubtype,
+							'mb-2': !collectionTypeLabels.itemSubtype,
+						}
+					)}
+				>
 					<span className="mr-1">
 						{Liferay.Language.get('type')}:
 					</span>
-					{collectionItemTypeLabel}
+					{collectionTypeLabels.itemType}
 				</p>
 			)}
 
-			{collectionItemSubtypeLabel && (
+			{collectionTypeLabels.itemSubtype && (
 				<p className="mb-2 page-editor__mapping-panel__type-label">
 					<span className="mr-1">
 						{Liferay.Language.get('subtype')}:
 					</span>
-					{collectionItemSubtypeLabel}
+					{collectionTypeLabels.itemSubtype}
 				</p>
 			)}
 
@@ -205,7 +222,6 @@ export default function MappingSelectorWrapper({
 
 function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 	const dispatch = useDispatch();
-	const mappedInfoItems = useSelector((state) => state.mappedInfoItems);
 	const mappingFields = useSelector((state) => state.mappingFields);
 	const pageContents = useSelector(selectPageContents);
 	const mappingSelectorSourceSelectId = useId();
@@ -225,7 +241,7 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 				infoItem.classPK === selectedItem.classPK
 		);
 
-		const type = selectedItem?.itemType || mappedContent?.name;
+		const type = selectedItem?.itemType || mappedContent?.type;
 		const subtype = selectedItem?.itemSubtype || mappedContent?.subtype;
 
 		setTypeLabel(type);
@@ -259,18 +275,6 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 				: {mappedField: fieldValue};
 
 		if (selectedSourceType === MAPPING_SOURCE_TYPES.content) {
-			const mappedInfoItem = mappedInfoItems.find(
-				(item) =>
-					item.classNameId === selectedItem.classNameId &&
-					item.classPK === selectedItem.classPK
-			);
-
-			if (!mappedInfoItem) {
-				dispatch(
-					addMappedInfoItem({title: selectedItem.title, ...data})
-				);
-			}
-
 			setSelectedItem((selectedItem) => ({
 				...selectedItem,
 				fieldId: fieldValue,
@@ -288,18 +292,18 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 
 	useEffect(() => {
 		if (mappedItem.classNameId && mappedItem.classPK) {
-			const infoItem = mappedInfoItems.find(
-				(infoItem) =>
-					infoItem.classNameId === mappedItem.classNameId &&
-					infoItem.classPK === mappedItem.classPK
+			const pageContent = pageContents.find(
+				(pageContent) =>
+					pageContent.classNameId === mappedItem.classNameId &&
+					pageContent.classPK === mappedItem.classPK
 			);
 
 			setSelectedItem({
-				...infoItem,
+				...pageContent,
 				...mappedItem,
 			});
 		}
-	}, [mappedItem, mappedInfoItems, setSelectedItem]);
+	}, [mappedItem, pageContents, setSelectedItem]);
 
 	useEffect(() => {
 		if (
@@ -312,7 +316,7 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 		}
 
 		const infoItem =
-			mappedInfoItems.find(
+			pageContents.find(
 				({classNameId, classPK}) =>
 					selectedItem.classNameId === classNameId &&
 					selectedItem.classPK === classPK
@@ -346,7 +350,7 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 	}, [
 		dispatch,
 		fieldType,
-		mappedInfoItems,
+		pageContents,
 		mappingFields,
 		selectedItem,
 		selectedMappingTypes,
@@ -396,6 +400,7 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 
 			{selectedSourceType === MAPPING_SOURCE_TYPES.content && (
 				<ItemSelector
+					className="mb-2"
 					label={Liferay.Language.get('item')}
 					onItemSelect={onInfoItemSelect}
 					selectedItem={selectedItem}
@@ -404,7 +409,12 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 			)}
 
 			{typeLabel && (
-				<p className="mb-2 mt-3 page-editor__mapping-panel__type-label">
+				<p
+					className={classNames(
+						'page-editor__mapping-panel__type-label',
+						{'mb-0': subtypeLabel, 'mb-2': !subtypeLabel}
+					)}
+				>
 					<span className="mr-1">
 						{Liferay.Language.get('type')}:
 					</span>
@@ -449,12 +459,12 @@ function MappingFieldSelect({fieldType, fields, onValueSelect, value}) {
 
 			<ClaySelect
 				aria-label={Liferay.Language.get('field')}
-				disabled={!(fields && fields.length)}
+				disabled={!(fields && !!fields.length)}
 				id={mappingSelectorFieldSelectId}
 				onChange={onValueSelect}
 				value={value}
 			>
-				{fields && fields.length && (
+				{fields && !!fields.length && (
 					<>
 						<ClaySelect.Option
 							label={UNMAPPED_OPTION.label}

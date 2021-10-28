@@ -22,6 +22,8 @@ import Carousel from './Carousel.es';
 import Footer from './Footer.es';
 import Header from './Header.es';
 
+import '../../css/item_selector_preview.scss';
+
 const KEY_CODE = {
 	ESC: 27,
 	LEFT: 37,
@@ -104,12 +106,12 @@ const ItemSelectorPreview = ({
 	}, [itemList.length]);
 
 	const handleOnKeyDown = useCallback(
-		(e) => {
+		(event) => {
 			if (!isMounted()) {
 				return;
 			}
 
-			switch (e.which || e.keyCode) {
+			switch (event.which || event.keyCode) {
 				case KEY_CODE.LEFT:
 					handleClickPrevious();
 					break;
@@ -117,8 +119,8 @@ const ItemSelectorPreview = ({
 					handleClickNext();
 					break;
 				case KEY_CODE.ESC:
-					e.preventDefault();
-					e.stopPropagation();
+					event.preventDefault();
+					event.stopPropagation();
 					close();
 					break;
 				default:

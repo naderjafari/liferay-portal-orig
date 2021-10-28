@@ -104,6 +104,7 @@ Group ddmTemplateGroup = GroupLocalServiceUtil.getGroup(ddmTemplateGroupId);
 			const openerWindow = Liferay.Util.getOpener();
 
 			openerWindow.Liferay.Util.openModal({
+				iframeBodyCssClass: '',
 				onClose: () => {
 					const form = document.getElementById('<portlet:namespace />fm');
 
@@ -113,24 +114,25 @@ Group ddmTemplateGroup = GroupLocalServiceUtil.getGroup(ddmTemplateGroupId);
 				},
 				title:
 					'<%= UnicodeLanguageUtil.get(request, "widget-templates") %>',
-				url: '<%=
-					PortletURLBuilder.create(
-						PortletURLFactoryUtil.create(request, PortletProviderUtil.getPortletId(DDMTemplate.class.getName(), PortletProvider.Action.VIEW), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE)
-					).setMVCPath(
-						"/view_template.jsp"
-					).setParameter(
-						"classNameId", classNameId
-					).setParameter(
-						"groupId", ddmTemplateGroupId
-					).setParameter(
-						"navigationStartsOn", DDMNavigationHelper.VIEW_TEMPLATES
-					).setParameter(
-						"refererPortletName", PortletKeys.PORTLET_DISPLAY_TEMPLATE
-					).setParameter(
-						"showHeader", false
-					).setWindowState(
-						LiferayWindowState.POP_UP
-					).buildString()
+				url:
+					'<%=
+						PortletURLBuilder.create(
+							PortletURLFactoryUtil.create(request, PortletProviderUtil.getPortletId(DDMTemplate.class.getName(), PortletProvider.Action.VIEW), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE)
+						).setMVCPath(
+							"/view_template.jsp"
+						).setParameter(
+							"classNameId", classNameId
+						).setParameter(
+							"groupId", ddmTemplateGroupId
+						).setParameter(
+							"navigationStartsOn", DDMNavigationHelper.VIEW_TEMPLATES
+						).setParameter(
+							"refererPortletName", PortletKeys.PORTLET_DISPLAY_TEMPLATE
+						).setParameter(
+							"showHeader", false
+						).setWindowState(
+							LiferayWindowState.POP_UP
+						).buildString()
 				%>',
 			});
 		});

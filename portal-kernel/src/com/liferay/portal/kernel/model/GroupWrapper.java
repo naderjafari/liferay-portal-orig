@@ -223,6 +223,11 @@ public class GroupWrapper
 		model.clearStagingGroup();
 	}
 
+	@Override
+	public Group cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
 	/**
 	 * Returns the active of this group.
 	 *
@@ -456,6 +461,14 @@ public class GroupWrapper
 		boolean privateLayout) {
 
 		return model.getDisplayURL(themeDisplay, privateLayout);
+	}
+
+	@Override
+	public String getDisplayURL(
+		com.liferay.portal.kernel.theme.ThemeDisplay themeDisplay,
+		boolean privateLayout, boolean controlPanel) {
+
+		return model.getDisplayURL(themeDisplay, privateLayout, controlPanel);
 	}
 
 	/**

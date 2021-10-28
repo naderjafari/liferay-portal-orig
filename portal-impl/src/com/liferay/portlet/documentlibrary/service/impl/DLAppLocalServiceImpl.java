@@ -18,6 +18,8 @@ import com.liferay.document.library.kernel.exception.NoSuchFileEntryException;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.model.DLVersionNumberIncrease;
+import com.liferay.document.library.kernel.service.DLAppHelperLocalService;
+import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanReference;
@@ -38,7 +40,9 @@ import com.liferay.portal.kernel.repository.model.FileShortcut;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.repository.model.RepositoryEntry;
+import com.liferay.portal.kernel.service.RepositoryLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.persistence.RepositoryPersistence;
 import com.liferay.portal.kernel.systemevent.SystemEventHierarchyEntryThreadLocal;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
@@ -532,7 +536,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 		Folder folder = localRepository.addFolder(
 			userId, parentFolderId, name, description, serviceContext);
 
-		dlAppHelperLocalService.addFolder(userId, folder, serviceContext);
+		_dlAppHelperLocalService.addFolder(userId, folder, serviceContext);
 
 		return folder;
 	}
@@ -579,7 +583,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 		LocalRepository localRepository =
 			repositoryProvider.getFileEntryLocalRepository(fileEntryId);
 
-		dlAppHelperLocalService.deleteFileEntry(
+		_dlAppHelperLocalService.deleteFileEntry(
 			localRepository.getFileEntry(fileEntryId));
 
 		localRepository.deleteFileEntry(fileEntryId);
@@ -660,14 +664,14 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			QueryUtil.ALL_POS, null);
 
 		for (FileEntry fileEntry : fileEntries) {
-			dlAppHelperLocalService.deleteFileEntry(fileEntry);
+			_dlAppHelperLocalService.deleteFileEntry(fileEntry);
 		}
 
 		Folder folder = getFolder(folderId);
 
 		localRepository.deleteFolder(folderId);
 
-		dlAppHelperLocalService.deleteFolder(folder);
+		_dlAppHelperLocalService.deleteFolder(folder);
 	}
 
 	/**
@@ -808,7 +812,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			}
 		}
 
-		List<Repository> repositories = repositoryPersistence.findByGroupId(
+		List<Repository> repositories = _repositoryPersistence.findByGroupId(
 			groupId);
 
 		for (Repository repository : repositories) {
@@ -826,15 +830,10 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			}
 		}
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("No DLFileEntry exists with the key {uuid=");
-		sb.append(uuid);
-		sb.append(", groupId=");
-		sb.append(groupId);
-		sb.append(StringPool.CLOSE_CURLY_BRACE);
-
-		throw new NoSuchFileEntryException(sb.toString());
+		throw new NoSuchFileEntryException(
+			StringBundler.concat(
+				"No DLFileEntry exists with the key {uuid=", uuid, ", groupId=",
+				groupId, StringPool.CLOSE_CURLY_BRACE));
 	}
 
 	/**
@@ -915,7 +914,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 	 */
 	@Override
 	public Folder getMountFolder(long repositoryId) throws PortalException {
-		DLFolder dlFolder = dlFolderLocalService.getMountFolder(repositoryId);
+		DLFolder dlFolder = _dlFolderLocalService.getMountFolder(repositoryId);
 
 		return new LiferayFolder(dlFolder);
 	}
@@ -1086,7 +1085,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			long[] assetLinkEntryIds)
 		throws PortalException {
 
-		dlAppHelperLocalService.updateAsset(
+		_dlAppHelperLocalService.updateAsset(
 			userId, fileEntry, fileVersion, assetCategoryIds, assetTagNames,
 			assetLinkEntryIds);
 	}
@@ -1278,7 +1277,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			changeLog, dlVersionNumberIncrease, file, expirationDate,
 			reviewDate, serviceContext);
 
-		dlAppHelperLocalService.updateFileEntry(
+		_dlAppHelperLocalService.updateFileEntry(
 			userId, fileEntry, null, fileEntry.getFileVersion(),
 			serviceContext);
 
@@ -1427,7 +1426,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			changeLog, dlVersionNumberIncrease, inputStream, size,
 			expirationDate, reviewDate, serviceContext);
 
-		dlAppHelperLocalService.updateFileEntry(
+		_dlAppHelperLocalService.updateFileEntry(
 			userId, fileEntry, null, fileEntry.getFileVersion(),
 			serviceContext);
 
@@ -1572,7 +1571,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			folderId, parentFolderId, name, description, serviceContext);
 
 		if (folderId != DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
-			dlAppHelperLocalService.updateFolder(
+			_dlAppHelperLocalService.updateFolder(
 				serviceContext.getUserId(), folder, serviceContext);
 		}
 
@@ -1646,7 +1645,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 				userId, parentFolderId, folder.getName(),
 				folder.getDescription(), serviceContext);
 
-			dlAppHelperLocalService.addFolder(
+			_dlAppHelperLocalService.addFolder(
 				userId, newFolder, serviceContext);
 
 			copyFolderDependencies(
@@ -1700,7 +1699,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 					currentFolder.getName(), currentFolder.getDescription(),
 					serviceContext);
 
-				dlAppHelperLocalService.addFolder(
+				_dlAppHelperLocalService.addFolder(
 					userId, newFolder, serviceContext);
 
 				copyFolderDependencies(
@@ -1722,7 +1721,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 
 			fromLocalRepository.deleteFileEntry(oldFileEntryId);
 
-			dlAppHelperLocalService.deleteFileEntry(fileEntry);
+			_dlAppHelperLocalService.deleteFileEntry(fileEntry);
 		}
 		catch (PortalException portalException) {
 			FileEntry fileEntry = toLocalRepository.getFileEntry(
@@ -1730,7 +1729,7 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 
 			toLocalRepository.deleteFileEntry(newFileEntryId);
 
-			dlAppHelperLocalService.deleteFileEntry(fileEntry);
+			_dlAppHelperLocalService.deleteFileEntry(fileEntry);
 
 			throw portalException;
 		}
@@ -1744,12 +1743,12 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 		if (!RepositoryUtil.isExternalRepository(
 				localRepository.getRepositoryId())) {
 
-			dlAppHelperLocalService.deleteRepositoryFileEntries(repositoryId);
+			_dlAppHelperLocalService.deleteRepositoryFileEntries(repositoryId);
 
 			localRepository.deleteAll();
 		}
 
-		repositoryLocalService.deleteRepository(repositoryId);
+		_repositoryLocalService.deleteRepository(repositoryId);
 	}
 
 	protected LocalRepository getFolderLocalRepository(
@@ -1770,14 +1769,11 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 			return repositoryProvider.getLocalRepository(repositoryId);
 		}
 		catch (InvalidRepositoryIdException invalidRepositoryIdException) {
-			StringBundler sb = new StringBundler(3);
-
-			sb.append("No Group exists with the key {repositoryId=");
-			sb.append(repositoryId);
-			sb.append("}");
-
 			throw new NoSuchGroupException(
-				sb.toString(), invalidRepositoryIdException);
+				StringBundler.concat(
+					"No Group exists with the key {repositoryId=", repositoryId,
+					"}"),
+				invalidRepositoryIdException);
 		}
 	}
 
@@ -1821,5 +1817,17 @@ public class DLAppLocalServiceImpl extends DLAppLocalServiceBaseImpl {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DLAppLocalServiceImpl.class);
+
+	@BeanReference(type = DLAppHelperLocalService.class)
+	private DLAppHelperLocalService _dlAppHelperLocalService;
+
+	@BeanReference(type = DLFolderLocalService.class)
+	private DLFolderLocalService _dlFolderLocalService;
+
+	@BeanReference(type = RepositoryLocalService.class)
+	private RepositoryLocalService _repositoryLocalService;
+
+	@BeanReference(type = RepositoryPersistence.class)
+	private RepositoryPersistence _repositoryPersistence;
 
 }

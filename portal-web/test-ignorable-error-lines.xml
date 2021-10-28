@@ -224,12 +224,20 @@
 			<contains>Returning the default theme</contains>
 			<matches></matches>
 		</ignore-error>
+		<ignore-error description="LPS-100651">
+			<contains>Unable to connect to a valid mail server. Please make sure one is properly configured: Couldn't connect to host, port: localhost, 25; timeout -1</contains>
+			<matches></matches>
+		</ignore-error>
 		<ignore-error description="LPS-105385 - temporarily ignore until fixed">
 			<contains>Unable to deserialize com.liferay.portal.kernel.util.EscapableLocalizableFunction due to security restrictions</contains>
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="LPS-111433 - temporarily ignore until fixed">
 			<contains>IX_EE41CBEB</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-119128">
+			<contains>already is datetime</contains>
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="LPS-123610">
@@ -242,6 +250,18 @@
 		</ignore-error>
 		<ignore-error description="LPS-127285 - temporarily ignore until fixed">
 			<contains>StyleBookEntryVersion</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-136151 - temporarily ignore until fixed">
+			<contains></contains>
+			<matches>bundle com.liferay.portal.properties.swapper.*The activate method has thrown an exception</matches>
+		</ignore-error>
+		<ignore-error description="LPS-136151 - temporarily ignore until fixed">
+			<contains>Store is not available</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-136151 - temporarily ignore until fixed">
+			<contains>Unable to register portal instance</contains>
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="LRQA-24859">

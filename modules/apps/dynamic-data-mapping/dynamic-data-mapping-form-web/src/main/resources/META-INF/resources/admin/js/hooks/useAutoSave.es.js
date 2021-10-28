@@ -15,16 +15,17 @@
 import {useIsMounted} from '@liferay/frontend-js-react-web';
 import {
 	FormSupport,
+	StringUtils,
 	convertToFormData,
 	makeFetch,
 	useConfig,
 	useFormState,
 } from 'data-engine-js-components-web';
-import {sub} from 'dynamic-data-mapping-form-builder/js/util/strings.es';
 import objectHash from 'object-hash';
 import React, {useCallback, useContext, useEffect, useRef} from 'react';
 
 import {useStateSync} from './useStateSync.es';
+import {useValidateFormWithObjects} from './useValidateFormWithObjects';
 
 const AutoSaveContext = React.createContext({});
 
@@ -36,14 +37,13 @@ const getStateHash = (state) =>
 		unorderedObjects: true,
 	});
 
-const getFormData = ({name, portletNamespace, published, saveAsDraft}) => {
+const getFormData = ({name, portletNamespace}) => {
 	const form = document.querySelector(`#${portletNamespace}editForm`);
 
 	const formData = new FormData(form);
 
 	formData.append(`${portletNamespace}name`, JSON.stringify(name));
-	formData.append(`${portletNamespace}published`, JSON.stringify(published));
-	formData.append(`${portletNamespace}saveAsDraft`, saveAsDraft);
+	formData.append(`${portletNamespace}saveAsDraft`, 'true');
 
 	return convertToFormData(formData);
 };
@@ -66,19 +66,13 @@ const defineIds = (portletNamespace, response) => {
 	}
 };
 
-const updateAutoSaveMessage = ({
-	modifiedDate,
-	portletNamespace,
-	saveAsDraft,
-}) => {
+const updateAutoSaveMessage = ({modifiedDate, portletNamespace}) => {
 	const autoSaveMessageNode = document.querySelector(
 		`#${portletNamespace}autosaveMessage`
 	);
 
-	autoSaveMessageNode.innerHTML = sub(
-		saveAsDraft
-			? Liferay.Language.get('draft-x')
-			: Liferay.Language.get('saved-x'),
+	autoSaveMessageNode.innerHTML = StringUtils.sub(
+		Liferay.Language.get('draft-x'),
 		[modifiedDate]
 	);
 };
@@ -91,7 +85,7 @@ const MILLISECONDS_TO_MINUTE = 60000;
  *
  * Each time the rules are changed, the form is saved.
  */
-export const AutoSaveProvider = ({children, interval, published, url}) => {
+export const AutoSaveProvider = ({children, interval, url}) => {
 	const {portletNamespace} = useConfig();
 	const {
 		availableLanguageIds,
@@ -115,6 +109,8 @@ export const AutoSaveProvider = ({children, interval, published, url}) => {
 	const lastKnownHashRef = useRef(null);
 
 	const lastKnownHashRulesRef = useRef(null);
+
+	const validateFormWithObjects = useValidateFormWithObjects();
 
 	const getCurrentStateHash = useCallback(
 		() =>
@@ -140,18 +136,18 @@ export const AutoSaveProvider = ({children, interval, published, url}) => {
 		]
 	);
 
-	const doSave = useCallback(
-		(saveAsDraft = true) => {
-			const lastKnownHash = getCurrentStateHash();
+	const doSave = useCallback(async () => {
+		const lastKnownHash = getCurrentStateHash();
 
-			doSyncInput();
+		doSyncInput();
 
+		const isValidToSaveForm = await validateFormWithObjects();
+
+		if (isValidToSaveForm) {
 			pendingRequestRef.current = makeFetch({
 				body: getFormData({
 					name: localizedName,
 					portletNamespace,
-					published,
-					saveAsDraft,
 				}),
 				url,
 			})
@@ -165,7 +161,6 @@ export const AutoSaveProvider = ({children, interval, published, url}) => {
 					updateAutoSaveMessage({
 						modifiedDate: response.modifiedDate,
 						portletNamespace,
-						saveAsDraft,
 					});
 
 					return response;
@@ -175,20 +170,19 @@ export const AutoSaveProvider = ({children, interval, published, url}) => {
 
 					console.error(error);
 				});
+		}
 
-			return pendingRequestRef.current;
-		},
-		[
-			doSyncInput,
-			getCurrentStateHash,
-			lastKnownHashRef,
-			localizedName,
-			pendingRequestRef,
-			portletNamespace,
-			published,
-			url,
-		]
-	);
+		return pendingRequestRef.current;
+	}, [
+		doSyncInput,
+		getCurrentStateHash,
+		lastKnownHashRef,
+		localizedName,
+		pendingRequestRef,
+		portletNamespace,
+		url,
+		validateFormWithObjects,
+	]);
 
 	const isSaved = useCallback(() => {
 		return lastKnownHashRef.current === getCurrentStateHash();
@@ -202,10 +196,10 @@ export const AutoSaveProvider = ({children, interval, published, url}) => {
 					.catch((error) => console.error(error));
 			}
 			else if (!isSaved() && !FormSupport.isEmpty(pages)) {
-				doSave(!published);
+				doSave();
 			}
 		}
-	}, [doSave, isMounted, isSaved, pages, pendingRequestRef, published]);
+	}, [doSave, isMounted, isSaved, pages, pendingRequestRef]);
 
 	useEffect(() => {
 		if (interval > 0) {

@@ -749,15 +749,10 @@ public class FriendlyURLServlet extends HttpServlet {
 				 friendlyURL +
 					 VirtualLayoutConstants.CANONICAL_URL_SEPARATOR))) {
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("{companyId=");
-			sb.append(companyId);
-			sb.append(", friendlyURL=");
-			sb.append(friendlyURL);
-			sb.append("}");
-
-			throw new NoSuchGroupException(sb.toString());
+			throw new NoSuchGroupException(
+				StringBundler.concat(
+					"{companyId=", companyId, ", friendlyURL=", friendlyURL,
+					"}"));
 		}
 
 		return group;
@@ -766,9 +761,9 @@ public class FriendlyURLServlet extends HttpServlet {
 	private boolean _isImpersonated(
 		HttpServletRequest httpServletRequest, long userId) {
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		Long realUserId = (Long)session.getAttribute(WebKeys.USER_ID);
+		Long realUserId = (Long)httpSession.getAttribute(WebKeys.USER_ID);
 
 		if ((realUserId == null) || (userId == realUserId)) {
 			return false;

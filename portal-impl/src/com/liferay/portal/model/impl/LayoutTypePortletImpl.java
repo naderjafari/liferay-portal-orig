@@ -269,13 +269,12 @@ public class LayoutTypePortletImpl
 
 	@Override
 	public List<Portlet> getAllPortlets() {
-		List<Portlet> explicitlyAddedPortlets = getExplicitlyAddedPortlets();
-
 		List<Portlet> staticPortlets = getStaticPortlets(
 			PropsKeys.LAYOUT_STATIC_PORTLETS_ALL);
 
 		return addStaticPortlets(
-			explicitlyAddedPortlets, staticPortlets, getEmbeddedPortlets());
+			getExplicitlyAddedPortlets(), staticPortlets,
+			getEmbeddedPortlets());
 	}
 
 	@Override
@@ -604,11 +603,9 @@ public class LayoutTypePortletImpl
 		List<String> columns = getColumns();
 
 		for (String columnId : columns) {
-			if (hasNonstaticPortletId(columnId, portletId)) {
-				return true;
-			}
+			if (hasNonstaticPortletId(columnId, portletId) ||
+				hasStaticPortletId(columnId, portletId)) {
 
-			if (hasStaticPortletId(columnId, portletId)) {
 				return true;
 			}
 		}

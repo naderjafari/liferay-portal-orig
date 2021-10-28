@@ -93,9 +93,9 @@ AUI.add(
 					},
 				},
 			},
-
+			// eslint-disable-next-line @liferay/aui/no-modal
 			EXTENDS: A.Modal,
-
+			// eslint-disable-next-line @liferay/aui/no-modal
 			NAME: A.Modal.NAME,
 
 			prototype: {},
@@ -214,9 +214,9 @@ AUI.add(
 						);
 					}
 
-					var iframeURL = new A.Url(uri);
+					const iframeURL = new URL(uri);
 
-					var namespace = iframeURL.getParameter('p_p_id');
+					const namespace = iframeURL.searchParams.get('p_p_id');
 
 					var bodyCssClass = ['dialog-iframe-popup'];
 
@@ -227,8 +227,8 @@ AUI.add(
 						bodyCssClass.push(config.dialogIframe.bodyCssClass);
 					}
 
-					iframeURL.addParameter(
-						'_' + namespace + '_bodyCssClass',
+					iframeURL.searchParams.set(
+						`_${namespace}_bodyCssClass`,
 						bodyCssClass.join(' ')
 					);
 
@@ -352,10 +352,15 @@ AUI.add(
 						try {
 							originalFn.call(this);
 						}
-						catch (err) {}
+						catch (error) {}
 					};
 
-					modal.get('boundingBox').addClass('dialog-iframe-modal');
+					var boundingBox = modal.get('boundingBox');
+
+					boundingBox.addClass('cadmin');
+					boundingBox.addClass('dialog-iframe-modal');
+					boundingBox.addClass('modal');
+					boundingBox.addClass('show');
 				}
 
 				if (!Lang.isValue(config.title)) {

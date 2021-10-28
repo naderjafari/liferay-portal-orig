@@ -77,7 +77,7 @@ public class ObjectFieldCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(29);
+		StringBundler sb = new StringBundler(41);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -95,16 +95,28 @@ public class ObjectFieldCacheModel
 		sb.append(createDate);
 		sb.append(", modifiedDate=");
 		sb.append(modifiedDate);
+		sb.append(", listTypeDefinitionId=");
+		sb.append(listTypeDefinitionId);
 		sb.append(", objectDefinitionId=");
 		sb.append(objectDefinitionId);
+		sb.append(", dbColumnName=");
+		sb.append(dbColumnName);
+		sb.append(", dbTableName=");
+		sb.append(dbTableName);
 		sb.append(", indexed=");
 		sb.append(indexed);
 		sb.append(", indexedAsKeyword=");
 		sb.append(indexedAsKeyword);
 		sb.append(", indexedLanguageId=");
 		sb.append(indexedLanguageId);
+		sb.append(", label=");
+		sb.append(label);
 		sb.append(", name=");
 		sb.append(name);
+		sb.append(", relationshipType=");
+		sb.append(relationshipType);
+		sb.append(", required=");
+		sb.append(required);
 		sb.append(", type=");
 		sb.append(type);
 		sb.append("}");
@@ -150,7 +162,23 @@ public class ObjectFieldCacheModel
 			objectFieldImpl.setModifiedDate(new Date(modifiedDate));
 		}
 
+		objectFieldImpl.setListTypeDefinitionId(listTypeDefinitionId);
 		objectFieldImpl.setObjectDefinitionId(objectDefinitionId);
+
+		if (dbColumnName == null) {
+			objectFieldImpl.setDBColumnName("");
+		}
+		else {
+			objectFieldImpl.setDBColumnName(dbColumnName);
+		}
+
+		if (dbTableName == null) {
+			objectFieldImpl.setDBTableName("");
+		}
+		else {
+			objectFieldImpl.setDBTableName(dbTableName);
+		}
+
 		objectFieldImpl.setIndexed(indexed);
 		objectFieldImpl.setIndexedAsKeyword(indexedAsKeyword);
 
@@ -161,12 +189,28 @@ public class ObjectFieldCacheModel
 			objectFieldImpl.setIndexedLanguageId(indexedLanguageId);
 		}
 
+		if (label == null) {
+			objectFieldImpl.setLabel("");
+		}
+		else {
+			objectFieldImpl.setLabel(label);
+		}
+
 		if (name == null) {
 			objectFieldImpl.setName("");
 		}
 		else {
 			objectFieldImpl.setName(name);
 		}
+
+		if (relationshipType == null) {
+			objectFieldImpl.setRelationshipType("");
+		}
+		else {
+			objectFieldImpl.setRelationshipType(relationshipType);
+		}
+
+		objectFieldImpl.setRequired(required);
 
 		if (type == null) {
 			objectFieldImpl.setType("");
@@ -194,13 +238,21 @@ public class ObjectFieldCacheModel
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
 
+		listTypeDefinitionId = objectInput.readLong();
+
 		objectDefinitionId = objectInput.readLong();
+		dbColumnName = objectInput.readUTF();
+		dbTableName = objectInput.readUTF();
 
 		indexed = objectInput.readBoolean();
 
 		indexedAsKeyword = objectInput.readBoolean();
 		indexedLanguageId = objectInput.readUTF();
+		label = objectInput.readUTF();
 		name = objectInput.readUTF();
+		relationshipType = objectInput.readUTF();
+
+		required = objectInput.readBoolean();
 		type = objectInput.readUTF();
 	}
 
@@ -231,7 +283,23 @@ public class ObjectFieldCacheModel
 		objectOutput.writeLong(createDate);
 		objectOutput.writeLong(modifiedDate);
 
+		objectOutput.writeLong(listTypeDefinitionId);
+
 		objectOutput.writeLong(objectDefinitionId);
+
+		if (dbColumnName == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(dbColumnName);
+		}
+
+		if (dbTableName == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(dbTableName);
+		}
 
 		objectOutput.writeBoolean(indexed);
 
@@ -244,12 +312,28 @@ public class ObjectFieldCacheModel
 			objectOutput.writeUTF(indexedLanguageId);
 		}
 
+		if (label == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(label);
+		}
+
 		if (name == null) {
 			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
+
+		if (relationshipType == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(relationshipType);
+		}
+
+		objectOutput.writeBoolean(required);
 
 		if (type == null) {
 			objectOutput.writeUTF("");
@@ -267,11 +351,17 @@ public class ObjectFieldCacheModel
 	public String userName;
 	public long createDate;
 	public long modifiedDate;
+	public long listTypeDefinitionId;
 	public long objectDefinitionId;
+	public String dbColumnName;
+	public String dbTableName;
 	public boolean indexed;
 	public boolean indexedAsKeyword;
 	public String indexedLanguageId;
+	public String label;
 	public String name;
+	public String relationshipType;
+	public boolean required;
 	public String type;
 
 }

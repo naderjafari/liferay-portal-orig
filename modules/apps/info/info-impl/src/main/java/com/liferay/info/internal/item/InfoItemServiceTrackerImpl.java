@@ -14,7 +14,11 @@
 
 package com.liferay.info.internal.item;
 
+import com.liferay.info.collection.provider.InfoCollectionProvider;
+import com.liferay.info.collection.provider.RelatedInfoItemCollectionProvider;
 import com.liferay.info.exception.CapabilityVerificationException;
+import com.liferay.info.filter.InfoFilterProvider;
+import com.liferay.info.filter.InfoRequestItemProvider;
 import com.liferay.info.formatter.InfoCollectionTextFormatter;
 import com.liferay.info.formatter.InfoTextFormatter;
 import com.liferay.info.internal.util.ItemClassNameServiceReferenceMapper;
@@ -28,11 +32,11 @@ import com.liferay.info.item.provider.InfoItemFormProvider;
 import com.liferay.info.item.provider.InfoItemFormVariationsProvider;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.info.item.provider.InfoItemPermissionProvider;
+import com.liferay.info.item.provider.InfoItemWorkflowProvider;
 import com.liferay.info.item.provider.filter.InfoItemServiceFilter;
 import com.liferay.info.item.renderer.InfoItemRenderer;
 import com.liferay.info.item.selector.InfoItemSelector;
 import com.liferay.info.item.updater.InfoItemFieldValuesUpdater;
-import com.liferay.info.list.provider.InfoItemRelatedListProvider;
 import com.liferay.info.list.provider.InfoListProvider;
 import com.liferay.info.list.renderer.InfoListRenderer;
 import com.liferay.info.localized.InfoLocalizedValue;
@@ -141,7 +145,7 @@ public class InfoItemServiceTrackerImpl implements InfoItemServiceTracker {
 	public List<InfoItemCapability> getInfoItemCapabilities(
 		String itemClassName) {
 
-		InfoItemCapabilitiesProvider infoItemCapabilitiesProvider =
+		InfoItemCapabilitiesProvider<?> infoItemCapabilitiesProvider =
 			getFirstInfoItemService(
 				InfoItemCapabilitiesProvider.class, itemClassName, null);
 
@@ -181,7 +185,7 @@ public class InfoItemServiceTrackerImpl implements InfoItemServiceTracker {
 		for (InfoItemClassDetails curInfoItemClassDetails :
 				getInfoItemClassDetails(InfoItemCapabilitiesProvider.class)) {
 
-			InfoItemCapabilitiesProvider infoItemCapabilitiesProvider =
+			InfoItemCapabilitiesProvider<?> infoItemCapabilitiesProvider =
 				getFirstInfoItemService(
 					InfoItemCapabilitiesProvider.class,
 					curInfoItemClassDetails.getClassName(), null);
@@ -192,9 +196,9 @@ public class InfoItemServiceTrackerImpl implements InfoItemServiceTracker {
 			if (infoItemCapabilities.contains(infoItemCapability)) {
 				infoItemCapability.verify(
 					curInfoItemClassDetails.getClassName());
-			}
 
-			infoItemClassDetailsList.add(curInfoItemClassDetails);
+				infoItemClassDetailsList.add(curInfoItemClassDetails);
+			}
 		}
 
 		return infoItemClassDetailsList;
@@ -248,14 +252,17 @@ public class InfoItemServiceTrackerImpl implements InfoItemServiceTracker {
 					(service, emitter) -> emitter.emit(service.getKey())));
 
 		Class<?>[] serviceClasses = new Class<?>[] {
-			InfoCollectionTextFormatter.class, InfoTextFormatter.class,
-			InfoItemCapabilitiesProvider.class, InfoItemDetailsProvider.class,
-			InfoItemFieldValuesProvider.class, InfoItemFieldValuesUpdater.class,
-			InfoItemFormProvider.class, InfoItemFormVariationsProvider.class,
+			InfoCollectionProvider.class, InfoCollectionTextFormatter.class,
+			InfoFilterProvider.class, InfoItemCapabilitiesProvider.class,
+			InfoItemDetailsProvider.class, InfoItemFieldValuesProvider.class,
+			InfoItemFieldValuesUpdater.class, InfoItemFormProvider.class,
+			InfoItemFormVariationsProvider.class,
 			InfoItemLanguagesProvider.class, InfoItemObjectProvider.class,
-			InfoItemPermissionProvider.class, InfoItemRelatedListProvider.class,
-			InfoItemRenderer.class, InfoItemSelector.class,
-			InfoListRenderer.class, InfoListProvider.class
+			InfoItemPermissionProvider.class, InfoItemRenderer.class,
+			InfoItemSelector.class, InfoItemWorkflowProvider.class,
+			InfoListRenderer.class, InfoListProvider.class,
+			InfoRequestItemProvider.class, InfoTextFormatter.class,
+			RelatedInfoItemCollectionProvider.class
 		};
 
 		for (Class<?> serviceClass : serviceClasses) {
@@ -299,22 +306,16 @@ public class InfoItemServiceTrackerImpl implements InfoItemServiceTracker {
 	private InfoItemClassDetails _getInfoItemClassDetails(
 		String itemClassName) {
 
-		InfoItemDetailsProvider infoItemDetailsProvider =
+		InfoItemDetailsProvider<?> infoItemDetailsProvider =
 			getFirstInfoItemService(
 				InfoItemDetailsProvider.class, itemClassName, null);
 
-		InfoItemClassDetails infoItemClassDetails = null;
-
 		if (infoItemDetailsProvider != null) {
-			infoItemClassDetails =
-				infoItemDetailsProvider.getInfoItemClassDetails();
-		}
-		else {
-			infoItemClassDetails = new InfoItemClassDetails(
-				itemClassName, InfoLocalizedValue.modelResource(itemClassName));
+			return infoItemDetailsProvider.getInfoItemClassDetails();
 		}
 
-		return infoItemClassDetails;
+		return new InfoItemClassDetails(
+			itemClassName, InfoLocalizedValue.modelResource(itemClassName));
 	}
 
 	private ServiceTrackerMap<String, InfoItemCapability>

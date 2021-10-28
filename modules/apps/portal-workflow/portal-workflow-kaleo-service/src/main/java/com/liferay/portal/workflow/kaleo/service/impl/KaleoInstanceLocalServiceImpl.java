@@ -91,7 +91,7 @@ public class KaleoInstanceLocalServiceImpl
 				serviceContext.getCompanyId());
 		}
 
-		Date now = new Date();
+		Date date = new Date();
 
 		long kaleoInstanceId = counterLocalService.increment();
 
@@ -106,8 +106,8 @@ public class KaleoInstanceLocalServiceImpl
 		kaleoInstance.setCompanyId(user.getCompanyId());
 		kaleoInstance.setUserId(user.getUserId());
 		kaleoInstance.setUserName(user.getFullName());
-		kaleoInstance.setCreateDate(now);
-		kaleoInstance.setModifiedDate(now);
+		kaleoInstance.setCreateDate(date);
+		kaleoInstance.setModifiedDate(date);
 		kaleoInstance.setKaleoDefinitionId(kaleoDefinitionId);
 		kaleoInstance.setKaleoDefinitionVersionId(kaleoDefinitionVersionId);
 		kaleoInstance.setKaleoDefinitionName(kaleoDefinitionName);
@@ -330,24 +330,6 @@ public class KaleoInstanceLocalServiceImpl
 			completed, serviceContext);
 	}
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link #search(Long,
-	 *             String, String, String, String, String, Boolean, int, int,
-	 *             OrderByComparator, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public List<KaleoInstance> search(
-		Long userId, String assetClassName, String nodeName,
-		String kaleoDefinitionName, Boolean completed, int start, int end,
-		OrderByComparator<KaleoInstance> orderByComparator,
-		ServiceContext serviceContext) {
-
-		return search(
-			userId, assetClassName, null, null, nodeName, kaleoDefinitionName,
-			completed, start, end, orderByComparator, serviceContext);
-	}
-
 	@Override
 	public List<KaleoInstance> search(
 		Long userId, String assetClassName, String assetTitle,
@@ -360,7 +342,7 @@ public class KaleoInstanceLocalServiceImpl
 			BaseModelSearchResult<KaleoInstance> baseModelSearchResult =
 				searchKaleoInstances(
 					userId, assetClassName, assetTitle, assetDescription,
-					nodeName, kaleoDefinitionName, completed, start, end,
+					nodeName, kaleoDefinitionName, completed, false, start, end,
 					orderByComparator, serviceContext);
 
 			return baseModelSearchResult.getBaseModels();
@@ -374,23 +356,6 @@ public class KaleoInstanceLocalServiceImpl
 		return Collections.emptyList();
 	}
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link #searchCount(Long,
-	 *             String, String, String, String, String, Boolean,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public int searchCount(
-		Long userId, String assetClassName, String nodeName,
-		String kaleoDefinitionName, Boolean completed,
-		ServiceContext serviceContext) {
-
-		return searchCount(
-			userId, assetClassName, null, null, nodeName, kaleoDefinitionName,
-			completed, serviceContext);
-	}
-
 	@Override
 	public int searchCount(
 		Long userId, String assetClassName, String assetTitle,
@@ -399,14 +364,15 @@ public class KaleoInstanceLocalServiceImpl
 
 		return _kaleoInstanceTokenLocalService.searchCount(
 			userId, assetClassName, assetTitle, assetDescription, nodeName,
-			kaleoDefinitionName, completed, serviceContext);
+			kaleoDefinitionName, completed, false, serviceContext);
 	}
 
 	@Override
 	public BaseModelSearchResult<KaleoInstance> searchKaleoInstances(
 			Long userId, String assetClassName, String assetTitle,
 			String assetDescription, String nodeName,
-			String kaleoDefinitionName, Boolean completed, int start, int end,
+			String kaleoDefinitionName, Boolean completed,
+			boolean searchByActiveWorkflowHandlers, int start, int end,
 			OrderByComparator<KaleoInstance> orderByComparator,
 			ServiceContext serviceContext)
 		throws PortalException {
@@ -415,8 +381,9 @@ public class KaleoInstanceLocalServiceImpl
 
 		Hits hits = _kaleoInstanceTokenLocalService.search(
 			userId, assetClassName, assetTitle, assetDescription, nodeName,
-			kaleoDefinitionName, completed, start, end,
-			getSortsFromComparator(orderByComparator), serviceContext);
+			kaleoDefinitionName, completed, searchByActiveWorkflowHandlers,
+			start, end, getSortsFromComparator(orderByComparator),
+			serviceContext);
 
 		for (Document document : hits.getDocs()) {
 			long kaleoInstanceId = GetterUtil.getLong(

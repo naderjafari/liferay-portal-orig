@@ -41,11 +41,13 @@ public class BatchPlannerPlanSoap implements Serializable {
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setModifiedDate(model.getModifiedDate());
 		soapModel.setActive(model.isActive());
+		soapModel.setExport(model.isExport());
 		soapModel.setExternalType(model.getExternalType());
 		soapModel.setExternalURL(model.getExternalURL());
 		soapModel.setInternalClassName(model.getInternalClassName());
 		soapModel.setName(model.getName());
-		soapModel.setExport(model.isExport());
+		soapModel.setTaskItemDelegateName(model.getTaskItemDelegateName());
+		soapModel.setTemplate(model.isTemplate());
 
 		return soapModel;
 	}
@@ -175,6 +177,18 @@ public class BatchPlannerPlanSoap implements Serializable {
 		_active = active;
 	}
 
+	public boolean getExport() {
+		return _export;
+	}
+
+	public boolean isExport() {
+		return _export;
+	}
+
+	public void setExport(boolean export) {
+		_export = export;
+	}
+
 	public String getExternalType() {
 		return _externalType;
 	}
@@ -207,16 +221,24 @@ public class BatchPlannerPlanSoap implements Serializable {
 		_name = name;
 	}
 
-	public boolean getExport() {
-		return _export;
+	public String getTaskItemDelegateName() {
+		return _taskItemDelegateName;
 	}
 
-	public boolean isExport() {
-		return _export;
+	public void setTaskItemDelegateName(String taskItemDelegateName) {
+		_taskItemDelegateName = taskItemDelegateName;
 	}
 
-	public void setExport(boolean export) {
-		_export = export;
+	public boolean getTemplate() {
+		return _template;
+	}
+
+	public boolean isTemplate() {
+		return _template;
+	}
+
+	public void setTemplate(boolean template) {
+		_template = template;
 	}
 
 	private long _mvccVersion;
@@ -227,10 +249,12 @@ public class BatchPlannerPlanSoap implements Serializable {
 	private Date _createDate;
 	private Date _modifiedDate;
 	private boolean _active;
+	private boolean _export;
 	private String _externalType;
 	private String _externalURL;
 	private String _internalClassName;
 	private String _name;
-	private boolean _export;
+	private String _taskItemDelegateName;
+	private boolean _template;
 
 }

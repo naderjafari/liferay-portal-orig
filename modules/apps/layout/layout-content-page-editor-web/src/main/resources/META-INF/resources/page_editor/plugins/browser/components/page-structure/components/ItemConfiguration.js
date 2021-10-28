@@ -23,7 +23,11 @@ import {
 	useActiveItemId,
 	useActiveItemType,
 } from '../../../../../app/contexts/ControlsContext';
-import {useSelectorCallback} from '../../../../../app/contexts/StoreContext';
+import {
+	useSelector,
+	useSelectorCallback,
+} from '../../../../../app/contexts/StoreContext';
+import selectCanViewItemConfiguration from '../../../../../app/selectors/selectCanViewItemConfiguration';
 import {deepEqual} from '../../../../../app/utils/checkDeepEqual';
 import {useId} from '../../../../../app/utils/useId';
 import {PANELS, selectPanels} from '../selectors/selectPanels';
@@ -32,11 +36,15 @@ import PageStructureSidebarSection from './PageStructureSidebarSection';
 export default function ItemConfiguration() {
 	const collectionContext = useCollectionActiveItemContext();
 
-	return (
+	const canViewItemConfiguration = useSelector(
+		selectCanViewItemConfiguration
+	);
+
+	return canViewItemConfiguration ? (
 		<CollectionItemContext.Provider value={collectionContext}>
 			<ItemConfigurationContent />
 		</CollectionItemContext.Provider>
-	);
+	) : null;
 }
 
 function ItemConfigurationContent() {
@@ -92,7 +100,7 @@ function ItemConfigurationContent() {
 							active={panel.panelId === activePanelId}
 							innerProps={{
 								'aria-controls': `${panelIdPrefix}-${panel.panelId}`,
-								id: `${tabIdPrefix}-${panel.panelId}`,
+								'id': `${tabIdPrefix}-${panel.panelId}`,
 							}}
 							key={panel.panelId}
 							onClick={() => setActivePanelId(panel.panelId)}

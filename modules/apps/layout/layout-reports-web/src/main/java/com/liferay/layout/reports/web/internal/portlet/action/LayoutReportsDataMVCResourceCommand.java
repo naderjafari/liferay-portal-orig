@@ -19,14 +19,15 @@ import com.liferay.info.constants.InfoDisplayWebKeys;
 import com.liferay.info.item.InfoItemDetails;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
-import com.liferay.layout.reports.web.internal.configuration.LayoutReportsGooglePageSpeedCompanyConfiguration;
-import com.liferay.layout.reports.web.internal.configuration.LayoutReportsGooglePageSpeedConfiguration;
+import com.liferay.layout.reports.web.internal.configuration.LayoutReportsGooglePageSpeedGroupConfiguration;
 import com.liferay.layout.reports.web.internal.configuration.provider.LayoutReportsGooglePageSpeedConfigurationProvider;
 import com.liferay.layout.reports.web.internal.constants.LayoutReportsPortletKeys;
 import com.liferay.layout.reports.web.internal.data.provider.LayoutReportsDataProvider;
+import com.liferay.layout.seo.canonical.url.LayoutSEOCanonicalURLProvider;
 import com.liferay.layout.seo.kernel.LayoutSEOLink;
 import com.liferay.layout.seo.kernel.LayoutSEOLinkManager;
 import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
@@ -49,7 +50,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -93,11 +94,6 @@ public class LayoutReportsDataMVCResourceCommand
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		LayoutReportsDataProvider layoutReportsDataProvider =
-			new LayoutReportsDataProvider(
-				_layoutReportsGooglePageSpeedConfigurationProvider.getApiKey(
-					themeDisplay.getScopeGroup()));
-
 		JSONPortletResponseUtil.writeJSON(
 			resourceRequest, resourceResponse,
 			JSONUtil.put(
@@ -113,16 +109,28 @@ public class LayoutReportsDataMVCResourceCommand
 				"pageURLs",
 				_getPageURLsJSONArray(resourceRequest, resourceResponse, layout)
 			).put(
-				"validConnection", layoutReportsDataProvider.isValidConnection()
+				"privateLayout", layout.isPrivateLayout()
+			).put(
+				"validConnection",
+				() -> {
+					LayoutReportsDataProvider layoutReportsDataProvider =
+						new LayoutReportsDataProvider(
+							_layoutReportsGooglePageSpeedConfigurationProvider.
+								getApiKey(themeDisplay.getScopeGroup()),
+							_layoutReportsGooglePageSpeedConfigurationProvider.
+								getStrategy(themeDisplay.getScopeGroup()));
+
+					return layoutReportsDataProvider.isValidConnection();
+				}
 			));
 	}
 
 	private Map<Locale, String> _getAlternateURLs(
-		String currentCompleteURL, Layout layout, ThemeDisplay themeDisplay) {
+		Layout layout, ThemeDisplay themeDisplay) {
 
 		try {
-			return _portal.getAlternateURLs(
-				currentCompleteURL, themeDisplay, layout);
+			return _layoutSEOCanonicalURLProvider.getCanonicalURLMap(
+				layout, themeDisplay);
 		}
 		catch (PortalException portalException) {
 			_log.error(portalException, portalException);
@@ -185,61 +193,25 @@ public class LayoutReportsDataMVCResourceCommand
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		if (_isOmniAdmin()) {
-			return PortletURLBuilder.create(
-				_portal.getControlPanelPortletURL(
-					portletRequest,
-					ConfigurationAdminPortletKeys.SYSTEM_SETTINGS,
-					PortletRequest.RENDER_PHASE)
-			).setMVCRenderCommandName(
-				"/configuration_admin/edit_configuration"
-			).setRedirect(
-				_getCompleteURL(portletRequest)
-			).setParameter(
-				"factoryPid",
-				LayoutReportsGooglePageSpeedConfiguration.class.getName()
-			).setParameter(
-				"pid", LayoutReportsGooglePageSpeedConfiguration.class.getName()
-			).buildString();
-		}
-		else if (_isCompanyAdmin()) {
-			return PortletURLBuilder.create(
-				_portal.getControlPanelPortletURL(
-					portletRequest,
-					ConfigurationAdminPortletKeys.INSTANCE_SETTINGS,
-					PortletRequest.RENDER_PHASE)
-			).setMVCRenderCommandName(
-				"/configuration_admin/edit_configuration"
-			).setRedirect(
-				_getCompleteURL(portletRequest)
-			).setParameter(
-				"factoryPid",
-				LayoutReportsGooglePageSpeedCompanyConfiguration.class.getName()
-			).setParameter(
-				"pid",
-				LayoutReportsGooglePageSpeedCompanyConfiguration.class.getName()
-			).buildString();
-		}
-		else if (_isSiteAdmin(themeDisplay.getScopeGroupId())) {
-			try {
-				return PortletURLBuilder.create(
-					_portal.getControlPanelPortletURL(
-						portletRequest,
-						_groupLocalService.getGroup(
-							themeDisplay.getScopeGroupId()),
-						"com_liferay_site_admin_web_portlet_" +
-							"SiteSettingsPortlet",
-						0, 0, PortletRequest.RENDER_PHASE)
-				).buildString();
-			}
-			catch (PortalException portalException) {
-				_log.error(portalException, portalException);
-
-				return null;
-			}
+		if (!_isGroupAdmin(themeDisplay.getScopeGroupId())) {
+			return null;
 		}
 
-		return null;
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				portletRequest, ConfigurationAdminPortletKeys.SITE_SETTINGS,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/configuration_admin/edit_configuration"
+		).setRedirect(
+			_getCompleteURL(portletRequest)
+		).setParameter(
+			"factoryPid",
+			LayoutReportsGooglePageSpeedGroupConfiguration.class.getName()
+		).setParameter(
+			"pid",
+			LayoutReportsGooglePageSpeedGroupConfiguration.class.getName()
+		).buildString();
 	}
 
 	private Locale _getDefaultLocale(Layout layout) {
@@ -278,7 +250,7 @@ public class LayoutReportsDataMVCResourceCommand
 			_getCompleteURL(portletRequest), layout, themeDisplay);
 
 		Map<Locale, String> alternateURLs = _getAlternateURLs(
-			canonicalURL, layout, themeDisplay);
+			layout, themeDisplay);
 
 		return JSONUtil.putAll(
 			Optional.ofNullable(
@@ -300,10 +272,20 @@ public class LayoutReportsDataMVCResourceCommand
 						return 1;
 					}
 
-					String languageId1 = LocaleUtil.toW3cLanguageId(locale1);
-					String languageId2 = LocaleUtil.toW3cLanguageId(locale2);
+					Locale locale = themeDisplay.getLocale();
 
-					return languageId1.compareToIgnoreCase(languageId2);
+					String displayLanguage1 = locale1.getDisplayLanguage(
+						locale);
+					String displayLanguage2 = locale2.getDisplayLanguage(
+						locale);
+
+					if (StringUtil.equalsIgnoreCase(
+							displayLanguage1, displayLanguage2)) {
+
+						return -1;
+					}
+
+					return 1;
 				}
 			).map(
 				locale -> {
@@ -362,7 +344,7 @@ public class LayoutReportsDataMVCResourceCommand
 						infoItemDetails.getClassName())
 			).map(
 				infoItemFieldValuesProvider ->
-					infoItemFieldValuesProvider.getInfoItemFieldValue(
+					infoItemFieldValuesProvider.getInfoFieldValue(
 						portletRequest.getAttribute(
 							InfoDisplayWebKeys.INFO_ITEM),
 						"title")
@@ -385,21 +367,7 @@ public class LayoutReportsDataMVCResourceCommand
 		return StringPool.BLANK;
 	}
 
-	private boolean _isCompanyAdmin() {
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
-		return permissionChecker.isCompanyAdmin();
-	}
-
-	private boolean _isOmniAdmin() {
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
-		return permissionChecker.isOmniadmin();
-	}
-
-	private boolean _isSiteAdmin(long groupId) {
+	private boolean _isGroupAdmin(long groupId) {
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
 
@@ -424,6 +392,9 @@ public class LayoutReportsDataMVCResourceCommand
 	@Reference
 	private LayoutReportsGooglePageSpeedConfigurationProvider
 		_layoutReportsGooglePageSpeedConfigurationProvider;
+
+	@Reference
+	private LayoutSEOCanonicalURLProvider _layoutSEOCanonicalURLProvider;
 
 	@Reference
 	private LayoutSEOLinkManager _layoutSEOLinkManager;

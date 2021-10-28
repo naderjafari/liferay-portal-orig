@@ -40,6 +40,7 @@ import com.liferay.message.boards.service.MBThreadFlagLocalService;
 import com.liferay.message.boards.service.MBThreadLocalService;
 import com.liferay.message.boards.service.MBThreadService;
 import com.liferay.message.boards.settings.MBGroupServiceSettings;
+import com.liferay.message.boards.util.comparator.ThreadCreateDateComparator;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -190,7 +191,8 @@ public class MessageBoardThreadResourceImpl
 						new QueryDefinition<>(
 							status, contextUser.getUserId(), true,
 							pagination.getStartPosition(),
-							pagination.getEndPosition(), null)),
+							pagination.getEndPosition(),
+							new ThreadCreateDateComparator())),
 					this::_toMessageBoardThread),
 				pagination,
 				_mbThreadService.getThreadsCount(
@@ -425,7 +427,8 @@ public class MessageBoardThreadResourceImpl
 				_toPriority(
 					mbThread.getGroupId(), messageBoardThread.getThreadType()),
 				false,
-				_getServiceContext(messageBoardThread, mbThread.getGroupId())));
+				_createServiceContext(
+					mbThread.getGroupId(), messageBoardThread)));
 	}
 
 	@Override
@@ -497,8 +500,8 @@ public class MessageBoardThreadResourceImpl
 			encodingFormat = MBMessageConstants.DEFAULT_FORMAT;
 		}
 
-		ServiceContext serviceContext = _getServiceContext(
-			messageBoardThread, siteId);
+		ServiceContext serviceContext = _createServiceContext(
+			siteId, messageBoardThread);
 
 		MBMessage mbMessage = _mbMessageService.addMessage(
 			siteId, messageBoardSectionId, messageBoardThread.getHeadline(),
@@ -528,6 +531,45 @@ public class MessageBoardThreadResourceImpl
 					" must be the owner or a content reviewer to access this ",
 					"message thread"));
 		}
+	}
+
+	private ServiceContext _createServiceContext(
+		long groupId, MessageBoardThread messageBoardThread) {
+
+		ServiceContext serviceContext =
+			ServiceContextRequestUtil.createServiceContext(
+				messageBoardThread.getTaxonomyCategoryIds(),
+				Optional.ofNullable(
+					messageBoardThread.getKeywords()
+				).orElse(
+					new String[0]
+				),
+				_getExpandoBridgeAttributes(messageBoardThread), groupId,
+				contextHttpServletRequest,
+				messageBoardThread.getViewableByAsString());
+
+		String link = contextHttpServletRequest.getHeader("Link");
+
+		if (link == null) {
+			UriBuilder uriBuilder = UriInfoUtil.getBaseUriBuilder(
+				contextUriInfo);
+
+			link = String.valueOf(
+				uriBuilder.replacePath(
+					"/"
+				).build());
+		}
+
+		serviceContext.setAttribute("link", link);
+
+		if (messageBoardThread.getId() == null) {
+			serviceContext.setCommand("add");
+		}
+		else {
+			serviceContext.setCommand("update");
+		}
+
+		return serviceContext;
 	}
 
 	private DynamicQuery _getDynamicQuery(
@@ -579,45 +621,6 @@ public class MessageBoardThreadResourceImpl
 			contextAcceptLanguage.getPreferredLocale());
 	}
 
-	private ServiceContext _getServiceContext(
-		MessageBoardThread messageBoardThread, long siteId) {
-
-		ServiceContext serviceContext =
-			ServiceContextRequestUtil.createServiceContext(
-				messageBoardThread.getTaxonomyCategoryIds(),
-				Optional.ofNullable(
-					messageBoardThread.getKeywords()
-				).orElse(
-					new String[0]
-				),
-				_getExpandoBridgeAttributes(messageBoardThread), siteId,
-				contextHttpServletRequest,
-				messageBoardThread.getViewableByAsString());
-
-		String link = contextHttpServletRequest.getHeader("Link");
-
-		if (link == null) {
-			UriBuilder uriBuilder = UriInfoUtil.getBaseUriBuilder(
-				contextUriInfo);
-
-			link = String.valueOf(
-				uriBuilder.replacePath(
-					"/"
-				).build());
-		}
-
-		serviceContext.setAttribute("entryURL", link);
-
-		if (messageBoardThread.getId() == null) {
-			serviceContext.setCommand("add");
-		}
-		else {
-			serviceContext.setCommand("update");
-		}
-
-		return serviceContext;
-	}
-
 	private Page<MessageBoardThread> _getSiteMessageBoardThreadsPage(
 			Map<String, Map<String, String>> actions,
 			UnsafeConsumer<BooleanQuery, Exception> booleanQueryUnsafeConsumer,
@@ -626,8 +629,8 @@ public class MessageBoardThreadResourceImpl
 		throws Exception {
 
 		return SearchUtil.search(
-			actions, booleanQueryUnsafeConsumer, filter, MBMessage.class,
-			keywords, pagination,
+			actions, booleanQueryUnsafeConsumer, filter,
+			MBMessage.class.getName(), keywords, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
 			searchContext -> {

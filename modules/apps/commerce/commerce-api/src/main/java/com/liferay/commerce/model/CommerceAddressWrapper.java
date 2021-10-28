@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.model;
 
+import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.portal.kernel.model.ModelWrapper;
 import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 
@@ -226,6 +227,11 @@ public class CommerceAddressWrapper
 	}
 
 	@Override
+	public CommerceAddress cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	@Override
 	public com.liferay.portal.kernel.model.Country fetchCountry() {
 		return model.fetchCountry();
 	}
@@ -345,6 +351,11 @@ public class CommerceAddressWrapper
 	@Override
 	public String getDescription() {
 		return model.getDescription();
+	}
+
+	@Override
+	public ExpandoBridge getExpandoBridge() {
+		return model.getExpandoBridge();
 	}
 
 	/**
@@ -552,11 +563,6 @@ public class CommerceAddressWrapper
 	@Override
 	public boolean isSameAddress(CommerceAddress commerceAddress) {
 		return model.isSameAddress(commerceAddress);
-	}
-
-	@Override
-	public void persist() {
-		model.persist();
 	}
 
 	/**

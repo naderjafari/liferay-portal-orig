@@ -15,6 +15,7 @@
 package com.liferay.portal.osgi.web.portlet.tracker.internal;
 
 import com.liferay.osgi.util.StringPlus;
+import com.liferay.petra.executor.PortalExecutorManager;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -28,6 +29,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.ResourceActionsException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.EventDefinition;
 import com.liferay.portal.kernel.model.PortletApp;
@@ -89,6 +91,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 import javax.portlet.Portlet;
@@ -231,20 +236,38 @@ public class PortletTracker
 
 		_portletInstanceFactory.destroy(portletModel);
 
-		_companyLocalService.forEachCompanyId(
-			companyId -> {
-				PortletCategory portletCategory =
-					(PortletCategory)WebAppPool.get(
-						companyId, WebKeys.PORTLET_CATEGORY);
+		Long companyId = (Long)serviceReference.getProperty(
+			"com.liferay.portlet.company");
 
-				if (portletCategory == null) {
-					_log.error(
-						"Unable to get portlet category for " + companyId);
-				}
-				else {
-					portletCategory.separate(portletModel.getRootPortletId());
-				}
-			});
+		if (companyId == null) {
+			_companyLocalService.forEachCompanyId(
+				curCompanyId -> {
+					PortletCategory portletCategory =
+						(PortletCategory)WebAppPool.get(
+							curCompanyId, WebKeys.PORTLET_CATEGORY);
+
+					if (portletCategory == null) {
+						_log.error(
+							"Unable to get portlet category for " +
+								curCompanyId);
+					}
+					else {
+						portletCategory.separate(
+							portletModel.getRootPortletId());
+					}
+				});
+		}
+		else {
+			PortletCategory portletCategory = (PortletCategory)WebAppPool.get(
+				companyId, WebKeys.PORTLET_CATEGORY);
+
+			if (portletCategory == null) {
+				_log.error("Unable to get portlet category for " + companyId);
+			}
+			else {
+				portletCategory.separate(portletModel.getRootPortletId());
+			}
+		}
 
 		serviceRegistrations.removeServiceReference(serviceReference);
 	}
@@ -252,6 +275,9 @@ public class PortletTracker
 	@Activate
 	protected void activate(BundleContext bundleContext) {
 		_bundleContext = bundleContext;
+
+		_executorService = _portalExecutorManager.getPortalExecutor(
+			PortletTracker.class.getName());
 
 		_serviceTracker = new ServiceTracker<>(
 			_bundleContext, Portlet.class, this);
@@ -280,8 +306,6 @@ public class PortletTracker
 				return null;
 			});
 
-		DependencyManagerSyncUtil.registerSyncFuture(futureTask);
-
 		Thread serviceTrackerOpenerThread = new Thread(
 			futureTask,
 			PortletTracker.class.getName() + "-ServiceTrackerOpener");
@@ -289,6 +313,8 @@ public class PortletTracker
 		serviceTrackerOpenerThread.setDaemon(true);
 
 		serviceTrackerOpenerThread.start();
+
+		DependencyManagerSyncUtil.registerSyncFuture(futureTask);
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Activated");
@@ -347,7 +373,10 @@ public class PortletTracker
 			}
 
 			com.liferay.portal.kernel.model.Portlet portletModel =
-				buildPortletModel(portletApp, portletId, bundle);
+				buildPortletModel(
+					portletApp, portletId, bundle,
+					(Long)serviceReference.getProperty(
+						"com.liferay.portlet.company"));
 
 			portletModel.setPortletName(portletName);
 
@@ -409,14 +438,21 @@ public class PortletTracker
 	}
 
 	protected com.liferay.portal.kernel.model.Portlet buildPortletModel(
-		PortletApp portletApp, String portletId, Bundle bundle) {
+		PortletApp portletApp, String portletId, Bundle bundle,
+		Long companyId) {
 
 		com.liferay.portal.kernel.model.Portlet portletModel =
 			_portletLocalService.createPortlet(0);
 
 		portletModel.setPortletId(portletId);
 
-		portletModel.setCompanyId(CompanyConstants.SYSTEM);
+		if (companyId == null) {
+			portletModel.setCompanyId(CompanyConstants.SYSTEM);
+		}
+		else {
+			portletModel.setCompanyId(companyId);
+		}
+
 		portletModel.setPluginPackage(
 			new BundlePluginPackage(bundle, portletApp));
 		portletModel.setPortletApp(portletApp);
@@ -1257,6 +1293,8 @@ public class PortletTracker
 	protected void deactivate() {
 		_serviceTracker.close();
 
+		_executorService.shutdownNow();
+
 		if (_log.isInfoEnabled()) {
 			_log.info("Deactivated");
 		}
@@ -1267,6 +1305,9 @@ public class PortletTracker
 			com.liferay.portal.kernel.model.Portlet portletModel)
 		throws PortalException {
 
+		Long companyId = (Long)serviceReference.getProperty(
+			"com.liferay.portlet.company");
+
 		List<String> categoryNames = StringPlus.asList(
 			get(serviceReference, "display-category"));
 
@@ -1274,8 +1315,47 @@ public class PortletTracker
 			categoryNames.add("category.undefined");
 		}
 
-		_portletLocalService.deployRemotePortlet(
-			portletModel, ArrayUtil.toStringArray(categoryNames), false);
+		if (companyId != null) {
+			_portletLocalService.deployRemotePortlet(
+				new long[] {companyId}, portletModel,
+				ArrayUtil.toStringArray(categoryNames), false, false);
+
+			_portletLocalService.clearCache();
+
+			return;
+		}
+
+		List<Future<Void>> futures = new ArrayList<>();
+
+		List<Company> companies = _companyLocalService.getCompanies(false);
+
+		for (Company company : companies) {
+			futures.add(
+				_executorService.submit(
+					() -> {
+						_portletLocalService.deployRemotePortlet(
+							new long[] {company.getCompanyId()}, portletModel,
+							ArrayUtil.toStringArray(categoryNames), false,
+							false);
+
+						return null;
+					}));
+		}
+
+		for (Future<Void> future : futures) {
+			try {
+				future.get();
+			}
+			catch (Exception exception) {
+				if (exception instanceof ExecutionException) {
+					throw new PortalException(exception.getCause());
+				}
+
+				throw new PortalException(exception);
+			}
+		}
+
+		_portletLocalService.clearCache();
 	}
 
 	protected Object get(
@@ -1396,6 +1476,7 @@ public class PortletTracker
 	@Reference
 	private CompanyLocalService _companyLocalService;
 
+	private ExecutorService _executorService;
 	private String _httpServiceEndpoint = StringPool.BLANK;
 
 	@Reference(
@@ -1405,6 +1486,9 @@ public class PortletTracker
 
 	@Reference
 	private Portal _portal;
+
+	@Reference
+	private PortalExecutorManager _portalExecutorManager;
 
 	private com.liferay.portal.kernel.model.Portlet _portalPortletModel;
 
@@ -1511,8 +1595,12 @@ public class PortletTracker
 
 			BundleContext bundleContext = _bundle.getBundleContext();
 
-			bundleContext.ungetService(
-				_servletContextHelperRegistrationServiceReference);
+			try {
+				bundleContext.ungetService(
+					_servletContextHelperRegistrationServiceReference);
+			}
+			catch (IllegalStateException illegalStateException) {
+			}
 		}
 
 		public synchronized void setPortletApp(PortletApp portletApp) {

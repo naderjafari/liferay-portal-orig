@@ -18,7 +18,7 @@ definition {
 				panel = "Control Panel",
 				portlet = "Search");
 
-			SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+			SearchAdministration.executeSearchActions(actionsDescription = "Reindex search indexes.");
 		}
 
 		task ("Add a new site") {
@@ -281,29 +281,29 @@ definition {
 
 			PageEditor.addFragment(
 				collectionName = "Featured Content",
+				composition = "true",
 				fragmentName = "Banner Center");
 		}
 
 		task ("Search the grandchild widget page in select modal then map it to link type editable field") {
 			PageEditorEditableLink.mapEditableFieldToPage(
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link",
 				keywords = "Grand Child",
 				pageName = "Test Grand Child Page Name");
 		}
 
 		task ("View the selected page is shown in Page field") {
-			AssertVisible(
-				key_contentName = "Test Grand Child Page Name",
-				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT");
+			AssertTextEquals(
+				key_fieldLabel = "Page",
+				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT",
+				value1 = "Test Grand Child Page Name");
 		}
 
 		task ("View selected page is linked to Banner Center fragment") {
-			var baseURL = PropsUtil.get("portal.url");
-
 			AssertVisible(
 				key_append = "[normalize-space(text())='Go Somewhere']",
-				key_URL = "${baseURL}/web/test-site-name/test-grand-child-page-name",
+				key_URL = "/web/test-site-name/test-grand-child-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			PageEditor.clickPublish();
@@ -318,7 +318,7 @@ definition {
 		task ("Assert redirect to grandchild widget page") {
 			Click(
 				key_append = "[normalize-space(text())='Go Somewhere']",
-				key_URL = "${baseURL}/web/test-site-name/test-grand-child-page-name",
+				key_URL = "/web/test-site-name/test-grand-child-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			AssertTextEquals(
@@ -335,11 +335,9 @@ definition {
 		property test.name.skip.portal.instance = "ContentPagesWithSearch#ViewContentPageNotShownInSearchResultsAfterDeleteCategory";
 
 		task ("Publish the content page") {
-			var plid = JSONLayout.getPlid(
+			JSONLayout.publishLayout(
 				groupName = "Test Site Name",
 				layoutName = "Test Content Page Name");
-
-			JSONLayout.publishLayout(plid = "${plid}");
 		}
 
 		task ("Add a a vocabulary") {
@@ -402,6 +400,81 @@ definition {
 
 		task ("View the content page is not shown in the search results") {
 			Search.viewNoResultAssetTitle(searchAssetTitle = "Test Content Page Name");
+		}
+	}
+
+	@description = "This is a test for LPS-119582. View content page shown in search results after execute reindex all."
+	@priority = "5"
+	test ViewContentPageShownInSearchResultsAfterExecuteReindexAll {
+		property test.name.skip.portal.instance = "ContentPagesWithSearch#ViewContentPageShownInSearchResultsAfterExecuteReindexAll";
+
+		task ("Add a Paragraph fragment to content page") {
+			ContentPagesNavigator.openEditContentPage(
+				pageName = "Test Content Page Name",
+				siteName = "Test Site Name");
+
+			PageEditor.addFragment(
+				collectionName = "Basic Components",
+				fragmentName = "Paragraph");
+		}
+
+		task ("Edit the inline content of Paragraph") {
+			PageEditor.editFragmentText(
+				fragmentName = "Paragraph",
+				id = "element-text",
+				text = "Searchable paragraph");
+		}
+
+		task ("Publish the content page") {
+			PageEditor.clickPublish();
+		}
+
+		task ("Add a web content based on Basic Web Content") {
+			JSONWebcontent.addWebContent(
+				content = "Web Content Content",
+				groupName = "Test Site Name",
+				title = "Searchable Web Content Title");
+		}
+
+		task ("Navigate to the search page") {
+			Navigator.gotoSitePage(
+				pageName = "Search",
+				siteName = "Test Site Name");
+		}
+
+		task ("Search keyword via search bar") {
+			Search.searchCP(searchTerm = "Searchable");
+		}
+
+		task ("View both content page and web content shown in the search results") {
+			for (var title : list "Test Content Page Name,Searchable Web Content Title") {
+				Search.viewResultAssetTitle(searchAssetTitle = "${title}");
+			}
+		}
+
+		task ("Execute Reindex all search indexes") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Configuration",
+				panel = "Control Panel",
+				portlet = "Search");
+
+			SearchAdministration.executeSearchActions(actionsDescription = "Reindex search indexes.");
+		}
+
+		task ("Navigate to the search page") {
+			Navigator.gotoSitePage(
+				pageName = "Search",
+				siteName = "Test Site Name");
+		}
+
+		task ("Search keyword via search bar") {
+			Search.searchCP(searchTerm = "Searchable");
+		}
+
+		task ("View both content page and web content are still shown in the search results") {
+			for (var title : list "Test Content Page Name,Searchable Web Content Title") {
+				Search.viewResultAssetTitle(searchAssetTitle = "${title}");
+			}
 		}
 	}
 

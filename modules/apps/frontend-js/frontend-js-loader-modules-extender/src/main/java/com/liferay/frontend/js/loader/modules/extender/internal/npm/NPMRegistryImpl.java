@@ -446,15 +446,12 @@ public class NPMRegistryImpl implements NPMRegistry {
 			for (String bridge : bridges) {
 				bridge = bridge.trim();
 
-				StringBundler sb = new StringBundler(5);
-
-				sb.append(packageJSONObject.getString("name"));
-				sb.append(StringPool.AT);
-				sb.append(packageJSONObject.getString("version"));
-				sb.append("/bridge/");
-				sb.append(bridge);
-
-				_globalAliases.put(bridge, sb.toString());
+				_globalAliases.put(
+					bridge,
+					StringBundler.concat(
+						packageJSONObject.getString("name"), StringPool.AT,
+						packageJSONObject.getString("version"), "/bridge/",
+						bridge));
 			}
 		}
 	}
@@ -540,16 +537,15 @@ public class NPMRegistryImpl implements NPMRegistry {
 			NPMRegistryImpl.class.getName() + "._activationThreadLocal",
 			() -> Boolean.FALSE);
 
-	private Boolean _applyVersioning;
+	private volatile Boolean _applyVersioning;
 	private BundleContext _bundleContext;
 	private BundleTracker<JSBundle> _bundleTracker;
 	private final Map<String, JSPackage> _dependencyJSPackages =
 		new ConcurrentHashMap<>();
 	private Map<String, String> _exactMatchMap;
 	private final Map<String, String> _globalAliases = new HashMap<>();
-	private ServiceTrackerList
-		<JavaScriptAwarePortalWebResources, JavaScriptAwarePortalWebResources>
-			_javaScriptAwarePortalWebResources;
+	private ServiceTrackerList<JavaScriptAwarePortalWebResources>
+		_javaScriptAwarePortalWebResources;
 
 	@Reference
 	private JSBundleProcessor _jsBundleProcessor;
@@ -561,14 +557,13 @@ public class NPMRegistryImpl implements NPMRegistry {
 
 	private Map<String, JSPackage> _jsPackages = new HashMap<>();
 	private List<JSPackageVersion> _jsPackageVersions = new ArrayList<>();
-	private ServiceTrackerList
-		<NPMRegistryUpdatesListener, NPMRegistryUpdatesListener>
-			_npmRegistryUpdatesListeners;
+	private ServiceTrackerList<NPMRegistryUpdatesListener>
+		_npmRegistryUpdatesListeners;
 	private final Map<String, String> _partialMatchMap =
 		new ConcurrentHashMap<>();
 	private Map<String, JSModule> _resolvedJSModules = new HashMap<>();
 	private Map<String, JSPackage> _resolvedJSPackages = new HashMap<>();
-	private ServiceTracker<ServletContext, JSConfigGeneratorPackage>
+	private volatile ServiceTracker<ServletContext, JSConfigGeneratorPackage>
 		_serviceTracker;
 
 	private static class JSPackageVersion {

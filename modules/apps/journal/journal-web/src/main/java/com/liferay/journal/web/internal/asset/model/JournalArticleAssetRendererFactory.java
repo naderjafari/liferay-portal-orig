@@ -204,7 +204,7 @@ public class JournalArticleAssetRendererFactory
 				JournalPortletKeys.JOURNAL, 0, 0, PortletRequest.RENDER_PHASE)
 		).setMVCPath(
 			"/edit_article.jsp"
-		).build();
+		).buildPortletURL();
 
 		if (classTypeId > 0) {
 			DDMStructure ddmStructure =
@@ -245,11 +245,8 @@ public class JournalArticleAssetRendererFactory
 			PermissionChecker permissionChecker, long groupId, long classTypeId)
 		throws Exception {
 
-		if (classTypeId == 0) {
-			return false;
-		}
-
-		if (!_ddmStructureModelResourcePermission.contains(
+		if ((classTypeId == 0) ||
+			!_ddmStructureModelResourcePermission.contains(
 				permissionChecker, classTypeId, ActionKeys.VIEW)) {
 
 			return false;

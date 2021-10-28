@@ -92,16 +92,12 @@ const ACTIONS = {
 		});
 	},
 
-	expireArticles({itemData}) {
-		this.send(itemData.expireURL);
+	discardArticleDraft({itemData}) {
+		this.send(itemData.discardArticleDraftURL);
 	},
 
-	exportTranslation({itemData, portletNamespace}) {
-		Liferay.componentReady(
-			`${portletNamespace}ExportForTranslationComponent`
-		).then((exportTranslationComponent) => {
-			exportTranslationComponent.open([itemData.articleEntryId]);
-		});
+	expireArticles({itemData}) {
+		this.send(itemData.expireURL);
 	},
 
 	permissions({itemData}) {
@@ -113,6 +109,7 @@ const ACTIONS = {
 
 	preview({itemData}) {
 		openModal({
+			iframeBodyCssClass: '',
 			title: itemData.title,
 			url: itemData.previewURL,
 		});
@@ -156,6 +153,7 @@ const ACTIONS = {
 };
 
 export default function propsTransformer({
+	actions,
 	additionalProps: {trashEnabled},
 	items,
 	portletNamespace,
@@ -187,6 +185,7 @@ export default function propsTransformer({
 
 	return {
 		...props,
-		items: items.map(bindAction),
+		actions: actions?.map(bindAction),
+		items: items?.map(bindAction),
 	};
 }

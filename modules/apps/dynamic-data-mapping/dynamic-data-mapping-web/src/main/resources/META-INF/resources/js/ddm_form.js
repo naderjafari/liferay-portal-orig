@@ -1223,7 +1223,16 @@ AUI.add(
 							instance.setValue(value);
 						}
 						else {
-							instance.setValue(instance.getValue());
+							if (
+								(dataType === 'double' ||
+									dataType === 'number') &&
+								!A.Object.isEmpty(localizationMap)
+							) {
+								instance.setValue(localizationMap);
+							}
+							else {
+								instance.setValue(instance.getValue());
+							}
 						}
 					}
 				},
@@ -1639,12 +1648,12 @@ AUI.add(
 						'1_json': JSON.stringify(criterionJSON),
 						'2_json': JSON.stringify(uploadCriterionJSON),
 						criteria,
-						itemSelectedEventName:
+						'itemSelectedEventName':
 							portletNamespace + 'selectDocumentLibrary',
-						p_p_auth: container.getData('itemSelectorAuthToken'),
-						p_p_id: Liferay.PortletKeys.ITEM_SELECTOR,
-						p_p_mode: 'view',
-						p_p_state: 'pop_up',
+						'p_p_auth': container.getData('itemSelectorAuthToken'),
+						'p_p_id': Liferay.PortletKeys.ITEM_SELECTOR,
+						'p_p_mode': 'view',
+						'p_p_state': 'pop_up',
 					};
 
 					var documentLibraryURL = Liferay.Util.PortletURL.createPortletURL(
@@ -1678,11 +1687,11 @@ AUI.add(
 
 				getUploadURL() {
 					var uploadParameters = {
-						cmd: 'add_temp',
+						'cmd': 'add_temp',
 						'javax.portlet.action':
 							'/document_library/upload_file_entry',
-						p_auth: Liferay.authToken,
-						p_p_id: Liferay.PortletKeys.DOCUMENT_LIBRARY,
+						'p_auth': Liferay.authToken,
+						'p_p_id': Liferay.PortletKeys.DOCUMENT_LIBRARY,
 					};
 
 					var uploadURL = Liferay.Util.PortletURL.createActionURL(
@@ -1816,14 +1825,7 @@ AUI.add(
 							layoutValue && layoutValue.privateLayout
 						);
 
-						var groupIdNode = A.one(
-							'#' + this.get('portletNamespace') + 'groupId'
-						);
-
-						var groupId =
-							(groupIdNode &&
-								groupIdNode.getAttribute('value')) ||
-							themeDisplay.getScopeGroupId();
+						var groupId = themeDisplay.getScopeGroupIdOrLiveGroupId();
 
 						var layoutsRoot = {
 							groupId,
@@ -2209,13 +2211,7 @@ AUI.add(
 
 					var delta = instance.get('delta');
 
-					var groupIdNode = A.one(
-						'#' + this.get('portletNamespace') + 'groupId'
-					);
-
-					var groupId =
-						(groupIdNode && groupIdNode.getAttribute('value')) ||
-						themeDisplay.getScopeGroupId();
+					var groupId = themeDisplay.getScopeGroupIdOrLiveGroupId();
 
 					var parentLayoutId = instance._currentParentLayoutId;
 
@@ -2528,13 +2524,7 @@ AUI.add(
 
 					var selectedLayout = instance.get('selectedLayout');
 
-					var groupIdNode = A.one(
-						'#' + this.get('portletNamespace') + 'groupId'
-					);
-
-					var groupId =
-						(groupIdNode && groupIdNode.getAttribute('value')) ||
-						themeDisplay.getScopeGroupId();
+					var groupId = themeDisplay.getScopeGroupIdOrLiveGroupId();
 
 					if (selectedLayout && selectedLayout.layoutId) {
 						instance._requestSiblingLayouts(
@@ -3178,6 +3168,14 @@ AUI.add(
 					}
 				},
 
+				getAltRuleInputName() {
+					var instance = this;
+
+					var inputName = instance.getInputName();
+
+					return inputName + 'Alt';
+				},
+
 				getDocumentLibrarySelectorURL() {
 					var instance = this;
 
@@ -3225,12 +3223,12 @@ AUI.add(
 						'0_json': JSON.stringify(journalCriterionJSON),
 						'1_json': JSON.stringify(imageCriterionJSON),
 						criteria,
-						itemSelectedEventName:
+						'itemSelectedEventName':
 							portletNamespace + 'selectDocumentLibrary',
-						p_p_auth: container.getData('itemSelectorAuthToken'),
-						p_p_id: Liferay.PortletKeys.ITEM_SELECTOR,
-						p_p_mode: 'view',
-						p_p_state: 'pop_up',
+						'p_p_auth': container.getData('itemSelectorAuthToken'),
+						'p_p_id': Liferay.PortletKeys.ITEM_SELECTOR,
+						'p_p_mode': 'view',
+						'p_p_state': 'pop_up',
 					};
 
 					var documentLibraryURL = Liferay.Util.PortletURL.createPortletURL(
@@ -3854,6 +3852,19 @@ AUI.add(
 								validatorRules[
 									field.getRuleInputName()
 								] = originalFieldRules;
+							}
+
+							if (field.get('dataType') === 'image') {
+								var originalAltRuleInputName = originalField.getAltRuleInputName();
+
+								originalFieldRules =
+									validatorRules[originalAltRuleInputName];
+
+								if (originalFieldRules) {
+									validatorRules[
+										field.getAltRuleInputName()
+									] = originalFieldRules;
+								}
 							}
 						}
 						else if (event.type === 'liferay-ddm-field:remove') {

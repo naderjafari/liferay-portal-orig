@@ -107,7 +107,7 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 			List<PathMatcher> includesPathMatchers)
 		throws IOException {
 
-		final File modulesDir = new File(getWorkingDirectory(), "modules");
+		File modulesDir = new File(getWorkingDirectory(), "modules");
 
 		if (!modulesDir.exists()) {
 			return new ArrayList<>();
@@ -151,7 +151,7 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 
 				@Override
 				public FileVisitResult preVisitDirectory(
-					Path filePath, BasicFileAttributes attrs) {
+					Path filePath, BasicFileAttributes basicFileAttributes) {
 
 					if (!JenkinsResultsParserUtil.isFileIncluded(
 							excludedModulesPathMatchers,
@@ -236,7 +236,7 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 		}
 
 		throw new RuntimeException(
-			"Could not find a plugins git working directory");
+			"Unable to find a plugins Git working directory");
 	}
 
 	public Properties getReleaseProperties() {

@@ -115,6 +115,21 @@ public class VariableNameCheck extends BaseCheck {
 
 				if (firstChildDetailAST.getType() == TokenTypes.METHOD_CALL) {
 					methodName = getMethodName(firstChildDetailAST);
+
+					if (methodName.equals("stream")) {
+						firstChildDetailAST =
+							firstChildDetailAST.getFirstChild();
+
+						if (firstChildDetailAST.getType() == TokenTypes.DOT) {
+							firstChildDetailAST =
+								firstChildDetailAST.getFirstChild();
+
+							_checkTypo(
+								detailAST, name,
+								firstChildDetailAST.getText() + "Stream",
+								false);
+						}
+					}
 				}
 			}
 			else if ((firstChildDetailAST.getType() == TokenTypes.IDENT) &&
@@ -654,14 +669,34 @@ public class VariableNameCheck extends BaseCheck {
 			return;
 		}
 
+		String lowerCaseTrimmedTypeName = StringUtil.toLowerCase(
+			trimmedTypeName);
+
 		if (SourceUtil.hasTypo(
 				StringUtil.toLowerCase(trimmedName),
-				StringUtil.toLowerCase(trimmedTypeName))) {
+				lowerCaseTrimmedTypeName)) {
 
 			log(
 				detailAST, _MSG_TYPO_VARIABLE, variableName,
 				_getExpectedVariableName(
 					typeName, leadingUnderline, nameTrailingDigits));
+		}
+
+		Matcher matcher = _camelCaseNamePattern.matcher(trimmedName);
+
+		while (matcher.find()) {
+			int x = matcher.start() + 1;
+
+			if (SourceUtil.hasTypo(
+					StringUtil.toLowerCase(trimmedName.substring(x)),
+					lowerCaseTrimmedTypeName)) {
+
+				log(
+					detailAST, _MSG_TYPO_VARIABLE, variableName,
+					StringBundler.concat(
+						leadingUnderline, variableName.substring(0, x),
+						typeName, nameTrailingDigits));
+			}
 		}
 	}
 
@@ -819,6 +854,8 @@ public class VariableNameCheck extends BaseCheck {
 
 	private static final String _MSG_TYPO_VARIABLE = "variable.typo";
 
+	private static final Pattern _camelCaseNamePattern = Pattern.compile(
+		"[a-z][A-Z](?=[a-z])");
 	private static final Pattern _classNameVariableNamePattern =
 		Pattern.compile("^_(.+)_CLASS_NAME$");
 	private static final Pattern _countVariableNamePattern = Pattern.compile(

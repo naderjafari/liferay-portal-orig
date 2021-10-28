@@ -121,17 +121,11 @@ public class PortletFragmentEntryProcessor implements FragmentEntryProcessor {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (String alias : _portletRegistry.getPortletAliases()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("<lfr-widget-");
-			sb.append(alias);
-			sb.append("></lfr-widget-");
-			sb.append(alias);
-			sb.append(">");
-
 			jsonArray.put(
 				JSONUtil.put(
-					"content", sb.toString()
+					"content",
+					StringBundler.concat(
+						"<lfr-widget-", alias, "></lfr-widget-", alias, ">")
 				).put(
 					"name", "lfr-widget-" + alias
 				));
@@ -171,15 +165,6 @@ public class PortletFragmentEntryProcessor implements FragmentEntryProcessor {
 
 			if (Validator.isNull(portletName)) {
 				continue;
-			}
-
-			if (Validator.isNull(portletName)) {
-				String alias = tagName.substring(11);
-
-				throw new FragmentEntryContentException(
-					LanguageUtil.format(
-						_resourceBundle,
-						"there-is-no-widget-available-for-alias-x", alias));
 			}
 
 			if ((originalFragmentEntryLink == null) &&

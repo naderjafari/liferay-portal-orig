@@ -16,6 +16,9 @@ package com.liferay.batch.planner.service;
 
 import com.liferay.batch.planner.model.BatchPlannerPlan;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.util.OrderByComparator;
+
+import java.util.List;
 
 /**
  * Provides the remote service utility for BatchPlannerPlan. This utility wraps
@@ -37,10 +40,81 @@ public class BatchPlannerPlanServiceUtil {
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.batch.planner.service.impl.BatchPlannerPlanServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
 	public static BatchPlannerPlan addBatchPlannerPlan(
-			String externalType, String name)
+			boolean export, String externalType, String externalURL,
+			String internalClassName, String name, String taskItemDelegateName,
+			boolean template)
 		throws PortalException {
 
-		return getService().addBatchPlannerPlan(externalType, name);
+		return getService().addBatchPlannerPlan(
+			export, externalType, externalURL, internalClassName, name,
+			taskItemDelegateName, template);
+	}
+
+	public static BatchPlannerPlan deleteBatchPlannerPlan(
+			long batchPlannerPlanId)
+		throws PortalException {
+
+		return getService().deleteBatchPlannerPlan(batchPlannerPlanId);
+	}
+
+	public static BatchPlannerPlan fetchBatchPlannerPlan(
+			long batchPlannerPlanId)
+		throws PortalException {
+
+		return getService().fetchBatchPlannerPlan(batchPlannerPlanId);
+	}
+
+	public static BatchPlannerPlan getBatchPlannerPlan(long batchPlannerPlanId)
+		throws PortalException {
+
+		return getService().getBatchPlannerPlan(batchPlannerPlanId);
+	}
+
+	public static List<BatchPlannerPlan> getBatchPlannerPlans(
+		long companyId, boolean export, boolean template, int start, int end,
+		OrderByComparator<BatchPlannerPlan> orderByComparator) {
+
+		return getService().getBatchPlannerPlans(
+			companyId, export, template, start, end, orderByComparator);
+	}
+
+	public static List<BatchPlannerPlan> getBatchPlannerPlans(
+		long companyId, boolean template, int start, int end,
+		OrderByComparator<BatchPlannerPlan> orderByComparator) {
+
+		return getService().getBatchPlannerPlans(
+			companyId, template, start, end, orderByComparator);
+	}
+
+	public static List<BatchPlannerPlan> getBatchPlannerPlans(
+		long companyId, int start, int end) {
+
+		return getService().getBatchPlannerPlans(companyId, start, end);
+	}
+
+	public static List<BatchPlannerPlan> getBatchPlannerPlans(
+		long companyId, int start, int end,
+		OrderByComparator<BatchPlannerPlan> orderByComparator) {
+
+		return getService().getBatchPlannerPlans(
+			companyId, start, end, orderByComparator);
+	}
+
+	public static int getBatchPlannerPlansCount(long companyId) {
+		return getService().getBatchPlannerPlansCount(companyId);
+	}
+
+	public static int getBatchPlannerPlansCount(
+		long companyId, boolean template) {
+
+		return getService().getBatchPlannerPlansCount(companyId, template);
+	}
+
+	public static int getBatchPlannerPlansCount(
+		long companyId, boolean export, boolean template) {
+
+		return getService().getBatchPlannerPlansCount(
+			companyId, export, template);
 	}
 
 	/**

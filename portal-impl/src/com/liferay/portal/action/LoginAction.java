@@ -71,14 +71,11 @@ public class LoginAction implements Action {
 		if (PropsValues.COMPANY_SECURITY_AUTH_REQUIRES_HTTPS &&
 			!httpServletRequest.isSecure()) {
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append(PortalUtil.getPortalURL(httpServletRequest, true));
-			sb.append(httpServletRequest.getRequestURI());
-			sb.append(StringPool.QUESTION);
-			sb.append(httpServletRequest.getQueryString());
-
-			httpServletResponse.sendRedirect(sb.toString());
+			httpServletResponse.sendRedirect(
+				StringBundler.concat(
+					PortalUtil.getPortalURL(httpServletRequest, true),
+					httpServletRequest.getRequestURI(), StringPool.QUESTION,
+					httpServletRequest.getQueryString()));
 
 			return null;
 		}
@@ -100,10 +97,10 @@ public class LoginAction implements Action {
 				rememberMe, authType);
 		}
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		if ((session.getAttribute("j_username") != null) &&
-			(session.getAttribute("j_password") != null)) {
+		if ((httpSession.getAttribute("j_username") != null) &&
+			(httpSession.getAttribute("j_password") != null)) {
 
 			if (PropsValues.PORTAL_JAAS_ENABLE) {
 				return actionMapping.getActionForward(
@@ -147,7 +144,7 @@ public class LoginAction implements Action {
 			).setMVCRenderCommandName(
 				"/login/login"
 			).setParameter(
-				"saveLastPath", Boolean.FALSE.toString()
+				"saveLastPath", false
 			).setPortletMode(
 				PortletMode.VIEW
 			).setWindowState(

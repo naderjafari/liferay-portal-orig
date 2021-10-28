@@ -34,7 +34,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -51,7 +50,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -202,18 +200,17 @@ public abstract class BaseTierPriceResourceTestCase {
 	public void testGetPriceEntryByExternalReferenceCodeTierPricesPage()
 		throws Exception {
 
-		Page<TierPrice> page =
-			tierPriceResource.
-				getPriceEntryByExternalReferenceCodeTierPricesPage(
-					testGetPriceEntryByExternalReferenceCodeTierPricesPage_getExternalReferenceCode(),
-					Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		String externalReferenceCode =
 			testGetPriceEntryByExternalReferenceCodeTierPricesPage_getExternalReferenceCode();
 		String irrelevantExternalReferenceCode =
 			testGetPriceEntryByExternalReferenceCodeTierPricesPage_getIrrelevantExternalReferenceCode();
+
+		Page<TierPrice> page =
+			tierPriceResource.
+				getPriceEntryByExternalReferenceCodeTierPricesPage(
+					externalReferenceCode, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantExternalReferenceCode != null) {
 			TierPrice irrelevantTierPrice =
@@ -245,7 +242,7 @@ public abstract class BaseTierPriceResourceTestCase {
 		page =
 			tierPriceResource.
 				getPriceEntryByExternalReferenceCodeTierPricesPage(
-					externalReferenceCode, Pagination.of(1, 2));
+					externalReferenceCode, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -344,21 +341,6 @@ public abstract class BaseTierPriceResourceTestCase {
 
 		assertEquals(randomTierPrice, postTierPrice);
 		assertValid(postTierPrice);
-
-		randomTierPrice = randomTierPrice();
-
-		assertHttpResponseStatusCode(
-			404,
-			tierPriceResource.getTierPriceByExternalReferenceCodeHttpResponse(
-				randomTierPrice.getExternalReferenceCode()));
-
-		testPostPriceEntryByExternalReferenceCodeTierPrice_addTierPrice(
-			randomTierPrice);
-
-		assertHttpResponseStatusCode(
-			200,
-			tierPriceResource.getTierPriceByExternalReferenceCodeHttpResponse(
-				randomTierPrice.getExternalReferenceCode()));
 	}
 
 	protected TierPrice
@@ -372,15 +354,14 @@ public abstract class BaseTierPriceResourceTestCase {
 
 	@Test
 	public void testGetPriceEntryIdTierPricesPage() throws Exception {
-		Page<TierPrice> page = tierPriceResource.getPriceEntryIdTierPricesPage(
-			testGetPriceEntryIdTierPricesPage_getPriceEntryId(),
-			Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long priceEntryId = testGetPriceEntryIdTierPricesPage_getPriceEntryId();
 		Long irrelevantPriceEntryId =
 			testGetPriceEntryIdTierPricesPage_getIrrelevantPriceEntryId();
+
+		Page<TierPrice> page = tierPriceResource.getPriceEntryIdTierPricesPage(
+			priceEntryId, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantPriceEntryId != null) {
 			TierPrice irrelevantTierPrice =
@@ -405,7 +386,7 @@ public abstract class BaseTierPriceResourceTestCase {
 			priceEntryId, randomTierPrice());
 
 		page = tierPriceResource.getPriceEntryIdTierPricesPage(
-			priceEntryId, Pagination.of(1, 2));
+			priceEntryId, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -488,20 +469,6 @@ public abstract class BaseTierPriceResourceTestCase {
 
 		assertEquals(randomTierPrice, postTierPrice);
 		assertValid(postTierPrice);
-
-		randomTierPrice = randomTierPrice();
-
-		assertHttpResponseStatusCode(
-			404,
-			tierPriceResource.getTierPriceByExternalReferenceCodeHttpResponse(
-				randomTierPrice.getExternalReferenceCode()));
-
-		testPostPriceEntryIdTierPrice_addTierPrice(randomTierPrice);
-
-		assertHttpResponseStatusCode(
-			200,
-			tierPriceResource.getTierPriceByExternalReferenceCodeHttpResponse(
-				randomTierPrice.getExternalReferenceCode()));
 	}
 
 	protected TierPrice testPostPriceEntryIdTierPrice_addTierPrice(
@@ -741,6 +708,23 @@ public abstract class BaseTierPriceResourceTestCase {
 			"This method needs to be implemented");
 	}
 
+	protected void assertContains(
+		TierPrice tierPrice, List<TierPrice> tierPrices) {
+
+		boolean contains = false;
+
+		for (TierPrice item : tierPrices) {
+			if (equals(tierPrice, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			tierPrices + " does not contain " + tierPrice, contains);
+	}
+
 	protected void assertHttpResponseStatusCode(
 		int expectedHttpResponseStatusCode,
 		HttpInvoker.HttpResponse actualHttpResponse) {
@@ -974,7 +958,7 @@ public abstract class BaseTierPriceResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.commerce.admin.pricing.dto.v2_0.
 						TierPrice.class)) {
@@ -991,12 +975,13 @@ public abstract class BaseTierPriceResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1268,14 +1253,16 @@ public abstract class BaseTierPriceResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1632,8 +1619,8 @@ public abstract class BaseTierPriceResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseTierPriceResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseTierPriceResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

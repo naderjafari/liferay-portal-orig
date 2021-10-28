@@ -29,11 +29,8 @@ export interface Config {
 
 	availableLanguages: {
 		[key: string]: {
-			default: boolean;
-			displayName: string;
 			languageIcon: string;
-			languageId: string;
-			w3cLanguageId: string;
+			languageLabel: string;
 		};
 	};
 
@@ -78,8 +75,6 @@ export interface Config {
 		}>;
 	}>;
 
-	contentBrowsingEnabled: boolean;
-
 	defaultEditorConfigurations: Record<
 		'comment' | 'rich-text' | 'text',
 		{
@@ -94,12 +89,9 @@ export interface Config {
 	defaultSegmentsEntryId: string;
 	defaultSegmentsExperienceId: string;
 	deleteFragmentEntryLinkCommentURL: string;
-	deleteItemURL: string;
 	deleteSegmentsExperienceURL: string;
-	discardDraftRedirectURL: string;
 	discardDraftURL: string;
 	draft: boolean;
-	dropdownWidgetTopperEnabled: boolean;
 	duplicateItemURL: string;
 	duplicateSegmentsExperienceURL: string;
 	editFragmentEntryLinkCommentURL: string;
@@ -118,8 +110,12 @@ export interface Config {
 	getAvailableListRenderersURL: string;
 	getAvailableListItemRenderersURL: string;
 	getAvailableTemplatesURL: string;
+	getCollectionConfigurationURL: string;
 	getCollectionFieldURL: string;
+	getCollectionFiltersURL: string;
+	getCollectionItemCountURL: string;
 	getCollectionMappingFieldsURL: string;
+	getCollectionSupportedFiltersURL: string;
 	getExperienceUsedPortletsURL: string;
 	getIframeContentCssURL: string;
 	getIframeContentURL: string;
@@ -127,6 +123,7 @@ export interface Config {
 	getInfoItemMappingFieldsURL: string;
 	getLayoutFriendlyURL: string;
 	getPageContentsURL: string;
+	getWidgetsURL: string;
 	imageSelectorURL: string;
 	infoItemPreviewSelectorURL: string;
 	infoItemSelectorURL: string;
@@ -156,6 +153,8 @@ export interface Config {
 	publishURL: string;
 	redirectURL: string;
 	renderFragmentEntryURL: string;
+	restoreCollectionDisplayConfigURL: string;
+	searchContainerPageMaxDelta: number;
 	selectedSegmentsEntryId: string;
 
 	sidebarPanels: {
@@ -179,6 +178,7 @@ export interface Config {
 		styleBookEntryId: string;
 	}>;
 	themeColorCssClasses: string[];
+	tokenOptimizationEnabled: boolean;
 	toolbarId: string;
 
 	toolbarPlugins: Array<{
@@ -189,6 +189,7 @@ export interface Config {
 
 	unmarkItemForDeletionURL: string;
 	updateConfigurationValuesURL: string;
+	updateCollectionDisplayConfigURL: string;
 	updateItemConfigURL: string;
 	updateLayoutPageTemplateDataURL: string;
 	updateRowColumnsURL: string;

@@ -24,14 +24,18 @@ import {AppContext} from '../../AppContext.es';
 import Alert from '../../components/Alert.es';
 import Link from '../../components/Link.es';
 import PaginatedList from '../../components/PaginatedList.es';
+import SubscriptionButton from '../../components/SubscriptionButton.es';
 import useQueryParams from '../../hooks/useQueryParams.es';
 import {
 	getTagsOrderByDateCreatedQuery,
 	getTagsOrderByNumberOfUsagesQuery,
+	subscribeTagQuery,
+	unsubscribeTagQuery,
 } from '../../utils/client.es';
 import lang from '../../utils/lang.es';
 import {
 	dateToInternationalHuman,
+	deleteCacheKey,
 	historyPushWithSlug,
 	useDebounceCallback,
 } from '../../utils/utils.es';
@@ -120,7 +124,7 @@ export default withRouter(({history, location}) => {
 	const historyPushParser = historyPushWithSlug(history.push);
 
 	function buildURL(search, page, pageSize) {
-		let url = (context.historyRouterBasePath || '#') + '/tags?';
+		let url = '/tags?';
 
 		if (search) {
 			url += `search=${search}&`;
@@ -131,14 +135,16 @@ export default withRouter(({history, location}) => {
 		return url;
 	}
 
+	function changePage(search, page, pageSize) {
+		historyPushParser(buildURL(search, page, pageSize));
+	}
+
 	const orderByOptions = getOrderByOptions();
 
-	const [debounceCallback] = useDebounceCallback((needHashtag, search) => {
-		setLoading(true);
-		historyPushParser(buildURL(search, 1, pageSize));
-	}, 500);
-
-	const hrefConstructor = (page) => buildURL(search, page, pageSize);
+	const [debounceCallback] = useDebounceCallback(
+		(search) => changePage(search, 1, 20),
+		500
+	);
 
 	return (
 		<>
@@ -191,10 +197,7 @@ export default withRouter(({history, location}) => {
 									}
 									onChange={(event) => {
 										setSearchBoxValue(event.target.value);
-										debounceCallback(
-											false,
-											event.target.value
-										);
+										debounceCallback(event.target.value);
 									}}
 									placeholder={Liferay.Language.get('search')}
 									type="text"
@@ -212,7 +215,7 @@ export default withRouter(({history, location}) => {
 											<ClayButtonWithIcon
 												displayType="unstyled"
 												onClick={() => {
-													debounceCallback(false, '');
+													debounceCallback('');
 												}}
 												symbol="times-circle"
 												type="submit"
@@ -234,7 +237,12 @@ export default withRouter(({history, location}) => {
 					<PaginatedList
 						activeDelta={pageSize}
 						activePage={page}
-						changeDelta={setPageSize}
+						changeDelta={(pageSize) =>
+							changePage(search, page, pageSize)
+						}
+						changePage={(page) =>
+							changePage(search, page, pageSize)
+						}
 						data={tags}
 						emptyState={
 							<ClayEmptyState
@@ -244,28 +252,39 @@ export default withRouter(({history, location}) => {
 								)}
 							/>
 						}
-						hrefConstructor={hrefConstructor}
 						loading={loading}
 					>
 						{(tag) => (
 							<div
-								className="col-md-3 question-tags"
+								className="col-lg-3 question-tags"
 								key={tag.id}
 							>
-								<Link
-									title={tag.name}
-									to={`/questions/tag/${tag.name}`}
-								>
-									<div className="card card-interactive card-interactive-primary card-type-template template-card-horizontal">
-										<div className="card-body">
-											<div className="card-row">
-												<div className="autofit-col autofit-col-expand">
-													<div className="autofit-section">
-														<div className="card-title">
-															<span className="text-truncate">
-																{tag.name}
-															</span>
+								<div className="align-items-center card card-interactive card-interactive-primary card-type-template d-flex justify-content-between template-card-horizontal">
+									<div>
+										<Link
+											title={tag.name}
+											to={`/questions/tag/${tag.name}`}
+										>
+											<div className="card-body d-flex flex-column">
+												<div className="card-row">
+													<div className="autofit-row autofit-row-center autofit-row-expand">
+														<div>
+															<div className="autofit-col autofit-col-expand">
+																<div className="autofit-section">
+																	<div className="card-title">
+																		<span className="text-truncate">
+																			{
+																				tag.name
+																			}
+																		</span>
+																	</div>
+																</div>
+															</div>
 														</div>
+													</div>
+												</div>
+												<div className="card-row">
+													<div className="autofit-col autofit-col-expand card-subtitle">
 														{orderBy ===
 														'latest-created' ? (
 															<div>
@@ -295,9 +314,53 @@ export default withRouter(({history, location}) => {
 													</div>
 												</div>
 											</div>
-										</div>
+										</Link>
 									</div>
-								</Link>
+									<div className="c-pr-3">
+										{tag.actions.subscribe && (
+											<div className="autofit-col">
+												<div className="autofit-section">
+													<SubscriptionButton
+														isSubscribed={
+															tag.subscribed
+														}
+														onSubscription={() => {
+															deleteCacheKey(
+																getTagsOrderByDateCreatedQuery,
+																{
+																	page,
+																	pageSize,
+																	search,
+																	siteKey:
+																		context.siteKey,
+																}
+															);
+															deleteCacheKey(
+																getTagsOrderByNumberOfUsagesQuery,
+																{
+																	page,
+																	pageSize,
+																	search,
+																	siteKey:
+																		context.siteKey,
+																}
+															);
+														}}
+														queryVariables={{
+															keywordId: tag.id,
+														}}
+														subscribeQuery={
+															subscribeTagQuery
+														}
+														unsubscribeQuery={
+															unsubscribeTagQuery
+														}
+													/>
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
 							</div>
 						)}
 					</PaginatedList>

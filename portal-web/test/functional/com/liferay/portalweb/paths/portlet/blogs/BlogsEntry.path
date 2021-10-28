@@ -2,17 +2,19 @@
 <head>
 <title>BlogsEntry</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">BlogsEntry</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ENTRY_COVER_IMAGE_CAPTION</td>
 	<td>//div[contains(@class,'cover-image-caption')]</td>
 	<td></td>
-</tr>	
+</tr>
 <tr>
 	<td>ENTRY_COVER_IMAGE</td>
 	<td>//div[contains(@class,'cover-image') and contains(@style,'${key_uploadFileName}')] | //div[contains(@class,'cover-image')]//img</td>
@@ -20,7 +22,7 @@
 </tr>
 <tr>
 	<td>ENTRY_COVER_IMAGE_SELECT_FILE</td>
-	<td>//div[contains(@class,'image-selector')]//button[contains(.,'Select File')]</td>
+	<td>//div[contains(@class,'blogs-cover-image-selector')]//div[contains(@class,'browse-image-controls')]//button[contains(.,'Select File')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -79,6 +81,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>CONTENT_ABSTRACT_AP</td>
+	<td>//div[contains(@class,'asset-content')]//div[contains(.,'${key_entryAbstractDescription}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>CONTENT_GENERIC</td>
 	<td>//div[contains(@class,'content')]//p</td>
 	<td></td>
@@ -96,6 +103,11 @@
 <tr>
 	<td>CONTENT_HTML_BOLD</td>
 	<td>//div[contains(@class,'widget-mode-detail-text')]/p/b</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CONTENT_HTML_H2</td>
+	<td>//div[contains(@class,'widget-mode-detail-text')]/h2</td>
 	<td></td>
 </tr>
 <tr>

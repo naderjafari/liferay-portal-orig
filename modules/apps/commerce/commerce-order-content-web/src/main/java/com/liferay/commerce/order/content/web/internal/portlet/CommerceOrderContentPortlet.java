@@ -18,6 +18,7 @@ import com.liferay.commerce.constants.CommerceOrderConstants;
 import com.liferay.commerce.constants.CommercePortletKeys;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.order.content.web.internal.display.context.CommerceOrderContentDisplayContext;
+import com.liferay.commerce.order.importer.type.CommerceOrderImporterTypeRegistry;
 import com.liferay.commerce.payment.service.CommercePaymentMethodGroupRelService;
 import com.liferay.commerce.percentage.PercentageFormatter;
 import com.liferay.commerce.price.CommerceOrderPriceCalculation;
@@ -25,6 +26,7 @@ import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.service.CommerceAddressService;
 import com.liferay.commerce.service.CommerceOrderNoteService;
 import com.liferay.commerce.service.CommerceOrderService;
+import com.liferay.commerce.service.CommerceOrderTypeService;
 import com.liferay.commerce.service.CommerceShipmentItemService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -68,7 +70,7 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.scopeable=true",
 		"javax.portlet.display-name=Placed Orders",
 		"javax.portlet.expiration-cache=0",
-		"javax.portlet.init-param.view-template=/placed_orders/view.jsp",
+		"javax.portlet.init-param.view-template=/placed_commerce_orders/view.jsp",
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_ORDER_CONTENT,
 		"javax.portlet.resource-bundle=content.Language",
 		"javax.portlet.security-role-ref=power-user,user"
@@ -101,8 +103,10 @@ public class CommerceOrderContentPortlet extends MVCPortlet {
 				commerceOrderContentDisplayContext =
 					new CommerceOrderContentDisplayContext(
 						_commerceAddressService, _commerceChannelLocalService,
+						_commerceOrderImporterTypeRegistry,
 						_commerceOrderNoteService,
 						_commerceOrderPriceCalculation, _commerceOrderService,
+						_commerceOrderTypeService,
 						_commercePaymentMethodGroupRelService,
 						_commerceShipmentItemService,
 						_portal.getHttpServletRequest(renderRequest),
@@ -130,6 +134,10 @@ public class CommerceOrderContentPortlet extends MVCPortlet {
 	private CommerceChannelLocalService _commerceChannelLocalService;
 
 	@Reference
+	private CommerceOrderImporterTypeRegistry
+		_commerceOrderImporterTypeRegistry;
+
+	@Reference
 	private CommerceOrderNoteService _commerceOrderNoteService;
 
 	@Reference
@@ -137,6 +145,9 @@ public class CommerceOrderContentPortlet extends MVCPortlet {
 
 	@Reference
 	private CommerceOrderService _commerceOrderService;
+
+	@Reference
+	private CommerceOrderTypeService _commerceOrderTypeService;
 
 	@Reference
 	private CommercePaymentMethodGroupRelService

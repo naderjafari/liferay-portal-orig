@@ -138,24 +138,17 @@ public class UADApplicationExportController {
 	private String _getEntryPath(
 		String applicationKey, String uadRegistryKey, String fileName) {
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(applicationKey);
-		sb.append(StringPool.FORWARD_SLASH);
-		sb.append(uadRegistryKey);
-		sb.append(StringPool.FORWARD_SLASH);
-		sb.append(fileName);
-
-		return sb.toString();
+		return StringBundler.concat(
+			applicationKey, StringPool.FORWARD_SLASH, uadRegistryKey,
+			StringPool.FORWARD_SLASH, fileName);
 	}
 
 	private ZipWriter _getZipWriter(String applicationKey, long userId) {
 		User user = _userLocalService.fetchUser(userId);
 
-		StringBundler sb = new StringBundler(8);
+		StringBundler sb = new StringBundler(7);
 
-		sb.append("UAD");
-		sb.append(StringPool.UNDERLINE);
+		sb.append("UAD_");
 
 		if (user != null) {
 			String userName = null;

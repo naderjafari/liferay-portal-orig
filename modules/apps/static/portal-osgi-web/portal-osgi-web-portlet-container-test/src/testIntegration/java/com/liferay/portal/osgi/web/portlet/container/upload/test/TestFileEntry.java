@@ -52,8 +52,6 @@ public class TestFileEntry implements FileEntry {
 		_folderId = folderId;
 		_groupId = groupId;
 		_inputStream = inputStream;
-
-		_date = new Date();
 	}
 
 	@Override
@@ -417,15 +415,7 @@ public class TestFileEntry implements FileEntry {
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(_groupId);
-		sb.append("_");
-		sb.append(_folderId);
-		sb.append("_");
-		sb.append(_fileName);
-
-		return sb.toString();
+		return StringBundler.concat(_groupId, "_", _folderId, "_", _fileName);
 	}
 
 	@Override
@@ -435,7 +425,7 @@ public class TestFileEntry implements FileEntry {
 
 	private static final Log _log = LogFactoryUtil.getLog(TestFileEntry.class);
 
-	private final Date _date;
+	private final Date _date = new Date();
 	private final String _fileName;
 	private final long _folderId;
 	private long _groupId;

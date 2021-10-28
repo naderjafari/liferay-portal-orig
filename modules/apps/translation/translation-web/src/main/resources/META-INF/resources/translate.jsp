@@ -30,6 +30,7 @@ renderResponse.setTitle(translateDisplayContext.getTitle());
 <div class="translation">
 	<aui:form action="<%= translateDisplayContext.getUpdateTranslationPortletURL() %>" cssClass="translation-edit" name="translate_fm">
 		<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
+		<aui:input name="portletResource" type="hidden" value='<%= ParamUtil.getString(request, "portletResource") %>' />
 		<aui:input name="sourceLanguageId" type="hidden" value="<%= translateDisplayContext.getSourceLanguageId() %>" />
 		<aui:input name="targetLanguageId" type="hidden" value="<%= translateDisplayContext.getTargetLanguageId() %>" />
 		<aui:input name="workflowAction" type="hidden" value="<%= String.valueOf(WorkflowConstants.ACTION_PUBLISH) %>" />
@@ -39,7 +40,7 @@ renderResponse.setTitle(translateDisplayContext.getTitle());
 				<ul class="tbar-nav">
 					<li class="tbar-item tbar-item-expand"></li>
 					<li class="tbar-item">
-						<div class="metadata-type-button-row tbar-section text-right">
+						<div class="tbar-section text-right">
 							<aui:button cssClass="btn-sm mr-3" href="<%= redirect %>" type="cancel" />
 
 							<aui:button cssClass="btn-sm mr-3" disabled="<%= translateDisplayContext.isSaveButtonDisabled() %>" id="saveDraftBtn" primary="<%= false %>" type="submit" value="<%= translateDisplayContext.getSaveButtonLabel() %>" />
@@ -138,6 +139,7 @@ renderResponse.setTitle(translateDisplayContext.getTitle());
 								boolean html = translateDisplayContext.getBooleanValue(infoField, TextInfoFieldType.HTML);
 								String label = translateDisplayContext.getInfoFieldLabel(infoField);
 								boolean multiline = translateDisplayContext.getBooleanValue(infoField, TextInfoFieldType.MULTILINE);
+								String name = infoField.getName();
 							%>
 
 								<c:choose>

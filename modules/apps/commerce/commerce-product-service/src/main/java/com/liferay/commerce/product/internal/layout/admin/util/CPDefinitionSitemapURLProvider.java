@@ -73,7 +73,11 @@ public class CPDefinitionSitemapURLProvider implements SitemapURLProvider {
 			layoutSet.getGroupId(), layoutSet.isPrivateLayout(),
 			CPPortletKeys.CP_CONTENT_WEB);
 
-		Layout layout = _layoutLocalService.getLayout(plid);
+		Layout layout = _layoutLocalService.fetchLayout(plid);
+
+		if (layout == null) {
+			return;
+		}
 
 		if (layoutUuid.equals(layout.getUuid())) {
 			long groupId =
@@ -149,7 +153,7 @@ public class CPDefinitionSitemapURLProvider implements SitemapURLProvider {
 		}
 
 		String currentSiteURL = _portal.getGroupFriendlyURL(
-			layout.getLayoutSet(), themeDisplay);
+			layout.getLayoutSet(), themeDisplay, false, false);
 
 		String urlSeparator = _cpFriendlyURL.getProductURLSeparator(
 			themeDisplay.getCompanyId());

@@ -269,19 +269,18 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		long userId = ParamUtil.getLong(resourceRequest, "userId");
-
-		JSONObject jsonObject = JSONUtil.put("success", Boolean.TRUE);
-
-		JSONObject userJSONObject = getUserJSONObject(
-			resourceResponse, themeDisplay, userId);
-
-		jsonObject.put("user", userJSONObject);
-
-		writeJSON(resourceRequest, resourceResponse, jsonObject);
+		writeJSON(
+			resourceRequest, resourceResponse,
+			JSONUtil.put(
+				"success", Boolean.TRUE
+			).put(
+				"user",
+				getUserJSONObject(
+					resourceResponse,
+					(ThemeDisplay)resourceRequest.getAttribute(
+						WebKeys.THEME_DISPLAY),
+					ParamUtil.getLong(resourceRequest, "userId"))
+			));
 	}
 
 	public void getContacts(
@@ -400,11 +399,8 @@ public class ContactsCenterPortlet extends MVCPortlet {
 		int type = ParamUtil.getInteger(actionRequest, "type");
 
 		for (long userId : userIds) {
-			if (userId == themeDisplay.getUserId()) {
-				continue;
-			}
-
-			if (socialRelationLocalService.hasRelation(
+			if ((userId == themeDisplay.getUserId()) ||
+				socialRelationLocalService.hasRelation(
 					userId, themeDisplay.getUserId(),
 					SocialRelationConstants.TYPE_BI_CONNECTION) ||
 				socialRelationLocalService.hasRelation(
@@ -771,9 +767,6 @@ public class ContactsCenterPortlet extends MVCPortlet {
 		JSONObject contactListJSONObject = getContactsJSONObject(
 			actionRequest, actionResponse);
 
-		JSONObject jsonObject = JSONUtil.put(
-			"contactList", contactListJSONObject);
-
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (long userId : userIds) {
@@ -786,13 +779,14 @@ public class ContactsCenterPortlet extends MVCPortlet {
 				));
 		}
 
-		jsonObject.put("contacts", jsonArray);
-
-		String message = getRelationMessage(actionRequest);
-
-		jsonObject.put("message", translate(actionRequest, message));
-
-		return jsonObject;
+		return JSONUtil.put(
+			"contactList", contactListJSONObject
+		).put(
+			"contacts", jsonArray
+		).put(
+			"message",
+			translate(actionRequest, getRelationMessage(actionRequest))
+		);
 	}
 
 	protected JSONObject getContactsJSONObject(
@@ -1014,7 +1008,7 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			).setParameter(
 				"entryId", entry.getEntryId()
 			).setParameter(
-				"portalUser", Boolean.FALSE.toString()
+				"portalUser", false
 			).setWindowState(
 				LiferayWindowState.EXCLUSIVE
 			).buildString()
@@ -1107,7 +1101,7 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			).setMVCPath(
 				"/contacts_center/view_resources.jsp"
 			).setParameter(
-				"portalUser", Boolean.TRUE.toString()
+				"portalUser", true
 			).setParameter(
 				"userId", user.getUserId()
 			).setWindowState(

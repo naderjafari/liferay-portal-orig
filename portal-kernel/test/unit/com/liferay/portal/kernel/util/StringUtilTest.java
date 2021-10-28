@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.util;
 
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.test.randomizerbumpers.RandomizerBumper;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
@@ -543,6 +544,9 @@ public class StringUtilTest {
 			"Hello World",
 			StringUtil.replace(
 				"Hello World", StringPool.BLANK, StringPool.BLANK, map));
+		Assert.assertEquals(
+			"AB Hi CD AB Liferay CD",
+			StringUtil.replace("AB Hi CD AB Liferay CD", "AB ", " CD", map));
 	}
 
 	@Test

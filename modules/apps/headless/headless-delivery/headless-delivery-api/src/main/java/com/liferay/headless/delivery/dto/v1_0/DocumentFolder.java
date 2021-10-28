@@ -67,6 +67,10 @@ public class DocumentFolder implements Serializable {
 		return ObjectMapperUtil.readValue(DocumentFolder.class, json);
 	}
 
+	public static DocumentFolder unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(DocumentFolder.class, json);
+	}
+
 	@Schema(
 		description = "Block of actions allowed by the user making the request."
 	)
@@ -755,13 +759,17 @@ public class DocumentFolder implements Serializable {
 
 		@JsonCreator
 		public static ViewableBy create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (ViewableBy viewableBy : values()) {
 				if (Objects.equals(viewableBy.getValue(), value)) {
 					return viewableBy;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

@@ -6,7 +6,7 @@
 	<import file="../build-common-java.xml" />
 
 	<property name="copy.jar" value="false" />
-	<property name="deploy.dir" value="${app.server.lib.portal.dir}" />
+	<property name="deploy.dir" value="${app.server.shielded-container-lib.portal.dir}" />
 	<property name="jar.file" value="${ant.project.name}" />
 	<property name="manifest.bundle.name" value="Liferay Portal Impl" />
 	<property name="manifest.bundle.symbolic.name" value="com.liferay.portal.impl;singleton:=true" />
@@ -728,6 +728,7 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 					<arg value="source.fail.on.has.warning=${source.fail.on.has.warning}" />
 					<arg value="source.file.extensions=${source.file.extensions}" />
 					<arg value="source.files=${source.files}" />
+					<arg value="source.formatter.properties=${source.formatter.properties}" />
 					<arg value="source.print.errors=${source.print.errors}" />
 					<arg value="validate.commit.messages=${validate.commit.messages}" />
 				</java>

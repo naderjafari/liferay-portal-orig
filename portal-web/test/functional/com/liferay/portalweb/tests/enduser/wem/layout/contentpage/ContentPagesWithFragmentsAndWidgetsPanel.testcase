@@ -54,67 +54,33 @@ definition {
 			PageEditor.gotoTab(tabName = "Fragments and Widgets");
 		}
 
-		task ("Change to card display style") {
-			Click(
-				key_displayStyle = "list",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
-
-			AssertVisible(
-				key_displayStyle = "card",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
-		}
-
 		task ("View the tooltip when hover on the display style button") {
 			MouseOver(
-				key_displayStyle = "card",
+				key_switchTo = "card",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 
 			AssertVisible(
-				key_content = "Change View",
+				key_content = "Switch to Card View",
 				locator1 = "Tooltip#FLOATING_TOOLTIP_CONTENT");
-		}
-
-		task ("Change to list display style") {
-			Click(
-				key_displayStyle = "card",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
-
-			AssertVisible(
-				key_displayStyle = "list",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
-		}
-
-		task ("View the tooltip when hover on the display style button") {
-			MouseOver(
-				key_displayStyle = "list",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
-
-			AssertVisible(
-				key_content = "Change View",
-				locator1 = "Tooltip#FLOATING_TOOLTIP_CONTENT");
-		}
-
-		task ("Navigate to Widgets tab") {
-			Navigator.gotoNavTab(navTab = "Widgets");
 		}
 
 		task ("Change to card display style") {
 			Click(
-				key_displayStyle = "list",
+				key_switchTo = "card",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 
 			AssertVisible(
-				key_displayStyle = "card",
+				key_switchTo = "list",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 		}
 
 		task ("View the tooltip when hover on the display style button") {
 			MouseOver(
-				key_displayStyle = "card",
+				key_switchTo = "list",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 
 			AssertVisible(
-				key_content = "Change View",
+				key_content = "Switch to List View",
 				locator1 = "Tooltip#FLOATING_TOOLTIP_CONTENT");
 		}
 
@@ -134,13 +100,7 @@ definition {
 			PageEditor.gotoTab(tabName = "Fragments and Widgets");
 
 			AssertVisible(
-				key_displayStyle = "card",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
-
-			Navigator.gotoNavTab(navTab = "Widgets");
-
-			AssertVisible(
-				key_displayStyle = "card",
+				key_switchTo = "list",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 		}
 	}
@@ -160,7 +120,7 @@ definition {
 
 		task ("View the display style is list") {
 			AssertVisible(
-				key_displayStyle = "list",
+				key_switchTo = "card",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 		}
 
@@ -177,6 +137,10 @@ definition {
 
 			Navigator.gotoNavTab(navTab = "Widgets");
 
+			Type.sendKeysApplicationSearch(
+				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_SEARCH_FIELD",
+				value1 = "Blogs");
+
 			DragOver(
 				key_portletName = "Blogs",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_WIDGET",
@@ -189,11 +153,11 @@ definition {
 
 		task ("Change to card display style") {
 			Click(
-				key_displayStyle = "list",
+				key_switchTo = "card",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 
 			AssertVisible(
-				key_displayStyle = "card",
+				key_switchTo = "list",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 		}
 
@@ -205,17 +169,6 @@ definition {
 				locator2 = "PageEditor#FRAGMENT_DROP_TARGET");
 
 			AssertVisible(locator1 = "//li[contains(@class,'page-editor__fragments-widgets__tab-card-item')][normalize-space()='Container'][contains(@class,'disabled')]");
-
-			Refresh();
-
-			Navigator.gotoNavTab(navTab = "Widgets");
-
-			DragOver(
-				key_portletName = "Blogs",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_WIDGET_CARD_ITEM",
-				locator2 = "PageEditor#FRAGMENT_DROP_TARGET");
-
-			AssertVisible(locator1 = "//li[contains(@class,'page-editor__fragments-widgets__tab-card-item')][normalize-space()='Blogs'][contains(@class,'disabled')]");
 		}
 	}
 
@@ -234,7 +187,7 @@ definition {
 
 		task ("View the display style is list") {
 			AssertVisible(
-				key_displayStyle = "list",
+				key_switchTo = "card",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 		}
 
@@ -253,6 +206,10 @@ definition {
 
 			Navigator.gotoNavTab(navTab = "Widgets");
 
+			Type.sendKeysApplicationSearch(
+				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_SEARCH_FIELD",
+				value1 = "Blogs");
+
 			MouseOver(
 				key_portletName = "Blogs",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_WIDGET");
@@ -262,31 +219,23 @@ definition {
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_WIDGET",
 				locator2 = "box-shadow",
 				value1 = "rgb(128, 172, 255) 0px 0px 0px 2px, rgba(39, 40, 51, 0.1) 0px 4px 8px 0px");
+
+			Click(locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_SEARCH_CLEAR_BUTTON");
 		}
 
 		task ("Change to card display style") {
+			Navigator.gotoNavTab(navTab = "Fragments");
+
 			Click(
-				key_displayStyle = "list",
+				key_switchTo = "card",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 
 			AssertVisible(
-				key_displayStyle = "card",
+				key_switchTo = "list",
 				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_DISPLAY_STYLE_BUTTON");
 		}
 
 		task ("View the visual feedback when hover on items") {
-			MouseOver(
-				key_portletName = "Blogs",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_WIDGET_CARD_ITEM");
-
-			AssertCssValue(
-				key_portletName = "Blogs",
-				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_WIDGET_CARD_ITEM",
-				locator2 = "box-shadow",
-				value1 = "rgba(39, 40, 51, 0.1) 0px 4px 8px 0px");
-
-			Navigator.gotoNavTab(navTab = "Fragments");
-
 			MouseOver(
 				key_collectionName = "Layout Elements",
 				key_fragmentName = "Container",
@@ -307,16 +256,6 @@ definition {
 
 			AssertVisible(
 				key_content = "Container",
-				locator1 = "Tooltip#FLOATING_TOOLTIP_CONTENT");
-
-			Navigator.gotoNavTab(navTab = "Widgets");
-
-			MouseOver(
-				key_card = "Blogs",
-				locator1 = "Card#CARD_TITLE");
-
-			AssertVisible(
-				key_content = "Blogs",
 				locator1 = "Tooltip#FLOATING_TOOLTIP_CONTENT");
 		}
 	}

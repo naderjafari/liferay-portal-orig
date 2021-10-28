@@ -75,6 +75,12 @@ public interface BatchPlannerLogLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public BatchPlannerLog addBatchPlannerLog(BatchPlannerLog batchPlannerLog);
 
+	public BatchPlannerLog addBatchPlannerLog(
+			long userId, long batchPlannerPlanId, String batchEngineExportERC,
+			String batchEngineImportERC, String dispatchTriggerERC, int size,
+			int status)
+		throws PortalException;
+
 	/**
 	 * Creates a new batch planner log with the primary key. Does not add the batch planner log to the database.
 	 *
@@ -202,6 +208,10 @@ public interface BatchPlannerLogLocalService
 	public BatchPlannerLog fetchBatchPlannerLog(long batchPlannerLogId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public BatchPlannerLog fetchBatchPlannerPlanBatchPlannerLog(
+		long batchPlannerPlanId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
 
 	/**
@@ -238,6 +248,30 @@ public interface BatchPlannerLogLocalService
 	public int getBatchPlannerLogsCount();
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getBatchPlannerLogsCount(long batchPlannerPlanId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public BatchPlannerLog getBatchPlannerPlanBatchPlannerLog(
+			long batchPlannerPlanId)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<BatchPlannerLog> getCompanyBatchPlannerLogs(
+		long companyId, boolean export, int start, int end,
+		OrderByComparator<BatchPlannerLog> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<BatchPlannerLog> getCompanyBatchPlannerLogs(
+		long companyId, int start, int end,
+		OrderByComparator<BatchPlannerLog> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getCompanyBatchPlannerLogsCount(long companyId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getCompanyBatchPlannerLogsCount(long companyId, boolean export);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery();
 
 	/**
@@ -268,5 +302,13 @@ public interface BatchPlannerLogLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public BatchPlannerLog updateBatchPlannerLog(
 		BatchPlannerLog batchPlannerLog);
+
+	public BatchPlannerLog updateBatchPlannerLogSize(
+			long batchPlannerLogId, int size)
+		throws PortalException;
+
+	public BatchPlannerLog updateBatchPlannerLogStatus(
+			long batchPlannerLogId, int status)
+		throws PortalException;
 
 }

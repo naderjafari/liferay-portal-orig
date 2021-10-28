@@ -20,10 +20,10 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useState} from 'react';
 
+import {fromControlsId} from '../../../../../app/components/layout-data-items/Collection';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../../../../app/config/constants/editableFragmentEntryProcessor';
 import {ITEM_ACTIVATION_ORIGINS} from '../../../../../app/config/constants/itemActivationOrigins';
 import {ITEM_TYPES} from '../../../../../app/config/constants/itemTypes';
-import {useToControlsId} from '../../../../../app/contexts/CollectionItemContext';
 import {
 	useHoverItem,
 	useHoveredItemId,
@@ -37,7 +37,10 @@ import {
 	useSelector,
 	useSelectorCallback,
 } from '../../../../../app/contexts/StoreContext';
+import selectCanUpdateEditables from '../../../../../app/selectors/selectCanUpdateEditables';
 import {selectPageContentDropdownItems} from '../../../../../app/selectors/selectPageContentDropdownItems';
+import getFirstControlsId from '../../../../../app/utils/getFirstControlsId';
+import ImageEditorModal from './ImageEditorModal';
 
 export default function PageContent({
 	classNameId,
@@ -47,38 +50,69 @@ export default function PageContent({
 	subtype,
 	title,
 }) {
-	const dropdownItems = useSelectorCallback(
-		selectPageContentDropdownItems(classPK),
-		[classPK]
-	);
 	const editableProcessorUniqueId = useEditableProcessorUniqueId();
 	const hoverItem = useHoverItem();
 	const hoveredItemId = useHoveredItemId();
+	const canUpdateEditables = useSelector(selectCanUpdateEditables);
 	const fragmentEntryLinks = useSelector((state) => state.fragmentEntryLinks);
 	const [isHovered, setIsHovered] = useState(false);
+	const layoutData = useSelector((state) => state.layoutData);
 	const [
-		nextEditbleProcessorUniqueId,
-		setEditableNextProcessorUniqueId,
+		nextEditableProcessorUniqueId,
+		setNextEditableProcessorUniqueId,
 	] = useState(null);
 	const selectItem = useSelectItem();
 	const setEditableProcessorUniqueId = useSetEditableProcessorUniqueId();
-	const toControlsId = useToControlsId();
+	const [imageEditorParams, setImageEditorParams] = useState(null);
 
 	const isBeingEdited = useMemo(
-		() => toControlsId(editableId) === editableProcessorUniqueId,
-		[toControlsId, editableId, editableProcessorUniqueId]
+		() => editableId === fromControlsId(editableProcessorUniqueId),
+		[editableId, editableProcessorUniqueId]
+	);
+
+	const dropdownItems = useSelectorCallback(
+		(state) => {
+			const pageContentDropdownItems = selectPageContentDropdownItems(
+				classPK
+			)(state);
+
+			return pageContentDropdownItems?.map((item) => {
+				if (item.label === Liferay.Language.get('edit-image')) {
+					const {
+						editImageURL,
+						fileEntryId,
+						previewURL,
+						...editImageItem
+					} = item;
+
+					return {
+						...editImageItem,
+						onClick: () => {
+							setImageEditorParams({
+								editImageURL,
+								fileEntryId,
+								previewURL,
+							});
+						},
+					};
+				}
+
+				return item;
+			});
+		},
+		[classPK]
 	);
 
 	useEffect(() => {
-		if (editableProcessorUniqueId || !nextEditbleProcessorUniqueId) {
+		if (editableProcessorUniqueId || !nextEditableProcessorUniqueId) {
 			return;
 		}
 
-		setEditableProcessorUniqueId(nextEditbleProcessorUniqueId);
-		setEditableNextProcessorUniqueId(null);
+		setEditableProcessorUniqueId(nextEditableProcessorUniqueId);
+		setNextEditableProcessorUniqueId(null);
 	}, [
 		editableProcessorUniqueId,
-		nextEditbleProcessorUniqueId,
+		nextEditableProcessorUniqueId,
 		setEditableProcessorUniqueId,
 	]);
 
@@ -143,12 +177,25 @@ export default function PageContent({
 			return;
 		}
 
-		selectItem(`${editableId}`, {
+		const itemId = getFirstControlsId({
+			item: {
+				id: editableId,
+				itemType: ITEM_TYPES.editable,
+				parentId: Object.values(layoutData.items).find(
+					(item) =>
+						item.config.fragmentEntryLinkId ===
+						editableId.split('-')[0]
+				)?.itemId,
+			},
+			layoutData,
+		});
+
+		selectItem(itemId, {
 			itemType: ITEM_TYPES.editable,
 			origin: ITEM_ACTIVATION_ORIGINS.sidebar,
 		});
 
-		setEditableNextProcessorUniqueId(toControlsId(editableId));
+		setNextEditableProcessorUniqueId(itemId);
 	};
 
 	return (
@@ -183,9 +230,14 @@ export default function PageContent({
 					)}
 				</ClayLayout.ContentCol>
 
-				{dropdownItems ? (
+				{dropdownItems?.length ? (
 					<ClayDropDownWithItems
 						items={dropdownItems}
+						menuElementAttrs={{
+							containerProps: {
+								className: 'cadmin',
+							},
+						}}
 						trigger={
 							<ClayButton
 								className="btn-monospaced btn-sm text-secondary"
@@ -201,9 +253,9 @@ export default function PageContent({
 				) : (
 					<ClayButton
 						className={classNames('btn-sm mr-2 text-secondary', {
-							'not-allowed': isBeingEdited,
+							'not-allowed': isBeingEdited || !canUpdateEditables,
 						})}
-						disabled={isBeingEdited}
+						disabled={isBeingEdited || !canUpdateEditables}
 						displayType="unstyled"
 						onClick={onClickEditInlineText}
 					>
@@ -214,6 +266,16 @@ export default function PageContent({
 					</ClayButton>
 				)}
 			</div>
+
+			{imageEditorParams && (
+				<ImageEditorModal
+					editImageURL={imageEditorParams.editImageURL}
+					fileEntryId={imageEditorParams.fileEntryId}
+					fragmentEntryLinks={fragmentEntryLinks}
+					onCloseModal={() => setImageEditorParams(null)}
+					previewURL={imageEditorParams.previewURL}
+				/>
+			)}
 		</li>
 	);
 }

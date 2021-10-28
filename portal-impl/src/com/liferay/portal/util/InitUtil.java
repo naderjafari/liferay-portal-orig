@@ -30,10 +30,12 @@ import com.liferay.portal.kernel.dao.jdbc.DataSourceFactoryUtil;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.log.SanitizerLogWrapper;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.xml.SecureXMLFactoryProviderUtil;
 import com.liferay.portal.kernel.util.BasePortalLifecycle;
+import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.JavaDetector;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -54,11 +56,8 @@ import com.liferay.portal.spring.compat.CompatBeanDefinitionRegistryPostProcesso
 import com.liferay.portal.spring.configurator.ConfigurableApplicationContextConfigurator;
 import com.liferay.portal.spring.context.ArrayApplicationContext;
 import com.liferay.portal.xml.SAXReaderImpl;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
 
-import com.sun.syndication.io.XmlReader;
+import com.rometools.rome.io.XmlReader;
 
 import java.lang.reflect.Field;
 
@@ -66,6 +65,9 @@ import java.util.List;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.lang.time.StopWatch;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -167,6 +169,12 @@ public class InitUtil {
 
 		DBManagerUtil.setDBManager(new DBManagerImpl());
 
+		// File
+
+		FileUtil fileUtil = new FileUtil();
+
+		fileUtil.setFile(new FileImpl());
+
 		// XML
 
 		SecureXMLFactoryProviderUtil secureXMLFactoryProviderUtil =
@@ -267,10 +275,6 @@ public class InitUtil {
 
 			PortalBeanLocatorUtil.setBeanLocator(beanLocator);
 
-			if (initModuleFramework) {
-				ModuleFrameworkUtil.startRuntime();
-			}
-
 			_appApplicationContext = configurableApplicationContext;
 
 			if (initModuleFramework && registerContext) {
@@ -297,15 +301,15 @@ public class InitUtil {
 	}
 
 	public static void registerSpringInitialized() {
-		Registry registry = RegistryUtil.getRegistry();
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
 		final ServiceRegistration<ModuleServiceLifecycle>
 			moduleServiceLifecycleServiceRegistration =
-				registry.registerService(
+				bundleContext.registerService(
 					ModuleServiceLifecycle.class,
 					new ModuleServiceLifecycle() {
 					},
-					HashMapBuilder.<String, Object>put(
+					HashMapDictionaryBuilder.<String, Object>put(
 						"module.service.lifecycle", "spring.initialized"
 					).put(
 						"service.vendor", ReleaseInfo.getVendor()
@@ -327,24 +331,6 @@ public class InitUtil {
 
 			},
 			PortalLifecycle.METHOD_DESTROY);
-	}
-
-	public static synchronized void stopModuleFramework() {
-		try {
-			ModuleFrameworkUtil.stopFramework(0);
-		}
-		catch (Exception exception) {
-			throw new RuntimeException(exception);
-		}
-	}
-
-	public static synchronized void stopRuntime() {
-		try {
-			ModuleFrameworkUtil.stopRuntime();
-		}
-		catch (Exception exception) {
-			throw new RuntimeException(exception);
-		}
 	}
 
 	private static final boolean _PRINT_TIME = false;

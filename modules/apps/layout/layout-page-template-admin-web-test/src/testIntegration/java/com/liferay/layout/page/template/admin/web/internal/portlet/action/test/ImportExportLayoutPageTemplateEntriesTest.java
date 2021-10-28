@@ -267,6 +267,19 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 	}
 
 	@Test
+	public void testImportExportLayoutPageTemplateEntryFragmentHidden()
+		throws Exception {
+
+		_addTextFragmentEntry();
+
+		File expectedFile = _generateZipFile(
+			"fragment/hidden/expected", null, null);
+		File inputFile = _generateZipFile("fragment/hidden/input", null, null);
+
+		_validateImportExport(expectedFile, inputFile);
+	}
+
+	@Test
 	public void testImportExportLayoutPageTemplateEntryFragmentTextFieldFragmentAvailableMappedContentAvailable()
 		throws Exception {
 
@@ -601,14 +614,11 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		ZipWriter zipWriter = ZipWriterFactoryUtil.getZipWriter();
 
-		StringBundler sb = new StringBundler(3);
-
-		sb.append(_LAYOUT_PATE_TEMPLATES_PATH + testPath);
-		sb.append(StringPool.FORWARD_SLASH + _ROOT_FOLDER);
-		sb.append(StringPool.FORWARD_SLASH);
-
 		Enumeration<URL> enumeration = _bundle.findEntries(
-			sb.toString(),
+			StringBundler.concat(
+				_LAYOUT_PATE_TEMPLATES_PATH + testPath,
+				StringPool.FORWARD_SLASH + _ROOT_FOLDER,
+				StringPool.FORWARD_SLASH),
 			LayoutPageTemplateExportImportConstants.
 				FILE_NAME_PAGE_TEMPLATE_COLLECTION,
 			true);

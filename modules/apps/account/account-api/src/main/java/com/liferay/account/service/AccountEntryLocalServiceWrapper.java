@@ -137,6 +137,21 @@ public class AccountEntryLocalServiceWrapper
 			emailAddress, logoBytes, taxIdNumber, type, status, serviceContext);
 	}
 
+	@Override
+	public com.liferay.account.model.AccountEntry addOrUpdateAccountEntry(
+			String externalReferenceCode, long userId,
+			long parentAccountEntryId, String name, String description,
+			String[] domains, String emailAddress, byte[] logoBytes,
+			String taxIdNumber, String type, int status,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _accountEntryLocalService.addOrUpdateAccountEntry(
+			externalReferenceCode, userId, parentAccountEntryId, name,
+			description, domains, emailAddress, logoBytes, taxIdNumber, type,
+			status, serviceContext);
+	}
+
 	/**
 	 * Creates a new account entry with the primary key. Does not add the account entry to the database.
 	 *
@@ -542,6 +557,20 @@ public class AccountEntryLocalServiceWrapper
 	}
 
 	@Override
+	public java.util.List<com.liferay.account.model.AccountEntry>
+			getUserAccountEntries(
+				long userId, Long parentAccountEntryId, String keywords,
+				String[] types, Integer status, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.account.model.AccountEntry> orderByComparator)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _accountEntryLocalService.getUserAccountEntries(
+			userId, parentAccountEntryId, keywords, types, status, start, end,
+			orderByComparator);
+	}
+
+	@Override
 	public int getUserAccountEntriesCount(
 			long userId, Long parentAccountEntryId, String keywords,
 			String[] types)
@@ -674,6 +703,25 @@ public class AccountEntryLocalServiceWrapper
 
 		return _accountEntryLocalService.updateDefaultShippingAddressId(
 			accountEntryId, addressId);
+	}
+
+	@Override
+	public com.liferay.account.model.AccountEntry updateExternalReferenceCode(
+			com.liferay.account.model.AccountEntry accountEntry,
+			String externalReferenceCode)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _accountEntryLocalService.updateExternalReferenceCode(
+			accountEntry, externalReferenceCode);
+	}
+
+	@Override
+	public com.liferay.account.model.AccountEntry updateExternalReferenceCode(
+			long accountEntryId, String externalReferenceCode)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _accountEntryLocalService.updateExternalReferenceCode(
+			accountEntryId, externalReferenceCode);
 	}
 
 	@Override

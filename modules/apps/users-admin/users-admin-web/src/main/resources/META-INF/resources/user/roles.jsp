@@ -175,7 +175,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 							"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
 						).setWindowState(
 							LiferayWindowState.POP_UP
-						).build();
+						).buildPortletURL();
 						%>
 
 						url: '<%= selectRegularRoleURL.toString() %>',
@@ -426,12 +426,12 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 						).setParameter(
 							"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
 						).setParameter(
-							"roleType", String.valueOf(RoleConstants.TYPE_ORGANIZATION)
+							"roleType", RoleConstants.TYPE_ORGANIZATION
 						).setParameter(
 							"step", "1"
 						).setWindowState(
 							LiferayWindowState.POP_UP
-						).build();
+						).buildPortletURL();
 						%>
 
 						url: '<%= selectOrganizationRoleURL.toString() %>',
@@ -624,12 +624,12 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 									).setParameter(
 										"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
 									).setParameter(
-										"roleType", String.valueOf(RoleConstants.TYPE_SITE)
+										"roleType", RoleConstants.TYPE_SITE
 									).setParameter(
 										"step", "1"
 									).setWindowState(
 										LiferayWindowState.POP_UP
-									).build()
+									).buildPortletURL()
 								%>',
 						});
 					});
@@ -781,7 +781,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				);
 
 				if (groupName) {
-					rowColumns.push(groupName);
+					rowColumns.push(Liferay.Util.escapeHTML(groupName));
 				}
 
 				if (groupId) {

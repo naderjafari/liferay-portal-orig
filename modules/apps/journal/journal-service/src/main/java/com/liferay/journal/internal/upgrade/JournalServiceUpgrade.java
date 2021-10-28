@@ -60,6 +60,7 @@ import com.liferay.journal.internal.upgrade.v3_3_0.StorageLinksUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v3_5_0.JournalArticleContentUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v3_5_1.JournalArticleDataFileEntryIdUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v4_0_0.JournalArticleDDMFieldsUpgradeProcess;
+import com.liferay.journal.internal.upgrade.v4_1_0.JournalArticleExternalReferenceCodeUpgradeProcess;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.util.JournalConverter;
 import com.liferay.portal.change.tracking.store.CTStoreFactory;
@@ -92,6 +93,7 @@ import com.liferay.portal.kernel.upgrade.MVCCVersionUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
+import com.liferay.portlet.documentlibrary.store.StoreFactory;
 import com.liferay.subscription.service.SubscriptionLocalService;
 
 import java.io.PrintWriter;
@@ -297,6 +299,10 @@ public class JournalServiceUpgrade implements UpgradeStepRegistrator {
 				_classNameLocalService, _ddmFieldLocalService,
 				_ddmStructureLocalService, _fieldsToDDMFormValuesConverter,
 				_journalConverter, _portal));
+
+		registry.register(
+			"4.0.0", "4.1.0",
+			new JournalArticleExternalReferenceCodeUpgradeProcess());
 	}
 
 	protected void deleteTempImages() throws Exception {
@@ -424,6 +430,9 @@ public class JournalServiceUpgrade implements UpgradeStepRegistrator {
 
 	@Reference
 	private SettingsFactory _settingsFactory;
+
+	@Reference(target = "(dl.store.impl.enabled=true)")
+	private StoreFactory _storeFactory;
 
 	@Reference
 	private SubscriptionLocalService _subscriptionLocalService;

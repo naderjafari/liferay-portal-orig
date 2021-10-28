@@ -22,7 +22,6 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.workflow.configuration.WorkflowDefinitionConfiguration;
 import com.liferay.portal.workflow.kaleo.designer.web.constants.KaleoDesignerPortletKeys;
@@ -32,7 +31,6 @@ import com.liferay.portal.workflow.kaleo.designer.web.internal.permission.KaleoD
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
 
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
@@ -62,10 +60,7 @@ public class DuplicateDefinitionPortletConfigurationIcon
 
 	@Override
 	public String getMessage(PortletRequest portletRequest) {
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			getLocale(portletRequest), "com.liferay.portal.workflow.web");
-
-		return LanguageUtil.get(resourceBundle, "duplicate");
+		return LanguageUtil.get(getLocale(portletRequest), "duplicate");
 	}
 
 	@Override
@@ -122,13 +117,10 @@ public class DuplicateDefinitionPortletConfigurationIcon
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
 
-		if (_companyAdministratorCanPublish &&
-			permissionChecker.isCompanyAdmin()) {
+		if ((_companyAdministratorCanPublish &&
+			 permissionChecker.isCompanyAdmin()) ||
+			permissionChecker.isOmniadmin()) {
 
-			return true;
-		}
-
-		if (permissionChecker.isOmniadmin()) {
 			return true;
 		}
 
@@ -142,7 +134,7 @@ public class DuplicateDefinitionPortletConfigurationIcon
 			KaleoDesignerWebKeys.KALEO_DRAFT_DEFINITION);
 	}
 
-	private boolean _companyAdministratorCanPublish;
+	private volatile boolean _companyAdministratorCanPublish;
 
 	@Reference
 	private Portal _portal;

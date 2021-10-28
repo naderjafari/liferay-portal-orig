@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Layout Page Templates";
+	property testray.main.component.name = "Content Page Templates";
 
 	setUp {
 		task ("Set up instance and sign in") {
@@ -16,9 +16,11 @@ definition {
 			JSONGroup.addGroup(groupName = "Test Site Name");
 		}
 
-		FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "test-site-name");
+		task ("Import test fragments from dependencies folder") {
+			FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "test-site-name");
 
-		FragmentsAdmin.importCollectionFromDependenciesFolder(collectionZipFile = "fragment-collection.zip");
+			FragmentsAdmin.importCollectionFromDependenciesFolder(collectionZipFile = "fragment-collection.zip");
+		}
 	}
 
 	tearDown {
@@ -69,16 +71,14 @@ definition {
 			PageEditor.editFragmentImage(
 				contributed = "false",
 				fileName = "Document_1.png",
-				fragmentName = "Image",
-				id = "image");
+				fragmentName = "Image");
 		}
 
 		task ("Assert the Image fragment's image was changed") {
-			AssertVisible(
-				key_fragmentClass = "image",
-				key_image = "Document_1.png",
-				key_position = "1",
-				locator1 = "Fragment#PAGE_EDITOR_FRAGMENT_IMAGE");
+			PageEditor.viewFragmentEditableImage(
+				contributed = "false",
+				fragmentClass = "image",
+				imageFileName = "Document_1.png");
 		}
 	}
 
@@ -118,7 +118,6 @@ definition {
 			PageEditor.editFragmentText(
 				contributed = "false",
 				fragmentName = "Content",
-				id = "content",
 				text = "Editing Finished");
 		}
 
@@ -126,8 +125,7 @@ definition {
 			PageEditor.viewFragmentEditableText(
 				contributed = "false",
 				editableText = "Editing Finished",
-				fragmentName = "Content",
-				id = "content");
+				fragmentName = "Content");
 		}
 	}
 
@@ -333,11 +331,10 @@ definition {
 				groupName = "Test Site Name",
 				name = "New Collection");
 
-			FragmentsAdminNavigator.openFragmentsAdmin(siteURLKey = "test-site-name");
-
-			FragmentsAdminNavigator.gotoCollection(collectionName = "New Collection");
-
-			FragmentsAdmin.addFragment(fragmentName = "Fragment Name");
+			JSONFragment.addSection(
+				collectionName = "New Collection",
+				groupName = "Test Site Name",
+				name = "Fragment Name");
 		}
 
 		task ("Assert the unpublished fragment does not appear in the sidebar when editing a content page template") {

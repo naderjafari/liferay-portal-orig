@@ -59,34 +59,11 @@ public class DiffVersionComparatorTag extends IncludeTag {
 			DiffVersion diffVersion, PortletURL sourceURL, PortletURL targetURL)
 		throws PortalException {
 
-		Date modifiedDate = diffVersion.getModifiedDate();
-
 		HttpServletRequest httpServletRequest = getRequest();
-
-		String timeDescription = LanguageUtil.getTimeDescription(
-			httpServletRequest,
-			System.currentTimeMillis() - modifiedDate.getTime(), true);
-
-		JSONObject diffVersionJSONObject = JSONUtil.put(
-			"displayDate",
-			LanguageUtil.format(
-				httpServletRequest, "x-ago", timeDescription, false)
-		).put(
-			"inRange",
-			(diffVersion.getVersion() > _sourceVersion) &&
-			(diffVersion.getVersion() <= _targetVersion)
-		);
 
 		String diffVersionString = String.valueOf(diffVersion.getVersion());
 
-		diffVersionJSONObject.put(
-			"label",
-			LanguageUtil.format(
-				httpServletRequest, "version-x", diffVersionString));
-
 		sourceURL.setParameter("sourceVersion", diffVersionString);
-
-		diffVersionJSONObject.put("sourceURL", sourceURL.toString());
 
 		if (Validator.isNotNull(_languageId)) {
 			targetURL.setParameter("languageId", _languageId);
@@ -94,11 +71,33 @@ public class DiffVersionComparatorTag extends IncludeTag {
 
 		targetURL.setParameter("targetVersion", diffVersionString);
 
-		diffVersionJSONObject.put("targetURL", targetURL.toString());
-
 		User user = UserLocalServiceUtil.fetchUser(diffVersion.getUserId());
 
-		diffVersionJSONObject.put(
+		return JSONUtil.put(
+			"displayDate",
+			() -> {
+				Date modifiedDate = diffVersion.getModifiedDate();
+
+				String timeDescription = LanguageUtil.getTimeDescription(
+					httpServletRequest,
+					System.currentTimeMillis() - modifiedDate.getTime(), true);
+
+				return LanguageUtil.format(
+					httpServletRequest, "x-ago", timeDescription, false);
+			}
+		).put(
+			"inRange",
+			(diffVersion.getVersion() > _sourceVersion) &&
+			(diffVersion.getVersion() <= _targetVersion)
+		).put(
+			"label",
+			LanguageUtil.format(
+				httpServletRequest, "version-x", diffVersionString)
+		).put(
+			"sourceURL", sourceURL.toString()
+		).put(
+			"targetURL", targetURL.toString()
+		).put(
 			"userInitials",
 			(user != null) ? user.getInitials() : StringPool.BLANK
 		).put(
@@ -106,8 +105,6 @@ public class DiffVersionComparatorTag extends IncludeTag {
 		).put(
 			"version", diffVersionString
 		);
-
-		return diffVersionJSONObject;
 	}
 
 	public Set<Locale> getAvailableLocales() {
@@ -244,13 +241,13 @@ public class DiffVersionComparatorTag extends IncludeTag {
 				PortletURLUtil.clone(_portletURL, renderResponse)
 			).setParameter(
 				"targetVersion", _targetVersion
-			).build();
+			).buildPortletURL();
 
 			PortletURL targetURL = PortletURLBuilder.create(
 				PortletURLUtil.clone(_portletURL, renderResponse)
 			).setParameter(
 				"sourceVersion", _sourceVersion
-			).build();
+			).buildPortletURL();
 
 			JSONArray diffVersionsJSONArray = JSONFactoryUtil.createJSONArray();
 

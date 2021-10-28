@@ -105,10 +105,6 @@ public class CommerceNotificationEntryClayTable
 			HttpServletRequest httpServletRequest, long groupId, Object model)
 		throws PortalException {
 
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
 		PortletURL portletURL = PortletURLBuilder.create(
 			_portal.getControlPanelPortletURL(
 				httpServletRequest, CPPortletKeys.COMMERCE_CHANNELS,
@@ -118,7 +114,9 @@ public class CommerceNotificationEntryClayTable
 		).setCMD(
 			"resend"
 		).setRedirect(
-			redirect
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
 		).setParameter(
 			"commerceNotificationQueueEntryId",
 			() -> {
@@ -126,7 +124,7 @@ public class CommerceNotificationEntryClayTable
 
 				return notificationEntry.getNotificationEntryId();
 			}
-		).build();
+		).buildPortletURL();
 
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {

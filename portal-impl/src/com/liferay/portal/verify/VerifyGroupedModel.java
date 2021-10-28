@@ -21,7 +21,6 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.upgrade.BaseUpgradeCallable;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.verify.model.VerifiableGroupedModel;
 
@@ -51,43 +50,34 @@ public class VerifyGroupedModel extends VerifyProcess {
 			unverifiedTableNames.add(verifiableGroupedModel.getTableName());
 		}
 
-		List<VerifiableGroupedModelUpgradeCallable>
-			verifiableGroupedModelUpgradeCallables = new ArrayList<>(
-				unverifiedTableNames.size());
+		if (unverifiedTableNames.isEmpty()) {
+			return;
+		}
 
-		while (!unverifiedTableNames.isEmpty()) {
-			int count = unverifiedTableNames.size();
+		int count = unverifiedTableNames.size();
 
-			for (VerifiableGroupedModel verifiableGroupedModel :
-					verifiableGroupedModels) {
-
+		processConcurrently(
+			verifiableGroupedModels,
+			verifiableGroupedModel -> {
 				if (unverifiedTableNames.contains(
 						verifiableGroupedModel.getRelatedTableName()) ||
 					!unverifiedTableNames.contains(
 						verifiableGroupedModel.getTableName())) {
 
-					continue;
+					return;
 				}
-
-				VerifiableGroupedModelUpgradeCallable
-					verifiableGroupedModelUpgradeCallable =
-						new VerifiableGroupedModelUpgradeCallable(
-							verifiableGroupedModel);
-
-				verifiableGroupedModelUpgradeCallables.add(
-					verifiableGroupedModelUpgradeCallable);
 
 				unverifiedTableNames.remove(
 					verifiableGroupedModel.getTableName());
-			}
 
-			if (unverifiedTableNames.size() == count) {
-				throw new VerifyException(
-					"Circular dependency detected " + unverifiedTableNames);
-			}
-		}
+				if (unverifiedTableNames.size() == count) {
+					throw new VerifyException(
+						"Circular dependency detected " + unverifiedTableNames);
+				}
 
-		doVerify(verifiableGroupedModelUpgradeCallables);
+				verifyGroupedModel(verifiableGroupedModel);
+			},
+			null);
 	}
 
 	@Override
@@ -143,32 +133,29 @@ public class VerifyGroupedModel extends VerifyProcess {
 		try (LoggingTimer loggingTimer = new LoggingTimer(
 				verifiableGroupedModel.getTableName())) {
 
-			StringBundler sb = new StringBundler(7);
-
-			sb.append("select ");
-			sb.append(verifiableGroupedModel.getPrimaryKeyColumnName());
-			sb.append(StringPool.COMMA_AND_SPACE);
-			sb.append(verifiableGroupedModel.getRelatedPrimaryKeyColumnName());
-			sb.append(" from ");
-			sb.append(verifiableGroupedModel.getTableName());
-			sb.append(" where groupId is null");
-
 			try (Connection connection = DataAccess.getConnection();
 				PreparedStatement preparedStatement1 =
-					connection.prepareStatement(sb.toString());
+					connection.prepareStatement(
+						StringBundler.concat(
+							"select ",
+							verifiableGroupedModel.getPrimaryKeyColumnName(),
+							StringPool.COMMA_AND_SPACE,
+							verifiableGroupedModel.
+								getRelatedPrimaryKeyColumnName(),
+							" from ", verifiableGroupedModel.getTableName(),
+							" where groupId is null"));
 				ResultSet resultSet = preparedStatement1.executeQuery()) {
-
-				sb = new StringBundler(5);
-
-				sb.append("update ");
-				sb.append(verifiableGroupedModel.getTableName());
-				sb.append(" set groupId = ? where ");
-				sb.append(verifiableGroupedModel.getPrimaryKeyColumnName());
-				sb.append(" = ?");
 
 				try (PreparedStatement preparedStatement2 =
 						AutoBatchPreparedStatementUtil.autoBatch(
-							connection.prepareStatement(sb.toString()))) {
+							connection.prepareStatement(
+								StringBundler.concat(
+									"update ",
+									verifiableGroupedModel.getTableName(),
+									" set groupId = ? where ",
+									verifiableGroupedModel.
+										getPrimaryKeyColumnName(),
+									" = ?")))) {
 
 					while (resultSet.next()) {
 						long relatedPrimKey = resultSet.getLong(
@@ -204,25 +191,5 @@ public class VerifyGroupedModel extends VerifyProcess {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		VerifyGroupedModel.class);
-
-	private class VerifiableGroupedModelUpgradeCallable
-		extends BaseUpgradeCallable<Void> {
-
-		@Override
-		protected Void doCall() throws Exception {
-			verifyGroupedModel(_verifiableGroupedModel);
-
-			return null;
-		}
-
-		private VerifiableGroupedModelUpgradeCallable(
-			VerifiableGroupedModel verifiableGroupedModel) {
-
-			_verifiableGroupedModel = verifiableGroupedModel;
-		}
-
-		private final VerifiableGroupedModel _verifiableGroupedModel;
-
-	}
 
 }

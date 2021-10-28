@@ -15,9 +15,12 @@
 import {ClayButtonWithIcon} from '@clayui/button';
 import ClayDropDown, {Align} from '@clayui/drop-down';
 import ClayDropDownDivider from '@clayui/drop-down/lib/Divider';
-import {useEventListener, useIsMounted} from '@liferay/frontend-js-react-web';
+import {
+	ReactPortal,
+	useEventListener,
+	useIsMounted,
+} from '@liferay/frontend-js-react-web';
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
 
 import {SELECT_SEGMENTS_EXPERIENCE} from '../../../plugins/experience/actions';
 import {UNDO_TYPES} from '../../config/constants/undoTypes';
@@ -62,7 +65,9 @@ export default function UndoHistory() {
 				active={active}
 				alignmentPosition={Align.BottomRight}
 				className="ml-2"
-				menuElementAttrs={{className: 'page-editor__undo-history'}}
+				menuElementAttrs={{
+					className: 'cadmin page-editor__undo-history',
+				}}
 				onActiveChange={setActive}
 				trigger={
 					<ClayButtonWithIcon
@@ -103,7 +108,11 @@ export default function UndoHistory() {
 				</ClayDropDown.ItemList>
 			</ClayDropDown>
 
-			{loading && ReactDOM.createPortal(<Overlay />, document.body)}
+			{loading && (
+				<ReactPortal>
+					<Overlay />
+				</ReactPortal>
+			)}
 		</>
 	);
 }

@@ -71,8 +71,8 @@ function Dropdown(props) {
 						const dropdownProps =
 							item.target === 'modal' || item.onClick
 								? {
-										onClick: (e) => {
-											e.preventDefault();
+										onClick: (event) => {
+											event.preventDefault();
 											setActive(false);
 
 											return handleAction({
@@ -85,7 +85,7 @@ function Dropdown(props) {
 								  }
 								: {
 										'data-senna-off': true,
-										href: item.href,
+										'href': item.href,
 								  };
 
 						return (

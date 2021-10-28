@@ -50,6 +50,18 @@ public class BatchPlannerLogLocalServiceWrapper
 		return _batchPlannerLogLocalService.addBatchPlannerLog(batchPlannerLog);
 	}
 
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog addBatchPlannerLog(
+			long userId, long batchPlannerPlanId, String batchEngineExportERC,
+			String batchEngineImportERC, String dispatchTriggerERC, int size,
+			int status)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogLocalService.addBatchPlannerLog(
+			userId, batchPlannerPlanId, batchEngineExportERC,
+			batchEngineImportERC, dispatchTriggerERC, size, status);
+	}
+
 	/**
 	 * Creates a new batch planner log with the primary key. Does not add the batch planner log to the database.
 	 *
@@ -238,6 +250,14 @@ public class BatchPlannerLogLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog
+		fetchBatchPlannerPlanBatchPlannerLog(long batchPlannerPlanId) {
+
+		return _batchPlannerLogLocalService.
+			fetchBatchPlannerPlanBatchPlannerLog(batchPlannerPlanId);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery
 		getActionableDynamicQuery() {
 
@@ -289,6 +309,57 @@ public class BatchPlannerLogLocalServiceWrapper
 	}
 
 	@Override
+	public int getBatchPlannerLogsCount(long batchPlannerPlanId) {
+		return _batchPlannerLogLocalService.getBatchPlannerLogsCount(
+			batchPlannerPlanId);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog
+			getBatchPlannerPlanBatchPlannerLog(long batchPlannerPlanId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogLocalService.getBatchPlannerPlanBatchPlannerLog(
+			batchPlannerPlanId);
+	}
+
+	@Override
+	public java.util.List<com.liferay.batch.planner.model.BatchPlannerLog>
+		getCompanyBatchPlannerLogs(
+			long companyId, boolean export, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.batch.planner.model.BatchPlannerLog>
+					orderByComparator) {
+
+		return _batchPlannerLogLocalService.getCompanyBatchPlannerLogs(
+			companyId, export, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<com.liferay.batch.planner.model.BatchPlannerLog>
+		getCompanyBatchPlannerLogs(
+			long companyId, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.batch.planner.model.BatchPlannerLog>
+					orderByComparator) {
+
+		return _batchPlannerLogLocalService.getCompanyBatchPlannerLogs(
+			companyId, start, end, orderByComparator);
+	}
+
+	@Override
+	public int getCompanyBatchPlannerLogsCount(long companyId) {
+		return _batchPlannerLogLocalService.getCompanyBatchPlannerLogsCount(
+			companyId);
+	}
+
+	@Override
+	public int getCompanyBatchPlannerLogsCount(long companyId, boolean export) {
+		return _batchPlannerLogLocalService.getCompanyBatchPlannerLogsCount(
+			companyId, export);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery
 		getIndexableActionableDynamicQuery() {
 
@@ -334,6 +405,24 @@ public class BatchPlannerLogLocalServiceWrapper
 
 		return _batchPlannerLogLocalService.updateBatchPlannerLog(
 			batchPlannerLog);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog
+			updateBatchPlannerLogSize(long batchPlannerLogId, int size)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogLocalService.updateBatchPlannerLogSize(
+			batchPlannerLogId, size);
+	}
+
+	@Override
+	public com.liferay.batch.planner.model.BatchPlannerLog
+			updateBatchPlannerLogStatus(long batchPlannerLogId, int status)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _batchPlannerLogLocalService.updateBatchPlannerLogStatus(
+			batchPlannerLogId, status);
 	}
 
 	@Override

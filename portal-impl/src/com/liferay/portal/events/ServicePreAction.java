@@ -92,6 +92,7 @@ import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.SessionParamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
@@ -112,6 +113,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -661,7 +663,7 @@ public class ServicePreAction extends Action {
 			List<Layout> layouts, boolean ignoreHiddenLayouts)
 		throws Exception {
 
-		if ((layouts == null) || layouts.isEmpty()) {
+		if (ListUtil.isEmpty(layouts)) {
 			return new LayoutComposite(layout, layouts);
 		}
 
@@ -835,21 +837,15 @@ public class ServicePreAction extends Action {
 
 		// Company logo
 
-		StringBundler sb = new StringBundler(6);
-
-		sb.append(imagePath);
-		sb.append("/company_logo");
+		String companyLogo = imagePath + "/company_logo";
 
 		long companyLogoId = company.getLogoId();
 
 		if (companyLogoId > 0) {
-			sb.append("?img_id=");
-			sb.append(company.getLogoId());
-			sb.append("&t=");
-			sb.append(WebServerServletTokenUtil.getToken(company.getLogoId()));
+			companyLogo = StringBundler.concat(
+				"?img_id=", company.getLogoId(), "&t=",
+				WebServerServletTokenUtil.getToken(company.getLogoId()));
 		}
-
-		String companyLogo = sb.toString();
 
 		int companyLogoHeight = 0;
 		int companyLogoWidth = 0;
@@ -887,10 +883,6 @@ public class ServicePreAction extends Action {
 			return null;
 		}
 
-		// Portal URL
-
-		String portalURL = PortalUtil.getPortalURL(httpServletRequest);
-
 		boolean signedIn = !user.isDefaultUser();
 
 		if (PropsValues.BROWSER_CACHE_DISABLED ||
@@ -904,26 +896,17 @@ public class ServicePreAction extends Action {
 				HttpHeaders.PRAGMA, HttpHeaders.PRAGMA_NO_CACHE_VALUE);
 		}
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
 		User realUser = user;
 
-		Long realUserId = (Long)session.getAttribute(WebKeys.USER_ID);
+		Long realUserId = (Long)httpSession.getAttribute(WebKeys.USER_ID);
 
 		if ((realUserId != null) &&
 			(user.getUserId() != realUserId.longValue())) {
 
 			realUser = UserLocalServiceUtil.getUserById(realUserId.longValue());
 		}
-
-		String doAsUserId = ParamUtil.getString(
-			httpServletRequest, "doAsUserId");
-		String doAsUserLanguageId = ParamUtil.getString(
-			httpServletRequest, "doAsUserLanguageId");
-		long doAsGroupId = ParamUtil.getLong(httpServletRequest, "doAsGroupId");
-
-		long refererGroupId = ParamUtil.getLong(
-			httpServletRequest, "refererGroupId");
 
 		long refererPlid = ParamUtil.getLong(httpServletRequest, "refererPlid");
 
@@ -978,7 +961,6 @@ public class ServicePreAction extends Action {
 		}
 
 		Layout layout = null;
-		List<Layout> layouts = null;
 
 		long plid = ParamUtil.getLong(httpServletRequest, "p_l_id");
 
@@ -1030,6 +1012,22 @@ public class ServicePreAction extends Action {
 					Group sourceGroup = GroupLocalServiceUtil.getGroup(
 						sourceGroupId);
 
+					if (sourceGroup.isUser() &&
+						!GroupPermissionUtil.contains(
+							permissionChecker, sourceGroup, ActionKeys.VIEW)) {
+
+						String message = StringBundler.concat(
+							"User ", user.getUserId(),
+							" is not allowed to access the private pages of ",
+							"user ", sourceGroup.getClassPK());
+
+						if (_log.isWarnEnabled()) {
+							_log.warn(message);
+						}
+
+						throw new NoSuchLayoutException(message);
+					}
+
 					layout = new VirtualLayout(layout, sourceGroup);
 				}
 				else {
@@ -1038,7 +1036,14 @@ public class ServicePreAction extends Action {
 			}
 		}
 
-		String ppid = ParamUtil.getString(httpServletRequest, "p_p_id");
+		long doAsGroupId = ParamUtil.getLong(httpServletRequest, "doAsGroupId");
+		String doAsUserId = ParamUtil.getString(
+			httpServletRequest, "doAsUserId");
+		String doAsUserLanguageId = ParamUtil.getString(
+			httpServletRequest, "doAsUserLanguageId");
+		Group group = null;
+		List<Layout> layouts = null;
+		boolean loginRequest = _isLoginRequest(httpServletRequest);
 
 		Boolean redirectToDefaultLayout =
 			(Boolean)httpServletRequest.getAttribute(
@@ -1048,9 +1053,9 @@ public class ServicePreAction extends Action {
 			redirectToDefaultLayout = Boolean.FALSE;
 		}
 
-		Group group = null;
+		long refererGroupId = ParamUtil.getLong(
+			httpServletRequest, "refererGroupId");
 
-		boolean loginRequest = _isLoginRequest(httpServletRequest);
 		boolean stagingGroup = false;
 		boolean viewableGroup = false;
 
@@ -1090,27 +1095,23 @@ public class ServicePreAction extends Action {
 					   !_hasAccessPermission(
 						   permissionChecker, layout, false)))) {
 
-				if (user.isDefaultUser() &&
+				if (!group.isUser() && user.isDefaultUser() &&
 					PropsValues.AUTH_LOGIN_PROMPT_ENABLED) {
 
 					throw new PrincipalException.MustBeAuthenticated(
 						user.getUserId());
 				}
 
-				sb = new StringBundler(6);
-
-				sb.append("User ");
-				sb.append(user.getUserId());
-				sb.append(" is not allowed to access the ");
-				sb.append(layout.isPrivateLayout() ? "private" : "public");
-				sb.append(" pages of group ");
-				sb.append(layout.getGroupId());
+				String message = StringBundler.concat(
+					"User ", user.getUserId(), " is not allowed to access the ",
+					layout.isPrivateLayout() ? "private" : "public",
+					" pages of group ", layout.getGroupId());
 
 				if (_log.isWarnEnabled()) {
-					_log.warn(sb.toString());
+					_log.warn(message);
 				}
 
-				throw new NoSuchLayoutException(sb.toString());
+				throw new NoSuchLayoutException(message);
 			}
 			else if (loginRequest && !viewableGroup) {
 				layout = null;
@@ -1219,15 +1220,9 @@ public class ServicePreAction extends Action {
 				}
 
 				if (logoId > 0) {
-					sb = new StringBundler(5);
-
-					sb.append(imagePath);
-					sb.append("/layout_set_logo?img_id=");
-					sb.append(logoId);
-					sb.append("&t=");
-					sb.append(WebServerServletTokenUtil.getToken(logoId));
-
-					layoutSetLogo = sb.toString();
+					layoutSetLogo = StringBundler.concat(
+						imagePath, "/layout_set_logo?img_id=", logoId, "&t=",
+						WebServerServletTokenUtil.getToken(logoId));
 
 					Image layoutSetLogoImage =
 						ImageLocalServiceUtil.getCompanyLogo(logoId);
@@ -1273,9 +1268,11 @@ public class ServicePreAction extends Action {
 
 				if (typeSettings != null) {
 					UnicodeProperties typeSettingsUnicodeProperties =
-						new UnicodeProperties(true);
-
-					typeSettingsUnicodeProperties.load(typeSettings);
+						UnicodePropertiesBuilder.create(
+							true
+						).load(
+							typeSettings
+						).build();
 
 					String stateMax = typeSettingsUnicodeProperties.getProperty(
 						LayoutTypePortletConstants.STATE_MAX);
@@ -1328,6 +1325,10 @@ public class ServicePreAction extends Action {
 
 		Locale locale = PortalUtil.getLocale(
 			httpServletRequest, httpServletResponse, true);
+
+		// Portal URL
+
+		String portalURL = PortalUtil.getPortalURL(httpServletRequest);
 
 		// Scope
 
@@ -1492,7 +1493,7 @@ public class ServicePreAction extends Action {
 		themeDisplay.setPathSound(contextPath.concat("/html/sound"));
 		themeDisplay.setPermissionChecker(permissionChecker);
 		themeDisplay.setPlid(plid);
-		themeDisplay.setPpid(ppid);
+		themeDisplay.setPpid(ParamUtil.getString(httpServletRequest, "p_p_id"));
 		themeDisplay.setRealCompanyLogo(companyLogo);
 		themeDisplay.setRealCompanyLogoHeight(companyLogoHeight);
 		themeDisplay.setRealCompanyLogoWidth(companyLogoWidth);
@@ -1534,7 +1535,10 @@ public class ServicePreAction extends Action {
 		themeDisplay.setShowMyAccountIcon(signedIn);
 		themeDisplay.setShowPageSettingsIcon(hasUpdateLayoutPermission);
 		themeDisplay.setShowPortalIcon(true);
-		themeDisplay.setShowSignInIcon(!signedIn);
+		themeDisplay.setShowSignInIcon(
+			!signedIn &&
+			!Objects.equals(
+				PropsValues.AUTH_LOGIN_PORTLET_NAME, themeDisplay.getPpid()));
 
 		boolean showSignOutIcon = signedIn;
 
@@ -1564,7 +1568,7 @@ public class ServicePreAction extends Action {
 			!CookieKeys.hasSessionId(httpServletRequest)) {
 
 			themeDisplay.setAddSessionIdToURL(true);
-			themeDisplay.setSessionId(session.getId());
+			themeDisplay.setSessionId(httpSession.getId());
 		}
 
 		// URLs
@@ -1605,7 +1609,7 @@ public class ServicePreAction extends Action {
 
 		if (themeDisplay.isAddSessionIdToURL()) {
 			urlControlPanel = PortalUtil.getURLWithSessionId(
-				urlControlPanel, session.getId());
+				urlControlPanel, httpSession.getId());
 		}
 
 		themeDisplay.setURLControlPanel(urlControlPanel);
@@ -1667,7 +1671,7 @@ public class ServicePreAction extends Action {
 							PortletRequest.RENDER_PHASE)
 					).setMVCRenderCommandName(
 						"/export_import/publish_layouts"
-					).build();
+					).buildPortletURL();
 
 					if (layout.isPrivateLayout()) {
 						publishToLiveURL.setParameter("tabs1", "private-pages");
@@ -1827,9 +1831,9 @@ public class ServicePreAction extends Action {
 			layouts.addAll(0, guestLayouts);
 		}
 		else {
-			HttpSession session = httpServletRequest.getSession();
+			HttpSession httpSession = httpServletRequest.getSession();
 
-			Long previousGroupId = (Long)session.getAttribute(
+			Long previousGroupId = (Long)httpSession.getAttribute(
 				WebKeys.VISITED_GROUP_ID_PREVIOUS);
 
 			if ((previousGroupId != null) &&
@@ -1891,18 +1895,18 @@ public class ServicePreAction extends Action {
 			return;
 		}
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		Long recentGroupId = (Long)session.getAttribute(
+		Long recentGroupId = (Long)httpSession.getAttribute(
 			WebKeys.VISITED_GROUP_ID_RECENT);
 
-		Long previousGroupId = (Long)session.getAttribute(
+		Long previousGroupId = (Long)httpSession.getAttribute(
 			WebKeys.VISITED_GROUP_ID_PREVIOUS);
 
 		if (recentGroupId == null) {
 			recentGroupId = Long.valueOf(currentGroupId);
 
-			session.setAttribute(
+			httpSession.setAttribute(
 				WebKeys.VISITED_GROUP_ID_RECENT, recentGroupId);
 		}
 		else if (recentGroupId.longValue() != currentGroupId) {
@@ -1910,10 +1914,10 @@ public class ServicePreAction extends Action {
 
 			recentGroupId = Long.valueOf(currentGroupId);
 
-			session.setAttribute(
+			httpSession.setAttribute(
 				WebKeys.VISITED_GROUP_ID_RECENT, recentGroupId);
 
-			session.setAttribute(
+			httpSession.setAttribute(
 				WebKeys.VISITED_GROUP_ID_PREVIOUS, previousGroupId);
 		}
 

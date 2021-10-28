@@ -17,7 +17,6 @@ package com.liferay.fragment.web.internal.servlet.taglib.clay;
 import com.liferay.fragment.constants.FragmentActionKeys;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.model.FragmentEntry;
-import com.liferay.fragment.web.internal.constants.FragmentWebKeys;
 import com.liferay.fragment.web.internal.security.permission.resource.FragmentPermission;
 import com.liferay.fragment.web.internal.servlet.taglib.util.BasicFragmentEntryActionDropdownItemsProvider;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
@@ -42,7 +41,8 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Eudaldo Alonso
  */
-public class BasicFragmentEntryVerticalCard extends FragmentEntryVerticalCard {
+public class BasicFragmentEntryVerticalCard
+	extends BaseFragmentEntryVerticalCard {
 
 	public BasicFragmentEntryVerticalCard(
 		FragmentEntry fragmentEntry, RenderRequest renderRequest,
@@ -74,11 +74,6 @@ public class BasicFragmentEntryVerticalCard extends FragmentEntryVerticalCard {
 		}
 
 		return null;
-	}
-
-	@Override
-	public String getDefaultEventHandler() {
-		return FragmentWebKeys.FRAGMENT_ENTRY_DROPDOWN_DEFAULT_EVENT_HANDLER;
 	}
 
 	@Override

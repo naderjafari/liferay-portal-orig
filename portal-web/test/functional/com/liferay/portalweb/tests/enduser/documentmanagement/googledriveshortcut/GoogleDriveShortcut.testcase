@@ -4,7 +4,7 @@ definition {
 	property custom.properties = "default.layout.template.id=1_column";
 	property portal.release = "false";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Documents Management";
+	property testray.main.component.name = "Document Management";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -167,6 +167,10 @@ definition {
 
 		PageEditor.clickPublish();
 
+		ContentPagesNavigator.openViewContentPage(
+			pageName = "Test Content Page Name",
+			siteName = "Guest");
+
 		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
 		Navigator.gotoPage(pageName = "Test Content Page Name");
@@ -186,7 +190,7 @@ definition {
 
 		PortletEntry.publish();
 
-		JSONDocument.addFolder(
+		JSONFolder.addFolder(
 			dmFolderDescription = "DM Folder Description",
 			dmFolderName = "DM Folder Name",
 			groupName = "Guest");

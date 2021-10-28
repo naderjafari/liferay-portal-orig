@@ -21,6 +21,24 @@ String redirect = ParamUtil.getString(request, "redirect");
 
 Folder folder = (Folder)request.getAttribute(WebKeys.DOCUMENT_LIBRARY_FOLDER);
 
+IGRequestHelper igRequestHelper = new IGRequestHelper(request);
+
+DLPortletInstanceSettings dlPortletInstanceSettings = igRequestHelper.getDLPortletInstanceSettings();
+
+long rootFolderId = dlPortletInstanceSettings.getRootFolderId();
+
+if (rootFolderId != DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
+	try {
+		Folder rootFolder = DLAppLocalServiceUtil.getFolder(rootFolderId);
+
+		if (rootFolder.getGroupId() != scopeGroupId) {
+			rootFolderId = DLFolderConstants.DEFAULT_PARENT_FOLDER_ID;
+		}
+	}
+	catch (NoSuchFolderException nsfe) {
+	}
+}
+
 long folderId = BeanParamUtil.getLong(folder, request, "folderId", rootFolderId);
 
 boolean defaultFolderView = false;
@@ -54,6 +72,9 @@ Map<String, Object> contextObjects = HashMapBuilder.<String, Object>put(
 	"dlPortletInstanceSettings", dlPortletInstanceSettings
 ).build();
 
+String displayStyle = portletPreferences.getValue("displayStyle", StringPool.BLANK);
+long displayStyleGroupId = GetterUtil.getLong(portletPreferences.getValue("displayStyleGroupId", null), themeDisplay.getScopeGroupId());
+
 String[] mediaGalleryMimeTypes = dlPortletInstanceSettings.getMimeTypes();
 %>
 
@@ -79,7 +100,7 @@ String[] mediaGalleryMimeTypes = dlPortletInstanceSettings.getMimeTypes();
 		renderResponse
 	).setMVCRenderCommandName(
 		"/image_gallery_display/view"
-	).build();
+	).buildPortletURL();
 
 	if (Validator.isNotNull(redirect)) {
 		portletURL.setParameter("redirect", redirect);

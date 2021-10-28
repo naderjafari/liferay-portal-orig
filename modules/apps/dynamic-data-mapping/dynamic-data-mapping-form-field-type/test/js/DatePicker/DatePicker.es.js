@@ -190,7 +190,7 @@ describe('DatePicker', () => {
 			jest.runAllTimers();
 		});
 
-		const date = moment().format('MM/DD/YYYY');
+		const date = moment().format('YYYY-MM-DD');
 
 		await wait(() => expect(getAllByDisplayValue(date)).toBeTruthy());
 
@@ -227,5 +227,24 @@ describe('DatePicker', () => {
 				getAllByDisplayValue(moment().format('YYYY/MM/DD'))
 			).toBeTruthy()
 		);
+	});
+
+	it('fills the input completely when last item of a date mask is a symbol Ex: (YYYY.MM.DD.)', () => {
+		const handleFieldEdited = jest.fn();
+
+		const {container} = render(
+			<DatePicker
+				{...defaultDatePickerConfig}
+				label="Field date"
+				locale="hu_HU"
+				onChange={handleFieldEdited}
+			/>
+		);
+
+		const input = container.querySelector('[type=text]');
+
+		userEvent.type(input, '1111.11.11.');
+
+		expect(input.value).toBe('1111.11.11.');
 	});
 });

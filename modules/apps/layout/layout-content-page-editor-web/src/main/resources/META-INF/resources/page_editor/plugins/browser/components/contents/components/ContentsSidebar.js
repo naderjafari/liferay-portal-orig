@@ -16,11 +16,11 @@ import React, {useMemo} from 'react';
 
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../../../../app/config/constants/editableFragmentEntryProcessor';
 import {EDITABLE_TYPES} from '../../../../../app/config/constants/editableTypes';
-import {config} from '../../../../../app/config/index';
 import {useSelector} from '../../../../../app/contexts/StoreContext';
 import selectLanguageId from '../../../../../app/selectors/selectLanguageId';
 import {selectPageContents} from '../../../../../app/selectors/selectPageContents';
 import isMapped from '../../../../../app/utils/editable-value/isMapped';
+import {getEditableLocalizedValue} from '../../../../../app/utils/getEditableLocalizedValue';
 import SidebarPanelContent from '../../../../../common/components/SidebarPanelContent';
 import NoPageContents from './NoPageContents';
 import PageContents from './PageContents';
@@ -28,12 +28,9 @@ import PageContents from './PageContents';
 const getEditableTitle = (editable, languageId) => {
 	const div = document.createElement('div');
 
-	div.innerHTML =
-		editable[languageId] ||
-		editable[config.defaultLanguageId] ||
-		editable.defaultValue;
+	div.innerHTML = getEditableLocalizedValue(editable, languageId);
 
-	return div.textContent;
+	return div.textContent.trim();
 };
 
 const getEditableValues = (fragmentEntryLinks, segmentsExperienceId) =>
@@ -49,7 +46,7 @@ const getEditableValues = (fragmentEntryLinks, segmentsExperienceId) =>
 			const editableValues = Object.entries(
 				fragmentEntryLink.editableValues[
 					EDITABLE_FRAGMENT_ENTRY_PROCESSOR
-				]
+				] ?? {}
 			);
 
 			return editableValues
@@ -64,6 +61,7 @@ const getEditableValues = (fragmentEntryLinks, segmentsExperienceId) =>
 				.map(([key, value]) => ({
 					...value,
 					editableId: `${fragmentEntryLink.fragmentEntryLinkId}-${key}`,
+					type: fragmentEntryLink.editableTypes[key],
 				}));
 		})
 		.reduce(
@@ -101,10 +99,11 @@ export default function ContentsSidebar() {
 
 	const inlineTextContents = useMemo(
 		() =>
-			getEditableValues(
-				fragmentEntryLinks,
-				segmentsExperienceId
-			).map((editable) => normalizeEditableValues(editable, languageId)),
+			getEditableValues(fragmentEntryLinks, segmentsExperienceId)
+				.map((editable) =>
+					normalizeEditableValues(editable, languageId)
+				)
+				.filter((editable) => editable.title),
 		[fragmentEntryLinks, languageId, segmentsExperienceId]
 	);
 

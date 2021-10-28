@@ -5,15 +5,13 @@ definition {
 			locator1 = "PublicationsChanges#COMMENT_BODY",
 			value1 = "${commentValue}");
 
-		Pause(locator1 = "3000");
-
-		SelectFrame(value1 = "relative=top");
-
 		AssertClick(
 			locator1 = "Button#REPLY",
 			value1 = "Reply");
 
-		Pause(locator1 = "3000");
+		AssertElementPresent(
+			key_commentValue = "${commentValue}",
+			locator1 = "PublicationsChanges#COMMENT_ACTIONS");
 	}
 
 	macro changeDisplayStyle {
@@ -32,7 +30,9 @@ definition {
 			locator1 = "MenuItem#ANY_MENU_ITEM",
 			value1 = "Delete");
 
-		AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
+		AssertElementPresent(locator1 = "PublicationsChanges#COMMENT_DELETING_MESSAGE");
+
+		Click.javaScriptClick(locator1 = "Button#DELETE");
 
 		AssertTextNotPresent(value1 = "${commentValue}");
 	}
@@ -53,7 +53,7 @@ definition {
 
 		SelectFrame(value1 = "relative=top");
 
-		Button.clickSave();
+		Click.javaScriptClick(locator1 = "Button#SAVE");
 
 		AssertElementPresent(
 			key_commentValue = "${commentValueEdit}",
@@ -61,10 +61,91 @@ definition {
 			value1 = "${commentValueEdit}");
 	}
 
+	macro gotoEditChanges {
+		if (isSet(changeOrder)) {
+			var changeOrder = "${changeOrder}";
+		}
+		else {
+			var changeOrder = "1";
+		}
+
+		if ("${conflictingChanges}" == "true") {
+			Click(
+				key_entryTitle = "${entryTitle}",
+				locator1 = "Publications#CONFLICTING_CHANGES_DISCARD_ELLIPSIS");
+
+			MenuItem.click(menuItem = "Edit Item");
+		}
+		else {
+			var key_changeCategory = "${changeCategory}";
+			var key_changeTitle = "${changeTitle}";
+
+			Click(locator1 = "PublicationsChanges#PUBLICATIONS_CHANGE_TITLE");
+
+			Click(locator1 = "PublicationsChanges#PUBLICATIONS_CHANGE_ELLIPSIS");
+
+			MenuItem.click(menuItem = "Edit");
+		}
+	}
+
+	macro openCommentsSidebar {
+		Click.javaScriptClick(locator1 = "PublicationsChanges#COMMENT_BUTTON");
+	}
+
+	macro sortChanges {
+		Click(
+			key_name = "${sortName}",
+			locator1 = "PublicationsChanges#SORT_BUTTON");
+
+		if ("${sort}" == "descending") {
+			if (IsElementPresent(locator1 = "PublicationsChanges#SORTED_ASCENDING_ICON")) {
+				Click(locator1 = "PublicationsChanges#SORTED_ASCENDING_ICON");
+			}
+		}
+
+		if ("${sort}" == "ascending") {
+			if (IsElementPresent(locator1 = "PublicationsChanges#SORTED_DESCENDING_ICON")) {
+				Click(locator1 = "PublicationsChanges#SORTED_DESCENDING_ICON");
+			}
+		}
+	}
+
+	macro viewChangesResultNotPresent {
+		var key_changeCategory = "${changeCategory}";
+		var key_changeTitle = "${changeTitle}";
+
+		if (isSet(changeOrder)) {
+			var changeOrder = "${changeOrder}";
+		}
+		else {
+			var changeOrder = "1";
+		}
+
+		AssertElementNotPresent(
+			locator1 = "PublicationsChanges#PUBLICATIONS_CHANGE_TITLE",
+			value1 = "${changeTitle}");
+	}
+
+	macro viewChangesResultsOrder {
+		var changeOrder = "0";
+
+		for (var changeTitle : list "${changesList}") {
+			var changeOrder = ${changeOrder} + 1;
+
+			var key_changeCategory = "${changeCategory}";
+			var key_changeTitle = "${changeTitle}";
+
+			AssertTextEquals(
+				changeOrder = "${changeOrder}",
+				locator1 = "PublicationsChanges#PUBLICATIONS_CHANGE_TITLE",
+				value1 = "${changeTitle}");
+		}
+	}
+
 	macro viewChangesViaChangesStyle {
 		if ("${publishedPublication}" == "true") {
 			Click(
-				key_publicationName = "Publication Name",
+				key_publicationName = "${publicationName}",
 				locator1 = "Publications#PUBLISHED_PUBLICATION_NAME");
 		}
 		else {
@@ -72,7 +153,7 @@ definition {
 		}
 
 		if ("${showAllItems}" == "true") {
-			Check.checkToggleSwitch(locator1 = "PublicationsSettings#SHOW_ALL_ITEMS_TOGGLE_SWITCH");
+			Check.checkToggleSwitch(locator1 = "PublicationsChanges#SHOW_ALL_ITEMS_TOGGLE_SWITCH");
 		}
 
 		Pause(locator1 = "3000");
@@ -113,7 +194,7 @@ definition {
 		Pause(locator1 = "3000");
 
 		if ("${showAllItems}" == "true") {
-			Check.checkToggleSwitch(locator1 = "PublicationsSettings#SHOW_ALL_ITEMS_TOGGLE_SWITCH");
+			Check.checkToggleSwitch(locator1 = "PublicationsChanges#SHOW_ALL_ITEMS_TOGGLE_SWITCH");
 		}
 
 		var key_changeCategory = "${changeCategory}";
@@ -132,8 +213,8 @@ definition {
 	}
 
 	macro viewDDLRecordChangeDiff {
-		if (IsElementNotPresent(locator1 = "Publications#CURRENT_DIFF_DISPLAY_ITEM", key_displayItem = "Unified")) {
-			Publications.changeDiffDisplayItem(displayItem = "Unified");
+		if (IsElementNotPresent(locator1 = "Publications#CURRENT_DIFF_DISPLAY_ITEM", key_displayItem = "Unified View")) {
+			Publications.changeDiffDisplayItem(displayItem = "Unified View");
 		}
 
 		var key_fieldName = "${fieldName}";
@@ -161,7 +242,7 @@ definition {
 				value1 = "${fieldValueInProduction}");
 		}
 
-		Publications.changeDiffDisplayItem(displayItem = "Publication: ${publicationName}");
+		Publications.changeDiffDisplayItem(displayItem = "Publication");
 
 		AssertTextEquals.assertPartialText(
 			key_displayItem = "${publicationName}",

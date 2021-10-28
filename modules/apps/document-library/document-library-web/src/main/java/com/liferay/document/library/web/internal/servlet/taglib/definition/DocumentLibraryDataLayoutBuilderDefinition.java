@@ -35,7 +35,7 @@ public class DocumentLibraryDataLayoutBuilderDefinition
 
 	@Override
 	public String[] getDisabledProperties() {
-		return new String[] {"requiredErrorMessage"};
+		return new String[] {"objectFieldName", "requiredErrorMessage"};
 	}
 
 	@Override
@@ -46,8 +46,9 @@ public class DocumentLibraryDataLayoutBuilderDefinition
 	@Override
 	public String[] getUnimplementedProperties() {
 		return new String[] {
-			"allowGuestUsers", "fieldNamespace", "inputMask", "readOnly",
-			"requireConfirmation", "validation", "visibilityExpression"
+			"allowGuestUsers", "fieldNamespace", "hideField", "inputMask",
+			"readOnly", "requireConfirmation", "validation",
+			"visibilityExpression"
 		};
 	}
 

@@ -55,7 +55,7 @@ import org.osgi.service.component.annotations.Reference;
 	}
 )
 public class ReindexSingleIndexerBackgroundTaskExecutor
-	extends ReindexBackgroundTaskExecutor {
+	extends BaseReindexBackgroundTaskExecutor {
 
 	public ReindexSingleIndexerBackgroundTaskExecutor() {
 		setIsolationLevel(BackgroundTaskConstants.ISOLATION_LEVEL_TASK_NAME);
@@ -168,7 +168,7 @@ public class ReindexSingleIndexerBackgroundTaskExecutor
 	@Reference
 	protected SearchEngineHelper searchEngineHelper;
 
-	protected ServiceTrackerList<Indexer<?>, Indexer<?>> systemIndexers;
+	protected ServiceTrackerList<Indexer<?>> systemIndexers;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ReindexSingleIndexerBackgroundTaskExecutor.class);

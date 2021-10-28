@@ -51,7 +51,8 @@ import javax.servlet.http.HttpServletRequest;
 public class ViewFlatUsersDisplayContextFactory {
 
 	public static ViewFlatUsersDisplayContext create(
-		RenderRequest renderRequest, RenderResponse renderResponse) {
+		HttpServletRequest httpServletRequest, RenderRequest renderRequest,
+		RenderResponse renderResponse) {
 
 		ViewFlatUsersDisplayContext viewFlatUsersDisplayContext =
 			new ViewFlatUsersDisplayContext();
@@ -76,17 +77,13 @@ public class ViewFlatUsersDisplayContextFactory {
 				isShowDeleteButton(userSearchTerms),
 				isShowRestoreButton(userSearchTerms));
 
-		HttpServletRequest httpServletRequest =
-			liferayPortletRequest.getOriginalHttpServletRequest();
-
 		Optional<FilterContributor[]> filterContributorsOptional =
 			getFilterContributorsOptional(httpServletRequest);
 
 		if (filterContributorsOptional.isPresent()) {
 			managementToolbarDisplayContext =
 				new FiltersManagementToolbarDisplayContextWrapper(
-					filterContributorsOptional.get(),
-					liferayPortletRequest.getHttpServletRequest(),
+					filterContributorsOptional.get(), httpServletRequest,
 					liferayPortletRequest, liferayPortletResponse,
 					managementToolbarDisplayContext);
 		}
@@ -165,7 +162,7 @@ public class ViewFlatUsersDisplayContextFactory {
 			(PortletURL)httpServletRequest.getAttribute("view.jsp-portletURL")
 		).setNavigation(
 			navigation
-		).build();
+		).buildPortletURL();
 
 		UserSearch userSearch = new UserSearch(
 			renderRequest, "cur2", portletURL);

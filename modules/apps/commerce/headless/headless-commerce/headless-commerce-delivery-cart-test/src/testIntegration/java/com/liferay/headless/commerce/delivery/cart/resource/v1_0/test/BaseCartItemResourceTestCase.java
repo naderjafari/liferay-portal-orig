@@ -34,7 +34,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -51,7 +50,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -181,6 +179,7 @@ public abstract class BaseCartItemResourceTestCase {
 
 		CartItem cartItem = randomCartItem();
 
+		cartItem.setAdaptiveMediaImageHTMLTag(regex);
 		cartItem.setName(regex);
 		cartItem.setOptions(regex);
 		cartItem.setSku(regex);
@@ -192,6 +191,7 @@ public abstract class BaseCartItemResourceTestCase {
 
 		cartItem = CartItemSerDes.toDTO(json);
 
+		Assert.assertEquals(regex, cartItem.getAdaptiveMediaImageHTMLTag());
 		Assert.assertEquals(regex, cartItem.getName());
 		Assert.assertEquals(regex, cartItem.getOptions());
 		Assert.assertEquals(regex, cartItem.getSku());
@@ -359,13 +359,13 @@ public abstract class BaseCartItemResourceTestCase {
 
 	@Test
 	public void testGetCartItemsPage() throws Exception {
-		Page<CartItem> page = cartItemResource.getCartItemsPage(
-			testGetCartItemsPage_getCartId(), Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long cartId = testGetCartItemsPage_getCartId();
 		Long irrelevantCartId = testGetCartItemsPage_getIrrelevantCartId();
+
+		Page<CartItem> page = cartItemResource.getCartItemsPage(
+			cartId, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantCartId != null) {
 			CartItem irrelevantCartItem = testGetCartItemsPage_addCartItem(
@@ -388,7 +388,7 @@ public abstract class BaseCartItemResourceTestCase {
 		CartItem cartItem2 = testGetCartItemsPage_addCartItem(
 			cartId, randomCartItem());
 
-		page = cartItemResource.getCartItemsPage(cartId, Pagination.of(1, 2));
+		page = cartItemResource.getCartItemsPage(cartId, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -465,7 +465,7 @@ public abstract class BaseCartItemResourceTestCase {
 			new HashMap<String, Object>() {
 				{
 					put("page", 1);
-					put("pageSize", 2);
+					put("pageSize", 10);
 
 					put("cartId", cartId);
 				}
@@ -486,7 +486,7 @@ public abstract class BaseCartItemResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/cartItems");
 
-		Assert.assertEquals(2, cartItemsJSONObject.get("totalCount"));
+		Assert.assertEquals(2, cartItemsJSONObject.getLong("totalCount"));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(cartItem1, cartItem2),
@@ -514,6 +514,21 @@ public abstract class BaseCartItemResourceTestCase {
 	protected CartItem testGraphQLCartItem_addCartItem() throws Exception {
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(CartItem cartItem, List<CartItem> cartItems) {
+		boolean contains = false;
+
+		for (CartItem item : cartItems) {
+			if (equals(cartItem, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			cartItems + " does not contain " + cartItem, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -574,6 +589,16 @@ public abstract class BaseCartItemResourceTestCase {
 		for (String additionalAssertFieldName :
 				getAdditionalAssertFieldNames()) {
 
+			if (Objects.equals(
+					"adaptiveMediaImageHTMLTag", additionalAssertFieldName)) {
+
+				if (cartItem.getAdaptiveMediaImageHTMLTag() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("cartItems", additionalAssertFieldName)) {
 				if (cartItem.getCartItems() == null) {
 					valid = false;
@@ -632,6 +657,14 @@ public abstract class BaseCartItemResourceTestCase {
 
 			if (Objects.equals("productId", additionalAssertFieldName)) {
 				if (cartItem.getProductId() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("productURLs", additionalAssertFieldName)) {
+				if (cartItem.getProductURLs() == null) {
 					valid = false;
 				}
 
@@ -726,7 +759,7 @@ public abstract class BaseCartItemResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.commerce.delivery.cart.dto.v1_0.
 						CartItem.class)) {
@@ -743,12 +776,13 @@ public abstract class BaseCartItemResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -783,6 +817,19 @@ public abstract class BaseCartItemResourceTestCase {
 
 		for (String additionalAssertFieldName :
 				getAdditionalAssertFieldNames()) {
+
+			if (Objects.equals(
+					"adaptiveMediaImageHTMLTag", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						cartItem1.getAdaptiveMediaImageHTMLTag(),
+						cartItem2.getAdaptiveMediaImageHTMLTag())) {
+
+					return false;
+				}
+
+				continue;
+			}
 
 			if (Objects.equals("cartItems", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
@@ -868,6 +915,17 @@ public abstract class BaseCartItemResourceTestCase {
 			if (Objects.equals("productId", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						cartItem1.getProductId(), cartItem2.getProductId())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("productURLs", additionalAssertFieldName)) {
+				if (!equals(
+						(Map)cartItem1.getProductURLs(),
+						(Map)cartItem2.getProductURLs())) {
 
 					return false;
 				}
@@ -980,14 +1038,16 @@ public abstract class BaseCartItemResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1041,6 +1101,14 @@ public abstract class BaseCartItemResourceTestCase {
 		sb.append(operator);
 		sb.append(" ");
 
+		if (entityFieldName.equals("adaptiveMediaImageHTMLTag")) {
+			sb.append("'");
+			sb.append(String.valueOf(cartItem.getAdaptiveMediaImageHTMLTag()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
 		if (entityFieldName.equals("cartItems")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
@@ -1088,6 +1156,11 @@ public abstract class BaseCartItemResourceTestCase {
 		}
 
 		if (entityFieldName.equals("productId")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("productURLs")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
@@ -1177,6 +1250,8 @@ public abstract class BaseCartItemResourceTestCase {
 	protected CartItem randomCartItem() throws Exception {
 		return new CartItem() {
 			{
+				adaptiveMediaImageHTMLTag = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 				id = RandomTestUtil.randomLong();
 				name = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				options = StringUtil.toLowerCase(RandomTestUtil.randomString());
@@ -1279,8 +1354,8 @@ public abstract class BaseCartItemResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseCartItemResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseCartItemResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

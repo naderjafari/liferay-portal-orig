@@ -30,10 +30,10 @@ PortletURL portletURL = PortletURLBuilder.createRenderURL(
 ).setParameter(
 	"articleId", articleId
 ).setParameter(
-	"groupId", String.valueOf(groupId)
+	"groupId", groupId
 ).setParameter(
-	"sourceVersion", String.valueOf(sourceVersion)
-).build();
+	"sourceVersion", sourceVersion
+).buildPortletURL();
 %>
 
 <aui:form action="<%= portletURL.toString() %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="selectVersionFm">

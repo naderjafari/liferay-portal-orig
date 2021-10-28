@@ -27,6 +27,7 @@ import com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecord;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecordVersion;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceVersionLocalService;
+import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.util.DDMFormValuesMerger;
 import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
@@ -39,6 +40,7 @@ import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -178,11 +180,20 @@ public class DDMFormAssetRenderer
 		).setRedirect(
 			_portal.getCurrentURL(httpServletRequest)
 		).setParameter(
+			"defaultLanguageId",
+			() -> {
+				DDMFormValues ddmFormValues =
+					_ddmFormInstanceRecordVersion.getDDMFormValues();
+
+				return LocaleUtil.toLanguageId(
+					ddmFormValues.getDefaultLocale());
+			}
+		).setParameter(
 			"formInstanceId", _ddmFormInstanceRecord.getFormInstanceId()
 		).setParameter(
 			"formInstanceRecordId",
 			_ddmFormInstanceRecord.getFormInstanceRecordId()
-		).build();
+		).buildPortletURL();
 	}
 
 	@Override

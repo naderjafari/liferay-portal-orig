@@ -25,10 +25,12 @@ import com.liferay.portal.kernel.dao.orm.Projection;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.PersistedModel;
+import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalService;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
@@ -37,6 +39,8 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import java.io.Serializable;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.osgi.annotation.versioning.ProviderType;
 
@@ -63,9 +67,11 @@ public interface ObjectFieldLocalService
 	 *
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.object.service.impl.ObjectFieldLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the object field local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link ObjectFieldLocalServiceUtil} if injection and service tracking are not available.
 	 */
-	public ObjectField addObjectField(
-			long userId, long objectDefinitionId, boolean indexed,
-			boolean indexedAsKeyword, String indexedLanguageId, String name,
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectField addCustomObjectField(
+			long userId, long listTypeDefinitionId, long objectDefinitionId,
+			boolean indexed, boolean indexedAsKeyword, String indexedLanguageId,
+			Map<Locale, String> labelMap, String name, boolean required,
 			String type)
 		throws PortalException;
 
@@ -81,6 +87,14 @@ public interface ObjectFieldLocalService
 	 */
 	@Indexable(type = IndexableType.REINDEX)
 	public ObjectField addObjectField(ObjectField objectField);
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectField addSystemObjectField(
+			long userId, long objectDefinitionId, String dbColumnName,
+			boolean indexed, boolean indexedAsKeyword, String indexedLanguageId,
+			Map<Locale, String> labelMap, String name, boolean required,
+			String type)
+		throws PortalException;
 
 	/**
 	 * Creates a new object field with the primary key. Does not add the object field to the database.
@@ -121,9 +135,12 @@ public interface ObjectFieldLocalService
 	 *
 	 * @param objectField the object field
 	 * @return the object field that was removed
+	 * @throws PortalException
 	 */
 	@Indexable(type = IndexableType.DELETE)
-	public ObjectField deleteObjectField(ObjectField objectField);
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
+	public ObjectField deleteObjectField(ObjectField objectField)
+		throws PortalException;
 
 	/**
 	 * @throws PortalException
@@ -207,6 +224,9 @@ public interface ObjectFieldLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ObjectField fetchObjectField(long objectFieldId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectField fetchObjectField(long objectDefinitionId, String name);
+
 	/**
 	 * Returns the object field with the matching UUID and company.
 	 *
@@ -239,6 +259,10 @@ public interface ObjectFieldLocalService
 	public ObjectField getObjectField(long objectFieldId)
 		throws PortalException;
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectField getObjectField(long objectDefinitionId, String name)
+		throws PortalException;
+
 	/**
 	 * Returns the object field with the matching UUID and company.
 	 *
@@ -269,6 +293,10 @@ public interface ObjectFieldLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<ObjectField> getObjectFields(long objectDefinitionId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<ObjectField> getObjectFields(
+		long objectDefinitionId, String dbTableName);
+
 	/**
 	 * Returns the number of object fields.
 	 *
@@ -276,6 +304,13 @@ public interface ObjectFieldLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getObjectFieldsCount();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getObjectFieldsCount(long objectDefinitionId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getObjectFieldsCountByListTypeDefinitionId(
+		long listTypeDefinitionId);
 
 	/**
 	 * Returns the OSGi service identifier.
@@ -292,6 +327,14 @@ public interface ObjectFieldLocalService
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException;
 
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectField updateCustomObjectField(
+			long objectFieldId, long listTypeDefinitionId, boolean indexed,
+			boolean indexedAsKeyword, String indexedLanguageId,
+			Map<Locale, String> labelMap, String name, boolean required,
+			String type)
+		throws PortalException;
+
 	/**
 	 * Updates the object field in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
@@ -304,5 +347,7 @@ public interface ObjectFieldLocalService
 	 */
 	@Indexable(type = IndexableType.REINDEX)
 	public ObjectField updateObjectField(ObjectField objectField);
+
+	public void validateType(String type) throws PortalException;
 
 }

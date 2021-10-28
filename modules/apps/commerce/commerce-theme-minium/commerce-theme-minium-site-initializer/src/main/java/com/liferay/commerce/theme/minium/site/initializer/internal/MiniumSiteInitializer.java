@@ -14,6 +14,8 @@
 
 package com.liferay.commerce.theme.minium.site.initializer.internal;
 
+import com.liferay.account.settings.AccountEntryGroupSettings;
+import com.liferay.commerce.account.configuration.CommerceAccountGroupServiceConfiguration;
 import com.liferay.commerce.account.constants.CommerceAccountConstants;
 import com.liferay.commerce.account.util.CommerceAccountRoleHelper;
 import com.liferay.commerce.currency.model.CommerceCurrency;
@@ -55,6 +57,7 @@ import com.liferay.commerce.service.CommerceShippingMethodLocalService;
 import com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionLocalService;
 import com.liferay.commerce.theme.minium.SiteInitializerDependencyResolver;
 import com.liferay.commerce.theme.minium.SiteInitializerDependencyResolverThreadLocal;
+import com.liferay.commerce.util.AccountEntryAllowedTypesUtil;
 import com.liferay.commerce.util.CommerceShippingEngineRegistry;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -174,6 +177,10 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			if (siteInitializerDependencyResolver != null) {
 				_siteInitializerDependencyResolver =
 					siteInitializerDependencyResolver;
+			}
+			else {
+				_siteInitializerDependencyResolver =
+					_defaultSiteInitializerDependencyResolver;
 			}
 
 			ServiceContext serviceContext = getServiceContext(groupId);
@@ -320,6 +327,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			String.valueOf(CommerceAccountConstants.SITE_TYPE_B2B));
 
 		modifiableSettings.store();
+
+		_accountEntryGroupSettings.setAllowedTypes(
+			serviceContext.getScopeGroupId(), _getAllowedTypes(groupId));
 	}
 
 	protected CommerceCatalog createCatalog(ServiceContext serviceContext)
@@ -549,6 +559,21 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			role.getRoleId(), "VIEW_PRICE");
 	}
 
+	private String[] _getAllowedTypes(long commerceChannelGroupId)
+		throws Exception {
+
+		CommerceAccountGroupServiceConfiguration
+			commerceAccountGroupServiceConfiguration =
+				_configurationProvider.getConfiguration(
+					CommerceAccountGroupServiceConfiguration.class,
+					new GroupServiceSettingsLocator(
+						commerceChannelGroupId,
+						CommerceAccountConstants.SERVICE_NAME));
+
+		return AccountEntryAllowedTypesUtil.getAllowedTypes(
+			commerceAccountGroupServiceConfiguration.commerceSiteType());
+	}
+
 	private long[] _getCProductIds(JSONArray jsonArray) {
 		List<Long> cProductIdsList = new ArrayList<>();
 
@@ -755,6 +780,22 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		Group group = serviceContext.getScopeGroup();
 
 		JSONArray jsonArray = _getJSONArray("products.json");
+
+		if (_siteInitializerDependencyResolver != null) {
+			for (int i = 0; i < jsonArray.length(); i++) {
+				JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+				String externalReferenceCode = jsonObject.getString(
+					"externalReferenceCode");
+
+				String newExternalReferenceCode =
+					externalReferenceCode +
+						_siteInitializerDependencyResolver.getKey();
+
+				jsonObject.put(
+					"externalReferenceCode", newExternalReferenceCode);
+			}
+		}
 
 		long[] commerceInventoryWarehouseIds = ListUtil.toLongArray(
 			commerceInventoryWarehouses,
@@ -973,6 +1014,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		MiniumSiteInitializer.class);
 
 	@Reference
+	private AccountEntryGroupSettings _accountEntryGroupSettings;
+
+	@Reference
 	private AssetCategoriesImporter _assetCategoriesImporter;
 
 	@Reference
@@ -1058,6 +1102,12 @@ public class MiniumSiteInitializer implements SiteInitializer {
 	@Reference
 	private DDMFormImporter _ddmFormImporter;
 
+	@Reference(
+		target = "(site.initializer.key=" + MiniumSiteInitializer.KEY + ")"
+	)
+	private SiteInitializerDependencyResolver
+		_defaultSiteInitializerDependencyResolver;
+
 	@Reference
 	private DLImporter _dlImporter;
 
@@ -1093,9 +1143,6 @@ public class MiniumSiteInitializer implements SiteInitializer {
 	@Reference
 	private SettingsFactory _settingsFactory;
 
-	@Reference(
-		target = "(site.initializer.key=" + MiniumSiteInitializer.KEY + ")"
-	)
 	private SiteInitializerDependencyResolver
 		_siteInitializerDependencyResolver;
 

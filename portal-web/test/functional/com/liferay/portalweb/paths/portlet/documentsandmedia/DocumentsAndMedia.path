@@ -2,11 +2,13 @@
 <head>
 <title>DocumentsAndMedia</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">DocumentsAndMedia</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>BREADCRUMB_HOME</td>
@@ -36,6 +38,11 @@
 <tr>
 	<td>CUSTOM_FIELD_NAME</td>
 	<td>//div[contains(@class,'custom-attributes')]/div/label[contains(.,'${key_customFieldName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>DOCUMENT_ANY_HREF</td>
+	<td>//a[contains(@href,"${key_href}")]</td>
 	<td></td>
 </tr>
 <tr>
@@ -102,7 +109,7 @@
 </tr>
 <tr>
 	<td>ICON_DOCUMENT_SHARED</td>
-	<td>//*[*[name()='svg'][contains(@class,'lexicon-icon-users')]]</td>
+	<td>xpath=(//li | //tr)[contains(@data-title,'${key_dmDocumentTitle}')]//*[*[name()='svg'][contains(@class,'lexicon-icon-users')]]</td>
 	<td></td>
 </tr>
 <tr>
@@ -160,11 +167,6 @@
 <tr>
 	<td>DESCRIPTIVE_LIST_DOCUMENT_ICON</td>
 	<td>//li[contains(@data-title,'${key_dmDocumentTitle}')]//div//div</td>
-	<td></td>
-</tr>
-<tr>
-	<td>DESCRIPTIVE_LIST_DOCUMENT_SHARED</td>
-	<td>//li[contains(@data-title,'${key_dmDocumentTitle}')]//*[*[name()='svg'][contains(@class,'lexicon-icon-users')]]</td>
 	<td></td>
 </tr>
 <tr>

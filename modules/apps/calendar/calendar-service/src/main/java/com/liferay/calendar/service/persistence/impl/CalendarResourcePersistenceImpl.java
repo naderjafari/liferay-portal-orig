@@ -22,8 +22,8 @@ import com.liferay.calendar.model.impl.CalendarResourceModelImpl;
 import com.liferay.calendar.service.persistence.CalendarResourcePersistence;
 import com.liferay.calendar.service.persistence.impl.constants.CalendarPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.change.tracking.CTColumnResolutionType;
 import com.liferay.portal.kernel.configuration.Configuration;
-import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -35,16 +35,18 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.helper.CTPersistenceHelper;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -55,18 +57,20 @@ import java.io.Serializable;
 
 import java.lang.reflect.InvocationHandler;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -179,25 +183,28 @@ public class CalendarResourcePersistenceImpl
 
 		uuid = Objects.toString(uuid, "");
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByUuid;
 				finderArgs = new Object[] {uuid};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByUuid;
 			finderArgs = new Object[] {uuid, start, end, orderByComparator};
 		}
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 
@@ -264,7 +271,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -580,11 +587,21 @@ public class CalendarResourcePersistenceImpl
 	public int countByUuid(String uuid) {
 		uuid = Objects.toString(uuid, "");
 
-		FinderPath finderPath = _finderPathCountByUuid;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {uuid};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByUuid;
+
+			finderArgs = new Object[] {uuid};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -619,7 +636,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -704,15 +723,18 @@ public class CalendarResourcePersistenceImpl
 
 		uuid = Objects.toString(uuid, "");
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		Object[] finderArgs = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			finderArgs = new Object[] {uuid, groupId};
 		}
 
 		Object result = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			result = finderCache.getResult(
 				_finderPathFetchByUUID_G, finderArgs);
 		}
@@ -765,7 +787,7 @@ public class CalendarResourcePersistenceImpl
 				List<CalendarResource> list = query.list();
 
 				if (list.isEmpty()) {
-					if (useFinderCache) {
+					if (useFinderCache && productionMode) {
 						finderCache.putResult(
 							_finderPathFetchByUUID_G, finderArgs, list);
 					}
@@ -821,11 +843,21 @@ public class CalendarResourcePersistenceImpl
 	public int countByUUID_G(String uuid, long groupId) {
 		uuid = Objects.toString(uuid, "");
 
-		FinderPath finderPath = _finderPathCountByUUID_G;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {uuid, groupId};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByUUID_G;
+
+			finderArgs = new Object[] {uuid, groupId};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -864,7 +896,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -969,18 +1003,21 @@ public class CalendarResourcePersistenceImpl
 
 		uuid = Objects.toString(uuid, "");
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByUuid_C;
 				finderArgs = new Object[] {uuid, companyId};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByUuid_C;
 			finderArgs = new Object[] {
 				uuid, companyId, start, end, orderByComparator
@@ -989,7 +1026,7 @@ public class CalendarResourcePersistenceImpl
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 
@@ -1062,7 +1099,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -1404,11 +1441,21 @@ public class CalendarResourcePersistenceImpl
 	public int countByUuid_C(String uuid, long companyId) {
 		uuid = Objects.toString(uuid, "");
 
-		FinderPath finderPath = _finderPathCountByUuid_C;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {uuid, companyId};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByUuid_C;
+
+			finderArgs = new Object[] {uuid, companyId};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1447,7 +1494,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -1545,25 +1594,28 @@ public class CalendarResourcePersistenceImpl
 		OrderByComparator<CalendarResource> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByGroupId;
 				finderArgs = new Object[] {groupId};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByGroupId;
 			finderArgs = new Object[] {groupId, start, end, orderByComparator};
 		}
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 
@@ -1619,7 +1671,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -2257,11 +2309,21 @@ public class CalendarResourcePersistenceImpl
 	 */
 	@Override
 	public int countByGroupId(long groupId) {
-		FinderPath finderPath = _finderPathCountByGroupId;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {groupId};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByGroupId;
+
+			finderArgs = new Object[] {groupId};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -2285,7 +2347,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -2424,25 +2488,28 @@ public class CalendarResourcePersistenceImpl
 		OrderByComparator<CalendarResource> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByActive;
 				finderArgs = new Object[] {active};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByActive;
 			finderArgs = new Object[] {active, start, end, orderByComparator};
 		}
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 
@@ -2498,7 +2565,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -2803,11 +2870,21 @@ public class CalendarResourcePersistenceImpl
 	 */
 	@Override
 	public int countByActive(boolean active) {
-		FinderPath finderPath = _finderPathCountByActive;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {active};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByActive;
+
+			finderArgs = new Object[] {active};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -2831,7 +2908,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -2930,18 +3009,21 @@ public class CalendarResourcePersistenceImpl
 
 		code = Objects.toString(code, "");
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByG_C;
 				finderArgs = new Object[] {groupId, code};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByG_C;
 			finderArgs = new Object[] {
 				groupId, code, start, end, orderByComparator
@@ -2950,7 +3032,7 @@ public class CalendarResourcePersistenceImpl
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 
@@ -3023,7 +3105,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -3971,16 +4053,19 @@ public class CalendarResourcePersistenceImpl
 			return findByG_C(groupIds[0], code, start, end, orderByComparator);
 		}
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderArgs = new Object[] {StringUtil.merge(groupIds), code};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderArgs = new Object[] {
 				StringUtil.merge(groupIds), code, start, end, orderByComparator
 			};
@@ -3988,7 +4073,7 @@ public class CalendarResourcePersistenceImpl
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				_finderPathWithPaginationFindByG_C, finderArgs);
 
@@ -4067,7 +4152,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(
 						_finderPathWithPaginationFindByG_C, finderArgs, list);
 				}
@@ -4111,11 +4196,21 @@ public class CalendarResourcePersistenceImpl
 	public int countByG_C(long groupId, String code) {
 		code = Objects.toString(code, "");
 
-		FinderPath finderPath = _finderPathCountByG_C;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {groupId, code};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByG_C;
+
+			finderArgs = new Object[] {groupId, code};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -4154,7 +4249,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -4185,10 +4282,19 @@ public class CalendarResourcePersistenceImpl
 
 		code = Objects.toString(code, "");
 
-		Object[] finderArgs = new Object[] {StringUtil.merge(groupIds), code};
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Long count = (Long)finderCache.getResult(
-			_finderPathWithPaginationCountByG_C, finderArgs);
+		Object[] finderArgs = null;
+
+		Long count = null;
+
+		if (productionMode) {
+			finderArgs = new Object[] {StringUtil.merge(groupIds), code};
+
+			count = (Long)finderCache.getResult(
+				_finderPathWithPaginationCountByG_C, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler();
@@ -4240,8 +4346,10 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(
-					_finderPathWithPaginationCountByG_C, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(
+						_finderPathWithPaginationCountByG_C, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -4504,18 +4612,21 @@ public class CalendarResourcePersistenceImpl
 		OrderByComparator<CalendarResource> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByG_A;
 				finderArgs = new Object[] {groupId, active};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByG_A;
 			finderArgs = new Object[] {
 				groupId, active, start, end, orderByComparator
@@ -4524,7 +4635,7 @@ public class CalendarResourcePersistenceImpl
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 
@@ -4586,7 +4697,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -5264,11 +5375,21 @@ public class CalendarResourcePersistenceImpl
 	 */
 	@Override
 	public int countByG_A(long groupId, boolean active) {
-		FinderPath finderPath = _finderPathCountByG_A;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {groupId, active};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByG_A;
+
+			finderArgs = new Object[] {groupId, active};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -5296,7 +5417,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -5435,15 +5558,18 @@ public class CalendarResourcePersistenceImpl
 	public CalendarResource fetchByC_C(
 		long classNameId, long classPK, boolean useFinderCache) {
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		Object[] finderArgs = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			finderArgs = new Object[] {classNameId, classPK};
 		}
 
 		Object result = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			result = finderCache.getResult(_finderPathFetchByC_C, finderArgs);
 		}
 
@@ -5484,7 +5610,7 @@ public class CalendarResourcePersistenceImpl
 				List<CalendarResource> list = query.list();
 
 				if (list.isEmpty()) {
-					if (useFinderCache) {
+					if (useFinderCache && productionMode) {
 						finderCache.putResult(
 							_finderPathFetchByC_C, finderArgs, list);
 					}
@@ -5538,11 +5664,21 @@ public class CalendarResourcePersistenceImpl
 	 */
 	@Override
 	public int countByC_C(long classNameId, long classPK) {
-		FinderPath finderPath = _finderPathCountByC_C;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {classNameId, classPK};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByC_C;
+
+			finderArgs = new Object[] {classNameId, classPK};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -5570,7 +5706,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -5589,8 +5727,8 @@ public class CalendarResourcePersistenceImpl
 	private static final String _FINDER_COLUMN_C_C_CLASSPK_2 =
 		"calendarResource.classPK = ?";
 
-	private FinderPath _finderPathWithPaginationFindByC_C_A;
-	private FinderPath _finderPathWithPaginationCountByC_C_A;
+	private FinderPath _finderPathWithPaginationFindByC_LikeC_A;
+	private FinderPath _finderPathWithPaginationCountByC_LikeC_A;
 
 	/**
 	 * Returns all the calendar resources where companyId = &#63; and code LIKE &#63; and active = &#63;.
@@ -5601,10 +5739,10 @@ public class CalendarResourcePersistenceImpl
 	 * @return the matching calendar resources
 	 */
 	@Override
-	public List<CalendarResource> findByC_C_A(
+	public List<CalendarResource> findByC_LikeC_A(
 		long companyId, String code, boolean active) {
 
-		return findByC_C_A(
+		return findByC_LikeC_A(
 			companyId, code, active, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			null);
 	}
@@ -5624,10 +5762,10 @@ public class CalendarResourcePersistenceImpl
 	 * @return the range of matching calendar resources
 	 */
 	@Override
-	public List<CalendarResource> findByC_C_A(
+	public List<CalendarResource> findByC_LikeC_A(
 		long companyId, String code, boolean active, int start, int end) {
 
-		return findByC_C_A(companyId, code, active, start, end, null);
+		return findByC_LikeC_A(companyId, code, active, start, end, null);
 	}
 
 	/**
@@ -5646,11 +5784,11 @@ public class CalendarResourcePersistenceImpl
 	 * @return the ordered range of matching calendar resources
 	 */
 	@Override
-	public List<CalendarResource> findByC_C_A(
+	public List<CalendarResource> findByC_LikeC_A(
 		long companyId, String code, boolean active, int start, int end,
 		OrderByComparator<CalendarResource> orderByComparator) {
 
-		return findByC_C_A(
+		return findByC_LikeC_A(
 			companyId, code, active, start, end, orderByComparator, true);
 	}
 
@@ -5671,24 +5809,27 @@ public class CalendarResourcePersistenceImpl
 	 * @return the ordered range of matching calendar resources
 	 */
 	@Override
-	public List<CalendarResource> findByC_C_A(
+	public List<CalendarResource> findByC_LikeC_A(
 		long companyId, String code, boolean active, int start, int end,
 		OrderByComparator<CalendarResource> orderByComparator,
 		boolean useFinderCache) {
 
 		code = Objects.toString(code, "");
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
-		finderPath = _finderPathWithPaginationFindByC_C_A;
+		finderPath = _finderPathWithPaginationFindByC_LikeC_A;
 		finderArgs = new Object[] {
 			companyId, code, active, start, end, orderByComparator
 		};
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 
@@ -5721,20 +5862,20 @@ public class CalendarResourcePersistenceImpl
 
 			sb.append(_SQL_SELECT_CALENDARRESOURCE_WHERE);
 
-			sb.append(_FINDER_COLUMN_C_C_A_COMPANYID_2);
+			sb.append(_FINDER_COLUMN_C_LIKEC_A_COMPANYID_2);
 
 			boolean bindCode = false;
 
 			if (code.isEmpty()) {
-				sb.append(_FINDER_COLUMN_C_C_A_CODE_3);
+				sb.append(_FINDER_COLUMN_C_LIKEC_A_CODE_3);
 			}
 			else {
 				bindCode = true;
 
-				sb.append(_FINDER_COLUMN_C_C_A_CODE_2);
+				sb.append(_FINDER_COLUMN_C_LIKEC_A_CODE_2);
 			}
 
-			sb.append(_FINDER_COLUMN_C_C_A_ACTIVE_2);
+			sb.append(_FINDER_COLUMN_C_LIKEC_A_ACTIVE_2);
 
 			if (orderByComparator != null) {
 				appendOrderByComparator(
@@ -5768,7 +5909,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -5794,12 +5935,12 @@ public class CalendarResourcePersistenceImpl
 	 * @throws NoSuchResourceException if a matching calendar resource could not be found
 	 */
 	@Override
-	public CalendarResource findByC_C_A_First(
+	public CalendarResource findByC_LikeC_A_First(
 			long companyId, String code, boolean active,
 			OrderByComparator<CalendarResource> orderByComparator)
 		throws NoSuchResourceException {
 
-		CalendarResource calendarResource = fetchByC_C_A_First(
+		CalendarResource calendarResource = fetchByC_LikeC_A_First(
 			companyId, code, active, orderByComparator);
 
 		if (calendarResource != null) {
@@ -5834,11 +5975,11 @@ public class CalendarResourcePersistenceImpl
 	 * @return the first matching calendar resource, or <code>null</code> if a matching calendar resource could not be found
 	 */
 	@Override
-	public CalendarResource fetchByC_C_A_First(
+	public CalendarResource fetchByC_LikeC_A_First(
 		long companyId, String code, boolean active,
 		OrderByComparator<CalendarResource> orderByComparator) {
 
-		List<CalendarResource> list = findByC_C_A(
+		List<CalendarResource> list = findByC_LikeC_A(
 			companyId, code, active, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -5859,12 +6000,12 @@ public class CalendarResourcePersistenceImpl
 	 * @throws NoSuchResourceException if a matching calendar resource could not be found
 	 */
 	@Override
-	public CalendarResource findByC_C_A_Last(
+	public CalendarResource findByC_LikeC_A_Last(
 			long companyId, String code, boolean active,
 			OrderByComparator<CalendarResource> orderByComparator)
 		throws NoSuchResourceException {
 
-		CalendarResource calendarResource = fetchByC_C_A_Last(
+		CalendarResource calendarResource = fetchByC_LikeC_A_Last(
 			companyId, code, active, orderByComparator);
 
 		if (calendarResource != null) {
@@ -5899,17 +6040,17 @@ public class CalendarResourcePersistenceImpl
 	 * @return the last matching calendar resource, or <code>null</code> if a matching calendar resource could not be found
 	 */
 	@Override
-	public CalendarResource fetchByC_C_A_Last(
+	public CalendarResource fetchByC_LikeC_A_Last(
 		long companyId, String code, boolean active,
 		OrderByComparator<CalendarResource> orderByComparator) {
 
-		int count = countByC_C_A(companyId, code, active);
+		int count = countByC_LikeC_A(companyId, code, active);
 
 		if (count == 0) {
 			return null;
 		}
 
-		List<CalendarResource> list = findByC_C_A(
+		List<CalendarResource> list = findByC_LikeC_A(
 			companyId, code, active, count - 1, count, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -5931,7 +6072,7 @@ public class CalendarResourcePersistenceImpl
 	 * @throws NoSuchResourceException if a calendar resource with the primary key could not be found
 	 */
 	@Override
-	public CalendarResource[] findByC_C_A_PrevAndNext(
+	public CalendarResource[] findByC_LikeC_A_PrevAndNext(
 			long calendarResourceId, long companyId, String code,
 			boolean active,
 			OrderByComparator<CalendarResource> orderByComparator)
@@ -5949,13 +6090,13 @@ public class CalendarResourcePersistenceImpl
 
 			CalendarResource[] array = new CalendarResourceImpl[3];
 
-			array[0] = getByC_C_A_PrevAndNext(
+			array[0] = getByC_LikeC_A_PrevAndNext(
 				session, calendarResource, companyId, code, active,
 				orderByComparator, true);
 
 			array[1] = calendarResource;
 
-			array[2] = getByC_C_A_PrevAndNext(
+			array[2] = getByC_LikeC_A_PrevAndNext(
 				session, calendarResource, companyId, code, active,
 				orderByComparator, false);
 
@@ -5969,7 +6110,7 @@ public class CalendarResourcePersistenceImpl
 		}
 	}
 
-	protected CalendarResource getByC_C_A_PrevAndNext(
+	protected CalendarResource getByC_LikeC_A_PrevAndNext(
 		Session session, CalendarResource calendarResource, long companyId,
 		String code, boolean active,
 		OrderByComparator<CalendarResource> orderByComparator,
@@ -5988,20 +6129,20 @@ public class CalendarResourcePersistenceImpl
 
 		sb.append(_SQL_SELECT_CALENDARRESOURCE_WHERE);
 
-		sb.append(_FINDER_COLUMN_C_C_A_COMPANYID_2);
+		sb.append(_FINDER_COLUMN_C_LIKEC_A_COMPANYID_2);
 
 		boolean bindCode = false;
 
 		if (code.isEmpty()) {
-			sb.append(_FINDER_COLUMN_C_C_A_CODE_3);
+			sb.append(_FINDER_COLUMN_C_LIKEC_A_CODE_3);
 		}
 		else {
 			bindCode = true;
 
-			sb.append(_FINDER_COLUMN_C_C_A_CODE_2);
+			sb.append(_FINDER_COLUMN_C_LIKEC_A_CODE_2);
 		}
 
-		sb.append(_FINDER_COLUMN_C_C_A_ACTIVE_2);
+		sb.append(_FINDER_COLUMN_C_LIKEC_A_ACTIVE_2);
 
 		if (orderByComparator != null) {
 			String[] orderByConditionFields =
@@ -6107,9 +6248,9 @@ public class CalendarResourcePersistenceImpl
 	 * @param active the active
 	 */
 	@Override
-	public void removeByC_C_A(long companyId, String code, boolean active) {
+	public void removeByC_LikeC_A(long companyId, String code, boolean active) {
 		for (CalendarResource calendarResource :
-				findByC_C_A(
+				findByC_LikeC_A(
 					companyId, code, active, QueryUtil.ALL_POS,
 					QueryUtil.ALL_POS, null)) {
 
@@ -6126,34 +6267,44 @@ public class CalendarResourcePersistenceImpl
 	 * @return the number of matching calendar resources
 	 */
 	@Override
-	public int countByC_C_A(long companyId, String code, boolean active) {
+	public int countByC_LikeC_A(long companyId, String code, boolean active) {
 		code = Objects.toString(code, "");
 
-		FinderPath finderPath = _finderPathWithPaginationCountByC_C_A;
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
 
-		Object[] finderArgs = new Object[] {companyId, code, active};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathWithPaginationCountByC_LikeC_A;
+
+			finderArgs = new Object[] {companyId, code, active};
+
+			count = (Long)finderCache.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(4);
 
 			sb.append(_SQL_COUNT_CALENDARRESOURCE_WHERE);
 
-			sb.append(_FINDER_COLUMN_C_C_A_COMPANYID_2);
+			sb.append(_FINDER_COLUMN_C_LIKEC_A_COMPANYID_2);
 
 			boolean bindCode = false;
 
 			if (code.isEmpty()) {
-				sb.append(_FINDER_COLUMN_C_C_A_CODE_3);
+				sb.append(_FINDER_COLUMN_C_LIKEC_A_CODE_3);
 			}
 			else {
 				bindCode = true;
 
-				sb.append(_FINDER_COLUMN_C_C_A_CODE_2);
+				sb.append(_FINDER_COLUMN_C_LIKEC_A_CODE_2);
 			}
 
-			sb.append(_FINDER_COLUMN_C_C_A_ACTIVE_2);
+			sb.append(_FINDER_COLUMN_C_LIKEC_A_ACTIVE_2);
 
 			String sql = sb.toString();
 
@@ -6176,7 +6327,9 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					finderCache.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -6189,16 +6342,16 @@ public class CalendarResourcePersistenceImpl
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_C_C_A_COMPANYID_2 =
+	private static final String _FINDER_COLUMN_C_LIKEC_A_COMPANYID_2 =
 		"calendarResource.companyId = ? AND ";
 
-	private static final String _FINDER_COLUMN_C_C_A_CODE_2 =
+	private static final String _FINDER_COLUMN_C_LIKEC_A_CODE_2 =
 		"calendarResource.code LIKE ? AND ";
 
-	private static final String _FINDER_COLUMN_C_C_A_CODE_3 =
+	private static final String _FINDER_COLUMN_C_LIKEC_A_CODE_3 =
 		"(calendarResource.code IS NULL OR calendarResource.code LIKE '') AND ";
 
-	private static final String _FINDER_COLUMN_C_C_A_ACTIVE_2 =
+	private static final String _FINDER_COLUMN_C_LIKEC_A_ACTIVE_2 =
 		"calendarResource.active = ?";
 
 	public CalendarResourcePersistenceImpl() {
@@ -6225,6 +6378,10 @@ public class CalendarResourcePersistenceImpl
 	 */
 	@Override
 	public void cacheResult(CalendarResource calendarResource) {
+		if (calendarResource.getCtCollectionId() != 0) {
+			return;
+		}
+
 		entityCache.putResult(
 			CalendarResourceImpl.class, calendarResource.getPrimaryKey(),
 			calendarResource);
@@ -6244,6 +6401,8 @@ public class CalendarResourcePersistenceImpl
 			calendarResource);
 	}
 
+	private int _valueObjectFinderCacheListThreshold;
+
 	/**
 	 * Caches the calendar resources in the entity cache if it is enabled.
 	 *
@@ -6251,7 +6410,19 @@ public class CalendarResourcePersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<CalendarResource> calendarResources) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (calendarResources.size() >
+				 _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (CalendarResource calendarResource : calendarResources) {
+			if (calendarResource.getCtCollectionId() != 0) {
+				continue;
+			}
+
 			if (entityCache.getResult(
 					CalendarResourceImpl.class,
 					calendarResource.getPrimaryKey()) == null) {
@@ -6416,7 +6587,9 @@ public class CalendarResourcePersistenceImpl
 					calendarResource.getPrimaryKeyObj());
 			}
 
-			if (calendarResource != null) {
+			if ((calendarResource != null) &&
+				ctPersistenceHelper.isRemove(calendarResource)) {
+
 				session.delete(calendarResource);
 			}
 		}
@@ -6494,7 +6667,13 @@ public class CalendarResourcePersistenceImpl
 		try {
 			session = openSession();
 
-			if (isNew) {
+			if (ctPersistenceHelper.isInsert(calendarResource)) {
+				if (!isNew) {
+					session.evict(
+						CalendarResourceImpl.class,
+						calendarResource.getPrimaryKeyObj());
+				}
+
 				session.save(calendarResource);
 			}
 			else {
@@ -6507,6 +6686,16 @@ public class CalendarResourcePersistenceImpl
 		}
 		finally {
 			closeSession(session);
+		}
+
+		if (calendarResource.getCtCollectionId() != 0) {
+			if (isNew) {
+				calendarResource.setNew(false);
+			}
+
+			calendarResource.resetOriginalValues();
+
+			return calendarResource;
 		}
 
 		entityCache.putResult(
@@ -6565,12 +6754,141 @@ public class CalendarResourcePersistenceImpl
 	/**
 	 * Returns the calendar resource with the primary key or returns <code>null</code> if it could not be found.
 	 *
+	 * @param primaryKey the primary key of the calendar resource
+	 * @return the calendar resource, or <code>null</code> if a calendar resource with the primary key could not be found
+	 */
+	@Override
+	public CalendarResource fetchByPrimaryKey(Serializable primaryKey) {
+		if (ctPersistenceHelper.isProductionMode(CalendarResource.class)) {
+			return super.fetchByPrimaryKey(primaryKey);
+		}
+
+		CalendarResource calendarResource = null;
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			calendarResource = (CalendarResource)session.get(
+				CalendarResourceImpl.class, primaryKey);
+
+			if (calendarResource != null) {
+				cacheResult(calendarResource);
+			}
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+
+		return calendarResource;
+	}
+
+	/**
+	 * Returns the calendar resource with the primary key or returns <code>null</code> if it could not be found.
+	 *
 	 * @param calendarResourceId the primary key of the calendar resource
 	 * @return the calendar resource, or <code>null</code> if a calendar resource with the primary key could not be found
 	 */
 	@Override
 	public CalendarResource fetchByPrimaryKey(long calendarResourceId) {
 		return fetchByPrimaryKey((Serializable)calendarResourceId);
+	}
+
+	@Override
+	public Map<Serializable, CalendarResource> fetchByPrimaryKeys(
+		Set<Serializable> primaryKeys) {
+
+		if (ctPersistenceHelper.isProductionMode(CalendarResource.class)) {
+			return super.fetchByPrimaryKeys(primaryKeys);
+		}
+
+		if (primaryKeys.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
+		Map<Serializable, CalendarResource> map =
+			new HashMap<Serializable, CalendarResource>();
+
+		if (primaryKeys.size() == 1) {
+			Iterator<Serializable> iterator = primaryKeys.iterator();
+
+			Serializable primaryKey = iterator.next();
+
+			CalendarResource calendarResource = fetchByPrimaryKey(primaryKey);
+
+			if (calendarResource != null) {
+				map.put(primaryKey, calendarResource);
+			}
+
+			return map;
+		}
+
+		if ((databaseInMaxParameters > 0) &&
+			(primaryKeys.size() > databaseInMaxParameters)) {
+
+			Iterator<Serializable> iterator = primaryKeys.iterator();
+
+			while (iterator.hasNext()) {
+				Set<Serializable> page = new HashSet<>();
+
+				for (int i = 0;
+					 (i < databaseInMaxParameters) && iterator.hasNext(); i++) {
+
+					page.add(iterator.next());
+				}
+
+				map.putAll(fetchByPrimaryKeys(page));
+			}
+
+			return map;
+		}
+
+		StringBundler sb = new StringBundler((primaryKeys.size() * 2) + 1);
+
+		sb.append(getSelectSQL());
+		sb.append(" WHERE ");
+		sb.append(getPKDBName());
+		sb.append(" IN (");
+
+		for (Serializable primaryKey : primaryKeys) {
+			sb.append((long)primaryKey);
+
+			sb.append(",");
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		sb.append(")");
+
+		String sql = sb.toString();
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			Query query = session.createQuery(sql);
+
+			for (CalendarResource calendarResource :
+					(List<CalendarResource>)query.list()) {
+
+				map.put(calendarResource.getPrimaryKeyObj(), calendarResource);
+
+				cacheResult(calendarResource);
+			}
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+
+		return map;
 	}
 
 	/**
@@ -6638,25 +6956,28 @@ public class CalendarResourcePersistenceImpl
 		OrderByComparator<CalendarResource> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindAll;
 				finderArgs = FINDER_ARGS_EMPTY;
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindAll;
 			finderArgs = new Object[] {start, end, orderByComparator};
 		}
 
 		List<CalendarResource> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<CalendarResource>)finderCache.getResult(
 				finderPath, finderArgs);
 		}
@@ -6694,7 +7015,7 @@ public class CalendarResourcePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					finderCache.putResult(finderPath, finderArgs, list);
 				}
 			}
@@ -6727,8 +7048,15 @@ public class CalendarResourcePersistenceImpl
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY);
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			CalendarResource.class);
+
+		Long count = null;
+
+		if (productionMode) {
+			count = (Long)finderCache.getResult(
+				_finderPathCountAll, FINDER_ARGS_EMPTY);
+		}
 
 		if (count == null) {
 			Session session = null;
@@ -6740,8 +7068,10 @@ public class CalendarResourcePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
+				if (productionMode) {
+					finderCache.putResult(
+						_finderPathCountAll, FINDER_ARGS_EMPTY, count);
+				}
 			}
 			catch (Exception exception) {
 				throw processException(exception);
@@ -6775,21 +7105,86 @@ public class CalendarResourcePersistenceImpl
 	}
 
 	@Override
-	protected Map<String, Integer> getTableColumnsMap() {
+	public Set<String> getCTColumnNames(
+		CTColumnResolutionType ctColumnResolutionType) {
+
+		return _ctColumnNamesMap.getOrDefault(
+			ctColumnResolutionType, Collections.emptySet());
+	}
+
+	@Override
+	public List<String> getMappingTableNames() {
+		return _mappingTableNames;
+	}
+
+	@Override
+	public Map<String, Integer> getTableColumnsMap() {
 		return CalendarResourceModelImpl.TABLE_COLUMNS_MAP;
+	}
+
+	@Override
+	public String getTableName() {
+		return "CalendarResource";
+	}
+
+	@Override
+	public List<String[]> getUniqueIndexColumnNames() {
+		return _uniqueIndexColumnNames;
+	}
+
+	private static final Map<CTColumnResolutionType, Set<String>>
+		_ctColumnNamesMap = new EnumMap<CTColumnResolutionType, Set<String>>(
+			CTColumnResolutionType.class);
+	private static final List<String> _mappingTableNames =
+		new ArrayList<String>();
+	private static final List<String[]> _uniqueIndexColumnNames =
+		new ArrayList<String[]>();
+
+	static {
+		Set<String> ctControlColumnNames = new HashSet<String>();
+		Set<String> ctIgnoreColumnNames = new HashSet<String>();
+		Set<String> ctStrictColumnNames = new HashSet<String>();
+
+		ctControlColumnNames.add("mvccVersion");
+		ctControlColumnNames.add("ctCollectionId");
+		ctStrictColumnNames.add("uuid_");
+		ctStrictColumnNames.add("groupId");
+		ctStrictColumnNames.add("companyId");
+		ctStrictColumnNames.add("userId");
+		ctStrictColumnNames.add("userName");
+		ctStrictColumnNames.add("createDate");
+		ctIgnoreColumnNames.add("modifiedDate");
+		ctStrictColumnNames.add("classNameId");
+		ctStrictColumnNames.add("classPK");
+		ctStrictColumnNames.add("classUuid");
+		ctStrictColumnNames.add("code_");
+		ctStrictColumnNames.add("name");
+		ctStrictColumnNames.add("description");
+		ctStrictColumnNames.add("active_");
+		ctStrictColumnNames.add("lastPublishDate");
+
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.CONTROL, ctControlColumnNames);
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.PK,
+			Collections.singleton("calendarResourceId"));
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.STRICT, ctStrictColumnNames);
+
+		_uniqueIndexColumnNames.add(new String[] {"uuid_", "groupId"});
+
+		_uniqueIndexColumnNames.add(new String[] {"classNameId", "classPK"});
 	}
 
 	/**
 	 * Initializes the calendar resource persistence.
 	 */
 	@Activate
-	public void activate(BundleContext bundleContext) {
-		_bundleContext = bundleContext;
-
-		_argumentsResolverServiceRegistration = _bundleContext.registerService(
-			ArgumentsResolver.class,
-			new CalendarResourceModelArgumentsResolver(),
-			new HashMapDictionary<>());
+	public void activate() {
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
@@ -6939,8 +7334,8 @@ public class CalendarResourcePersistenceImpl
 			new String[] {Long.class.getName(), Long.class.getName()},
 			new String[] {"classNameId", "classPK"}, false);
 
-		_finderPathWithPaginationFindByC_C_A = new FinderPath(
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_C_A",
+		_finderPathWithPaginationFindByC_LikeC_A = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_LikeC_A",
 			new String[] {
 				Long.class.getName(), String.class.getName(),
 				Boolean.class.getName(), Integer.class.getName(),
@@ -6948,8 +7343,8 @@ public class CalendarResourcePersistenceImpl
 			},
 			new String[] {"companyId", "code_", "active_"}, true);
 
-		_finderPathWithPaginationCountByC_C_A = new FinderPath(
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByC_C_A",
+		_finderPathWithPaginationCountByC_LikeC_A = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByC_LikeC_A",
 			new String[] {
 				Long.class.getName(), String.class.getName(),
 				Boolean.class.getName()
@@ -6960,8 +7355,6 @@ public class CalendarResourcePersistenceImpl
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(CalendarResourceImpl.class.getName());
-
-		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -6990,7 +7383,8 @@ public class CalendarResourcePersistenceImpl
 		super.setSessionFactory(sessionFactory);
 	}
 
-	private BundleContext _bundleContext;
+	@Reference
+	protected CTPersistenceHelper ctPersistenceHelper;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -7052,114 +7446,8 @@ public class CalendarResourcePersistenceImpl
 		return finderCache;
 	}
 
-	private ServiceRegistration<ArgumentsResolver>
-		_argumentsResolverServiceRegistration;
-
-	private static class CalendarResourceModelArgumentsResolver
-		implements ArgumentsResolver {
-
-		@Override
-		public Object[] getArguments(
-			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
-			boolean original) {
-
-			String[] columnNames = finderPath.getColumnNames();
-
-			if ((columnNames == null) || (columnNames.length == 0)) {
-				if (baseModel.isNew()) {
-					return FINDER_ARGS_EMPTY;
-				}
-
-				return null;
-			}
-
-			CalendarResourceModelImpl calendarResourceModelImpl =
-				(CalendarResourceModelImpl)baseModel;
-
-			long columnBitmask = calendarResourceModelImpl.getColumnBitmask();
-
-			if (!checkColumn || (columnBitmask == 0)) {
-				return _getValue(
-					calendarResourceModelImpl, columnNames, original);
-			}
-
-			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
-				finderPath);
-
-			if (finderPathColumnBitmask == null) {
-				finderPathColumnBitmask = 0L;
-
-				for (String columnName : columnNames) {
-					finderPathColumnBitmask |=
-						calendarResourceModelImpl.getColumnBitmask(columnName);
-				}
-
-				if (finderPath.isBaseModelResult() &&
-					(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION ==
-						finderPath.getCacheName())) {
-
-					finderPathColumnBitmask |= _ORDER_BY_COLUMNS_BITMASK;
-				}
-
-				_finderPathColumnBitmasksCache.put(
-					finderPath, finderPathColumnBitmask);
-			}
-
-			if ((columnBitmask & finderPathColumnBitmask) != 0) {
-				return _getValue(
-					calendarResourceModelImpl, columnNames, original);
-			}
-
-			return null;
-		}
-
-		@Override
-		public String getClassName() {
-			return CalendarResourceImpl.class.getName();
-		}
-
-		@Override
-		public String getTableName() {
-			return CalendarResourceTable.INSTANCE.getTableName();
-		}
-
-		private static Object[] _getValue(
-			CalendarResourceModelImpl calendarResourceModelImpl,
-			String[] columnNames, boolean original) {
-
-			Object[] arguments = new Object[columnNames.length];
-
-			for (int i = 0; i < arguments.length; i++) {
-				String columnName = columnNames[i];
-
-				if (original) {
-					arguments[i] =
-						calendarResourceModelImpl.getColumnOriginalValue(
-							columnName);
-				}
-				else {
-					arguments[i] = calendarResourceModelImpl.getColumnValue(
-						columnName);
-				}
-			}
-
-			return arguments;
-		}
-
-		private static final Map<FinderPath, Long>
-			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
-
-		private static final long _ORDER_BY_COLUMNS_BITMASK;
-
-		static {
-			long orderByColumnsBitmask = 0;
-
-			orderByColumnsBitmask |= CalendarResourceModelImpl.getColumnBitmask(
-				"code_");
-
-			_ORDER_BY_COLUMNS_BITMASK = orderByColumnsBitmask;
-		}
-
-	}
+	@Reference
+	private CalendarResourceModelArgumentsResolver
+		_calendarResourceModelArgumentsResolver;
 
 }

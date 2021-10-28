@@ -12,6 +12,7 @@
  * details.
  */
 
+import {usePrevious} from '@liferay/frontend-js-react-web';
 import React, {useCallback, useContext, useEffect} from 'react';
 
 import {updateFragmentEntryLinkContent} from '../actions/index';
@@ -21,6 +22,7 @@ import LayoutService from '../services/LayoutService';
 import isMappedToInfoItem from '../utils/editable-value/isMappedToInfoItem';
 import isMappedToLayout from '../utils/editable-value/isMappedToLayout';
 import isMappedToStructure from '../utils/editable-value/isMappedToStructure';
+import isNullOrUndefined from '../utils/isNullOrUndefined';
 import {useDisplayPagePreviewItem} from './DisplayPagePreviewItemContext';
 import {useDispatch} from './StoreContext';
 
@@ -29,9 +31,12 @@ const defaultToControlsId = (controlId) => controlId;
 
 export const INITIAL_STATE = {
 	collectionConfig: null,
+	collectionId: null,
 	collectionItem: null,
 	collectionItemIndex: null,
+	customCollectionSelectorURL: null,
 	fromControlsId: defaultFromControlsId,
+	parentToControlsId: defaultToControlsId,
 	setCollectionItemContent: () => null,
 	toControlsId: defaultToControlsId,
 };
@@ -40,16 +45,22 @@ const CollectionItemContext = React.createContext(INITIAL_STATE);
 
 const CollectionItemContextProvider = CollectionItemContext.Provider;
 
-const useFromControlsId = () => {
-	const context = useContext(CollectionItemContext);
-
-	return context.fromControlsId || defaultFromControlsId;
-};
-
 const useCollectionItemIndex = () => {
 	const context = useContext(CollectionItemContext);
 
 	return context.collectionItemIndex;
+};
+
+const useCustomCollectionSelectorURL = () => {
+	const context = useContext(CollectionItemContext);
+
+	return context.customCollectionSelectorURL;
+};
+
+const useParentToControlsId = () => {
+	const context = useContext(CollectionItemContext);
+
+	return context.parentToControlsId;
 };
 
 const useToControlsId = () => {
@@ -65,12 +76,41 @@ const useCollectionConfig = () => {
 };
 
 const useGetContent = (fragmentEntryLink, languageId, segmentsExperienceId) => {
-	const context = useContext(CollectionItemContext);
+	const {
+		collectionContent = {},
+		content,
+		editableValues,
+		fragmentEntryLinkId,
+	} = fragmentEntryLink;
+
+	const collectionItemContext = useContext(CollectionItemContext);
 	const dispatch = useDispatch();
-
-	const {className, classPK} = context.collectionItem || {};
-
 	const fieldSets = fragmentEntryLink.configuration?.fieldSets;
+	const toControlsId = useToControlsId();
+
+	const collectionContentId = toControlsId(fragmentEntryLinkId);
+
+	const {className: collectionItemClassName, classPK: collectionItemClassPK} =
+		collectionItemContext.collectionItem || {};
+	const {collectionItemIndex} = collectionItemContext;
+
+	const {
+		className: displayPagePreviewItemClassName,
+		classPK: displayPagePreviewItemClassPK,
+	} = useDisplayPagePreviewItem()?.data || {};
+
+	const withinCollection = !isNullOrUndefined(
+		collectionItemContext.collectionItem
+	);
+
+	const [itemClassName, itemClassPK] = withinCollection
+		? [collectionItemClassName, collectionItemClassPK]
+		: [displayPagePreviewItemClassName, displayPagePreviewItemClassPK];
+
+	const previousEditableValues = usePrevious(editableValues);
+	const previousLanguageId = usePrevious(languageId);
+	const previousItemClassName = usePrevious(itemClassName);
+	const previousItemClassPK = usePrevious(itemClassPK);
 
 	useEffect(() => {
 		const hasLocalizable =
@@ -78,47 +118,106 @@ const useGetContent = (fragmentEntryLink, languageId, segmentsExperienceId) => {
 				fieldSet.fields.some((field) => field.localizable)
 			) ?? false;
 
-		if (context.collectionItemIndex != null || hasLocalizable) {
+		if (
+			shouldRenderFragmentEntryLink({
+				editableValues,
+				hasLocalizable,
+				itemClassName,
+				itemClassPK,
+				languageId,
+				previousEditableValues,
+				previousItemClassName,
+				previousItemClassPK,
+				previousLanguageId,
+				withinCollection,
+			})
+		) {
 			FragmentService.renderFragmentEntryLinkContent({
-				collectionItemClassName: className,
-				collectionItemClassPK: classPK,
-				fragmentEntryLinkId: fragmentEntryLink.fragmentEntryLinkId,
+				fragmentEntryLinkId,
+				itemClassName,
+				itemClassPK,
 				languageId,
 				onNetworkStatus: dispatch,
 				segmentsExperienceId,
 			}).then(({content}) => {
 				dispatch(
 					updateFragmentEntryLinkContent({
-						collectionItemIndex: context.collectionItemIndex,
+						collectionContentId,
 						content,
-						fragmentEntryLinkId:
-							fragmentEntryLink.fragmentEntryLinkId,
+						fragmentEntryLinkId,
 					})
 				);
 			});
 		}
 	}, [
-		className,
-		classPK,
-		context.collectionItemIndex,
+		collectionContentId,
 		dispatch,
+		editableValues,
 		fieldSets,
-		fragmentEntryLink.editableValues,
-		fragmentEntryLink.fragmentEntryLinkId,
+		fragmentEntryLinkId,
+		itemClassName,
+		itemClassPK,
 		languageId,
+		previousEditableValues,
+		previousItemClassName,
+		previousItemClassPK,
+		previousLanguageId,
 		segmentsExperienceId,
+		withinCollection,
 	]);
 
-	if (context.collectionItemIndex != null) {
-		const collectionContent = fragmentEntryLink.collectionContent || [];
+	return (
+		(!isNullOrUndefined(collectionItemIndex)
+			? collectionContent[collectionContentId]
+			: null) || content
+	);
+};
 
-		return (
-			collectionContent[context.collectionItemIndex] ||
-			fragmentEntryLink.content
-		);
+const shouldRenderFragmentEntryLink = ({
+	editableValues,
+	hasLocalizable,
+	itemClassName,
+	itemClassPK,
+	languageId,
+	previousEditableValues,
+	previousItemClassName,
+	previousItemClassPK,
+	previousLanguageId,
+	withinCollection,
+}) => {
+
+	// For normal fragments we need to render again if the change the locale
+	// and the fragment have some localizable configuration fields
+
+	if (hasLocalizable && previousLanguageId !== languageId) {
+		return true;
 	}
 
-	return fragmentEntryLink.content;
+	// For fragments inside a collection, we need to render when previousItemClassName or previousItemClassPK
+	// is undefined. This happens when the collection is render at the first time or when changing the "preview with"
+	// to none. When setting the item to none the component is unmounted, which means that we cannot rely on
+	// the usePrevious hook values. Also we need to render when editable values change
+
+	if (
+		withinCollection &&
+		(isNullOrUndefined(previousItemClassName) ||
+			isNullOrUndefined(previousItemClassPK) ||
+			(!isNullOrUndefined(editableValues) &&
+				previousEditableValues !== editableValues))
+	) {
+		return true;
+	}
+
+	//  For any other case we need to render when the className or classPK changes
+
+	if (
+		previousItemClassName !== itemClassName &&
+		previousItemClassPK !== itemClassPK
+	) {
+		return true;
+	}
+
+	return false;
 };
 
 const useGetFieldValue = () => {
@@ -171,8 +270,7 @@ const useGetFieldValue = () => {
 
 	const getFromCollectionItem = useCallback(
 		({collectionFieldId}) =>
-			collectionItem[collectionFieldId] !== null &&
-			collectionItem[collectionFieldId] !== undefined
+			!isNullOrUndefined(collectionItem[collectionFieldId])
 				? Promise.resolve(collectionItem[collectionFieldId])
 				: Promise.reject(),
 		[collectionItem]
@@ -187,26 +285,28 @@ const useGetFieldValue = () => {
 };
 
 const useRenderFragmentContent = () => {
-	const context = useContext(CollectionItemContext);
+	const collectionItemContext = useContext(CollectionItemContext);
 
-	const {className, classPK} = context.collectionItem || {};
+	const {className: collectionItemClassName, classPK: collectionItemClassPK} =
+		collectionItemContext.collectionItem || {};
+	const {collectionItemIndex} = collectionItemContext;
 
 	return useCallback(
 		({fragmentEntryLinkId, onNetworkStatus, segmentsExperienceId}) => {
 			return FragmentService.renderFragmentEntryLinkContent({
-				collectionItemClassName: className,
-				collectionItemClassPK: classPK,
+				collectionItemClassName,
+				collectionItemClassPK,
 				fragmentEntryLinkId,
 				onNetworkStatus,
 				segmentsExperienceId,
 			}).then(({content}) => {
 				return {
-					collectionItemIndex: context.collectionItemIndex,
+					collectionItemIndex,
 					content,
 				};
 			});
 		},
-		[className, classPK, context.collectionItemIndex]
+		[collectionItemClassName, collectionItemClassPK, collectionItemIndex]
 	);
 };
 
@@ -217,7 +317,8 @@ export {
 	useGetContent,
 	useCollectionConfig,
 	useCollectionItemIndex,
-	useFromControlsId,
+	useCustomCollectionSelectorURL,
+	useParentToControlsId,
 	useToControlsId,
 	useGetFieldValue,
 };

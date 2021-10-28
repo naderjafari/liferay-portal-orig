@@ -41,8 +41,12 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.io.Serializable;
+
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -89,10 +93,61 @@ public class CTDisplayRendererRegistry {
 			modelClassPK);
 	}
 
+	public <T extends BaseModel<T>> Map<Serializable, T> fetchCTModelMap(
+		long ctCollectionId, CTSQLModeThreadLocal.CTSQLMode ctSQLMode,
+		long modelClassNameId, Set<Long> primaryKeys) {
+
+		CTService<?> ctService = _ctServiceServiceTrackerMap.getService(
+			modelClassNameId);
+
+		if (ctService == null) {
+			return null;
+		}
+
+		try (SafeCloseable safeCloseable1 =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollectionId);
+			SafeCloseable safeCloseable2 =
+				CTSQLModeThreadLocal.setCTSQLModeWithSafeCloseable(ctSQLMode)) {
+
+			return (Map<Serializable, T>)ctService.updateWithUnsafeFunction(
+				ctPersistence -> ctPersistence.fetchByPrimaryKeys(
+					(Set)primaryKeys));
+		}
+	}
+
+	public <T extends BaseModel<T>> String[] getAvailableLanguageIds(
+		long ctCollectionId, CTSQLModeThreadLocal.CTSQLMode ctSQLMode, T model,
+		long modelClassNameId) {
+
+		CTDisplayRenderer<T> ctDisplayRenderer =
+			(CTDisplayRenderer<T>)_ctDisplayServiceTrackerMap.getService(
+				modelClassNameId);
+
+		if (ctDisplayRenderer == null) {
+			return null;
+		}
+
+		try (SafeCloseable safeCloseable1 =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollectionId);
+			SafeCloseable safeCloseable2 =
+				CTSQLModeThreadLocal.setCTSQLModeWithSafeCloseable(ctSQLMode)) {
+
+			return ctDisplayRenderer.getAvailableLanguageIds(model);
+		}
+	}
+
 	public long getCtCollectionId(CTCollection ctCollection, CTEntry ctEntry)
 		throws PortalException {
 
 		if (ctCollection.getStatus() == WorkflowConstants.STATUS_APPROVED) {
+			if (ctEntry.getChangeType() ==
+					CTConstants.CT_CHANGE_TYPE_DELETION) {
+
+				return ctCollection.getCtCollectionId();
+			}
+
 			return _ctEntryLocalService.getCTRowCTCollectionId(ctEntry);
 		}
 		else if (ctEntry.getChangeType() ==
@@ -105,7 +160,7 @@ public class CTDisplayRendererRegistry {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T extends BaseModel<T>> CTDisplayRenderer<T> getCTDisplayRenderer(
+	public <T extends BaseModel<?>> CTDisplayRenderer<T> getCTDisplayRenderer(
 		long modelClassNameId) {
 
 		CTDisplayRenderer<T> ctDisplayRenderer =
@@ -148,8 +203,22 @@ public class CTDisplayRendererRegistry {
 		return CTSQLModeThreadLocal.CTSQLMode.DEFAULT;
 	}
 
+	public <T extends BaseModel<T>> String getDefaultLanguageId(
+		T model, long modelClassNameId) {
+
+		CTDisplayRenderer<T> ctDisplayRenderer =
+			(CTDisplayRenderer<T>)_ctDisplayServiceTrackerMap.getService(
+				modelClassNameId);
+
+		if (ctDisplayRenderer == null) {
+			return null;
+		}
+
+		return ctDisplayRenderer.getDefaultLanguageId(model);
+	}
+
 	@SuppressWarnings("unchecked")
-	public <T extends BaseModel<T>> CTDisplayRenderer<T> getDefaultRenderer() {
+	public <T extends BaseModel<?>> CTDisplayRenderer<T> getDefaultRenderer() {
 		return (CTDisplayRenderer<T>)_defaultCTDisplayRenderer;
 	}
 

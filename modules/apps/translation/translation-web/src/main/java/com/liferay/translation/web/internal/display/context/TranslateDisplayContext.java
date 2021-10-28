@@ -23,12 +23,15 @@ import com.liferay.info.field.type.TextInfoFieldType;
 import com.liferay.info.form.InfoForm;
 import com.liferay.info.item.InfoItemFieldValues;
 import com.liferay.info.localized.InfoLocalizedValue;
+import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.editor.configuration.EditorConfiguration;
 import com.liferay.portal.kernel.editor.configuration.EditorConfigurationFactoryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
@@ -36,6 +39,7 @@ import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -44,10 +48,14 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.segments.constants.SegmentsExperienceConstants;
+import com.liferay.segments.model.SegmentsExperience;
+import com.liferay.segments.service.SegmentsExperienceServiceUtil;
 import com.liferay.translation.constants.TranslationPortletKeys;
 import com.liferay.translation.info.field.TranslationInfoFieldChecker;
 import com.liferay.translation.model.TranslationEntry;
 import com.liferay.translation.service.TranslationEntryLocalServiceUtil;
+import com.liferay.translation.web.internal.configuration.FFLayoutExperienceSelectorConfiguration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +64,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,21 +81,28 @@ public class TranslateDisplayContext {
 	public TranslateDisplayContext(
 		List<String> availableSourceLanguageIds,
 		List<String> availableTargetLanguageIds,
-		BooleanSupplier booleanSupplier, String className, long classPK,
+		UnsafeSupplier<Boolean, PortalException> booleanUnsafeSupplier,
+		String className, long classPK,
+		FFLayoutExperienceSelectorConfiguration
+			ffLayoutExperienceSelectorConfiguration,
 		InfoForm infoForm, LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse, Object object,
+		long segmentsExperienceId,
 		InfoItemFieldValues sourceInfoItemFieldValues, String sourceLanguageId,
 		InfoItemFieldValues targetInfoItemFieldValues, String targetLanguageId,
 		TranslationInfoFieldChecker translationInfoFieldChecker) {
 
 		_availableSourceLanguageIds = availableSourceLanguageIds;
 		_availableTargetLanguageIds = availableTargetLanguageIds;
-		_booleanSupplier = booleanSupplier;
+		_booleanUnsafeSupplier = booleanUnsafeSupplier;
 		_className = className;
 		_classPK = classPK;
+		_ffLayoutExperienceSelectorConfiguration =
+			ffLayoutExperienceSelectorConfiguration;
 		_infoForm = infoForm;
 		_liferayPortletResponse = liferayPortletResponse;
 		_object = object;
+		_segmentsExperienceId = segmentsExperienceId;
 		_sourceInfoItemFieldValues = sourceInfoItemFieldValues;
 		_sourceLanguageId = sourceLanguageId;
 		_targetInfoItemFieldValues = targetInfoItemFieldValues;
@@ -124,8 +139,9 @@ public class TranslateDisplayContext {
 		InfoLocalizedValue<String> labelInfoLocalizedValue =
 			infoField.getLabelInfoLocalizedValue();
 
-		return labelInfoLocalizedValue.getValue(
-			PortalUtil.getLocale(_httpServletRequest));
+		return HtmlUtil.escape(
+			labelInfoLocalizedValue.getValue(
+				PortalUtil.getLocale(_httpServletRequest)));
 	}
 
 	public List<InfoField> getInfoFields(InfoFieldSetEntry infoFieldSetEntry) {
@@ -151,7 +167,9 @@ public class TranslateDisplayContext {
 		return _infoForm.getInfoFieldSetEntries();
 	}
 
-	public Map<String, Object> getInfoFieldSetEntriesData() {
+	public Map<String, Object> getInfoFieldSetEntriesData()
+		throws PortalException {
+
 		List<HashMap<String, Object>> infoFieldSetEntries = new ArrayList<>();
 
 		for (InfoFieldSetEntry infoFieldSetEntry : getInfoFieldSetEntries()) {
@@ -161,61 +179,66 @@ public class TranslateDisplayContext {
 				continue;
 			}
 
-			Stream<InfoField> stream = infoFields.stream();
-
 			infoFieldSetEntries.add(
 				HashMapBuilder.<String, Object>put(
 					"fields",
-					stream.map(
-						infoField -> {
-							String infoFieldId =
-								"infoField--" + infoField.getName() + "--";
+					() -> {
+						Stream<InfoField> stream = infoFields.stream();
 
-							Map<String, Object> editorConfiguration = null;
+						return stream.map(
+							infoField -> {
+								String infoFieldId =
+									"infoField--" + infoField.getName() + "--";
 
-							if (getBooleanValue(
-									infoField, TextInfoFieldType.HTML)) {
+								Map<String, Object> editorConfiguration = null;
 
-								editorConfiguration = _getInfoFieldEditorConfig(
-									infoFieldId);
+								if (getBooleanValue(
+										infoField, TextInfoFieldType.HTML)) {
+
+									editorConfiguration =
+										_getInfoFieldEditorConfig(infoFieldId);
+								}
+
+								return HashMapBuilder.<String, Object>put(
+									"editorConfiguration", editorConfiguration
+								).put(
+									"html",
+									getBooleanValue(
+										infoField, TextInfoFieldType.HTML)
+								).put(
+									"id", infoFieldId
+								).put(
+									"label",
+									infoField.getLabel(
+										_themeDisplay.getLocale())
+								).put(
+									"multiline",
+									getBooleanValue(
+										infoField, TextInfoFieldType.MULTILINE)
+								).put(
+									"sourceContent",
+									getSourceStringValue(
+										infoField, getSourceLocale())
+								).put(
+									"sourceContentDir",
+									LanguageUtil.get(
+										getSourceLocale(), "lang.dir")
+								).put(
+									"targetContent",
+									getTargetStringValue(
+										infoField, getTargetLocale())
+								).put(
+									"targetContentDir",
+									LanguageUtil.get(
+										getTargetLocale(), "lang.dir")
+								).put(
+									"targetLanguageId", getTargetLanguageId()
+								).build();
 							}
-
-							return HashMapBuilder.<String, Object>put(
-								"editorConfiguration", editorConfiguration
-							).put(
-								"html",
-								getBooleanValue(
-									infoField, TextInfoFieldType.HTML)
-							).put(
-								"id", infoFieldId
-							).put(
-								"label",
-								infoField.getLabel(_themeDisplay.getLocale())
-							).put(
-								"multiline",
-								getBooleanValue(
-									infoField, TextInfoFieldType.MULTILINE)
-							).put(
-								"sourceContent",
-								getSourceStringValue(
-									infoField, getSourceLocale())
-							).put(
-								"sourceContentDir",
-								LanguageUtil.get(getSourceLocale(), "lang.dir")
-							).put(
-								"targetContent",
-								getTargetStringValue(
-									infoField, getTargetLocale())
-							).put(
-								"targetContentDir",
-								LanguageUtil.get(getTargetLocale(), "lang.dir")
-							).put(
-								"targetLanguageId", getTargetLanguageId()
-							).build();
-						}
-					).collect(
-						Collectors.toList()
-					)
+						).collect(
+							Collectors.toList()
+						);
+					}
 				).put(
 					"legend",
 					getInfoFieldSetLabel(
@@ -224,7 +247,7 @@ public class TranslateDisplayContext {
 		}
 
 		return HashMapBuilder.<String, Object>put(
-			"aditionalFields",
+			"additionalFields",
 			HashMapBuilder.<String, Object>put(
 				"redirect", ParamUtil.getString(_httpServletRequest, "redirect")
 			).put(
@@ -234,6 +257,10 @@ public class TranslateDisplayContext {
 			).build()
 		).put(
 			"autoTranslateEnabled", isAutoTranslateEnabled()
+		).put(
+			"currentUrl", PortalUtil.getCurrentCompleteURL(_httpServletRequest)
+		).put(
+			"experiencesSelectorData", _getExperiencesSelectorData()
 		).put(
 			"getAutoTranslateURL", getAutoTranslateURL()
 		).put(
@@ -283,7 +310,7 @@ public class TranslateDisplayContext {
 		if (infoFieldSetEntry instanceof InfoFieldSet) {
 			InfoFieldSet infoFieldSet = (InfoFieldSet)infoFieldSetEntry;
 
-			return infoFieldSet.getLabel(locale);
+			return HtmlUtil.escape(infoFieldSet.getLabel(locale));
 		}
 
 		return null;
@@ -364,13 +391,20 @@ public class TranslateDisplayContext {
 		InfoFieldValue<Object> infoFieldValue =
 			_sourceInfoItemFieldValues.getInfoFieldValue("title");
 
+		if (infoFieldValue == null) {
+			infoFieldValue = _sourceInfoItemFieldValues.getInfoFieldValue(
+				"name");
+		}
+
+		if (infoFieldValue == null) {
+			return LanguageUtil.get(_themeDisplay.getLocale(), "translation");
+		}
+
 		return (String)infoFieldValue.getValue(_themeDisplay.getLocale());
 	}
 
 	public Map<String, Object> getTranslateLanguagesSelectorData() {
 		return HashMapBuilder.<String, Object>put(
-			"currentUrl", PortalUtil.getCurrentCompleteURL(_httpServletRequest)
-		).put(
 			"sourceAvailableLanguages", _availableSourceLanguageIds
 		).put(
 			"sourceLanguageId", _sourceLanguageId
@@ -386,13 +420,17 @@ public class TranslateDisplayContext {
 			_liferayPortletResponse
 		).setActionName(
 			"/translation/update_translation"
+		).setPortletResource(
+			ParamUtil.getString(_httpServletRequest, "portletResource")
 		).setParameter(
 			"classNameId", PortalUtil.getClassNameId(_className)
 		).setParameter(
 			"classPK", _classPK
 		).setParameter(
 			"groupId", _getGroupId()
-		).build();
+		).setParameter(
+			"segmentsExperienceId", _segmentsExperienceId
+		).buildPortletURL();
 	}
 
 	public boolean hasTranslationPermission() {
@@ -403,8 +441,8 @@ public class TranslateDisplayContext {
 		return true;
 	}
 
-	public boolean isAutoTranslateEnabled() {
-		if (_booleanSupplier.getAsBoolean() && hasTranslationPermission()) {
+	public boolean isAutoTranslateEnabled() throws PortalException {
+		if (_booleanUnsafeSupplier.get() && hasTranslationPermission()) {
 			return true;
 		}
 
@@ -433,6 +471,73 @@ public class TranslateDisplayContext {
 		return _isAvailableTargetLanguageIdsEmpty();
 	}
 
+	private String _getEditorConfigKey() {
+		if (_className.equals(Layout.class.getName())) {
+			return "layoutTranslateEditor";
+		}
+
+		return "defaultTranslateEditor";
+	}
+
+	private Map<String, Object> _getExperiencesSelectorData()
+		throws PortalException {
+
+		if (!_ffLayoutExperienceSelectorConfiguration.enabled() ||
+			!Objects.equals(_className, Layout.class.getName())) {
+
+			return null;
+		}
+
+		List<SegmentsExperience> segmentsExperiences =
+			SegmentsExperienceServiceUtil.getSegmentsExperiences(
+				_groupId, PortalUtil.getClassNameId(_className), _classPK,
+				true);
+
+		boolean addedDefault = false;
+
+		Map<String, String> defaultExperience = HashMapBuilder.put(
+			"label",
+			SegmentsExperienceConstants.getDefaultSegmentsExperienceName(
+				_themeDisplay.getLocale())
+		).put(
+			"value", String.valueOf(SegmentsExperienceConstants.ID_DEFAULT)
+		).build();
+
+		List<Map<String, String>> options = new ArrayList<>();
+
+		for (SegmentsExperience segmentsExperience : segmentsExperiences) {
+			if ((segmentsExperience.getPriority() <
+					SegmentsExperienceConstants.PRIORITY_DEFAULT) &&
+				!addedDefault) {
+
+				options.add(defaultExperience);
+
+				addedDefault = true;
+			}
+
+			options.add(
+				HashMapBuilder.put(
+					"label",
+					segmentsExperience.getName(_themeDisplay.getLocale())
+				).put(
+					"value",
+					String.valueOf(segmentsExperience.getSegmentsExperienceId())
+				).build());
+		}
+
+		if (!addedDefault) {
+			options.add(defaultExperience);
+		}
+
+		return HashMapBuilder.<String, Object>put(
+			"label", LanguageUtil.get(_httpServletRequest, "experience")
+		).put(
+			"options", options
+		).put(
+			"value", _segmentsExperienceId
+		).build();
+	}
+
 	private long _getGroupId() {
 		if (_groupId != null) {
 			return _groupId;
@@ -446,18 +551,21 @@ public class TranslateDisplayContext {
 	}
 
 	private Map<String, Object> _getInfoFieldEditorConfig(String infoFieldId) {
-		String portletNamespace = PortalUtil.getPortletNamespace(
-			TranslationPortletKeys.TRANSLATION);
-
 		EditorConfiguration editorConfiguration =
 			EditorConfigurationFactoryUtil.getEditorConfiguration(
-				TranslationPortletKeys.TRANSLATION, "translateEditor",
+				TranslationPortletKeys.TRANSLATION, _getEditorConfigKey(),
 				"ckeditor",
 				HashMapBuilder.<String, Object>put(
 					"liferay-ui:input-editor:allowBrowseDocuments", true
 				).put(
 					"liferay-ui:input-editor:name",
-					portletNamespace + infoFieldId
+					() -> {
+						String portletNamespace =
+							PortalUtil.getPortletNamespace(
+								TranslationPortletKeys.TRANSLATION);
+
+						return portletNamespace + infoFieldId;
+					}
 				).build(),
 				_themeDisplay,
 				RequestBackedPortletURLFactoryUtil.create(_httpServletRequest));
@@ -487,14 +595,18 @@ public class TranslateDisplayContext {
 
 	private final List<String> _availableSourceLanguageIds;
 	private final List<String> _availableTargetLanguageIds;
-	private final BooleanSupplier _booleanSupplier;
+	private final UnsafeSupplier<Boolean, PortalException>
+		_booleanUnsafeSupplier;
 	private final String _className;
 	private final long _classPK;
+	private final FFLayoutExperienceSelectorConfiguration
+		_ffLayoutExperienceSelectorConfiguration;
 	private Long _groupId;
 	private final HttpServletRequest _httpServletRequest;
 	private final InfoForm _infoForm;
 	private final LiferayPortletResponse _liferayPortletResponse;
 	private final Object _object;
+	private final long _segmentsExperienceId;
 	private final InfoItemFieldValues _sourceInfoItemFieldValues;
 	private final String _sourceLanguageId;
 	private final Locale _sourceLocale;

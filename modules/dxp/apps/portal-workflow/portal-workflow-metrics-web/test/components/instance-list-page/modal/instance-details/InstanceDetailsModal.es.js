@@ -9,7 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {cleanup, render} from '@testing-library/react';
+import {act, cleanup, fireEvent, render} from '@testing-library/react';
 import React, {useState} from 'react';
 
 import '@testing-library/jest-dom/extend-expect';
@@ -85,18 +85,20 @@ describe('The InstanceDetailsModal component should', () => {
 		);
 
 		getByText = renderResult.getByText;
-
-		jest.runAllTimers();
 	};
 
 	describe('render with a completed Instance', () => {
-		beforeAll(() => {
+		beforeAll(async () => {
 			renderComponent({
 				get: jest.fn().mockResolvedValue({data}),
 			});
+
+			await act(async () => {
+				jest.runAllTimers();
+			});
 		});
 
-		test('Render Modal title with correct item id and status icon', () => {
+		it('Render Modal title with correct item id and status icon', () => {
 			const instanceDetailsTitle = getByText('item #37634');
 			const instanceIconTitle = document.querySelector(
 				'.lexicon-icon-check-circle'
@@ -106,7 +108,7 @@ describe('The InstanceDetailsModal component should', () => {
 			expect(instanceIconTitle).toBeTruthy();
 		});
 
-		test('Render SLA details with correct status', () => {
+		it('Render SLA details with correct status', () => {
 			const resultIcons = document.querySelectorAll('.sticker');
 			const resultStatus = document.querySelectorAll('.sla-result');
 
@@ -124,7 +126,7 @@ describe('The InstanceDetailsModal component should', () => {
 			);
 		});
 
-		test('Render Process details with correct infos', () => {
+		it('Render Process details with correct infos', () => {
 			const instanceDetailsRows = document.querySelectorAll('p.row');
 
 			expect(instanceDetailsRows.length).toBe(6);
@@ -140,17 +142,21 @@ describe('The InstanceDetailsModal component should', () => {
 			);
 		});
 
-		test('Render Go to Submission Page button with correct link', () => {
+		it('Render Go to Submission Page button with correct link', () => {
+			window.open = jest.fn();
 			const submissionPageButton = getByText('go-to-submission-page');
 
-			expect(submissionPageButton.getAttribute('href')).toContain(
-				'37634'
+			fireEvent.click(submissionPageButton);
+
+			expect(window.open).toHaveBeenCalledWith(
+				'/group/control_panel/manage/-/workflow_instance/view/37634',
+				'_blank'
 			);
 		});
 	});
 
 	describe('render with a pending Instance', () => {
-		beforeAll(() => {
+		beforeAll(async () => {
 			renderComponent({
 				get: jest.fn().mockResolvedValue({
 					data: {
@@ -169,9 +175,13 @@ describe('The InstanceDetailsModal component should', () => {
 					},
 				}),
 			});
+
+			await act(async () => {
+				jest.runAllTimers();
+			});
 		});
 
-		test('Render details with slaStatus Untracked', () => {
+		it('Render details with slaStatus Untracked', () => {
 			const untrackedIcons = document.querySelectorAll(
 				'.lexicon-icon-hr'
 			);
@@ -185,7 +195,7 @@ describe('The InstanceDetailsModal component should', () => {
 			expect(slaResultLabelElement).toBeTruthy();
 		});
 
-		test('Render Process details with correct infos', () => {
+		it('Render Process details with correct infos', () => {
 			const instanceDetailsRows = document.querySelectorAll('p.row');
 
 			expect(instanceDetailsRows.length).toBe(7);

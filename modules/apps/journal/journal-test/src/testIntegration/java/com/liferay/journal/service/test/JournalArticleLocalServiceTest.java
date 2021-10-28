@@ -32,6 +32,7 @@ import com.liferay.dynamic.data.mapping.test.util.DDMFormTestUtil;
 import com.liferay.dynamic.data.mapping.test.util.DDMStructureTestUtil;
 import com.liferay.dynamic.data.mapping.test.util.DDMTemplateTestUtil;
 import com.liferay.journal.constants.JournalFolderConstants;
+import com.liferay.journal.exception.DuplicateArticleExternalReferenceCodeException;
 import com.liferay.journal.exception.DuplicateArticleIdException;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.model.JournalArticleDisplay;
@@ -134,13 +135,21 @@ public class JournalArticleLocalServiceTest {
 	public void testCopyArticle() throws Exception {
 		JournalArticle oldArticle = JournalTestUtil.addArticle(
 			_group.getGroupId(),
-			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Test-1",
+			RandomTestUtil.randomString());
+
+		JournalArticle thirdArticle = JournalTestUtil.addArticle(
+			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Test-2",
+			oldArticle.getContent());
 
 		JournalArticle newArticle = _journalArticleLocalService.copyArticle(
 			oldArticle.getUserId(), oldArticle.getGroupId(),
 			oldArticle.getArticleId(), null, true, oldArticle.getVersion());
 
 		Assert.assertNotEquals(oldArticle, newArticle);
+		Assert.assertNotEquals(
+			thirdArticle.getUrlTitle(), newArticle.getUrlTitle());
 
 		List<ResourcePermission> oldResourcePermissions =
 			_resourcePermissionLocalService.getResourcePermissions(
@@ -247,11 +256,11 @@ public class JournalArticleLocalServiceTest {
 	@Test(expected = DuplicateArticleIdException.class)
 	public void testDuplicatedArticleId() throws Exception {
 		JournalArticle article = JournalTestUtil.addArticle(
-			_group.getGroupId(),
-			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+			RandomTestUtil.randomString(), _group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, null, true);
 
 		JournalTestUtil.addArticle(
-			_group.getGroupId(),
+			RandomTestUtil.randomString(), _group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			article.getArticleId(), false);
 	}
@@ -264,6 +273,18 @@ public class JournalArticleLocalServiceTest {
 
 		JournalTestUtil.addArticle(
 			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			article.getArticleId(), true);
+	}
+
+	@Test(expected = DuplicateArticleExternalReferenceCodeException.class)
+	public void testDuplicatedExternalReferenceCode() throws Exception {
+		JournalArticle article = JournalTestUtil.addArticle(
+			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+
+		JournalTestUtil.addArticle(
+			article.getExternalReferenceCode(), _group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			article.getArticleId(), true);
 	}
@@ -472,7 +493,7 @@ public class JournalArticleLocalServiceTest {
 		DDMTemplate ddmTemplate = DDMTemplateTestUtil.addTemplate(
 			_group.getGroupId(), ddmStructure.getStructureId(),
 			PortalUtil.getClassNameId(JournalArticle.class),
-			TemplateConstants.LANG_TYPE_VM,
+			TemplateConstants.LANG_TYPE_FTL,
 			JournalTestUtil.getSampleTemplateXSL(), LocaleUtil.US);
 
 		String content = DDMStructureTestUtil.getSampleStructuredContent(

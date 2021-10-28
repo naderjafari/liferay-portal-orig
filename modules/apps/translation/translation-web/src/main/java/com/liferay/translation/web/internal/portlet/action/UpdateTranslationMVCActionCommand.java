@@ -30,14 +30,17 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.servlet.MultiSessionMessages;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropertiesParamUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.segments.constants.SegmentsExperienceConstants;
 import com.liferay.translation.constants.TranslationPortletKeys;
 import com.liferay.translation.service.TranslationEntryService;
+import com.liferay.translation.web.internal.util.TranslationRequestUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,17 +66,19 @@ public class UpdateTranslationMVCActionCommand extends BaseMVCActionCommand {
 
 	@Override
 	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
+		ActionRequest actionRequest, ActionResponse actionResponse) {
 
 		try {
 			long groupId = ParamUtil.getLong(actionRequest, "groupId");
 
-			long classNameId = ParamUtil.getLong(actionRequest, "classNameId");
+			long segmentsExperienceId = ParamUtil.getLong(
+				actionRequest, "segmentsExperienceId",
+				SegmentsExperienceConstants.ID_DEFAULT);
 
-			String className = _portal.getClassName(classNameId);
-
-			long classPK = ParamUtil.getLong(actionRequest, "classPK");
+			String className = TranslationRequestUtil.getClassName(
+				actionRequest, segmentsExperienceId);
+			long classPK = TranslationRequestUtil.getClassPK(
+				actionRequest, segmentsExperienceId);
 
 			InfoItemReference infoItemReference = new InfoItemReference(
 				className, classPK);
@@ -99,6 +104,16 @@ public class UpdateTranslationMVCActionCommand extends BaseMVCActionCommand {
 			_translationEntryService.addOrUpdateTranslationEntry(
 				groupId, _getTargetLanguageId(actionRequest), infoItemReference,
 				infoItemFieldValues, serviceContext);
+
+			String portletResource = ParamUtil.getString(
+				actionRequest, "portletResource");
+
+			if (Validator.isNotNull(portletResource)) {
+				hideDefaultErrorMessage(actionRequest);
+
+				MultiSessionMessages.add(
+					actionRequest, portletResource + "requestProcessed");
+			}
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);
@@ -192,9 +207,6 @@ public class UpdateTranslationMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private InfoItemServiceTracker _infoItemServiceTracker;
-
-	@Reference
-	private Portal _portal;
 
 	@Reference
 	private TranslationEntryService _translationEntryService;

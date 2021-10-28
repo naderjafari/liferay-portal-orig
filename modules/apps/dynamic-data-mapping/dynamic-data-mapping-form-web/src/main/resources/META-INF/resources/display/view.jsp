@@ -124,6 +124,7 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 						<liferay-ui:error exception="<%= NoSuchFormInstanceException.class %>" message="the-selected-form-no-longer-exists" />
 						<liferay-ui:error exception="<%= NoSuchStructureException.class %>" message="unable-to-retrieve-the-definition-of-the-selected-form" />
 						<liferay-ui:error exception="<%= NoSuchStructureLayoutException.class %>" message="unable-to-retrieve-the-layout-of-the-selected-form" />
+						<liferay-ui:error exception="<%= ObjectEntryValuesException.class %>" message="the-maximum-length-is-280-characters-for-text-fields" />
 						<liferay-ui:error exception="<%= StorageException.class %>" message="there-was-an-error-when-accessing-the-data-storage" />
 
 						<liferay-ui:error-principal />
@@ -162,6 +163,15 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 							</div>
 						</c:if>
 
+						<div class="ddm-form-upload-permission-message hide mt-4">
+							<clay:container-fluid>
+								<clay:alert
+									displayType="warning"
+									message="you-do-not-have-the-permission-to-access-the-upload-fields-on-this-form"
+								/>
+							</clay:container-fluid>
+						</div>
+
 						<div class="ddm-form-basic-info">
 							<clay:container-fluid>
 								<h1 class="ddm-form-name"><%= HtmlUtil.escape(formInstance.getName(displayLocale)) %></h1>
@@ -176,13 +186,21 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 							</clay:container-fluid>
 						</div>
 
+						<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="/dynamic_data_mapping_form/validate_csrf_token" var="validateCSRFTokenURL" />
+
 						<clay:container-fluid
 							cssClass="ddm-form-builder-app ddm-form-builder-app-not-ready"
 							id="<%= ddmFormDisplayContext.getContainerId() %>"
 						>
 							<react:component
 								module="admin/js/FormView.link.es"
-								props="<%= ddmFormDisplayContext.getDDMFormContext() %>"
+								props='<%=
+									HashMapBuilder.<String, Object>put(
+										"validateCSRFTokenURL", validateCSRFTokenURL.toString()
+									).putAll(
+										ddmFormDisplayContext.getDDMFormContext()
+									).build()
+								%>'
 							/>
 						</clay:container-fluid>
 
@@ -356,7 +374,7 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 </c:choose>
 
 <c:if test="<%= ddmFormDisplayContext.isShowConfigurationIcon() %>">
-	<div class="icons-container lfr-meta-actions">
+	<div class="c-mt-3 icons-container">
 		<div class="btn-group lfr-icon-actions">
 			<liferay-ui:icon
 				icon="cog"

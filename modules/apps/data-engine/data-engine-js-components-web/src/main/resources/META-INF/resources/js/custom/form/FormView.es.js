@@ -14,6 +14,7 @@
 
 import '../../../css/main.scss';
 
+import {fetch, openModal} from 'frontend-js-web';
 import React, {
 	useCallback,
 	useEffect,
@@ -41,6 +42,9 @@ import {getFormId, getFormNode} from '../../utils/formId.es';
 import {parseProps} from '../../utils/parseProps.es';
 import {paginationReducer} from './reducers/index.es';
 
+const DDM_FORM_PORTLET_NAMESPACE =
+	'_com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormPortlet_';
+
 /**
  * This is a copy of the old implementation made in Metal.js, deals with
  * the submit of the Form in the User View, removes the default behavior
@@ -48,12 +52,13 @@ import {paginationReducer} from './reducers/index.es';
  */
 const useFormSubmit = ({apiRef, containerRef}) => {
 	const {activePage, pages} = useFormState();
-	const {submittable} = useConfig();
+	const {portletNamespace, submittable, validateCSRFTokenURL} = useConfig();
+	const isDDMFormPortletNamespace = portletNamespace.includes(
+		DDM_FORM_PORTLET_NAMESPACE
+	);
 
-	const handleFormSubmitted = useCallback(
+	const submitForm = useCallback(
 		(event) => {
-			event.preventDefault();
-
 			apiRef.current
 				.validate()
 				.then((validForm) => {
@@ -67,6 +72,10 @@ const useFormSubmit = ({apiRef, containerRef}) => {
 						).length;
 
 						if (!validLiferayForm) {
+							Liferay.fire('ddmFormError', {
+								formWrapperId: event.target.id,
+							});
+
 							return;
 						}
 
@@ -92,10 +101,78 @@ const useFormSubmit = ({apiRef, containerRef}) => {
 				})
 				.catch((error) => {
 					console.error(error);
+
+					Liferay.fire('ddmFormError', {
+						error,
+						formWrapperId: event.target.id,
+					});
 				});
 		},
 		[apiRef, containerRef, submittable]
 	);
+
+	const handleFormSubmitted = useCallback(
+		(event) => {
+			event.preventDefault();
+
+			if (isDDMFormPortletNamespace) {
+				fetch(validateCSRFTokenURL, {
+					method: 'GET',
+				})
+					.then((response) => response.json())
+					.then((jsonResponse) => {
+						if (jsonResponse.validCSRFToken) {
+							submitForm(event);
+						}
+						else {
+							showSessionExpiredModal();
+						}
+					})
+					.catch((error) => {
+						console.error(error);
+					});
+			}
+			else {
+				submitForm(event);
+			}
+		},
+		[isDDMFormPortletNamespace, submitForm, validateCSRFTokenURL]
+	);
+
+	const showSessionExpiredModal = () => {
+		openModal({
+			bodyHTML: Liferay.ThemeDisplay.isSignedIn()
+				? Liferay.Language.get(
+						'you-need-to-be-signed-in-to-submit-this-form'
+				  )
+				: Liferay.Language.get(
+						'you-need-to-reload-the-page-to-submit-this-form'
+				  ),
+			buttons: [
+				{
+					displayType: 'secondary',
+					label: Liferay.Language.get('cancel'),
+					type: 'cancel',
+				},
+				{
+					label: Liferay.Language.get('ok'),
+					onClick: () => {
+						if (Liferay.ThemeDisplay.isSignedIn()) {
+							location.href =
+								themeDisplay.getPathMain() +
+								'/portal/login?redirect=' +
+								window.location.href;
+						}
+						else {
+							window.location.reload();
+						}
+					},
+				},
+			],
+			id: '<portlet:namespace />ddmFormSessionExpiredModal',
+			title: Liferay.Language.get('your-session-has-expired'),
+		});
+	};
 
 	useEffect(() => {
 		if (containerRef.current) {
@@ -141,7 +218,7 @@ const useFormSubmit = ({apiRef, containerRef}) => {
  * Liferay.Component register.
  */
 const usePublicAPI = ({apiRef, containerRef, unstable_onEventRef}) => {
-	const {containerId, groupId, portletNamespace, viewMode} = useConfig();
+	const {containerId, groupId, portletNamespace} = useConfig();
 	const {
 		activePage,
 		ddmStructureLayoutId,
@@ -154,6 +231,7 @@ const usePublicAPI = ({apiRef, containerRef, unstable_onEventRef}) => {
 		readOnly,
 		rules,
 		successPageSettings,
+		viewMode,
 		...otherProps
 	} = useFormState();
 	const dispatch = useForm();

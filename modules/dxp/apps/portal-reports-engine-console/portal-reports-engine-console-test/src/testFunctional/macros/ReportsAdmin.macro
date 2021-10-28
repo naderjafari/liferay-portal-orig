@@ -11,9 +11,12 @@ definition {
 			locator1 = "ReportsAdminEditReportDefinition#DATA_SOURCE_NAME_SELECT",
 			value1 = "${dataSource}");
 
-		UploadCommonFile(
+		var projectDir = PropsUtil.get("project.dir");
+		var filePath = "${projectDir}/modules/dxp/apps/portal-reports-engine-console/portal-reports-engine-console-test/src/testFunctional/tests/dependencies/${templateFile}";
+
+		UploadFile(
 			locator1 = "ReportsAdminEditReportDefinition#TEMPLATE_FILE_UPLOAD",
-			value1 = "${templateFile}");
+			value1 = "${filePath}");
 
 		PortletEntry.save();
 	}
@@ -392,7 +395,7 @@ Sincerely,<br />
 		}
 
 		AssertTextEquals(
-			locator1 = "Message#INFO",
+			locator1 = "ReportsAdmin#EMPTY_TABLE",
 			value1 = "There are no definitions.");
 	}
 
@@ -417,8 +420,8 @@ Sincerely,<br />
 		}
 
 		AssertTextEquals(
-			locator1 = "Message#INFO",
-			value1 = "There are no entries.");
+			locator1 = "ReportsAdmin#EMPTY_TABLE",
+			value1 = "There are no reports.");
 	}
 
 	macro tearDownSources {
@@ -441,7 +444,7 @@ Sincerely,<br />
 		}
 
 		AssertTextEquals(
-			locator1 = "Message#INFO",
+			locator1 = "ReportsAdmin#EMPTY_TABLE",
 			value1 = "There are no sources.");
 	}
 

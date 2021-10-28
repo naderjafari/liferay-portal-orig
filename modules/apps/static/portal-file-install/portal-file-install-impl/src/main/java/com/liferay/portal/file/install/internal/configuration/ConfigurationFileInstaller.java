@@ -106,14 +106,30 @@ public class ConfigurationFileInstaller implements FileInstaller {
 			}
 		}
 
+		String oldFileName = null;
+
 		if (old != null) {
-			old.remove(DirectoryWatcher.FILENAME);
+			oldFileName = (String)old.remove(DirectoryWatcher.FILENAME);
+
 			old.remove(Constants.SERVICE_PID);
 			old.remove(ConfigurationAdmin.SERVICE_FACTORYPID);
+
+			if ((dictionary.get(ConfigurationAdmin.SERVICE_BUNDLELOCATION) ==
+					null) &&
+				Objects.equals(
+					StringPool.QUESTION,
+					old.get(ConfigurationAdmin.SERVICE_BUNDLELOCATION))) {
+
+				old.remove(ConfigurationAdmin.SERVICE_BUNDLELOCATION);
+			}
 		}
 
-		if (!_equals(dictionary, old)) {
-			dictionary.put(DirectoryWatcher.FILENAME, _toConfigKey(file));
+		String currentFileName = _toConfigKey(file);
+
+		if (!_equals(dictionary, old) ||
+			!Objects.equals(oldFileName, currentFileName)) {
+
+			dictionary.put(DirectoryWatcher.FILENAME, currentFileName);
 
 			String logString = StringPool.BLANK;
 
@@ -208,16 +224,11 @@ public class ConfigurationFileInstaller implements FileInstaller {
 	private Configuration _findExistingConfiguration(String fileName)
 		throws Exception {
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(StringPool.OPEN_PARENTHESIS);
-		sb.append(DirectoryWatcher.FILENAME);
-		sb.append(StringPool.EQUAL);
-		sb.append(_escapeFilterValue(fileName));
-		sb.append(StringPool.CLOSE_PARENTHESIS);
-
 		Configuration[] configurations = _configurationAdmin.listConfigurations(
-			sb.toString());
+			StringBundler.concat(
+				StringPool.OPEN_PARENTHESIS, DirectoryWatcher.FILENAME,
+				StringPool.EQUAL, _escapeFilterValue(fileName),
+				StringPool.CLOSE_PARENTHESIS));
 
 		if ((configurations != null) && (configurations.length > 0)) {
 			return configurations[0];
@@ -248,6 +259,14 @@ public class ConfigurationFileInstaller implements FileInstaller {
 		String pid = path.substring(0, path.lastIndexOf(CharPool.PERIOD));
 
 		int index = pid.indexOf(CharPool.TILDE);
+
+		if (index <= 0) {
+			index = pid.indexOf(CharPool.UNDERLINE);
+
+			if (index <= 0) {
+				index = pid.indexOf(CharPool.DASH);
+			}
+		}
 
 		if (index > 0) {
 			String name = pid.substring(index + 1);

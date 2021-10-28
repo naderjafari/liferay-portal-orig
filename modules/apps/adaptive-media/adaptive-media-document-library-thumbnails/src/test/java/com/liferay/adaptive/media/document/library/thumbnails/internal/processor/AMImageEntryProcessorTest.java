@@ -53,6 +53,8 @@ public class AMImageEntryProcessorTest {
 
 	@Before
 	public void setUp() {
+		_amImageEntryProcessor = new AMImageEntryProcessor();
+
 		Mockito.doReturn(
 			_amAsyncProcessor
 		).when(
@@ -666,8 +668,7 @@ public class AMImageEntryProcessorTest {
 		Mockito.mock(AMAsyncProcessor.class);
 	private final AMAsyncProcessorLocator _amAsyncProcessorLocator =
 		Mockito.mock(AMAsyncProcessorLocator.class);
-	private final AMImageEntryProcessor _amImageEntryProcessor =
-		new AMImageEntryProcessor();
+	private AMImageEntryProcessor _amImageEntryProcessor;
 	private final AMImageFinder _amImageFinder = Mockito.mock(
 		AMImageFinder.class);
 	private final AMImageMimeTypeProvider _amImageMimeTypeProvider =

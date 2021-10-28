@@ -29,13 +29,16 @@ import AccountsListView from './views/AccountsListView';
 import OrdersListView from './views/OrdersListView';
 
 function AccountSelector({
+	accountEntryAllowedTypes,
 	alignmentPosition,
+	commerceChannelId,
 	createNewOrderURL,
-	currentAccount: account,
-	currentOrder: order,
+	currentCommerceAccount: account,
+	currentCommerceOrder: order,
 	refreshPageOnAccountSelected: forceRefresh,
 	selectOrderURL,
 	setCurrentAccountURL,
+	showOrderTypeModal,
 	spritemap,
 }) {
 	const [active, setActive] = useState(false);
@@ -100,6 +103,11 @@ function AccountSelector({
 			>
 				{currentView === VIEWS.ACCOUNTS_LIST && (
 					<AccountsListView
+						accountEntryAllowedTypes={
+							accountEntryAllowedTypes
+								? JSON.parse(accountEntryAllowedTypes)
+								: ''
+						}
 						changeAccount={changeAccount}
 						currentAccount={currentAccount}
 						disabled={!active}
@@ -109,11 +117,13 @@ function AccountSelector({
 
 				{currentView === VIEWS.ORDERS_LIST && (
 					<OrdersListView
+						commerceChannelId={commerceChannelId}
 						createOrderURL={createNewOrderURL}
 						currentAccount={currentAccount}
 						disabled={!active}
 						selectOrderURL={selectOrderURL}
 						setCurrentView={setCurrentView}
+						showOrderTypeModal={showOrderTypeModal}
 					/>
 				)}
 			</ClayDropDown>
@@ -122,15 +132,20 @@ function AccountSelector({
 }
 
 AccountSelector.propTypes = {
+	accountEntryAllowedTypes: PropTypes.string.isRequired,
 	alignmentPosition: PropTypes.number,
+	commerceChannelId: PropTypes.oneOfType([
+		PropTypes.number,
+		PropTypes.string,
+	]),
 	createNewOrderURL: PropTypes.string.isRequired,
-	currentAccount: PropTypes.shape({
-		id: PropTypes.number,
+	currentCommerceAccount: PropTypes.shape({
+		id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 		logoURL: PropTypes.string,
 		name: PropTypes.string,
 	}),
-	currentOrder: PropTypes.shape({
-		orderId: PropTypes.number,
+	currentCommerceOrder: PropTypes.shape({
+		orderId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 		workflowStatusInfo: PropTypes.shape({
 			label_i18n: PropTypes.string,
 		}),
@@ -138,12 +153,13 @@ AccountSelector.propTypes = {
 	refreshPageOnAccountSelected: PropTypes.bool,
 	selectOrderURL: PropTypes.string.isRequired,
 	setCurrentAccountURL: PropTypes.string.isRequired,
+	showOrderTypeModal: PropTypes.bool,
 	spritemap: PropTypes.string.isRequired,
 };
 
 AccountSelector.defaultProps = {
 	alignmentPosition: 3,
-	currentOrder: {
+	currentCommerceOrder: {
 		orderId: 0,
 	},
 	refreshPageOnAccountSelected: false,

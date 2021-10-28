@@ -2,11 +2,13 @@
 <head>
 <title>Calendar</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">Calendar</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ADD_EVENT_BUTTON</td>
@@ -496,6 +498,11 @@
 <tr>
 	<td>SCHEDULER_EVENT_SPECIFIC_ALL_DAY</td>
 	<td>//div[contains(@class,'calendar-portlet-event')]/div[contains(@class,'scheduler-event-content') and contains(.,'${key_eventTitle}')]/../../div</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SCHEDULER_EVENT_SPECIFIC_ALL_DAY_2</td>
+	<td>//div[contains(@class,'calendar-portlet-event')]/div[contains(@class,'scheduler-event-content') and contains(.,'${key_eventTitle}')]/../../div[2]</td>
 	<td></td>
 </tr>
 <tr>

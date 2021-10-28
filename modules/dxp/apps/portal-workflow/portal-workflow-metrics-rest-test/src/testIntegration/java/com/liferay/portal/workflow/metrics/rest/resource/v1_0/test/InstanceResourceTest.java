@@ -16,17 +16,29 @@ package com.liferay.portal.workflow.metrics.rest.resource.v1_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.test.randomizerbumpers.NumericStringRandomizerBumper;
+import com.liferay.portal.kernel.test.randomizerbumpers.UniqueStringRandomizerBumper;
 import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.workflow.metrics.model.Assignment;
+import com.liferay.portal.workflow.metrics.model.RoleAssignment;
 import com.liferay.portal.workflow.metrics.rest.client.dto.v1_0.Assignee;
 import com.liferay.portal.workflow.metrics.rest.client.dto.v1_0.Creator;
 import com.liferay.portal.workflow.metrics.rest.client.dto.v1_0.Instance;
@@ -40,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -49,6 +62,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.DateUtils;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -91,12 +105,22 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 		Instance instance = randomInstance();
 
 		instance.setSlaResults(
-			new SLAResult[] {
+			Stream.of(
+				_toSLAResult(true, SLAResult.Status.NEW),
 				_toSLAResult(true, SLAResult.Status.NEW),
 				_toSLAResult(true, SLAResult.Status.PAUSED),
+				_toSLAResult(true, SLAResult.Status.PAUSED),
 				_toSLAResult(true, SLAResult.Status.RUNNING),
+				_toSLAResult(true, SLAResult.Status.RUNNING),
+				_toSLAResult(true, SLAResult.Status.RUNNING),
+				_toSLAResult(true, SLAResult.Status.STOPPED),
+				_toSLAResult(true, SLAResult.Status.STOPPED),
 				_toSLAResult(true, SLAResult.Status.STOPPED)
-			});
+			).sorted(
+				Comparator.comparing(SLAResult::getRemainingTime)
+			).toArray(
+				SLAResult[]::new
+			));
 
 		testGetProcessInstancesPage_addInstance(_process.getId(), instance);
 
@@ -116,6 +140,14 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 
 		Instance instance1 = randomInstance();
 
+		instance1.setAssignees(
+			new Assignee[] {
+				new Assignee() {
+					{
+						id = _user.getUserId();
+					}
+				}
+			});
 		instance1.setClassPK(_classPK);
 		instance1.setCompleted(true);
 		instance1.setDateCompletion(
@@ -134,12 +166,72 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 			new Assignee[] {
 				new Assignee() {
 					{
-						id = _user.getUserId();
+						id = -1L;
 					}
 				}
 			});
 
-		testGetProcessInstancesPage_addInstance(_process.getId(), instance2);
+		Instance instance3 = randomInstance();
+
+		instance3.setAssignees(
+			new Assignee[] {
+				new Assignee() {
+					{
+						id = -1L;
+					}
+				}
+			});
+
+		Role siteAdministrationRole = _roleLocalService.getRole(
+			TestPropsValues.getCompanyId(), RoleConstants.SITE_ADMINISTRATOR);
+
+		Role siteMemberRole = _roleLocalService.getRole(
+			TestPropsValues.getCompanyId(), RoleConstants.SITE_MEMBER);
+
+		_addUserGroupRole(
+			new long[] {TestPropsValues.getUserId()},
+			TestPropsValues.getGroupId(), siteAdministrationRole.getRoleId());
+
+		_addUserGroupRole(
+			new long[] {TestPropsValues.getUserId()}, testGroup.getGroupId(),
+			siteMemberRole.getRoleId());
+
+		List<Assignment> assignments = new ArrayList<>();
+
+		assignments.add(
+			new RoleAssignment(
+				siteAdministrationRole.getRoleId(),
+				Collections.singletonList(TestPropsValues.getGroupId())));
+
+		_testGetProcessInstancesPage_addInstance(
+			assignments, instance2, _process.getId());
+
+		assignments = new ArrayList<>();
+
+		assignments.add(
+			new RoleAssignment(
+				siteMemberRole.getRoleId(),
+				Collections.singletonList(TestPropsValues.getGroupId())));
+
+		_testGetProcessInstancesPage_addInstance(
+			assignments, instance3, _process.getId());
+
+		_testGetProcessInstancesPage(
+			null, null, null, null, new String[] {"Pending"},
+			instances -> instances.forEach(
+				instance -> {
+					Assignee assignee = (Assignee)ArrayUtil.getValue(
+						instance.getAssignees(), 0);
+
+					if (Objects.equals(instance.getId(), instance2.getId())) {
+						Assert.assertTrue(assignee.getReviewer());
+					}
+					else if (Objects.equals(
+								instance.getId(), instance3.getId())) {
+
+						Assert.assertFalse(assignee.getReviewer());
+					}
+				}));
 
 		_testGetProcessInstancesPage(
 			null, null, null, null, new String[] {"Completed"},
@@ -152,19 +244,19 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 		_testGetProcessInstancesPage(
 			null, null, null, null, new String[] {"Pending"},
 			instances -> assertEqualsIgnoringOrder(
-				Collections.singletonList(instance2), instances));
+				Arrays.asList(instance2, instance3), instances));
 		_testGetProcessInstancesPage(
 			new Long[] {_user.getUserId()}, null, null, null, null,
 			instances -> assertEqualsIgnoringOrder(
-				Collections.singletonList(instance2), instances));
+				Collections.singletonList(instance1), instances));
 		_testGetProcessInstancesPage(
 			null, null, null, null, new String[] {"Completed", "Pending"},
 			instances -> assertEqualsIgnoringOrder(
-				Arrays.asList(instance1, instance2), instances));
+				Arrays.asList(instance1, instance2, instance3), instances));
 		_testGetProcessInstancesPage(
 			null, null, null, null, null,
 			instances -> assertEqualsIgnoringOrder(
-				Arrays.asList(instance1, instance2), instances));
+				Arrays.asList(instance1, instance2, instance3), instances));
 
 		Date dateEnd = DateUtils.addSeconds(instance1.getDateCompletion(), 1);
 		Date dateStart = DateUtils.addSeconds(
@@ -178,7 +270,7 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 			null, null, dateEnd, dateStart,
 			new String[] {"Completed", "Pending"},
 			instances -> assertEqualsIgnoringOrder(
-				Arrays.asList(instance1, instance2), instances));
+				Arrays.asList(instance1, instance2, instance3), instances));
 	}
 
 	@Override
@@ -205,7 +297,86 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 				else {
 					BeanUtils.setProperty(
 						instance1, entityField.getName(),
-						DateUtils.addMinutes(new Date(), -2));
+						DateUtils.addMinutes(
+							DateUtils.truncate(new Date(), Calendar.SECOND),
+							-2));
+				}
+			});
+	}
+
+	@Override
+	@Test
+	public void testGetProcessInstancesPageWithSortString() throws Exception {
+		testGetProcessInstancesPageWithSort(
+			EntityField.Type.STRING,
+			(entityField, instance1, instance2) -> {
+				String entityFieldName = entityField.getName();
+
+				if (StringUtil.equals("assigneeName", entityFieldName)) {
+					instance1.setAssignees(
+						() -> {
+							User user = _addUser("aaa");
+
+							return new Assignee[] {
+								new Assignee() {
+									{
+										id = user.getUserId();
+										name = user.getFullName();
+									}
+								}
+							};
+						});
+
+					instance2.setAssignees(
+						() -> {
+							User user = _addUser("bbb");
+
+							return new Assignee[] {
+								new Assignee() {
+									{
+										id = user.getUserId();
+										name = user.getFullName();
+									}
+								}
+							};
+						});
+				}
+				else if (StringUtil.equals("userName", entityFieldName)) {
+					instance1.setCreator(
+						() -> {
+							User user = _addUser("aaa");
+
+							return new Creator() {
+								{
+									id = user.getUserId();
+									name = user.getFullName();
+								}
+							};
+						});
+
+					instance2.setCreator(
+						() -> {
+							User user = _addUser("bbb");
+
+							return new Creator() {
+								{
+									id = user.getUserId();
+									name = user.getFullName();
+								}
+							};
+						});
+				}
+				else {
+					BeanUtils.setProperty(
+						instance1, entityFieldName,
+						"aaa".concat(
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString())));
+					BeanUtils.setProperty(
+						instance2, entityFieldName,
+						"bbb".concat(
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString())));
 				}
 			});
 	}
@@ -214,10 +385,35 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 	public SearchTestRule searchTestRule = new SearchTestRule();
 
 	@Override
+	protected boolean equals(Instance instance1, Instance instance2) {
+		if (super.equals(instance1, instance2)) {
+			return Objects.deepEquals(
+				instance1.getDateCreated(), instance2.getDateCreated());
+		}
+
+		return false;
+	}
+
+	@Override
 	protected String[] getAdditionalAssertFieldNames() {
 		return new String[] {
-			"assetTitle", "assetType", "classPK", "processId", "slaResults"
+			"assetTitle", "assetType", "classPK", "creator", "processId",
+			"slaResults"
 		};
+	}
+
+	@Override
+	protected List<GraphQLField> getGraphQLFields() throws Exception {
+		List<GraphQLField> graphQLFields = super.getGraphQLFields();
+
+		graphQLFields.addAll(
+			getGraphQLFields(
+				ReflectionUtil.getDeclaredField(
+					com.liferay.portal.workflow.metrics.rest.dto.v1_0.Instance.
+						class,
+					"dateCreated")));
+
+		return graphQLFields;
 	}
 
 	@Override
@@ -247,6 +443,8 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 
 		instance.setCompleted(false);
 		instance.setDateCompletion((Date)null);
+		instance.setDateCreated(
+			DateUtils.truncate(new Date(), Calendar.SECOND));
 		instance.setProcessId(_process.getId());
 		instance.setProcessVersion(_process.getVersion());
 		instance.setSlaResults(
@@ -276,28 +474,8 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 			Long processId, Instance instance)
 		throws Exception {
 
-		instance.setProcessId(processId);
-
-		instance = _workflowMetricsRESTTestHelper.addInstance(
-			testGroup.getCompanyId(), instance);
-
-		for (Assignee assignee : instance.getAssignees()) {
-			_workflowMetricsRESTTestHelper.addTask(
-				assignee, testGroup.getCompanyId(), instance,
-				TestPropsValues.getUser());
-		}
-
-		if (instance.getCompleted()) {
-			_workflowMetricsRESTTestHelper.completeInstance(
-				testGroup.getCompanyId(), instance);
-		}
-
-		_workflowMetricsRESTTestHelper.addSLAInstanceResults(
-			testGroup.getCompanyId(), instance, instance.getSlaResults());
-
-		_instances.add(instance);
-
-		return instance;
+		return _testGetProcessInstancesPage_addInstance(
+			Collections.emptyList(), instance, processId);
 	}
 
 	@Override
@@ -334,6 +512,22 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 			_process.getId(), instance);
 	}
 
+	private User _addUser(String firstName) throws Exception {
+		return UserTestUtil.addUser(
+			RandomTestUtil.randomString(
+				NumericStringRandomizerBumper.INSTANCE,
+				UniqueStringRandomizerBumper.INSTANCE),
+			LocaleUtil.getDefault(),
+			firstName.concat(
+				StringUtil.toLowerCase(RandomTestUtil.randomString())),
+			RandomTestUtil.randomString(),
+			new long[] {TestPropsValues.getGroupId()});
+	}
+
+	private void _addUserGroupRole(long[] userIds, long groupId, long roleIds) {
+		_userGroupRoleLocalService.addUserGroupRoles(userIds, groupId, roleIds);
+	}
+
 	private void _deleteInstances() throws Exception {
 		for (Instance instance : _instances) {
 			_workflowMetricsRESTTestHelper.deleteInstance(
@@ -351,9 +545,43 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 
 		Page<Instance> page = instanceResource.getProcessInstancesPage(
 			_process.getId(), assigneeIds, classPKs, dateEnd, dateStart, null,
-			statuses, null, Pagination.of(1, 2), null);
+			statuses, null, Pagination.of(1, 3), null);
 
 		unsafeConsumer.accept((List<Instance>)page.getItems());
+	}
+
+	private Instance _testGetProcessInstancesPage_addInstance(
+			List<Assignment> assignments, Instance instance, Long processId)
+		throws Exception {
+
+		instance.setProcessId(processId);
+
+		instance = _workflowMetricsRESTTestHelper.addInstance(
+			testGroup.getCompanyId(), instance);
+
+		for (Assignee assignee : instance.getAssignees()) {
+			if (assignee.getId() == -1L) {
+				_workflowMetricsRESTTestHelper.addTask(
+					assignee, assignments, testGroup.getCompanyId(), instance);
+			}
+			else {
+				_workflowMetricsRESTTestHelper.addTask(
+					assignee, testGroup.getCompanyId(), instance,
+					TestPropsValues.getUser());
+			}
+		}
+
+		if (instance.getCompleted()) {
+			_workflowMetricsRESTTestHelper.completeInstance(
+				testGroup.getCompanyId(), instance);
+		}
+
+		_workflowMetricsRESTTestHelper.addSLAInstanceResults(
+			testGroup.getCompanyId(), instance, instance.getSlaResults());
+
+		_instances.add(instance);
+
+		return instance;
 	}
 
 	private SLAResult _toSLAResult(
@@ -367,7 +595,8 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 				id = RandomTestUtil.randomLong();
 				name = StringPool.BLANK;
 				onTime = !overdue;
-				remainingTime = overdue ? -1L : 1L;
+				remainingTime = overdue ? -RandomTestUtil.randomLong() :
+					RandomTestUtil.randomLong();
 				status = slaResultStatus;
 			}
 		};
@@ -376,7 +605,17 @@ public class InstanceResourceTest extends BaseInstanceResourceTestCase {
 	private Long _classPK;
 	private final List<Instance> _instances = new ArrayList<>();
 	private Process _process;
+
+	@Inject
+	private RoleLocalService _roleLocalService;
+
 	private User _user;
+
+	@Inject
+	private UserGroupRoleLocalService _userGroupRoleLocalService;
+
+	@Inject
+	private UserLocalService _userLocalService;
 
 	@Inject
 	private WorkflowMetricsRESTTestHelper _workflowMetricsRESTTestHelper;

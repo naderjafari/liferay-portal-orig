@@ -1173,8 +1173,7 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 				sb.append(StringPool.SLASH);
 			}
 
-			sb.append(StringPool.STAR);
-			sb.append("</url-pattern>");
+			sb.append("*</url-pattern>");
 			sb.append("</servlet-mapping>");
 		}
 
@@ -1338,15 +1337,11 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 	}
 
 	public String getInvokerFilterContent() {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(getInvokerFilterContent("ASYNC"));
-		sb.append(getInvokerFilterContent("ERROR"));
-		sb.append(getInvokerFilterContent("FORWARD"));
-		sb.append(getInvokerFilterContent("INCLUDE"));
-		sb.append(getInvokerFilterContent("REQUEST"));
-
-		return sb.toString();
+		return StringBundler.concat(
+			getInvokerFilterContent("ASYNC"), getInvokerFilterContent("ERROR"),
+			getInvokerFilterContent("FORWARD"),
+			getInvokerFilterContent("INCLUDE"),
+			getInvokerFilterContent("REQUEST"));
 	}
 
 	public String getInvokerFilterContent(String dispatcher) {
@@ -1574,11 +1569,8 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 
 		Properties properties = getPluginPackageProperties(srcFile);
 
-		if (properties == null) {
-			return StringPool.BLANK;
-		}
-
-		if (!GetterUtil.getBoolean(
+		if ((properties == null) ||
+			!GetterUtil.getBoolean(
 				properties.getProperty(
 					"servlet-context-include-filters-enabled"),
 				true)) {
@@ -1814,14 +1806,12 @@ public class BaseDeployer implements AutoDeployer, Deployer {
 			}
 
 			if (parseProps) {
-				String displayName = getDisplayName(file);
-
 				String propertiesString = StringUtil.read(inputStream);
 
 				Properties properties = PropertiesUtil.load(propertiesString);
 
 				return PluginPackageUtil.readPluginPackageProperties(
-					displayName, properties);
+					getDisplayName(file), properties);
 			}
 
 			String xml = StringUtil.read(inputStream);

@@ -20,6 +20,7 @@ import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.test.util.DDMFormTemplateContext;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
@@ -168,7 +169,7 @@ public class DDMFormTemplateContextFactoryTest {
 				true
 			).build();
 
-		Assert.assertEquals(true, ddmFormTemplateContext.get("readOnly"));
+		Assert.assertTrue((boolean)ddmFormTemplateContext.get("readOnly"));
 	}
 
 	@Test
@@ -186,8 +187,8 @@ public class DDMFormTemplateContextFactoryTest {
 				false
 			).build();
 
-		Assert.assertEquals(
-			false, ddmFormTemplateContext.get("showRequiredFieldsWarning"));
+		Assert.assertFalse(
+			(boolean)ddmFormTemplateContext.get("showRequiredFieldsWarning"));
 	}
 
 	@Test
@@ -205,8 +206,8 @@ public class DDMFormTemplateContextFactoryTest {
 				true
 			).build();
 
-		Assert.assertEquals(
-			true, ddmFormTemplateContext.get("showSubmitButton"));
+		Assert.assertTrue(
+			(boolean)ddmFormTemplateContext.get("showSubmitButton"));
 	}
 
 	@Test
@@ -226,8 +227,8 @@ public class DDMFormTemplateContextFactoryTest {
 				true
 			).build();
 
-		Assert.assertEquals(
-			false, ddmFormTemplateContext.get("showSubmitButton"));
+		Assert.assertFalse(
+			(boolean)ddmFormTemplateContext.get("showSubmitButton"));
 	}
 
 	@Test
@@ -357,9 +358,20 @@ public class DDMFormTemplateContextFactoryTest {
 			(HashMap<String, Object>)ddmFormTemplateContext.get("validations");
 
 		Assert.assertEquals(
-			actualValidationsMap.toString(), 2, actualValidationsMap.size());
+			actualValidationsMap.toString(), 3, actualValidationsMap.size());
+		Assert.assertTrue(actualValidationsMap.containsKey("date"));
 		Assert.assertTrue(actualValidationsMap.containsKey("numeric"));
 		Assert.assertTrue(actualValidationsMap.containsKey("string"));
+
+		_assertValidations(
+			actualValidationsMap, "date",
+			HashMapBuilder.put(
+				"dateRange", "dateRange({name}, \"{parameter}\")"
+			).put(
+				"futureDates", "futureDates({name}, \"{parameter}\")"
+			).put(
+				"pastDates", "pastDates({name}, \"{parameter}\")"
+			).build());
 
 		_assertValidations(
 			actualValidationsMap, "numeric",
@@ -407,14 +419,15 @@ public class DDMFormTemplateContextFactoryTest {
 				true
 			).build();
 
-		Assert.assertEquals(true, ddmFormTemplateContext.get("viewMode"));
+		Assert.assertTrue((boolean)ddmFormTemplateContext.get("viewMode"));
 	}
 
-	protected void setUpThemeDisplay() {
+	protected void setUpThemeDisplay() throws Exception {
 		ThemeDisplay themeDisplay = new ThemeDisplay();
 
 		themeDisplay.setPathContext("/my/path/context/");
 		themeDisplay.setPathThemeImages("/my/theme/images/");
+		themeDisplay.setUser(TestPropsValues.getUser());
 
 		_httpServletRequest.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
 	}

@@ -21,6 +21,7 @@ import com.liferay.commerce.product.exception.CPOptionKeyException;
 import com.liferay.commerce.product.exception.CPOptionSKUContributorException;
 import com.liferay.commerce.product.model.CPOption;
 import com.liferay.commerce.product.service.base.CPOptionLocalServiceBaseImpl;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
@@ -81,7 +82,7 @@ public class CPOptionLocalServiceImpl extends CPOptionLocalServiceBaseImpl {
 			externalReferenceCode = null;
 		}
 
-		key = FriendlyURLNormalizerUtil.normalize(key);
+		key = FriendlyURLNormalizerUtil.normalizeWithPeriodsAndSlashes(key);
 
 		validateCPOptionKey(0, user.getCompanyId(), key);
 
@@ -161,7 +162,7 @@ public class CPOptionLocalServiceImpl extends CPOptionLocalServiceBaseImpl {
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(cpOption.getCPOptionId());
+		_expandoRowLocalService.deleteRows(cpOption.getCPOptionId());
 
 		return cpOption;
 	}
@@ -247,7 +248,7 @@ public class CPOptionLocalServiceImpl extends CPOptionLocalServiceBaseImpl {
 
 		CPOption cpOption = cpOptionPersistence.findByPrimaryKey(cpOptionId);
 
-		key = FriendlyURLNormalizerUtil.normalize(key);
+		key = FriendlyURLNormalizerUtil.normalizeWithPeriodsAndSlashes(key);
 
 		validateCPOptionKey(
 			cpOption.getCPOptionId(), cpOption.getCompanyId(), key);
@@ -425,5 +426,8 @@ public class CPOptionLocalServiceImpl extends CPOptionLocalServiceBaseImpl {
 
 	@ServiceReference(type = ConfigurationProvider.class)
 	private ConfigurationProvider _configurationProvider;
+
+	@ServiceReference(type = ExpandoRowLocalService.class)
+	private ExpandoRowLocalService _expandoRowLocalService;
 
 }

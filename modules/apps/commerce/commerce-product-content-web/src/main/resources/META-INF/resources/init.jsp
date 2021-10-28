@@ -18,7 +18,8 @@
 
 <%@ taglib uri="http://java.sun.com/portlet_2_0" prefix="portlet" %>
 
-<%@ taglib uri="http://liferay.com/tld/aui" prefix="aui" %><%@
+<%@ taglib uri="http://liferay.com/tld/adaptive-media-image" prefix="liferay-adaptive-media" %><%@
+taglib uri="http://liferay.com/tld/aui" prefix="aui" %><%@
 taglib uri="http://liferay.com/tld/commerce" prefix="liferay-commerce" %><%@
 taglib uri="http://liferay.com/tld/commerce-product" prefix="liferay-commerce-product" %><%@
 taglib uri="http://liferay.com/tld/commerce-ui" prefix="commerce-ui" %><%@
@@ -26,6 +27,7 @@ taglib uri="http://liferay.com/tld/ddm" prefix="liferay-ddm" %><%@
 taglib uri="http://liferay.com/tld/frontend" prefix="liferay-frontend" %><%@
 taglib uri="http://liferay.com/tld/portlet" prefix="liferay-portlet" %><%@
 taglib uri="http://liferay.com/tld/soy" prefix="soy" %><%@
+taglib uri="http://liferay.com/tld/template" prefix="liferay-template" %><%@
 taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %><%@
 taglib uri="http://liferay.com/tld/util" prefix="liferay-util" %>
@@ -35,7 +37,6 @@ page import="com.liferay.commerce.account.model.CommerceAccount" %><%@
 page import="com.liferay.commerce.constants.CommerceWebKeys" %><%@
 page import="com.liferay.commerce.context.CommerceContext" %><%@
 page import="com.liferay.commerce.product.catalog.CPCatalogEntry" %><%@
-page import="com.liferay.commerce.product.catalog.CPMedia" %><%@
 page import="com.liferay.commerce.product.catalog.CPSku" %><%@
 page import="com.liferay.commerce.product.constants.CPWebKeys" %><%@
 page import="com.liferay.commerce.product.content.constants.CPContentWebKeys" %><%@
@@ -44,6 +45,7 @@ page import="com.liferay.commerce.product.content.render.list.CPContentListRende
 page import="com.liferay.commerce.product.content.render.list.entry.CPContentListEntryRenderer" %><%@
 page import="com.liferay.commerce.product.content.util.CPCompareContentHelper" %><%@
 page import="com.liferay.commerce.product.content.util.CPContentHelper" %><%@
+page import="com.liferay.commerce.product.content.util.CPMedia" %><%@
 page import="com.liferay.commerce.product.content.web.internal.constants.CPCompareContentConstants" %><%@
 page import="com.liferay.commerce.product.content.web.internal.constants.CPCompareContentMiniConstants" %><%@
 page import="com.liferay.commerce.product.content.web.internal.constants.CPContentPortletConstants" %><%@

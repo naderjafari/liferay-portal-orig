@@ -85,8 +85,8 @@ public class SignInNavigationPrePageInclude implements PageInclude {
 			).setMVCRenderCommandName(
 				"/login/login"
 			).setParameter(
-				"saveLastPath", Boolean.FALSE.toString()
-			).build();
+				"saveLastPath", false
+			).buildPortletURL();
 
 			try {
 				fastLoginURL.setPortletMode(PortletMode.VIEW);

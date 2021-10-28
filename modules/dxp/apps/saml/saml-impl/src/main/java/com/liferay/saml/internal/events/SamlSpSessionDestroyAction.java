@@ -43,8 +43,8 @@ import org.osgi.service.component.annotations.Reference;
 public class SamlSpSessionDestroyAction extends SessionAction {
 
 	@Override
-	public void run(HttpSession session) throws ActionException {
-		Long userId = (Long)session.getAttribute(WebKeys.USER_ID);
+	public void run(HttpSession httpSession) throws ActionException {
+		Long userId = (Long)httpSession.getAttribute(WebKeys.USER_ID);
 
 		if (userId == null) {
 			return;
@@ -70,31 +70,35 @@ public class SamlSpSessionDestroyAction extends SessionAction {
 		CompanyThreadLocal.setCompanyId(userCompanyId);
 
 		try {
-			doRun(session);
+			doRun(httpSession);
 		}
 		finally {
 			CompanyThreadLocal.setCompanyId(companyId);
 		}
 	}
 
-	protected void doRun(HttpSession session) throws ActionException {
+	protected void doRun(HttpSession httpSession) throws ActionException {
 		if (!_samlProviderConfigurationHelper.isEnabled() ||
 			!_samlProviderConfigurationHelper.isRoleSp()) {
 
 			return;
 		}
 
+		SamlSpSession samlSpSession =
+			_samlSpSessionLocalService.fetchSamlSpSessionByJSessionId(
+				httpSession.getId());
+
+		if (samlSpSession == null) {
+			return;
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug(
+				"HTTP session expiring SAML SP session " +
+					samlSpSession.getSamlSpSessionKey());
+		}
+
 		try {
-			SamlSpSession samlSpSession =
-				_samlSpSessionLocalService.getSamlSpSessionByJSessionId(
-					session.getId());
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(
-					"HTTP session expiring SAML SP session " +
-						samlSpSession.getSamlSpSessionKey());
-			}
-
 			_samlSpSessionLocalService.deleteSamlSpSession(
 				samlSpSession.getSamlSpSessionId());
 		}

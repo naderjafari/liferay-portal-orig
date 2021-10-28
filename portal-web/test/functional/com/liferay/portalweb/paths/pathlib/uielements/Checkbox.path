@@ -2,11 +2,13 @@
 <head>
 <title>Checkbox</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">Checkbox</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ACTIVE</td>
@@ -55,20 +57,20 @@
 </tr>
 <tr>
 	<td>ANY_CHECKBOX</td>
-	<td>//label[contains(.,'${checkboxName}')]/input[@type='checkbox']</td>
+	<td>//label[contains(.,'${checkboxName}')]//input[@type='checkbox']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>ANY_CHECKBOX_CHECKED</td>
-	<td>//label[contains(.,'${checkboxName}')]/input[@type='checkbox' and @checked]</td>
+	<td>//label[contains(.,'${checkboxName}')]//input[@type='checkbox' and @checked]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>ANY_CHECKBOX_UNCHECKED</td>
-	<td>//label[contains(.,'${checkboxName}')]/input[@type='checkbox' and not(@checked)]</td>
+	<td>//label[contains(.,'${checkboxName}')]//input[@type='checkbox' and not(@checked)]</td>
 	<td></td>
 </tr>
-<tr>	
+<tr>
 	<td>ADD_SHIPMENT_ITEMS_CHECKBOX</td>
 	<td>//div[contains(text(), '${key_productSKU}')]/preceding-sibling::div[@class='dnd-td item-selector']//input[@type='checkbox']</td>
 	<td></td>
@@ -80,7 +82,7 @@
 </tr>
 <tr>
 	<td>CHECKBOX_DISABLED</td>
-	<td>//label[contains(.,'${key_checkboxName}')]/input[@type='checkbox' and contains(@class,'disabled')]</td>
+	<td>//label[contains(.,'${key_checkboxName}')]/input[@type='checkbox' and contains(@class,'disabled')] | //label[contains(@class,'disabled')][contains(.,'${key_checkboxName}')]//input[@type='checkbox']</td>
 	<td></td>
 </tr>
 <tr>
@@ -134,9 +136,9 @@
 	<td></td>
 </tr>
 <tr>
-    <td>ENABLE_CHECKBOX</td>
-    <td>//tr[contains(@data-name,'${key_checkboxName}')]//input[contains(@type,'checkbox')]</td>
-    <td></td>
+	<td>ENABLE_CHECKBOX</td>
+	<td>//tr[contains(@data-name,'${key_checkboxName}')]//input[contains(@type,'checkbox')]</td>
+	<td></td>
 </tr>
 <tr>
 	<td>ENABLE_COMMENTS</td>
@@ -176,11 +178,6 @@
 <tr>
 	<td>ENABLE_CONVERSION_TXT</td>
 	<td>//label[contains(.,'TXT')]/input[@type='checkbox']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>ENABLE_DIRECTORY_INDEXING</td>
-	<td>//label[contains(.,'Enable Directory Indexing')]//input[@type='checkbox']</td>
 	<td></td>
 </tr>
 <tr>
@@ -456,6 +453,11 @@
 <tr>
 	<td>STATUS</td>
 	<td>//span[@class='icon-check' and contains(.,'${key_status}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SWITCH</td>
+	<td>//div[contains(@data-field-name,'${key_fieldName}')]//span[@class='toggle-switch-bar'] | //span[contains(text(),'${key_fieldName}')]/preceding-sibling::span[@class='toggle-switch-handle'] | //span[contains(text(),'${key_fieldName}')] | //label[contains(@class,'toggle-switch')]//input[contains(@type,'checkbox')]/following-sibling::span[contains(@class,'toggle-switch-bar')]//span[contains(text(),'${key_fieldName}')]/..//preceding-sibling::input[contains(@type,'checkbox')]</td>
 	<td></td>
 </tr>
 <tr>

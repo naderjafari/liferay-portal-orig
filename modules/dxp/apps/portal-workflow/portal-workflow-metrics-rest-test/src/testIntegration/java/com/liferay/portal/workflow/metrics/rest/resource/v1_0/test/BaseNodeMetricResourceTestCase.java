@@ -28,7 +28,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -51,9 +50,7 @@ import com.liferay.portal.workflow.metrics.rest.client.pagination.Pagination;
 import com.liferay.portal.workflow.metrics.rest.client.resource.v1_0.NodeMetricResource;
 import com.liferay.portal.workflow.metrics.rest.client.serdes.v1_0.NodeMetricSerDes;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -195,16 +192,16 @@ public abstract class BaseNodeMetricResourceTestCase {
 
 	@Test
 	public void testGetProcessNodeMetricsPage() throws Exception {
-		Page<NodeMetric> page = nodeMetricResource.getProcessNodeMetricsPage(
-			testGetProcessNodeMetricsPage_getProcessId(), null,
-			RandomTestUtil.nextDate(), RandomTestUtil.nextDate(),
-			RandomTestUtil.randomString(), Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long processId = testGetProcessNodeMetricsPage_getProcessId();
 		Long irrelevantProcessId =
 			testGetProcessNodeMetricsPage_getIrrelevantProcessId();
+
+		Page<NodeMetric> page = nodeMetricResource.getProcessNodeMetricsPage(
+			processId, null, RandomTestUtil.nextDate(),
+			RandomTestUtil.nextDate(), RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantProcessId != null) {
 			NodeMetric irrelevantNodeMetric =
@@ -212,7 +209,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 					irrelevantProcessId, randomIrrelevantNodeMetric());
 
 			page = nodeMetricResource.getProcessNodeMetricsPage(
-				irrelevantProcessId, null, null, null, null,
+				irrelevantProcessId, null, null, null, null, null,
 				Pagination.of(1, 2), null);
 
 			Assert.assertEquals(1, page.getTotalCount());
@@ -230,7 +227,8 @@ public abstract class BaseNodeMetricResourceTestCase {
 			processId, randomNodeMetric());
 
 		page = nodeMetricResource.getProcessNodeMetricsPage(
-			processId, null, null, null, null, Pagination.of(1, 2), null);
+			processId, null, null, null, null, null, Pagination.of(1, 10),
+			null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -254,14 +252,14 @@ public abstract class BaseNodeMetricResourceTestCase {
 			processId, randomNodeMetric());
 
 		Page<NodeMetric> page1 = nodeMetricResource.getProcessNodeMetricsPage(
-			processId, null, null, null, null, Pagination.of(1, 2), null);
+			processId, null, null, null, null, null, Pagination.of(1, 2), null);
 
 		List<NodeMetric> nodeMetrics1 = (List<NodeMetric>)page1.getItems();
 
 		Assert.assertEquals(nodeMetrics1.toString(), 2, nodeMetrics1.size());
 
 		Page<NodeMetric> page2 = nodeMetricResource.getProcessNodeMetricsPage(
-			processId, null, null, null, null, Pagination.of(2, 2), null);
+			processId, null, null, null, null, null, Pagination.of(2, 2), null);
 
 		Assert.assertEquals(3, page2.getTotalCount());
 
@@ -270,7 +268,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 		Assert.assertEquals(nodeMetrics2.toString(), 1, nodeMetrics2.size());
 
 		Page<NodeMetric> page3 = nodeMetricResource.getProcessNodeMetricsPage(
-			processId, null, null, null, null, Pagination.of(1, 3), null);
+			processId, null, null, null, null, null, Pagination.of(1, 3), null);
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(nodeMetric1, nodeMetric2, nodeMetric3),
@@ -311,7 +309,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -383,8 +381,8 @@ public abstract class BaseNodeMetricResourceTestCase {
 		for (EntityField entityField : entityFields) {
 			Page<NodeMetric> ascPage =
 				nodeMetricResource.getProcessNodeMetricsPage(
-					processId, null, null, null, null, Pagination.of(1, 2),
-					entityField.getName() + ":asc");
+					processId, null, null, null, null, null,
+					Pagination.of(1, 2), entityField.getName() + ":asc");
 
 			assertEquals(
 				Arrays.asList(nodeMetric1, nodeMetric2),
@@ -392,8 +390,8 @@ public abstract class BaseNodeMetricResourceTestCase {
 
 			Page<NodeMetric> descPage =
 				nodeMetricResource.getProcessNodeMetricsPage(
-					processId, null, null, null, null, Pagination.of(1, 2),
-					entityField.getName() + ":desc");
+					processId, null, null, null, null, null,
+					Pagination.of(1, 2), entityField.getName() + ":desc");
 
 			assertEquals(
 				Arrays.asList(nodeMetric2, nodeMetric1),
@@ -420,6 +418,23 @@ public abstract class BaseNodeMetricResourceTestCase {
 		throws Exception {
 
 		return null;
+	}
+
+	protected void assertContains(
+		NodeMetric nodeMetric, List<NodeMetric> nodeMetrics) {
+
+		boolean contains = false;
+
+		for (NodeMetric item : nodeMetrics) {
+			if (equals(nodeMetric, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			nodeMetrics + " does not contain " + nodeMetric, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -574,7 +589,7 @@ public abstract class BaseNodeMetricResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.portal.workflow.metrics.rest.dto.v1_0.
 						NodeMetric.class)) {
@@ -591,12 +606,13 @@ public abstract class BaseNodeMetricResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -750,14 +766,16 @@ public abstract class BaseNodeMetricResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -986,8 +1004,8 @@ public abstract class BaseNodeMetricResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseNodeMetricResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseNodeMetricResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

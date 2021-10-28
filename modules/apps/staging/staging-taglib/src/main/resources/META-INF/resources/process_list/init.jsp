@@ -58,14 +58,14 @@ PortletURL renderURL = PortletURLBuilder.createRenderURL(
 ).setParameter(
 	"displayStyle", displayStyle
 ).setParameter(
-	"localPublishing", String.valueOf(localPublishing)
+	"localPublishing", localPublishing
 ).setParameter(
 	"orderByCol", orderByCol
 ).setParameter(
 	"orderByType", orderByType
 ).setParameter(
 	"searchContainerId", searchContainerId
-).build();
+).buildPortletURL();
 
 String taskExecutorClassName = localPublishing ? localTaskExecutorClassName : remoteTaskExecutorClassName;
 %>

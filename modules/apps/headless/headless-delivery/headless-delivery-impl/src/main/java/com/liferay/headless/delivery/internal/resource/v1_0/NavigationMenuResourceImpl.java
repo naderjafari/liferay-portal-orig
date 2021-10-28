@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.util.JaxRsLinkUtil;
@@ -398,11 +399,9 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 			return null;
 		}
 
-		UnicodeProperties unicodeProperties = new UnicodeProperties();
-
-		unicodeProperties.fastLoad(siteNavigationMenuItem.getTypeSettings());
-
-		return unicodeProperties;
+		return UnicodePropertiesBuilder.fastLoad(
+			siteNavigationMenuItem.getTypeSettings()
+		).build();
 	}
 
 	private boolean _isNameProperty(Map.Entry<String, String> property) {
@@ -558,8 +557,7 @@ public class NavigationMenuResourceImpl extends BaseNavigationMenuResourceImpl {
 								localizedNames = layout.getNameMap();
 							}
 
-							return LocalizedMapUtil.getI18nMap(
-								true, localizedNames);
+							return LocalizedMapUtil.getI18nMap(localizedNames);
 						}
 
 						return null;

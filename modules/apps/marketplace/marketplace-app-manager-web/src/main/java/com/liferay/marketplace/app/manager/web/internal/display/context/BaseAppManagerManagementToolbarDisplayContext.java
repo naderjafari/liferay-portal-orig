@@ -89,8 +89,8 @@ public abstract class BaseAppManagerManagementToolbarDisplayContext
 			PortletURLBuilder.create(
 				getPortletURL()
 			).setParameter(
-				"resetCur", Boolean.TRUE.toString()
-			).build(),
+				"resetCur", true
+			).buildPortletURL(),
 			"category", getCategory());
 	}
 
@@ -135,8 +135,8 @@ public abstract class BaseAppManagerManagementToolbarDisplayContext
 			PortletURLBuilder.create(
 				getPortletURL()
 			).setParameter(
-				"resetCur", Boolean.TRUE.toString()
-			).build(),
+				"resetCur", true
+			).buildPortletURL(),
 			"state", getState());
 	}
 

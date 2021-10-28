@@ -62,6 +62,9 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,9 +78,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -127,6 +132,14 @@ public class JenkinsResultsParserUtil {
 		URL_CACHE + "/liferay-portal/build.properties",
 		URL_CACHE + "/liferay-portal/ci.properties",
 		URL_CACHE + "/liferay-portal/test.properties"
+	};
+
+	public static final String[] URLS_GIT_DIRECTORIES_JSON_DEFAULT = {
+		URL_CACHE + "/liferay-jenkins-ee/git-directories.json"
+	};
+
+	public static final String[] URLS_GIT_WORKING_DIRECTORIES_JSON_DEFAULT = {
+		URL_CACHE + "/liferay-jenkins-ee/git-working-directories.json"
 	};
 
 	public static final String[] URLS_JENKINS_PROPERTIES_DEFAULT = {
@@ -275,6 +288,65 @@ public class JenkinsResultsParserUtil {
 		}
 	}
 
+	public static void copy(
+			final File sourceBaseDir, final File targetBaseDir,
+			final List<PathMatcher> includePathMatchers,
+			final List<PathMatcher> excludePathMatchers)
+		throws IOException {
+
+		if ((sourceBaseDir == null) || !sourceBaseDir.exists() ||
+			(targetBaseDir == null)) {
+
+			return;
+		}
+
+		if (!targetBaseDir.exists()) {
+			targetBaseDir.mkdirs();
+		}
+
+		Files.walkFileTree(
+			sourceBaseDir.toPath(),
+			new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult preVisitDirectory(
+						Path filePath, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					if (isFileExcluded(
+							excludePathMatchers, filePath.toFile())) {
+
+						return FileVisitResult.SKIP_SUBTREE;
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFile(
+						Path filePath, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					if (!isFileIncluded(
+							excludePathMatchers, includePathMatchers,
+							filePath.toFile())) {
+
+						return FileVisitResult.CONTINUE;
+					}
+
+					File file = filePath.toFile();
+
+					String relativePath = getPathRelativeTo(
+						file, sourceBaseDir);
+
+					copy(file, new File(targetBaseDir, relativePath));
+
+					return FileVisitResult.CONTINUE;
+				}
+
+			});
+	}
+
 	public static JSONArray createJSONArray(String jsonString) {
 		jsonString = jsonString.trim();
 
@@ -321,10 +393,8 @@ public class JenkinsResultsParserUtil {
 		return jsonObject;
 	}
 
-	public static URL createURL(String urlString) throws Exception {
-		URL url = new URL(urlString);
-
-		return encode(url);
+	public static URL createURL(String url) throws Exception {
+		return encode(new URL(url));
 	}
 
 	public static String decode(String url)
@@ -362,6 +432,71 @@ public class JenkinsResultsParserUtil {
 		return successful;
 	}
 
+	public static void delete(
+			File baseDir, final List<PathMatcher> includePathMatchers,
+			final List<PathMatcher> excludePathMatchers)
+		throws IOException {
+
+		if ((baseDir == null) || !baseDir.exists()) {
+			return;
+		}
+
+		Files.walkFileTree(
+			baseDir.toPath(),
+			new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult postVisitDirectory(
+						Path dirPath, IOException ioException)
+					throws IOException {
+
+					if (Files.isDirectory(dirPath)) {
+						File dir = dirPath.toFile();
+
+						File[] files = dir.listFiles();
+
+						if ((files == null) || (files.length == 0)) {
+							delete(dir);
+						}
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult preVisitDirectory(
+						Path filePath, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					if (isFileExcluded(
+							excludePathMatchers, filePath.toFile())) {
+
+						return FileVisitResult.SKIP_SUBTREE;
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFile(
+						Path filePath, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					if (!isFileIncluded(
+							excludePathMatchers, includePathMatchers,
+							filePath.toFile())) {
+
+						return FileVisitResult.CONTINUE;
+					}
+
+					delete(filePath.toFile());
+
+					return FileVisitResult.CONTINUE;
+				}
+
+			});
+	}
+
 	public static String encode(String url)
 		throws MalformedURLException, URISyntaxException {
 
@@ -380,6 +515,20 @@ public class JenkinsResultsParserUtil {
 		String uriASCIIString = uri.toASCIIString();
 
 		return new URL(uriASCIIString.replace("#", "%23"));
+	}
+
+	public static String escapeForBash(String string) {
+		string = string.replaceAll(" ", "\\\\ ");
+		string = string.replaceAll("'", "\\\\\\\'");
+		string = string.replaceAll("<", "\\\\\\<");
+		string = string.replaceAll(">", "\\\\\\>");
+		string = string.replaceAll("\"", "\\\\\\\"");
+		string = string.replaceAll("\\$", "\\\\\\$");
+		string = string.replaceAll("\\(", "\\\\\\(");
+		string = string.replaceAll("\\)", "\\\\\\)");
+		string = string.replaceAll("\\n", "\\\\n");
+
+		return string;
 	}
 
 	public static Process executeBashCommands(
@@ -539,8 +688,10 @@ public class JenkinsResultsParserUtil {
 		String jenkinsMasterName, String script) {
 
 		try {
-			URL urlObject = new URL(
-				fixURL(getLocalURL("http://" + jenkinsMasterName + "/script")));
+			String url = fixURL(
+				getLocalURL("http://" + jenkinsMasterName + "/script"));
+
+			URL urlObject = new URL(url);
 
 			HttpURLConnection httpURLConnection =
 				(HttpURLConnection)urlObject.openConnection();
@@ -548,11 +699,25 @@ public class JenkinsResultsParserUtil {
 			httpURLConnection.setDoOutput(true);
 			httpURLConnection.setRequestMethod("POST");
 
-			Properties buildProperties = getBuildProperties(false);
+			HTTPAuthorization httpAuthorization = null;
 
-			HTTPAuthorization httpAuthorization = new BasicHTTPAuthorization(
-				buildProperties.getProperty("jenkins.admin.user.token"),
-				buildProperties.getProperty("jenkins.admin.user.name"));
+			String jenkinsAdminUserName = getBuildProperty(
+				"jenkins.admin.user.name");
+
+			if (jenkinsMasterName.contains("test-1-0")) {
+				String jenkinsAdminUserPassword = getBuildProperty(
+					"jenkins.admin.user.password");
+
+				httpAuthorization = new BasicHTTPAuthorization(
+					jenkinsAdminUserPassword, jenkinsAdminUserName);
+			}
+			else {
+				String jenkinsAdminUserToken = getBuildProperty(
+					"jenkins.admin.user.token");
+
+				httpAuthorization = new BasicHTTPAuthorization(
+					jenkinsAdminUserToken, jenkinsAdminUserName);
+			}
 
 			httpURLConnection.setRequestProperty(
 				"Authorization", httpAuthorization.toString());
@@ -560,20 +725,26 @@ public class JenkinsResultsParserUtil {
 			try (OutputStream outputStream =
 					httpURLConnection.getOutputStream()) {
 
-				script = "script=" + URLEncoder.encode(script, "UTF-8");
+				String post = "script=" + URLEncoder.encode(script, "UTF-8");
 
-				outputStream.write(script.getBytes("UTF-8"));
+				outputStream.write(post.getBytes("UTF-8"));
 
 				outputStream.flush();
 			}
 
 			httpURLConnection.connect();
 
+			int responseCode = httpURLConnection.getResponseCode();
+
 			System.out.println(
 				combine(
 					"Response from ", urlObject.toString(), ": ",
-					String.valueOf(httpURLConnection.getResponseCode()), " ",
+					String.valueOf(responseCode), " ",
 					httpURLConnection.getResponseMessage()));
+
+			if (responseCode >= 400) {
+				System.out.println(script);
+			}
 		}
 		catch (IOException ioException) {
 			System.out.println("Unable to execute Jenkins script");
@@ -796,16 +967,36 @@ public class JenkinsResultsParserUtil {
 				return "SUCCESS";
 			}
 
-			if (progressiveText.contains("Finished: UNSTABLE")) {
-				return "FAILURE";
-			}
+			if (progressiveText.contains("Finished: UNSTABLE") ||
+				progressiveText.contains("Finished: FAILURE")) {
 
-			if (progressiveText.contains("Finished: FAILURE")) {
 				return "FAILURE";
 			}
 		}
 
 		return null;
+	}
+
+	public static Long getAverage(List<Long> numbers) {
+		if ((numbers == null) || numbers.isEmpty()) {
+			return 0L;
+		}
+
+		List<Long> numbersToAverage = new ArrayList<>(numbers);
+
+		numbersToAverage.removeAll(Collections.singleton(null));
+
+		if (numbersToAverage.isEmpty()) {
+			return 0L;
+		}
+
+		long total = 0L;
+
+		for (Long number : numbersToAverage) {
+			total += number;
+		}
+
+		return total / numbersToAverage.size();
 	}
 
 	public static String getAxisVariable(JSONObject jsonObject) {
@@ -852,16 +1043,10 @@ public class JenkinsResultsParserUtil {
 			throw new RuntimeException("Unable to encode " + axisBuildURL);
 		}
 
-		String label = "AXIS_VARIABLE=";
+		Matcher matcher = _axisVariablePattern.matcher(url);
 
-		int x = url.indexOf(label);
-
-		if (x != -1) {
-			url = url.substring(x + label.length());
-
-			int y = url.indexOf(",");
-
-			return url.substring(0, y);
+		if (matcher.find()) {
+			return matcher.group("axisVariable");
 		}
 
 		return "";
@@ -899,6 +1084,40 @@ public class JenkinsResultsParserUtil {
 		sb.append(matcher.group("buildNumber"));
 		sb.append("/");
 		sb.append(artifactName);
+
+		return sb.toString();
+	}
+
+	public static String getBuildDirPath() {
+		StringBuilder sb = new StringBuilder();
+
+		if (isWindows()) {
+			sb.append("C:");
+		}
+
+		sb.append("/tmp/jenkins/");
+
+		String buildNumber = System.getenv("BUILD_NUMBER");
+		String jobName = System.getenv("JOB_NAME");
+		String masterHostname = System.getenv("MASTER_HOSTNAME");
+
+		if (!isCINode() || isNullOrEmpty(buildNumber) ||
+			isNullOrEmpty(jobName) || isNullOrEmpty(masterHostname)) {
+
+			LocalDate localDate = LocalDate.now();
+
+			sb.append(
+				localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+
+			return sb.toString();
+		}
+
+		sb.append(masterHostname);
+		sb.append("/");
+		sb.append(
+			jobName.replaceAll("([^/]+)/AXIS_VARIABLE=([^,]+),.*", "$1/$2"));
+		sb.append("/");
+		sb.append(buildNumber);
 
 		return sb.toString();
 	}
@@ -1220,6 +1439,25 @@ public class JenkinsResultsParserUtil {
 	public static String getCIProperty(
 		String branchName, String key, String repositoryName) {
 
+		List<String> ciPropertyURLs = new ArrayList<>();
+
+		if (repositoryName.startsWith("com-liferay-")) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("https://raw.githubusercontent.com/liferay");
+			sb.append("/liferay-portal");
+
+			if (!branchName.equals("master")) {
+				sb.append("-ee");
+			}
+
+			sb.append("/");
+			sb.append(branchName);
+			sb.append("/ci.properties");
+
+			ciPropertyURLs.add(sb.toString());
+		}
+
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("https://raw.githubusercontent.com/liferay/");
@@ -1228,18 +1466,20 @@ public class JenkinsResultsParserUtil {
 		sb.append(branchName);
 		sb.append("/ci.properties");
 
+		ciPropertyURLs.add(sb.toString());
+
 		Properties ciProperties = new Properties();
 
-		try {
-			String ciPropertiesString = toString(sb.toString(), true);
+		for (String ciPropertyURL : ciPropertyURLs) {
+			try {
+				String ciPropertiesString = toString(ciPropertyURL, true);
 
-			ciProperties.load(new StringReader(ciPropertiesString));
-		}
-		catch (IOException ioException) {
-			System.out.println(
-				"Unable to load ci.properties from " + sb.toString());
-
-			return null;
+				ciProperties.load(new StringReader(ciPropertiesString));
+			}
+			catch (IOException ioException) {
+				System.out.println(
+					"Unable to load ci.properties from " + ciPropertyURL);
+			}
 		}
 
 		return ciProperties.getProperty(key);
@@ -1334,11 +1574,13 @@ public class JenkinsResultsParserUtil {
 		while (true) {
 			String timeStamp = String.valueOf(getCurrentTimeMillis());
 
-			if (_timeStamps.contains(timeStamp)) {
-				continue;
-			}
+			synchronized (_timeStamps) {
+				if (_timeStamps.contains(timeStamp)) {
+					continue;
+				}
 
-			_timeStamps.add(timeStamp);
+				_timeStamps.add(timeStamp);
+			}
 
 			return timeStamp;
 		}
@@ -1387,6 +1629,34 @@ public class JenkinsResultsParserUtil {
 		return null;
 	}
 
+	public static String getDockerImageName(File dockerFile) {
+		if ((dockerFile == null) || !dockerFile.exists()) {
+			return null;
+		}
+
+		String dockerFileContent;
+
+		try {
+			dockerFileContent = read(dockerFile);
+		}
+		catch (IOException ioException) {
+			return null;
+		}
+
+		if (isNullOrEmpty(dockerFileContent)) {
+			return null;
+		}
+
+		Matcher dockerFileMatcher = _dockerFilePattern.matcher(
+			dockerFileContent);
+
+		if (!dockerFileMatcher.find()) {
+			return null;
+		}
+
+		return dockerFileMatcher.group("dockerImageName");
+	}
+
 	public static String getEnvironmentVariable(
 		String environmentVariableName) {
 
@@ -1417,6 +1687,22 @@ public class JenkinsResultsParserUtil {
 		}
 
 		return excludedFiles;
+	}
+
+	public static String getGitDirectoryName(
+		String repositoryName, String upstreamBranchName) {
+
+		String targetGitDirectoryName = _getGitDirectoryName(
+			repositoryName, upstreamBranchName,
+			_getGitWorkingDirectoriesJSONArray());
+
+		if (targetGitDirectoryName == null) {
+			targetGitDirectoryName = _getGitDirectoryName(
+				repositoryName, upstreamBranchName,
+				_getGitDirectoriesJSONArray());
+		}
+
+		return targetGitDirectoryName;
 	}
 
 	public static String getGitHubAPIRateLimitStatusMessage() {
@@ -1476,6 +1762,28 @@ public class JenkinsResultsParserUtil {
 
 	public static DateFormat getGitHubDateFormat() {
 		return _gitHubDateFormat;
+	}
+
+	public static String getGitRepositoryName(String gitDirectoryName) {
+		JSONObject gitDirectoryJSONObject = _getGitDirectoryJSONObject(
+			gitDirectoryName);
+
+		if (gitDirectoryJSONObject == null) {
+			return null;
+		}
+
+		return gitDirectoryJSONObject.getString("repository");
+	}
+
+	public static String getGitUpstreamBranchName(String gitDirectoryName) {
+		JSONObject gitDirectoryJSONObject = _getGitDirectoryJSONObject(
+			gitDirectoryName);
+
+		if (gitDirectoryJSONObject == null) {
+			return null;
+		}
+
+		return gitDirectoryJSONObject.getString("branch");
 	}
 
 	public static String[] getGlobsFromProperty(String globProperty) {
@@ -1942,6 +2250,8 @@ public class JenkinsResultsParserUtil {
 			_remoteURLAuthorityPattern1.matcher(localURL);
 		Matcher remoteURLAuthorityMatcher2 =
 			_remoteURLAuthorityPattern2.matcher(localURL);
+		Matcher remoteURLAuthorityMatcher3 =
+			_remoteURLAuthorityPattern3.matcher(localURL);
 
 		if (remoteURLAuthorityMatcher1.find()) {
 			String localURLAuthority = combine(
@@ -1957,6 +2267,15 @@ public class JenkinsResultsParserUtil {
 			String localURLAuthority = combine(
 				"http://", remoteURLAuthorityMatcher2.group(1), "/");
 			String remoteURLAuthority = remoteURLAuthorityMatcher2.group(0);
+
+			localURL = localURL.replaceAll(
+				remoteURLAuthority, localURLAuthority);
+		}
+		else if (remoteURLAuthorityMatcher3.find()) {
+			String localURLAuthority = combine(
+				"http://mirrors.lax.liferay.com/",
+				remoteURLAuthorityMatcher3.group(2));
+			String remoteURLAuthority = remoteURLAuthorityMatcher3.group(0);
 
 			localURL = localURL.replaceAll(
 				remoteURLAuthority, localURLAuthority);
@@ -2180,6 +2499,42 @@ public class JenkinsResultsParserUtil {
 		return getProperty(properties, basePropertyName, true, opts);
 	}
 
+	public static List<String> getPropertyOptions(String propertyName) {
+		List<String> propertyOptions = new ArrayList<>();
+
+		Stack<Integer> stack = new Stack<>();
+
+		Integer start = null;
+
+		for (int i = 0; i < propertyName.length(); i++) {
+			char c = propertyName.charAt(i);
+
+			if (c == '[') {
+				stack.push(i);
+
+				if (start == null) {
+					start = i;
+				}
+
+				continue;
+			}
+
+			if ((c != ']') || (start == null)) {
+				continue;
+			}
+
+			stack.pop();
+
+			if (stack.isEmpty()) {
+				propertyOptions.add(propertyName.substring(start + 1, i));
+
+				start = null;
+			}
+		}
+
+		return propertyOptions;
+	}
+
 	public static String getRandomGitHubDevNodeHostname() {
 		return getRandomGitHubDevNodeHostname(null);
 	}
@@ -2386,6 +2741,8 @@ public class JenkinsResultsParserUtil {
 			remoteURL);
 		Matcher localURLAuthorityMatcher2 = _localURLAuthorityPattern2.matcher(
 			remoteURL);
+		Matcher localURLAuthorityMatcher3 = _localURLAuthorityPattern3.matcher(
+			remoteURL);
 
 		if (localURLAuthorityMatcher1.find()) {
 			String localURLAuthority = localURLAuthorityMatcher1.group(0);
@@ -2401,6 +2758,14 @@ public class JenkinsResultsParserUtil {
 			String remoteURLAuthority = combine(
 				"https://", localURLAuthorityMatcher2.group(1),
 				".liferay.com/");
+
+			remoteURL = remoteURL.replaceAll(
+				localURLAuthority, remoteURLAuthority);
+		}
+		else if (localURLAuthorityMatcher3.find()) {
+			String localURLAuthority = localURLAuthorityMatcher3.group(0);
+			String remoteURLAuthority = combine(
+				"https://", localURLAuthorityMatcher3.group(2));
 
 			remoteURL = remoteURL.replaceAll(
 				localURLAuthority, remoteURLAuthority);
@@ -2729,6 +3094,16 @@ public class JenkinsResultsParserUtil {
 		}
 	}
 
+	public static boolean isSHA(String sha) {
+		if (sha == null) {
+			return false;
+		}
+
+		Matcher matcher = _shaPattern.matcher(sha);
+
+		return matcher.matches();
+	}
+
 	public static boolean isWindows() {
 		return SystemUtils.IS_OS_WINDOWS;
 	}
@@ -2870,6 +3245,68 @@ public class JenkinsResultsParserUtil {
 		}
 
 		System.out.println(tableStringBuilder.toString());
+	}
+
+	public static void pullDockerImageDependencies(
+		File baseDir, String[] excludedDockerImageNames) {
+
+		String dockerEnabled = System.getenv("DOCKER_ENABLED");
+
+		if (isNullOrEmpty(dockerEnabled) || !dockerEnabled.equals("true")) {
+			return;
+		}
+
+		List<String> pulledDockerImageNames = new ArrayList<>();
+
+		for (File dockerFile : findFiles(baseDir, "Dockerfile")) {
+			String dockerImageName = getDockerImageName(dockerFile);
+
+			if (isNullOrEmpty(dockerImageName) ||
+				pulledDockerImageNames.contains(dockerImageName)) {
+
+				continue;
+			}
+
+			boolean excludeDockerImageName = false;
+
+			if (excludedDockerImageNames != null) {
+				for (String excludedImageName : excludedDockerImageNames) {
+					if (isNullOrEmpty(excludedImageName)) {
+						continue;
+					}
+
+					if (dockerImageName.matches(excludedImageName)) {
+						excludeDockerImageName = true;
+
+						break;
+					}
+				}
+			}
+
+			if (excludeDockerImageName) {
+				continue;
+			}
+
+			try {
+				Process process = executeBashCommands(
+					"docker pull " + dockerImageName);
+
+				if (process.exitValue() != 0) {
+					System.out.println(
+						"Failed to pull Docker image " + dockerImageName);
+
+					return;
+				}
+
+				pulledDockerImageNames.add(dockerImageName);
+			}
+			catch (IOException | TimeoutException exception) {
+				System.out.println(
+					"Failed to pull Docker image " + dockerImageName);
+
+				exception.printStackTrace();
+			}
+		}
 	}
 
 	public static String read(File file) throws IOException {
@@ -3089,14 +3526,24 @@ public class JenkinsResultsParserUtil {
 						buildProperties.getProperty("spira.admin.user.name"));
 				}
 
-				if ((httpAuthorizationHeader == null) &&
-					url.matches("https://test-\\d+-\\d+.liferay.com/.+")) {
+				if (url.matches("https://test-\\d+-\\d+.liferay.com/.+")) {
+					if (isCINode()) {
+						url = getLocalURL(url);
 
-					Properties buildProperties = getBuildProperties();
+						httpAuthorizationHeader = null;
+					}
+					else {
+						if (httpAuthorizationHeader == null) {
+							Properties buildProperties = getBuildProperties();
 
-					httpAuthorizationHeader = new BasicHTTPAuthorization(
-						buildProperties.getProperty("jenkins.admin.user.token"),
-						buildProperties.getProperty("jenkins.admin.user.name"));
+							httpAuthorizationHeader =
+								new BasicHTTPAuthorization(
+									buildProperties.getProperty(
+										"jenkins.admin.user.password"),
+									buildProperties.getProperty(
+										"jenkins.admin.user.name"));
+						}
+					}
 				}
 
 				boolean testrayRequest = false;
@@ -3340,7 +3787,7 @@ public class JenkinsResultsParserUtil {
 					"Downloading ", url.toString(), " to ",
 					getCanonicalPath(file)));
 
-			FileUtils.copyURLToFile(url, file);
+			FileUtils.copyURLToFile(url, file, 10000, 10000);
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
@@ -3625,7 +4072,7 @@ public class JenkinsResultsParserUtil {
 
 				if (expectResponse && (bytes == 0) && (i < 1)) {
 					System.out.println(
-						"Could not find response, retrying request");
+						"Unable to get response, retrying request");
 
 					continue;
 				}
@@ -3778,6 +4225,9 @@ public class JenkinsResultsParserUtil {
 		buildDescription = buildDescription.replaceAll("\"", "\\\\\"");
 		buildDescription = buildDescription.replaceAll("\'", "\\\\\'");
 
+		jobName = jobName.replace("%28", "(");
+		jobName = jobName.replace("%29", ")");
+
 		String jenkinsScript = combine(
 			"def job = Jenkins.instance.getItemByFullName(\"", jobName,
 			"\"); def build = job.getBuildByNumber(",
@@ -3829,12 +4279,23 @@ public class JenkinsResultsParserUtil {
 			propertiesFile.delete();
 		}
 
+		File parentFile = propertiesFile.getParentFile();
+
+		if (!parentFile.exists()) {
+			parentFile.mkdirs();
+		}
+
 		if (properties.isEmpty()) {
 			return;
 		}
 
 		try (FileOutputStream fileOutputStream = new FileOutputStream(
 				propertiesFile)) {
+
+			String propertiesFileHeader = "## Autogenerated\n\n";
+
+			fileOutputStream.write(
+				propertiesFileHeader.getBytes(StandardCharsets.UTF_8));
 
 			properties.store(
 				fileOutputStream,
@@ -3874,9 +4335,9 @@ public class JenkinsResultsParserUtil {
 
 					@Override
 					public FileVisitResult visitFile(
-						Path path, BasicFileAttributes attributes) {
+						Path path, BasicFileAttributes basicFileAttributes) {
 
-						if (attributes.isSymbolicLink()) {
+						if (basicFileAttributes.isSymbolicLink()) {
 							return FileVisitResult.CONTINUE;
 						}
 
@@ -4248,6 +4709,94 @@ public class JenkinsResultsParserUtil {
 		return join(",", propertyValues);
 	}
 
+	private static synchronized JSONArray _getGitDirectoriesJSONArray() {
+		if (_gitDirectoriesJSONArray != null) {
+			return _gitDirectoriesJSONArray;
+		}
+
+		_gitDirectoriesJSONArray = new JSONArray();
+
+		for (String url : URLS_GIT_DIRECTORIES_JSON_DEFAULT) {
+			JSONArray jsonArray;
+
+			try {
+				jsonArray = toJSONArray(getLocalURL(url), false);
+			}
+			catch (IOException ioException) {
+				continue;
+			}
+
+			if (jsonArray == null) {
+				continue;
+			}
+
+			for (int i = 0; i < jsonArray.length(); i++) {
+				_gitDirectoriesJSONArray.put(jsonArray.get(i));
+			}
+		}
+
+		return _gitDirectoriesJSONArray;
+	}
+
+	private static JSONObject _getGitDirectoryJSONObject(
+		String gitDirectoryName) {
+
+		JSONObject jsonObject = _getGitDirectoryJSONObject(
+			gitDirectoryName, _getGitWorkingDirectoriesJSONArray());
+
+		if (jsonObject == null) {
+			jsonObject = _getGitDirectoryJSONObject(
+				gitDirectoryName, _getGitDirectoriesJSONArray());
+		}
+
+		return jsonObject;
+	}
+
+	private static JSONObject _getGitDirectoryJSONObject(
+		String gitDirectoryName, JSONArray gitDirectoriesJSONArray) {
+
+		for (int i = 0; i < gitDirectoriesJSONArray.length(); i++) {
+			JSONObject gitDirectoryJSONObject =
+				gitDirectoriesJSONArray.getJSONObject(i);
+
+			if ((gitDirectoryJSONObject == JSONObject.NULL) ||
+				!gitDirectoryName.equals(
+					gitDirectoryJSONObject.getString("name"))) {
+
+				continue;
+			}
+
+			return gitDirectoryJSONObject;
+		}
+
+		return null;
+	}
+
+	private static String _getGitDirectoryName(
+		String repositoryName, String upstreamBranchName,
+		JSONArray gitDirectoriesJSONArray) {
+
+		for (int i = 0; i < gitDirectoriesJSONArray.length(); i++) {
+			JSONObject gitDirectoryJSONObject =
+				gitDirectoriesJSONArray.getJSONObject(i);
+
+			if ((gitDirectoryJSONObject == JSONObject.NULL) ||
+				!Objects.equals(
+					repositoryName,
+					gitDirectoryJSONObject.getString("repository")) ||
+				!Objects.equals(
+					upstreamBranchName,
+					gitDirectoryJSONObject.getString("branch"))) {
+
+				continue;
+			}
+
+			return gitDirectoryJSONObject.getString("name");
+		}
+
+		return null;
+	}
+
 	private static String _getGitHubAPIRateLimitStatusMessage(
 		int limit, int remaining, long reset) {
 
@@ -4261,6 +4810,35 @@ public class JenkinsResultsParserUtil {
 		sb.append(".");
 
 		return sb.toString();
+	}
+
+	private static synchronized JSONArray _getGitWorkingDirectoriesJSONArray() {
+		if (_gitWorkingDirectoriesJSONArray != null) {
+			return _gitWorkingDirectoriesJSONArray;
+		}
+
+		_gitWorkingDirectoriesJSONArray = new JSONArray();
+
+		for (String url : URLS_GIT_WORKING_DIRECTORIES_JSON_DEFAULT) {
+			JSONArray jsonArray;
+
+			try {
+				jsonArray = toJSONArray(getLocalURL(url), false);
+			}
+			catch (IOException ioException) {
+				continue;
+			}
+
+			if (jsonArray == null) {
+				continue;
+			}
+
+			for (int i = 0; i < jsonArray.length(); i++) {
+				_gitWorkingDirectoriesJSONArray.put(jsonArray.get(i));
+			}
+		}
+
+		return _gitWorkingDirectoriesJSONArray;
 	}
 
 	private static Set<Set<String>> _getOrderedOptSets(String... opts) {
@@ -4417,17 +4995,7 @@ public class JenkinsResultsParserUtil {
 		int maxOptCount = 0;
 
 		for (String propertyName : propertyNames) {
-			Matcher matcher = _propertyOptionPattern.matcher(propertyName);
-
-			Set<String> optSet = new LinkedHashSet<>();
-
-			while (matcher.find()) {
-				String opt = matcher.group("opt");
-
-				opt = Pattern.quote(opt);
-
-				optSet.add(opt.replaceAll("\\*", "\\\\E.+\\\\Q"));
-			}
+			Set<String> optSet = _getPropertyOptSet(propertyName);
 
 			if (optSet.size() > maxOptCount) {
 				maxOptCount = optSet.size();
@@ -4468,6 +5036,56 @@ public class JenkinsResultsParserUtil {
 		}
 
 		return propertyOptRegexSets;
+	}
+
+	private static Set<String> _getPropertyOptSet(String propertyName) {
+		Set<String> propertyOptSet = new LinkedHashSet<>();
+
+		List<Integer> indices = new ArrayList<>();
+		Stack<Integer> stack = new Stack<>();
+
+		Integer start = null;
+
+		for (int i = 0; i < propertyName.length(); i++) {
+			char c = propertyName.charAt(i);
+
+			if (c == '[') {
+				stack.push(i);
+
+				if (start == null) {
+					start = i;
+
+					indices.add(start);
+				}
+			}
+
+			if (c == ']') {
+				if (start == null) {
+					continue;
+				}
+
+				stack.pop();
+
+				if (stack.isEmpty()) {
+					indices.add(i);
+
+					start = null;
+				}
+			}
+		}
+
+		for (int i = 0; i < indices.size(); i++) {
+			String opt = propertyName.substring(
+				indices.get(i) + 1, indices.get(i + 1));
+
+			opt = Pattern.quote(opt);
+
+			propertyOptSet.add(opt.replaceAll("\\*", "\\\\E.+\\\\Q"));
+
+			i++;
+		}
+
+		return propertyOptSet;
 	}
 
 	private static String _getRedactTokenKey(int index) {
@@ -4578,6 +5196,8 @@ public class JenkinsResultsParserUtil {
 	private static final Log _log = LogFactory.getLog(
 		JenkinsResultsParserUtil.class);
 
+	private static final Pattern _axisVariablePattern = Pattern.compile(
+		".*AXIS_VARIABLE=(?<axisVariable>\\d+).*");
 	private static final Pattern _buildIDPattern = Pattern.compile(
 		"(?<cohortNumber>[\\d]{1})(?<masterNumber>[\\d]{2})" +
 			"(?<jobID>[\\d]+)_(?<buildNumber>[\\d]+)");
@@ -4588,8 +5208,12 @@ public class JenkinsResultsParserUtil {
 	private static final Pattern _curlyBraceExpansionPattern = Pattern.compile(
 		"\\{.*?\\}");
 	private static Long _currentTimeMillisDelta;
+	private static final Pattern _dockerFilePattern = Pattern.compile(
+		".*FROM (?<dockerImageName>[^\\s]+)( AS builder)?\\n[\\s\\S]*");
+	private static JSONArray _gitDirectoriesJSONArray;
 	private static final DateFormat _gitHubDateFormat = new SimpleDateFormat(
 		"yyyy-MM-dd'T'HH:mm:ss");
+	private static JSONArray _gitWorkingDirectoriesJSONArray;
 	private static final Pattern _javaVersionPattern = Pattern.compile(
 		"(\\d+\\.\\d+)");
 	private static final Pattern _jenkinsMasterPattern = Pattern.compile(
@@ -4605,15 +5229,21 @@ public class JenkinsResultsParserUtil {
 		"http://((release|test)-[0-9]+)/([0-9]+)/");
 	private static final Pattern _localURLAuthorityPattern2 = Pattern.compile(
 		"http://(test-[0-9]+-[0-9]+)/");
+	private static final Pattern _localURLAuthorityPattern3 = Pattern.compile(
+		"https?://(mirrors/|mirrors.dlc.liferay.com/|mirrors.lax.liferay.com/" +
+			")?((files|releases).liferay.com)");
 	private static final Pattern _nestedPropertyPattern = Pattern.compile(
 		"\\$\\{([^\\}]+)\\}");
-	private static final Pattern _propertyOptionPattern = Pattern.compile(
-		"\\[(?<opt>[^\\]]+)\\]");
 	private static final Set<String> _redactTokens = new HashSet<>();
 	private static final Pattern _remoteURLAuthorityPattern1 = Pattern.compile(
 		"https://(release|test).liferay.com/([0-9]+)/");
 	private static final Pattern _remoteURLAuthorityPattern2 = Pattern.compile(
 		"https://(test-[0-9]+-[0-9]+).liferay.com/");
+	private static final Pattern _remoteURLAuthorityPattern3 = Pattern.compile(
+		"https?://(mirrors/|mirrors.dlc.liferay.com/|mirrors.lax.liferay.com/" +
+			")?((files|releases).liferay.com)");
+	private static final Pattern _shaPattern = Pattern.compile(
+		"[0-9a-f]{7,40}");
 
 	private static final File _sshDir = new File(
 		JenkinsResultsParserUtil._userHomeDir, ".ssh") {

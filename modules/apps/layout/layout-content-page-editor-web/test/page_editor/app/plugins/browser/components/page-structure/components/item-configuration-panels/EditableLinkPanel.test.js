@@ -76,8 +76,7 @@ function getStateWithConfig(config = {}) {
 			},
 		},
 		languageId: 'en_US',
-		mappedInfoItems: [],
-		mappingFields: {},
+		mappingFields: [],
 		pageContents: [],
 		segmentsExperienceId: 0,
 	};
@@ -277,11 +276,9 @@ describe('EditableLinkPanel', () => {
 		expect(updateEditableValues).toHaveBeenCalled();
 
 		expect(editableConfig).toEqual({
-			en_US: {
-				href: 'http://google.com',
-				target: '',
-			},
+			href: {en_US: 'http://google.com'},
 			mapperType: 'link',
+			target: '',
 		});
 	});
 
@@ -305,10 +302,8 @@ describe('EditableLinkPanel', () => {
 		expect(updateEditableValues).toHaveBeenCalled();
 
 		expect(editableConfig).toEqual({
-			en_US: {
-				href: 'http://google.com',
-				target: '',
-			},
+			href: {en_US: 'http://google.com'},
+			target: '',
 		});
 	});
 });

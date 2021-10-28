@@ -333,6 +333,23 @@ definition {
 		Check.checkNotVisible(locator1 = "SitePages#LIST_GROUP_ITEM_CHECKBOX");
 	}
 
+	@summary = "Click on page meni of a Site Page. Parent pages hierarchy is required to navigate to child pages."
+	macro clickPageMenu {
+		WaitForPageLoad();
+
+		if (isSet(parentPagesHierarchy)) {
+			for (var parentPage : list "${parentPagesHierarchy}") {
+				Click(
+					key_itemName = "${parentPage}",
+					locator1 = "SitePages#LIST_GROUP_ITEM");
+			}
+		}
+
+		Click(
+			key_pageName = "${pageName}",
+			locator1 = "SitePages#LIST_GROUP_ITEM_ELLIPSIS_ICON");
+	}
+
 	macro configureChildPage {
 		if (IsTextNotEqual(locator1 = "ControlMenu#HEADING", value1 = "Pages")) {
 			ProductMenu.gotoPortlet(
@@ -431,6 +448,20 @@ definition {
 
 			var count = ${count} + 1;
 		}
+	}
+
+	macro getFriendlyURL {
+		var baseURL = "${baseURL}";
+
+		if (contains("${baseURL}", "{baseURL}")) {
+			baseURL = PropsUtil.get("portal.url");
+		}
+
+		key_friendlyURL = "";
+
+		var friendlyURL = selenium.getElementValue(locator1 = "SitePages#FRIENDLY_URL");
+
+		return "${baseURL}/web/guest${friendlyURL}";
 	}
 
 	@summary = "Go to the page creation form through the empty-result-message taglib"

@@ -63,12 +63,14 @@ public class UserLocalServiceWrapper
 	 * <code>admin.default.group.names</code>.
 	 *
 	 * @param userId the primary key of the user
+	 * @return <code>true</code> if user was added to default groups;
+	 <code>false</code> if user was already a member
 	 */
 	@Override
-	public void addDefaultGroups(long userId)
+	public boolean addDefaultGroups(long userId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		_userLocalService.addDefaultGroups(userId);
+		return _userLocalService.addDefaultGroups(userId);
 	}
 
 	/**
@@ -78,12 +80,14 @@ public class UserLocalServiceWrapper
 	 * <code>admin.default.role.names</code>.
 	 *
 	 * @param userId the primary key of the user
+	 * @return <code>true</code> if user was given default roles;
+	 <code>false</code> if user already has default roles
 	 */
 	@Override
-	public void addDefaultRoles(long userId)
+	public boolean addDefaultRoles(long userId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		_userLocalService.addDefaultRoles(userId);
+		return _userLocalService.addDefaultRoles(userId);
 	}
 
 	/**
@@ -93,12 +97,14 @@ public class UserLocalServiceWrapper
 	 * <code>admin.default.user.group.names</code>.
 	 *
 	 * @param userId the primary key of the user
+	 * @return <code>true</code> if user was added to default user groups;
+	 <code>false</code> if user is already a user group member
 	 */
 	@Override
-	public void addDefaultUserGroups(long userId)
+	public boolean addDefaultUserGroups(long userId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		_userLocalService.addDefaultUserGroups(userId);
+		return _userLocalService.addDefaultUserGroups(userId);
 	}
 
 	@Override
@@ -160,6 +166,25 @@ public class UserLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		_userLocalService.addOrganizationUsers(organizationId, userIds);
+	}
+
+	@Override
+	public User addOrUpdateUser(
+			String externalReferenceCode, long creatorUserId, long companyId,
+			boolean autoPassword, String password1, String password2,
+			boolean autoScreenName, String screenName, String emailAddress,
+			java.util.Locale locale, String firstName, String middleName,
+			String lastName, long prefixId, long suffixId, boolean male,
+			int birthdayMonth, int birthdayDay, int birthdayYear,
+			String jobTitle, boolean sendEmail, ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _userLocalService.addOrUpdateUser(
+			externalReferenceCode, creatorUserId, companyId, autoPassword,
+			password1, password2, autoScreenName, screenName, emailAddress,
+			locale, firstName, middleName, lastName, prefixId, suffixId, male,
+			birthdayMonth, birthdayDay, birthdayYear, jobTitle, sendEmail,
+			serviceContext);
 	}
 
 	/**
@@ -695,6 +720,7 @@ public class UserLocalServiceWrapper
 	 * authentication, without using the AuthPipeline. Primarily used for
 	 * authenticating users of <code>tunnel-web</code>.
 	 *
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
 	 * @param companyId the primary key of the user's company
 	 * @param realm unused
 	 * @param nonce the number used once
@@ -704,6 +730,7 @@ public class UserLocalServiceWrapper
 	 * @return the user's primary key if authentication is successful;
 	 <code>0</code> otherwise
 	 */
+	@Deprecated
 	@Override
 	public long authenticateForDigest(
 			long companyId, String userName, String realm, String nonce,
@@ -722,7 +749,9 @@ public class UserLocalServiceWrapper
 	 * @param encPassword the encrypted password
 	 * @return <code>true</code> if authentication is successful;
 	 <code>false</code> otherwise
+	 * @deprecated As of Cavanaugh (7.4.x), with no replacement
 	 */
+	@Deprecated
 	@Override
 	public boolean authenticateForJAAS(long userId, String encPassword) {
 		return _userLocalService.authenticateForJAAS(userId, encPassword);
@@ -2564,6 +2593,44 @@ public class UserLocalServiceWrapper
 			emailAddress, status, params, andSearch, start, end, sorts);
 	}
 
+	@Override
+	public java.util.List<User> searchBySocial(
+			long userId, int[] socialRelationTypes, String keywords, int start,
+			int end)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _userLocalService.searchBySocial(
+			userId, socialRelationTypes, keywords, start, end);
+	}
+
+	@Override
+	public java.util.List<User> searchBySocial(
+		long companyId, long[] groupIds, String keywords, int start, int end) {
+
+		return _userLocalService.searchBySocial(
+			companyId, groupIds, keywords, start, end);
+	}
+
+	@Override
+	public java.util.List<User> searchBySocial(
+		long companyId, long[] groupIds, String keywords, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<User>
+			orderByComparator) {
+
+		return _userLocalService.searchBySocial(
+			companyId, groupIds, keywords, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<User> searchBySocial(
+			long[] groupIds, long userId, int[] socialRelationTypes,
+			String keywords, int start, int end)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _userLocalService.searchBySocial(
+			groupIds, userId, socialRelationTypes, keywords, start, end);
+	}
+
 	/**
 	 * Returns the number of users who match the keywords and status.
 	 *
@@ -2625,6 +2692,11 @@ public class UserLocalServiceWrapper
 		return _userLocalService.searchCounts(companyId, status, groupIds);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #searchBySocial(long, int[], String, int, int)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<User> searchSocial(
 			long userId, int[] socialRelationTypes, String keywords, int start,
@@ -2635,6 +2707,11 @@ public class UserLocalServiceWrapper
 			userId, socialRelationTypes, keywords, start, end);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #searchBySocial(long, long[], String, int, int)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<User> searchSocial(
 		long companyId, long[] groupIds, String keywords, int start, int end) {
@@ -2643,6 +2720,12 @@ public class UserLocalServiceWrapper
 			companyId, groupIds, keywords, start, end);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #searchBySocial(long, long[], String, int, int,
+	 OrderByComparator)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<User> searchSocial(
 		long companyId, long[] groupIds, String keywords, int start, int end,
@@ -2653,6 +2736,11 @@ public class UserLocalServiceWrapper
 			companyId, groupIds, keywords, start, end, orderByComparator);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #searchBySocial(long[], long, int[], String, int, int)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<User> searchSocial(
 			long[] groupIds, long userId, int[] socialRelationTypes,

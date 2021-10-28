@@ -23,12 +23,14 @@ import com.liferay.portal.kernel.dao.orm.Projection;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.PersistedModel;
+import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalService;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
@@ -126,6 +128,14 @@ public interface AccountEntryLocalService
 			ServiceContext serviceContext)
 		throws PortalException;
 
+	public AccountEntry addOrUpdateAccountEntry(
+			String externalReferenceCode, long userId,
+			long parentAccountEntryId, String name, String description,
+			String[] domains, String emailAddress, byte[] logoBytes,
+			String taxIdNumber, String type, int status,
+			ServiceContext serviceContext)
+		throws PortalException;
+
 	/**
 	 * Creates a new account entry with the primary key. Does not add the account entry to the database.
 	 *
@@ -166,6 +176,7 @@ public interface AccountEntryLocalService
 	 * @throws PortalException
 	 */
 	@Indexable(type = IndexableType.DELETE)
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
 	public AccountEntry deleteAccountEntry(AccountEntry accountEntry)
 		throws PortalException;
 
@@ -383,6 +394,13 @@ public interface AccountEntryLocalService
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AccountEntry> getUserAccountEntries(
+			long userId, Long parentAccountEntryId, String keywords,
+			String[] types, Integer status, int start, int end,
+			OrderByComparator<AccountEntry> orderByComparator)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getUserAccountEntriesCount(
 			long userId, Long parentAccountEntryId, String keywords,
 			String[] types)
@@ -462,6 +480,16 @@ public interface AccountEntryLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public AccountEntry updateDefaultShippingAddressId(
 			long accountEntryId, long addressId)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.REINDEX)
+	public AccountEntry updateExternalReferenceCode(
+			AccountEntry accountEntry, String externalReferenceCode)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.REINDEX)
+	public AccountEntry updateExternalReferenceCode(
+			long accountEntryId, String externalReferenceCode)
 		throws PortalException;
 
 	@Indexable(type = IndexableType.REINDEX)

@@ -100,20 +100,18 @@ definition {
 	@description = "This is a use case for LPS-102425."
 	@priority = "4"
 	test AddUserEmailAddressApostrophe {
+		property custom.properties = "jsonws.web.service.paths.excludes=";
+
 		JSONUser.addUser(
 			userEmailAddress = "user1@liferay.com",
 			userFirstName = "user1",
 			userLastName = "user1",
 			userScreenName = "user1");
 
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.editPasswordCP(
-			userEmailAddress = "user1@liferay.com",
-			userScreenName = "user1");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "user1@liferay.com");
 
 		JSONRole.assignRoleToUser(
 			roleTitle = "Administrator",
@@ -142,21 +140,23 @@ definition {
 		Navigator.openURL();
 
 		JSONUser.addUser(
+			creatorEmailAddress = "user1@liferay.com",
+			creatorPassword = "test",
 			userEmailAddress = "user%27ea@liferay.com",
 			userFirstName = "userfn",
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "user%27ea@liferay.com");
 
-		User.editPasswordCP(
-			userEmailAddress = "user'ea@liferay.com",
-			userScreenName = "usersn");
+		Navigator.openURL();
 
-		User.logoutAndLoginPG(
+		UserBar.signOut();
+
+		User.firstLoginUI(
 			userLoginEmailAddress = "user'ea@liferay.com",
 			userLoginFullName = "userfn userln");
 
@@ -182,7 +182,11 @@ definition {
 			roleTitle = "Administrator",
 			userEmailAddress = "user%27ea@liferay.com");
 
-		User.logoutAndLoginPG(
+		Navigator.openURL();
+
+		UserBar.signOut();
+
+		User.firstLoginUI(
 			userLoginEmailAddress = "user'ea@liferay.com",
 			userLoginFullName = "userfn userln");
 
@@ -805,6 +809,110 @@ definition {
 		for (var rowEntry : list "userfn1 userln1,userfn3 userln3,userfn5 userln5") {
 			LexiconEntry.viewNoEntry(rowEntry = "${rowEntry}");
 		}
+	}
+
+	@description = "This is a use case for can add comment for user."
+	@priority = "2"
+	test CanAddComment {
+		User.openUsersAdmin();
+
+		User.addCP(
+			userComment = "test",
+			userEmailAddress = "userea@liferay.com",
+			userFirstName = "userfn",
+			userLastName = "userln",
+			userScreenName = "usersn");
+
+		Alert.viewSuccessMessage();
+
+		User.openUsersAdmin();
+
+		UserNavigator.gotoUser(userScreenName = "usersn");
+
+		AssertElementPresent(
+			locator1 = "TextArea#COMMENTS",
+			userComment = "test");
+
+		AssertConsoleTextNotPresent(value1 = "java.lang.NullPointerException");
+	}
+
+	@priority = "3"
+	test CanBulkActivateUsers {
+		for (var userNum : list "1,2,3,4,5") {
+			JSONUser.addUser(
+				userEmailAddress = "userea${userNum}@liferay.com",
+				userFirstName = "userfn${userNum}",
+				userLastName = "userln${userNum}",
+				userScreenName = "usersn${userNum}");
+		}
+
+		User.openUsersAdmin();
+
+		User.deactivateCP(
+			deactivateType = "Management Toolbar",
+			userFirstNameList = "userfn1,userfn3,userfn5");
+
+		ManagementBar.setFilterAndOrder(filterBy = "Inactive");
+
+		for (var rowEntry : list "userfn1 userln1,userfn3 userln3,userfn5 userln5") {
+			LexiconEntry.viewEntryName(rowEntry = "${rowEntry}");
+		}
+
+		User.bulkActivateCP(
+			activateType = "Management Toolbar",
+			userFirstNameList = "userfn1,userfn3,userfn5");
+
+		for (var rowEntry : list "userfn1 userln1,userfn3 userln3,userfn5 userln5") {
+			LexiconEntry.viewNoEntry(rowEntry = "${rowEntry}");
+		}
+
+		User.openUsersAdmin();
+
+		for (var rowEntry : list "userfn1 userln1,userfn2 userln2,userfn3 userln3,userfn4 userln4,userfn5 userln5") {
+			AssertElementPresent(
+				key_rowEntry = "${rowEntry}",
+				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+		}
+	}
+
+	@description = "This test changes to cards view for users."
+	@priority = "2"
+	test CanChangeToCardsView {
+		JSONUser.addUser(
+			userEmailAddress = "userea1@liferay.com",
+			userFirstName = "userfn1",
+			userLastName = "userln1",
+			userScreenName = "usersn1");
+
+		User.openUsersAdmin();
+
+		ManagementBar.changeDisplayStyle(displayStyle = "Cards");
+
+		LexiconCard.viewCardTitle(card = "userfn1 userln1");
+
+		LexiconCard.viewCardSubtitle(
+			card = "userfn1 userln1",
+			cardSubtitle = "usersn1");
+	}
+
+	@description = "This test changes to list view for users."
+	@priority = "2"
+	test CanChangeToListView {
+		JSONUser.addUser(
+			userEmailAddress = "userea1@liferay.com",
+			userFirstName = "userfn1",
+			userLastName = "userln1",
+			userScreenName = "usersn1");
+
+		User.openUsersAdmin();
+
+		ManagementBar.changeDisplayStyle(displayStyle = "List");
+
+		LexiconList.viewListEntryTitle(listEntry = "userfn1 userln1");
+
+		LexiconList.viewListEntrySubtitle(
+			listEntry = "userfn1 userln1",
+			listEntrySubtitle = "usersn1");
 	}
 
 	@priority = "4"
@@ -1789,6 +1897,26 @@ definition {
 		var rowEntry = StringUtil.lowerCase("${rowEntry}");
 
 		LexiconEntry.viewNoEntry(rowEntry = StringUtil.lowerCase("Default Site Tag Name"));
+
+		// Additional steps to cover LPS-111656
+
+		User.openUsersAdmin();
+
+		UserNavigator.gotoUser(userScreenName = "usersn");
+
+		UserNavigator.gotoMemberships();
+
+		PortletEntry.save();
+
+		User.openUsersAdmin();
+
+		UserNavigator.gotoUser(userScreenName = "usersn");
+
+		for (var tagName : list "Global Tag Name 1,Global Tag Name 2") {
+			var tagName = StringUtil.lowerCase("${tagName}");
+
+			AssetCategorization.viewTag(tagName = "${tagName}");
+		}
 	}
 
 	@description = "This test disables the property that allows numeric values in the screen name field. It asserts that the specific error message displays when a user attempts to do so. It also covers LPS-12849."
@@ -2062,7 +2190,9 @@ definition {
 
 		ServerAdministration.openServerAdmin();
 
-		var script = TestCase.getFileContent(fileName = "updateUser.groovy");
+		var script = TestCase.getFileContent(
+			fileName = "updateUser.groovy",
+			filePath = "coreinfrastructure/administration/users/cpusersandorganizations");
 
 		ServerAdministration.executeScript(
 			language = "Groovy",
@@ -2255,20 +2385,14 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
+		User.openUsersAdmin();
 
 		User.editCategorizationCP(
 			categoryName = "Category Name 1",
 			userScreenName = "usersn",
 			vocabularyName = "Vocabulary Name 1");
 
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
+		User.openUsersAdmin();
 
 		UserNavigator.gotoUser(userScreenName = "usersn");
 
@@ -2276,10 +2400,7 @@ definition {
 
 		PortletEntry.save();
 
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
+		User.openUsersAdmin();
 
 		UserNavigator.gotoUser(userScreenName = "usersn");
 
@@ -2496,7 +2617,7 @@ definition {
 			panel = "Control Panel",
 			portlet = "Search");
 
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+		SearchAdministration.executeSearchActions(actionsDescription = "Reindex search indexes.");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
@@ -2572,6 +2693,55 @@ definition {
 		User.removeContactInformation(rowEntry = "1111111111");
 
 		User.viewContactInformation(skype = "skype12345");
+	}
+
+	@description = "This is a use case for LPS-111136"
+	@priority = "3"
+	test WelcomeEmailContainsVirtualHostSendToNewUser {
+		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com${line.separator}mail.send.blacklist=noreply@liferay.com,noreply@domain.invalid,test@domain.invalid";
+		property test.name.skip.portal.instance = "UsersAdmin#WelcomeEmailContainsVirtualHostSendToNewUser";
+		property test.smtp.server.enabled = "true";
+
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "Email",
+			configurationName = "Email Sender",
+			configurationScope = "Virtual Instance Scope");
+
+		PortalSettings.configureEmailSender(
+			emailAddress = "test@liferay.com",
+			emailSenderName = "Joe Bloggs");
+
+		JSONGroup.addGroup(groupName = "My Site");
+
+		JSONLayout.addPublicLayout(
+			groupName = "My Site",
+			layoutName = "First Page");
+
+		Site.openSiteSettingsAdmin(siteURLKey = "my-site");
+
+		Site.addVirtualHostsURLCP(
+			publicPageVirtualHostURL = "www.able.com",
+			publicVirtualHosts = "true");
+
+		Navigator.gotoBack();
+
+		Site.editFriendlyURLCP(siteFriendlyURLEdit = "/www.able");
+
+		Navigator.openSpecificURL(url = "http://www.able.com:8080");
+
+		User.createAccount(
+			newPassword = "Password1",
+			userEmailAddress = "userea@liferay.com",
+			userFirstName = "userfn",
+			userLastName = "userln",
+			userScreenName = "usersn");
+
+		MockMock.viewMail(
+			asset = "http://www.able.com:8080: Your New Account",
+			content = "Welcome! You recently created an account at http://www.able.com:8080.",
+			recipient = "userfn userln",
+			sender = "Joe Bloggs",
+			subject = "http://www.able.com:8080: Your New Account");
 	}
 
 }

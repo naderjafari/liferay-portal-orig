@@ -33,34 +33,6 @@ create table CPDefinitionInventory (
 	multipleOrderQuantity INTEGER
 );
 
-create table CommerceAddress (
-	externalReferenceCode VARCHAR(75) null,
-	commerceAddressId LONG not null primary key,
-	groupId LONG,
-	companyId LONG,
-	userId LONG,
-	userName VARCHAR(75) null,
-	createDate DATE null,
-	modifiedDate DATE null,
-	classNameId LONG,
-	classPK LONG,
-	name VARCHAR(255) null,
-	description STRING null,
-	street1 VARCHAR(255) null,
-	street2 VARCHAR(255) null,
-	street3 VARCHAR(255) null,
-	city VARCHAR(75) null,
-	zip VARCHAR(75) null,
-	regionId LONG,
-	countryId LONG,
-	latitude DOUBLE,
-	longitude DOUBLE,
-	phoneNumber VARCHAR(75) null,
-	defaultBilling BOOLEAN,
-	defaultShipping BOOLEAN,
-	type_ INTEGER
-);
-
 create table CommerceAddressRestriction (
 	commerceAddressRestrictionId LONG not null primary key,
 	groupId LONG,
@@ -99,6 +71,7 @@ create table CommerceOrder (
 	modifiedDate DATE null,
 	commerceAccountId LONG,
 	commerceCurrencyId LONG,
+	commerceOrderTypeId LONG,
 	billingAddressId LONG,
 	shippingAddressId LONG,
 	commercePaymentMethodKey VARCHAR(75) null,
@@ -244,6 +217,40 @@ create table CommerceOrderPayment (
 	commercePaymentMethodKey VARCHAR(75) null,
 	content TEXT null,
 	status INTEGER
+);
+
+create table CommerceOrderType (
+	externalReferenceCode VARCHAR(75) null,
+	commerceOrderTypeId LONG not null primary key,
+	companyId LONG,
+	userId LONG,
+	userName VARCHAR(75) null,
+	createDate DATE null,
+	modifiedDate DATE null,
+	name STRING null,
+	description STRING null,
+	active_ BOOLEAN,
+	displayDate DATE null,
+	displayOrder INTEGER,
+	expirationDate DATE null,
+	lastPublishDate DATE null,
+	status INTEGER,
+	statusByUserId LONG,
+	statusByUserName VARCHAR(75) null,
+	statusDate DATE null
+);
+
+create table CommerceOrderTypeRel (
+	externalReferenceCode VARCHAR(75) null,
+	commerceOrderTypeRelId LONG not null primary key,
+	companyId LONG,
+	userId LONG,
+	userName VARCHAR(75) null,
+	createDate DATE null,
+	modifiedDate DATE null,
+	classNameId LONG,
+	classPK LONG,
+	commerceOrderTypeId LONG
 );
 
 create table CommerceShipment (

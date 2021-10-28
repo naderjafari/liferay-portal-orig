@@ -36,17 +36,19 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 		),
 		@DDMFormRule(
 			actions = {
+				"setEnabled('required', not(hasObjectField(getValue('objectFieldName'))))",
 				"setMultiple('predefinedValue', getValue('multiple'))",
 				"setOptions('predefinedValue', getValue('options'))",
 				"setRequired('ddmDataProviderInstanceId', contains(getValue('dataSourceType'), \"data-provider\"))",
 				"setRequired('ddmDataProviderInstanceOutput', contains(getValue('dataSourceType'), \"data-provider\"))",
 				"setRequired('options', contains(getValue('dataSourceType'), \"manual\") OR isEmpty(getValue('dataSourceType')))",
+				"setVisible('dataSourceType', not(hasObjectField(getValue('objectFieldName'))))",
 				"setVisible('ddmDataProviderInstanceId', contains(getValue('dataSourceType'), \"data-provider\"))",
 				"setVisible('ddmDataProviderInstanceOutput', contains(getValue('dataSourceType'), \"data-provider\"))",
-				"setVisible('options', contains(getValue('dataSourceType'), \"manual\") OR isEmpty(getValue('dataSourceType')))",
+				"setVisible('multiple', not(hasObjectField(getValue('objectFieldName'))))",
+				"setVisible('options', (contains(getValue('dataSourceType'), \"manual\") OR isEmpty(getValue('dataSourceType'))) AND not(hasObjectField(getValue('objectFieldName'))))",
 				"setVisible('predefinedValue', contains(getValue('dataSourceType'), \"manual\"))",
-				"setVisible('requiredErrorMessage', false)",
-				"setVisible('validation', false)"
+				"setVisible('requiredErrorMessage', getValue('required'))"
 			},
 			condition = "TRUE"
 		),
@@ -56,6 +58,13 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 				"setValue('ddmDataProviderInstanceOutput', '')"
 			},
 			condition = "not(equals(getValue('dataSourceType'), \"data-provider\"))"
+		),
+		@DDMFormRule(
+			actions = {
+				"setValue('options', getListTypeEntries(getValue('objectFieldName')))",
+				"setValue('required', isRequiredObjectField(getValue('objectFieldName')))"
+			},
+			condition = "hasObjectField(getValue('objectFieldName'))"
 		)
 	}
 )
@@ -89,7 +98,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"name", "fieldReference", "predefinedValue",
-								"visibilityExpression", "validation",
+								"objectFieldName", "visibilityExpression",
 								"fieldNamespace", "indexType",
 								"labelAtStructureLevel", "localizable",
 								"nativeField", "readOnly", "dataType", "type",
@@ -116,7 +125,8 @@ public interface SelectDDMFormFieldTypeSettings
 		label = "%create-list",
 		optionLabels = {"%manually", "%from-data-provider", "%from-autofill"},
 		optionValues = {"manual", "data-provider", "from-autofill"},
-		predefinedValue = "[\"manual\"]", type = "select"
+		predefinedValue = "[\"manual\"]", properties = "showEmptyOption=false",
+		type = "select"
 	)
 	public String dataSourceType();
 

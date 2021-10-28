@@ -15,6 +15,7 @@
 package com.liferay.portal.webserver;
 
 import com.liferay.document.library.kernel.document.conversion.DocumentConversionUtil;
+import com.liferay.document.library.kernel.exception.FileEntryExpiredException;
 import com.liferay.document.library.kernel.exception.NoSuchFileEntryException;
 import com.liferay.document.library.kernel.exception.NoSuchFileException;
 import com.liferay.document.library.kernel.exception.NoSuchFolderException;
@@ -127,6 +128,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -299,9 +301,7 @@ public class WebServerServlet extends HttpServlet {
 
 						return;
 					}
-				}
 
-				if (lastModified > 0) {
 					httpServletResponse.setDateHeader(
 						HttpHeaders.LAST_MODIFIED, lastModified);
 				}
@@ -317,7 +317,9 @@ public class WebServerServlet extends HttpServlet {
 				_createFileServingCallable(
 					httpServletRequest, httpServletResponse, user));
 		}
-		catch (NoSuchFileEntryException | NoSuchFolderException exception) {
+		catch (FileEntryExpiredException | NoSuchFileEntryException |
+			   NoSuchFolderException exception) {
+
 			PortalUtil.sendError(
 				HttpServletResponse.SC_NOT_FOUND, exception, httpServletRequest,
 				httpServletResponse);
@@ -425,56 +427,6 @@ public class WebServerServlet extends HttpServlet {
 		}
 
 		return null;
-	}
-
-	protected FileEntry getFileEntry(String[] pathArray) throws Exception {
-		if (pathArray.length == 1) {
-			long fileShortcutId = GetterUtil.getLong(pathArray[0]);
-
-			FileShortcut dlFileShortcut = DLAppServiceUtil.getFileShortcut(
-				fileShortcutId);
-
-			return DLAppServiceUtil.getFileEntry(
-				dlFileShortcut.getToFileEntryId());
-		}
-		else if (pathArray.length == 2) {
-			long groupId = GetterUtil.getLong(pathArray[0]);
-
-			return DLAppServiceUtil.getFileEntryByUuidAndGroupId(
-				pathArray[1], groupId);
-		}
-		else if (pathArray.length == 3) {
-			long groupId = GetterUtil.getLong(pathArray[0]);
-			long folderId = GetterUtil.getLong(pathArray[1]);
-
-			String fileName = HttpUtil.decodeURL(pathArray[2]);
-
-			if (fileName.contains(StringPool.QUESTION)) {
-				fileName = fileName.substring(
-					0, fileName.indexOf(StringPool.QUESTION));
-			}
-
-			try {
-				return DLAppServiceUtil.getFileEntryByFileName(
-					groupId, folderId, fileName);
-			}
-			catch (NoSuchFileEntryException noSuchFileEntryException) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(
-						noSuchFileEntryException, noSuchFileEntryException);
-				}
-
-				return DLAppServiceUtil.getFileEntry(
-					groupId, folderId, fileName);
-			}
-		}
-		else {
-			long groupId = GetterUtil.getLong(pathArray[0]);
-
-			String uuid = pathArray[3];
-
-			return DLAppServiceUtil.getFileEntryByUuidAndGroupId(uuid, groupId);
-		}
 	}
 
 	protected Image getImage(
@@ -716,18 +668,16 @@ public class WebServerServlet extends HttpServlet {
 
 				String[] pathArray = StringUtil.split(path, CharPool.SLASH);
 
-				if (pathArray.length == 0) {
-					return -1;
-				}
+				if ((pathArray.length == 0) ||
+					pathArray[0].equals("language")) {
 
-				if (pathArray[0].equals("language")) {
 					return -1;
 				}
 
 				FileEntry fileEntry = null;
 
 				try {
-					fileEntry = getFileEntry(pathArray);
+					fileEntry = _getFileEntry(pathArray, httpServletRequest);
 				}
 				catch (Exception exception) {
 					if (_log.isDebugEnabled()) {
@@ -996,7 +946,7 @@ public class WebServerServlet extends HttpServlet {
 
 		// Retrieve file details
 
-		FileEntry fileEntry = getFileEntry(pathArray);
+		FileEntry fileEntry = _getFileEntry(pathArray, httpServletRequest);
 
 		if (_processCompanyInactiveRequest(
 				httpServletRequest, httpServletResponse,
@@ -1276,11 +1226,8 @@ public class WebServerServlet extends HttpServlet {
 		FileEntry fileEntry = getPortletFileEntry(
 			httpServletRequest, pathArray);
 
-		if (fileEntry == null) {
-			return;
-		}
-
-		if (_processCompanyInactiveRequest(
+		if ((fileEntry == null) ||
+			_processCompanyInactiveRequest(
 				httpServletRequest, httpServletResponse,
 				fileEntry.getCompanyId())) {
 
@@ -1445,10 +1392,10 @@ public class WebServerServlet extends HttpServlet {
 	private static User _getUser(HttpServletRequest httpServletRequest)
 		throws Exception {
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
 		if (PortalSessionThreadLocal.getHttpSession() == null) {
-			PortalSessionThreadLocal.setHttpSession(session);
+			PortalSessionThreadLocal.setHttpSession(httpSession);
 		}
 
 		User user = PortalUtil.getUser(httpServletRequest);
@@ -1457,8 +1404,8 @@ public class WebServerServlet extends HttpServlet {
 			return user;
 		}
 
-		String userIdString = (String)session.getAttribute("j_username");
-		String password = (String)session.getAttribute("j_password");
+		String userIdString = (String)httpSession.getAttribute("j_username");
+		String password = (String)httpSession.getAttribute("j_password");
 
 		if ((userIdString != null) && (password != null)) {
 			long userId = GetterUtil.getLong(userIdString);
@@ -1480,6 +1427,43 @@ public class WebServerServlet extends HttpServlet {
 			typeSettingsUnicodeProperties.getProperty(
 				"directoryIndexingEnabled"),
 			PropsValues.WEB_SERVER_SERVLET_DIRECTORY_INDEXING_ENABLED);
+	}
+
+	private void _checkExpiredFileEntry(
+			FileEntry fileEntry, HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		if (fileEntry == null) {
+			return;
+		}
+
+		FileVersion fileVersion = fileEntry.getFileVersion();
+
+		if (!fileVersion.isExpired()) {
+			return;
+		}
+
+		User user = _getUser(httpServletRequest);
+
+		PermissionChecker permissionChecker = _getPermissionChecker(
+			httpServletRequest);
+
+		if (!permissionChecker.isContentReviewer(
+				user.getCompanyId(), fileVersion.getGroupId()) &&
+			!Objects.equals(fileVersion.getUserId(), user.getUserId())) {
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					StringBundler.concat(
+						"The file entry ", fileEntry.getFileEntryId(),
+						" is expired. Only users with content review ",
+						"permission can access it."));
+			}
+
+			throw new FileEntryExpiredException(
+				"The file entry " + fileEntry.getFileEntryId() +
+					" is expired and the user does not have review permission");
+		}
 	}
 
 	private void _checkResourcePermission(
@@ -1505,7 +1489,7 @@ public class WebServerServlet extends HttpServlet {
 
 			// Check for sendFile
 
-			FileEntry fileEntry = getFileEntry(pathArray);
+			FileEntry fileEntry = _getFileEntry(pathArray, httpServletRequest);
 
 			String portletId = _getPortletId(fileEntry, httpServletRequest);
 
@@ -1536,8 +1520,8 @@ public class WebServerServlet extends HttpServlet {
 	}
 
 	private Callable<Void> _createFileServingCallable(
-		final HttpServletRequest httpServletRequest,
-		final HttpServletResponse httpServletResponse, final User user) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, User user) {
 
 		return () -> {
 			String path = HttpUtil.fixPath(httpServletRequest.getPathInfo());
@@ -1594,6 +1578,80 @@ public class WebServerServlet extends HttpServlet {
 
 			return null;
 		};
+	}
+
+	private FileEntry _getFileEntry(
+			String[] pathArray, HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		if (pathArray.length == 1) {
+			long fileShortcutId = GetterUtil.getLong(pathArray[0]);
+
+			FileShortcut dlFileShortcut = DLAppServiceUtil.getFileShortcut(
+				fileShortcutId);
+
+			FileEntry fileEntry = DLAppServiceUtil.getFileEntry(
+				dlFileShortcut.getToFileEntryId());
+
+			_checkExpiredFileEntry(fileEntry, httpServletRequest);
+
+			return fileEntry;
+		}
+		else if (pathArray.length == 2) {
+			long groupId = GetterUtil.getLong(pathArray[0]);
+
+			FileEntry fileEntry = DLAppServiceUtil.getFileEntryByUuidAndGroupId(
+				pathArray[1], groupId);
+
+			_checkExpiredFileEntry(fileEntry, httpServletRequest);
+
+			return fileEntry;
+		}
+		else if (pathArray.length == 3) {
+			long groupId = GetterUtil.getLong(pathArray[0]);
+			long folderId = GetterUtil.getLong(pathArray[1]);
+
+			String fileName = HttpUtil.decodeURL(pathArray[2]);
+
+			if (fileName.contains(StringPool.QUESTION)) {
+				fileName = fileName.substring(
+					0, fileName.indexOf(StringPool.QUESTION));
+			}
+
+			try {
+				FileEntry fileEntry = DLAppServiceUtil.getFileEntryByFileName(
+					groupId, folderId, fileName);
+
+				_checkExpiredFileEntry(fileEntry, httpServletRequest);
+
+				return fileEntry;
+			}
+			catch (NoSuchFileEntryException noSuchFileEntryException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						noSuchFileEntryException, noSuchFileEntryException);
+				}
+
+				FileEntry fileEntry = DLAppServiceUtil.getFileEntry(
+					groupId, folderId, fileName);
+
+				_checkExpiredFileEntry(fileEntry, httpServletRequest);
+
+				return fileEntry;
+			}
+		}
+		else {
+			long groupId = GetterUtil.getLong(pathArray[0]);
+
+			String uuid = pathArray[3];
+
+			FileEntry fileEntry = DLAppServiceUtil.getFileEntryByUuidAndGroupId(
+				uuid, groupId);
+
+			_checkExpiredFileEntry(fileEntry, httpServletRequest);
+
+			return fileEntry;
+		}
 	}
 
 	private PermissionChecker _getPermissionChecker(

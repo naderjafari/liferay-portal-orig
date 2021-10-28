@@ -78,13 +78,13 @@ definition {
 		var HTML = '''<link data-senna-track="temporary" href="''';
 
 		if ("${locale}" == "zh") {
-			var zhAlternate = '''" hreflang="zh-CN" rel="alternate" />''';
+			var zhAlternate = '''" hreflang="zh-CN" rel="alternate">''';
 
 			var pageSource = StringUtil.add("${HTML}", "${portalURL}/zh/web/guest${zhAlternate}","");
 		}
 
 		else if ("${locale}" == "es") {
-			var esAlternate = '''" hreflang="es-ES" rel="alternate" />''';
+			var esAlternate = '''" hreflang="es-ES" rel="alternate">''';
 
 			var pageSource = StringUtil.add("${HTML}", "${portalURL}/es/web/guest${esAlternate}","");
 		}
@@ -102,7 +102,7 @@ definition {
 
 	macro assertCanonicalURL {
 		var HTML = '''<link data-senna-track="temporary" href="''';
-		var HTML2 = '''" rel="canonical" />''';
+		var HTML2 = '''" rel="canonical">''';
 
 		if (isSet(customCanonicalURL)) {
 			var portalURL = "${customCanonicalURL}";
@@ -125,6 +125,15 @@ definition {
 		else {
 			var pageSource = StringUtil.add("${HTML}", "${portalURL}${HTML2}","");
 		}
+
+		AssertHTMLSourceTextPresent(value1 = "${pageSource}");
+	}
+
+	macro assertDefaultAlternateURL {
+		var HTML = '''<link data-senna-track="temporary" href="''';
+		var HTML2 = '''" hreflang="x-default" rel="alternate">''';
+
+		var pageSource = StringUtil.add("${HTML}", "${portalURL}${HTML2}","");
 
 		AssertHTMLSourceTextPresent(value1 = "${pageSource}");
 	}
@@ -176,7 +185,7 @@ definition {
 	}
 
 	macro changeSinglePageTheme {
-		ContentPages.clickPencil();
+		ContentPages.gotoPageEditor();
 
 		PageEditor.gotoTab(tabName = "Page Design Options");
 
@@ -197,14 +206,23 @@ definition {
 		PortletEntry.save();
 	}
 
+	macro clearFiltersInAppliedFilters {
+		Click(
+			button = "Clear Filters",
+			locator1 = "PageEditor#APPLIED_FILTERS_INNER_BUTTON");
+
+		AssertElementNotPresent(locator1 = "PageEditor#APPLIED_FILTERS_FILTER_LIST_PLACEHOLDER");
+	}
+
 	macro configureCanonicalURL {
 		var checkboxName = "Use Custom Canonical URL";
 
 		if (IsNotChecked(locator1 = "Checkbox#ANY_CHECKBOX")) {
 			Click(locator1 = "Checkbox#ANY_CHECKBOX");
 
-			AssertTextEquals(
-				locator1 = "Message#INFO",
+			AssertVisible(
+				key_infoMessage = "Info:Due to the customization of the canonical URL, depending on the platform this page is shared, the Open Graph metadata shown might not be the one configured in this page.",
+				locator1 = "Message#INFO_SPECIFIC",
 				value1 = "Info:Due to the customization of the canonical URL, depending on the platform this page is shared, the Open Graph metadata shown might not be the one configured in this page.");
 		}
 
@@ -268,6 +286,10 @@ definition {
 			value1 = "${friendlyURLEdit}");
 
 		Button.clickSave();
+
+		Alert.viewSuccessMessage();
+
+		Alert.closeMessage(messageType = "SUCCESS");
 	}
 
 	macro editName {
@@ -456,7 +478,7 @@ definition {
 			key_oldFriendlyURL = "${activeURL}",
 			locator1 = "SitePages#FRIENDLY_URL_HISTORY_ITEM");
 
-		Click(locator1 = "Icon#TIMES");
+		Click(locator1 = "Modal#CLOSE_BUTTON");
 
 		AssertVisible(
 			locator1 = "TextInput#FRIENDLY_URL",
@@ -465,9 +487,27 @@ definition {
 		Button.clickSave();
 
 		Alert.viewSuccessMessage();
+
+		Alert.closeMessage(messageType = "SUCCESS");
 	}
 
-	macro selectFilterInCollectionCategoryFilter {
+	macro searchInCollectionFilter {
+		if (!(isSet(index))) {
+			var index = "1";
+		}
+
+		Type(
+			index = "${index}",
+			locator1 = "PageEditor#COLLECTION_FILTER_SEARCH_FIELD",
+			value1 = "${searchTerm}");
+
+		KeyPress(
+			index = "${index}",
+			locator1 = "PageEditor#COLLECTION_FILTER_SEARCH_FIELD",
+			value1 = "\RETURN");
+	}
+
+	macro selectFilterInCollectionFilter {
 		if (isSet(columnNumber)) {
 			Click.clickNoWaitForVisible(
 				key_columnNumber = "${columnNumber}",
@@ -478,7 +518,13 @@ definition {
 		else {
 			Click(
 				key_title = "${title}",
-				locator1 = "Fragment#COLLECTION_CATEGORY_FILTER_DROPDOWN_TOGGLE");
+				locator1 = "PageEditor#COLLECTION_FILTER_DROPDOWN_TOGGLE");
+		}
+
+		if (isSet(searchTerm)) {
+			Type(
+				locator1 = "MenuItem#SEARCH_FIELD",
+				value1 = "${searchTerm}");
 		}
 
 		if (isSet(multipleSelection)) {
@@ -494,10 +540,12 @@ definition {
 					locator1 = "MenuItem#ANY_CHECKBOX");
 			}
 
-			Button.clickApply();
+			DropdownMenuItem.click(menuItem = "Apply");
 		}
 		else {
-			DropdownMenuItem.click(menuItem = "${filterName}");
+			Click.clickAtNotVisible(
+				key_radioName = "${filterName}",
+				locator1 = "MenuItem#ANY_RADIO");
 		}
 
 		if (isSet(columnNumber)) {
@@ -511,7 +559,7 @@ definition {
 		else {
 			AssertTextEquals(
 				key_title = "${title}",
-				locator1 = "Fragment#COLLECTION_CATEGORY_FILTER_DROPDOWN_TOGGLE",
+				locator1 = "PageEditor#COLLECTION_FILTER_DROPDOWN_TOGGLE",
 				value1 = "${selectedName}");
 		}
 	}
@@ -1177,7 +1225,7 @@ definition {
 			value1 = "rtl");
 
 		AssertCssValue(
-			locator1 = "ProductMenu#TOGGLE",
+			locator1 = "ProductMenu#PRODUCT_MENU_OPENED",
 			locator2 = "text-align",
 			value1 = "right");
 

@@ -4,7 +4,7 @@
 <service-builder auto-namespace-tables="false" mvcc-enabled="true" package-path="com.liferay.batch.planner">
 	<author>Igor Beslic</author>
 	<namespace>BatchPlanner</namespace>
-	<entity local-service="true" name="BatchPlannerLog">
+	<entity local-service="true" name="BatchPlannerLog" remote-service="true">
 
 		<!-- PK fields -->
 
@@ -36,7 +36,10 @@
 
 		<!-- Finder methods -->
 
-		<finder name="BatchPlannerPlanId" return-type="Collection">
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="BatchPlannerPlanId" return-type="BatchPlannerLog">
 			<finder-column name="batchPlannerPlanId" />
 		</finder>
 		<finder name="BPPI_BEETERC" return-type="BatchPlannerLog" unique="true">
@@ -109,11 +112,13 @@
 		<!-- Other fields -->
 
 		<column name="active" type="boolean" />
+		<column name="export" type="boolean" />
 		<column name="externalType" type="String" />
 		<column name="externalURL" type="String" />
 		<column name="internalClassName" type="String" />
 		<column name="name" type="String" />
-		<column name="export" type="boolean" />
+		<column name="taskItemDelegateName" type="String" />
+		<column name="template" type="boolean" />
 
 		<!-- Order -->
 
@@ -130,9 +135,22 @@
 			<finder-column name="companyId" />
 			<finder-column name="userId" />
 		</finder>
+		<finder name="C_E" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="export" />
+		</finder>
 		<finder name="C_N" return-type="BatchPlannerPlan" unique="true">
 			<finder-column name="companyId" />
 			<finder-column name="name" />
+		</finder>
+		<finder name="C_T" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="template" />
+		</finder>
+		<finder name="C_E_T" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="export" />
+			<finder-column name="template" />
 		</finder>
 	</entity>
 	<entity local-service="true" name="BatchPlannerPolicy" remote-service="true">
@@ -172,8 +190,15 @@
 		</finder>
 	</entity>
 	<exceptions>
+		<exception>BatchPlannerLogBatchEngineExportTaskERC</exception>
+		<exception>BatchPlannerLogBatchEngineImportTaskERC</exception>
+		<exception>BatchPlannerMappingExternalFieldName</exception>
+		<exception>BatchPlannerMappingExternalFieldType</exception>
+		<exception>BatchPlannerMappingInternalFieldName</exception>
+		<exception>BatchPlannerMappingInternalFieldType</exception>
 		<exception>BatchPlannerPlanExternalType</exception>
 		<exception>BatchPlannerPlanName</exception>
+		<exception>BatchPlannerPolicyName</exception>
 		<exception>DuplicateBatchPlannerPlan</exception>
 	</exceptions>
 </service-builder>

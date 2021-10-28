@@ -12,12 +12,14 @@
  * details.
  */
 
-import {ClayRadio} from '@clayui/form';
+import {ClayInput, ClayRadio} from '@clayui/form';
 import React, {useMemo} from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
 import {useSyncValue} from '../hooks/useSyncValue.es';
 import {setJSONArrayValue} from '../util/setters.es';
+
+import './Radio.scss';
 
 const Radio = ({
 	editingLanguageId,
@@ -60,15 +62,15 @@ const Radio = ({
 
 	return (
 		<FieldBase {...otherProps} name={name} readOnly={disabled}>
-			<div className="ddm-radio" onBlur={onBlur} onFocus={onFocus}>
-				{options.map((option) => (
+			<div className="ddm__radio" onBlur={onBlur} onFocus={onFocus}>
+				{options.map((option, index) => (
 					<ClayRadio
 						checked={currentValue === option.value}
 						disabled={disabled}
 						inline={inline}
 						key={option.value}
 						label={option.label}
-						name={name}
+						name={`${name}_${index}`}
 						onChange={(event) => {
 							setCurrentValue(option.value);
 
@@ -78,6 +80,7 @@ const Radio = ({
 					/>
 				))}
 			</div>
+			<ClayInput name={name} type="hidden" value={currentValue} />
 		</FieldBase>
 	);
 };

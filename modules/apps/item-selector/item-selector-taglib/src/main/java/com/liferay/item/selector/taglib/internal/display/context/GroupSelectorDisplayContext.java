@@ -80,11 +80,14 @@ public class GroupSelectorDisplayContext {
 		).setParameter(
 			"groupType", groupType
 		).setParameter(
+			"scopeGroupType",
+			ParamUtil.getString(_liferayPortletRequest, "scopeGroupType")
+		).setParameter(
 			"selectedTab",
 			ParamUtil.getString(_liferayPortletRequest, "selectedTab")
 		).setParameter(
-			"showGroupSelector", Boolean.TRUE.toString()
-		).build();
+			"showGroupSelector", true
+		).buildPortletURL();
 	}
 
 	public Set<String> getGroupTypes() {
@@ -190,8 +193,8 @@ public class GroupSelectorDisplayContext {
 			"selectedTab",
 			ParamUtil.getString(_liferayPortletRequest, "selectedTab")
 		).setParameter(
-			"showGroupSelector", Boolean.TRUE.toString()
-		).build();
+			"showGroupSelector", true
+		).buildPortletURL();
 	}
 
 	private String _groupType;

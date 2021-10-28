@@ -26,7 +26,7 @@ Map<String, String> contextParams = HashMapBuilder.<String, String>put(
 ).build();
 %>
 
-<c:if test="<%= CommerceCatalogPermission.contains(permissionChecker, cpAttachmentFileEntriesDisplayContext.getCPDefinition(), ActionKeys.UPDATE) %>">
+<c:if test="<%= CommerceCatalogPermission.contains(permissionChecker, cpAttachmentFileEntriesDisplayContext.getCPDefinition(), ActionKeys.VIEW) %>">
 	<aui:form action="<%= portletURL.toString() %>" cssClass="pt-4" method="post" name="fm">
 		<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
 
@@ -46,6 +46,7 @@ Map<String, String> contextParams = HashMapBuilder.<String, String>put(
 				namespace="<%= liferayPortletResponse.getNamespace() %>"
 				pageNumber="<%= 1 %>"
 				portletURL="<%= portletURL %>"
+				selectedItemsKey="cpattachmentFileEntryId"
 			/>
 		</commerce-ui:panel>
 
@@ -63,6 +64,7 @@ Map<String, String> contextParams = HashMapBuilder.<String, String>put(
 				namespace="<%= liferayPortletResponse.getNamespace() %>"
 				pageNumber="<%= 1 %>"
 				portletURL="<%= portletURL %>"
+				selectedItemsKey="cpattachmentFileEntryId"
 			/>
 		</commerce-ui:panel>
 	</aui:form>

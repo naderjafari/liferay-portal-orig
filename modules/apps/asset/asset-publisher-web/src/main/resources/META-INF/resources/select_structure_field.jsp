@@ -44,15 +44,15 @@ ClassType classType = classTypeReader.getClassType(classTypeId, locale);
 				renderResponse
 			).setMVCPath(
 				"/select_structure_field.jsp"
+			).setPortletResource(
+				portletResource
 			).setParameter(
 				"className", className
 			).setParameter(
 				"classTypeId", classTypeId
 			).setParameter(
 				"eventName", eventName
-			).setParameter(
-				"portletResource", portletResource
-			).build()
+			).buildPortletURL()
 		%>'
 		total="<%= classType.getClassTypeFieldsCount() %>"
 	>

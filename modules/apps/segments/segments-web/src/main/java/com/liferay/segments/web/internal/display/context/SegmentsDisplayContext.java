@@ -164,9 +164,7 @@ public class SegmentsDisplayContext {
 	}
 
 	public String getSearchActionURL() {
-		PortletURL portletURL = _getPortletURL();
-
-		return portletURL.toString();
+		return String.valueOf(_getPortletURL());
 	}
 
 	public SearchContainer<SegmentsEntry> getSearchContainer()
@@ -249,7 +247,7 @@ public class SegmentsDisplayContext {
 		).setParameter(
 			"segmentsEntryId", segmentsEntry.getSegmentsEntryId()
 		).setParameter(
-			"showInEditMode", Boolean.FALSE.toString()
+			"showInEditMode", false
 		).buildString();
 	}
 
@@ -291,11 +289,7 @@ public class SegmentsDisplayContext {
 	}
 
 	public boolean isDisabledManagementBar() throws PortalException {
-		if (_hasResults()) {
-			return false;
-		}
-
-		if (_isSearch()) {
+		if (_hasResults() || _isSearch()) {
 			return false;
 		}
 
@@ -396,23 +390,27 @@ public class SegmentsDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+		return PortletURLBuilder.createRenderURL(
 			_renderResponse
 		).setMVCPath(
 			"/view.jsp"
-		).build();
+		).setKeywords(
+			() -> {
+				String keywords = _getKeywords();
 
-		String keywords = _getKeywords();
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
-
-		portletURL.setParameter("displayStyle", getDisplayStyle());
-		portletURL.setParameter("orderByCol", _getOrderByCol());
-		portletURL.setParameter("orderByType", getOrderByType());
-
-		return portletURL;
+				return null;
+			}
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).setParameter(
+			"orderByCol", _getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildPortletURL();
 	}
 
 	private Sort _getSort() {

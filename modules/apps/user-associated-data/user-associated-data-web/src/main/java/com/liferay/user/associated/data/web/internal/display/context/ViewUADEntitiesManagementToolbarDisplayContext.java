@@ -101,9 +101,7 @@ public class ViewUADEntitiesManagementToolbarDisplayContext
 
 	@Override
 	public String getSearchActionURL() {
-		PortletURL portletURL = getPortletURL();
-
-		return portletURL.toString();
+		return String.valueOf(getPortletURL());
 	}
 
 	@Override
@@ -144,7 +142,7 @@ public class ViewUADEntitiesManagementToolbarDisplayContext
 				liferayPortletResponse
 			).setParameters(
 				portletURL.getParameterMap()
-			).build();
+			).buildPortletURL();
 		}
 
 		String[] parameterNames = {

@@ -125,13 +125,16 @@ public abstract class BaseClientTestCase {
 
 		String pAuthToken = parsePAuthToken(response);
 
-		Map<String, NewCookie> cookies = response.getCookies();
+		Map<String, NewCookie> newCookies = response.getCookies();
 
-		NewCookie newCookie = cookies.get(CookieKeys.JSESSIONID);
+		NewCookie cookieSupportNewCookie = newCookies.get(
+			CookieKeys.COOKIE_SUPPORT);
+		NewCookie jSessionIdNewCookie = newCookies.get(CookieKeys.JSESSIONID);
 
 		invocationBuilder = getInvocationBuilder(hostname, getLoginWebTarget());
 
-		invocationBuilder.cookie(newCookie);
+		invocationBuilder.cookie(cookieSupportNewCookie);
+		invocationBuilder.cookie(jSessionIdNewCookie);
 
 		MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
 
@@ -141,15 +144,15 @@ public abstract class BaseClientTestCase {
 
 		response = invocationBuilder.post(Entity.form(formData));
 
-		cookies = response.getCookies();
+		newCookies = response.getCookies();
 
-		newCookie = cookies.get(CookieKeys.JSESSIONID);
+		jSessionIdNewCookie = newCookies.get(CookieKeys.JSESSIONID);
 
-		if (newCookie == null) {
+		if (jSessionIdNewCookie == null) {
 			return null;
 		}
 
-		return newCookie.toCookie();
+		return jSessionIdNewCookie.toCookie();
 	}
 
 	protected Function<WebTarget, Invocation.Builder>
@@ -223,7 +226,7 @@ public abstract class BaseClientTestCase {
 		return (clientId, invocationBuilder) -> {
 			String codeVerifier = RandomTestUtil.randomString();
 
-			final String codeChallenge = generateCodeChallenge(codeVerifier);
+			String codeChallenge = generateCodeChallenge(codeVerifier);
 
 			String authorizationCode = parseAuthorizationCodeString(
 				getCodeResponse(
@@ -327,11 +330,7 @@ public abstract class BaseClientTestCase {
 			Map<String, String[]> parameterMap = HttpUtil.getParameterMap(
 				uri.getQuery());
 
-			if (parameterMap.containsKey("error")) {
-				return response;
-			}
-
-			if (skipAuthorization) {
+			if (parameterMap.containsKey("error") || skipAuthorization) {
 				return response;
 			}
 

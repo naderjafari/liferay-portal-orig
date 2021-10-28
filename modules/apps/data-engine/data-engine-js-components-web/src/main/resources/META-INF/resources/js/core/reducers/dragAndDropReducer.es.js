@@ -12,22 +12,22 @@
  * details.
  */
 
-import {FieldSupport, SettingsContext} from 'dynamic-data-mapping-form-builder';
+import {
+	findFieldByFieldName,
+	removeEmptyRows,
+} from '../../utils/FormSupport.es';
+import {FIELD_TYPE_FIELDSET} from '../../utils/constants';
+import {addFieldToPage, getParentField} from '../../utils/fieldSupport';
+import {updateField} from '../../utils/settingsContext';
+import {PagesVisitor} from '../../utils/visitors.es';
+import {EVENT_TYPES} from '../actions/eventTypes.es';
 import {
 	getColumn,
 	handleResizeLeft,
 	handleResizeRight,
-} from 'dynamic-data-mapping-form-builder/js/components/LayoutProvider/handlers/columnResizedHandler.es';
-import sectionAdded from 'dynamic-data-mapping-form-builder/js/components/LayoutProvider/handlers/sectionAddedHandler.es';
-
-import * as FormSupport from '../../utils/FormSupport.es';
-import {PagesVisitor} from '../../utils/visitors.es';
-import {EVENT_TYPES} from '../actions/eventTypes.es';
+} from '../utils/columnResizedHandler';
+import sectionAdded from '../utils/sectionAddedHandler';
 import {deleteField} from './fieldEditableReducer.es';
-
-const FIELD_TYPES = {
-	FIELDSET: 'fieldset',
-};
 
 /**
  * NOTE: This is a literal copy of the old LayoutProvider logic. Small changes
@@ -64,10 +64,7 @@ export default (state, action, config) => {
 
 			let {sourceParentField} = action.payload;
 
-			const sourceField = FormSupport.findFieldByFieldName(
-				pages,
-				sourceFieldName
-			);
+			const sourceField = findFieldByFieldName(pages, sourceFieldName);
 
 			if (
 				sourceParentField &&
@@ -77,7 +74,7 @@ export default (state, action, config) => {
 				return state;
 			}
 
-			let newPages = deleteField({
+			let updatedPages = deleteField({
 				defaultLanguageId,
 				editingLanguageId,
 				fieldName: sourceFieldName,
@@ -89,7 +86,7 @@ export default (state, action, config) => {
 
 			if (
 				sourceParentField &&
-				sourceParentField.type === FIELD_TYPES.FIELDSET &&
+				sourceParentField.type === FIELD_TYPE_FIELDSET &&
 				sourceParentField.nestedFields.length === 1
 			) {
 				let sourceParentFieldName = sourceParentField
@@ -101,13 +98,13 @@ export default (state, action, config) => {
 						sourceParentFieldName = sourceParentField.fieldName;
 					}
 
-					sourceParentField = FieldSupport.getParentField(
+					sourceParentField = getParentField(
 						pages,
 						sourceParentField.fieldName
 					);
 				} while (
 					sourceParentField &&
-					sourceParentField.type === FIELD_TYPES.FIELDSET &&
+					sourceParentField.type === FIELD_TYPE_FIELDSET &&
 					sourceParentField.fieldName !== targetParentFieldName &&
 					sourceParentField.nestedFields.length === 1
 				);
@@ -116,7 +113,7 @@ export default (state, action, config) => {
 					sourceParentFieldName &&
 					sourceParentFieldName !== targetParentFieldName
 				) {
-					newPages = deleteField({
+					updatedPages = deleteField({
 						defaultLanguageId,
 						editingLanguageId,
 						fieldName: sourceParentFieldName,
@@ -129,7 +126,7 @@ export default (state, action, config) => {
 			}
 
 			if (targetFieldName) {
-				newPages = deleteField({
+				updatedPages = deleteField({
 					clean: true,
 					defaultLanguageId,
 					editingLanguageId,
@@ -151,7 +148,7 @@ export default (state, action, config) => {
 					},
 					{
 						activePage,
-						pages: newPages,
+						pages: updatedPages,
 						rules,
 					},
 					{
@@ -165,22 +162,22 @@ export default (state, action, config) => {
 				);
 			}
 
-			const {pages: updatedPages} = FieldSupport.addField({
+			updatedPages = addFieldToPage({
 				defaultLanguageId,
 				editingLanguageId,
 				fieldNameGenerator,
 				generateFieldNameUsingFieldLabel,
 				indexes: targetIndexes,
 				newField: sourceField,
-				pages: newPages,
+				pages: updatedPages,
 				parentFieldName: targetParentFieldName,
 			});
 
 			const visitor = new PagesVisitor(updatedPages);
 
-			newPages = visitor.mapFields((field) => {
+			updatedPages = visitor.mapFields((field) => {
 				if (field.type != 'grid' && field.rows) {
-					return SettingsContext.updateField(
+					return updateField(
 						{
 							availableLanguageIds,
 							defaultLanguageId,
@@ -189,28 +186,19 @@ export default (state, action, config) => {
 						},
 						field,
 						'rows',
-						FormSupport.removeEmptyRows([field], 0)
+						removeEmptyRows([field], 0)
 					);
 				}
 
 				return field;
 			});
 
-			return {
-				pages: newPages.map((page, pageIndex) => {
-					if (sourceFieldPage === pageIndex) {
-						return {
-							...page,
-							rows: FormSupport.removeEmptyRows(
-								newPages,
-								pageIndex
-							),
-						};
-					}
+			updatedPages[sourceFieldPage].rows = removeEmptyRows(
+				updatedPages,
+				sourceFieldPage
+			);
 
-					return page;
-				}),
-			};
+			return {pages: updatedPages};
 		}
 		case EVENT_TYPES.DND.RESIZE: {
 			const {column, direction, loc} = action.payload;

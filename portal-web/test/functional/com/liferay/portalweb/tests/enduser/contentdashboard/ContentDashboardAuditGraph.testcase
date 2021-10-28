@@ -31,6 +31,9 @@ definition {
 		if ("${testPortalInstance}" == "true") {
 			PortalInstances.tearDownCP();
 		}
+		else {
+			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
+		}
 	}
 
 	@description = "When a user clicks on one of the colored bars of the audit graph, the filters corresponding to the categories in that bar are applied, they are shown as filter labels in the management tool bar and the list of contents is filtered by them"
@@ -583,6 +586,270 @@ definition {
 		AssertTextPresent(
 			locator1 = "ContentDashboard#NO_CATEGORIES_SELECTED_TEXT",
 			value1 = "There are no categories selected");
+	}
+
+	@description = "LPS-133797 When the user selects the option Available, the modal lists all the existing Global Vocabularies"
+	@priority = "5"
+	test CheckAvailableVocabulariesDisplayed {
+		task ("Create 2 new vocabularies") {
+			for (var vocabularyNumber : list "1,2") {
+				JSONCategory.addVocabulary(
+					groupName = "Global",
+					title = "Vocabulary Name ${vocabularyNumber}");
+			}
+		}
+
+		task ("Check if vocabularies are avalible") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Content",
+				panel = "Applications",
+				portlet = "Content Dashboard");
+
+			ContentDashboard.openAuditGraphConfiguration();
+
+			AssertElementPresent(
+				locator1 = "ContentDashboard#AUDIT_GRAPH_CONFIGURATION_VOCABULARY_AVAILABLE",
+				vocabularyName = "Vocabulary Name 1");
+
+			AssertElementPresent(
+				locator1 = "ContentDashboard#AUDIT_GRAPH_CONFIGURATION_VOCABULARY_AVAILABLE",
+				vocabularyName = "Vocabulary Name 2");
+		}
+	}
+
+	@description = "LPS-134606 When there's a vocabulary in the "In use" box is in the second position of the list and user clicks on Save, the graph will feature that vocabulary in the checkbox legend above"
+	@priority = "5"
+	test CheckSecondPositionVocabularyCheckbox {
+		property portal.acceptance = "true";
+
+		task ("Create a Web Content with Audience and Stage categories") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddCP();
+
+			WebContent.addWithCategoryCP(
+				categoryName = "Audience 1",
+				vocabularyName = "Audience",
+				webContentContent = "Web Content Content",
+				webContentTitle = "WC Title");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "WC Title");
+
+			WebContent.selectCategory(
+				categoryName = "Stage 1",
+				vocabularyName = "Stage");
+
+			PortletEntry.publish();
+		}
+
+		task ("Go to Content Dashboard > Audic Graph configuration") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Content",
+				panel = "Applications",
+				portlet = "Content Dashboard");
+		}
+
+		task ("Check which vocabulary is displayed in x-axis") {
+			ContentDashboard.setVocabularyInUseSecondPosition(vocabularyName = "Stage");
+
+			AssertTextPresent(
+				auditGraphCheckboxName = "Stage 1",
+				locator1 = "ContentDashboard#AUDIT_GRAPH_CATEGORY_CHECKBOX",
+				value1 = "WC Title");
+
+			ContentDashboard.setVocabularyInUseSecondPosition(vocabularyName = "Audience");
+
+			AssertTextPresent(
+				auditGraphCheckboxName = "Audience 1",
+				locator1 = "ContentDashboard#AUDIT_GRAPH_CATEGORY_CHECKBOX",
+				value1 = "WC Title");
+		}
+	}
+
+	@description = "LPS-134606 When there's a vocabulary in the "In use" box is in the top position of the list and user clicks on Save, the graph will feature that vocabulary in the X axis"
+	@priority = "5"
+	test CheckTopPositionVocabularyXAxis {
+		property portal.acceptance = "true";
+
+		task ("Create a Web Content with Audience and Stage categories") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddCP();
+
+			WebContent.addWithCategoryCP(
+				categoryName = "Audience 1",
+				vocabularyName = "Audience",
+				webContentContent = "Web Content Content",
+				webContentTitle = "WC Title");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "WC Title");
+
+			WebContent.selectCategory(
+				categoryName = "Stage 1",
+				vocabularyName = "Stage");
+
+			PortletEntry.publish();
+		}
+
+		task ("Go to Content Dashboard > Audic Graph configuration") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Content",
+				panel = "Applications",
+				portlet = "Content Dashboard");
+		}
+
+		task ("Check which vocabulary is displayed in x-axis") {
+			ContentDashboard.setVocabularyInUseTopPosition(vocabularyName = "Stage");
+
+			AssertTextPresent(
+				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
+				value1 = "WC Title",
+				xAxisCategoryName = "Stage 1");
+
+			ContentDashboard.setVocabularyInUseTopPosition(vocabularyName = "Audience");
+
+			AssertTextPresent(
+				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
+				value1 = "WC Title",
+				xAxisCategoryName = "Audience 1");
+		}
+	}
+
+	@priority = "4"
+	test DocumentWithNoCategories {
+		property osgi.module.configuration.file.names = "com.liferay.content.dashboard.web.internal.configuration.FFContentDashboardDocumentConfiguration.config";
+		property osgi.module.configurations = "enabled=B&quot;true&quot;";
+		property portal.acceptance = "true";
+
+		task ("Create a new Document") {
+			JSONDocument.addFile(
+				dmDocumentDescription = "DM Document Description",
+				dmDocumentTitle = "DM Document Title",
+				groupName = "Test Site Name");
+		}
+
+		task ("Go to Content Dashboard") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Content",
+				panel = "Applications",
+				portlet = "Content Dashboard");
+		}
+
+		task ("Assert the are no info in the Audit Graph") {
+			AssertTextPresent(
+				locator1 = "ContentDashboard#EMPTY_AUDIT_GRAPH_TEXT",
+				value1 = "There is no data.");
+		}
+	}
+
+	@priority = "4"
+	test DocumentWithOneCategory {
+		property osgi.module.configuration.file.names = "com.liferay.content.dashboard.web.internal.configuration.FFContentDashboardDocumentConfiguration.config";
+		property osgi.module.configurations = "enabled=B&quot;true&quot;";
+		property portal.acceptance = "true";
+
+		task ("Create a new Document") {
+			JSONDocument.addFile(
+				dmDocumentDescription = "DM Document Description",
+				dmDocumentTitle = "DM Document Title",
+				groupName = "Test Site Name");
+		}
+
+		task ("Add public and internal categories to Document") {
+			DMDocument.openDocumentsAndMediaAdmin(siteURLKey = "test-site-name");
+
+			LexiconEntry.gotoEntryMenuItem(
+				menuItem = "Edit",
+				rowEntry = "DM Document Title");
+
+			DMDocument.addCategories(
+				categoryNameList = "Audience 1",
+				vocabularyName = "Audience");
+
+			Button.clickSubmitButton();
+
+			Alert.viewSuccessMessage();
+		}
+
+		task ("Go to Content Dashboard") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Content",
+				panel = "Applications",
+				portlet = "Content Dashboard");
+		}
+
+		task ("Assert the document is counted as an asset") {
+			AssertTextPresent(
+				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
+				value1 = "DM Document Title",
+				xAxisCategoryName = "Audience 1");
+		}
+	}
+
+	@description = "LPS-133797 When clicks on the left or right arrows within Configuration and selects one or more vocabularies, the vocabularies go from Available to In use and vice versa"
+	@priority = "3"
+	test MoveVocabulariesAcrossConfiguration {
+		task ("Go to Content Dashboard > Audic Graph configuration") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Content",
+				panel = "Applications",
+				portlet = "Content Dashboard");
+		}
+
+		task ("Move vocabulary from in use to available") {
+			ContentDashboard.moveVocabularyDisplayConfiguration(vocabularyName = "Audience");
+		}
+
+		task ("Move vocabulary from available to in use") {
+			ContentDashboard.moveVocabularyDisplayConfiguration(vocabularyName = "Topic");
+		}
+	}
+
+	@description = "LPS-134606 When the user has removed all vocabularies from the In Use box and clicks on Save , a warning message will show: Select at least one vocabulary to show on the chart "
+	@priority = "3"
+	test ShowWarningMessageNoVocabulariesInUse {
+		task ("Create a Web Content with Audience and Stage categories") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddCP();
+
+			WebContent.addWithCategoryCP(
+				categoryName = "Audience 1",
+				vocabularyName = "Audience",
+				webContentContent = "Web Content Content",
+				webContentTitle = "WC Title");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "WC Title");
+
+			WebContent.selectCategory(
+				categoryName = "Stage 1",
+				vocabularyName = "Stage");
+
+			PortletEntry.publish();
+		}
+
+		task ("Go to Content Dashboard > Audic Graph configuration") {
+			ApplicationsMenu.gotoPortlet(
+				category = "Content",
+				panel = "Applications",
+				portlet = "Content Dashboard");
+		}
+
+		task ("Move all vocabularies from In Use and check warning message") {
+			ContentDashboard.moveVocabularyDisplayConfiguration(vocabularyName = "Audience");
+
+			ContentDashboard.moveVocabularyDisplayConfiguration(
+				notCloseFrame = "true",
+				vocabularyName = "Stage");
+
+			Alert.viewWarningSpecific(warningMessage = "You have not selected any vocabularies");
+		}
 	}
 
 }

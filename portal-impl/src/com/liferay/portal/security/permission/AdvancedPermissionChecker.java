@@ -752,15 +752,11 @@ public class AdvancedPermissionChecker extends BasePermissionChecker {
 
 		if (RoleLocalServiceUtil.hasUserRole(
 				getUserId(), group.getCompanyId(),
-				RoleConstants.PORTAL_CONTENT_REVIEWER, true)) {
-
-			return true;
-		}
-
-		if (group.isSite() &&
-			UserGroupRoleLocalServiceUtil.hasUserGroupRole(
-				getUserId(), groupId, RoleConstants.SITE_CONTENT_REVIEWER,
-				true)) {
+				RoleConstants.PORTAL_CONTENT_REVIEWER, true) ||
+			(group.isSite() &&
+			 UserGroupRoleLocalServiceUtil.hasUserGroupRole(
+				 getUserId(), groupId, RoleConstants.SITE_CONTENT_REVIEWER,
+				 true))) {
 
 			return true;
 		}
@@ -775,11 +771,7 @@ public class AdvancedPermissionChecker extends BasePermissionChecker {
 			return false;
 		}
 
-		if (isOmniadmin()) {
-			return true;
-		}
-
-		if (isCompanyAdmin(companyId)) {
+		if (isOmniadmin() || isCompanyAdmin(companyId)) {
 			return true;
 		}
 
@@ -935,22 +927,19 @@ public class AdvancedPermissionChecker extends BasePermissionChecker {
 	}
 
 	protected boolean isGroupMemberImpl(long groupId) throws Exception {
-		if (!signedIn) {
-			return false;
-		}
-
-		if (groupId <= 0) {
+		if (!signedIn || (groupId <= 0)) {
 			return false;
 		}
 
 		Group group = GroupLocalServiceUtil.getGroup(groupId);
 
-		long[] roleIds = getRoleIds(getUserId(), group.getGroupId());
-
 		Role role = RoleLocalServiceUtil.getRole(
 			group.getCompanyId(), RoleConstants.SITE_MEMBER);
 
-		if (Arrays.binarySearch(roleIds, role.getRoleId()) >= 0) {
+		int count = Arrays.binarySearch(
+			getRoleIds(getUserId(), group.getGroupId()), role.getRoleId());
+
+		if (count >= 0) {
 			return true;
 		}
 
@@ -1347,12 +1336,9 @@ public class AdvancedPermissionChecker extends BasePermissionChecker {
 				noSuchResourcePermissionException);
 		}
 
-		if (isOmniadmin()) {
-			return true;
-		}
-
-		if (name.equals(Organization.class.getName()) &&
-			isOrganizationAdminImpl(GetterUtil.getLong(primKey))) {
+		if (isOmniadmin() ||
+			(name.equals(Organization.class.getName()) &&
+			 isOrganizationAdminImpl(GetterUtil.getLong(primKey)))) {
 
 			return true;
 		}
@@ -1367,12 +1353,8 @@ public class AdvancedPermissionChecker extends BasePermissionChecker {
 			// the current portlet
 
 			if (Validator.isNull(name) || Validator.isNull(primKey) ||
-				!primKey.contains(PortletConstants.LAYOUT_SEPARATOR)) {
-
-				return true;
-			}
-
-			if (PortletPermissionUtil.hasLayoutManagerPermission(
+				!primKey.contains(PortletConstants.LAYOUT_SEPARATOR) ||
+				PortletPermissionUtil.hasLayoutManagerPermission(
 					name, actionId)) {
 
 				return true;

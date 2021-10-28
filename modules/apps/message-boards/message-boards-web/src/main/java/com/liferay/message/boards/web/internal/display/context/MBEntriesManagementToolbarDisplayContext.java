@@ -403,7 +403,7 @@ public class MBEntriesManagementToolbarDisplayContext {
 		).setMVCRenderCommandName(
 			"/message_boards_admin/search"
 		).setRedirect(
-			_currentURLObj.toString()
+			_currentURLObj
 		).setParameter(
 			"breadcrumbsCategoryId", categoryId
 		).setParameter(
@@ -417,7 +417,7 @@ public class MBEntriesManagementToolbarDisplayContext {
 		).setParameter(
 			"orderByType",
 			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
-		).build();
+		).buildPortletURL();
 	}
 
 	public void populateOrder(SearchContainer searchContainer) {

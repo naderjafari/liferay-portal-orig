@@ -12,15 +12,12 @@
  * details.
  */
 
-import {PagesVisitor} from 'data-engine-js-components-web';
-import {EVENT_TYPES as CORE_EVENT_TYPES} from 'data-engine-taglib';
 import {
 	FieldUtil,
-	RulesSupport,
+	PagesVisitor,
 	SettingsContext,
-} from 'dynamic-data-mapping-form-builder';
-
-import {EVENT_TYPES} from '../eventTypes.es';
+} from 'data-engine-js-components-web';
+import {EVENT_TYPES as CORE_EVENT_TYPES} from 'data-engine-taglib';
 
 /**
  * NOTE: This is a literal copy of the old LayoutProvider logic. Small changes
@@ -76,50 +73,7 @@ export default (state, action) => {
 				focusedField: {},
 			};
 		}
-		case EVENT_TYPES.SIDEBAR.CHANGES_CANCEL: {
-			const {focusedField, pages, previousFocusedField} = state;
 
-			const {settingsContext} = previousFocusedField;
-
-			const visitor = new PagesVisitor(pages);
-
-			return {
-				focusedField: previousFocusedField,
-				pages: visitor.mapFields((field) => {
-					if (field.fieldName === focusedField.fieldName) {
-						return {
-							...previousFocusedField,
-							settingsContext,
-						};
-					}
-
-					return field;
-				}),
-			};
-		}
-		case EVENT_TYPES.SIDEBAR.CHANGE_FIELD_TYPE: {
-			const {pages, rules} = state;
-
-			const visitor = new PagesVisitor(pages);
-
-			const newPages = visitor.mapFields(
-				(field) => {
-					if (field.fieldName !== action.payload.fieldName) {
-						return field;
-					}
-
-					return action.payload;
-				},
-				true,
-				true
-			);
-
-			return {
-				focusedField: action.payload,
-				pages: newPages,
-				rules: RulesSupport.formatRules(newPages, rules),
-			};
-		}
 		default:
 			return state;
 	}

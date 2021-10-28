@@ -487,6 +487,29 @@ public class AddressLocalServiceWrapper
 	}
 
 	@Override
+	public java.util.List<com.liferay.portal.kernel.model.Address>
+		getTypeAddresses(
+			long companyId, java.lang.String className, long classPK,
+			long[] typeIds) {
+
+		return _addressLocalService.getTypeAddresses(
+			companyId, className, classPK, typeIds);
+	}
+
+	@Override
+	public java.util.List<com.liferay.portal.kernel.model.Address>
+		getTypeAddresses(
+			long companyId, java.lang.String className, long classPK,
+			long[] typeIds, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.portal.kernel.model.Address> orderByComparator) {
+
+		return _addressLocalService.getTypeAddresses(
+			companyId, className, classPK, typeIds, start, end,
+			orderByComparator);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.search.BaseModelSearchResult
 		<com.liferay.portal.kernel.model.Address> searchAddresses(
 				long companyId, java.lang.String className, long classPK,

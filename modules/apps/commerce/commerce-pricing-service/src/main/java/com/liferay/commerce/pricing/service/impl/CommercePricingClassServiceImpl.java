@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
@@ -41,50 +42,37 @@ import java.util.Map;
 
 /**
  * @author Riccardo Alberti
- * @see CommercePricingClassServiceBaseImpl
  */
 public class CommercePricingClassServiceImpl
 	extends CommercePricingClassServiceBaseImpl {
 
 	@Override
 	public CommercePricingClass addCommercePricingClass(
-			long userId, Map<Locale, String> titleMap,
+			String externalReferenceCode, Map<Locale, String> titleMap,
 			Map<Locale, String> descriptionMap, ServiceContext serviceContext)
 		throws PortalException {
 
 		_checkPortletResourcePermission(
 			null, CommercePricingClassActionKeys.ADD_COMMERCE_PRICING_CLASS);
 
-		return commercePricingClassLocalService.addCommercePricingClass(
-			null, userId, titleMap, descriptionMap, serviceContext);
-	}
-
-	@Override
-	public CommercePricingClass addCommercePricingClass(
-			String externalReferenceCode, long userId,
-			Map<Locale, String> titleMap, Map<Locale, String> descriptionMap,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		_checkPortletResourcePermission(
-			null, CommercePricingClassActionKeys.ADD_COMMERCE_PRICING_CLASS);
+		PermissionChecker permissionChecker = getPermissionChecker();
 
 		return commercePricingClassLocalService.addCommercePricingClass(
-			externalReferenceCode, userId, titleMap, descriptionMap,
-			serviceContext);
+			externalReferenceCode, permissionChecker.getUserId(), titleMap,
+			descriptionMap, serviceContext);
 	}
 
 	@Override
 	public CommercePricingClass addOrUpdateCommercePricingClass(
 			String externalReferenceCode, long commercePricingClassId,
-			long userId, Map<Locale, String> titleMap,
-			Map<Locale, String> descriptionMap, ServiceContext serviceContext)
+			Map<Locale, String> titleMap, Map<Locale, String> descriptionMap,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		if (commercePricingClassId > 0) {
 			try {
 				return updateCommercePricingClass(
-					commercePricingClassId, userId, titleMap, descriptionMap,
+					commercePricingClassId, titleMap, descriptionMap,
 					serviceContext);
 			}
 			catch (NoSuchPricingClassException noSuchPricingClassException) {
@@ -105,14 +93,13 @@ public class CommercePricingClassServiceImpl
 			if (commercePricingClass != null) {
 				return commercePricingClassLocalService.
 					updateCommercePricingClass(
-						commercePricingClassId, userId, titleMap,
+						commercePricingClassId, getUserId(), titleMap,
 						descriptionMap, serviceContext);
 			}
 		}
 
 		return addCommercePricingClass(
-			externalReferenceCode, userId, titleMap, descriptionMap,
-			serviceContext);
+			externalReferenceCode, titleMap, descriptionMap, serviceContext);
 	}
 
 	@Override
@@ -209,6 +196,15 @@ public class CommercePricingClassServiceImpl
 	}
 
 	@Override
+	public List<CommercePricingClass> searchByCPDefinitionId(
+			long cpDefinitionId, String title, int start, int end)
+		throws PrincipalException {
+
+		return commercePricingClassFinder.findByCPDefinitionId(
+			cpDefinitionId, title, start, end, true);
+	}
+
+	@Override
 	public BaseModelSearchResult<CommercePricingClass>
 			searchCommercePricingClasses(
 				long companyId, String keywords, int start, int end, Sort sort)
@@ -219,27 +215,16 @@ public class CommercePricingClassServiceImpl
 	}
 
 	@Override
-	public List<CommercePricingClass>
-			searchCommercePricingClassesByCPDefinitionId(
-				long cpDefinitionId, String title, int start, int end)
-		throws PrincipalException {
-
-		return commercePricingClassFinder.findByCPDefinitionId(
-			cpDefinitionId, title, start, end, true);
-	}
-
-	@Override
 	public CommercePricingClass updateCommercePricingClass(
-			long commercePricingClassId, long userId,
-			Map<Locale, String> titleMap, Map<Locale, String> descriptionMap,
-			ServiceContext serviceContext)
+			long commercePricingClassId, Map<Locale, String> titleMap,
+			Map<Locale, String> descriptionMap, ServiceContext serviceContext)
 		throws PortalException {
 
 		_commercePricingClassResourcePermission.check(
 			getPermissionChecker(), commercePricingClassId, ActionKeys.UPDATE);
 
 		return commercePricingClassLocalService.updateCommercePricingClass(
-			commercePricingClassId, userId, titleMap, descriptionMap,
+			commercePricingClassId, getUserId(), titleMap, descriptionMap,
 			serviceContext);
 	}
 

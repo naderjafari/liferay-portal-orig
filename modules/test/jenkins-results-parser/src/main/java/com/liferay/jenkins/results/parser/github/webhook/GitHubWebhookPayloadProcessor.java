@@ -118,6 +118,10 @@ public class GitHubWebhookPayloadProcessor {
 
 		String repositoryName = pullRequest.getGitRepositoryName();
 
+		if (repositoryName.equals("liferay-fix-pack-builder-ee")) {
+			return "test-fixpack-builder-pullrequest";
+		}
+
 		if (repositoryName.equals("liferay-jenkins-ee")) {
 			return "test-jenkins-acceptance-pullrequest";
 		}
@@ -730,11 +734,9 @@ public class GitHubWebhookPayloadProcessor {
 	}
 
 	protected boolean isLiferayUser(String gitHubUsername) {
-		if (gitHubUsername.equals("liferay")) {
-			return true;
-		}
+		if (gitHubUsername.equals("liferay") ||
+			_validLiferayUsers.contains(gitHubUsername)) {
 
-		if (_validLiferayUsers.contains(gitHubUsername)) {
 			return true;
 		}
 
@@ -1390,12 +1392,8 @@ public class GitHubWebhookPayloadProcessor {
 				}
 			}
 
-			String jenkinsAdminUserToken = _jenkinsBuildProperties.getProperty(
-				"jenkins.admin.user.token");
-
 			try {
-				JenkinsStopBuildUtil.stopBuild(
-					buildURL, "jenkins-admin", jenkinsAdminUserToken);
+				JenkinsStopBuildUtil.stopBuild(buildURL);
 			}
 			catch (Exception exception) {
 				throw new RuntimeException(
@@ -1584,7 +1582,7 @@ public class GitHubWebhookPayloadProcessor {
 		String sha = pushEventPayload.getAfterSHA();
 
 		if (_log.isInfoEnabled()) {
-			_log.info("Sync subrepo sha " + sha);
+			_log.info("Sync subrepo SHA " + sha);
 		}
 
 		jsonObject.put("sha", sha);
@@ -2430,8 +2428,9 @@ public class GitHubWebhookPayloadProcessor {
 		Collections.emptyList();
 	private static final MultiPattern _whiteListedRepositoryMultiPattern =
 		new MultiPattern(
+			"com-liferay-.*", "liferay-fix-pack-builder-ee",
 			"liferay-jenkins-ee", "liferay-plugins(-ee)?",
-			"liferay-portal(-ee)?", "com-liferay-.*");
+			"liferay-portal(-ee)?");
 
 	private boolean _ciForwardEligible;
 	private final Properties _jenkinsBuildProperties;

@@ -242,9 +242,6 @@ public class PluginPackageUtil {
 	}
 
 	private PluginPackageUtil() {
-		_installedPluginPackages = new LocalPluginPackageRepository();
-		_repositoryCache = new HashMap<>();
-		_availableTagsCache = new TreeSet<>();
 	}
 
 	private void _endPluginPackageInstallation(String preliminaryContext) {
@@ -870,8 +867,6 @@ public class PluginPackageUtil {
 			properties.getProperty("recommended-deployment-context"),
 			moduleArtifactId);
 
-		String author = GetterUtil.getString(properties.getProperty("author"));
-
 		List<String> types = new ArrayList<>();
 
 		types.add(pluginType);
@@ -930,7 +925,8 @@ public class PluginPackageUtil {
 		pluginPackage.setName(pluginName);
 		pluginPackage.setRecommendedDeploymentContext(deploymentContext);
 		//pluginPackage.setModifiedDate(null);
-		pluginPackage.setAuthor(author);
+		pluginPackage.setAuthor(
+			GetterUtil.getString(properties.getProperty("author")));
 		pluginPackage.setTypes(types);
 		pluginPackage.setLicenses(licenses);
 		pluginPackage.setLiferayVersions(liferayVersions);
@@ -1272,10 +1268,12 @@ public class PluginPackageUtil {
 	private static final PluginPackageUtil _pluginPackageUtil =
 		new PluginPackageUtil();
 
-	private final Set<String> _availableTagsCache;
-	private final LocalPluginPackageRepository _installedPluginPackages;
+	private final Set<String> _availableTagsCache = new TreeSet<>();
+	private final LocalPluginPackageRepository _installedPluginPackages =
+		new LocalPluginPackageRepository();
 	private Date _lastUpdateDate;
-	private final Map<String, RemotePluginPackageRepository> _repositoryCache;
+	private final Map<String, RemotePluginPackageRepository> _repositoryCache =
+		new HashMap<>();
 	private boolean _settingUpdateAvailable;
 	private Boolean _updateAvailable;
 

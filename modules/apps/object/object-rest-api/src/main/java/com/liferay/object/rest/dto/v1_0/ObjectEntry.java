@@ -61,6 +61,10 @@ public class ObjectEntry implements Serializable {
 		return ObjectMapperUtil.readValue(ObjectEntry.class, json);
 	}
 
+	public static ObjectEntry unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(ObjectEntry.class, json);
+	}
+
 	@Schema
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
@@ -177,6 +181,34 @@ public class ObjectEntry implements Serializable {
 	protected Date dateModified;
 
 	@Schema
+	public String getExternalReferenceCode() {
+		return externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		this.externalReferenceCode = externalReferenceCode;
+	}
+
+	@JsonIgnore
+	public void setExternalReferenceCode(
+		UnsafeSupplier<String, Exception> externalReferenceCodeUnsafeSupplier) {
+
+		try {
+			externalReferenceCode = externalReferenceCodeUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String externalReferenceCode;
+
+	@Schema
 	public Long getId() {
 		return id;
 	}
@@ -233,6 +265,63 @@ public class ObjectEntry implements Serializable {
 	@JsonAnySetter
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, Object> properties = new HashMap<>();
+
+	@Schema
+	public String getScopeKey() {
+		return scopeKey;
+	}
+
+	public void setScopeKey(String scopeKey) {
+		this.scopeKey = scopeKey;
+	}
+
+	@JsonIgnore
+	public void setScopeKey(
+		UnsafeSupplier<String, Exception> scopeKeyUnsafeSupplier) {
+
+		try {
+			scopeKey = scopeKeyUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String scopeKey;
+
+	@Schema
+	@Valid
+	public Status getStatus() {
+		return status;
+	}
+
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	@JsonIgnore
+	public void setStatus(
+		UnsafeSupplier<Status, Exception> statusUnsafeSupplier) {
+
+		try {
+			status = statusUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Status status;
 
 	@Override
 	public boolean equals(Object object) {
@@ -312,6 +401,20 @@ public class ObjectEntry implements Serializable {
 			sb.append("\"");
 		}
 
+		if (externalReferenceCode != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(externalReferenceCode));
+
+			sb.append("\"");
+		}
+
 		if (id != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -330,6 +433,30 @@ public class ObjectEntry implements Serializable {
 			sb.append("\"properties\": ");
 
 			sb.append(_toJSON(properties));
+		}
+
+		if (scopeKey != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"scopeKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(scopeKey));
+
+			sb.append("\"");
+		}
+
+		if (status != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"status\": ");
+
+			sb.append(String.valueOf(status));
 		}
 
 		sb.append("}");

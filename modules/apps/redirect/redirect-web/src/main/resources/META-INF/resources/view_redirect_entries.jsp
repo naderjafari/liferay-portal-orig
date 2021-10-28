@@ -30,13 +30,12 @@ RedirectManagementToolbarDisplayContext redirectManagementToolbarDisplayContext 
 
 <c:if test="<%= !stagingGroup %>">
 	<clay:management-toolbar
-		additionalProps="<%= redirectManagementToolbarDisplayContext.getAdditionalProps() %>"
 		managementToolbarDisplayContext="<%= redirectManagementToolbarDisplayContext %>"
 		propsTransformer="js/RedirectManagementToolbarPropsTransformer"
 	/>
 </c:if>
 
-<div class="closed redirect-entries sidenav-container sidenav-right" id="<%= liferayPortletResponse.getNamespace() + "infoPanelId" %>">
+<div class="closed redirect-entries sidenav-container sidenav-right" id="<portlet:namespace />infoPanelId">
 	<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="/redirect/info_panel" var="sidebarPanelURL" />
 
 	<liferay-frontend:sidebar-panel

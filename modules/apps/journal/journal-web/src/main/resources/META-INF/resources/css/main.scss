@@ -1,6 +1,7 @@
 @import 'atlas-variables';
 
-@import '../ddm_template_editor/components/App';
+@import '../ddm_template_editor/components/PortletIcon';
+@import '../ddm_template_editor/components/PropertiesPanel';
 
 $toolbarDesktopHeight: 4rem;
 $toolbarHeight: 6.875rem;
@@ -192,7 +193,6 @@ $productMenuWidth: 320px;
 				max-height: calc(
 					100vh - #{$controlMenuHeight + $portletLayoutMargin} - #{$toolbarHeight}
 				);
-				overflow: auto;
 
 				@include media-breakpoint-up(lg) {
 					max-height: calc(

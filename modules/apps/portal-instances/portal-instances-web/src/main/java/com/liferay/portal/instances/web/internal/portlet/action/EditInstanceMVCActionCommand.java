@@ -14,6 +14,7 @@
 
 package com.liferay.portal.instances.web.internal.portlet.action;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.instances.service.PortalInstancesLocalService;
 import com.liferay.portal.instances.web.internal.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.exception.CompanyMxException;
@@ -26,6 +27,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.CompanyService;
@@ -86,6 +88,10 @@ public class EditInstanceMVCActionCommand extends BaseMVCActionCommand {
 		}
 		catch (Exception exception) {
 			String mvcPath = "/error.jsp";
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 
 			if (exception instanceof NoSuchCompanyException ||
 				exception instanceof PrincipalException) {
@@ -151,15 +157,28 @@ public class EditInstanceMVCActionCommand extends BaseMVCActionCommand {
 			Company company = _companyService.addCompany(
 				webId, virtualHostname, mx, false, maxUsers, active);
 
+			String siteInitializerKey = ParamUtil.getString(
+				actionRequest, "siteInitializerKey");
 			ServletContext servletContext =
 				(ServletContext)actionRequest.getAttribute(WebKeys.CTX);
 
-			_portalInstancesLocalService.initializePortalInstance(
-				servletContext, company.getWebId());
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setWithSafeCloseable(
+						company.getCompanyId())) {
+
+				_portalInstancesLocalService.initializePortalInstance(
+					company.getCompanyId(), siteInitializerKey, servletContext);
+			}
 		}
 		else {
 
 			// Update instance
+
+			if (companyId ==
+					_portalInstancesLocalService.getDefaultCompanyId()) {
+
+				active = true;
+			}
 
 			_companyService.updateCompany(
 				companyId, virtualHostname, mx, maxUsers, active);

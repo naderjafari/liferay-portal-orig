@@ -13,7 +13,7 @@
  */
 
 import {useThunk} from '@liferay/frontend-js-react-web';
-import React, {useContext, useReducer, useRef} from 'react';
+import React, {useCallback, useContext, useReducer} from 'react';
 
 import {createReducer} from '../reducers/createReducer.es';
 import {useConfig} from './useConfig.es';
@@ -23,7 +23,7 @@ const FormDispatchContext = React.createContext(() => {});
 
 FormDispatchContext.displayName = 'FormDispatchContext';
 
-const FormStateContext = React.createContext({});
+const FormStateContext = React.createContext({editingLanguageId: 'en_US'});
 
 FormStateContext.displayName = 'FormStateContext';
 
@@ -66,15 +66,15 @@ export const FormNoopProvider = ({children, initialState, onAction, value}) => {
  * const [state, dispatch] = usePropagateAction(useReducer(...));
  */
 const usePropagateAction = ([state, dispatch], onAction) => {
-	const propagateDispatch = useRef((action) => {
-		dispatch(action);
+	const callBack = useCallback(
+		(action) => {
+			dispatch(action);
+			onAction?.(action);
+		},
+		[dispatch, onAction]
+	);
 
-		if (onAction) {
-			onAction(action);
-		}
-	});
-
-	return [state, propagateDispatch.current];
+	return [state, callBack];
 };
 
 /**

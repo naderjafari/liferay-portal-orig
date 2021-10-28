@@ -19,6 +19,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
@@ -86,9 +88,9 @@ public class UpdateLanguageAction implements Action {
 					contact.getSkypeSn(), contact.getTwitterSn());
 			}
 
-			HttpSession session = httpServletRequest.getSession();
+			HttpSession httpSession = httpServletRequest.getSession();
 
-			session.setAttribute(WebKeys.LOCALE, locale);
+			httpSession.setAttribute(WebKeys.LOCALE, locale);
 
 			LanguageUtil.updateCookie(
 				httpServletRequest, httpServletResponse, locale);
@@ -96,8 +98,15 @@ public class UpdateLanguageAction implements Action {
 
 		// Send redirect
 
-		httpServletResponse.sendRedirect(
-			getRedirect(httpServletRequest, themeDisplay, locale));
+		try {
+			httpServletResponse.sendRedirect(
+				getRedirect(httpServletRequest, themeDisplay, locale));
+		}
+		catch (IllegalArgumentException | NoSuchLayoutException exception) {
+			httpServletResponse.sendError(
+				HttpServletResponse.SC_BAD_REQUEST,
+				httpServletRequest.getRequestURI());
+		}
 
 		return null;
 	}
@@ -109,6 +118,10 @@ public class UpdateLanguageAction implements Action {
 
 		String redirect = PortalUtil.escapeRedirect(
 			ParamUtil.getString(httpServletRequest, "redirect"));
+
+		if (Validator.isNull(redirect)) {
+			throw new IllegalArgumentException();
+		}
 
 		String layoutURL = redirect;
 
@@ -166,6 +179,10 @@ public class UpdateLanguageAction implements Action {
 			catch (NoSuchLayoutException noSuchLayoutException) {
 				if (!Portal.FRIENDLY_URL_SEPARATOR.equals(
 						friendlyURLSeparator)) {
+
+					if (_log.isDebugEnabled()) {
+						_log.debug(noSuchLayoutException);
+					}
 
 					throw noSuchLayoutException;
 				}
@@ -264,11 +281,8 @@ public class UpdateLanguageAction implements Action {
 		Locale layoutURLLocale = LocaleUtil.fromLanguageId(
 			layoutURLLanguageId, true, false);
 
-		if (layoutURLLocale != null) {
-			return true;
-		}
-
-		if (PortalUtil.isGroupFriendlyURL(
+		if ((layoutURLLocale != null) ||
+			PortalUtil.isGroupFriendlyURL(
 				layoutURL, group.getFriendlyURL(),
 				layout.getFriendlyURL(locale))) {
 
@@ -277,5 +291,8 @@ public class UpdateLanguageAction implements Action {
 
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		UpdateLanguageAction.class);
 
 }

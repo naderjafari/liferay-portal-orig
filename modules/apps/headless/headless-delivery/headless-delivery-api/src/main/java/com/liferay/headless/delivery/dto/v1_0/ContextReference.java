@@ -57,6 +57,10 @@ public class ContextReference implements Serializable {
 		return ObjectMapperUtil.readValue(ContextReference.class, json);
 	}
 
+	public static ContextReference unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(ContextReference.class, json);
+	}
+
 	@Schema
 	@Valid
 	public ContextSource getContextSource() {
@@ -156,13 +160,17 @@ public class ContextReference implements Serializable {
 
 		@JsonCreator
 		public static ContextSource create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (ContextSource contextSource : values()) {
 				if (Objects.equals(contextSource.getValue(), value)) {
 					return contextSource;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

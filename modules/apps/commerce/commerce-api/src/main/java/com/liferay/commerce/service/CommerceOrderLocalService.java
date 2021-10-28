@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.dao.orm.Projection;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.PersistedModel;
+import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
@@ -33,6 +34,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.service.BaseLocalService;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
@@ -86,23 +88,29 @@ public interface CommerceOrderLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public CommerceOrder addCommerceOrder(CommerceOrder commerceOrder);
 
-	public CommerceOrder addCommerceOrder(
-			long userId, long groupId, long commerceAccountId)
-		throws PortalException;
-
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public CommerceOrder addCommerceOrder(
 			long userId, long groupId, long commerceAccountId,
 			long commerceCurrencyId)
 		throws PortalException;
 
+	public CommerceOrder addCommerceOrder(
+			long userId, long groupId, long commerceAccountId,
+			long commerceCurrencyId, long commerceOrderTypeId)
+		throws PortalException;
+
 	@Indexable(type = IndexableType.REINDEX)
 	public CommerceOrder addCommerceOrder(
 			long userId, long groupId, long commerceAccountId,
-			long commerceCurrencyId, long billingAddressId,
-			long shippingAddressId, String commercePaymentMethodKey,
-			long commerceShippingMethodId, String shippingOptionName,
-			String purchaseOrderNumber, BigDecimal subtotal,
-			BigDecimal shippingAmount, BigDecimal total,
+			long commerceCurrencyId, long commerceOrderTypeId,
+			long billingAddressId, long shippingAddressId,
+			String commercePaymentMethodKey, long commerceShippingMethodId,
+			String shippingOptionName, String purchaseOrderNumber,
+			BigDecimal subtotal, BigDecimal shippingAmount,
+			BigDecimal taxAmount, BigDecimal total,
 			BigDecimal subtotalWithTaxAmount, BigDecimal shippingWithTaxAmount,
 			BigDecimal totalWithTaxAmount, int paymentStatus,
 			int orderDateMonth, int orderDateDay, int orderDateYear,
@@ -110,48 +118,14 @@ public interface CommerceOrderLocalService
 			ServiceContext serviceContext)
 		throws PortalException;
 
-	@Indexable(type = IndexableType.REINDEX)
-	public CommerceOrder addCommerceOrder(
-			long userId, long groupId, long commerceAccountId,
-			long commerceCurrencyId, long billingAddressId,
-			long shippingAddressId, String commercePaymentMethodKey,
-			long commerceShippingMethodId, String shippingOptionName,
-			String purchaseOrderNumber, BigDecimal subtotal,
-			BigDecimal shippingAmount, BigDecimal total,
-			BigDecimal subtotalWithTaxAmount, BigDecimal shippingWithTaxAmount,
-			BigDecimal totalWithTaxAmount, int paymentStatus, int orderStatus,
-			ServiceContext serviceContext)
-		throws PortalException;
-
-	@Indexable(type = IndexableType.REINDEX)
-	public CommerceOrder addCommerceOrder(
-			long userId, long groupId, long commerceAccountId,
-			long commerceCurrencyId, long billingAddressId,
-			long shippingAddressId, String commercePaymentMethodKey,
-			long commerceShippingMethodId, String shippingOptionName,
-			String purchaseOrderNumber, BigDecimal subtotal,
-			BigDecimal shippingAmount, BigDecimal total, int paymentStatus,
-			int orderStatus, ServiceContext serviceContext)
-		throws PortalException;
-
-	public CommerceOrder addCommerceOrder(
-			long userId, long groupId, long commerceAccountId,
-			long commerceCurrencyId, long shippingAddressId,
-			String purchaseOrderNumber)
-		throws PortalException;
-
-	public CommerceOrder addCommerceOrder(
-			long userId, long groupId, long commerceAccountId,
-			long shippingAddressId, String purchaseOrderNumber)
-		throws PortalException;
-
 	public CommerceOrder addOrUpdateCommerceOrder(
 			String externalReferenceCode, long userId, long groupId,
 			long commerceAccountId, long commerceCurrencyId,
-			long billingAddressId, long shippingAddressId,
-			String commercePaymentMethodKey, long commerceShippingMethodId,
-			String shippingOptionName, String purchaseOrderNumber,
-			BigDecimal subtotal, BigDecimal shippingAmount, BigDecimal total,
+			long commerceOrderTypeId, long billingAddressId,
+			long shippingAddressId, String commercePaymentMethodKey,
+			long commerceShippingMethodId, String shippingOptionName,
+			String purchaseOrderNumber, BigDecimal subtotal,
+			BigDecimal shippingAmount, BigDecimal taxAmount, BigDecimal total,
 			BigDecimal subtotalWithTaxAmount, BigDecimal shippingWithTaxAmount,
 			BigDecimal totalWithTaxAmount, int paymentStatus,
 			int orderDateMonth, int orderDateDay, int orderDateYear,
@@ -160,15 +134,22 @@ public interface CommerceOrderLocalService
 			ServiceContext serviceContext)
 		throws PortalException;
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public CommerceOrder addOrUpdateCommerceOrder(
 			String externalReferenceCode, long userId, long groupId,
 			long commerceAccountId, long commerceCurrencyId,
 			long billingAddressId, long shippingAddressId,
 			String commercePaymentMethodKey, long commerceShippingMethodId,
 			String shippingOptionName, String purchaseOrderNumber,
-			BigDecimal subtotal, BigDecimal shippingAmount, BigDecimal total,
+			BigDecimal subtotal, BigDecimal shippingAmount,
+			BigDecimal taxAmount, BigDecimal total,
 			BigDecimal subtotalWithTaxAmount, BigDecimal shippingWithTaxAmount,
-			BigDecimal totalWithTaxAmount, int paymentStatus, int orderStatus,
+			BigDecimal totalWithTaxAmount, int paymentStatus,
+			int orderDateMonth, int orderDateDay, int orderDateYear,
+			int orderDateHour, int orderDateMinute, int orderStatus,
 			String advanceStatus, CommerceContext commerceContext,
 			ServiceContext serviceContext)
 		throws PortalException;
@@ -205,6 +186,7 @@ public interface CommerceOrderLocalService
 	 * @throws PortalException
 	 */
 	@Indexable(type = IndexableType.DELETE)
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
 	public CommerceOrder deleteCommerceOrder(CommerceOrder commerceOrder)
 		throws PortalException;
 
@@ -629,7 +611,8 @@ public interface CommerceOrderLocalService
 			long billingAddressId, long shippingAddressId,
 			String commercePaymentMethodKey, long commerceShippingMethodId,
 			String shippingOptionName, String purchaseOrderNumber,
-			BigDecimal subtotal, BigDecimal shippingAmount, BigDecimal total,
+			BigDecimal subtotal, BigDecimal shippingAmount,
+			BigDecimal taxAmount, BigDecimal total,
 			BigDecimal subtotalWithTaxAmount, BigDecimal shippingWithTaxAmount,
 			BigDecimal totalWithTaxAmount, String advanceStatus,
 			CommerceContext commerceContext)

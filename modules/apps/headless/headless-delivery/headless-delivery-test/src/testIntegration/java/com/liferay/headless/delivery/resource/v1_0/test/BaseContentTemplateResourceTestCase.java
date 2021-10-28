@@ -36,7 +36,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -56,9 +55,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -226,18 +223,16 @@ public abstract class BaseContentTemplateResourceTestCase {
 
 	@Test
 	public void testGetAssetLibraryContentTemplatesPage() throws Exception {
-		Page<ContentTemplate> page =
-			contentTemplateResource.getAssetLibraryContentTemplatesPage(
-				testGetAssetLibraryContentTemplatesPage_getAssetLibraryId(),
-				RandomTestUtil.randomString(), null, null, Pagination.of(1, 2),
-				null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long assetLibraryId =
 			testGetAssetLibraryContentTemplatesPage_getAssetLibraryId();
 		Long irrelevantAssetLibraryId =
 			testGetAssetLibraryContentTemplatesPage_getIrrelevantAssetLibraryId();
+
+		Page<ContentTemplate> page =
+			contentTemplateResource.getAssetLibraryContentTemplatesPage(
+				assetLibraryId, null, null, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantAssetLibraryId != null) {
 			ContentTemplate irrelevantContentTemplate =
@@ -266,7 +261,7 @@ public abstract class BaseContentTemplateResourceTestCase {
 				assetLibraryId, randomContentTemplate());
 
 		page = contentTemplateResource.getAssetLibraryContentTemplatesPage(
-			assetLibraryId, null, null, null, Pagination.of(1, 2), null);
+			assetLibraryId, null, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -433,7 +428,7 @@ public abstract class BaseContentTemplateResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -552,17 +547,15 @@ public abstract class BaseContentTemplateResourceTestCase {
 
 	@Test
 	public void testGetSiteContentTemplatesPage() throws Exception {
-		Page<ContentTemplate> page =
-			contentTemplateResource.getSiteContentTemplatesPage(
-				testGetSiteContentTemplatesPage_getSiteId(),
-				RandomTestUtil.randomString(), null, null, Pagination.of(1, 2),
-				null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long siteId = testGetSiteContentTemplatesPage_getSiteId();
 		Long irrelevantSiteId =
 			testGetSiteContentTemplatesPage_getIrrelevantSiteId();
+
+		Page<ContentTemplate> page =
+			contentTemplateResource.getSiteContentTemplatesPage(
+				siteId, null, null, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantSiteId != null) {
 			ContentTemplate irrelevantContentTemplate =
@@ -589,7 +582,7 @@ public abstract class BaseContentTemplateResourceTestCase {
 				siteId, randomContentTemplate());
 
 		page = contentTemplateResource.getSiteContentTemplatesPage(
-			siteId, null, null, null, Pagination.of(1, 2), null);
+			siteId, null, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -752,7 +745,7 @@ public abstract class BaseContentTemplateResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -874,7 +867,7 @@ public abstract class BaseContentTemplateResourceTestCase {
 			new HashMap<String, Object>() {
 				{
 					put("page", 1);
-					put("pageSize", 2);
+					put("pageSize", 10);
 
 					put("siteKey", "\"" + siteId + "\"");
 				}
@@ -897,7 +890,8 @@ public abstract class BaseContentTemplateResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/contentTemplates");
 
-		Assert.assertEquals(2, contentTemplatesJSONObject.get("totalCount"));
+		Assert.assertEquals(
+			2, contentTemplatesJSONObject.getLong("totalCount"));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(contentTemplate1, contentTemplate2),
@@ -989,6 +983,25 @@ public abstract class BaseContentTemplateResourceTestCase {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		ContentTemplate contentTemplate,
+		List<ContentTemplate> contentTemplates) {
+
+		boolean contains = false;
+
+		for (ContentTemplate item : contentTemplates) {
+			if (equals(contentTemplate, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			contentTemplates + " does not contain " + contentTemplate,
+			contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -1203,7 +1216,7 @@ public abstract class BaseContentTemplateResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.ContentTemplate.
 						class)) {
@@ -1220,12 +1233,13 @@ public abstract class BaseContentTemplateResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1445,14 +1459,16 @@ public abstract class BaseContentTemplateResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1811,8 +1827,8 @@ public abstract class BaseContentTemplateResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseContentTemplateResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseContentTemplateResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

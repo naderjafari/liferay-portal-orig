@@ -32,7 +32,6 @@ import com.liferay.layout.util.structure.ContainerStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.configuration.test.util.ConfigurationTestUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -47,6 +46,7 @@ import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.servlet.PortletServlet;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.portlet.MockLiferayResourceRequest;
 import com.liferay.portal.kernel.test.portlet.MockLiferayResourceResponse;
@@ -59,7 +59,6 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -81,6 +80,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.springframework.mock.web.MockHttpServletRequest;
 
 /**
  * @author Víctor Galán
@@ -111,13 +112,6 @@ public class GetPageContentMVCResourceCommandTest {
 
 	@Test
 	public void testCollectionMapping() throws Exception {
-		ConfigurationTestUtil.saveConfiguration(
-			"com.liferay.layout.content.page.editor.web.internal." +
-				"configuration.FFLayoutContentPageEditorConfiguration",
-			HashMapDictionaryBuilder.<String, Object>put(
-				"contentBrowsingEnabled", true
-			).build());
-
 		AssetListEntry assetListEntry =
 			_assetListEntryLocalService.addDynamicAssetListEntry(
 				TestPropsValues.getUserId(), _group.getGroupId(),
@@ -414,6 +408,28 @@ public class GetPageContentMVCResourceCommandTest {
 		mockLiferayResourceRequest.setAttribute(
 			JavaConstants.JAVAX_PORTLET_CONFIG, null);
 
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setAttribute(
+			JavaConstants.JAVAX_PORTLET_RESPONSE,
+			new MockLiferayResourceResponse());
+
+		ThemeDisplay themeDisplay = _getThemeDisplay();
+
+		mockHttpServletRequest.setAttribute(
+			WebKeys.THEME_DISPLAY, themeDisplay);
+
+		mockLiferayResourceRequest.setAttribute(
+			PortletServlet.PORTLET_SERVLET_REQUEST, mockHttpServletRequest);
+
+		mockLiferayResourceRequest.setAttribute(
+			WebKeys.THEME_DISPLAY, themeDisplay);
+
+		return mockLiferayResourceRequest;
+	}
+
+	private ThemeDisplay _getThemeDisplay() throws Exception {
 		ThemeDisplay themeDisplay = new ThemeDisplay();
 
 		themeDisplay.setCompany(_company);
@@ -426,10 +442,7 @@ public class GetPageContentMVCResourceCommandTest {
 		themeDisplay.setSiteGroupId(_group.getGroupId());
 		themeDisplay.setUser(TestPropsValues.getUser());
 
-		mockLiferayResourceRequest.setAttribute(
-			WebKeys.THEME_DISPLAY, themeDisplay);
-
-		return mockLiferayResourceRequest;
+		return themeDisplay;
 	}
 
 	@Inject

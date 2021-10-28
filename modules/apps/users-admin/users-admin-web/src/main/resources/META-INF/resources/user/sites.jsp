@@ -201,16 +201,16 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 					).setParameter(
 						"eventName", eventName
 					).setParameter(
-						"filterManageableGroups", Boolean.FALSE.toString()
+						"filterManageableGroups", false
 					).setParameter(
-						"includeCurrentGroup", Boolean.FALSE.toString()
+						"includeCurrentGroup", false
 					).setParameter(
-						"manualMembership", Boolean.TRUE.toString()
+						"manualMembership", true
 					).setParameter(
 						"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
 					).setWindowState(
 						LiferayWindowState.POP_UP
-					).build();
+					).buildPortletURL();
 					%>
 
 					url: '<%= groupSelectorURL.toString() %>',

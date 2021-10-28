@@ -22,6 +22,7 @@ import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPDefinitionSpecificationOptionValue;
 import com.liferay.commerce.product.model.CPSpecificationOption;
 import com.liferay.commerce.product.service.base.CPSpecificationOptionLocalServiceBaseImpl;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -51,6 +52,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.spring.extender.service.ServiceReference;
 
 import java.io.Serializable;
 
@@ -132,7 +134,7 @@ public class CPSpecificationOptionLocalServiceImpl
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(
+		_expandoRowLocalService.deleteRows(
 			cpSpecificationOption.getCPSpecificationOptionId());
 
 		return cpSpecificationOption;
@@ -253,11 +255,15 @@ public class CPSpecificationOptionLocalServiceImpl
 				"keywords", keywords
 			).build();
 
-		Map<String, Serializable> attributes =
+		searchContext.setAttributes(
 			HashMapBuilder.<String, Serializable>put(
 				CPField.CP_OPTION_CATEGORY_ID, keywords
 			).put(
 				CPField.CP_OPTION_CATEGORY_TITLE, keywords
+			).put(
+				CPField.FACETABLE, () -> facetable
+			).put(
+				CPField.KEY, keywords
 			).put(
 				Field.CONTENT, keywords
 			).put(
@@ -266,16 +272,9 @@ public class CPSpecificationOptionLocalServiceImpl
 				Field.ENTRY_CLASS_PK, keywords
 			).put(
 				Field.TITLE, keywords
-			).build();
-
-		if (facetable != null) {
-			attributes.put(CPField.FACETABLE, facetable);
-		}
-
-		attributes.put(CPField.KEY, keywords);
-		attributes.put("params", params);
-
-		searchContext.setAttributes(attributes);
+			).put(
+				"params", params
+			).build());
 
 		searchContext.setCompanyId(companyId);
 		searchContext.setEnd(end);
@@ -403,10 +402,10 @@ public class CPSpecificationOptionLocalServiceImpl
 			long companyId, long cpSpecificationOptionId)
 		throws Exception {
 
-		final Indexer<CPDefinition> indexer =
-			IndexerRegistryUtil.nullSafeGetIndexer(CPDefinition.class);
+		Indexer<CPDefinition> indexer = IndexerRegistryUtil.nullSafeGetIndexer(
+			CPDefinition.class);
 
-		final IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
 			cpDefinitionSpecificationOptionValueLocalService.
 				getIndexableActionableDynamicQuery();
 
@@ -452,5 +451,8 @@ public class CPSpecificationOptionLocalServiceImpl
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		CPSpecificationOptionLocalServiceImpl.class);
+
+	@ServiceReference(type = ExpandoRowLocalService.class)
+	private ExpandoRowLocalService _expandoRowLocalService;
 
 }

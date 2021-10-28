@@ -203,10 +203,10 @@ public class DLFileEntryAssetRendererFactory
 		).setParameter(
 			"groupId", group.getGroupId()
 		).setParameter(
-			"showMountFolder", Boolean.FALSE.toString()
+			"showMountFolder", false
 		).setParameter(
-			"showSelectFolder", Boolean.TRUE.toString()
-		).build();
+			"showSelectFolder", true
+		).buildPortletURL();
 	}
 
 	@Override

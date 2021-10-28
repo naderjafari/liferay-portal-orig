@@ -291,8 +291,13 @@ renderResponse.setTitle(headerTitle);
 								if (selectFolderButton) {
 									selectFolderButton.addEventListener('click', (event) => {
 										Liferay.Util.openSelectionModal({
-											id: '<portlet:namespace />selectFolder',
+											eventName: '<portlet:namespace />folderSelected',
+											multiple: false,
 											onSelect: function (selectedItem) {
+												if (!selectedItem) {
+													return;
+												}
+
 												var folderData = {
 													idString: 'folderId',
 													idValue: selectedItem.folderid,
@@ -302,15 +307,20 @@ renderResponse.setTitle(headerTitle);
 
 												Liferay.Util.selectFolder(folderData, '<portlet:namespace />');
 											},
-											selectEventName: '<portlet:namespace />selectFolder',
 											title: '<liferay-ui:message arguments="folder" key="select-x" />',
 
-											<liferay-portlet:renderURL var="selectFolderURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
-												<portlet:param name="mvcRenderCommandName" value="/document_library/select_folder" />
-												<portlet:param name="folderId" value="<%= String.valueOf(folderId) %>" />
-											</liferay-portlet:renderURL>
+											<%
+											ItemSelector itemSelector = (ItemSelector)request.getAttribute(ItemSelector.class.getName());
 
-											url: '<%= selectFolderURL.toString() %>',
+											FolderItemSelectorCriterion folderItemSelectorCriterion = new FolderItemSelectorCriterion();
+
+											folderItemSelectorCriterion.setDesiredItemSelectorReturnTypes(new FolderItemSelectorReturnType());
+											folderItemSelectorCriterion.setFolderId(folderId);
+
+											PortletURL selectFolderURL = itemSelector.getItemSelectorURL(RequestBackedPortletURLFactoryUtil.create(request), portletDisplay.getNamespace() + "folderSelected", folderItemSelectorCriterion);
+											%>
+
+											url: '<%= HtmlUtil.escapeJS(selectFolderURL.toString()) %>',
 										});
 									});
 								}
@@ -536,26 +546,24 @@ renderResponse.setTitle(headerTitle);
 							classPK="<%= assetClassPK %>"
 						/>
 					</aui:fieldset>
+				</c:if>
 
-					<c:if test="<%= FFExpirationDateReviewDateConfigurationUtil.expirationDateEnabled() || FFExpirationDateReviewDateConfigurationUtil.reviewDateEnabled() %>">
-						<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" label="expiration-date">
-							<c:if test="<%= FFExpirationDateReviewDateConfigurationUtil.expirationDateEnabled() %>">
-								<liferay-ui:error exception="<%= FileEntryExpirationDateException.class %>" message="please-enter-a-valid-expiration-date" />
-								<liferay-ui:error exception="<%= FileEntryReviewDateException.class %>" message="please-enter-a-valid-review-date" />
+				<c:if test="<%= !RepositoryUtil.isExternalRepository(repositoryId) %>">
+					<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" label="expiration-date">
+						<liferay-ui:error exception="<%= FileEntryExpirationDateException.class %>" message="please-enter-a-valid-expiration-date" />
+						<liferay-ui:error exception="<%= FileEntryReviewDateException.class %>" message="please-enter-a-valid-review-date" />
 
-								<p class="text-secondary">
-									<liferay-ui:message key="including-an-expiration-date-will-allow-your-documents-or-media-to-expire-automatically-and-become-unpublished" />
-								</p>
+						<p class="text-secondary">
+							<liferay-ui:message key="including-an-expiration-date-will-allow-your-documents-or-media-to-expire-automatically-and-become-unpublished" />
+						</p>
 
-								<aui:input dateTogglerCheckboxLabel="never-expire" disabled="<%= dlEditFileEntryDisplayContext.isNeverExpire() %>" name="expirationDate" wrapperCssClass="expiration-date" />
-							</c:if>
+						<aui:input dateTogglerCheckboxLabel="never-expire" disabled="<%= dlEditFileEntryDisplayContext.isNeverExpire() %>" name="expirationDate" wrapperCssClass="expiration-date" />
 
-							<c:if test="<%= FFExpirationDateReviewDateConfigurationUtil.reviewDateEnabled() %>">
-								<aui:input dateTogglerCheckboxLabel="never-review" disabled="<%= dlEditFileEntryDisplayContext.isNeverReview() %>" name="reviewDate" wrapperCssClass="review-date" />
-							</c:if>
-						</aui:fieldset>
-					</c:if>
+						<aui:input dateTogglerCheckboxLabel="never-review" disabled="<%= dlEditFileEntryDisplayContext.isNeverReview() %>" name="reviewDate" wrapperCssClass="review-date" />
+					</aui:fieldset>
+				</c:if>
 
+				<c:if test="<%= (folder == null) || folder.isSupportsSocial() %>">
 					<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" label="related-assets">
 						<liferay-asset:input-asset-links
 							className="<%= DLFileEntry.class.getName() %>"

@@ -29,6 +29,8 @@ public class DDMFormFieldTypeConstants {
 
 	public static final String DATE = "date";
 
+	public static final String DDM_IMAGE = "ddm-image";
+
 	public static final String DOCUMENT_LIBRARY = "document_library";
 
 	public static final String FIELDSET = "fieldset";
@@ -45,7 +47,14 @@ public class DDMFormFieldTypeConstants {
 
 	public static final String LOCALIZABLE_TEXT = "localizable_text";
 
+	public static final String MULTI_LANGUAGE_OPTION_SELECT =
+		"multi_language_option_select";
+
 	public static final String NUMERIC = "numeric";
+
+	public static final String NUMERIC_INPUT_MASK = "numeric_input_mask";
+
+	public static final String OBJECT_FIELD = "object_field";
 
 	public static final String OPTIONS = "options";
 
@@ -54,6 +63,8 @@ public class DDMFormFieldTypeConstants {
 	public static final String PASSWORD = "password";
 
 	public static final String RADIO = "radio";
+
+	public static final String REDIRECT_BUTTON = "redirect_button";
 
 	public static final String RICH_TEXT = "rich_text";
 

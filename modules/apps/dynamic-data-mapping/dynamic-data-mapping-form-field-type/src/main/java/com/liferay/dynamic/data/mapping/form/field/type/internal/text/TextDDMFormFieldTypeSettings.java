@@ -37,6 +37,31 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 		),
 		@DDMFormRule(
 			actions = {
+				"setVisible('autocomplete', TRUE)",
+				"setVisible('repeatable', TRUE)",
+				"setVisible('requireConfirmation', TRUE)",
+				"setVisible('required', TRUE)", "setVisible('showLabel', TRUE)",
+				"setVisible('validation', TRUE)"
+			},
+			condition = "equals(getValue('hideField'), FALSE)"
+		),
+		@DDMFormRule(
+			actions = {
+				"setValue('autocomplete', FALSE)",
+				"setValue('repeatable', FALSE)",
+				"setValue('requireConfirmation', FALSE)",
+				"setValue('required', FALSE)", "setValue('showLabel', TRUE)",
+				"setVisible('autocomplete', FALSE)",
+				"setVisible('repeatable', FALSE)",
+				"setVisible('requireConfirmation', FALSE)",
+				"setVisible('required', FALSE)",
+				"setVisible('showLabel', FALSE)",
+				"setVisible('validation', FALSE)"
+			},
+			condition = "equals(getValue('hideField'), TRUE)"
+		),
+		@DDMFormRule(
+			actions = {
 				"setValue('autocomplete', FALSE)",
 				"setValue('requireConfirmation', FALSE)",
 				"setVisible('autocomplete', FALSE)",
@@ -45,7 +70,12 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 			condition = "not(equals(getValue('displayStyle'), 'singleline'))"
 		),
 		@DDMFormRule(
+			actions = "setValue('required', isRequiredObjectField(getValue('objectFieldName')))",
+			condition = "hasObjectField(getValue('objectFieldName'))"
+		),
+		@DDMFormRule(
 			actions = {
+				"setEnabled('required', not(hasObjectField(getValue('objectFieldName'))))",
 				"setRequired('ddmDataProviderInstanceId', equals(getValue('dataSourceType'), \"data-provider\"))",
 				"setRequired('ddmDataProviderInstanceOutput', equals(getValue('dataSourceType'), \"data-provider\"))",
 				"setValidationDataType('validation', getValue('dataType'))",
@@ -57,7 +87,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 				"setVisible('ddmDataProviderInstanceOutput', equals(getValue('dataSourceType'), \"data-provider\") and getValue('autocomplete'))",
 				"setVisible('direction', getValue('requireConfirmation'))",
 				"setVisible('options', contains(getValue('dataSourceType'), \"manual\") and getValue('autocomplete'))",
-				"setVisible('requiredErrorMessage', false)"
+				"setVisible('requiredErrorMessage', getValue('required'))"
 			},
 			condition = "TRUE"
 		),
@@ -98,14 +128,14 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"name", "fieldReference", "predefinedValue",
-								"visibilityExpression", "fieldNamespace",
-								"indexType", "labelAtStructureLevel",
-								"localizable", "nativeField", "readOnly",
-								"dataType", "type", "hideField", "showLabel",
-								"repeatable", "requireConfirmation",
-								"direction", "confirmationLabel",
-								"confirmationErrorMessage", "validation",
-								"tooltip"
+								"objectFieldName", "visibilityExpression",
+								"fieldNamespace", "indexType",
+								"labelAtStructureLevel", "localizable",
+								"nativeField", "readOnly", "dataType", "type",
+								"hideField", "showLabel", "repeatable",
+								"requireConfirmation", "direction",
+								"confirmationLabel", "confirmationErrorMessage",
+								"validation", "tooltip"
 							}
 						)
 					}
@@ -197,8 +227,7 @@ public interface TextDDMFormFieldTypeSettings
 		properties = {
 			"showAsSwitcher=true",
 			"tooltip=%the-user-filling-the-form-will-not-be-able-to-see-this-field"
-		},
-		visibilityExpression = "FALSE"
+		}
 	)
 	public boolean hideField();
 

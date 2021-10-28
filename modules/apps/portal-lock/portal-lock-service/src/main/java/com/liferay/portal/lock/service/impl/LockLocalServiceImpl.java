@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.lock.LockListener;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
@@ -49,6 +50,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Brian Wing Shun Chan
@@ -199,7 +201,7 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 		boolean isNew = false;
 
 		if (lock == null) {
-			User user = userLocalService.getUser(userId);
+			User user = _userLocalService.getUser(userId);
 
 			long lockId = counterLocalService.increment();
 
@@ -219,15 +221,15 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 			return lock;
 		}
 
-		Date now = new Date();
+		Date date = new Date();
 
-		lock.setCreateDate(now);
+		lock.setCreateDate(date);
 
 		if (expirationTime == 0) {
 			lock.setExpirationDate(null);
 		}
 		else {
-			lock.setExpirationDate(new Date(now.getTime() + expirationTime));
+			lock.setExpirationDate(new Date(date.getTime() + expirationTime));
 		}
 
 		lock = lockPersistence.update(lock);
@@ -323,15 +325,9 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 		List<Lock> locks = lockPersistence.findByUuid_C(uuid, companyId);
 
 		if (locks.isEmpty()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("{uuid=");
-			sb.append(uuid);
-			sb.append(", companyId=");
-			sb.append(companyId);
-			sb.append("}");
-
-			throw new NoSuchLockException(sb.toString());
+			throw new NoSuchLockException(
+				StringBundler.concat(
+					"{uuid=", uuid, ", companyId=", companyId, "}"));
 		}
 
 		Lock lock = locks.get(0);
@@ -345,16 +341,16 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 		}
 
 		try {
-			Date now = new Date();
+			Date date = new Date();
 
-			lock.setCreateDate(now);
+			lock.setCreateDate(date);
 
 			if (expirationTime == 0) {
 				lock.setExpirationDate(null);
 			}
 			else {
 				lock.setExpirationDate(
-					new Date(now.getTime() + expirationTime));
+					new Date(date.getTime() + expirationTime));
 			}
 
 			return lockPersistence.update(lock);
@@ -490,5 +486,8 @@ public class LockLocalServiceImpl extends LockLocalServiceBaseImpl {
 	private final TransactionConfig _transactionConfig =
 		TransactionConfig.Factory.create(
 			Propagation.REQUIRES_NEW, new Class<?>[] {Exception.class});
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

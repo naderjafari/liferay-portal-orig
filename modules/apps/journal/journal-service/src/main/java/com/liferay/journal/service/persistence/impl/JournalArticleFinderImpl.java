@@ -754,15 +754,10 @@ public class JournalArticleFinderImpl
 			closeSession(session);
 		}
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("No JournalArticle exists with the key {resourcePrimKey=");
-		sb.append(resourcePrimKey);
-		sb.append(", displayDate=");
-		sb.append(displayDate);
-		sb.append("}");
-
-		throw new NoSuchArticleException(sb.toString());
+		throw new NoSuchArticleException(
+			StringBundler.concat(
+				"No JournalArticle exists with the key {resourcePrimKey=",
+				resourcePrimKey, ", displayDate=", displayDate, "}"));
 	}
 
 	@Override
@@ -1883,26 +1878,20 @@ public class JournalArticleFinderImpl
 		}
 
 		if (queryDefinition.isExcludeStatus()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("(JournalArticle.status != ");
-			sb.append(queryDefinition.getStatus());
-			sb.append(") AND (tempJournalArticle.status != ");
-			sb.append(queryDefinition.getStatus());
-			sb.append(")");
-
-			sql = StringUtil.replace(sql, "[$STATUS_JOIN$]", sb.toString());
+			sql = StringUtil.replace(
+				sql, "[$STATUS_JOIN$]",
+				StringBundler.concat(
+					"(JournalArticle.status != ", queryDefinition.getStatus(),
+					") AND (tempJournalArticle.status != ",
+					queryDefinition.getStatus(), ")"));
 		}
 		else {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("(JournalArticle.status = ");
-			sb.append(queryDefinition.getStatus());
-			sb.append(") AND (tempJournalArticle.status = ");
-			sb.append(queryDefinition.getStatus());
-			sb.append(")");
-
-			sql = StringUtil.replace(sql, "[$STATUS_JOIN$]", sb.toString());
+			sql = StringUtil.replace(
+				sql, "[$STATUS_JOIN$]",
+				StringBundler.concat(
+					"(JournalArticle.status = ", queryDefinition.getStatus(),
+					") AND (tempJournalArticle.status = ",
+					queryDefinition.getStatus(), ")"));
 		}
 
 		return sql;
@@ -2077,36 +2066,43 @@ public class JournalArticleFinderImpl
 		}
 
 		Predicate predicate = JournalArticleTable.INSTANCE.companyId.eq(
-			companyId);
+			companyId
+		).and(
+			() -> {
+				if (groupId > 0) {
+					return JournalArticleTable.INSTANCE.groupId.eq(groupId);
+				}
 
-		if (groupId > 0) {
-			predicate = predicate.and(
-				JournalArticleTable.INSTANCE.groupId.eq(groupId));
-		}
-
-		if (!folderIds.isEmpty()) {
-			predicate = predicate.and(
-				JournalArticleTable.INSTANCE.folderId.in(
-					folderIds.toArray(new Long[0])));
-		}
-
-		predicate = predicate.and(
-			JournalArticleTable.INSTANCE.classNameId.eq(classNameId));
-
-		if (queryDefinition.getStatus() != WorkflowConstants.STATUS_ANY) {
-			if (queryDefinition.isExcludeStatus()) {
-				predicate = predicate.and(
-					JournalArticleTable.INSTANCE.status.neq(
-						queryDefinition.getStatus()));
+				return null;
 			}
-			else {
-				predicate = predicate.and(
-					JournalArticleTable.INSTANCE.status.eq(
-						queryDefinition.getStatus()));
-			}
-		}
+		).and(
+			() -> {
+				if (!folderIds.isEmpty()) {
+					return JournalArticleTable.INSTANCE.folderId.in(
+						folderIds.toArray(new Long[0]));
+				}
 
-		predicate = predicate.and(
+				return null;
+			}
+		).and(
+			JournalArticleTable.INSTANCE.classNameId.eq(classNameId)
+		).and(
+			() -> {
+				if (queryDefinition.getStatus() ==
+						WorkflowConstants.STATUS_ANY) {
+
+					return null;
+				}
+
+				if (queryDefinition.isExcludeStatus()) {
+					return JournalArticleTable.INSTANCE.status.neq(
+						queryDefinition.getStatus());
+				}
+
+				return JournalArticleTable.INSTANCE.status.eq(
+					queryDefinition.getStatus());
+			}
+		).and(
 			Predicate.withParentheses(
 				_getAndOrPredicate(
 					andOperator,
@@ -2115,9 +2111,10 @@ public class JournalArticleFinderImpl
 						_customSQL.keywords(ddmStructureKeys, false)),
 					_customSQL.getKeywordsPredicate(
 						JournalArticleTable.INSTANCE.DDMTemplateKey,
-						_customSQL.keywords(ddmTemplateKeys, false)))));
-
-		predicate = predicate.and(tempJournalArticleTable.id.isNull());
+						_customSQL.keywords(ddmTemplateKeys, false))))
+		).and(
+			tempJournalArticleTable.id.isNull()
+		);
 
 		Predicate versionPredicate = null;
 
@@ -2183,16 +2180,21 @@ public class JournalArticleFinderImpl
 				JournalArticleTable.INSTANCE.reviewDate.lte(reviewDate));
 		}
 
-		predicate = predicate.and(Predicate.withParentheses(keywordsPredicate));
+		return joinStep.where(
+			predicate.and(
+				Predicate.withParentheses(keywordsPredicate)
+			).and(
+				() -> {
+					if (inlineSQLHelper) {
+						return _inlineSQLHelper.getPermissionWherePredicate(
+							JournalArticle.class,
+							JournalArticleTable.INSTANCE.resourcePrimKey,
+							groupId);
+					}
 
-		if (inlineSQLHelper) {
-			predicate = predicate.and(
-				_inlineSQLHelper.getPermissionWherePredicate(
-					JournalArticle.class,
-					JournalArticleTable.INSTANCE.resourcePrimKey, groupId));
-		}
-
-		return joinStep.where(predicate);
+					return null;
+				}
+			));
 	}
 
 	private boolean _isOrderByTitle(

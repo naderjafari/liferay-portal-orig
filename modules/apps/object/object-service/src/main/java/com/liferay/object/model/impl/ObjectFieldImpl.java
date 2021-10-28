@@ -14,20 +14,9 @@
 
 package com.liferay.object.model.impl;
 
-import com.liferay.petra.string.StringPool;
-
 /**
  * @author Marco Leo
  * @author Brian Wing Shun Chan
  */
 public class ObjectFieldImpl extends ObjectFieldBaseImpl {
-
-	public ObjectFieldImpl() {
-	}
-
-	@Override
-	public String getDBColumnName() {
-		return getName() + StringPool.UNDERLINE;
-	}
-
 }

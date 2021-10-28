@@ -71,7 +71,7 @@ definition {
 			actual = "${plid2}",
 			expected = "${plid1}");
 
-		ContentPages.clickPencil();
+		ContentPages.gotoPageEditor();
 
 		AssertElementPresent(locator1 = "PageEditor#FRAGMENT_SIDEBAR_BODY");
 	}
@@ -141,7 +141,7 @@ definition {
 		}
 
 		task ("Get plids of widget pages before conversion") {
-			var plidsBeforeConversion = "";
+			var list = ListUtil.newList();
 
 			for (var i : list "1,2,3,4,5,6,7,8,9,10") {
 				Navigator.gotoSitePage(
@@ -151,16 +151,14 @@ definition {
 				var plidBeforeConversion = Page.getPlidFromHtmlSource();
 
 				if ("${i}" == "1") {
-					var plidsBeforeConversion = List.add(
-						item = "${plidBeforeConversion}",
-						list = "${plidsBeforeConversion}");
+					ListUtil.add("${list}","${plidBeforeConversion}");
 				}
 				else {
-					var plidsBeforeConversion = List.add(
-						item = " ${plidBeforeConversion}",
-						list = "${plidsBeforeConversion}");
+					ListUtil.add("${list}"," ${plidBeforeConversion}");
 				}
 			}
+
+			var plidsBeforeConversion = ListUtil.toString("${list}");
 
 			echo("${plidsBeforeConversion}");
 		}
@@ -169,7 +167,9 @@ definition {
 
 		ServerAdministration.openServerAdmin();
 
-		var script = TestCase.getFileContent(fileName = "convertWidgetPages.groovy");
+		var script = TestCase.getFileContent(
+			fileName = "convertWidgetPages.groovy",
+			filePath = "enduser/wem/layout/pagesadmin");
 
 		ServerAdministration.executeScript(
 			language = "Groovy",
@@ -196,7 +196,7 @@ definition {
 		}
 
 		task ("Get plids of converted pages") {
-			var plidsAfterConversion = "";
+			var list = ListUtil.newList();
 
 			for (var i : list "1,2,3,4,5,6,7,8,9,10") {
 				ContentPagesNavigator.openViewContentPage(
@@ -208,16 +208,14 @@ definition {
 				var plidAfterConversion = Page.getPlidFromHtmlSource();
 
 				if ("${i}" == "1") {
-					var plidsAfterConversion = List.add(
-						item = "${plidAfterConversion}",
-						list = "${plidsAfterConversion}");
+					ListUtil.add("${list}","${plidAfterConversion}");
 				}
 				else {
-					var plidsAfterConversion = List.add(
-						item = " ${plidAfterConversion}",
-						list = "${plidsAfterConversion}");
+					ListUtil.add("${list}"," ${plidAfterConversion}");
 				}
 			}
+
+			var plidsAfterConversion = ListUtil.toString("${list}");
 
 			echo("${plidsAfterConversion}");
 		}
@@ -363,7 +361,9 @@ definition {
 		task ("Execute grooy script to bulk convert all widget pages") {
 			ServerAdministration.openServerAdmin();
 
-			var script = TestCase.getFileContent(fileName = "convertWidgetPages.groovy");
+			var script = TestCase.getFileContent(
+				fileName = "convertWidgetPages.groovy",
+				filePath = "enduser/wem/layout/pagesadmin");
 
 			ServerAdministration.executeScript(
 				language = "Groovy",
@@ -520,7 +520,9 @@ definition {
 
 		ServerAdministration.openServerAdmin();
 
-		var script = TestCase.getFileContent(fileName = "convertWidgetPages.groovy");
+		var script = TestCase.getFileContent(
+			fileName = "convertWidgetPages.groovy",
+			filePath = "enduser/wem/layout/pagesadmin");
 
 		ServerAdministration.executeScript(
 			language = "Groovy",
@@ -640,7 +642,7 @@ definition {
 
 		WaitForElementNotPresent(locator1 = "IFrame#MODAL_BODY");
 
-		DragAndDrop.dragAndDropPortletToObject(
+		DragAndDrop.dragAndDropPortletToPortlet(
 			key_portletTitleName = "Asset Publisher",
 			locator1 = "Home#PAGE_COLUMN_PORTLET_COLUMN_1_PORTLET_HEADER",
 			locator2 = "Home#PORTLET_COLUMN_1",
@@ -698,7 +700,8 @@ definition {
 
 		AppManager.uploadApp(
 			appName = "custom-layout-layouttpl",
-			warFileName = "custom-layout-layouttpl.war");
+			warFileName = "custom-layout-layouttpl.war",
+			warFilePath = "enduser/wem/layout/pagesadmin");
 
 		JSONLayout.addPublicLayout(
 			groupName = "Test Site Name",
@@ -793,7 +796,8 @@ definition {
 
 		AppManager.uploadApp(
 			appName = "custom-layout-layouttpl",
-			warFileName = "custom-layout-layouttpl.war");
+			warFileName = "custom-layout-layouttpl.war",
+			warFilePath = "enduser/wem/layout/pagesadmin");
 
 		JSONLayout.addPublicLayout(
 			groupName = "Test Site Name",
@@ -899,7 +903,8 @@ definition {
 
 		AppManager.uploadApp(
 			appName = "custom-layout-layouttpl",
-			warFileName = "custom-layout-layouttpl.war");
+			warFileName = "custom-layout-layouttpl.war",
+			warFilePath = "enduser/wem/layout/pagesadmin");
 
 		JSONLayout.addPublicLayout(
 			groupName = "Test Site Name",
@@ -952,7 +957,7 @@ definition {
 
 		WaitForElementNotPresent(locator1 = "IFrame#MODAL_BODY");
 
-		DragAndDrop.dragAndDropPortletToObject(
+		DragAndDrop.dragAndDropPortletToPortlet(
 			key_portletTitleName = "Asset Publisher",
 			locator1 = "Home#PAGE_COLUMN_PORTLET_COLUMN_2_PORTLET_HEADER",
 			locator2 = "Home#PORTLET_COLUMN_1",
@@ -1343,7 +1348,7 @@ definition {
 
 		PageEditor.viewFragment(fragmentName = "Web Content Display");
 
-		PageEditor.viewNoFragment(fragmentName = "Asset Publisher");
+		PageEditor.viewFragmentNotPresent(fragmentName = "Asset Publisher");
 	}
 
 }

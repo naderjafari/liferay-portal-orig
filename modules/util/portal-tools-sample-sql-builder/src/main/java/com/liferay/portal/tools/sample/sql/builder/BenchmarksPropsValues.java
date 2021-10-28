@@ -39,6 +39,11 @@ public class BenchmarksPropsValues {
 	public static final String ACTUAL_PROPERTIES_CONTENT =
 		PropertiesHolder._ACTUAL_PROPERTIES_CONTENT;
 
+	public static final String[] COMMERCE_LAYOUT_EXCLUDED_PORTLETS =
+		StringUtil.split(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.COMMERCE_LAYOUT_EXCLUDED_PORTLETS));
+
 	public static final DBType DB_TYPE = DBType.valueOf(
 		StringUtil.toUpperCase(
 			PropertiesHolder._get(BenchmarksPropsKeys.DB_TYPE)));
@@ -90,6 +95,12 @@ public class BenchmarksPropsValues {
 		GetterUtil.getInteger(
 			PropertiesHolder._get(
 				BenchmarksPropsKeys.MAX_COMMERCE_INVENTORY_WAREHOUSE_COUNT));
+
+	public static final int MAX_COMMERCE_INVENTORY_WAREHOUSE_ITEM_QUANTITY =
+		GetterUtil.getInteger(
+			PropertiesHolder._get(
+				BenchmarksPropsKeys.
+					MAX_COMMERCE_INVENTORY_WAREHOUSE_ITEM_QUANTITY));
 
 	public static final int MAX_COMMERCE_ORDER_STATUS_CANCELLED_COUNT =
 		GetterUtil.getInteger(

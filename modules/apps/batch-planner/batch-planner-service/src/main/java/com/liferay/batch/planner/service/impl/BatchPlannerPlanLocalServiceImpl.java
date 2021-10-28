@@ -18,6 +18,7 @@ import com.liferay.batch.planner.constants.BatchPlannerPlanConstants;
 import com.liferay.batch.planner.exception.BatchPlannerPlanExternalTypeException;
 import com.liferay.batch.planner.exception.BatchPlannerPlanNameException;
 import com.liferay.batch.planner.exception.DuplicateBatchPlannerPlanException;
+import com.liferay.batch.planner.model.BatchPlannerLog;
 import com.liferay.batch.planner.model.BatchPlannerPlan;
 import com.liferay.batch.planner.service.base.BatchPlannerPlanLocalServiceBaseImpl;
 import com.liferay.petra.string.StringBundler;
@@ -25,7 +26,9 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -44,7 +47,9 @@ public class BatchPlannerPlanLocalServiceImpl
 
 	@Override
 	public BatchPlannerPlan addBatchPlannerPlan(
-			long userId, String externalType, String name)
+			long userId, boolean export, String externalType,
+			String externalURL, String internalClassName, String name,
+			String taskItemDelegateName, boolean template)
 		throws PortalException {
 
 		_validateExternalType(externalType);
@@ -59,8 +64,61 @@ public class BatchPlannerPlanLocalServiceImpl
 		batchPlannerPlan.setCompanyId(user.getCompanyId());
 		batchPlannerPlan.setUserId(userId);
 		batchPlannerPlan.setUserName(user.getFullName());
+		batchPlannerPlan.setExport(export);
 		batchPlannerPlan.setExternalType(externalType);
+		batchPlannerPlan.setExternalURL(externalURL);
+		batchPlannerPlan.setInternalClassName(internalClassName);
 		batchPlannerPlan.setName(name);
+		batchPlannerPlan.setTaskItemDelegateName(taskItemDelegateName);
+		batchPlannerPlan.setTemplate(template);
+
+		batchPlannerPlan = batchPlannerPlanPersistence.update(batchPlannerPlan);
+
+		resourceLocalService.addResources(
+			user.getCompanyId(), GroupConstants.DEFAULT_LIVE_GROUP_ID,
+			user.getUserId(), BatchPlannerPlan.class.getName(),
+			batchPlannerPlan.getBatchPlannerPlanId(), false, true, false);
+
+		return batchPlannerPlan;
+	}
+
+	@Override
+	public BatchPlannerPlan deleteBatchPlannerPlan(long batchPlannerPlanId)
+		throws PortalException {
+
+		BatchPlannerPlan batchPlannerPlan = batchPlannerPlanPersistence.remove(
+			batchPlannerPlanId);
+
+		resourceLocalService.deleteResource(
+			batchPlannerPlan, ResourceConstants.SCOPE_COMPANY);
+
+		BatchPlannerLog batchPlannerLog =
+			batchPlannerLogPersistence.fetchByBatchPlannerPlanId(
+				batchPlannerPlanId);
+
+		if (batchPlannerLog != null) {
+			batchPlannerLogPersistence.removeByBatchPlannerPlanId(
+				batchPlannerPlanId);
+		}
+
+		batchPlannerMappingPersistence.removeByBatchPlannerPlanId(
+			batchPlannerPlanId);
+
+		batchPlannerPolicyPersistence.removeByBatchPlannerPlanId(
+			batchPlannerPlanId);
+
+		return batchPlannerPlan;
+	}
+
+	@Override
+	public BatchPlannerPlan updateActive(
+			long batchPlannerPlanId, boolean active)
+		throws PortalException {
+
+		BatchPlannerPlan batchPlannerPlan =
+			batchPlannerPlanPersistence.findByPrimaryKey(batchPlannerPlanId);
+
+		batchPlannerPlan.setActive(active);
 
 		return batchPlannerPlanPersistence.update(batchPlannerPlan);
 	}

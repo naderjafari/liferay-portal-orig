@@ -388,17 +388,10 @@ public class LiferayRelengPlugin implements Plugin<Project> {
 								FileUtil.getAbsolutePath(
 									project.getProjectDir()));
 
-							if (Validator.isNull(result)) {
-								return false;
-							}
-
-							if (GradlePluginsDefaultsUtil.isTestProject(
-									project)) {
-
-								return false;
-							}
-
-							if (!LiferayRelengUtil.hasUnpublishedDependencies(
+							if (Validator.isNull(result) ||
+								GradlePluginsDefaultsUtil.isTestProject(
+									project) ||
+								!LiferayRelengUtil.hasUnpublishedDependencies(
 									project)) {
 
 								return false;
@@ -485,13 +478,9 @@ public class LiferayRelengPlugin implements Plugin<Project> {
 					return false;
 				}
 
-				if (liferayThemeProject &&
-					LiferayRelengUtil.hasStaleParentTheme(project)) {
-
-					return true;
-				}
-
-				if (LiferayRelengUtil.hasUnpublishedCommits(
+				if ((liferayThemeProject &&
+					 LiferayRelengUtil.hasStaleParentTheme(project)) ||
+					LiferayRelengUtil.hasUnpublishedCommits(
 						project, project.getProjectDir(),
 						recordArtifactTask.getOutputFile())) {
 
@@ -768,12 +757,9 @@ public class LiferayRelengPlugin implements Plugin<Project> {
 					return false;
 				}
 
-				if (Boolean.parseBoolean(force)) {
-					return true;
-				}
-
-				if (liferayThemeProject &&
-					LiferayRelengUtil.hasStaleParentTheme(project)) {
+				if (Boolean.parseBoolean(force) ||
+					(liferayThemeProject &&
+					 LiferayRelengUtil.hasStaleParentTheme(project))) {
 
 					return true;
 				}
@@ -1097,10 +1083,10 @@ public class LiferayRelengPlugin implements Plugin<Project> {
 								System.lineSeparator());
 
 					mergeArtifactsPublishCommandsMergeFilesTask.setInputFiles(
-						new File(
+						/*new File(
 							dir, WRITE_ARTIFACT_PUBLISH_COMMANDS + "-step1.sh"),
 						new File(
-							dir, WRITE_ARTIFACT_PUBLISH_COMMANDS + "-step2.sh"),
+							dir, WRITE_ARTIFACT_PUBLISH_COMMANDS + "-step2.sh"),*/
 						new File(
 							dir,
 							WRITE_ARTIFACT_PUBLISH_COMMANDS + "-step3.sh"));

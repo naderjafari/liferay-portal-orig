@@ -253,11 +253,9 @@ public class MediaWikiImporter implements WikiImporter {
 	}
 
 	protected boolean isValidImage(String[] paths, InputStream inputStream) {
-		if (_specialMediaWikiDirs.contains(paths[0])) {
-			return false;
-		}
+		if (_specialMediaWikiDirs.contains(paths[0]) ||
+			((paths.length > 1) && _specialMediaWikiDirs.contains(paths[1]))) {
 
-		if ((paths.length > 1) && _specialMediaWikiDirs.contains(paths[1])) {
 			return false;
 		}
 
@@ -309,14 +307,12 @@ public class MediaWikiImporter implements WikiImporter {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				StringBundler sb = new StringBundler(4);
-
-				sb.append("Could not move ");
-				sb.append(_wikiGroupServiceConfiguration.frontPageName());
-				sb.append(" to the title provided: ");
-				sb.append(frontPageTitle);
-
-				_log.warn(sb.toString(), exception);
+				_log.warn(
+					StringBundler.concat(
+						"Could not move ",
+						_wikiGroupServiceConfiguration.frontPageName(),
+						" to the title provided: ", frontPageTitle),
+					exception);
 			}
 		}
 	}

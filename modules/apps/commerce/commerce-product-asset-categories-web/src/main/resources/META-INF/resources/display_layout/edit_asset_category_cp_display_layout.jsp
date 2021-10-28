@@ -43,7 +43,7 @@ if (cpDisplayLayout != null) {
 }
 %>
 
-<commerce-ui:side-panel-content
+<liferay-frontend:side-panel-content
 	title='<%= (cpDisplayLayout == null) ? LanguageUtil.get(request, "add-display-layout") : LanguageUtil.get(request, "edit-display-layout") %>'
 >
 	<portlet:actionURL name="/commerce_channels/edit_asset_category_cp_display_layout" var="editAssetCategoryCPDisplayLayoutActionURL" />
@@ -51,6 +51,7 @@ if (cpDisplayLayout != null) {
 	<aui:form action="<%= editAssetCategoryCPDisplayLayoutActionURL %>" method="post" name="fm">
 		<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= (cpDisplayLayout == null) ? Constants.ADD : Constants.UPDATE %>" />
 		<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
+		<aui:input name="cpDisplayLayoutId" type="hidden" value="<%= (cpDisplayLayout == null) ? 0 : cpDisplayLayout.getCPDisplayLayoutId() %>" />
 		<aui:input name="classPK" type="hidden" value="<%= (cpDisplayLayout == null) ? 0 : cpDisplayLayout.getClassPK() %>" />
 		<aui:input name="commerceChannelId" type="hidden" value="<%= categoryCPDisplayLayoutDisplayContext.getCommerceChannelId() %>" />
 
@@ -97,7 +98,7 @@ if (cpDisplayLayout != null) {
 			<aui:button cssClass="btn-lg" type="submit" />
 		</aui:button-row>
 	</aui:form>
-</commerce-ui:side-panel-content>
+</liferay-frontend:side-panel-content>
 
 <liferay-frontend:component
 	context='<%=

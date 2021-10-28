@@ -24,12 +24,10 @@ import Date from 'dynamic-data-mapping-form-field-type/DatePicker/DatePicker.es'
 import DocumentLibrary from 'dynamic-data-mapping-form-field-type/DocumentLibrary/DocumentLibrary.es';
 import Grid from 'dynamic-data-mapping-form-field-type/Grid/Grid.es';
 import Image from 'dynamic-data-mapping-form-field-type/ImagePicker/ImagePicker.es';
-import Numeric from 'dynamic-data-mapping-form-field-type/Numeric/Numeric.es';
+import Numeric from 'dynamic-data-mapping-form-field-type/Numeric/Numeric';
 import RichText from 'dynamic-data-mapping-form-field-type/RichText/RichText.es';
 import Select from 'dynamic-data-mapping-form-field-type/Select/Select.es';
 import Text from 'dynamic-data-mapping-form-field-type/Text/Text.es';
-
-import 'frontend-editor-ckeditor-web';
 import React from 'react';
 
 import {Editor} from '../../../../../../src/main/resources/META-INF/resources/data_layout_builder/js/components/rules/editor/Editor.es';
@@ -114,6 +112,8 @@ const defaultProps = (fieldsList = FIELDS) => {
 				value: '39421',
 			},
 		],
+		dataProviderInstanceParameterSettingsURL:
+			'/o/dynamic-data-mapping-form-builder-provider-instance-parameter-settings/',
 		fields: fieldsList,
 		operatorsByType: OPERATORS_BY_TYPE,
 		pages,

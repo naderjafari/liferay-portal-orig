@@ -29,6 +29,7 @@ import com.liferay.commerce.exception.CommerceOrderStatusException;
 import com.liferay.commerce.model.CommerceAddress;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.model.CommerceOrderItem;
+import com.liferay.commerce.model.CommerceOrderType;
 import com.liferay.commerce.model.CommerceShippingMethod;
 import com.liferay.commerce.order.CommerceOrderValidatorRegistry;
 import com.liferay.commerce.order.CommerceOrderValidatorResult;
@@ -42,6 +43,8 @@ import com.liferay.commerce.product.service.CommerceChannelService;
 import com.liferay.commerce.service.CommerceAddressService;
 import com.liferay.commerce.service.CommerceOrderItemService;
 import com.liferay.commerce.service.CommerceOrderService;
+import com.liferay.commerce.service.CommerceOrderTypeLocalService;
+import com.liferay.commerce.service.CommerceOrderTypeService;
 import com.liferay.commerce.service.CommerceShippingMethodLocalService;
 import com.liferay.commerce.util.CommerceShippingHelper;
 import com.liferay.headless.commerce.core.util.ExpandoUtil;
@@ -53,6 +56,7 @@ import com.liferay.headless.commerce.delivery.cart.dto.v1_0.CouponCode;
 import com.liferay.headless.commerce.delivery.cart.internal.dto.v1_0.CartDTOConverter;
 import com.liferay.headless.commerce.delivery.cart.internal.dto.v1_0.CartItemDTOConverter;
 import com.liferay.headless.commerce.delivery.cart.resource.v1_0.CartResource;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.model.Country;
 import com.liferay.portal.kernel.model.Region;
 import com.liferay.portal.kernel.service.CountryService;
@@ -102,21 +106,21 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 	}
 
 	@Override
-	public Page<Cart> getChannelCartsPage(Long channelId, Pagination pagination)
+	public Page<Cart> getChannelCartsPage(
+			Long accountId, Long channelId, Pagination pagination)
 		throws Exception {
 
 		CommerceChannel commerceChannel =
 			_commerceChannelLocalService.getCommerceChannel(channelId);
 
 		List<CommerceOrder> commerceOrders =
-			_commerceOrderService.getUserPendingCommerceOrders(
-				contextCompany.getCompanyId(), commerceChannel.getGroupId(),
-				null, pagination.getStartPosition(),
-				pagination.getEndPosition());
+			_commerceOrderService.getPendingCommerceOrders(
+				commerceChannel.getGroupId(), accountId, null,
+				pagination.getStartPosition(), pagination.getEndPosition());
 
 		long pendingCommerceOrdersCount =
 			_commerceOrderService.getPendingCommerceOrdersCount(
-				contextCompany.getCompanyId(), commerceChannel.getGroupId());
+				commerceChannel.getGroupId(), accountId, null);
 
 		return Page.of(
 			_toCarts(commerceOrders), pagination, pendingCommerceOrdersCount);
@@ -214,7 +218,7 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 			_commerceChannelLocalService.getCommerceChannel(channelId);
 
 		CommerceOrder commerceOrder = _addCommerceOrder(
-			cart, commerceChannel.getGroupId(), contextUser.getUserId());
+			cart, commerceChannel.getGroupId());
 
 		_updateOrder(commerceOrder, cart);
 
@@ -250,7 +254,7 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 	}
 
 	private CommerceOrder _addCommerceOrder(
-			Cart cart, long commerceChannelGroupId, long userId)
+			Cart cart, long commerceChannelGroupId)
 		throws Exception {
 
 		long commerceCurrencyId = 0;
@@ -266,9 +270,15 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 		CommerceAccount commerceAccount =
 			_commerceAccountService.getCommerceAccount(cart.getAccountId());
 
+		CommerceChannel commerceChannel =
+			_commerceChannelLocalService.getCommerceChannelByGroupId(
+				commerceChannelGroupId);
+
 		return _commerceOrderService.addCommerceOrder(
-			userId, commerceChannelGroupId,
-			commerceAccount.getCommerceAccountId(), commerceCurrencyId);
+			commerceChannelGroupId, commerceAccount.getCommerceAccountId(),
+			commerceCurrencyId,
+			_getCommerceOrderTypeId(
+				commerceChannel.getCommerceChannelId(), cart));
 	}
 
 	private void _addOrUpdateBillingAddress(
@@ -338,6 +348,9 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 				_addOrUpdateCommerceOrderItem(
 					cartItem, commerceOrder, commerceContext, serviceContext);
 			}
+
+			commerceOrder = _commerceOrderService.recalculatePrice(
+				commerceOrder.getCommerceOrderId(), commerceContext);
 		}
 
 		commerceOrder.setBillingAddressId(
@@ -417,6 +430,40 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 			commerceOrder.getPurchaseOrderNumber(), commerceOrder.getSubtotal(),
 			commerceOrder.getShippingAmount(), commerceOrder.getTotal(),
 			commerceOrder.getAdvanceStatus(), commerceContext);
+	}
+
+	private long _getCommerceOrderTypeId(long commerceChannelId, Cart cart)
+		throws Exception {
+
+		if (cart.getOrderTypeId() != null) {
+			return cart.getOrderTypeId();
+		}
+
+		CommerceOrderType commerceOrderType =
+			_commerceOrderTypeService.fetchByExternalReferenceCode(
+				cart.getOrderTypeExternalReferenceCode(),
+				contextCompany.getCompanyId());
+
+		if (commerceOrderType != null) {
+			return commerceOrderType.getCommerceOrderTypeId();
+		}
+
+		int commerceOrderTypesCount =
+			_commerceOrderTypeService.getCommerceOrderTypesCount(
+				CommerceChannel.class.getName(), commerceChannelId, true);
+
+		if (commerceOrderTypesCount == 1) {
+			List<CommerceOrderType> commerceOrderTypes =
+				_commerceOrderTypeService.getCommerceOrderTypes(
+					CommerceChannel.class.getName(), commerceChannelId, true,
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+
+			commerceOrderType = commerceOrderTypes.get(0);
+
+			return commerceOrderType.getCommerceOrderTypeId();
+		}
+
+		return 0;
 	}
 
 	private long _getRegionId(
@@ -654,6 +701,12 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 
 	@Reference
 	private CommerceOrderService _commerceOrderService;
+
+	@Reference
+	private CommerceOrderTypeLocalService _commerceOrderTypeLocalService;
+
+	@Reference
+	private CommerceOrderTypeService _commerceOrderTypeService;
 
 	@Reference
 	private CommerceOrderValidatorRegistry _commerceOrderValidatorRegistry;

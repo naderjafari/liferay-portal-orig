@@ -65,6 +65,10 @@ public class PriceModifier implements Serializable {
 		return ObjectMapperUtil.readValue(PriceModifier.class, json);
 	}
 
+	public static PriceModifier unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(PriceModifier.class, json);
+	}
+
 	@Schema
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
@@ -234,7 +238,6 @@ public class PriceModifier implements Serializable {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long id;
 
-	@DecimalMin("0")
 	@Schema
 	@Valid
 	public BigDecimal getModifierAmount() {

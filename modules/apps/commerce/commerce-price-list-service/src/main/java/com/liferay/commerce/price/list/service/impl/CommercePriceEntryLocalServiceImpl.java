@@ -26,9 +26,9 @@ import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.product.service.CPInstanceLocalService;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -247,7 +247,7 @@ public class CommercePriceEntryLocalServiceImpl
 			externalReferenceCode, serviceContext.getCompanyId());
 
 		Date expirationDate = null;
-		Date now = new Date();
+		Date date = new Date();
 
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
@@ -283,7 +283,7 @@ public class CommercePriceEntryLocalServiceImpl
 		commercePriceEntry.setCProductId(cProductId);
 		commercePriceEntry.setDisplayDate(displayDate);
 
-		if ((expirationDate == null) || expirationDate.after(now)) {
+		if ((expirationDate == null) || expirationDate.after(date)) {
 			commercePriceEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
 		}
 		else {
@@ -292,7 +292,7 @@ public class CommercePriceEntryLocalServiceImpl
 
 		commercePriceEntry.setExpirationDate(expirationDate);
 		commercePriceEntry.setStatusByUserId(user.getUserId());
-		commercePriceEntry.setStatusDate(serviceContext.getModifiedDate(now));
+		commercePriceEntry.setStatusDate(serviceContext.getModifiedDate(date));
 
 		commercePriceEntry = commercePriceEntryPersistence.update(
 			commercePriceEntry);
@@ -456,19 +456,11 @@ public class CommercePriceEntryLocalServiceImpl
 				neverExpire, serviceContext);
 		}
 
-		StringBundler sb = new StringBundler(9);
-
-		sb.append("{cProductId=");
-		sb.append(cProductId);
-		sb.append(StringPool.COMMA_AND_SPACE);
-		sb.append("cpInstanceUuid=");
-		sb.append(cpInstanceUuid);
-		sb.append(StringPool.COMMA_AND_SPACE);
-		sb.append("skuExternalReferenceCode=");
-		sb.append(skuExternalReferenceCode);
-		sb.append(CharPool.CLOSE_CURLY_BRACE);
-
-		throw new NoSuchCPInstanceException(sb.toString());
+		throw new NoSuchCPInstanceException(
+			StringBundler.concat(
+				"{cProductId=", cProductId, ", cpInstanceUuid=", cpInstanceUuid,
+				", skuExternalReferenceCode=", skuExternalReferenceCode,
+				CharPool.CLOSE_CURLY_BRACE));
 	}
 
 	/**
@@ -609,7 +601,7 @@ public class CommercePriceEntryLocalServiceImpl
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(
+		_expandoRowLocalService.deleteRows(
 			commercePriceEntry.getCommercePriceEntryId());
 
 		return commercePriceEntry;
@@ -948,7 +940,7 @@ public class CommercePriceEntryLocalServiceImpl
 				commercePriceEntryId);
 
 		Date expirationDate = null;
-		Date now = new Date();
+		Date date = new Date();
 
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
@@ -974,7 +966,7 @@ public class CommercePriceEntryLocalServiceImpl
 
 		commercePriceEntry.setDisplayDate(displayDate);
 
-		if ((expirationDate == null) || expirationDate.after(now)) {
+		if ((expirationDate == null) || expirationDate.after(date)) {
 			commercePriceEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
 		}
 		else {
@@ -983,7 +975,7 @@ public class CommercePriceEntryLocalServiceImpl
 
 		commercePriceEntry.setExpirationDate(expirationDate);
 		commercePriceEntry.setStatusByUserId(user.getUserId());
-		commercePriceEntry.setStatusDate(serviceContext.getModifiedDate(now));
+		commercePriceEntry.setStatusDate(serviceContext.getModifiedDate(date));
 
 		commercePriceEntry = commercePriceEntryPersistence.update(
 			commercePriceEntry);
@@ -1093,7 +1085,7 @@ public class CommercePriceEntryLocalServiceImpl
 		throws PortalException {
 
 		User user = userLocalService.getUser(userId);
-		Date now = new Date();
+		Date date = new Date();
 
 		CommercePriceEntry commercePriceEntry =
 			commercePriceEntryPersistence.findByPrimaryKey(
@@ -1101,23 +1093,23 @@ public class CommercePriceEntryLocalServiceImpl
 
 		if ((status == WorkflowConstants.STATUS_APPROVED) &&
 			(commercePriceEntry.getDisplayDate() != null) &&
-			now.before(commercePriceEntry.getDisplayDate())) {
+			date.before(commercePriceEntry.getDisplayDate())) {
 
 			status = WorkflowConstants.STATUS_SCHEDULED;
 		}
 
-		Date modifiedDate = serviceContext.getModifiedDate(now);
+		Date modifiedDate = serviceContext.getModifiedDate(date);
 
 		if (status == WorkflowConstants.STATUS_APPROVED) {
 			Date expirationDate = commercePriceEntry.getExpirationDate();
 
-			if ((expirationDate != null) && expirationDate.before(now)) {
+			if ((expirationDate != null) && expirationDate.before(date)) {
 				commercePriceEntry.setExpirationDate(null);
 			}
 		}
 
 		if (status == WorkflowConstants.STATUS_EXPIRED) {
-			commercePriceEntry.setExpirationDate(now);
+			commercePriceEntry.setExpirationDate(date);
 		}
 
 		commercePriceEntry.setStatus(status);
@@ -1472,5 +1464,8 @@ public class CommercePriceEntryLocalServiceImpl
 
 	@ServiceReference(type = CPInstanceLocalService.class)
 	private CPInstanceLocalService _cpInstanceLocalService;
+
+	@ServiceReference(type = ExpandoRowLocalService.class)
+	private ExpandoRowLocalService _expandoRowLocalService;
 
 }

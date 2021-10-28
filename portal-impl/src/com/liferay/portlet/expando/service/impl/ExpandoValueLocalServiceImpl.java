@@ -21,18 +21,19 @@ import com.liferay.expando.kernel.model.ExpandoTable;
 import com.liferay.expando.kernel.model.ExpandoTableConstants;
 import com.liferay.expando.kernel.model.ExpandoValue;
 import com.liferay.expando.kernel.util.ExpandoValueDeleteHandler;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.typeconverter.DateArrayConverter;
 import com.liferay.portal.typeconverter.NumberArrayConverter;
 import com.liferay.portal.typeconverter.NumberConverter;
 import com.liferay.portlet.expando.model.impl.ExpandoValueImpl;
 import com.liferay.portlet.expando.service.base.ExpandoValueLocalServiceBaseImpl;
-import com.liferay.registry.collections.ServiceTrackerCollections;
-import com.liferay.registry.collections.ServiceTrackerMap;
 
 import java.io.Serializable;
 
@@ -380,7 +381,7 @@ public class ExpandoValueLocalServiceImpl
 	public ExpandoValue addValue(
 			long companyId, String className, String tableName,
 			String columnName, long classPK, Map<Locale, ?> dataMap,
-			Locale defautlLocale)
+			Locale defaultLocale)
 		throws PortalException {
 
 		ExpandoTable table = expandoTableLocalService.getTable(
@@ -398,10 +399,10 @@ public class ExpandoValueLocalServiceImpl
 
 		if (type == ExpandoColumnConstants.STRING_ARRAY_LOCALIZED) {
 			value.setStringArrayMap(
-				(Map<Locale, String[]>)dataMap, defautlLocale);
+				(Map<Locale, String[]>)dataMap, defaultLocale);
 		}
 		else {
-			value.setStringMap((Map<Locale, String>)dataMap, defautlLocale);
+			value.setStringMap((Map<Locale, String>)dataMap, defaultLocale);
 		}
 
 		return expandoValueLocalService.addValue(
@@ -1902,7 +1903,8 @@ public class ExpandoValueLocalServiceImpl
 
 		private static final ServiceTrackerMap
 			<String, List<ExpandoValueDeleteHandler>> _serviceTrackerMap =
-				ServiceTrackerCollections.openMultiValueMap(
+				ServiceTrackerMapFactory.openMultiValueMap(
+					SystemBundleUtil.getBundleContext(),
 					ExpandoValueDeleteHandler.class, "model.class.name");
 
 	}

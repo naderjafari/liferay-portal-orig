@@ -22,10 +22,10 @@ PortletURL portletURL = PortletURLBuilder.createRenderURL(
 ).setParameter(
 	"className", className
 ).setParameter(
-	"classPK", String.valueOf(classPK)
+	"classPK", classPK
 ).setParameter(
-	"selPlid", String.valueOf(selPlid)
-).build();
+	"selPlid", selPlid
+).buildPortletURL();
 
 request.setAttribute("mobile_device_rules_header.jspf-portletURL", portletURL);
 %>

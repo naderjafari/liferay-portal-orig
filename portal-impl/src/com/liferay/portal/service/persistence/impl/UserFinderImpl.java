@@ -785,7 +785,7 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 			return (List<User>)QueryUtil.list(sqlQuery, getDialect(), 0, size);
 		}
 		finally {
-			session.close();
+			closeSession(session);
 		}
 	}
 
@@ -815,7 +815,7 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 			return (List<User>)QueryUtil.list(sqlQuery, getDialect(), 0, size);
 		}
 		finally {
-			session.close();
+			closeSession(session);
 		}
 	}
 
@@ -1163,7 +1163,8 @@ public class UserFinderImpl extends UserFinderBaseImpl implements UserFinder {
 				else if (group.isUserGroup()) {
 					userGroupIds.add(group.getClassPK());
 				}
-				else {
+
+				if (group.isSite()) {
 					siteGroupIds.add(groupId);
 				}
 			}

@@ -39,7 +39,7 @@ function AssetTagsSelector({
 }) {
 	const {refetch, resource} = useResource({
 		fetchOptions: {
-			body: Liferay.Util.objectToFormData({
+			'body': Liferay.Util.objectToFormData({
 				cmd: JSON.stringify({
 					'/assettag/search': {
 						end: 20,
@@ -51,8 +51,8 @@ function AssetTagsSelector({
 				}),
 				p_auth: Liferay.authToken,
 			}),
-			credentials: 'include',
-			method: 'POST',
+			'credentials': 'include',
+			'method': 'POST',
 			'x-csrf-token': Liferay.authToken,
 		},
 		link: `${window.location.origin}${themeDisplay.getPathContext()}
@@ -121,7 +121,8 @@ function AssetTagsSelector({
 	};
 
 	const handleSelectButtonClick = () => {
-		const sub = (str, obj) => str.replace(/\{([^}]+)\}/g, (_, m) => obj[m]);
+		const sub = (str, object) =>
+			str.replace(/\{([^}]+)\}/g, (_, m) => object[m]);
 
 		const url = sub(decodeURIComponent(portletURL), {
 			selectedTagNames: selectedItems.map((item) => item.value).join(),

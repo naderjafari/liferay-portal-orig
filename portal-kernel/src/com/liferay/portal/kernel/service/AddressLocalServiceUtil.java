@@ -430,6 +430,22 @@ public class AddressLocalServiceUtil {
 		return getService().getPersistedModel(primaryKeyObj);
 	}
 
+	public static List<Address> getTypeAddresses(
+		long companyId, String className, long classPK, long[] typeIds) {
+
+		return getService().getTypeAddresses(
+			companyId, className, classPK, typeIds);
+	}
+
+	public static List<Address> getTypeAddresses(
+		long companyId, String className, long classPK, long[] typeIds,
+		int start, int end, OrderByComparator<Address> orderByComparator) {
+
+		return getService().getTypeAddresses(
+			companyId, className, classPK, typeIds, start, end,
+			orderByComparator);
+	}
+
 	public static com.liferay.portal.kernel.search.BaseModelSearchResult
 		<Address> searchAddresses(
 				long companyId, String className, long classPK, String keywords,

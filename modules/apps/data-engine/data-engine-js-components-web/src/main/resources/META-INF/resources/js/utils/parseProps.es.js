@@ -56,7 +56,6 @@ export const parseProps = ({
 	publishFormInstanceURL,
 	published,
 	redirectURL,
-	restrictedFormURL,
 	rolesURL,
 	rules,
 	shareFormInstanceURL,
@@ -65,8 +64,10 @@ export const parseProps = ({
 	showPublishAlert,
 	showSubmitButton,
 	spritemap,
+	submitButtonId,
 	submitLabel,
 	submittable,
+	validateCSRFTokenURL,
 	view,
 	...otherProps
 }) => ({
@@ -95,7 +96,6 @@ export const parseProps = ({
 		publishFormInstanceURL,
 		published,
 		redirectURL,
-		restrictedFormURL,
 		rolesURL,
 		shareFormInstanceURL,
 		sharedFormURL,
@@ -104,8 +104,10 @@ export const parseProps = ({
 		showSubmitButton,
 		sidebarPanels,
 		spritemap,
+		submitButtonId,
 		submitLabel,
 		submittable,
+		validateCSRFTokenURL,
 		view,
 	}),
 	state: validator({

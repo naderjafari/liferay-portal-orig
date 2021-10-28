@@ -34,7 +34,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -53,7 +52,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -212,15 +210,15 @@ public abstract class BaseLanguageResourceTestCase {
 
 	@Test
 	public void testGetAssetLibraryLanguagesPage() throws Exception {
-		Page<Language> page = languageResource.getAssetLibraryLanguagesPage(
-			testGetAssetLibraryLanguagesPage_getAssetLibraryId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long assetLibraryId =
 			testGetAssetLibraryLanguagesPage_getAssetLibraryId();
 		Long irrelevantAssetLibraryId =
 			testGetAssetLibraryLanguagesPage_getIrrelevantAssetLibraryId();
+
+		Page<Language> page = languageResource.getAssetLibraryLanguagesPage(
+			assetLibraryId);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantAssetLibraryId != null) {
 			Language irrelevantLanguage =
@@ -277,13 +275,12 @@ public abstract class BaseLanguageResourceTestCase {
 
 	@Test
 	public void testGetSiteLanguagesPage() throws Exception {
-		Page<Language> page = languageResource.getSiteLanguagesPage(
-			testGetSiteLanguagesPage_getSiteId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long siteId = testGetSiteLanguagesPage_getSiteId();
 		Long irrelevantSiteId = testGetSiteLanguagesPage_getIrrelevantSiteId();
+
+		Page<Language> page = languageResource.getSiteLanguagesPage(siteId);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantSiteId != null) {
 			Language irrelevantLanguage = testGetSiteLanguagesPage_addLanguage(
@@ -360,7 +357,7 @@ public abstract class BaseLanguageResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/languages");
 
-		Assert.assertEquals(2, languagesJSONObject.get("totalCount"));
+		Assert.assertEquals(2, languagesJSONObject.getLong("totalCount"));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(language1, language2),
@@ -371,6 +368,21 @@ public abstract class BaseLanguageResourceTestCase {
 	protected Language testGraphQLLanguage_addLanguage() throws Exception {
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(Language language, List<Language> languages) {
+		boolean contains = false;
+
+		for (Language item : languages) {
+			if (equals(language, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			languages + " does not contain " + language, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -503,7 +515,7 @@ public abstract class BaseLanguageResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.Language.class)) {
 
@@ -519,12 +531,13 @@ public abstract class BaseLanguageResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -656,14 +669,16 @@ public abstract class BaseLanguageResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -896,8 +911,8 @@ public abstract class BaseLanguageResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseLanguageResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseLanguageResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

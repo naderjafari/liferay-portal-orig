@@ -14,8 +14,8 @@
 
 package com.liferay.portal.service.persistence.impl;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
@@ -28,32 +28,34 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.exception.NoSuchCompanyException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.CompanyTable;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.CompanyPersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.model.impl.CompanyImpl;
 import com.liferay.portal.model.impl.CompanyModelImpl;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
 
 import java.io.Serializable;
 
 import java.lang.reflect.InvocationHandler;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The persistence implementation for the company service.
@@ -1240,6 +1242,8 @@ public class CompanyPersistenceImpl
 
 		dbColumnNames.put("system", "system_");
 		dbColumnNames.put("active", "active_");
+		dbColumnNames.put("type", "type_");
+		dbColumnNames.put("size", "size_");
 
 		setDBColumnNames(dbColumnNames);
 
@@ -1273,6 +1277,8 @@ public class CompanyPersistenceImpl
 			company);
 	}
 
+	private int _valueObjectFinderCacheListThreshold;
+
 	/**
 	 * Caches the companies in the entity cache if it is enabled.
 	 *
@@ -1280,23 +1286,36 @@ public class CompanyPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<Company> companies) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (companies.size() > _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (Company company : companies) {
-			Company cachedCompany = (Company)EntityCacheUtil.getResult(
-				CompanyImpl.class, company.getPrimaryKey());
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setWithSafeCloseable(
+						company.getPrimaryKey())) {
 
-			if (cachedCompany == null) {
-				cacheResult(company);
-			}
-			else {
-				CompanyModelImpl companyModelImpl = (CompanyModelImpl)company;
-				CompanyModelImpl cachedCompanyModelImpl =
-					(CompanyModelImpl)cachedCompany;
+				Company cachedCompany = (Company)EntityCacheUtil.getResult(
+					CompanyImpl.class, company.getPrimaryKey());
 
-				companyModelImpl.setCompanySecurityBag(
-					cachedCompanyModelImpl.getCompanySecurityBag());
+				if (cachedCompany == null) {
+					cacheResult(company);
+				}
+				else {
+					CompanyModelImpl companyModelImpl =
+						(CompanyModelImpl)company;
+					CompanyModelImpl cachedCompanyModelImpl =
+						(CompanyModelImpl)cachedCompany;
 
-				companyModelImpl.setVirtualHostname(
-					cachedCompanyModelImpl.getVirtualHostname());
+					companyModelImpl.setCompanySecurityBag(
+						cachedCompanyModelImpl.getCompanySecurityBag());
+
+					companyModelImpl.setVirtualHostname(
+						cachedCompanyModelImpl.getVirtualHostname());
+				}
 			}
 		}
 	}
@@ -1484,6 +1503,29 @@ public class CompanyPersistenceImpl
 		}
 
 		CompanyModelImpl companyModelImpl = (CompanyModelImpl)company;
+
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		Date date = new Date();
+
+		if (isNew && (company.getCreateDate() == null)) {
+			if (serviceContext == null) {
+				company.setCreateDate(date);
+			}
+			else {
+				company.setCreateDate(serviceContext.getCreateDate(date));
+			}
+		}
+
+		if (!companyModelImpl.hasSetModifiedDate()) {
+			if (serviceContext == null) {
+				company.setModifiedDate(date);
+			}
+			else {
+				company.setModifiedDate(serviceContext.getModifiedDate(date));
+			}
+		}
 
 		Session session = null;
 
@@ -1776,10 +1818,8 @@ public class CompanyPersistenceImpl
 	 * Initializes the company persistence.
 	 */
 	public void afterPropertiesSet() {
-		Registry registry = RegistryUtil.getRegistry();
-
-		_argumentsResolverServiceRegistration = registry.registerService(
-			ArgumentsResolver.class, new CompanyModelArgumentsResolver());
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
@@ -1841,8 +1881,6 @@ public class CompanyPersistenceImpl
 
 	public void destroy() {
 		EntityCacheUtil.removeCache(CompanyImpl.class.getName());
-
-		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	private static final String _SQL_SELECT_COMPANY =
@@ -1869,98 +1907,11 @@ public class CompanyPersistenceImpl
 		CompanyPersistenceImpl.class);
 
 	private static final Set<String> _badColumnNames = SetUtil.fromArray(
-		new String[] {"system", "active"});
+		new String[] {"system", "active", "type", "size"});
 
 	@Override
 	protected FinderCache getFinderCache() {
 		return FinderCacheUtil.getFinderCache();
-	}
-
-	private ServiceRegistration<ArgumentsResolver>
-		_argumentsResolverServiceRegistration;
-
-	private static class CompanyModelArgumentsResolver
-		implements ArgumentsResolver {
-
-		@Override
-		public Object[] getArguments(
-			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
-			boolean original) {
-
-			String[] columnNames = finderPath.getColumnNames();
-
-			if ((columnNames == null) || (columnNames.length == 0)) {
-				if (baseModel.isNew()) {
-					return FINDER_ARGS_EMPTY;
-				}
-
-				return null;
-			}
-
-			CompanyModelImpl companyModelImpl = (CompanyModelImpl)baseModel;
-
-			long columnBitmask = companyModelImpl.getColumnBitmask();
-
-			if (!checkColumn || (columnBitmask == 0)) {
-				return _getValue(companyModelImpl, columnNames, original);
-			}
-
-			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
-				finderPath);
-
-			if (finderPathColumnBitmask == null) {
-				finderPathColumnBitmask = 0L;
-
-				for (String columnName : columnNames) {
-					finderPathColumnBitmask |=
-						companyModelImpl.getColumnBitmask(columnName);
-				}
-
-				_finderPathColumnBitmasksCache.put(
-					finderPath, finderPathColumnBitmask);
-			}
-
-			if ((columnBitmask & finderPathColumnBitmask) != 0) {
-				return _getValue(companyModelImpl, columnNames, original);
-			}
-
-			return null;
-		}
-
-		@Override
-		public String getClassName() {
-			return CompanyImpl.class.getName();
-		}
-
-		@Override
-		public String getTableName() {
-			return CompanyTable.INSTANCE.getTableName();
-		}
-
-		private static Object[] _getValue(
-			CompanyModelImpl companyModelImpl, String[] columnNames,
-			boolean original) {
-
-			Object[] arguments = new Object[columnNames.length];
-
-			for (int i = 0; i < arguments.length; i++) {
-				String columnName = columnNames[i];
-
-				if (original) {
-					arguments[i] = companyModelImpl.getColumnOriginalValue(
-						columnName);
-				}
-				else {
-					arguments[i] = companyModelImpl.getColumnValue(columnName);
-				}
-			}
-
-			return arguments;
-		}
-
-		private static final Map<FinderPath, Long>
-			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
-
 	}
 
 }

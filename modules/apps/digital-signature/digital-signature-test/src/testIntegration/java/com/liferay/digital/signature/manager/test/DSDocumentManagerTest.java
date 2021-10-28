@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
 import java.util.Collections;
 
@@ -46,12 +47,12 @@ public class DSDocumentManagerTest {
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Test
 	public void testGetDSDocumentsAsBytes() throws Exception {
-		Class<?> clazz = getClass();
-
 		DSEnvelope dsEnvelope = _dsEnvelopeManager.addDSEnvelope(
 			TestPropsValues.getCompanyId(), TestPropsValues.getGroupId(),
 			new DSEnvelope() {
@@ -61,8 +62,8 @@ public class DSDocumentManagerTest {
 							{
 								data = Base64.encode(
 									FileUtil.getBytes(
-										clazz.getResourceAsStream(
-											"dependencies/Document.pdf")));
+										getClass(),
+										"dependencies/Document.pdf"));
 								dsDocumentId = "1";
 								name = RandomTestUtil.randomString();
 							}

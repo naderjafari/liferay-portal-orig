@@ -23,7 +23,6 @@ import com.liferay.blogs.service.persistence.BlogsEntryPersistence;
 import com.liferay.blogs.service.persistence.impl.constants.BlogsPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
-import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -36,7 +35,6 @@ import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.sanitizer.Sanitizer;
 import com.liferay.portal.kernel.sanitizer.SanitizerException;
 import com.liferay.portal.kernel.sanitizer.SanitizerUtil;
@@ -50,8 +48,9 @@ import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -64,18 +63,16 @@ import java.lang.reflect.InvocationHandler;
 
 import java.sql.Timestamp;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -20965,6 +20962,272 @@ public class BlogsEntryPersistenceImpl
 	private static final String _FINDER_COLUMN_G_U_LTD_NOTS_STATUS_2 =
 		"blogsEntry.status != ?";
 
+	private FinderPath _finderPathFetchByG_ERC;
+	private FinderPath _finderPathCountByG_ERC;
+
+	/**
+	 * Returns the blogs entry where groupId = &#63; and externalReferenceCode = &#63; or throws a <code>NoSuchEntryException</code> if it could not be found.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the matching blogs entry
+	 * @throws NoSuchEntryException if a matching blogs entry could not be found
+	 */
+	@Override
+	public BlogsEntry findByG_ERC(long groupId, String externalReferenceCode)
+		throws NoSuchEntryException {
+
+		BlogsEntry blogsEntry = fetchByG_ERC(groupId, externalReferenceCode);
+
+		if (blogsEntry == null) {
+			StringBundler sb = new StringBundler(6);
+
+			sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+			sb.append("groupId=");
+			sb.append(groupId);
+
+			sb.append(", externalReferenceCode=");
+			sb.append(externalReferenceCode);
+
+			sb.append("}");
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(sb.toString());
+			}
+
+			throw new NoSuchEntryException(sb.toString());
+		}
+
+		return blogsEntry;
+	}
+
+	/**
+	 * Returns the blogs entry where groupId = &#63; and externalReferenceCode = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the matching blogs entry, or <code>null</code> if a matching blogs entry could not be found
+	 */
+	@Override
+	public BlogsEntry fetchByG_ERC(long groupId, String externalReferenceCode) {
+		return fetchByG_ERC(groupId, externalReferenceCode, true);
+	}
+
+	/**
+	 * Returns the blogs entry where groupId = &#63; and externalReferenceCode = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the matching blogs entry, or <code>null</code> if a matching blogs entry could not be found
+	 */
+	@Override
+	public BlogsEntry fetchByG_ERC(
+		long groupId, String externalReferenceCode, boolean useFinderCache) {
+
+		externalReferenceCode = Objects.toString(externalReferenceCode, "");
+
+		Object[] finderArgs = null;
+
+		if (useFinderCache) {
+			finderArgs = new Object[] {groupId, externalReferenceCode};
+		}
+
+		Object result = null;
+
+		if (useFinderCache) {
+			result = finderCache.getResult(_finderPathFetchByG_ERC, finderArgs);
+		}
+
+		if (result instanceof BlogsEntry) {
+			BlogsEntry blogsEntry = (BlogsEntry)result;
+
+			if ((groupId != blogsEntry.getGroupId()) ||
+				!Objects.equals(
+					externalReferenceCode,
+					blogsEntry.getExternalReferenceCode())) {
+
+				result = null;
+			}
+		}
+
+		if (result == null) {
+			StringBundler sb = new StringBundler(4);
+
+			sb.append(_SQL_SELECT_BLOGSENTRY_WHERE);
+
+			sb.append(_FINDER_COLUMN_G_ERC_GROUPID_2);
+
+			boolean bindExternalReferenceCode = false;
+
+			if (externalReferenceCode.isEmpty()) {
+				sb.append(_FINDER_COLUMN_G_ERC_EXTERNALREFERENCECODE_3);
+			}
+			else {
+				bindExternalReferenceCode = true;
+
+				sb.append(_FINDER_COLUMN_G_ERC_EXTERNALREFERENCECODE_2);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(groupId);
+
+				if (bindExternalReferenceCode) {
+					queryPos.add(externalReferenceCode);
+				}
+
+				List<BlogsEntry> list = query.list();
+
+				if (list.isEmpty()) {
+					if (useFinderCache) {
+						finderCache.putResult(
+							_finderPathFetchByG_ERC, finderArgs, list);
+					}
+				}
+				else {
+					if (list.size() > 1) {
+						Collections.sort(list, Collections.reverseOrder());
+
+						if (_log.isWarnEnabled()) {
+							if (!useFinderCache) {
+								finderArgs = new Object[] {
+									groupId, externalReferenceCode
+								};
+							}
+
+							_log.warn(
+								"BlogsEntryPersistenceImpl.fetchByG_ERC(long, String, boolean) with parameters (" +
+									StringUtil.merge(finderArgs) +
+										") yields a result set with more than 1 result. This violates the logical unique restriction. There is no order guarantee on which result is returned by this finder.");
+						}
+					}
+
+					BlogsEntry blogsEntry = list.get(0);
+
+					result = blogsEntry;
+
+					cacheResult(blogsEntry);
+				}
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		if (result instanceof List<?>) {
+			return null;
+		}
+		else {
+			return (BlogsEntry)result;
+		}
+	}
+
+	/**
+	 * Removes the blogs entry where groupId = &#63; and externalReferenceCode = &#63; from the database.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the blogs entry that was removed
+	 */
+	@Override
+	public BlogsEntry removeByG_ERC(long groupId, String externalReferenceCode)
+		throws NoSuchEntryException {
+
+		BlogsEntry blogsEntry = findByG_ERC(groupId, externalReferenceCode);
+
+		return remove(blogsEntry);
+	}
+
+	/**
+	 * Returns the number of blogs entries where groupId = &#63; and externalReferenceCode = &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the number of matching blogs entries
+	 */
+	@Override
+	public int countByG_ERC(long groupId, String externalReferenceCode) {
+		externalReferenceCode = Objects.toString(externalReferenceCode, "");
+
+		FinderPath finderPath = _finderPathCountByG_ERC;
+
+		Object[] finderArgs = new Object[] {groupId, externalReferenceCode};
+
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+
+		if (count == null) {
+			StringBundler sb = new StringBundler(3);
+
+			sb.append(_SQL_COUNT_BLOGSENTRY_WHERE);
+
+			sb.append(_FINDER_COLUMN_G_ERC_GROUPID_2);
+
+			boolean bindExternalReferenceCode = false;
+
+			if (externalReferenceCode.isEmpty()) {
+				sb.append(_FINDER_COLUMN_G_ERC_EXTERNALREFERENCECODE_3);
+			}
+			else {
+				bindExternalReferenceCode = true;
+
+				sb.append(_FINDER_COLUMN_G_ERC_EXTERNALREFERENCECODE_2);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(groupId);
+
+				if (bindExternalReferenceCode) {
+					queryPos.add(externalReferenceCode);
+				}
+
+				count = (Long)query.uniqueResult();
+
+				finderCache.putResult(finderPath, finderArgs, count);
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return count.intValue();
+	}
+
+	private static final String _FINDER_COLUMN_G_ERC_GROUPID_2 =
+		"blogsEntry.groupId = ? AND ";
+
+	private static final String _FINDER_COLUMN_G_ERC_EXTERNALREFERENCECODE_2 =
+		"blogsEntry.externalReferenceCode = ?";
+
+	private static final String _FINDER_COLUMN_G_ERC_EXTERNALREFERENCECODE_3 =
+		"(blogsEntry.externalReferenceCode IS NULL OR blogsEntry.externalReferenceCode = '')";
+
 	public BlogsEntryPersistenceImpl() {
 		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
@@ -20999,7 +21262,16 @@ public class BlogsEntryPersistenceImpl
 			_finderPathFetchByG_UT,
 			new Object[] {blogsEntry.getGroupId(), blogsEntry.getUrlTitle()},
 			blogsEntry);
+
+		finderCache.putResult(
+			_finderPathFetchByG_ERC,
+			new Object[] {
+				blogsEntry.getGroupId(), blogsEntry.getExternalReferenceCode()
+			},
+			blogsEntry);
 	}
+
+	private int _valueObjectFinderCacheListThreshold;
 
 	/**
 	 * Caches the blogs entries in the entity cache if it is enabled.
@@ -21008,6 +21280,13 @@ public class BlogsEntryPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<BlogsEntry> blogsEntries) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (blogsEntries.size() > _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (BlogsEntry blogsEntry : blogsEntries) {
 			if (entityCache.getResult(
 					BlogsEntryImpl.class, blogsEntry.getPrimaryKey()) == null) {
@@ -21077,6 +21356,15 @@ public class BlogsEntryPersistenceImpl
 		finderCache.putResult(_finderPathCountByG_UT, args, Long.valueOf(1));
 		finderCache.putResult(
 			_finderPathFetchByG_UT, args, blogsEntryModelImpl);
+
+		args = new Object[] {
+			blogsEntryModelImpl.getGroupId(),
+			blogsEntryModelImpl.getExternalReferenceCode()
+		};
+
+		finderCache.putResult(_finderPathCountByG_ERC, args, Long.valueOf(1));
+		finderCache.putResult(
+			_finderPathFetchByG_ERC, args, blogsEntryModelImpl);
 	}
 
 	/**
@@ -21565,12 +21853,9 @@ public class BlogsEntryPersistenceImpl
 	 * Initializes the blogs entry persistence.
 	 */
 	@Activate
-	public void activate(BundleContext bundleContext) {
-		_bundleContext = bundleContext;
-
-		_argumentsResolverServiceRegistration = _bundleContext.registerService(
-			ArgumentsResolver.class, new BlogsEntryModelArgumentsResolver(),
-			new HashMapDictionary<>());
+	public void activate() {
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
@@ -22057,13 +22342,21 @@ public class BlogsEntryPersistenceImpl
 				Date.class.getName(), Integer.class.getName()
 			},
 			new String[] {"groupId", "userId", "displayDate", "status"}, false);
+
+		_finderPathFetchByG_ERC = new FinderPath(
+			FINDER_CLASS_NAME_ENTITY, "fetchByG_ERC",
+			new String[] {Long.class.getName(), String.class.getName()},
+			new String[] {"groupId", "externalReferenceCode"}, true);
+
+		_finderPathCountByG_ERC = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_ERC",
+			new String[] {Long.class.getName(), String.class.getName()},
+			new String[] {"groupId", "externalReferenceCode"}, false);
 	}
 
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(BlogsEntryImpl.class.getName());
-
-		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -22091,8 +22384,6 @@ public class BlogsEntryPersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
-
-	private BundleContext _bundleContext;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -22162,113 +22453,7 @@ public class BlogsEntryPersistenceImpl
 		return finderCache;
 	}
 
-	private ServiceRegistration<ArgumentsResolver>
-		_argumentsResolverServiceRegistration;
-
-	private static class BlogsEntryModelArgumentsResolver
-		implements ArgumentsResolver {
-
-		@Override
-		public Object[] getArguments(
-			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
-			boolean original) {
-
-			String[] columnNames = finderPath.getColumnNames();
-
-			if ((columnNames == null) || (columnNames.length == 0)) {
-				if (baseModel.isNew()) {
-					return FINDER_ARGS_EMPTY;
-				}
-
-				return null;
-			}
-
-			BlogsEntryModelImpl blogsEntryModelImpl =
-				(BlogsEntryModelImpl)baseModel;
-
-			long columnBitmask = blogsEntryModelImpl.getColumnBitmask();
-
-			if (!checkColumn || (columnBitmask == 0)) {
-				return _getValue(blogsEntryModelImpl, columnNames, original);
-			}
-
-			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
-				finderPath);
-
-			if (finderPathColumnBitmask == null) {
-				finderPathColumnBitmask = 0L;
-
-				for (String columnName : columnNames) {
-					finderPathColumnBitmask |=
-						blogsEntryModelImpl.getColumnBitmask(columnName);
-				}
-
-				if (finderPath.isBaseModelResult() &&
-					(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION ==
-						finderPath.getCacheName())) {
-
-					finderPathColumnBitmask |= _ORDER_BY_COLUMNS_BITMASK;
-				}
-
-				_finderPathColumnBitmasksCache.put(
-					finderPath, finderPathColumnBitmask);
-			}
-
-			if ((columnBitmask & finderPathColumnBitmask) != 0) {
-				return _getValue(blogsEntryModelImpl, columnNames, original);
-			}
-
-			return null;
-		}
-
-		@Override
-		public String getClassName() {
-			return BlogsEntryImpl.class.getName();
-		}
-
-		@Override
-		public String getTableName() {
-			return BlogsEntryTable.INSTANCE.getTableName();
-		}
-
-		private static Object[] _getValue(
-			BlogsEntryModelImpl blogsEntryModelImpl, String[] columnNames,
-			boolean original) {
-
-			Object[] arguments = new Object[columnNames.length];
-
-			for (int i = 0; i < arguments.length; i++) {
-				String columnName = columnNames[i];
-
-				if (original) {
-					arguments[i] = blogsEntryModelImpl.getColumnOriginalValue(
-						columnName);
-				}
-				else {
-					arguments[i] = blogsEntryModelImpl.getColumnValue(
-						columnName);
-				}
-			}
-
-			return arguments;
-		}
-
-		private static final Map<FinderPath, Long>
-			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
-
-		private static final long _ORDER_BY_COLUMNS_BITMASK;
-
-		static {
-			long orderByColumnsBitmask = 0;
-
-			orderByColumnsBitmask |= BlogsEntryModelImpl.getColumnBitmask(
-				"displayDate");
-			orderByColumnsBitmask |= BlogsEntryModelImpl.getColumnBitmask(
-				"createDate");
-
-			_ORDER_BY_COLUMNS_BITMASK = orderByColumnsBitmask;
-		}
-
-	}
+	@Reference
+	private BlogsEntryModelArgumentsResolver _blogsEntryModelArgumentsResolver;
 
 }

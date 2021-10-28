@@ -46,6 +46,12 @@ portletDisplay.setShowBackIcon(true);
 
 						<div class="publication-description"><%= HtmlUtil.escape(ctCollection.getDescription()) %></div>
 					</li>
+					<li class="tbar-item">
+						<react:component
+							module="publications/js/ManageCollaborators"
+							props="<%= publicationsDisplayContext.getCollaboratorsReactData(ctCollection) %>"
+						/>
+					</li>
 
 					<c:if test="<%= CTCollectionPermission.contains(permissionChecker, ctCollection, CTActionKeys.PUBLISH) %>">
 						<c:if test="<%= PropsValues.SCHEDULER_ENABLED %>">
@@ -88,20 +94,26 @@ portletDisplay.setShowBackIcon(true);
 						</li>
 					</c:if>
 
-					<li class="tbar-item">
-						<div class="dropdown">
-							<button class="btn btn-monospaced btn-sm btn-unstyled dropdown-toggle hidden" type="button">
-								<svg class="lexicon-icon lexicon-icon-ellipsis-v publications-hidden" role="presentation">
-									<use xlink:href="<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg#ellipsis-v" />
-								</svg>
-							</button>
-						</div>
+					<%
+					Map<String, Object> dropdownReactData = viewChangesDisplayContext.getDropdownReactData(permissionChecker);
+					%>
 
-						<react:component
-							module="publications/js/DropdownMenu"
-							props="<%= viewChangesDisplayContext.getDropdownReactData(permissionChecker) %>"
-						/>
-					</li>
+					<c:if test="<%= dropdownReactData != null %>">
+						<li class="tbar-item">
+							<div class="dropdown">
+								<button class="btn btn-monospaced btn-sm btn-unstyled dropdown-toggle hidden" type="button">
+									<svg class="lexicon-icon lexicon-icon-ellipsis-v publications-hidden" role="presentation">
+										<use xlink:href="<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg#ellipsis-v" />
+									</svg>
+								</button>
+							</div>
+
+							<react:component
+								module="publications/js/DropdownMenu"
+								props="<%= dropdownReactData %>"
+							/>
+						</li>
+					</c:if>
 				</c:when>
 				<c:when test="<%= ctCollection.getStatus() == WorkflowConstants.STATUS_EXPIRED %>">
 					<li class="tbar-item tbar-item-expand text-left">
@@ -115,6 +127,12 @@ portletDisplay.setShowBackIcon(true);
 						</div>
 
 						<div class="publication-description"><%= HtmlUtil.escape(ctCollection.getDescription()) %></div>
+					</li>
+					<li class="tbar-item">
+						<react:component
+							module="publications/js/ManageCollaborators"
+							props="<%= publicationsDisplayContext.getCollaboratorsReactData(ctCollection) %>"
+						/>
 					</li>
 					<li class="tbar-item">
 						<a class="btn btn-secondary btn-sm disabled" type="button">
@@ -138,20 +156,27 @@ portletDisplay.setShowBackIcon(true);
 							<liferay-ui:message key="publish" />
 						</a>
 					</li>
-					<li class="tbar-item">
-						<div class="dropdown">
-							<button class="btn btn-monospaced btn-sm btn-unstyled dropdown-toggle hidden" type="button">
-								<svg class="lexicon-icon lexicon-icon-ellipsis-v publications-hidden" role="presentation">
-									<use xlink:href="<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg#ellipsis-v" />
-								</svg>
-							</button>
-						</div>
 
-						<react:component
-							module="publications/js/DropdownMenu"
-							props="<%= viewChangesDisplayContext.getDropdownReactData(permissionChecker) %>"
-						/>
-					</li>
+					<%
+					Map<String, Object> dropdownReactData = viewChangesDisplayContext.getDropdownReactData(permissionChecker);
+					%>
+
+					<c:if test="<%= dropdownReactData != null %>">
+						<li class="tbar-item">
+							<div class="dropdown">
+								<button class="btn btn-monospaced btn-sm btn-unstyled dropdown-toggle hidden" type="button">
+									<svg class="lexicon-icon lexicon-icon-ellipsis-v publications-hidden" role="presentation">
+										<use xlink:href="<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg#ellipsis-v" />
+									</svg>
+								</button>
+							</div>
+
+							<react:component
+								module="publications/js/DropdownMenu"
+								props="<%= dropdownReactData %>"
+							/>
+						</li>
+					</c:if>
 				</c:when>
 				<c:when test="<%= ctCollection.getStatus() == WorkflowConstants.STATUS_SCHEDULED %>">
 					<li class="tbar-item tbar-item-expand text-left">
@@ -165,6 +190,12 @@ portletDisplay.setShowBackIcon(true);
 						</div>
 
 						<div class="publication-description"><%= HtmlUtil.escape(viewChangesDisplayContext.getScheduledDescription()) %></div>
+					</li>
+					<li class="tbar-item">
+						<react:component
+							module="publications/js/ManageCollaborators"
+							props="<%= publicationsDisplayContext.getCollaboratorsReactData(ctCollection) %>"
+						/>
 					</li>
 
 					<c:if test="<%= CTCollectionPermission.contains(permissionChecker, ctCollection, CTActionKeys.PUBLISH) && PropsValues.SCHEDULER_ENABLED %>">
@@ -223,6 +254,12 @@ portletDisplay.setShowBackIcon(true);
 						%>
 
 						<div class="publication-description"><%= HtmlUtil.escape(description.concat(LanguageUtil.format(resourceBundle, "published-by-x-on-x", new Object[] {ctCollection.getUserName(), format.format(ctCollection.getStatusDate())}, false))) %></div>
+					</li>
+					<li class="tbar-item">
+						<react:component
+							module="publications/js/ManageCollaborators"
+							props="<%= publicationsDisplayContext.getCollaboratorsReactData(ctCollection) %>"
+						/>
 					</li>
 					<li class="tbar-item">
 						<c:choose>

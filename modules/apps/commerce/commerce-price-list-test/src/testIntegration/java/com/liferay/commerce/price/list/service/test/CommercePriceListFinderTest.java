@@ -38,13 +38,11 @@ import com.liferay.commerce.product.model.CommerceCatalog;
 import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.test.util.CommerceTestUtil;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.SynchronousDestinationTestRule;
-import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -58,7 +56,6 @@ import org.frutilla.FrutillaRule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -78,23 +75,17 @@ public class CommercePriceListFinderTest {
 			PermissionCheckerMethodTestRule.INSTANCE,
 			SynchronousDestinationTestRule.INSTANCE);
 
-	@BeforeClass
-	public static void setUpClass() throws Exception {
-		_company = CompanyTestUtil.addCompany();
-
-		_user = UserTestUtil.addUser(_company);
-	}
-
 	@Before
 	public void setUp() throws Exception {
-		_group = GroupTestUtil.addGroup(
-			_company.getCompanyId(), _user.getUserId(), 0);
+		_group = GroupTestUtil.addGroup();
+
+		_user = UserTestUtil.addUser();
 
 		_commerceCurrency = CommerceCurrencyTestUtil.addCommerceCurrency(
-			_company.getCompanyId());
+			_group.getCompanyId());
 
 		_serviceContext = ServiceContextTestUtil.getServiceContext(
-			_company.getCompanyId(), _group.getGroupId(), _user.getUserId());
+			_group.getCompanyId(), _group.getGroupId(), _user.getUserId());
 
 		_commerceAccount =
 			_commerceAccountLocalService.getPersonalCommerceAccount(
@@ -102,8 +93,8 @@ public class CommercePriceListFinderTest {
 
 		_commerceAccountGroup =
 			_commerceAccountGroupLocalService.addCommerceAccountGroup(
-				_company.getCompanyId(), RandomTestUtil.randomString(), 0,
-				false, null, _serviceContext);
+				_group.getCompanyId(), RandomTestUtil.randomString(), 0, false,
+				null, _serviceContext);
 
 		CommerceAccountGroupCommerceAccountRelLocalServiceUtil.
 			addCommerceAccountGroupCommerceAccountRel(
@@ -121,7 +112,7 @@ public class CommercePriceListFinderTest {
 	@After
 	public void tearDown() throws Exception {
 		_commercePriceListLocalService.deleteCommercePriceLists(
-			_company.getCompanyId());
+			_group.getCompanyId());
 	}
 
 	@Test
@@ -146,9 +137,9 @@ public class CommercePriceListFinderTest {
 		CommercePriceList retrievedPriceList =
 			_commercePriceListLocalService.
 				getCommercePriceListByAccountAndChannelId(
-					_commerceCatalog.getGroupId(), _TYPE,
+					_commerceCatalog.getGroupId(),
 					_commerceAccount.getCommerceAccountId(),
-					_commerceChannel.getCommerceChannelId());
+					_commerceChannel.getCommerceChannelId(), _TYPE);
 
 		Assert.assertEquals(
 			commercePriceList.getCommercePriceListId(),
@@ -199,9 +190,8 @@ public class CommercePriceListFinderTest {
 		CommercePriceList retrievedPriceList =
 			_commercePriceListLocalService.
 				getCommercePriceListByAccountGroupsAndChannelId(
-					_commerceCatalog.getGroupId(), _TYPE,
-					commerceAccountGroupIds,
-					_commerceChannel.getCommerceChannelId());
+					_commerceCatalog.getGroupId(), commerceAccountGroupIds,
+					_commerceChannel.getCommerceChannelId(), _TYPE);
 
 		Assert.assertEquals(
 			commercePriceList.getCommercePriceListId(),
@@ -251,8 +241,8 @@ public class CommercePriceListFinderTest {
 		CommercePriceList retrievedPriceList =
 			_commercePriceListLocalService.
 				getCommercePriceListByAccountGroupIds(
-					_commerceCatalog.getGroupId(), _TYPE,
-					commerceAccountGroupIds);
+					_commerceCatalog.getGroupId(), commerceAccountGroupIds,
+					_TYPE);
 
 		Assert.assertEquals(
 			commercePriceList.getCommercePriceListId(),
@@ -288,8 +278,8 @@ public class CommercePriceListFinderTest {
 
 		CommercePriceList retrievedPriceList =
 			_commercePriceListLocalService.getCommercePriceListByAccountId(
-				_commerceCatalog.getGroupId(), _TYPE,
-				_commerceAccount.getCommerceAccountId());
+				_commerceCatalog.getGroupId(),
+				_commerceAccount.getCommerceAccountId(), _TYPE);
 
 		Assert.assertEquals(
 			commercePriceList.getCommercePriceListId(),
@@ -324,8 +314,8 @@ public class CommercePriceListFinderTest {
 
 		CommercePriceList retrievedPriceList =
 			_commercePriceListLocalService.getCommercePriceListByChannelId(
-				_commerceCatalog.getGroupId(), _TYPE,
-				_commerceChannel.getCommerceChannelId());
+				_commerceCatalog.getGroupId(),
+				_commerceChannel.getCommerceChannelId(), _TYPE);
 
 		Assert.assertEquals(
 			commercePriceList.getCommercePriceListId(),
@@ -363,9 +353,9 @@ public class CommercePriceListFinderTest {
 		CommercePriceList retrievedPriceList =
 			_commercePriceListLocalService.
 				getCommercePriceListByAccountAndChannelId(
-					_commerceCatalog.getGroupId(), _TYPE,
+					_commerceCatalog.getGroupId(),
 					CommerceAccountConstants.ACCOUNT_ID_GUEST,
-					_commerceChannel.getCommerceChannelId());
+					_commerceChannel.getCommerceChannelId(), _TYPE);
 
 		Assert.assertEquals(
 			commercePriceList.getCommercePriceListId(),
@@ -408,8 +398,8 @@ public class CommercePriceListFinderTest {
 
 		CommercePriceList retrievedPriceList =
 			_commercePriceListLocalService.getCommercePriceListByAccountId(
-				_commerceCatalog.getGroupId(), _TYPE,
-				CommerceAccountConstants.ACCOUNT_ID_GUEST);
+				_commerceCatalog.getGroupId(),
+				CommerceAccountConstants.ACCOUNT_ID_GUEST, _TYPE);
 
 		Assert.assertEquals(
 			commercePriceList.getCommercePriceListId(),
@@ -502,8 +492,7 @@ public class CommercePriceListFinderTest {
 
 		Assert.assertEquals(
 			_commerceCatalog.getGroupId(), baseCommercePriceList.getGroupId());
-		Assert.assertEquals(
-			true, baseCommercePriceList.isCatalogBasePriceList());
+		Assert.assertTrue(baseCommercePriceList.isCatalogBasePriceList());
 
 		CommercePriceList commercePriceList =
 			CommercePriceListTestUtil.addCommercePriceList(
@@ -517,7 +506,7 @@ public class CommercePriceListFinderTest {
 			commercePriceList.getCommercePriceListId(),
 			retrievedPriceList.getCommercePriceListId());
 
-		Assert.assertEquals(false, retrievedPriceList.isCatalogBasePriceList());
+		Assert.assertFalse(retrievedPriceList.isCatalogBasePriceList());
 
 		CommercePriceListAccountRel commercePriceListAccountRel =
 			_commercePriceListAccountRelLocalService.
@@ -557,7 +546,6 @@ public class CommercePriceListFinderTest {
 	private static final String _TYPE =
 		CommercePriceListConstants.TYPE_PRICE_LIST;
 
-	private static Company _company;
 	private static User _user;
 
 	private CommerceAccount _commerceAccount;

@@ -54,6 +54,10 @@ public class ContentSubtype implements Serializable {
 		return ObjectMapperUtil.readValue(ContentSubtype.class, json);
 	}
 
+	public static ContentSubtype unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(ContentSubtype.class, json);
+	}
+
 	@Schema(description = "The content subtype's ID.")
 	public Long getSubtypeId() {
 		return subtypeId;
@@ -81,6 +85,34 @@ public class ContentSubtype implements Serializable {
 	@GraphQLField(description = "The content subtype's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long subtypeId;
+
+	@Schema(description = "The content subtype's Key.")
+	public String getSubtypeKey() {
+		return subtypeKey;
+	}
+
+	public void setSubtypeKey(String subtypeKey) {
+		this.subtypeKey = subtypeKey;
+	}
+
+	@JsonIgnore
+	public void setSubtypeKey(
+		UnsafeSupplier<String, Exception> subtypeKeyUnsafeSupplier) {
+
+		try {
+			subtypeKey = subtypeKeyUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The content subtype's Key.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String subtypeKey;
 
 	@Override
 	public boolean equals(Object object) {
@@ -117,6 +149,20 @@ public class ContentSubtype implements Serializable {
 			sb.append("\"subtypeId\": ");
 
 			sb.append(subtypeId);
+		}
+
+		if (subtypeKey != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"subtypeKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(subtypeKey));
+
+			sb.append("\"");
 		}
 
 		sb.append("}");

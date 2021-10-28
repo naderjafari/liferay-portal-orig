@@ -23,6 +23,7 @@ import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.service.CommerceCurrencyService;
 import com.liferay.commerce.exception.NoSuchOrderException;
 import com.liferay.commerce.model.CommerceOrder;
+import com.liferay.commerce.model.CommerceOrderType;
 import com.liferay.commerce.model.CommerceShippingMethod;
 import com.liferay.commerce.order.engine.CommerceOrderEngine;
 import com.liferay.commerce.product.model.CommerceChannel;
@@ -31,6 +32,7 @@ import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.service.CommerceAddressService;
 import com.liferay.commerce.service.CommerceOrderItemService;
 import com.liferay.commerce.service.CommerceOrderService;
+import com.liferay.commerce.service.CommerceOrderTypeService;
 import com.liferay.commerce.service.CommerceShippingMethodService;
 import com.liferay.headless.commerce.admin.order.dto.v1_0.BillingAddress;
 import com.liferay.headless.commerce.admin.order.dto.v1_0.Order;
@@ -45,6 +47,7 @@ import com.liferay.headless.commerce.admin.order.resource.v1_0.OrderResource;
 import com.liferay.headless.commerce.core.util.DateConfig;
 import com.liferay.headless.commerce.core.util.ExpandoUtil;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Sort;
@@ -112,7 +115,7 @@ public class OrderResourceImpl
 
 		if (commerceOrder == null) {
 			throw new NoSuchOrderException(
-				"Unable to find Order with externalReferenceCode: " +
+				"Unable to find order with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -150,7 +153,7 @@ public class OrderResourceImpl
 
 		if (commerceOrder == null) {
 			throw new NoSuchOrderException(
-				"Unable to find Order with externalReferenceCode: " +
+				"Unable to find order with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -201,7 +204,7 @@ public class OrderResourceImpl
 
 		if (commerceOrder == null) {
 			throw new NoSuchOrderException(
-				"Unable to find Order with externalReferenceCode: " +
+				"Unable to find order with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -296,16 +299,18 @@ public class OrderResourceImpl
 
 		CommerceOrder commerceOrder =
 			_commerceOrderService.addOrUpdateCommerceOrder(
-				order.getExternalReferenceCode(), contextUser.getUserId(),
-				commerceChannel.getGroupId(),
+				order.getExternalReferenceCode(), commerceChannel.getGroupId(),
 				commerceAccount.getCommerceAccountId(),
 				commerceCurrency.getCommerceCurrencyId(),
+				_getCommerceOrderTypeId(
+					commerceChannel.getCommerceChannelId(), order),
 				GetterUtil.getLong(order.getBillingAddressId()),
 				GetterUtil.getLong(order.getShippingAddressId()),
 				order.getPaymentMethod(), commerceShippingMethodId,
 				order.getShippingOption(), order.getPurchaseOrderNumber(),
 				order.getSubtotal(), order.getShippingAmount(),
-				order.getTotal(), order.getSubtotalWithTaxAmount(),
+				order.getTaxAmount(), order.getTotal(),
+				order.getSubtotalWithTaxAmount(),
 				order.getShippingWithTaxAmount(), order.getTotalWithTaxAmount(),
 				GetterUtil.getInteger(
 					order.getPaymentStatus(),
@@ -336,10 +341,36 @@ public class OrderResourceImpl
 				orderDate.getMinute(), serviceContext);
 		}
 
-		// Printed note
+		// Requested delivery date
 
-		_commerceOrderService.updatePrintedNote(
-			commerceOrder.getCommerceOrderId(), order.getPrintedNote());
+		if (order.getRequestedDeliveryDate() != null) {
+			Calendar requestedDeliveryDateCalendar =
+				CalendarFactoryUtil.getCalendar(serviceContext.getTimeZone());
+
+			requestedDeliveryDateCalendar.setTime(
+				order.getRequestedDeliveryDate());
+
+			DateConfig requestedDeliveryDate = new DateConfig(
+				requestedDeliveryDateCalendar);
+
+			_commerceOrderService.updateInfo(
+				commerceOrder.getCommerceOrderId(),
+				GetterUtil.getString(
+					order.getPrintedNote(), commerceOrder.getPrintedNote()),
+				requestedDeliveryDate.getMonth(),
+				requestedDeliveryDate.getDay(), requestedDeliveryDate.getYear(),
+				requestedDeliveryDate.getHour(),
+				requestedDeliveryDate.getMinute(), serviceContext);
+		}
+		else {
+
+			// Printed note
+
+			_commerceOrderService.updatePrintedNote(
+				commerceOrder.getCommerceOrderId(),
+				GetterUtil.getString(
+					order.getPrintedNote(), commerceOrder.getPrintedNote()));
+		}
 
 		// Expando
 
@@ -380,6 +411,40 @@ public class OrderResourceImpl
 				ActionKeys.UPDATE, commerceOrder.getCommerceOrderId(),
 				contextUriInfo, "patchOrder", getClass())
 		).build();
+	}
+
+	private long _getCommerceOrderTypeId(long commerceChannelId, Order order)
+		throws Exception {
+
+		if (order.getOrderTypeId() != null) {
+			return order.getOrderTypeId();
+		}
+
+		CommerceOrderType commerceOrderType =
+			_commerceOrderTypeService.fetchByExternalReferenceCode(
+				order.getOrderTypeExternalReferenceCode(),
+				contextCompany.getCompanyId());
+
+		if (commerceOrderType != null) {
+			return commerceOrderType.getCommerceOrderTypeId();
+		}
+
+		int commerceOrderTypesCount =
+			_commerceOrderTypeService.getCommerceOrderTypesCount(
+				CommerceChannel.class.getName(), commerceChannelId, true);
+
+		if (commerceOrderTypesCount == 1) {
+			List<CommerceOrderType> commerceOrderTypes =
+				_commerceOrderTypeService.getCommerceOrderTypes(
+					CommerceChannel.class.getName(), commerceChannelId, true,
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+
+			commerceOrderType = commerceOrderTypes.get(0);
+
+			return commerceOrderType.getCommerceOrderTypeId();
+		}
+
+		return 0;
 	}
 
 	private String _getHttpMethodName(Class<?> clazz, Method method)
@@ -445,7 +510,7 @@ public class OrderResourceImpl
 				commerceOrder.getCommerceOrderId());
 
 			for (OrderItem orderItem : orderItems) {
-				OrderItemUtil.addOrUpdateCommerceOrderItem(
+				OrderItemUtil.addCommerceOrderItem(
 					_cpInstanceService, _commerceOrderItemService,
 					_commerceOrderModelResourcePermission, orderItem,
 					commerceOrder,
@@ -522,6 +587,8 @@ public class OrderResourceImpl
 			(BigDecimal)GetterUtil.getNumber(
 				order.getShippingAmount(), commerceOrder.getShippingAmount()),
 			(BigDecimal)GetterUtil.getNumber(
+				order.getTaxAmount(), commerceOrder.getTaxAmount()),
+			(BigDecimal)GetterUtil.getNumber(
 				order.getTotal(), commerceOrder.getTotal()),
 			(BigDecimal)GetterUtil.getNumber(
 				order.getSubtotalWithTaxAmount(),
@@ -540,6 +607,41 @@ public class OrderResourceImpl
 				GetterUtil.getLong(
 					order.getAccountId(),
 					commerceOrder.getCommerceAccountId())));
+
+		// Requested Delivery Date
+
+		if (order.getRequestedDeliveryDate() != null) {
+			ServiceContext serviceContext =
+				_serviceContextHelper.getServiceContext(
+					commerceOrder.getGroupId());
+
+			Calendar requestedDeliveryDateCalendar =
+				CalendarFactoryUtil.getCalendar(serviceContext.getTimeZone());
+
+			requestedDeliveryDateCalendar.setTime(
+				order.getRequestedDeliveryDate());
+
+			DateConfig requestedDeliveryDate = new DateConfig(
+				requestedDeliveryDateCalendar);
+
+			_commerceOrderService.updateInfo(
+				commerceOrder.getCommerceOrderId(),
+				GetterUtil.getString(
+					order.getPrintedNote(), commerceOrder.getPrintedNote()),
+				requestedDeliveryDate.getMonth(),
+				requestedDeliveryDate.getDay(), requestedDeliveryDate.getYear(),
+				requestedDeliveryDate.getHour(),
+				requestedDeliveryDate.getMinute(), serviceContext);
+		}
+		else {
+
+			// Printed note
+
+			_commerceOrderService.updatePrintedNote(
+				commerceOrder.getCommerceOrderId(),
+				GetterUtil.getString(
+					order.getPrintedNote(), commerceOrder.getPrintedNote()));
+		}
 
 		// Expando
 
@@ -599,6 +701,9 @@ public class OrderResourceImpl
 
 	@Reference
 	private CommerceOrderService _commerceOrderService;
+
+	@Reference
+	private CommerceOrderTypeService _commerceOrderTypeService;
 
 	@Reference
 	private CommerceShippingMethodService _commerceShippingMethodService;

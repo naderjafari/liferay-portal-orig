@@ -67,33 +67,27 @@ public class AssetDisplayLayoutFriendlyURLPrivateLayoutUpgradeProcess
 	}
 
 	private void _upgradeAssetDisplayLayoutFriendlyURLs() throws Exception {
-		StringBundler sb1 = new StringBundler(7);
-
-		sb1.append("select distinct LayoutFriendlyURL.groupId, ");
-		sb1.append("LayoutFriendlyURL.groupId, ");
-		sb1.append("LayoutFriendlyURL.friendlyURL, ");
-		sb1.append("LayoutFriendlyURL.languageId from LayoutFriendlyURL ");
-		sb1.append("inner join Layout on Layout.plid = ");
-		sb1.append("LayoutFriendlyURL.plid where Layout.type_ = ? and ");
-		sb1.append("LayoutFriendlyURL.privateLayout = ?");
-
-		StringBundler sb2 = new StringBundler(5);
-
-		sb2.append("select LayoutFriendlyURL.layoutFriendlyURLid from ");
-		sb2.append("LayoutFriendlyURL where LayoutFriendlyURL.groupId = ? ");
-		sb2.append("and LayoutFriendlyURL.privateLayout = ? and ");
-		sb2.append("LayoutFriendlyURL.friendlyURL = ? and ");
-		sb2.append("LayoutFriendlyURL.languageId = ?");
-
 		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
-				sb1.toString());
+				StringBundler.concat(
+					"select distinct LayoutFriendlyURL.plid, ",
+					"LayoutFriendlyURL.groupId, ",
+					"LayoutFriendlyURL.friendlyURL, ",
+					"LayoutFriendlyURL.languageId from LayoutFriendlyURL ",
+					"inner join Layout on Layout.plid = ",
+					"LayoutFriendlyURL.plid where Layout.type_ = ? and ",
+					"LayoutFriendlyURL.privateLayout = ?"));
 			PreparedStatement preparedStatement2 = connection.prepareStatement(
-				sb2.toString());
+				StringBundler.concat(
+					"select LayoutFriendlyURL.layoutFriendlyURLid from ",
+					"LayoutFriendlyURL where LayoutFriendlyURL.groupId = ? ",
+					"and LayoutFriendlyURL.privateLayout = ? and ",
+					"LayoutFriendlyURL.friendlyURL = ? and ",
+					"LayoutFriendlyURL.languageId = ?"));
 			PreparedStatement preparedStatement3 =
-				AutoBatchPreparedStatementUtil.autoBatch(
-					connection.prepareStatement(
-						"update LayoutFriendlyURL set privateLayout = ?," +
-							"friendlyURL = ? where plid = ?"))) {
+				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+					connection,
+					"update LayoutFriendlyURL set privateLayout = ?," +
+						"friendlyURL = ? where plid = ?")) {
 
 			preparedStatement1.setString(1, LayoutConstants.TYPE_ASSET_DISPLAY);
 			preparedStatement1.setBoolean(2, true);
@@ -120,12 +114,12 @@ public class AssetDisplayLayoutFriendlyURLPrivateLayoutUpgradeProcess
 
 					preparedStatement3.setBoolean(1, false);
 					preparedStatement3.setString(2, newFriendlyURL);
-					preparedStatement3.setLong(2, plid);
+					preparedStatement3.setLong(3, plid);
 
-					preparedStatement2.addBatch();
+					preparedStatement3.addBatch();
 				}
 
-				preparedStatement2.executeBatch();
+				preparedStatement3.executeBatch();
 			}
 		}
 	}

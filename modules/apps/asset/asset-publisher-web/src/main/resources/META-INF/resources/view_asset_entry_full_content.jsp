@@ -70,7 +70,15 @@ Map<String, Object> fragmentsEditorData = HashMapBuilder.<String, Object>put(
 	<%
 	String fullContentRedirect = themeDisplay.getURLCurrent();
 
-	if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(assetEntry.getCompanyId(), assetEntry.getGroupId(), assetEntry.getClassName())) {
+	int assetDisplayPageType = AssetDisplayPageConstants.TYPE_NONE;
+
+	AssetDisplayPageEntry assetDisplayPageEntry = AssetDisplayPageEntryLocalServiceUtil.fetchAssetDisplayPageEntry(assetEntry.getGroupId(), assetEntry.getClassNameId(), assetEntry.getClassPK());
+
+	if (assetDisplayPageEntry != null) {
+		assetDisplayPageType = assetDisplayPageEntry.getType();
+	}
+
+	if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(assetEntry.getCompanyId(), assetEntry.getGroupId(), assetEntry.getClassName()) && (assetDisplayPageType != AssetDisplayPageConstants.TYPE_SPECIFIC)) {
 		fullContentRedirect = redirect;
 	}
 
@@ -230,7 +238,7 @@ Map<String, Object> fragmentsEditorData = HashMapBuilder.<String, Object>put(
 			renderResponse
 		).setMVCPath(
 			"/view_content.jsp"
-		).build();
+		).buildPortletURL();
 
 		if (print) {
 			assetLingsURL.setParameter("viewMode", Constants.PRINT);
@@ -351,7 +359,7 @@ Map<String, Object> fragmentsEditorData = HashMapBuilder.<String, Object>put(
 												"viewMode", Constants.PRINT
 											).setWindowState(
 												LiferayWindowState.POP_UP
-											).build()
+											).buildPortletURL()
 										%>',
 										'',
 										'directories=0,height=480,left=80,location=1,menubar=1,resizable=1,scrollbars=yes,status=0,toolbar=0,top=180,width=640'
@@ -420,13 +428,13 @@ Map<String, Object> fragmentsEditorData = HashMapBuilder.<String, Object>put(
 				<%
 				PortletURL exportAssetURL = PortletURLBuilder.create(
 					assetRenderer.getURLExport(liferayPortletRequest, liferayPortletResponse)
+				).setPortletResource(
+					portletDisplay.getId()
 				).setParameter(
 					"plid", themeDisplay.getPlid()
-				).setParameter(
-					"portletResource", portletDisplay.getId()
 				).setWindowState(
 					LiferayWindowState.EXCLUSIVE
-				).build();
+				).buildPortletURL();
 
 				for (String extension : assetPublisherDisplayContext.getExtensions(assetRenderer)) {
 					exportAssetURL.setParameter("targetExtension", extension);

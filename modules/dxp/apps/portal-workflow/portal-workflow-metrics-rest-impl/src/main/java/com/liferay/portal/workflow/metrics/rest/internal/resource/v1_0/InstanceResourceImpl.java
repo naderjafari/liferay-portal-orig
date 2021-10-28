@@ -82,6 +82,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -213,6 +214,8 @@ public class InstanceResourceImpl
 		searchSearchRequest.setQuery(
 			booleanQuery.addMustQueryClauses(
 				_queries.term("instanceId", instanceId)));
+
+		searchSearchRequest.setSize(10000);
 
 		SearchSearchResponse searchSearchResponse =
 			_searchRequestExecutor.executeSearchRequest(searchSearchRequest);
@@ -861,6 +864,63 @@ public class InstanceResourceImpl
 		);
 	}
 
+	private boolean _isReviewer(Map<String, Object> task) {
+		if (task.get("assigneeIds") == null) {
+			return false;
+		}
+
+		List<Long> assigneeIds = ListUtil.toList(
+			(List<?>)task.get("assigneeIds"), GetterUtil::getLong);
+
+		for (long assigneeId : assigneeIds) {
+			if (ArrayUtil.contains(
+					contextUser.getRoleIds(), GetterUtil.getLong(assigneeId))) {
+
+				return true;
+			}
+		}
+
+		if (task.get("assigneeGroupIds") == null) {
+			return false;
+		}
+
+		List<Long> assigneeGroupIds = ListUtil.toList(
+			(List<?>)task.get("assigneeGroupIds"), GetterUtil::getLong);
+
+		Map<Long, List<Long>> mapGroupRoleIds = new HashMap<>();
+
+		for (long groupId : assigneeGroupIds) {
+			mapGroupRoleIds.put(
+				groupId,
+				Stream.of(
+					roleLocalService.getUserGroupRoles(
+						contextUser.getUserId(), groupId),
+					roleLocalService.getUserGroupGroupRoles(
+						contextUser.getUserId(), groupId)
+				).flatMap(
+					List::stream
+				).map(
+					Role::getRoleId
+				).collect(
+					Collectors.toList()
+				));
+		}
+
+		if (mapGroupRoleIds.isEmpty()) {
+			return false;
+		}
+
+		for (int i = 0; i < assigneeGroupIds.size(); i++) {
+			List<Long> roleIds = mapGroupRoleIds.get(assigneeGroupIds.get(i));
+
+			if (roleIds.contains(assigneeIds.get(i))) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private Date _parseDate(String dateString) {
 		try {
 			return DateUtil.parseDate(
@@ -890,36 +950,20 @@ public class InstanceResourceImpl
 					task.get("assigneeType"), User.class.getName())) {
 
 				for (Object assigneeId : (List<?>)task.get("assigneeIds")) {
-					Assignee assignee = AssigneeUtil.toAssignee(
-						_language, _portal,
-						ResourceBundleUtil.getModuleAndPortalResourceBundle(
-							contextAcceptLanguage.getPreferredLocale(),
-							InstanceResourceImpl.class),
-						GetterUtil.getLong(assigneeId),
-						_userLocalService::fetchUser);
-
-					if (assignee != null) {
-						assignees.add(assignee);
-					}
+					assignees.add(
+						AssigneeUtil.toAssignee(
+							_language, _portal,
+							ResourceBundleUtil.getModuleAndPortalResourceBundle(
+								contextAcceptLanguage.getPreferredLocale(),
+								InstanceResourceImpl.class),
+							GetterUtil.getLong(assigneeId),
+							_userLocalService::fetchUser));
 				}
 			}
 			else if (Objects.equals(
 						task.get("assigneeType"), Role.class.getName())) {
 
-				boolean reviewer = false;
-
-				for (Object assigneeId : (List<?>)task.get("assigneeIds")) {
-					if (ArrayUtil.contains(
-							contextUser.getRoleIds(),
-							GetterUtil.getLong(assigneeId))) {
-
-						reviewer = true;
-
-						break;
-					}
-				}
-
-				assignees.add(_createAssignee(reviewer));
+				assignees.add(_createAssignee(_isReviewer(task)));
 			}
 
 			taskNames.add(
@@ -1131,7 +1175,28 @@ public class InstanceResourceImpl
 
 		Sort sort = (Sort)ArrayUtil.getValue(sorts, 0);
 
-		if (StringUtil.equals(sort.getFieldName(), "createDate")) {
+		if (StringUtil.startsWith(sort.getFieldName(), "assetType")) {
+			fieldSort = _sorts.field(
+				sort.getFieldName(),
+				sort.isReverse() ? SortOrder.DESC : SortOrder.ASC);
+		}
+		else if (StringUtil.equals(sort.getFieldName(), "assigneeName")) {
+			fieldSort = _sorts.field(
+				"tasks.assigneeName",
+				sort.isReverse() ? SortOrder.DESC : SortOrder.ASC);
+
+			fieldSort.setMissing("_last");
+
+			NestedSort nestedSort = _sorts.nested("tasks");
+
+			nestedSort.setFilterQuery(
+				_queries.term("tasks.assigneeType", User.class.getName()));
+
+			fieldSort.setNestedSort(nestedSort);
+
+			fieldSort.setSortMode(SortMode.MIN);
+		}
+		else if (StringUtil.equals(sort.getFieldName(), "createDate")) {
 			fieldSort = _sorts.field(
 				"createDate",
 				sort.isReverse() ? SortOrder.DESC : SortOrder.ASC);
@@ -1153,6 +1218,10 @@ public class InstanceResourceImpl
 			fieldSort.setNestedSort(nestedSort);
 
 			fieldSort.setSortMode(SortMode.MIN);
+		}
+		else if (StringUtil.equals(sort.getFieldName(), "userName")) {
+			fieldSort = _sorts.field(
+				"userName", sort.isReverse() ? SortOrder.DESC : SortOrder.ASC);
 		}
 
 		return fieldSort;

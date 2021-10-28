@@ -28,6 +28,7 @@ import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.model.CPInstanceOptionValueRel;
 import com.liferay.commerce.product.model.CProduct;
 import com.liferay.commerce.product.service.base.CPInstanceLocalServiceBaseImpl;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryDefinition;
@@ -51,6 +52,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.Constants;
@@ -65,6 +67,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
+import com.liferay.portal.spring.extender.service.ServiceReference;
 
 import java.io.Serializable;
 
@@ -275,7 +278,7 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 		}
 
 		Date expirationDate = null;
-		Date now = new Date();
+		Date date = new Date();
 
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
@@ -338,16 +341,16 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 
 		cpInstance.setStatus(WorkflowConstants.STATUS_DRAFT);
 
-		if ((displayDate != null) && now.before(displayDate)) {
+		if ((displayDate != null) && date.before(displayDate)) {
 			cpInstance.setStatus(WorkflowConstants.STATUS_SCHEDULED);
 		}
 
-		if (!neverExpire && expirationDate.before(now)) {
+		if (!neverExpire && expirationDate.before(date)) {
 			cpInstance.setStatus(WorkflowConstants.STATUS_EXPIRED);
 		}
 
 		cpInstance.setStatusByUserId(user.getUserId());
-		cpInstance.setStatusDate(serviceContext.getModifiedDate(now));
+		cpInstance.setStatusDate(serviceContext.getModifiedDate(date));
 		cpInstance.setExpandoBridgeAttributes(serviceContext);
 		cpInstance.setUnspsc(unspsc);
 
@@ -952,11 +955,11 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(cpInstance.getCPInstanceId());
+		_expandoRowLocalService.deleteRows(cpInstance.getCPInstanceId());
 
 		// Workflow
 
-		workflowInstanceLinkLocalService.deleteWorkflowInstanceLinks(
+		_workflowInstanceLinkLocalService.deleteWorkflowInstanceLinks(
 			cpInstance.getCompanyId(), cpInstance.getGroupId(),
 			CPInstance.class.getName(), cpInstance.getCPInstanceId());
 
@@ -1389,7 +1392,7 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 		}
 
 		Date expirationDate = null;
-		Date now = new Date();
+		Date date = new Date();
 
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
@@ -1418,12 +1421,12 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 		cpInstance.setDisplayDate(displayDate);
 		cpInstance.setExpirationDate(expirationDate);
 
-		if (!neverExpire && expirationDate.before(now)) {
+		if (!neverExpire && expirationDate.before(date)) {
 			cpInstance.setStatus(WorkflowConstants.STATUS_EXPIRED);
 		}
 
 		cpInstance.setStatusByUserId(user.getUserId());
-		cpInstance.setStatusDate(serviceContext.getModifiedDate(now));
+		cpInstance.setStatusDate(serviceContext.getModifiedDate(date));
 		cpInstance.setExpandoBridgeAttributes(serviceContext);
 		cpInstance.setUnspsc(unspsc);
 
@@ -1530,7 +1533,7 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 		throws PortalException {
 
 		User user = userLocalService.getUser(userId);
-		Date now = new Date();
+		Date date = new Date();
 
 		CPInstance cpInstance = cpInstancePersistence.findByPrimaryKey(
 			cpInstanceId);
@@ -1546,7 +1549,7 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 
 		if ((status == WorkflowConstants.STATUS_APPROVED) &&
 			(cpInstance.getDisplayDate() != null) &&
-			now.before(cpInstance.getDisplayDate())) {
+			date.before(cpInstance.getDisplayDate())) {
 
 			status = WorkflowConstants.STATUS_SCHEDULED;
 		}
@@ -1554,13 +1557,13 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 		if (status == WorkflowConstants.STATUS_APPROVED) {
 			Date expirationDate = cpInstance.getExpirationDate();
 
-			if ((expirationDate != null) && expirationDate.before(now)) {
+			if ((expirationDate != null) && expirationDate.before(date)) {
 				cpInstance.setExpirationDate(null);
 			}
 		}
 
 		if (status == WorkflowConstants.STATUS_EXPIRED) {
-			cpInstance.setExpirationDate(now);
+			cpInstance.setExpirationDate(date);
 		}
 
 		if ((cpInstance.getStatus() == WorkflowConstants.STATUS_APPROVED) &&
@@ -1574,7 +1577,7 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 		cpInstance.setStatus(status);
 		cpInstance.setStatusByUserId(user.getUserId());
 		cpInstance.setStatusByUserName(user.getFullName());
-		cpInstance.setStatusDate(now);
+		cpInstance.setStatusDate(date);
 
 		return cpInstancePersistence.update(cpInstance);
 	}
@@ -2229,11 +2232,9 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 		CPInstance cpInstance = cpInstancePersistence.fetchByC_S(
 			cpDefinitionId, sku);
 
-		if (cpInstance == null) {
-			return;
-		}
+		if ((cpInstance == null) ||
+			(cpInstanceId == cpInstance.getCPInstanceId())) {
 
-		if (cpInstanceId == cpInstance.getCPInstanceId()) {
 			return;
 		}
 
@@ -2247,5 +2248,11 @@ public class CPInstanceLocalServiceImpl extends CPInstanceLocalServiceBaseImpl {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		CPInstanceLocalServiceImpl.class);
+
+	@ServiceReference(type = ExpandoRowLocalService.class)
+	private ExpandoRowLocalService _expandoRowLocalService;
+
+	@ServiceReference(type = WorkflowInstanceLinkLocalService.class)
+	private WorkflowInstanceLinkLocalService _workflowInstanceLinkLocalService;
 
 }

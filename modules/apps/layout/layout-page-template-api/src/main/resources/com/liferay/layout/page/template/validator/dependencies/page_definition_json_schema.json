@@ -525,6 +525,10 @@
 					"title": "The height Schema",
 					"type": "string"
 				},
+				"hidden": {
+					"title": "The hidden Schema",
+					"type": "boolean"
+				},
 				"marginBottom": {
 					"title": "The marginBottom Schema",
 					"type": "string"
@@ -607,6 +611,10 @@
 				"fragmentViewportStyle": {
 					"additionalProperties": false,
 					"properties": {
+						"hidden": {
+							"title": "The hidden Schema",
+							"type": "boolean"
+						},
 						"marginBottom": {
 							"title": "The marginBottom Schema",
 							"type": "string"
@@ -750,6 +758,20 @@
 					"minimum": 0,
 					"title": "The numberOfItems Schema",
 					"type": "integer"
+				},
+				"numberOfItemsPerPage": {
+					"minimum": 0,
+					"title": "The numberOfItemsPerPage Schema",
+					"type": "integer"
+				},
+				"paginationType": {
+					"enum": [
+						"None",
+						"Regular",
+						"Simple"
+					],
+					"title": "The paginationType Schema",
+					"type": "string"
 				},
 				"templateKey": {
 					"title": "The templateKey Schema",
@@ -1277,6 +1299,7 @@
 					"properties": {
 						"align": {
 							"enum": [
+								"Baseline",
 								"Center",
 								"End",
 								"None",
@@ -1317,7 +1340,8 @@
 						"contentDisplay": {
 							"enum": [
 								"Block",
-								"Flex"
+								"FlexColumn",
+								"FlexRow"
 							],
 							"title": "The contentDisplay Schema",
 							"type": "string"
@@ -1666,6 +1690,10 @@
 			},
 			"title": "The settings Schema",
 			"type": "object"
+		},
+		"version": {
+			"title": "The version Schema",
+			"type": "number"
 		}
 	},
 	"required": [

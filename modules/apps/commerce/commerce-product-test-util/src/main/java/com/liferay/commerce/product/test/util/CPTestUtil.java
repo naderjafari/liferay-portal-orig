@@ -652,16 +652,15 @@ public class CPTestUtil {
 				Field.STATUS, status
 			).put(
 				"params",
-				LinkedHashMapBuilder.<String, Object>put(
-					"keywords",
-					() -> {
-						if (Validator.isNotNull(keywords)) {
-							return keywords;
-						}
-
-						return StringPool.STAR;
+				() -> {
+					if (Validator.isNotNull(keywords)) {
+						return LinkedHashMapBuilder.<String, Object>put(
+							"keywords", keywords
+						).build();
 					}
-				).build()
+
+					return null;
+				}
 			).build());
 
 		searchContext.setCompanyId(group.getCompanyId());
@@ -669,9 +668,6 @@ public class CPTestUtil {
 
 		if (Validator.isNotNull(keywords)) {
 			searchContext.setKeywords(keywords);
-		}
-		else {
-			searchContext.setKeywords(StringPool.STAR);
 		}
 
 		return searchContext;

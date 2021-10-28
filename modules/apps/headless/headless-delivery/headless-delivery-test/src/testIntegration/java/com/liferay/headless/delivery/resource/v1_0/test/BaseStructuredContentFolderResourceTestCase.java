@@ -39,7 +39,6 @@ import com.liferay.portal.kernel.json.JSONDeserializer;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -61,9 +60,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -235,19 +232,18 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 	public void testGetAssetLibraryStructuredContentFoldersPage()
 		throws Exception {
 
-		Page<StructuredContentFolder> page =
-			structuredContentFolderResource.
-				getAssetLibraryStructuredContentFoldersPage(
-					testGetAssetLibraryStructuredContentFoldersPage_getAssetLibraryId(),
-					null, RandomTestUtil.randomString(), null, null,
-					Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long assetLibraryId =
 			testGetAssetLibraryStructuredContentFoldersPage_getAssetLibraryId();
 		Long irrelevantAssetLibraryId =
 			testGetAssetLibraryStructuredContentFoldersPage_getIrrelevantAssetLibraryId();
+
+		Page<StructuredContentFolder> page =
+			structuredContentFolderResource.
+				getAssetLibraryStructuredContentFoldersPage(
+					assetLibraryId, null, null, null, null,
+					Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantAssetLibraryId != null) {
 			StructuredContentFolder irrelevantStructuredContentFolder =
@@ -280,8 +276,8 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 		page =
 			structuredContentFolderResource.
 				getAssetLibraryStructuredContentFoldersPage(
-					assetLibraryId, null, null, null, null, Pagination.of(1, 2),
-					null);
+					assetLibraryId, null, null, null, null,
+					Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -469,7 +465,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -693,17 +689,15 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 	@Test
 	public void testGetSiteStructuredContentFoldersPage() throws Exception {
-		Page<StructuredContentFolder> page =
-			structuredContentFolderResource.getSiteStructuredContentFoldersPage(
-				testGetSiteStructuredContentFoldersPage_getSiteId(), null,
-				RandomTestUtil.randomString(), null, null, Pagination.of(1, 2),
-				null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long siteId = testGetSiteStructuredContentFoldersPage_getSiteId();
 		Long irrelevantSiteId =
 			testGetSiteStructuredContentFoldersPage_getIrrelevantSiteId();
+
+		Page<StructuredContentFolder> page =
+			structuredContentFolderResource.getSiteStructuredContentFoldersPage(
+				siteId, null, null, null, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantSiteId != null) {
 			StructuredContentFolder irrelevantStructuredContentFolder =
@@ -735,7 +729,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 		page =
 			structuredContentFolderResource.getSiteStructuredContentFoldersPage(
-				siteId, null, null, null, null, Pagination.of(1, 2), null);
+				siteId, null, null, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -914,7 +908,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -1047,7 +1041,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 			new HashMap<String, Object>() {
 				{
 					put("page", 1);
-					put("pageSize", 2);
+					put("pageSize", 10);
 
 					put("siteKey", "\"" + siteId + "\"");
 				}
@@ -1073,7 +1067,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 			"JSONObject/structuredContentFolders");
 
 		Assert.assertEquals(
-			2, structuredContentFoldersJSONObject.get("totalCount"));
+			2, structuredContentFoldersJSONObject.getLong("totalCount"));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(structuredContentFolder1, structuredContentFolder2),
@@ -1260,19 +1254,18 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 	public void testGetStructuredContentFolderStructuredContentFoldersPage()
 		throws Exception {
 
-		Page<StructuredContentFolder> page =
-			structuredContentFolderResource.
-				getStructuredContentFolderStructuredContentFoldersPage(
-					testGetStructuredContentFolderStructuredContentFoldersPage_getParentStructuredContentFolderId(),
-					RandomTestUtil.randomString(), null, null,
-					Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long parentStructuredContentFolderId =
 			testGetStructuredContentFolderStructuredContentFoldersPage_getParentStructuredContentFolderId();
 		Long irrelevantParentStructuredContentFolderId =
 			testGetStructuredContentFolderStructuredContentFoldersPage_getIrrelevantParentStructuredContentFolderId();
+
+		Page<StructuredContentFolder> page =
+			structuredContentFolderResource.
+				getStructuredContentFolderStructuredContentFoldersPage(
+					parentStructuredContentFolderId, null, null, null,
+					Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantParentStructuredContentFolderId != null) {
 			StructuredContentFolder irrelevantStructuredContentFolder =
@@ -1308,7 +1301,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 			structuredContentFolderResource.
 				getStructuredContentFolderStructuredContentFoldersPage(
 					parentStructuredContentFolderId, null, null, null,
-					Pagination.of(1, 2), null);
+					Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -1501,7 +1494,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -1934,7 +1927,9 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 				Class<?> clazz = object.getClass();
 
-				for (Field field : getDeclaredFields(clazz.getSuperclass())) {
+				for (java.lang.reflect.Field field :
+						getDeclaredFields(clazz.getSuperclass())) {
+
 					arraySB.append(field.getName());
 					arraySB.append(": ");
 
@@ -1980,7 +1975,9 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 		StringBuilder sb = new StringBuilder("{");
 
-		for (Field field : getDeclaredFields(StructuredContentFolder.class)) {
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(StructuredContentFolder.class)) {
+
 			if (!ArrayUtil.contains(
 					getAdditionalAssertFieldNames(), field.getName())) {
 
@@ -2020,6 +2017,26 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 				"JSONObject/data",
 				"JSONObject/createSiteStructuredContentFolder"),
 			StructuredContentFolder.class);
+	}
+
+	protected void assertContains(
+		StructuredContentFolder structuredContentFolder,
+		List<StructuredContentFolder> structuredContentFolders) {
+
+		boolean contains = false;
+
+		for (StructuredContentFolder item : structuredContentFolders) {
+			if (equals(structuredContentFolder, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			structuredContentFolders + " does not contain " +
+				structuredContentFolder,
+			contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -2256,7 +2273,7 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.
 						StructuredContentFolder.class)) {
@@ -2273,12 +2290,13 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -2508,14 +2526,16 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -2875,8 +2895,9 @@ public abstract class BaseStructuredContentFolderResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseStructuredContentFolderResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(
+			BaseStructuredContentFolderResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

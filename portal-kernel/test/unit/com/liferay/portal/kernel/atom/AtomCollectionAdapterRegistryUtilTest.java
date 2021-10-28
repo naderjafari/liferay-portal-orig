@@ -14,11 +14,8 @@
 
 package com.liferay.portal.kernel.atom;
 
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,18 +23,15 @@ import java.util.Objects;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Tina Tian
  */
 public class AtomCollectionAdapterRegistryUtilTest {
-
-	@BeforeClass
-	public static void setUpClass() {
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
-	}
 
 	@Before
 	public void setUp() {
@@ -53,12 +47,12 @@ public class AtomCollectionAdapterRegistryUtilTest {
 					return null;
 				});
 
-		Registry registry = RegistryUtil.getRegistry();
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
-		_serviceRegistration = registry.registerService(
+		_serviceRegistration = bundleContext.registerService(
 			(Class<AtomCollectionAdapter<?>>)
 				(Class<?>)AtomCollectionAdapter.class,
-			_atomCollectionAdapter);
+			_atomCollectionAdapter, null);
 	}
 
 	@After

@@ -125,7 +125,7 @@ AnnouncementsAdminViewManagementToolbarDisplayContext announcementsAdminViewMana
 							currentURL
 						).setParameter(
 							"entryId", entry.getEntryId()
-						).build()
+						).buildPortletURL()
 					%>'
 					name="title"
 					value="<%= HtmlUtil.escape(entry.getTitle()) %>"
@@ -133,7 +133,7 @@ AnnouncementsAdminViewManagementToolbarDisplayContext announcementsAdminViewMana
 
 				<liferay-ui:search-container-column-text
 					name="type"
-					value="<%= LanguageUtil.get(resourceBundle, entry.getType()) %>"
+					value="<%= HtmlUtil.escape(LanguageUtil.get(resourceBundle, entry.getType())) %>"
 				/>
 
 				<liferay-ui:search-container-column-date

@@ -57,6 +57,39 @@ public class UserAccount implements Serializable {
 		return ObjectMapperUtil.readValue(UserAccount.class, json);
 	}
 
+	public static UserAccount unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(UserAccount.class, json);
+	}
+
+	@Schema(description = "A list of the user's account.")
+	@Valid
+	public AccountBrief[] getAccountBriefs() {
+		return accountBriefs;
+	}
+
+	public void setAccountBriefs(AccountBrief[] accountBriefs) {
+		this.accountBriefs = accountBriefs;
+	}
+
+	@JsonIgnore
+	public void setAccountBriefs(
+		UnsafeSupplier<AccountBrief[], Exception> accountBriefsUnsafeSupplier) {
+
+		try {
+			accountBriefs = accountBriefsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "A list of the user's account.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected AccountBrief[] accountBriefs;
+
 	@Schema
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
@@ -318,6 +351,36 @@ public class UserAccount implements Serializable {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String emailAddress;
 
+	@Schema(description = "The optional external key of this user account.")
+	public String getExternalReferenceCode() {
+		return externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		this.externalReferenceCode = externalReferenceCode;
+	}
+
+	@JsonIgnore
+	public void setExternalReferenceCode(
+		UnsafeSupplier<String, Exception> externalReferenceCodeUnsafeSupplier) {
+
+		try {
+			externalReferenceCode = externalReferenceCodeUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The optional external key of this user account."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String externalReferenceCode;
+
 	@Schema(description = "The user's surname (last name).")
 	public String getFamilyName() {
 		return familyName;
@@ -542,6 +605,34 @@ public class UserAccount implements Serializable {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String[] keywords;
 
+	@Schema(description = "The last time the user logged in.")
+	public Date getLastLoginDate() {
+		return lastLoginDate;
+	}
+
+	public void setLastLoginDate(Date lastLoginDate) {
+		this.lastLoginDate = lastLoginDate;
+	}
+
+	@JsonIgnore
+	public void setLastLoginDate(
+		UnsafeSupplier<Date, Exception> lastLoginDateUnsafeSupplier) {
+
+		try {
+			lastLoginDate = lastLoginDateUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The last time the user logged in.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Date lastLoginDate;
+
 	@Schema(description = "The user's full name.")
 	public String getName() {
 		return name;
@@ -747,6 +838,26 @@ public class UserAccount implements Serializable {
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
 
+		if (accountBriefs != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"accountBriefs\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < accountBriefs.length; i++) {
+				sb.append(String.valueOf(accountBriefs[i]));
+
+				if ((i + 1) < accountBriefs.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (actions != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -875,6 +986,20 @@ public class UserAccount implements Serializable {
 			sb.append("\"");
 		}
 
+		if (externalReferenceCode != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(externalReferenceCode));
+
+			sb.append("\"");
+		}
+
 		if (familyName != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -991,6 +1116,20 @@ public class UserAccount implements Serializable {
 			}
 
 			sb.append("]");
+		}
+
+		if (lastLoginDate != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"lastLoginDate\": ");
+
+			sb.append("\"");
+
+			sb.append(liferayToJSONDateFormat.format(lastLoginDate));
+
+			sb.append("\"");
 		}
 
 		if (name != null) {

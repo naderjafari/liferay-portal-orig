@@ -461,7 +461,7 @@ public class DefaultWorkflowEngineImpl
 			WorkflowModelSearchResult<WorkflowInstance>
 				workflowModelSearchResult = searchWorkflowInstances(
 					userId, assetClassName, assetTitle, assetDescription,
-					nodeName, kaleoDefinitionName, completed, start, end,
+					nodeName, kaleoDefinitionName, completed, false, start, end,
 					orderByComparator, serviceContext);
 
 			return workflowModelSearchResult.getWorkflowModels();
@@ -496,7 +496,8 @@ public class DefaultWorkflowEngineImpl
 	public WorkflowModelSearchResult<WorkflowInstance> searchWorkflowInstances(
 			Long userId, String assetClassName, String assetTitle,
 			String assetDescription, String nodeName,
-			String kaleoDefinitionName, Boolean completed, int start, int end,
+			String kaleoDefinitionName, Boolean completed,
+			boolean searchByActiveWorkflowHandlers, int start, int end,
 			OrderByComparator<WorkflowInstance> orderByComparator,
 			ServiceContext serviceContext)
 		throws WorkflowException {
@@ -505,7 +506,8 @@ public class DefaultWorkflowEngineImpl
 			BaseModelSearchResult<KaleoInstance> baseModelSearchResult =
 				kaleoInstanceLocalService.searchKaleoInstances(
 					userId, assetClassName, assetTitle, assetDescription,
-					nodeName, kaleoDefinitionName, completed, start, end,
+					nodeName, kaleoDefinitionName, completed,
+					searchByActiveWorkflowHandlers, start, end,
 					KaleoInstanceOrderByComparator.getOrderByComparator(
 						orderByComparator, _kaleoWorkflowModelConverter,
 						serviceContext),
@@ -526,9 +528,21 @@ public class DefaultWorkflowEngineImpl
 
 	@Override
 	public WorkflowInstance signalWorkflowInstance(
-			long workflowInstanceId, final String transitionName,
+			long workflowInstanceId, String transitionName,
 			Map<String, Serializable> workflowContext,
 			ServiceContext serviceContext)
+		throws WorkflowException {
+
+		return signalWorkflowInstance(
+			workflowInstanceId, transitionName, workflowContext, serviceContext,
+			false);
+	}
+
+	@Override
+	public WorkflowInstance signalWorkflowInstance(
+			long workflowInstanceId, final String transitionName,
+			Map<String, Serializable> workflowContext,
+			ServiceContext serviceContext, boolean waitForCompletion)
 		throws WorkflowException {
 
 		try {
@@ -561,7 +575,8 @@ public class DefaultWorkflowEngineImpl
 					public Void call() throws Exception {
 						try {
 							_kaleoSignaler.signalExit(
-								transitionName, executionContext);
+								transitionName, executionContext,
+								waitForCompletion);
 						}
 						catch (Exception exception) {
 							throw new WorkflowException(
@@ -587,9 +602,21 @@ public class DefaultWorkflowEngineImpl
 	@Override
 	public WorkflowInstance startWorkflowInstance(
 			String workflowDefinitionName, Integer workflowDefinitionVersion,
+			String transitionName, Map<String, Serializable> workflowContext,
+			ServiceContext serviceContext)
+		throws WorkflowException {
+
+		return startWorkflowInstance(
+			workflowDefinitionName, workflowDefinitionVersion, transitionName,
+			workflowContext, serviceContext, false);
+	}
+
+	@Override
+	public WorkflowInstance startWorkflowInstance(
+			String workflowDefinitionName, Integer workflowDefinitionVersion,
 			final String transitionName,
 			Map<String, Serializable> workflowContext,
-			ServiceContext serviceContext)
+			ServiceContext serviceContext, boolean waitForCompletion)
 		throws WorkflowException {
 
 		try {
@@ -661,7 +688,8 @@ public class DefaultWorkflowEngineImpl
 					public Void call() throws Exception {
 						try {
 							_kaleoSignaler.signalEntry(
-								transitionName, executionContext);
+								transitionName, executionContext,
+								waitForCompletion);
 						}
 						catch (Exception exception) {
 							throw new WorkflowException(

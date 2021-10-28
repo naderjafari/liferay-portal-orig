@@ -36,7 +36,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -56,9 +55,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -346,6 +343,32 @@ public abstract class BaseWikiPageResourceTestCase {
 
 		assertEquals(randomWikiPage, getWikiPage);
 		assertValid(getWikiPage);
+
+		WikiPage newWikiPage =
+			testPutSiteWikiPageByExternalReferenceCode_createWikiPage();
+
+		putWikiPage = wikiPageResource.putSiteWikiPageByExternalReferenceCode(
+			newWikiPage.getSiteId(), newWikiPage.getExternalReferenceCode(),
+			newWikiPage);
+
+		assertEquals(newWikiPage, putWikiPage);
+		assertValid(putWikiPage);
+
+		getWikiPage = wikiPageResource.getSiteWikiPageByExternalReferenceCode(
+			putWikiPage.getSiteId(), putWikiPage.getExternalReferenceCode());
+
+		assertEquals(newWikiPage, getWikiPage);
+
+		Assert.assertEquals(
+			newWikiPage.getExternalReferenceCode(),
+			putWikiPage.getExternalReferenceCode());
+	}
+
+	protected WikiPage
+			testPutSiteWikiPageByExternalReferenceCode_createWikiPage()
+		throws Exception {
+
+		return randomWikiPage();
 	}
 
 	protected WikiPage testPutSiteWikiPageByExternalReferenceCode_addWikiPage()
@@ -357,16 +380,14 @@ public abstract class BaseWikiPageResourceTestCase {
 
 	@Test
 	public void testGetWikiNodeWikiPagesPage() throws Exception {
-		Page<WikiPage> page = wikiPageResource.getWikiNodeWikiPagesPage(
-			testGetWikiNodeWikiPagesPage_getWikiNodeId(),
-			RandomTestUtil.randomString(), null, null, Pagination.of(1, 2),
-			null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long wikiNodeId = testGetWikiNodeWikiPagesPage_getWikiNodeId();
 		Long irrelevantWikiNodeId =
 			testGetWikiNodeWikiPagesPage_getIrrelevantWikiNodeId();
+
+		Page<WikiPage> page = wikiPageResource.getWikiNodeWikiPagesPage(
+			wikiNodeId, null, null, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantWikiNodeId != null) {
 			WikiPage irrelevantWikiPage =
@@ -392,7 +413,7 @@ public abstract class BaseWikiPageResourceTestCase {
 			wikiNodeId, randomWikiPage());
 
 		page = wikiPageResource.getWikiNodeWikiPagesPage(
-			wikiNodeId, null, null, null, Pagination.of(1, 2), null);
+			wikiNodeId, null, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -537,7 +558,7 @@ public abstract class BaseWikiPageResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -665,15 +686,15 @@ public abstract class BaseWikiPageResourceTestCase {
 
 	@Test
 	public void testGetWikiPageWikiPagesPage() throws Exception {
-		Page<WikiPage> page = wikiPageResource.getWikiPageWikiPagesPage(
-			testGetWikiPageWikiPagesPage_getParentWikiPageId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long parentWikiPageId =
 			testGetWikiPageWikiPagesPage_getParentWikiPageId();
 		Long irrelevantParentWikiPageId =
 			testGetWikiPageWikiPagesPage_getIrrelevantParentWikiPageId();
+
+		Page<WikiPage> page = wikiPageResource.getWikiPageWikiPagesPage(
+			parentWikiPageId);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantParentWikiPageId != null) {
 			WikiPage irrelevantWikiPage =
@@ -988,6 +1009,21 @@ public abstract class BaseWikiPageResourceTestCase {
 			"This method needs to be implemented");
 	}
 
+	protected void assertContains(WikiPage wikiPage, List<WikiPage> wikiPages) {
+		boolean contains = false;
+
+		for (WikiPage item : wikiPages) {
+			if (equals(wikiPage, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			wikiPages + " does not contain " + wikiPage, contains);
+	}
+
 	protected void assertHttpResponseStatusCode(
 		int expectedHttpResponseStatusCode,
 		HttpInvoker.HttpResponse actualHttpResponse) {
@@ -1254,7 +1290,7 @@ public abstract class BaseWikiPageResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.WikiPage.class)) {
 
@@ -1270,12 +1306,13 @@ public abstract class BaseWikiPageResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1591,14 +1628,16 @@ public abstract class BaseWikiPageResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1988,8 +2027,8 @@ public abstract class BaseWikiPageResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseWikiPageResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseWikiPageResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

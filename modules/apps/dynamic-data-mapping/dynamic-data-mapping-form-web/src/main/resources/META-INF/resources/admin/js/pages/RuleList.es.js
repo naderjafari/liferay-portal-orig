@@ -12,17 +12,17 @@
  * details.
  */
 
-import './RuleList.scss';
-
 import ClayButton from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
 import ClayLabel from '@clayui/label';
 import ClayLayout from '@clayui/layout';
 import ClayList from '@clayui/list';
+import {RulesSupport, capitalize} from 'data-engine-js-components-web';
 import {LangUtil, OPERATOR_OPTIONS_TYPES} from 'data-engine-taglib';
-import {RulesSupport} from 'dynamic-data-mapping-form-builder';
 import React, {useMemo} from 'react';
+
+import './RuleList.scss';
 
 const LOGICAL_OPERATOR = {
 	AND: Liferay.Language.get('and'),
@@ -31,7 +31,7 @@ const LOGICAL_OPERATOR = {
 
 const OPERATORS = {
 	'belongs-to': Liferay.Language.get('belongs-to'),
-	contains: Liferay.Language.get('contains'),
+	'contains': Liferay.Language.get('contains'),
 	'equals-to': Liferay.Language.get('is-equal-to'),
 	'greater-than': Liferay.Language.get('is-greater-than'),
 	'greater-than-equals': Liferay.Language.get('is-greater-than-or-equal-to'),
@@ -107,6 +107,8 @@ const Operand = ({field, left, type, value}) => {
 				return value;
 			case 'json':
 				return getOperandTypeJson(JSON.parse(value), left.field);
+			case 'checkbox':
+				return capitalize(value);
 			default:
 				return value;
 		}
@@ -232,11 +234,11 @@ const ActionDefault = ({action, fields, target}) => (
 
 const ACTIONS = {
 	'auto-fill': ActionAutoFill,
-	calculate: ActionCalculate,
-	enable: ActionDefault,
+	'calculate': ActionCalculate,
+	'enable': ActionDefault,
 	'jump-to-page': ActionJumpToPage,
-	require: ActionDefault,
-	show: ActionDefault,
+	'require': ActionDefault,
+	'show': ActionDefault,
 };
 
 const LogicalOperator = ({children, logicalOperator}) => (

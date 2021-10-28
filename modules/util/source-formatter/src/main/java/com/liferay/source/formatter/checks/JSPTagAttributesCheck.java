@@ -94,7 +94,13 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 	}
 
 	@Override
-	protected Tag formatTagAttributeType(Tag tag) throws Exception {
+	protected Tag formatTagAttributeType(String absolutePath, Tag tag)
+		throws Exception {
+
+		if (absolutePath.endsWith(".jspx")) {
+			return tag;
+		}
+
 		Map<String, String> setMethodsMap = _getSetMethodsMap(tag.getName());
 
 		Map<String, String> attributesMap = tag.getAttributesMap();
@@ -110,6 +116,12 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 			String attributeValue = entry.getValue();
 
 			String tagName = tag.getName();
+
+			if (tagName.matches("\\w+")) {
+				tag.putAttribute(
+					attributeName,
+					_formatPortletNamespaceValue(attributeValue));
+			}
 
 			if (tagName.equals("aui:button") && attributeName.equals("type") &&
 				attributeValue.equals("button")) {
@@ -204,6 +216,22 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 
 		if (parametersList.size() == 1) {
 			return matcher.replaceFirst("$1$2$3");
+		}
+
+		return attributeValue;
+	}
+
+	private String _formatPortletNamespaceValue(String attributeValue) {
+		if (attributeValue.matches(
+				"<%= liferayPortletResponse\\.getNamespace\\(\\) \\+ " +
+					"\"\\w+\" %>")) {
+
+			return StringUtil.replace(
+				attributeValue,
+				new String[] {
+					"<%= liferayPortletResponse.getNamespace() + \"", "\" %>"
+				},
+				new String[] {"<portlet:namespace />", ""});
 		}
 
 		return attributeValue;

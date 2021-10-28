@@ -29,8 +29,10 @@ import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.constants.JournalWebKeys;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.model.JournalFolder;
+import com.liferay.journal.service.JournalArticleServiceUtil;
 import com.liferay.journal.service.JournalFolderLocalServiceUtil;
 import com.liferay.journal.util.JournalConverter;
+import com.liferay.journal.web.internal.configuration.JournalWebConfiguration;
 import com.liferay.journal.web.internal.security.permission.resource.JournalArticlePermission;
 import com.liferay.journal.web.internal.security.permission.resource.JournalFolderPermission;
 import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
@@ -86,6 +88,10 @@ public class JournalEditArticleDisplayContext {
 		_httpServletRequest = httpServletRequest;
 		_liferayPortletResponse = liferayPortletResponse;
 		_article = article;
+
+		_journalWebConfiguration =
+			(JournalWebConfiguration)_httpServletRequest.getAttribute(
+				JournalWebConfiguration.class.getName());
 
 		_themeDisplay = (ThemeDisplay)_httpServletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -187,9 +193,12 @@ public class JournalEditArticleDisplayContext {
 		return _classPK;
 	}
 
-	public Map<String, Object> getComponentContext() {
+	public Map<String, Object> getComponentContext() throws PortalException {
 		return HashMapBuilder.<String, Object>put(
 			"articleId", getArticleId()
+		).put(
+			"autoSaveDraftEnabled",
+			_journalWebConfiguration.journalArticleAutoSaveDraftEnabled()
 		).put(
 			"availableLocales", _getAvailableLanguageIds()
 		).put(
@@ -198,6 +207,8 @@ public class JournalEditArticleDisplayContext {
 			"contentTitle", "titleMapAsXML"
 		).put(
 			"defaultLanguageId", getDefaultArticleLanguageId()
+		).put(
+			"hasSavePermission", hasSavePermission()
 		).build();
 	}
 
@@ -223,6 +234,18 @@ public class JournalEditArticleDisplayContext {
 		}
 
 		String content = _article.getContent();
+
+		if (Validator.isNull(content) && _article.isNew() &&
+			(getClassNameId() ==
+				JournalArticleConstants.CLASS_NAME_ID_DEFAULT)) {
+
+			JournalArticle ddmStructureArticle =
+				JournalArticleServiceUtil.getArticle(
+					ddmStructure.getGroupId(), DDMStructure.class.getName(),
+					ddmStructure.getStructureId());
+
+			content = ddmStructureArticle.getContent();
+		}
 
 		if (Validator.isNull(content)) {
 			return _ddmFormValues;
@@ -422,6 +445,27 @@ public class JournalEditArticleDisplayContext {
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
 
 		return _folderId;
+	}
+
+	public String getFolderName() {
+		if (_folderName != null) {
+			return _folderName;
+		}
+
+		if (JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID != getFolderId()) {
+			JournalFolder folder =
+				JournalFolderLocalServiceUtil.fetchJournalFolder(getFolderId());
+
+			if (folder != null) {
+				_folderName = folder.getName();
+
+				return _folderName;
+			}
+		}
+
+		_folderName = LanguageUtil.get(_httpServletRequest, "home");
+
+		return _folderName;
 	}
 
 	public String getFriendlyURLBase() {
@@ -736,6 +780,21 @@ public class JournalEditArticleDisplayContext {
 		return false;
 	}
 
+	public boolean isShowSelectFolder() {
+		if (_showSelectFolder != null) {
+			return _showSelectFolder;
+		}
+
+		_showSelectFolder = false;
+
+		if (_article == null) {
+			_showSelectFolder = ParamUtil.getBoolean(
+				_httpServletRequest, "showSelectFolder", true);
+		}
+
+		return _showSelectFolder;
+	}
+
 	private String[] _getAvailableLanguageIds() {
 		if (_article == null) {
 			return new String[] {getDefaultArticleLanguageId()};
@@ -828,21 +887,13 @@ public class JournalEditArticleDisplayContext {
 		if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(
 				_themeDisplay.getCompanyId(), getGroupId(),
 				JournalFolder.class.getName(), getFolderId(),
-				ddmStructure.getStructureId())) {
-
-			return true;
-		}
-
-		if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(
+				ddmStructure.getStructureId()) ||
+			WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(
 				_themeDisplay.getCompanyId(), getGroupId(),
 				JournalFolder.class.getName(),
 				_getInheritedWorkflowDDMStructuresFolderId(),
-				ddmStructure.getStructureId())) {
-
-			return true;
-		}
-
-		if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(
+				ddmStructure.getStructureId()) ||
+			WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(
 				_themeDisplay.getCompanyId(), getGroupId(),
 				JournalFolder.class.getName(),
 				_getInheritedWorkflowDDMStructuresFolderId(),
@@ -904,9 +955,11 @@ public class JournalEditArticleDisplayContext {
 	private String _defaultArticleLanguageId;
 	private String _defaultLanguageId;
 	private Long _folderId;
+	private String _folderName;
 	private Long _groupId;
 	private final HttpServletRequest _httpServletRequest;
 	private Long _inheritedWorkflowDDMStructuresFolderId;
+	private final JournalWebConfiguration _journalWebConfiguration;
 	private final LiferayPortletResponse _liferayPortletResponse;
 	private Boolean _neverExpire;
 	private Boolean _neverReview;
@@ -915,6 +968,7 @@ public class JournalEditArticleDisplayContext {
 	private Long _refererPlid;
 	private String _referringPortletResource;
 	private Boolean _showHeader;
+	private Boolean _showSelectFolder;
 	private String _smallImageSource;
 	private final ThemeDisplay _themeDisplay;
 	private Double _version;

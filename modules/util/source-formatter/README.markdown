@@ -96,7 +96,7 @@ Checks are configured in the following files:
    - [Styling](src/main/resources/documentation/styling_checks.markdown#styling-checks)
 
 - ### By File Extensions:
-   - [.action, .function, .jrxml, .macro, .pom, .project, .testcase, .toggle, .tpl, .wsdl, .xml or .xsd](src/main/resources/documentation/xml_source_processor_checks.markdown#checks-for-action-function-jrxml-macro-pom-project-testcase-toggle-tpl-wsdl-xml-or-xsd)
+   - [.action, .function, .jrxml, .macro, .pom, .project, .properties, .testcase, .toggle, .tpl, .wsdl, .xml or .xsd](src/main/resources/documentation/xml_source_processor_checks.markdown#checks-for-action-function-jrxml-macro-pom-project-properties-testcase-toggle-tpl-wsdl-xml-or-xsd)
    - [.bnd](src/main/resources/documentation/bnd_source_processor_checks.markdown#checks-for-bnd)
    - [.bndrun](src/main/resources/documentation/bnd_run_source_processor_checks.markdown#checks-for-bndrun)
    - [.cfg or .config](src/main/resources/documentation/config_source_processor_checks.markdown#checks-for-cfg-or-config)
@@ -109,11 +109,11 @@ Checks are configured in the following files:
    - [.function, .macro or .testcase](src/main/resources/documentation/poshi_source_processor_checks.markdown#checks-for-function-macro-or-testcase)
    - [.gradle](src/main/resources/documentation/gradle_source_processor_checks.markdown#checks-for-gradle)
    - [.groovy](src/main/resources/documentation/groovy_source_processor_checks.markdown#checks-for-groovy)
-   - [.html](src/main/resources/documentation/html_source_processor_checks.markdown#checks-for-html)
+   - [.html or .path](src/main/resources/documentation/html_source_processor_checks.markdown#checks-for-html-or-path)
    - [.ipynb, .json or .npmbridgerc](src/main/resources/documentation/json_source_processor_checks.markdown#checks-for-ipynb-json-or-npmbridgerc)
    - [.java](src/main/resources/documentation/java_source_processor_checks.markdown#checks-for-java)
    - [.js or .jsx](src/main/resources/documentation/js_source_processor_checks.markdown#checks-for-js-or-jsx)
-   - [.jsp, .jspf, .tag, .tpl or .vm](src/main/resources/documentation/jsp_source_processor_checks.markdown#checks-for-jsp-jspf-tag-tpl-or-vm)
+   - [.jsp, .jspf, .jspx, .tag, .tpl or .vm](src/main/resources/documentation/jsp_source_processor_checks.markdown#checks-for-jsp-jspf-jspx-tag-tpl-or-vm)
    - [.lfrbuild-*](src/main/resources/documentation/lfr_build_source_processor_checks.markdown#checks-for-lfrbuild)
    - [.markdown or .md](src/main/resources/documentation/markdown_source_processor_checks.markdown#checks-for-markdown-or-md)
    - [.py](src/main/resources/documentation/python_source_processor_checks.markdown#checks-for-py)

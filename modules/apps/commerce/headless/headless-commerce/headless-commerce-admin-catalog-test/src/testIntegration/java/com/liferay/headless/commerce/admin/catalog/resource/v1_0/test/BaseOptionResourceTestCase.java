@@ -35,7 +35,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -44,6 +43,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -53,9 +53,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -204,21 +202,21 @@ public abstract class BaseOptionResourceTestCase {
 	@Test
 	public void testGetOptionsPage() throws Exception {
 		Page<Option> page = optionResource.getOptionsPage(
-			RandomTestUtil.randomString(), null, Pagination.of(1, 2), null);
+			null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		Option option1 = testGetOptionsPage_addOption(randomOption());
 
 		Option option2 = testGetOptionsPage_addOption(randomOption());
 
 		page = optionResource.getOptionsPage(
-			null, null, Pagination.of(1, 2), null);
+			null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(option1, option2), (List<Option>)page.getItems());
+		assertContains(option1, (List<Option>)page.getItems());
+		assertContains(option2, (List<Option>)page.getItems());
 		assertValid(page);
 
 		optionResource.deleteOption(option1.getId());
@@ -277,6 +275,11 @@ public abstract class BaseOptionResourceTestCase {
 
 	@Test
 	public void testGetOptionsPageWithPagination() throws Exception {
+		Page<Option> totalPage = optionResource.getOptionsPage(
+			null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+
 		Option option1 = testGetOptionsPage_addOption(randomOption());
 
 		Option option2 = testGetOptionsPage_addOption(randomOption());
@@ -284,27 +287,28 @@ public abstract class BaseOptionResourceTestCase {
 		Option option3 = testGetOptionsPage_addOption(randomOption());
 
 		Page<Option> page1 = optionResource.getOptionsPage(
-			null, null, Pagination.of(1, 2), null);
+			null, null, Pagination.of(1, totalCount + 2), null);
 
 		List<Option> options1 = (List<Option>)page1.getItems();
 
-		Assert.assertEquals(options1.toString(), 2, options1.size());
+		Assert.assertEquals(
+			options1.toString(), totalCount + 2, options1.size());
 
 		Page<Option> page2 = optionResource.getOptionsPage(
-			null, null, Pagination.of(2, 2), null);
+			null, null, Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Option> options2 = (List<Option>)page2.getItems();
 
 		Assert.assertEquals(options2.toString(), 1, options2.size());
 
 		Page<Option> page3 = optionResource.getOptionsPage(
-			null, null, Pagination.of(1, 3), null);
+			null, null, Pagination.of(1, totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(option1, option2, option3),
-			(List<Option>)page3.getItems());
+		assertContains(option1, (List<Option>)page3.getItems());
+		assertContains(option2, (List<Option>)page3.getItems());
+		assertContains(option3, (List<Option>)page3.getItems());
 	}
 
 	@Test
@@ -337,7 +341,7 @@ public abstract class BaseOptionResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -435,7 +439,7 @@ public abstract class BaseOptionResourceTestCase {
 			new HashMap<String, Object>() {
 				{
 					put("page", 1);
-					put("pageSize", 2);
+					put("pageSize", 10);
 				}
 			},
 			new GraphQLField("items", getGraphQLFields()),
@@ -445,7 +449,7 @@ public abstract class BaseOptionResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/options");
 
-		Assert.assertEquals(0, optionsJSONObject.get("totalCount"));
+		long totalCount = optionsJSONObject.getLong("totalCount");
 
 		Option option1 = testGraphQLOption_addOption();
 		Option option2 = testGraphQLOption_addOption();
@@ -454,10 +458,15 @@ public abstract class BaseOptionResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/options");
 
-		Assert.assertEquals(2, optionsJSONObject.get("totalCount"));
+		Assert.assertEquals(
+			totalCount + 2, optionsJSONObject.getLong("totalCount"));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(option1, option2),
+		assertContains(
+			option1,
+			Arrays.asList(
+				OptionSerDes.toDTOs(optionsJSONObject.getString("items"))));
+		assertContains(
+			option2,
 			Arrays.asList(
 				OptionSerDes.toDTOs(optionsJSONObject.getString("items"))));
 	}
@@ -470,20 +479,6 @@ public abstract class BaseOptionResourceTestCase {
 
 		assertEquals(randomOption, postOption);
 		assertValid(postOption);
-
-		randomOption = randomOption();
-
-		assertHttpResponseStatusCode(
-			404,
-			optionResource.getOptionByExternalReferenceCodeHttpResponse(
-				randomOption.getExternalReferenceCode()));
-
-		testPostOption_addOption(randomOption);
-
-		assertHttpResponseStatusCode(
-			200,
-			optionResource.getOptionByExternalReferenceCodeHttpResponse(
-				randomOption.getExternalReferenceCode()));
 	}
 
 	protected Option testPostOption_addOption(Option option) throws Exception {
@@ -714,6 +709,20 @@ public abstract class BaseOptionResourceTestCase {
 			"This method needs to be implemented");
 	}
 
+	protected void assertContains(Option option, List<Option> options) {
+		boolean contains = false;
+
+		for (Option item : options) {
+			if (equals(option, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(options + " does not contain " + option, contains);
+	}
+
 	protected void assertHttpResponseStatusCode(
 		int expectedHttpResponseStatusCode,
 		HttpInvoker.HttpResponse actualHttpResponse) {
@@ -899,7 +908,7 @@ public abstract class BaseOptionResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.commerce.admin.catalog.dto.v1_0.Option.
 						class)) {
@@ -916,12 +925,13 @@ public abstract class BaseOptionResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1120,14 +1130,16 @@ public abstract class BaseOptionResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1395,8 +1407,8 @@ public abstract class BaseOptionResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseOptionResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseOptionResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

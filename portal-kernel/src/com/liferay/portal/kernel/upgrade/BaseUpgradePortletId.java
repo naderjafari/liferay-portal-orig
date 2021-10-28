@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.sql.PreparedStatement;
@@ -57,10 +58,12 @@ public abstract class BaseUpgradePortletId extends UpgradeProcess {
 	protected String getNewTypeSettings(
 		String typeSettings, String oldPropertyId, String newPropertyId) {
 
-		UnicodeProperties typeSettingsUnicodeProperties = new UnicodeProperties(
-			true);
-
-		typeSettingsUnicodeProperties.fastLoad(typeSettings);
+		UnicodeProperties typeSettingsUnicodeProperties =
+			UnicodePropertiesBuilder.create(
+				true
+			).fastLoad(
+				typeSettings
+			).build();
 
 		String value = typeSettingsUnicodeProperties.remove(oldPropertyId);
 
@@ -75,10 +78,12 @@ public abstract class BaseUpgradePortletId extends UpgradeProcess {
 		String typeSettings, String oldRootPortletId, String newRootPortletId,
 		boolean exactMatch) {
 
-		UnicodeProperties typeSettingsUnicodeProperties = new UnicodeProperties(
-			true);
-
-		typeSettingsUnicodeProperties.fastLoad(typeSettings);
+		UnicodeProperties typeSettingsUnicodeProperties =
+			UnicodePropertiesBuilder.create(
+				true
+			).fastLoad(
+				typeSettings
+			).build();
 
 		for (Map.Entry<String, String> entry :
 				typeSettingsUnicodeProperties.entrySet()) {
@@ -130,31 +135,16 @@ public abstract class BaseUpgradePortletId extends UpgradeProcess {
 	}
 
 	protected String getTypeSettingsCriteria(String portletId) {
-		StringBundler sb = new StringBundler(21);
-
-		sb.append("typeSettings like '%=");
-		sb.append(portletId);
-		sb.append(",%' OR typeSettings like '%=");
-		sb.append(portletId);
-		sb.append("\n%' OR typeSettings like '%=");
-		sb.append(portletId);
-		sb.append("' OR typeSettings like '%,");
-		sb.append(portletId);
-		sb.append(",%' OR typeSettings like '%,");
-		sb.append(portletId);
-		sb.append("\n%' OR typeSettings like '%,");
-		sb.append(portletId);
-		sb.append("' OR typeSettings like '%=");
-		sb.append(portletId);
-		sb.append("_INSTANCE_%' OR typeSettings like '%,");
-		sb.append(portletId);
-		sb.append("_INSTANCE_%' OR typeSettings like '%=");
-		sb.append(portletId);
-		sb.append("_USER_%' OR typeSettings like '%,");
-		sb.append(portletId);
-		sb.append("_USER_%'");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"typeSettings like '%=", portletId, ",%' OR typeSettings like '%=",
+			portletId, "\n%' OR typeSettings like '%=", portletId,
+			"' OR typeSettings like '%,", portletId,
+			",%' OR typeSettings like '%,", portletId,
+			"\n%' OR typeSettings like '%,", portletId,
+			"' OR typeSettings like '%=", portletId,
+			"_INSTANCE_%' OR typeSettings like '%,", portletId,
+			"_INSTANCE_%' OR typeSettings like '%=", portletId,
+			"_USER_%' OR typeSettings like '%,", portletId, "_USER_%'");
 	}
 
 	protected String[] getUninstanceablePortletIds() {

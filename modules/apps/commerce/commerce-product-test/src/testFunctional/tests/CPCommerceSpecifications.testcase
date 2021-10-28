@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Commerce";
+	property testray.main.component.name = "Product Info Management";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -14,29 +14,23 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		Navigator.openURL();
 
-		if ("${testPortalInstance}" == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			Navigator.openURL();
-
-			CommerceConfiguration.commerceAdminTearDown();
-
-			CommerceConfiguration.commerceInitializersTearDown();
-
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
 			User.logoutPG();
 		}
+
+		User.firstLoginPG();
+
+		CommerceConfiguration.commerceAdminTearDown();
+
+		CommerceConfiguration.commerceInitializersTearDown();
 	}
 
 	@description = "This is a test for COMMERCE-6283. EditSpecificationGroup"
 	@priority = "3"
 	test EditSpecificationGroup {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CPCommerceSpecifications#EditSpecificationGroup";
-
-		// TODO Review
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
@@ -75,9 +69,6 @@ definition {
 	@priority = "3"
 	test EditSpecificationLabel {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CPCommerceSpecifications#EditSpecificationLabel";
-
-		// TODO Review
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
@@ -114,9 +105,6 @@ definition {
 	@priority = "3"
 	test RemoveSpecificationGroup {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CPCommerceSpecifications#RemoveSpecificationGroup";
-
-		// TODO Review
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
@@ -145,9 +133,6 @@ definition {
 	@priority = "3"
 	test RemoveSpecificationLabel {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CPCommerceSpecifications#RemoveSpecificationLabel";
-
-		// TODO Review
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 

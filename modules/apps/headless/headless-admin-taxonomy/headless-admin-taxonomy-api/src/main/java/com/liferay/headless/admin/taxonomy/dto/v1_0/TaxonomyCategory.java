@@ -67,6 +67,10 @@ public class TaxonomyCategory implements Serializable {
 		return ObjectMapperUtil.readValue(TaxonomyCategory.class, json);
 	}
 
+	public static TaxonomyCategory unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(TaxonomyCategory.class, json);
+	}
+
 	@Schema
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
@@ -488,6 +492,39 @@ public class TaxonomyCategory implements Serializable {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected ParentTaxonomyVocabulary parentTaxonomyVocabulary;
 
+	@Schema(description = "The category's properties.")
+	@Valid
+	public TaxonomyCategoryProperty[] getTaxonomyCategoryProperties() {
+		return taxonomyCategoryProperties;
+	}
+
+	public void setTaxonomyCategoryProperties(
+		TaxonomyCategoryProperty[] taxonomyCategoryProperties) {
+
+		this.taxonomyCategoryProperties = taxonomyCategoryProperties;
+	}
+
+	@JsonIgnore
+	public void setTaxonomyCategoryProperties(
+		UnsafeSupplier<TaxonomyCategoryProperty[], Exception>
+			taxonomyCategoryPropertiesUnsafeSupplier) {
+
+		try {
+			taxonomyCategoryProperties =
+				taxonomyCategoryPropertiesUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The category's properties.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected TaxonomyCategoryProperty[] taxonomyCategoryProperties;
+
 	@Schema
 	public Integer getTaxonomyCategoryUsageCount() {
 		return taxonomyCategoryUsageCount;
@@ -770,6 +807,26 @@ public class TaxonomyCategory implements Serializable {
 			sb.append(String.valueOf(parentTaxonomyVocabulary));
 		}
 
+		if (taxonomyCategoryProperties != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"taxonomyCategoryProperties\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < taxonomyCategoryProperties.length; i++) {
+				sb.append(String.valueOf(taxonomyCategoryProperties[i]));
+
+				if ((i + 1) < taxonomyCategoryProperties.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (taxonomyCategoryUsageCount != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -813,13 +870,17 @@ public class TaxonomyCategory implements Serializable {
 
 		@JsonCreator
 		public static ViewableBy create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (ViewableBy viewableBy : values()) {
 				if (Objects.equals(viewableBy.getValue(), value)) {
 					return viewableBy;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

@@ -14,6 +14,8 @@
 
 package com.liferay.jenkins.results.parser;
 
+import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +34,7 @@ import org.json.JSONObject;
  */
 public class JenkinsMaster implements JenkinsNode<JenkinsMaster> {
 
-	public static final Integer SLAVE_RAM_DEFAULT = 16;
+	public static final Integer SLAVE_RAM_DEFAULT = 12;
 
 	public static final Integer SLAVES_PER_HOST_DEFAULT = 2;
 
@@ -264,6 +266,26 @@ public class JenkinsMaster implements JenkinsNode<JenkinsMaster> {
 	}
 
 	public boolean isAvailable() {
+		if ((_availableTimestamp == -1) ||
+			((System.currentTimeMillis() - _availableTimestamp) >
+				_AVAILABLE_TIMEOUT)) {
+
+			try {
+				JenkinsResultsParserUtil.toString(
+					"http://" + getName(), false, 0, 0, 0);
+
+				_available = true;
+			}
+			catch (IOException ioException) {
+				System.out.println(getName() + " is unreachable.");
+
+				_available = false;
+			}
+			finally {
+				_availableTimestamp = System.currentTimeMillis();
+			}
+		}
+
 		return _available;
 	}
 
@@ -282,6 +304,17 @@ public class JenkinsMaster implements JenkinsNode<JenkinsMaster> {
 	}
 
 	public synchronized void update(boolean minimal) {
+		if (!isAvailable()) {
+			_batchSizes.clear();
+			_buildURLs.clear();
+			_jenkinsSlavesMap.clear();
+			_queueCount = 0;
+			_queuedBuildURLs.clear();
+			_reportedAvailableSlavesCount = 0;
+
+			return;
+		}
+
 		JSONObject computerAPIJSONObject = null;
 		JSONObject queueAPIJSONObject = null;
 
@@ -309,14 +342,17 @@ public class JenkinsMaster implements JenkinsNode<JenkinsMaster> {
 				false, 5000);
 		}
 		catch (Exception exception) {
-			System.out.println("Unable to read " + _masterURL);
+			_batchSizes.clear();
+			_buildURLs.clear();
+			_jenkinsSlavesMap.clear();
+			_queueCount = 0;
+			_queuedBuildURLs.clear();
+			_reportedAvailableSlavesCount = 0;
 
-			_available = false;
+			System.out.println("Unable to read " + _masterURL);
 
 			return;
 		}
-
-		_available = true;
 
 		List<String> buildURLs = new ArrayList<>();
 
@@ -504,10 +540,13 @@ public class JenkinsMaster implements JenkinsNode<JenkinsMaster> {
 		return recentBatchSizesTotal;
 	}
 
+	private static final long _AVAILABLE_TIMEOUT = 1000 * 60 * 5;
+
 	private static final Map<String, JenkinsMaster> _jenkinsMasters =
 		Collections.synchronizedMap(new HashMap<String, JenkinsMaster>());
 
 	private boolean _available;
+	private long _availableTimestamp = -1;
 	private final Map<Long, Integer> _batchSizes = new TreeMap<>();
 	private final List<String> _buildURLs = new CopyOnWriteArrayList<>();
 	private final Map<String, JenkinsSlave> _jenkinsSlavesMap =

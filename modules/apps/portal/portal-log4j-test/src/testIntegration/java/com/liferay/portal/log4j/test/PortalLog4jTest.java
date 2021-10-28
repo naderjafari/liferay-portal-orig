@@ -19,8 +19,11 @@ import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogContext;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.IOException;
@@ -52,6 +55,11 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Hai Yu
@@ -136,12 +144,61 @@ public class PortalLog4jTest {
 
 	@Test
 	public void testLogOutput() throws Exception {
-		_testLogOutput("DEBUG");
-		_testLogOutput("ERROR");
-		_testLogOutput("FATAL");
-		_testLogOutput("INFO");
-		_testLogOutput("TRACE");
-		_testLogOutput("WARN");
+		_testLogOutput("DEBUG", null);
+		_testLogOutput("ERROR", null);
+		_testLogOutput("FATAL", null);
+		_testLogOutput("INFO", null);
+		_testLogOutput("TRACE", null);
+		_testLogOutput("WARN", null);
+	}
+
+	@Test
+	public void testLogOutputWithLogContext() throws Exception {
+		Bundle bundle = FrameworkUtil.getBundle(PortalLog4jTest.class);
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		String logContextName = "TestLogContext";
+
+		String key1 = "test.key.1";
+		String key2 = "test.key.2";
+		String value1 = "test.value.1";
+		String value2 = "test.value.2";
+
+		ServiceRegistration<LogContext> serviceRegistration =
+			bundleContext.registerService(
+				LogContext.class,
+				new LogContext() {
+
+					@Override
+					public Map<String, String> getContext() {
+						return HashMapBuilder.put(
+							key1, value1
+						).put(
+							key2, value2
+						).build();
+					}
+
+					@Override
+					public String getName() {
+						return logContextName;
+					}
+
+				},
+				new HashMapDictionary());
+
+		String logContextMessage = StringBundler.concat(
+			StringPool.OPEN_CURLY_BRACE, logContextName, "{\"", key1, "\":\"",
+			value1, "\",\"", key2, "\":\"", value2, "\"}}");
+
+		_testLogOutput("DEBUG", logContextMessage);
+		_testLogOutput("ERROR", logContextMessage);
+		_testLogOutput("FATAL", logContextMessage);
+		_testLogOutput("INFO", logContextMessage);
+		_testLogOutput("TRACE", logContextMessage);
+		_testLogOutput("WARN", logContextMessage);
+
+		serviceRegistration.unregister();
 	}
 
 	private static Path _initFileAppender(
@@ -331,13 +388,11 @@ public class PortalLog4jTest {
 
 		// <log4j:message>...</log4j:message>
 
-		if (expectedThrowable != null) {
-			Assert.assertEquals(
-				StringBundler.concat(
-					"<log4j:message><![CDATA[", expectedMessage,
-					"]]></log4j:message>"),
-				outputLines[1]);
-		}
+		Assert.assertEquals(
+			StringBundler.concat(
+				"<log4j:message><![CDATA[", expectedMessage,
+				"]]></log4j:message>"),
+			outputLines[1]);
 
 		// <log4j:throwable>...</log4j:throwable>
 
@@ -460,34 +515,49 @@ public class PortalLog4jTest {
 		}
 	}
 
-	private void _testLogOutput(String level) throws Exception {
+	private void _testLogOutput(String level, String logContextMessage)
+		throws Exception {
+
 		String testMessage = level + " message";
 
-		_testLogOutput(level, testMessage, null);
+		_testLogOutput(level, testMessage, logContextMessage, null);
 
 		TestException testException = new TestException();
 
-		_testLogOutput(level, testMessage, testException);
+		_testLogOutput(level, testMessage, logContextMessage, testException);
 
-		_testLogOutput(level, null, testException);
+		_testLogOutput(level, null, logContextMessage, testException);
 	}
 
 	private void _testLogOutput(
-			String level, String message, Throwable throwable)
+			String level, String message, String logContextMessage,
+			Throwable throwable)
 		throws Exception {
 
 		_outputLog(level, message, throwable);
 
+		String expectedMessage = message;
+
+		if (logContextMessage != null) {
+			if (message == null) {
+				expectedMessage = logContextMessage;
+			}
+			else {
+				expectedMessage = logContextMessage + message;
+			}
+		}
+
 		try {
 			_assertTextLog(
-				level, message, throwable, _unsyncStringWriter.toString());
+				level, expectedMessage, throwable,
+				_unsyncStringWriter.toString());
 
 			_assertTextLog(
-				level, message, throwable,
+				level, expectedMessage, throwable,
 				new String(Files.readAllBytes(_textLogFilePath)));
 
 			_assertXmlLog(
-				level, message, throwable,
+				level, expectedMessage, throwable,
 				new String(Files.readAllBytes(_xmlLogFilePath)));
 		}
 		finally {

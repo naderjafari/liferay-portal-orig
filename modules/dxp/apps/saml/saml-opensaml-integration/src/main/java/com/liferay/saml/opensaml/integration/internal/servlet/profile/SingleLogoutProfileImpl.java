@@ -447,10 +447,11 @@ public class SingleLogoutProfileImpl
 		HttpServletRequest httpServletRequest,
 		MessageContext<?> messageContext) {
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		SamlSloContext samlSloContext = (SamlSloContext)session.getAttribute(
-			SamlWebKeys.SAML_SLO_CONTEXT);
+		SamlSloContext samlSloContext =
+			(SamlSloContext)httpSession.getAttribute(
+				SamlWebKeys.SAML_SLO_CONTEXT);
 
 		String samlSsoSessionId = getSamlSsoSessionId(httpServletRequest);
 
@@ -488,7 +489,7 @@ public class SingleLogoutProfileImpl
 				samlSloContext.setSamlSsoSessionId(samlSsoSessionId);
 				samlSloContext.setUserId(portal.getUserId(httpServletRequest));
 
-				session.setAttribute(
+				httpSession.setAttribute(
 					SamlWebKeys.SAML_SLO_CONTEXT, samlSloContext);
 			}
 		}
@@ -629,17 +630,13 @@ public class SingleLogoutProfileImpl
 			}
 			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
-					StringBundler sb = new StringBundler(7);
-
-					sb.append("Unable to perform a single logout for service ");
-					sb.append("provider ");
-					sb.append(entityId);
-					sb.append(" with binding ");
-					sb.append(singleLogoutService.getBinding());
-					sb.append(" to ");
-					sb.append(singleLogoutService.getLocation());
-
-					_log.debug(sb.toString(), exception);
+					_log.debug(
+						StringBundler.concat(
+							"Unable to perform a single logout for service ",
+							"provider ", entityId, " with binding ",
+							singleLogoutService.getBinding(), " to ",
+							singleLogoutService.getLocation()),
+						exception);
 				}
 
 				samlSloRequestInfo.setStatus(

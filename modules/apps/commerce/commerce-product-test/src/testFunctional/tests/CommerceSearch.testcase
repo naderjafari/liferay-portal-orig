@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Commerce";
+	property testray.main.component.name = "Shopping Experience";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -12,25 +12,23 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		Navigator.openURL();
 
-		if ("${testPortalInstance}" == "true") {
-			PortalInstances.tearDownCP();
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
+			User.logoutPG();
 		}
-		else {
-			Navigator.openURL();
 
-			CommerceConfiguration.commerceAdminTearDown();
+		User.firstLoginPG();
 
-			CommerceConfiguration.commerceInitializersTearDown();
-		}
+		CommerceConfiguration.commerceAdminTearDown();
+
+		CommerceConfiguration.commerceInitializersTearDown();
 	}
 
 	@description = "COMMERCE-6664. I want to be able to disable Search Results widget pagination"
 	@priority = "3"
 	test DisableSearchResultsWidgetPagination {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#DisableSearchResultsWidgetPagination";
 
 		// TODO Review
 
@@ -300,13 +298,71 @@ definition {
 	}
 
 	@description = "COMMERCE-6319. As a buyer, I want to be able to search a Catalog entry using Global Search(Product Name, Product Name with single quotes, Product Name with double quotes) and I want to be able to click on a suggested entry and get redirected to that product Details page"
-	@ignore = "true"
 	@priority = "3"
 	test GlobalSearchSuggestedCatalogEntries {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6319 GlobalSearchSuggestedCatalogEntries pending implementation
+		// TODO Review
 
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		Click(locator1 = "AppBuilder#SEARCH_BUTTON");
+
+		Type(
+			locator1 = "Search#GLOBAL_SEARCH_BAR",
+			value1 = "ABS Sensor");
+
+		AssertElementPresent(
+			key_entryName = "ABS Sensor",
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION");
+
+		AssertElementPresent(
+			key_entryName = "Wear Sensors",
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION");
+
+		Click(locator1 = "Button#SEARCH_CLOSE");
+
+		Type(
+			locator1 = "Search#GLOBAL_SEARCH_BAR",
+			value1 = "'ABS Sensor'");
+
+		AssertElementPresent(
+			key_entryName = "ABS Sensor",
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION");
+
+		AssertElementPresent(
+			key_entryName = "Wear Sensors",
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION");
+
+		Click(locator1 = "Button#SEARCH_CLOSE");
+
+		var product = '''"ABS Sensor"''';
+
+		Type(
+			locator1 = "Search#GLOBAL_SEARCH_BAR",
+			value1 = "${product}");
+
+		AssertElementPresent(
+			key_entryName = "ABS Sensor",
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION");
+
+		AssertElementNotPresent(
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION",
+			value1 = "Shock Absorber");
+
+		AssertElementNotPresent(
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION",
+			value1 = "Wear Sensors");
+
+		Click(
+			key_entryName = "ABS Sensor",
+			locator1 = "Search#ACCOUNT_SEARCH_SUGGESTION");
+
+		AssertTextEquals(
+			locator1 = "CommerceFrontStore#FS_PRODUCT_NAME",
+			value1 = "ABS Sensor");
 	}
 
 	@description = "COMMERCE-6321. As a buyer, I want to be able to search an Orders entry using Global Search and I want to be able to click on a suggested entry and get redirected to that order details page"
@@ -322,17 +378,15 @@ definition {
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
 
-		CommerceAcceleratorsInitializer.createNewAccountViaFront(
-			accountName = "Commerce Account",
-			adminEmailAddress = "test@liferay.com");
-
-		Click(
-			key_navUnderline = "Members",
-			locator1 = "NavUnderline#NAV_UNDERLINE_LINK");
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Commerce Account");
 
 		CommerceAcceleratorsInitializer.inviteNewMemberWithRoleToAccount(
+			accountName = "Commerce Account",
 			emailAddress = "buyer@liferay.com",
-			role = "Buyer");
+			role = "Buyer",
+			userFirstName = "Buyer",
+			userLastName = "User",
+			userScreenName = "buyeruser");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
@@ -346,7 +400,7 @@ definition {
 		CommerceLogin.editPasswordCP(
 			newPassword = "ttest",
 			requirePasswordReset = "true",
-			userScreenName = "buyer");
+			userScreenName = "buyeruser");
 
 		User.logoutPG();
 
@@ -400,20 +454,9 @@ definition {
 	}
 
 	@description = "COMMERCE-6148. As a buyer, I want to search a product by its name using the Search Bar widget and I want the results to be visible on the Search Results widget"
-	@ignore = "true"
 	@priority = "3"
 	test SearchBarWidgetSearchProductByName {
-		property portal.acceptance = "false";
-
-		// TODO COMMERCE-6148 SearchBarWidgetSearchProductByName pending implementation
-
-	}
-
-	@description = "COMMERCE-6149.As a buyer, I want to search a product by its name using double quotes in the Search Bar widget and that product should be visible on the Search Results widget"
-	@priority = "3"
-	test SearchBarWidgetSearchProductByNameDoubleQuotes {
-		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductByNameDoubleQuotes";
+		property portal.acceptance = "Intern Test";
 
 		// TODO Review
 
@@ -421,11 +464,42 @@ definition {
 
 		ApplicationsMenu.gotoSite(site = "Minium");
 
+		Type(
+			locator1 = "Search#EMBEDDED_SEARCH_BAR",
+			value1 = "ABS Sensor");
+
+		Button.clickSubmitButton();
+
+		for (var i : list "ABS Sensor,Wear Sensors,3") {
+			if ("${i}" == "3") {
+				AssertElementNotPresent(
+					key_value = "${i}",
+					locator1 = "CommerceAccelerators#ASSERT_PRODUCT_CARD");
+			}
+			else {
+				AssertElementPresent(
+					key_productName = "${i}",
+					locator1 = "CommerceAccelerators#PRODUCT_CARD_NAME");
+			}
+		}
+	}
+
+	@description = "COMMERCE-6149.As a buyer, I want to search a product by its name using double quotes in the Search Bar widget and that product should be visible on the Search Results widget"
+	@priority = "3"
+	test SearchBarWidgetSearchProductByNameDoubleQuotes {
+		property portal.acceptance = "false";
+
 		var product = '''"ABS Sensor"''';
+
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
 
 		Type(
 			locator1 = "Search#EMBEDDED_SEARCH_BAR",
 			value1 = "${product}");
+
+		Button.clickSubmitButton();
 
 		AssertElementPresent(
 			key_value = "1",
@@ -444,7 +518,6 @@ definition {
 	@priority = "3"
 	test SearchBarWidgetSearchProductByNameSingleQuotes {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductByNameSingleQuotes";
 
 		// TODO Review
 
@@ -476,7 +549,6 @@ definition {
 	@priority = "3"
 	test SearchBarWidgetSearchProductBySKU {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductBySKU";
 
 		// TODO Review
 
@@ -503,7 +575,6 @@ definition {
 	@priority = "3"
 	test SearchBarWidgetSearchProductsByCategory {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductsByCategory";
 
 		// TODO Review
 
@@ -532,7 +603,6 @@ definition {
 	@priority = "3"
 	test SearchBarWidgetSearchProductsByDifferentCategories {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductsByDifferentCategories";
 
 		// TODO Review
 
@@ -563,7 +633,6 @@ definition {
 	@priority = "3"
 	test SearchBarWidgetSearchProductsByDifferentSKUs {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductsByDifferentSKUs";
 
 		// TODO Review
 
@@ -595,7 +664,6 @@ definition {
 	@priority = "3"
 	test SearchBarWidgetSearchProductsByDifferentSpecificationValues {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductsByDifferentSpecificationValues";
 
 		// TODO Review
 
@@ -642,7 +710,6 @@ definition {
 	@priority = "3"
 	test SearchBarWidgetSearchProductsBySpecificationValue {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchBarWidgetSearchProductsBySpecificationValue";
 
 		// TODO Review
 
@@ -673,7 +740,6 @@ definition {
 	@priority = "3"
 	test SearchResultsWidgetChangeNumberOfItemsToDisplayFromPaginationBar {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchResultsWidgetChangeNumberOfItemsToDisplayFromPaginationBar";
 
 		// TODO Review
 
@@ -692,7 +758,6 @@ definition {
 	@priority = "3"
 	test SearchResultsWidgetChangeResultsPage {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchResultsWidgetChangeResultsPage";
 
 		// TODO Review
 
@@ -742,7 +807,6 @@ definition {
 	@priority = "3"
 	test SearchResultsWidgetEditNumberOfItemsToDisplayFromConfiguration {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommerceSearch#SearchResultsWidgetEditNumberOfItemsToDisplayFromConfiguration";
 
 		// TODO Review
 
@@ -775,13 +839,93 @@ definition {
 	}
 
 	@description = "COMMERCE-6663. I want to be able to use ADT to render Search Results widget and I want to be able to select a Display Template and see it applied to the widget"
-	@ignore = "true"
 	@priority = "3"
 	test UseADTInSearchResultsWidget {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6663 UseADTInSearchResultsWidget pending implementation
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
+		CommerceNavigator.gotoPortlet(
+			category = "Product Management",
+			portlet = "Products");
+
+		CommerceProducts.searchProduct(search = "U-Joint");
+
+		CommerceNavigator.gotoEntry(entryName = "U-Joint");
+
+		var productId = selenium.getText(locator1 = "CommerceEntry#HEADER_ID");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		ProductMenu.gotoPortlet(
+			category = "Design",
+			portlet = "Templates");
+
+		Navigator.gotoNavTab(navTab = "Widget Templates");
+
+		CommerceAcceleratorsInitializer.addADT(
+			adtType = "Search Results",
+			fieldNameList = "Commerce Product Catalog Entries*");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		MouseOver(locator1 = "CommerceEntry#PAGINATION_BAR");
+
+		Click.clickNoWaitForVisible(locator1 = "CommerceAccelerators#SEARCH_RESULT_OPTIONS");
+
+		MenuItem.click(menuItem = "Configuration");
+
+		SelectFrame(locator1 = "IFrame#CONFIGURATION");
+
+		Navigator.gotoNavTab(navTab = "Render Selection");
+
+		if (IsElementNotPresent(key_selectFieldLabel = "Product List Renderer", locator1 = "Select#ANY")) {
+			Click(
+				key_text = "Product List Renderer",
+				locator1 = "Link#ANY");
+		}
+
+		AssertTextEquals(
+			key_selectFieldLabel = "Product List Renderer",
+			locator1 = "Select#ANY",
+			value1 = "Default");
+
+		Click(
+			key_radioOption = "Use Application Display Template",
+			locator1 = "CommerceEntry#RADIO_BUTTON");
+
+		if (IsElementNotPresent(key_text = "Display Template", locator1 = "Select#ANY")) {
+			Click(
+				key_text = "Display Template",
+				locator1 = "Link#ANY");
+		}
+
+		Select(
+			key_selectFieldLabel = "Display Template",
+			locator1 = "Select#ANY",
+			value1 = "Search Results Test ADT");
+
+		Navigator.gotoNavTab(navTab = "Pagination");
+
+		Type(
+			key_fieldLabel = "Number of Items to Display",
+			locator1 = "TextInput#GENERIC_NUMBER_INPUT",
+			value1 = "1");
+
+		Button.clickSave();
+
+		IFrame.closeFrame();
+
+		SelectFrameTop();
+
+		AssertTextEquals(
+			locator1 = "CommerceAccelerators#SORT_BY_DROPDOWN",
+			value1 = "Sort By: Relevance");
+
+		AssertTextEquals.assertPartialText(
+			key_portletName = "Search Results",
+			locator1 = "Portlet#BODY",
+			value1 = "${productId}");
 	}
 
 }

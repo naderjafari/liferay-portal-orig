@@ -16,15 +16,14 @@ import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput, ClaySelect} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import {useManualQuery, useMutation} from 'graphql-hooks';
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../../AppContext.es';
 import Alert from '../../components/Alert.es';
+import DefaultQuestionsEditor from '../../components/DefaultQuestionsEditor.es';
 import Link from '../../components/Link.es';
-import QuestionsEditor from '../../components/QuestionsEditor';
 import TagSelector from '../../components/TagSelector.es';
-import TextLengthValidation from '../../components/TextLengthValidation.es';
 import {
 	createQuestionInASectionQuery,
 	createQuestionInRootQuery,
@@ -36,7 +35,6 @@ import {
 	getContextLink,
 	historyPushWithSlug,
 	slugToText,
-	stripHTML,
 	useDebounceCallback,
 } from '../../utils/utils.es';
 
@@ -47,7 +45,8 @@ export default withRouter(
 			params: {sectionTitle},
 		},
 	}) => {
-		const [articleBody, setArticleBody] = useState('');
+		const editor = useRef('');
+		const [hasEnoughContent, setHasEnoughContent] = useState(false);
 		const [headline, setHeadline] = useState('');
 		const [error, setError] = useState({});
 		const [sectionId, setSectionId] = useState();
@@ -128,6 +127,9 @@ export default withRouter(
 			setError(error);
 		};
 
+		const processResponse = (error) =>
+			error ? processError(error.graphQLErrors[0]) : debounceCallback();
+
 		const createQuestion = () => {
 			deleteCache();
 			if (
@@ -137,26 +139,26 @@ export default withRouter(
 				createQuestionInRoot({
 					fetchOptionsOverrides: getContextLink(sectionTitle),
 					variables: {
-						articleBody,
+						articleBody: editor.current.getContent(),
 						headline,
 						keywords: tags.map((tag) => tag.label),
 						siteKey: context.siteKey,
 					},
 				})
-					.then(debounceCallback)
+					.then(({error}) => processResponse(error))
 					.catch(processError);
 			}
 			else {
 				createQuestionInASection({
 					fetchOptionsOverrides: getContextLink(sectionTitle),
 					variables: {
-						articleBody,
+						articleBody: editor.current.getContent(),
 						headline,
 						keywords: tags.map((tag) => tag.label),
 						messageBoardSectionId: sectionId,
 					},
 				})
-					.then(debounceCallback)
+					.then(({error}) => processResponse(error))
 					.catch(processError);
 			}
 		};
@@ -200,35 +202,14 @@ export default withRouter(
 								</ClayForm.FeedbackGroup>
 							</ClayForm.Group>
 
-							<ClayForm.Group className="c-mt-4">
-								<label htmlFor="basicInput">
-									{Liferay.Language.get('body')}
-
-									<span className="c-ml-2 reference-mark">
-										<ClayIcon symbol="asterisk" />
-									</span>
-								</label>
-
-								<QuestionsEditor
-									onChange={(event) => {
-										setArticleBody(event.editor.getData());
-									}}
-								/>
-
-								<ClayForm.FeedbackGroup>
-									<ClayForm.FeedbackItem>
-										<span className="small text-secondary">
-											{Liferay.Language.get(
-												'include-all-the-information-someone-would-need-to-answer-your-question'
-											)}
-										</span>
-
-										<TextLengthValidation
-											text={articleBody}
-										/>
-									</ClayForm.FeedbackItem>
-								</ClayForm.FeedbackGroup>
-							</ClayForm.Group>
+							<DefaultQuestionsEditor
+								additionalInformation={Liferay.Language.get(
+									'include-all-the-information-someone-would-need-to-answer-your-question'
+								)}
+								label={Liferay.Language.get('body')}
+								onContentLengthValid={setHasEnoughContent}
+								ref={editor}
+							/>
 
 							{sections.length > 1 && (
 								<ClayForm.Group className="c-mt-4">
@@ -264,17 +245,18 @@ export default withRouter(
 							<ClayButton
 								className="c-mt-4 c-mt-sm-0"
 								disabled={
-									!articleBody ||
-									!headline ||
-									!tagsLoaded ||
-									stripHTML(articleBody).length < 15
+									hasEnoughContent || !headline || !tagsLoaded
 								}
 								displayType="primary"
 								onClick={() => {
 									createQuestion();
 								}}
 							>
-								{Liferay.Language.get('post-your-question')}
+								{context.trustedUser
+									? Liferay.Language.get('post-your-question')
+									: Liferay.Language.get(
+											'submit-for-publication'
+									  )}
 							</ClayButton>
 
 							<Link

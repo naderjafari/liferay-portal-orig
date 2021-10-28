@@ -18,7 +18,9 @@ import com.liferay.jenkins.results.parser.test.clazz.group.AxisTestClassGroup;
 import com.liferay.jenkins.results.parser.test.clazz.group.BatchTestClassGroup;
 import com.liferay.jenkins.results.parser.test.clazz.group.SegmentTestClassGroup;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -26,6 +28,8 @@ import java.util.Set;
  * @author Michael Hashimoto
  */
 public interface Job {
+
+	public int getAxisCount();
 
 	public List<AxisTestClassGroup> getAxisTestClassGroups();
 
@@ -36,6 +40,8 @@ public interface Job {
 	public List<Build> getBuildHistory(JenkinsMaster jenkinsMaster);
 
 	public BuildProfile getBuildProfile();
+
+	public List<String> getDistNodes();
 
 	public DistType getDistType();
 
@@ -67,6 +73,10 @@ public interface Job {
 
 		DXP("DXP", "dxp"), PORTAL("Portal", "portal");
 
+		public static BuildProfile getByString(String string) {
+			return _buildProfiles.get(string);
+		}
+
 		public String toDisplayString() {
 			return _displayString;
 		}
@@ -79,6 +89,15 @@ public interface Job {
 		private BuildProfile(String displayString, String string) {
 			_displayString = displayString;
 			_string = string;
+		}
+
+		private static Map<String, BuildProfile> _buildProfiles =
+			new HashMap<>();
+
+		static {
+			for (BuildProfile buildProfile : values()) {
+				_buildProfiles.put(buildProfile.toString(), buildProfile);
+			}
 		}
 
 		private final String _displayString;

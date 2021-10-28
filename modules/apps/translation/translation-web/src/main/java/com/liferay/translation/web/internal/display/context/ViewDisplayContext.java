@@ -58,8 +58,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionURL;
 import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -105,19 +103,16 @@ public class ViewDisplayContext {
 				ActionKeys.DELETE),
 			dropdownItem -> {
 				dropdownItem.putData("action", "delete");
-
-				ActionURL deleteTranslationEntryURL =
-					_liferayPortletResponse.createActionURL();
-
-				deleteTranslationEntryURL.setParameter(
-					ActionRequest.ACTION_NAME,
-					"/translation/delete_translation_entry");
-				deleteTranslationEntryURL.setParameter(
-					"translationEntryId",
-					String.valueOf(translationEntry.getTranslationEntryId()));
-
 				dropdownItem.putData(
-					"delete-url", deleteTranslationEntryURL.toString());
+					"delete-url",
+					PortletURLBuilder.createActionURL(
+						_liferayPortletResponse
+					).setActionName(
+						"/translation/delete_translation_entry"
+					).setParameter(
+						"translationEntryId",
+						translationEntry.getTranslationEntryId()
+					).buildString());
 
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "delete"));
@@ -240,14 +235,14 @@ public class ViewDisplayContext {
 		).setMVCRenderCommandName(
 			"/translation/translate"
 		).setRedirect(
-			String.valueOf(_liferayPortletResponse.createRenderURL())
+			(PortletURL)_liferayPortletResponse.createRenderURL()
 		).setParameter(
 			"classNameId", translationEntry.getClassNameId()
 		).setParameter(
 			"classPK", translationEntry.getClassPK()
 		).setParameter(
 			"targetLanguageId", translationEntry.getLanguageId()
-		).build();
+		).buildPortletURL();
 	}
 
 	public TranslationEntryManagementToolbarDisplayContext

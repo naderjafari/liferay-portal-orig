@@ -27,7 +27,6 @@ import com.liferay.info.exception.NoSuchInfoItemException;
 import com.liferay.info.field.InfoField;
 import com.liferay.info.field.InfoFieldValue;
 import com.liferay.info.field.type.TextInfoFieldType;
-import com.liferay.info.item.InfoItemDetails;
 import com.liferay.info.item.InfoItemFieldValues;
 import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.InfoItemServiceTracker;
@@ -56,6 +55,7 @@ import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
+import com.liferay.template.info.item.provider.TemplateInfoItemFieldSetProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,6 +103,11 @@ public class JournalArticleInfoItemFieldValuesProvider
 				_getDDMStructureInfoFieldValues(journalArticle)
 			).infoFieldValues(
 				_getDDMTemplateInfoFieldValues(journalArticle)
+			).infoFieldValues(
+				_templateInfoItemFieldSetProvider.getInfoFieldValues(
+					JournalArticle.class.getName(),
+					_getInfoItemFormVariationKey(journalArticle),
+					journalArticle)
 			).infoItemReference(
 				new InfoItemReference(
 					JournalArticle.class.getName(),
@@ -144,98 +149,13 @@ public class JournalArticleInfoItemFieldValuesProvider
 
 		List<DDMTemplate> ddmTemplates = ddmStructure.getTemplates();
 
-		Locale locale = LocaleThreadLocal.getThemeDisplayLocale();
-
-		String languageId = LocaleUtil.toLanguageId(locale);
-
 		ddmTemplates.forEach(
 			ddmTemplate -> {
 				String fieldName = _getTemplateKey(ddmTemplate);
 
-				InfoField infoField = InfoField.builder(
-				).infoFieldType(
-					TextInfoFieldType.INSTANCE
-				).name(
-					fieldName
-				).labelInfoLocalizedValue(
-					InfoLocalizedValue.localize(getClass(), fieldName)
-				).build();
-
-				InfoFieldValue<Object> infoFieldValue = new InfoFieldValue<>(
-					infoField,
-					() -> {
-						ThemeDisplay themeDisplay = _getThemeDisplay();
-
-						HttpServletRequest httpServletRequest =
-							themeDisplay.getRequest();
-
-						InfoItemDetailsProvider infoItemDetailsProvider =
-							_infoItemServiceTracker.getFirstInfoItemService(
-								InfoItemDetailsProvider.class,
-								JournalArticle.class.getName());
-
-						InfoItemDetails infoItemDetails =
-							infoItemDetailsProvider.getInfoItemDetails(
-								journalArticle);
-
-						httpServletRequest.setAttribute(
-							InfoDisplayWebKeys.INFO_ITEM_DETAILS,
-							infoItemDetails);
-
-						for (InfoDisplayRequestAttributesContributor
-								infoDisplayRequestAttributesContributor :
-									_infoDisplayRequestAttributesContributors) {
-
-							infoDisplayRequestAttributesContributor.
-								addAttributes(httpServletRequest);
-						}
-
-						PortletRequestModel portletRequestModel = null;
-
-						PortletRequest portletRequest =
-							(PortletRequest)httpServletRequest.getAttribute(
-								JavaConstants.JAVAX_PORTLET_REQUEST);
-
-						PortletResponse portletResponse =
-							(PortletResponse)httpServletRequest.getAttribute(
-								JavaConstants.JAVAX_PORTLET_RESPONSE);
-
-						if ((portletRequest != null) &&
-							(portletResponse != null)) {
-
-							portletRequestModel = new PortletRequestModel(
-								portletRequest, portletResponse);
-						}
-
-						JournalArticleDisplay journalArticleDisplay =
-							_journalContent.getDisplay(
-								journalArticle, ddmTemplate.getTemplateKey(),
-								com.liferay.portal.kernel.util.Constants.VIEW,
-								languageId, 1, portletRequestModel,
-								themeDisplay);
-
-						if (journalArticleDisplay != null) {
-							return journalArticleDisplay.getContent();
-						}
-
-						try {
-							journalArticleDisplay =
-								_journalArticleLocalService.getArticleDisplay(
-									journalArticle,
-									ddmTemplate.getTemplateKey(), null,
-									languageId, 1, null, themeDisplay);
-
-							return journalArticleDisplay.getContent();
-						}
-						catch (Exception exception) {
-							throw new RuntimeException(
-								"Unable to render dynamic data mapping " +
-									"template" + ddmTemplate.getTemplateId(),
-								exception);
-						}
-					});
-
-				infoFieldValues.add(infoFieldValue);
+				infoFieldValues.add(
+					_getJournalTemplateInfoFieldValue(
+						ddmTemplate, fieldName, journalArticle));
 			});
 
 		return infoFieldValues;
@@ -248,6 +168,12 @@ public class JournalArticleInfoItemFieldValuesProvider
 		return _assetDisplayPageFriendlyURLProvider.getFriendlyURL(
 			JournalArticle.class.getName(), journalArticle.getResourcePrimKey(),
 			themeDisplay);
+	}
+
+	private String _getInfoItemFormVariationKey(JournalArticle journalArticle) {
+		DDMStructure ddmStructure = journalArticle.getDDMStructure();
+
+		return String.valueOf(ddmStructure.getStructureId());
 	}
 
 	private List<InfoFieldValue<Object>> _getJournalArticleInfoFieldValues(
@@ -372,6 +298,88 @@ public class JournalArticleInfoItemFieldValuesProvider
 		}
 	}
 
+	private InfoFieldValue<Object> _getJournalTemplateInfoFieldValue(
+		DDMTemplate ddmTemplate, String fieldName,
+		JournalArticle journalArticle) {
+
+		Locale locale = LocaleThreadLocal.getThemeDisplayLocale();
+
+		String languageId = LocaleUtil.toLanguageId(locale);
+
+		return new InfoFieldValue<>(
+			InfoField.builder(
+			).infoFieldType(
+				TextInfoFieldType.INSTANCE
+			).name(
+				fieldName
+			).labelInfoLocalizedValue(
+				InfoLocalizedValue.localize(getClass(), fieldName)
+			).build(),
+			() -> {
+				ThemeDisplay themeDisplay = _getThemeDisplay();
+
+				HttpServletRequest httpServletRequest =
+					themeDisplay.getRequest();
+
+				InfoItemDetailsProvider infoItemDetailsProvider =
+					_infoItemServiceTracker.getFirstInfoItemService(
+						InfoItemDetailsProvider.class,
+						JournalArticle.class.getName());
+
+				httpServletRequest.setAttribute(
+					InfoDisplayWebKeys.INFO_ITEM_DETAILS,
+					infoItemDetailsProvider.getInfoItemDetails(journalArticle));
+
+				for (InfoDisplayRequestAttributesContributor
+						infoDisplayRequestAttributesContributor :
+							_infoDisplayRequestAttributesContributors) {
+
+					infoDisplayRequestAttributesContributor.addAttributes(
+						httpServletRequest);
+				}
+
+				PortletRequestModel portletRequestModel = null;
+
+				PortletRequest portletRequest =
+					(PortletRequest)httpServletRequest.getAttribute(
+						JavaConstants.JAVAX_PORTLET_REQUEST);
+
+				PortletResponse portletResponse =
+					(PortletResponse)httpServletRequest.getAttribute(
+						JavaConstants.JAVAX_PORTLET_RESPONSE);
+
+				if ((portletRequest != null) && (portletResponse != null)) {
+					portletRequestModel = new PortletRequestModel(
+						portletRequest, portletResponse);
+				}
+
+				JournalArticleDisplay journalArticleDisplay =
+					_journalContent.getDisplay(
+						journalArticle, ddmTemplate.getTemplateKey(),
+						com.liferay.portal.kernel.util.Constants.VIEW,
+						languageId, 1, portletRequestModel, themeDisplay);
+
+				if (journalArticleDisplay != null) {
+					return journalArticleDisplay.getContent();
+				}
+
+				try {
+					journalArticleDisplay =
+						_journalArticleLocalService.getArticleDisplay(
+							journalArticle, ddmTemplate.getTemplateKey(), null,
+							languageId, 1, null, themeDisplay);
+
+					return journalArticleDisplay.getContent();
+				}
+				catch (Exception exception) {
+					throw new RuntimeException(
+						"Unable to render dynamic data mapping template " +
+							ddmTemplate.getTemplateId(),
+						exception);
+				}
+			});
+	}
+
 	private User _getLastVersionUser(JournalArticle journalArticle) {
 		List<JournalArticle> articles = _journalArticleLocalService.getArticles(
 			journalArticle.getGroupId(), journalArticle.getArticleId(), 0, 1,
@@ -437,6 +445,9 @@ public class JournalArticleInfoItemFieldValuesProvider
 
 	@Reference
 	private JournalConverter _journalConverter;
+
+	@Reference
+	private TemplateInfoItemFieldSetProvider _templateInfoItemFieldSetProvider;
 
 	@Reference
 	private UserLocalService _userLocalService;

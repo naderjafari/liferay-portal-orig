@@ -17,11 +17,13 @@ package com.liferay.object.rest.internal.graphql.dto.v1_0;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.rest.dto.v1_0.ObjectEntry;
-import com.liferay.object.rest.internal.manager.v1_0.ObjectEntryManager;
 import com.liferay.object.rest.internal.odata.entity.v1_0.ObjectEntryEntityModel;
+import com.liferay.object.rest.manager.v1_0.ObjectEntryManager;
+import com.liferay.object.scope.ObjectScopeProvider;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.aggregation.Aggregation;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
@@ -50,13 +52,14 @@ public class ObjectDefinitionGraphQLDTOContributor
 
 	public static ObjectDefinitionGraphQLDTOContributor of(
 		ObjectDefinition objectDefinition,
-		ObjectEntryManager objectEntryManager, List<ObjectField> objectFields) {
+		ObjectEntryManager objectEntryManager, List<ObjectField> objectFields,
+		ObjectScopeProvider objectScopeProvider) {
 
 		List<GraphQLDTOProperty> graphQLDTOProperties = new ArrayList<>();
 
 		graphQLDTOProperties.add(
 			GraphQLDTOProperty.of(
-				objectDefinition.getPrimaryKeyColumnName(), Long.class));
+				objectDefinition.getPKObjectFieldName(), Long.class));
 
 		for (ObjectField objectField : objectFields) {
 			graphQLDTOProperties.add(
@@ -67,10 +70,12 @@ public class ObjectDefinitionGraphQLDTOContributor
 		}
 
 		return new ObjectDefinitionGraphQLDTOContributor(
+			objectDefinition.getCompanyId(),
 			new ObjectEntryEntityModel(objectFields), graphQLDTOProperties,
-			objectDefinition.getPrimaryKeyColumnName(),
-			objectDefinition.getObjectDefinitionId(), objectEntryManager,
-			objectDefinition.getName());
+			StringUtil.removeSubstring(
+				objectDefinition.getPKObjectFieldName(), "c_"),
+			objectDefinition, objectEntryManager, objectScopeProvider,
+			objectDefinition.getShortName(), objectDefinition.getName());
 	}
 
 	@Override
@@ -80,8 +85,8 @@ public class ObjectDefinitionGraphQLDTOContributor
 
 		return _toMap(
 			_objectEntryManager.addObjectEntry(
-				dtoConverterContext, dtoConverterContext.getUserId(),
-				_objectDefinitionId, _toObjectEntry(dto)));
+				dtoConverterContext, _objectDefinition, _toObjectEntry(dto),
+				(String)dtoConverterContext.getAttribute("scopeKey")));
 	}
 
 	@Override
@@ -92,12 +97,18 @@ public class ObjectDefinitionGraphQLDTOContributor
 	}
 
 	@Override
+	public long getCompanyId() {
+		return _companyId;
+	}
+
+	@Override
 	public Map<String, Object> getDTO(
 			DTOConverterContext dtoConverterContext, long id)
 		throws Exception {
 
 		return _toMap(
-			_objectEntryManager.getObjectEntry(dtoConverterContext, id));
+			_objectEntryManager.getObjectEntry(
+				dtoConverterContext, _objectDefinition, id));
 	}
 
 	@Override
@@ -108,8 +119,9 @@ public class ObjectDefinitionGraphQLDTOContributor
 
 		Page<ObjectEntry> page = _objectEntryManager.getObjectEntries(
 			(Long)dtoConverterContext.getAttribute("companyId"),
-			_objectDefinitionId, aggregation, dtoConverterContext, filter,
-			pagination, search, sorts);
+			_objectDefinition,
+			(String)dtoConverterContext.getAttribute("scopeKey"), aggregation,
+			dtoConverterContext, filter, pagination, search, sorts);
 
 		Collection<ObjectEntry> items = page.getItems();
 
@@ -145,6 +157,15 @@ public class ObjectDefinitionGraphQLDTOContributor
 		return _resourceName;
 	}
 
+	public String getTypeName() {
+		return _typeName;
+	}
+
+	@Override
+	public boolean hasScope() {
+		return _objectScopeProvider.isGroupAware();
+	}
+
 	@Override
 	public Map<String, Object> updateDTO(
 			Map<String, Object> dto, DTOConverterContext dtoConverterContext,
@@ -153,21 +174,27 @@ public class ObjectDefinitionGraphQLDTOContributor
 
 		return _toMap(
 			_objectEntryManager.updateObjectEntry(
-				dtoConverterContext, dtoConverterContext.getUserId(), id,
+				dtoConverterContext, _objectDefinition, id,
 				_toObjectEntry(dto)));
 	}
 
 	private ObjectDefinitionGraphQLDTOContributor(
-		EntityModel entityModel, List<GraphQLDTOProperty> graphQLDTOProperties,
-		String idName, long objectDefinitionId,
-		ObjectEntryManager objectEntryManager, String resourceName) {
+		long companyId, EntityModel entityModel,
+		List<GraphQLDTOProperty> graphQLDTOProperties, String idName,
+		ObjectDefinition objectDefinition,
+		ObjectEntryManager objectEntryManager,
+		ObjectScopeProvider objectScopeProvider, String resourceName,
+		String typeName) {
 
+		_companyId = companyId;
 		_entityModel = entityModel;
 		_graphQLDTOProperties = graphQLDTOProperties;
 		_idName = idName;
-		_objectDefinitionId = objectDefinitionId;
+		_objectDefinition = objectDefinition;
 		_objectEntryManager = objectEntryManager;
+		_objectScopeProvider = objectScopeProvider;
 		_resourceName = resourceName;
+		_typeName = typeName;
 	}
 
 	private Map<String, Object> _toMap(ObjectEntry objectEntry) {
@@ -180,6 +207,10 @@ public class ObjectDefinitionGraphQLDTOContributor
 
 	private ObjectEntry _toObjectEntry(Map<String, Object> map) {
 		ObjectEntry objectEntry = new ObjectEntry();
+
+		if (map == null) {
+			return objectEntry;
+		}
 
 		objectEntry.setId((Long)map.get(getIdName()));
 
@@ -211,11 +242,14 @@ public class ObjectDefinitionGraphQLDTOContributor
 			"String", String.class
 		).build();
 
+	private final long _companyId;
 	private final EntityModel _entityModel;
 	private final List<GraphQLDTOProperty> _graphQLDTOProperties;
 	private final String _idName;
-	private final long _objectDefinitionId;
+	private final ObjectDefinition _objectDefinition;
 	private final ObjectEntryManager _objectEntryManager;
+	private final ObjectScopeProvider _objectScopeProvider;
 	private final String _resourceName;
+	private final String _typeName;
 
 }

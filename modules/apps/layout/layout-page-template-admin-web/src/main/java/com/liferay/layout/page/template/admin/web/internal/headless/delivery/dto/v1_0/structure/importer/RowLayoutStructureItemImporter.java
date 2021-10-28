@@ -19,10 +19,8 @@ import com.liferay.layout.util.constants.LayoutDataItemTypeConstants;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.layout.util.structure.RowStyledLayoutStructureItem;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.util.GetterUtil;
 
 import java.util.List;
@@ -41,16 +39,18 @@ public class RowLayoutStructureItemImporter
 
 	@Override
 	public LayoutStructureItem addLayoutStructureItem(
-			Layout layout, LayoutStructure layoutStructure,
-			PageElement pageElement, String parentItemId, int position,
-			Set<String> warningMessages)
+			LayoutStructure layoutStructure,
+			LayoutStructureItemImporterContext
+				layoutStructureItemImporterContext,
+			PageElement pageElement, Set<String> warningMessages)
 		throws Exception {
 
 		RowStyledLayoutStructureItem rowStyledLayoutStructureItem =
 			(RowStyledLayoutStructureItem)
 				layoutStructure.addLayoutStructureItem(
-					LayoutDataItemTypeConstants.TYPE_ROW, parentItemId,
-					position);
+					LayoutDataItemTypeConstants.TYPE_ROW,
+					layoutStructureItemImporterContext.getParentItemId(),
+					layoutStructureItemImporterContext.getPosition());
 
 		Map<String, Object> definitionMap = getDefinitionMap(
 			pageElement.getDefinition());
@@ -140,31 +140,41 @@ public class RowLayoutStructureItemImporter
 		RowStyledLayoutStructureItem rowStyledLayoutStructureItem,
 		Map<String, Object> rowViewportDefinitionMap, String rowViewportId) {
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-		if (rowViewportDefinitionMap.containsKey("modulesPerRow")) {
-			jsonObject.put(
-				"modulesPerRow",
-				GetterUtil.getInteger(
-					rowViewportDefinitionMap.get("modulesPerRow")));
-		}
-
-		if (rowViewportDefinitionMap.containsKey("reverseOrder")) {
-			jsonObject.put(
-				"reverseOrder",
-				GetterUtil.getBoolean(
-					rowViewportDefinitionMap.get("reverseOrder")));
-		}
-
-		if (rowViewportDefinitionMap.containsKey("verticalAlignment")) {
-			jsonObject.put(
-				"verticalAlignment",
-				GetterUtil.getString(
-					rowViewportDefinitionMap.get("verticalAlignment")));
-		}
-
 		rowStyledLayoutStructureItem.setViewportConfiguration(
-			rowViewportId, jsonObject);
+			rowViewportId,
+			JSONUtil.put(
+				"modulesPerRow",
+				() -> {
+					if (rowViewportDefinitionMap.containsKey("modulesPerRow")) {
+						return GetterUtil.getInteger(
+							rowViewportDefinitionMap.get("modulesPerRow"));
+					}
+
+					return null;
+				}
+			).put(
+				"reverseOrder",
+				() -> {
+					if (rowViewportDefinitionMap.containsKey("reverseOrder")) {
+						return GetterUtil.getBoolean(
+							rowViewportDefinitionMap.get("reverseOrder"));
+					}
+
+					return null;
+				}
+			).put(
+				"verticalAlignment",
+				() -> {
+					if (rowViewportDefinitionMap.containsKey(
+							"verticalAlignment")) {
+
+						return GetterUtil.getString(
+							rowViewportDefinitionMap.get("verticalAlignment"));
+					}
+
+					return null;
+				}
+			));
 	}
 
 }

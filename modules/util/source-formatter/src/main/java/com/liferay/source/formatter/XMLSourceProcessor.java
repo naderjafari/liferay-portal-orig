@@ -32,11 +32,11 @@ public class XMLSourceProcessor extends BaseSourceProcessor {
 		return getFileNames(
 			new String[] {
 				"**/.bnd/**", "**/.idea/**", "**/.ivy/**", "**/bin/**",
-				"**/javadocs-*.xml", "**/logs/**", "**/portal-impl/**/*.action",
-				"**/portal-impl/**/*.function", "**/portal-impl/**/*.macro",
-				"**/portal-impl/**/*.testcase", "**/src/test/**",
-				"**/test-classes/unit/**", "**/test-results/**",
-				"**/test/unit/**", "**/tools/node**"
+				"**/javadocs-*.xml", "**/logs/**", "**/modules/**/.project",
+				"**/portal-impl/**/*.action", "**/portal-impl/**/*.function",
+				"**/portal-impl/**/*.macro", "**/portal-impl/**/*.testcase",
+				"**/src/test/**", "**/test-classes/unit/**",
+				"**/test-results/**", "**/test/unit/**", "**/tools/node**"
 			},
 			getIncludes());
 	}
@@ -52,7 +52,9 @@ public class XMLSourceProcessor extends BaseSourceProcessor {
 		throws Exception {
 
 		if ((fileName.endsWith(".function") || fileName.endsWith(".macro") ||
-			 fileName.endsWith(".project") || fileName.endsWith(".testcase")) &&
+			 fileName.endsWith(".project") ||
+			 fileName.endsWith(".properties") ||
+			 fileName.endsWith(".testcase")) &&
 			!SourceUtil.isXML(content)) {
 
 			return file;
@@ -92,8 +94,8 @@ public class XMLSourceProcessor extends BaseSourceProcessor {
 
 	private static final String[] _INCLUDES = {
 		"**/*.action", "**/*.function", "**/*.jrxml", "**/*.macro", "**/*.pom",
-		"**/*.project", "**/*.testcase", "**/*.toggle", "**/*.wsdl", "**/*.xml",
-		"**/definitions/liferay-*.xsd", "**/*.xml.tpl"
+		"**/*.project", "**/*.properties", "**/*.testcase", "**/*.toggle",
+		"**/*.wsdl", "**/*.xml", "**/definitions/liferay-*.xsd", "**/*.xml.tpl"
 	};
 
 }

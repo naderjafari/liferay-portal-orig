@@ -3,7 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.main.component.name = "Commerce";
+	property testray.main.component.name = "Shopping Experience";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -12,25 +12,23 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		Navigator.openURL();
 
-		if ("${testPortalInstance}" == "true") {
-			PortalInstances.tearDownCP();
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
+			User.logoutPG();
 		}
-		else {
-			Navigator.openURL();
 
-			CommerceConfiguration.commerceAdminTearDown();
+		User.firstLoginPG();
 
-			CommerceConfiguration.commerceInitializersTearDown();
-		}
+		CommerceConfiguration.commerceAdminTearDown();
+
+		CommerceConfiguration.commerceInitializersTearDown();
 	}
 
 	@description = "COMMERCE-6374. As a buyer, I want to be able to create a new order by clicking on 'Add Order' button"
 	@priority = "3"
 	test CreateNewOrderFromPendingOrdersPage {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "SFCommerceOrders#CreateNewOrderFromPendingOrdersPage";
 
 		// TODO Review
 
@@ -40,9 +38,7 @@ definition {
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
 
-		CommerceAcceleratorsInitializer.createNewAccountViaFront(
-			accountName = "Test Test",
-			adminEmailAddress = "test@liferay.com");
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Test Test");
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
 
@@ -63,7 +59,6 @@ definition {
 	@priority = "3"
 	test DeleteOrderFromPendingOrderDetailsPage {
 		property portal.acceptance = "Intern Test";
-		property test.name.skip.portal.instance = "SFCommerceOrders#DeleteOrderFromPendingOrderDetailsPage";
 
 		// TODO Review
 
@@ -73,9 +68,7 @@ definition {
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
 
-		CommerceAcceleratorsInitializer.createNewAccountViaFront(
-			accountName = "Test Account",
-			adminEmailAddress = "test@liferay.com");
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Test Account");
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
 
@@ -106,7 +99,6 @@ definition {
 	@priority = "3"
 	test EditOrderFromPendingOrderDetailsPage {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "SFCommerceOrders#EditOrderFromPendingOrderDetailsPage";
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
@@ -114,14 +106,9 @@ definition {
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
 
-		CommerceAcceleratorsInitializer.createNewAccountViaFront(
-			accountName = "Test Test",
-			adminEmailAddress = "test@liferay.com");
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Test Test");
 
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Accounts");
+		Accounts.openAccountsAdmin();
 
 		CommerceNavigator.gotoEntry(entryName = "Test Test");
 
@@ -224,20 +211,9 @@ definition {
 	}
 
 	@description = "COMMERCE-6383. As a buyer, I want to be able to Reorder the Placed Order by clicking on 'Reorder' button"
-	@ignore = "true"
 	@priority = "3"
 	test ReorderFromPlacedOrdersDetailsPage {
 		property portal.acceptance = "false";
-
-		// TODO COMMERCE-6383 ReorderFromPlacedOrdersDetailsPage pending implementation
-
-	}
-
-	@description = "COMMERCE-6375. As a buyer, I want to be able to search for one pending order using the search bar"
-	@priority = "3"
-	test SearchOrderInPendingOrdersPage {
-		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "SFCommerceOrders#SearchOrderInPendingOrdersPage";
 
 		// TODO Review
 
@@ -247,9 +223,71 @@ definition {
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
 
-		CommerceAcceleratorsInitializer.createNewAccountViaFront(
-			accountName = "Test Test",
-			adminEmailAddress = "test@liferay.com");
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Test Account");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
+
+		FrontStore.addInitializerProductToCart(
+			productName = "U-Joint",
+			productQuantity = "1");
+
+		CommerceNavigator.gotoMiniCart();
+
+		Button.click(button = "View Details");
+
+		Button.click(button = "Checkout");
+
+		CommerceCheckout.initializersCheckout(
+			newAddressAddress = "Test Address",
+			newAddressCity = "Test City",
+			newAddressCountry = "United States",
+			newAddressName = "Address Name",
+			newAddressZipCode = "Test Zip Code",
+			productName = "U-Joint",
+			productQuantity = "1",
+			productUnitPrice = "24",
+			shippingMethod = "Standard");
+
+		Click(
+			key_text = "Go to Order Details",
+			locator1 = "Button#ANY");
+
+		Click(
+			key_text = "Reorder",
+			locator1 = "Button#ANY");
+
+		for (var iterator : list "1,2,3,4,5") {
+			if ("${iterator}" == "2") {
+				Click(
+					key_radioOption = "Standard",
+					locator1 = "CommerceEntry#RADIO_BUTTON");
+			}
+			else {
+				Click(locator1 = "Button#CONTINUE");
+			}
+		}
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Placed Orders");
+
+		AssertTextEquals(
+			locator1 = "CommerceEntry#PAGINATION_RESULTS",
+			value1 = "Showing 1 to 2 of 2");
+	}
+
+	@description = "COMMERCE-6375. As a buyer, I want to be able to search for one pending order using the search bar"
+	@priority = "3"
+	test SearchOrderInPendingOrdersPage {
+		property portal.acceptance = "false";
+
+		// TODO Review
+
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
+
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Test Test");
 
 		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Pending Orders");
 
@@ -285,43 +323,294 @@ definition {
 	}
 
 	@description = "COMMERCE-6381. As a buyer, I want to be able to search for one placed order using the search bar"
-	@ignore = "true"
 	@priority = "3"
 	test SearchOrderInPlacedOrdersPage {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6381 SearchOrderInPlacedOrdersPage pending implementation
+		// TODO Review
 
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
+
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Test Account");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Pending Orders");
+
+		Click(
+			key_text = "Add Order",
+			locator1 = "Button#ANY");
+
+		SelectFrameTop();
+
+		var firstOrderId = selenium.getText("CommerceEntry#ACTIVE_ORDER_ID");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
+
+		FrontStore.addInitializerProductToCart(
+			productName = "U-Joint",
+			productQuantity = "1");
+
+		CommerceNavigator.gotoMiniCart();
+
+		Button.click(button = "View Details");
+
+		Button.click(button = "Checkout");
+
+		CommerceCheckout.initializersCheckout(
+			newAddressAddress = "Test Address",
+			newAddressCity = "Test City",
+			newAddressCountry = "United States",
+			newAddressName = "Address Name",
+			newAddressZipCode = "Test Zip Code",
+			productName = "U-Joint",
+			productQuantity = "1",
+			productUnitPrice = "24",
+			shippingMethod = "Standard");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Pending Orders");
+
+		Click(
+			key_text = "Add Order",
+			locator1 = "Button#ANY");
+
+		SelectFrameTop();
+
+		var secondOrderId = selenium.getText("CommerceEntry#ACTIVE_ORDER_ID");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
+
+		FrontStore.addInitializerProductToCart(
+			productName = "Transmission Cooler Line Assembly",
+			productQuantity = "2");
+
+		CommerceNavigator.gotoMiniCart();
+
+		Button.click(button = "View Details");
+
+		Button.click(button = "Checkout");
+
+		CommerceCheckout.initializersCheckout(
+			newAddressAddress = "Test Address",
+			newAddressCity = "Test City",
+			newAddressCountry = "United States",
+			newAddressName = "Address Name",
+			newAddressZipCode = "Test Zip Code",
+			productName = "Transmission Cooler Line Assembly",
+			productQuantity = "2",
+			productUnitPrice = "15",
+			shippingMethod = "Standard");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Placed Orders");
+
+		CommerceNavigator.searchEntry(entryName = "${firstOrderId}");
+
+		AssertElementPresent(
+			key_errorMessage = "${firstOrderId}",
+			locator1 = "WorkflowMetricsSLA#SLA_ERROR_MESSAGE");
+
+		AssertElementNotPresent(
+			key_errorMessage = "${secondOrderId}",
+			locator1 = "WorkflowMetricsSLA#SLA_ERROR_MESSAGE");
 	}
 
 	@description = "COMMERCE-6665. I want to be able to select a Display Template in Pending Orders widget and see it applied to the widget"
-	@ignore = "true"
 	@priority = "3"
 	test UseADTInPendingOrdersWidget {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6665 UseADTInPendingOrdersWidget pending implementation
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		ProductMenu.gotoPortlet(
+			category = "Design",
+			portlet = "Templates");
+
+		Navigator.gotoNavTab(navTab = "Widget Templates");
+
+		CommerceAcceleratorsInitializer.addADT(
+			adtType = "Open Carts",
+			fieldNameList = "Commerce Orders*");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
+
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Commerce Account");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
+
+		FrontStore.addInitializerProductToCart(
+			productName = "U-Joint",
+			productQuantity = "1");
+
+		var orderId = selenium.getText("CommerceEntry#ACTIVE_ORDER_ID");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Pending Orders");
+
+		ApplicationDisplayTemplates.selectPortletADT(
+			portletName = "Open Carts",
+			templateName = "Open Carts Test ADT");
+
+		AssertTextEquals.assertPartialText(
+			key_portletName = "Open Carts",
+			locator1 = "Portlet#BODY",
+			value1 = "${orderId}");
 	}
 
 	@description = "COMMERCE-6666. I want to be able to select a Display Template in Placed Orders widget and see it applied to the widget"
-	@ignore = "true"
 	@priority = "3"
 	test UseADTInPlacedOrdersWidget {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6666 UseADTInPlacedOrdersWidget pending implementation
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		ProductMenu.gotoPortlet(
+			category = "Design",
+			portlet = "Templates");
+
+		Navigator.gotoNavTab(navTab = "Widget Templates");
+
+		CommerceAcceleratorsInitializer.addADT(
+			adtType = "Placed Orders",
+			fieldNameList = "Commerce Orders*");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
+
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Commerce Account");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
+
+		FrontStore.addInitializerProductToCart(
+			productName = "U-Joint",
+			productQuantity = "1");
+
+		var orderId = selenium.getText("CommerceEntry#ACTIVE_ORDER_ID");
+
+		CommerceNavigator.gotoMiniCart();
+
+		Button.click(button = "View Details");
+
+		Button.click(button = "Checkout");
+
+		CommerceCheckout.initializersCheckout(
+			newAddressAddress = "Test Address",
+			newAddressCity = "Test City",
+			newAddressCountry = "United States",
+			newAddressName = "Address Name",
+			newAddressZipCode = "Test Zip Code",
+			productName = "U-Joint",
+			productQuantity = "1",
+			productUnitPrice = "24",
+			shippingMethod = "Standard");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Placed Orders");
+
+		ApplicationDisplayTemplates.selectPortletADT(
+			portletName = "Placed Orders",
+			templateName = "Placed Orders Test ADT");
+
+		AssertTextEquals.assertPartialText(
+			key_portletName = "Placed Orders",
+			locator1 = "Portlet#BODY",
+			value1 = "${orderId}");
 	}
 
 	@description = "COMMERCE-6382. As a buyer, I want to be able to see the list of shipments for an order item by clicking on 'Shipments'"
-	@ignore = "true"
 	@priority = "3"
 	test ViewListOfShipmentsInPlacedOrdersDetailsPage {
 		property portal.acceptance = "false";
 
-		// TODO COMMERCE-6382 ViewListOfShipmentsInPlacedOrdersDetailsPage pending implementation
+		// TODO Review
 
+		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Account Management");
+
+		CommerceAcceleratorsInitializer.createNewAccountViaFront(accountName = "Test Account");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Catalog");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		FrontStore.addInitializerProductToCart(
+			productName = "U-Joint",
+			productQuantity = "1");
+
+		CommerceNavigator.gotoMiniCart();
+
+		Button.click(button = "View Details");
+
+		Button.click(button = "Checkout");
+
+		CommerceCheckout.initializersCheckout(
+			newAddressAddress = "Test Address",
+			newAddressCity = "Test City",
+			newAddressCountry = "United States",
+			newAddressName = "Address Name",
+			newAddressZipCode = "Test Zip Code",
+			productName = "U-Joint",
+			productQuantity = "1",
+			productUnitPrice = "24",
+			shippingMethod = "Standard");
+
+		CommerceNavigator.gotoPortlet(
+			category = "Order Management",
+			portlet = "Orders");
+
+		CommerceNavigator.gotoOrderEntryViaAdmin(status = "Pending");
+
+		Click(
+			key_text = "Accept Order",
+			locator1 = "Button#ANY");
+
+		CommerceOrders.createShipment(
+			carrierDetail = "Test Carrier",
+			complement = "Deliver",
+			productSKUList = "MIN55861",
+			warehouseName = "Italy");
+
+		ApplicationsMenu.gotoSite(site = "Minium");
+
+		CommerceNavigator.gotoMiniumSidebarItem(menuItem = "Placed Orders");
+
+		Click(
+			key_orderAuthor = "Test Account",
+			locator1 = "CommerceAccelerators#ORDERS_ENTRY_VIEW_BUTTON");
+
+		Click(
+			key_text = "Shipments",
+			locator1 = "Button#ANY");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		AssertVisible(
+			key_title = "Shipments",
+			locator1 = "Header#H2_TITLE");
+
+		for (var currentRow : list "status;Delivered,carrier;Test Carrier,tracking-number;Test Tracking Number") {
+			var currentColumn = StringUtil.extractFirst("${currentRow}",";");
+			var currentValue = StringUtil.extractLast("${currentRow}",";");
+
+			AssertTextEquals(
+				key_columnName = "${currentColumn}",
+				key_tableEntry = "",
+				locator1 = "LexiconTable#TABLE_ENTRY_INFO",
+				value1 = "${currentValue}");
+		}
 	}
 
 }

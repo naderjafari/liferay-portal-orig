@@ -27,6 +27,69 @@ definition {
 		}
 	}
 
+	@description = "Verify that the user can Approve a DDL Entry"
+	@ignore = "true"
+	@priority = "5"
+	test CanApproveDDLEntry {
+
+		// TODO LRQA-69481 CanApproveDDLEntry pending implementation
+
+	}
+
+	@description = "This is a test for LRQA-69474. Verify that if it is possible to create a Dynamic Data List. "
+	@ignore = "true"
+	@priority = "3"
+	test CanCreateDDL {
+
+		// TODO LRQA-69474 CanCreateDDL pending implementation
+
+	}
+
+	@description = "Verify that the user can Publish a Entry after Save as Draft"
+	@ignore = "true"
+	@priority = "4"
+	test CanPublishAfterSaveAsDraft {
+
+		// TODO LRQA-69476 CanPublishAfterSaveAsDraft pending implementation
+
+	}
+
+	@description = "Verify that, when the user Save as Draft, the DDL status is Draft"
+	@ignore = "true"
+	@priority = "3"
+	test CanSaveAsDraft {
+
+		// TODO LRQA-69475 CanSaveAsDraft pending implementation
+
+	}
+
+	@description = "Verify that the Entry is not displayed on My Workflow Tasks when the user Delete a DDL with Pending entry"
+	@ignore = "true"
+	@priority = "4"
+	test DeletedEntryIsNotDisplayedOnMyWorkflowTasks {
+
+		// TODO LRQA-69478 DeletedEntryIsNotDisplayedOnMyWorkflowTasks pending implementation
+
+	}
+
+	@description = "Verify that, when the user Save as Draft, the task is not displayed on My Workflow Tasks"
+	@ignore = "true"
+	@priority = "3"
+	test DraftEntryIsNotDisplayedOnMyWorkflowTasks {
+
+		// TODO LRQA-69477 DraftEntryIsNotDisplayedOnMyWorkflowTasks pending implementation
+
+	}
+
+	@description = "Verify that, editing an Approved entry, the DDL Entry status returns to Pending"
+	@ignore = "true"
+	@priority = "4"
+	test EditApprovedEntryReturnsToPending {
+
+		// TODO LRQA-69482 EditApprovedEntryReturnsToPending pending implementation
+
+	}
+
 	@description = "This is a use case for LPS-61212."
 	@priority = "5"
 	test EditDDLRecordViaMyWorkflowTasks {
@@ -139,6 +202,15 @@ definition {
 			workflowAssetTitle = "New Data Definition Name for List: DDL List Name",
 			workflowAssetType = "Dynamic Data Lists Record",
 			workflowTask = "Review");
+	}
+
+	@description = "Verify that, editing a Pending entry, a message is displayed"
+	@ignore = "true"
+	@priority = "2"
+	test MessageIsDisplayedOnEditingPendingEntry {
+
+		// TODO LRQA-69480 MessageIsDisplayedOnEditingPendingEntry pending implementation
+
 	}
 
 	@priority = "4"
@@ -257,6 +329,15 @@ definition {
 			fieldFieldLabel = "Text Label",
 			fieldName = "TextName",
 			workflowStatus = "Update");
+	}
+
+	@description = "Verify that, editing a Pending entry, the DDL Entry status remains on Pending"
+	@ignore = "true"
+	@priority = "3"
+	test StatusIsPendingWhenPendingEntryIsEdited {
+
+		// TODO LRQA-69479 StatusIsPendingWhenPendingEntryIsEdited pending implementation
+
 	}
 
 }

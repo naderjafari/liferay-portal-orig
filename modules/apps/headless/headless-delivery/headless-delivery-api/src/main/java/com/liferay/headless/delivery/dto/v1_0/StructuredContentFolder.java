@@ -67,6 +67,11 @@ public class StructuredContentFolder implements Serializable {
 		return ObjectMapperUtil.readValue(StructuredContentFolder.class, json);
 	}
 
+	public static StructuredContentFolder unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(
+			StructuredContentFolder.class, json);
+	}
+
 	@Schema(
 		description = "Block of actions allowed by the user making the request."
 	)
@@ -777,13 +782,17 @@ public class StructuredContentFolder implements Serializable {
 
 		@JsonCreator
 		public static ViewableBy create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (ViewableBy viewableBy : values()) {
 				if (Objects.equals(viewableBy.getValue(), value)) {
 					return viewableBy;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

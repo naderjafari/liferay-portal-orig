@@ -12,6 +12,7 @@ dependencies {
 	compileOnly group: "org.osgi", name: "osgi.core", version: "6.0.0"
 	compileOnly project(":apps:application-list:application-list-api")
 	compileOnly project(":apps:captcha:captcha-api")
+	compileOnly project(":apps:change-tracking:change-tracking-spi")
 	compileOnly project(":apps:configuration-admin:configuration-admin-api")
 	compileOnly project(":apps:document-library:document-library-api")
 	compileOnly project(":apps:dynamic-data-mapping:dynamic-data-mapping-api")
@@ -20,6 +21,7 @@ dependencies {
 	compileOnly project(":apps:dynamic-data-mapping:dynamic-data-mapping-form-item-selector-api")
 	compileOnly project(":apps:dynamic-data-mapping:dynamic-data-mapping-form-taglib")
 	compileOnly project(":apps:dynamic-data-mapping:dynamic-data-mapping-service")
+	compileOnly project(":apps:dynamic-data-mapping:dynamic-data-mapping-taglib")
 	compileOnly project(":apps:export-import:export-import-api")
 	compileOnly project(":apps:frontend-editor:frontend-editor-taglib")
 	compileOnly project(":apps:frontend-js:frontend-js-loader-modules-extender-api")
@@ -33,6 +35,7 @@ dependencies {
 	compileOnly project(":apps:journal:journal-article-dynamic-data-mapping-form-field-type-api")
 	compileOnly project(":apps:layout:layout-dynamic-data-mapping-form-field-type-api")
 	compileOnly project(":apps:layout:layout-type-controller:layout-type-controller-api")
+	compileOnly project(":apps:object:object-api")
 	compileOnly project(":apps:petra:petra-portlet-url-builder")
 	compileOnly project(":apps:portal:portal-instance-lifecycle-api")
 	compileOnly project(":apps:static:osgi:osgi-util")
@@ -45,7 +48,6 @@ dependencies {
 	compileOnly project(":core:petra:petra-lang")
 	compileOnly project(":core:petra:petra-sql-dsl-api")
 	compileOnly project(":core:petra:petra-string")
-	compileOnly project(":core:registry-api")
 
 	testCompile group: "org.skyscreamer", name: "jsonassert", version: "1.2.3"
 	testCompile project(":apps:dynamic-data-mapping:dynamic-data-mapping-expression")

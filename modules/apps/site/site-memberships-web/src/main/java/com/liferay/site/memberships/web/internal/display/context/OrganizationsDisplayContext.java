@@ -25,7 +25,6 @@ import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -131,8 +130,7 @@ public class OrganizationsDisplayContext {
 
 		organizationSearch.setEmptyResultsMessage(
 			LanguageUtil.format(
-				ResourceBundleUtil.getBundle(
-					themeDisplay.getLocale(), getClass()),
+				themeDisplay.getLocale(),
 				"no-organization-was-found-that-is-a-member-of-this-x",
 				StringUtil.toLowerCase(
 					GroupUtil.getGroupTypeLabel(
@@ -178,7 +176,7 @@ public class OrganizationsDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+		return PortletURLBuilder.createRenderURL(
 			_renderResponse
 		).setMVCPath(
 			"/view.jsp"
@@ -190,37 +188,54 @@ public class OrganizationsDisplayContext {
 
 				return themeDisplay.getURLCurrent();
 			}
+		).setKeywords(
+			() -> {
+				String keywords = getKeywords();
+
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
+
+				return null;
+			}
 		).setTabs1(
 			"organizations"
 		).setParameter(
+			"displayStyle",
+			() -> {
+				String displayStyle = getDisplayStyle();
+
+				if (Validator.isNotNull(displayStyle)) {
+					return displayStyle;
+				}
+
+				return null;
+			}
+		).setParameter(
 			"groupId", getGroupId()
-		).build();
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = getOrderByCol();
 
-		String displayStyle = getDisplayStyle();
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		if (Validator.isNotNull(displayStyle)) {
-			portletURL.setParameter("displayStyle", displayStyle);
-		}
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
 
-		String keywords = getKeywords();
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
-
-		String orderByCol = getOrderByCol();
-
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
-
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	private String _displayStyle;

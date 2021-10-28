@@ -109,7 +109,7 @@ definition {
 				id = "element-text");
 
 			PageEditorMapping.mapEditableFieldToAsset(
-				entryTitle = "WebContent Title",
+				entryTitle = "WC WebContent Title",
 				navItem = "Web Content");
 
 			Select(
@@ -118,22 +118,27 @@ definition {
 		}
 
 		task ("View mapped content") {
+			PageEditor.viewFragment(fragmentName = "Heading");
+
 			AssertTextEquals.assertPartialText(
+				fragmentName = "heading",
 				id = "element-text",
-				key_fragmentName = "Heading",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
+				index = "1",
+				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_TEXT",
 				value1 = "Category Name 3-1, Category Name 3-2, Category Name 3-3");
 
 			AssertTextEquals.assertPartialText(
+				fragmentName = "heading",
 				id = "element-text",
-				key_fragmentName = "Heading",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
+				index = "1",
+				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_TEXT",
 				value1 = "Subcategory Name 2");
 
 			AssertTextEquals.assertPartialText(
+				fragmentName = "heading",
 				id = "element-text",
-				key_fragmentName = "Heading",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
+				index = "1",
+				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_TEXT",
 				value1 = "Category Name 1");
 		}
 	}
@@ -142,10 +147,10 @@ definition {
 	@priority = "4"
 	test MapBlogsContentToLinkFragment {
 		task ("Add a blogs entry") {
-			JSONBlog.addEntry(
-				entryContent = "Blogs Entry Content",
-				entryTitle = "Blogs Entry Title",
-				groupName = "Test Site Name");
+			HeadlessBlog.addBlogEntry(
+				content = "Blogs Entry Content",
+				groupName = "Test Site Name",
+				title = "Blogs Entry Title");
 		}
 
 		task ("Add a Button fragment to page") {
@@ -285,11 +290,10 @@ definition {
 
 			PageEditor.waitForAutoSave();
 
-			AssertTextEquals(
-				id = "element-text",
-				key_fragmentName = "Heading",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
-				value1 = "Web Content Content");
+			PageEditor.viewFragmentEditableText(
+				editableText = "Web Content Content",
+				fragmentName = "Heading",
+				id = "element-text");
 		}
 
 		task ("Map custom ddmfield of document type to Paragraph fragment") {
@@ -315,11 +319,10 @@ definition {
 
 			PageEditor.waitForAutoSave();
 
-			AssertTextEquals(
-				id = "element-text",
-				key_fragmentName = "Paragraph",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
-				value1 = "DM Document Text");
+			PageEditor.viewFragmentEditableText(
+				editableText = "DM Document Text",
+				fragmentName = "Paragraph",
+				id = "element-text");
 		}
 
 		task ("Assert mapped content in view mode") {
@@ -329,15 +332,15 @@ definition {
 				pageName = "Content Page Name",
 				siteName = "Test Site Name");
 
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Web Content Content");
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Web Content Content");
 
-			AssertTextEquals(
-				key_fragmentName = "paragraph",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "DM Document Text");
+			ContentPages.viewFragmentText(
+				fragmentName = "paragraph",
+				id = "element-text",
+				text = "DM Document Text");
 		}
 	}
 
@@ -359,12 +362,13 @@ definition {
 
 			PageEditor.addFragment(
 				collectionName = "Featured Content",
+				composition = "true",
 				fragmentName = "Banner Center");
 		}
 
 		task ("Map the Title field of document to link editable field of Banner Center") {
 			PageEditorMapping.gotoEditableFieldMapping(
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			PageEditorMapping.mapEditableFieldToAsset(
@@ -379,7 +383,7 @@ definition {
 
 			PageEditor.viewFragmentEditableText(
 				editableText = "Document Title",
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			PageEditor.clickPublish();
@@ -463,12 +467,13 @@ definition {
 
 			PageEditor.addFragment(
 				collectionName = "Featured Content",
+				composition = "true",
 				fragmentName = "Banner Center");
 		}
 
 		task ("Map manual URL to link editable field of Banner Center") {
 			PageEditorEditableLink.gotoEditableFieldLink(
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			PageEditorEditableLink.updateURL(
@@ -593,17 +598,16 @@ definition {
 		}
 
 		task ("View the selected page is shown in Page field") {
-			AssertVisible(
-				key_contentName = "Test Public Page Name",
-				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT");
+			AssertTextEquals(
+				key_fieldLabel = "Page",
+				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT",
+				value1 = "Test Public Page Name");
 		}
 
 		task ("View selected page is linked to Button fragment") {
-			var baseURL = PropsUtil.get("portal.url");
-
 			AssertVisible(
 				key_append = "//img[contains(@src,'data:image/png')]",
-				key_URL = "${baseURL}/web/test-site-name/test-public-page-name",
+				key_URL = "/web/test-site-name/test-public-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			PageEditor.clickPublish();
@@ -618,7 +622,7 @@ definition {
 		task ("Assert redirect to public widget page") {
 			Click(
 				key_append = "//img[contains(@src,'data:image/png')]",
-				key_URL = "${baseURL}/web/test-site-name/test-public-page-name",
+				key_URL = "/web/test-site-name/test-public-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			AssertTextEquals(
@@ -643,17 +647,16 @@ definition {
 		}
 
 		task ("View the selected page is shown in Page field") {
-			AssertVisible(
-				key_contentName = "Test Private Page Name",
-				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT");
+			AssertTextEquals(
+				key_fieldLabel = "Page",
+				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT",
+				value1 = "Test Private Page Name");
 		}
 
 		task ("View selected page is linked to Image fragment") {
-			var baseURL = PropsUtil.get("portal.url");
-
 			AssertVisible(
 				key_append = "//img[contains(@src,'data:image/png')]",
-				key_URL = "${baseURL}/group/test-site-name/test-private-page-name",
+				key_URL = "/group/test-site-name/test-private-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			PageEditor.clickPublish();
@@ -668,7 +671,7 @@ definition {
 		task ("Assert redirect to private widget page") {
 			Click(
 				key_append = "//img[contains(@src,'data:image/png')]",
-				key_URL = "${baseURL}/group/test-site-name/test-private-page-name",
+				key_URL = "/group/test-site-name/test-private-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			AssertTextEquals(
@@ -709,11 +712,11 @@ definition {
 		}
 
 		task ("Add a blogs entry with the new category") {
-			JSONBlog.addEntry(
+			HeadlessBlog.addBlogEntry(
 				assetCategoryIds = "${categoryId}",
-				entryContent = "Blogs Entry Content",
-				entryTitle = "Blogs Entry Title",
-				groupName = "Test Site Name");
+				content = "Blogs Entry Content",
+				groupName = "Test Site Name",
+				title = "Blogs Entry Title");
 		}
 
 		task ("Add a document based on Basic Document with the new category") {
@@ -809,11 +812,11 @@ definition {
 		property portal.acceptance = "true";
 
 		task ("Add a blogs entry with a tag") {
-			JSONBlog.addEntry(
+			HeadlessBlog.addBlogEntry(
 				assetTagNames = "tagname1",
-				entryContent = "Blogs Entry Content",
-				entryTitle = "Blogs Entry Title",
-				groupName = "Test Site Name");
+				content = "Blogs Entry Content",
+				groupName = "Test Site Name",
+				title = "Blogs Entry Title");
 		}
 
 		task ("Add a Heading fragment to page") {
@@ -963,12 +966,13 @@ definition {
 
 			PageEditor.addFragment(
 				collectionName = "Featured Content",
+				composition = "true",
 				fragmentName = "Banner Center");
 		}
 
 		task ("Assert map the fields of web content to link fragment") {
 			PageEditorMapping.gotoEditableFieldMapping(
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			PageEditorMapping.mapEditableFieldToAsset(
@@ -983,7 +987,7 @@ definition {
 
 			PageEditor.viewFragmentEditableText(
 				editableText = "This is a Text field",
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			Select(
@@ -994,7 +998,7 @@ definition {
 
 			PageEditor.viewFragmentEditableText(
 				editableText = "This is a Text Box field",
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			Select(
@@ -1005,7 +1009,7 @@ definition {
 
 			PageEditor.viewFragmentEditableText(
 				editableText = "This is a Rich Text field",
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			Select(
@@ -1016,7 +1020,7 @@ definition {
 
 			PageEditor.viewFragmentEditableText(
 				editableText = "10/10/20",
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			Select(
@@ -1027,7 +1031,7 @@ definition {
 
 			PageEditor.viewFragmentEditableText(
 				editableText = "9",
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			Select(
@@ -1038,7 +1042,7 @@ definition {
 
 			PageEditor.viewFragmentEditableText(
 				editableText = "0.5",
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 		}
 	}
@@ -1322,23 +1326,17 @@ definition {
 
 			PageEditor.addFragment(
 				collectionName = "Featured Content",
+				composition = "true",
 				fragmentName = "Banner Center");
 		}
 
 		task ("Map the Image field to the background image field") {
-			PageEditorMapping.gotoEditableFieldMapping(
-				fragmentName = "Banner Center",
-				id = "banner-center");
-
-			PageEditorMapping.mapEditableFieldToAsset(
+			PageEditor.editLayoutContainer(
+				backgroundImage = "Mapping",
 				entryTitle = "WC WebContent Title",
-				navItem = "Web Content");
-
-			Select(
-				locator1 = "PageEditorEditableLink#FIELD",
-				value1 = "Image");
-
-			PageEditor.waitForAutoSave();
+				fieldName = "Image",
+				navItem = "Web Content",
+				panel = "Styles");
 
 			PageEditor.clickPublish();
 		}
@@ -1348,9 +1346,7 @@ definition {
 				pageName = "Content Page Name",
 				siteName = "Test Site Name");
 
-			AssertElementPresent(
-				key_imageName = "Document_2.jpeg",
-				locator1 = "Fragment#FRAGMENT_SECTION_BACKGROUND_IMAGE");
+			ContentPages.viewFragmentBackgroundImage(image = "Document_2.jpeg");
 		}
 	}
 
@@ -1373,12 +1369,13 @@ definition {
 
 			PageEditor.addFragment(
 				collectionName = "Featured Content",
+				composition = "true",
 				fragmentName = "Banner Center");
 		}
 
 		task ("Map the Title field of web content to link type editable field") {
 			PageEditorMapping.gotoEditableFieldMapping(
-				fragmentName = "Banner Center",
+				fragmentName = "Button",
 				id = "link");
 
 			PageEditorMapping.mapEditableFieldToAsset(
@@ -1463,16 +1460,16 @@ definition {
 		}
 
 		task ("Open the Preview modal") {
-			Click(locator1 = "PageEditor#PREVIEW");
-
-			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+			PageEditor.openPreviewMode();
 		}
 
 		task ("Assert the web content in Preview Modal") {
-			AssertTextEquals(
-				key_fragmentName = "heading",
-				locator1 = "Fragment#FRAGMENT_BASIC_COMPONENT",
-				value1 = "Web Content Title 1");
+			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+
+			ContentPages.viewFragmentText(
+				fragmentName = "heading",
+				id = "element-text",
+				text = "Web Content Title 1");
 
 			AssertVisible(
 				key_content = "[contains(.,'Web Content Content 1')]",
@@ -1530,11 +1527,10 @@ definition {
 		}
 
 		task ("Assert the title of web content is shown in Heading") {
-			AssertTextEquals(
-				id = "element-text",
-				key_fragmentName = "Heading",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
-				value1 = "Web Content Title");
+			PageEditor.viewFragmentEditableText(
+				editableText = "Web Content Title",
+				fragmentName = "Heading",
+				id = "element-text");
 		}
 
 		task ("Move the web content to the Recycle Bin") {
@@ -1548,11 +1544,10 @@ definition {
 				pageName = "Content Page Name",
 				siteName = "Test Site Name");
 
-			AssertTextEquals(
-				id = "element-text",
-				key_fragmentName = "Heading",
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_EDITABLE_FIELD",
-				value1 = "Heading Example");
+			PageEditor.viewFragmentEditableText(
+				editableText = "Heading Example",
+				fragmentName = "Heading",
+				id = "element-text");
 		}
 	}
 
@@ -1583,17 +1578,16 @@ definition {
 		}
 
 		task ("View the selected page is shown in Page field") {
-			AssertVisible(
-				key_contentName = "Test Widget Page Name",
-				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT");
+			AssertTextEquals(
+				key_fieldLabel = "Page",
+				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT",
+				value1 = "Test Widget Page Name");
 		}
 
 		task ("View selected page is linked to Button fragment") {
-			var baseURL = PropsUtil.get("portal.url");
-
 			AssertVisible(
 				key_append = "[normalize-space(text())='Go Somewhere']",
-				key_URL = "${baseURL}/web/test-site-name/test-widget-page-name",
+				key_URL = "/web/test-site-name/test-widget-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			PageEditor.clickPublish();
@@ -1614,14 +1608,14 @@ definition {
 		task ("View selected page is still linked to Button fragment") {
 			AssertVisible(
 				key_append = "[normalize-space(text())='Go Somewhere']",
-				key_URL = "${baseURL}/web/test-site-name/test-widget-page-name",
+				key_URL = "/web/test-site-name/test-widget-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 		}
 
 		task ("Assert Not Found is shown") {
 			Click(
 				key_append = "[normalize-space(text())='Go Somewhere']",
-				key_URL = "${baseURL}/web/test-site-name/test-widget-page-name",
+				key_URL = "/web/test-site-name/test-widget-page-name",
 				locator1 = "Fragment#FRAGMENT_LINK");
 
 			AssertTextEquals(
@@ -1647,9 +1641,10 @@ definition {
 				fragmentName = "Button",
 				id = "link");
 
-			AssertVisible(
-				key_contentName = "Test Widget Page Name",
-				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT");
+			AssertTextEquals(
+				key_fieldLabel = "Page",
+				locator1 = "PageEditor#ITEM_SELECTOR_CONTENT_INPUT",
+				value1 = "Test Widget Page Name");
 		}
 
 		task ("Publish to content page") {
@@ -1681,10 +1676,10 @@ definition {
 		}
 
 		task ("Add a blogs entry") {
-			JSONBlog.addEntry(
-				entryContent = "Blogs Entry Content",
-				entryTitle = "Blogs Entry Title",
-				groupName = "Test Site Name");
+			HeadlessBlog.addBlogEntry(
+				content = "Blogs Entry Content",
+				groupName = "Test Site Name",
+				title = "Blogs Entry Title");
 		}
 
 		task ("Add a custom Document type") {

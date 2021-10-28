@@ -16,26 +16,31 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 const webpack = require('webpack');
 
-const components = require('./test/dev/components/index');
-const {defineServerResponses} = require('./test/dev/fakeServerUtilities');
+const components = require('./dev/components/index');
+const {defineServerResponses} = require('./dev/fakeServerUtilities');
 
 const outputPath = path.resolve(__dirname, './dev/public');
 
 function getComponentPath(entry) {
-	return path.join(__dirname, 'test', 'dev', 'components', entry);
+	return path.join(__dirname, 'dev', 'components', entry);
 }
 
-// eslint-disable-next-line no-undef
+const entry = [...components, {entry: 'Menu'}].reduce((comp, current) => {
+	comp[current.entry] = getComponentPath(current.entry);
+
+	return comp;
+}, {});
+
 module.exports = {
 	devServer: {
 		before(app) {
 			defineServerResponses(app);
 		},
 		compress: false,
-		contentBase: './test/dev/public',
+		contentBase: './dev/public',
 		open: true,
 		openPage: 'index.html',
-		port: 9000,
+		port: 8888,
 		proxy: {
 			'/image': {
 				target: 'http://localhost:8080/',
@@ -47,17 +52,13 @@ module.exports = {
 		publicPath: '/',
 	},
 	devtool: 'inline-source-map',
-	entry: [...components, {entry: 'Menu'}].reduce((comp, current) => {
-		comp[current.entry] = getComponentPath(current.entry);
-
-		return comp;
-	}, {}),
+	entry,
 	mode: 'development',
 	module: {
 		rules: [
 			{
 				exclude: /node_modules/,
-				test: /\.(js|jsx)$/,
+				test: /\.(js|jsx|ts|tsx)$/,
 				use: [
 					{
 						loader: 'babel-loader',
@@ -91,11 +92,6 @@ module.exports = {
 					},
 				],
 			},
-			{
-				exclude: /node_modules/,
-				test: /\.tsx?$/,
-				use: 'ts-loader',
-			},
 		],
 	},
 	output: {
@@ -106,20 +102,36 @@ module.exports = {
 		new webpack.optimize.ModuleConcatenationPlugin(),
 		new HtmlWebpackPlugin({
 			inject: false,
-			template: path.resolve(__dirname, './test/dev/public/index.html'),
+			template: path.resolve(__dirname, './dev/public/index.html'),
 		}),
 	],
 	resolve: {
 		alias: {
 			'@liferay/frontend-js-react-web': path.resolve(
 				__dirname,
-				'../../../node_modules/@liferay/frontend-js-react-web/src/main/resources/META-INF/resources/js/index.es.js'
+				'../../../node_modules/@liferay/frontend-js-react-web/src/main/resources/META-INF/resources/js/index.ts'
+			),
+			'@liferay/frontend-js-state-web': path.resolve(
+				__dirname,
+				'../../../node_modules/@liferay/frontend-js-state-web/src/main/resources/META-INF/resources/index.ts'
 			),
 			'frontend-js-web': path.resolve(
 				__dirname,
 				'../../../node_modules/frontend-js-web/src/main/resources/META-INF/resources/index.es.js'
 			),
+			'frontend-taglib-clay/data_set_display/data_renderers/DateRenderer': path.resolve(
+				__dirname,
+				'../../../node_modules/frontend-taglib-clay/src/main/resources/META-INF/resources/data_set_display/data_renderers/DateRenderer.js'
+			),
+			'frontend-taglib-clay/data_set_display/data_renderers/StatusRenderer': path.resolve(
+				__dirname,
+				'../../../node_modules/frontend-taglib-clay/src/main/resources/META-INF/resources/data_set_display/data_renderers/StatusRenderer.js'
+			),
+			'frontend-taglib-clay/data_set_display/data_renderers/index': path.resolve(
+				__dirname,
+				'../../../node_modules/frontend-taglib-clay/src/main/resources/META-INF/resources/data_set_display/data_renderers/index.js'
+			),
 		},
-		extensions: ['.js', '.jsx'],
+		extensions: ['.js', '.jsx', '.ts', '.tsx'],
 	},
 };

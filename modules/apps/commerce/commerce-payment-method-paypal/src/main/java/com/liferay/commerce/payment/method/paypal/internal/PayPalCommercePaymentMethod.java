@@ -250,8 +250,9 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 				jsonObject, StringPool.BLANK);
 
 			return new CommercePaymentResult(
-				null, commercePaymentRequest.getCommerceOrderId(), status, true,
-				null, null, errorMessages, success);
+				commercePaymentRequest.getTransactionId(),
+				commercePaymentRequest.getCommerceOrderId(), status, true, null,
+				null, errorMessages, success);
 		}
 	}
 
@@ -260,7 +261,8 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 		CommercePaymentRequest commercePaymentRequest) {
 
 		return new CommercePaymentResult(
-			null, commercePaymentRequest.getCommerceOrderId(),
+			commercePaymentRequest.getTransactionId(),
+			commercePaymentRequest.getCommerceOrderId(),
 			CommerceOrderPaymentConstants.STATUS_CANCELLED, false, null, null,
 			Collections.emptyList(), true);
 	}
@@ -309,7 +311,7 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 
 		boolean success = false;
 		int status = CommerceOrderPaymentConstants.STATUS_FAILED;
-		String transactionId = StringPool.BLANK;
+		String transactionId = commercePaymentRequest.getTransactionId();
 
 		CommerceOrder commerceOrder =
 			_commerceOrderLocalService.getCommerceOrder(
@@ -376,7 +378,8 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 			}
 
 			return new CommercePaymentResult(
-				null, commercePaymentRequest.getCommerceOrderId(),
+				commercePaymentRequest.getTransactionId(),
+				commercePaymentRequest.getCommerceOrderId(),
 				CommerceOrderConstants.PAYMENT_STATUS_AUTHORIZED, true, null,
 				null, Collections.emptyList(), success);
 		}
@@ -391,7 +394,8 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 				jsonObject, StringPool.BLANK);
 
 			return new CommercePaymentResult(
-				null, commercePaymentRequest.getCommerceOrderId(),
+				commercePaymentRequest.getTransactionId(),
+				commercePaymentRequest.getCommerceOrderId(),
 				CommerceOrderConstants.PAYMENT_STATUS_AUTHORIZED, true, null,
 				null, errorMessages, false);
 		}
@@ -439,7 +443,8 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 			_log.error(payPalRESTException.getMessage(), payPalRESTException);
 
 			return new CommercePaymentResult(
-				null, commercePaymentRequest.getCommerceOrderId(),
+				commercePaymentRequest.getTransactionId(),
+				commercePaymentRequest.getCommerceOrderId(),
 				CommerceOrderConstants.PAYMENT_STATUS_AUTHORIZED, true, null,
 				null,
 				Collections.singletonList(payPalRESTException.getMessage()),
@@ -569,7 +574,7 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 
 		boolean success = false;
 		int status = CommerceOrderPaymentConstants.STATUS_FAILED;
-		String transactionId = StringPool.BLANK;
+		String refundId = StringPool.BLANK;
 
 		CommerceOrder commerceOrder =
 			_commerceOrderLocalService.getCommerceOrder(
@@ -582,11 +587,10 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 
 		capturesRefundRequest.prefer("return=representation");
 
-		BigDecimal amount = commercePaymentRequest.getAmount();
-
 		capturesRefundRequest.requestBody(
 			_buildRefundRequestBody(
-				amount.toString(), commerceCurrency.getCode()));
+				String.valueOf(commercePaymentRequest.getAmount()),
+				commerceCurrency.getCode()));
 
 		PayPalHttpClient payPalHttpClient = _getPayPalHttpClient(commerceOrder);
 
@@ -599,12 +603,13 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 			success = true;
 			status = CommerceOrderConstants.ORDER_STATUS_PARTIALLY_REFUNDED;
 
-			transactionId = refund.id();
+			refundId = refund.id();
 		}
 
 		return new CommercePaymentResult(
-			transactionId, commercePaymentRequest.getCommerceOrderId(), status,
-			false, null, null, Collections.emptyList(), success);
+			commercePaymentRequest.getTransactionId(),
+			commercePaymentRequest.getCommerceOrderId(), status, false, null,
+			refundId, Collections.emptyList(), success);
 	}
 
 	@Override
@@ -688,8 +693,9 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 				jsonObject, StringPool.BLANK);
 
 			return new CommercePaymentResult(
-				null, commercePaymentRequest.getCommerceOrderId(), status, true,
-				null, null, errorMessages, success);
+				commercePaymentRequest.getTransactionId(),
+				commercePaymentRequest.getCommerceOrderId(), status, true, null,
+				null, errorMessages, success);
 		}
 	}
 
@@ -754,8 +760,9 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 			_log.error(payPalRESTException.getMessage(), payPalRESTException);
 
 			return new CommercePaymentResult(
-				null, commercePaymentRequest.getCommerceOrderId(), status, true,
-				null, null,
+				commercePaymentRequest.getTransactionId(),
+				commercePaymentRequest.getCommerceOrderId(), status, true, null,
+				null,
 				Collections.singletonList(payPalRESTException.getMessage()),
 				success);
 		}
@@ -768,7 +775,7 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 
 		boolean success = false;
 		int status = CommerceOrderPaymentConstants.STATUS_FAILED;
-		String transactionId = StringPool.BLANK;
+		String refundId = StringPool.BLANK;
 
 		CommerceOrder commerceOrder =
 			_commerceOrderLocalService.getCommerceOrder(
@@ -798,12 +805,13 @@ public class PayPalCommercePaymentMethod implements CommercePaymentMethod {
 			success = true;
 			status = CommerceOrderConstants.ORDER_STATUS_REFUNDED;
 
-			transactionId = refund.id();
+			refundId = refund.id();
 		}
 
 		return new CommercePaymentResult(
-			transactionId, commercePaymentRequest.getCommerceOrderId(), status,
-			false, null, null, Collections.emptyList(), success);
+			commercePaymentRequest.getTransactionId(),
+			commercePaymentRequest.getCommerceOrderId(), status, false, null,
+			refundId, Collections.emptyList(), success);
 	}
 
 	@Override

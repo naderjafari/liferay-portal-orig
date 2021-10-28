@@ -18,7 +18,7 @@
 			</then>
 		</elseif>
 		<else>
-			<property name="elasticsearch.version" value="7.12.0" />
+			<property name="elasticsearch.version" value="7.15.0" />
 		</else>
 	</if>
 
@@ -44,7 +44,7 @@
 	<property name="elasticsearch.tar.url.linux" value="https://artifacts.elastic.co/downloads/elasticsearch/${elasticsearch.tar.name.linux}" />
 	<property name="elasticsearch.tar.url.mac" value="https://artifacts.elastic.co/downloads/elasticsearch/${elasticsearch.tar.name.mac}" />
 	<property name="elasticsearch.zip.url.windows" value="https://artifacts.elastic.co/downloads/elasticsearch/${elasticsearch.zip.name.windows}" />
-	<property name="elasticsearch.sidecar.version" value="7.9.0" />
+	<property name="elasticsearch.sidecar.version" value="7.10.2" />
 	<property name="elasticsearch.sidecar.analysis-icu.zip.url" value="https://artifacts.elastic.co/downloads/elasticsearch-plugins/analysis-icu/analysis-icu-${elasticsearch.sidecar.version}.zip" />
 	<property name="elasticsearch.sidecar.analysis-kuromoji.zip.url" value="https://artifacts.elastic.co/downloads/elasticsearch-plugins/analysis-kuromoji/analysis-kuromoji-${elasticsearch.sidecar.version}.zip" />
 	<property name="elasticsearch.sidecar.analysis-smartcn.zip.url" value="https://artifacts.elastic.co/downloads/elasticsearch-plugins/analysis-smartcn/analysis-smartcn-${elasticsearch.sidecar.version}.zip" />
@@ -88,6 +88,12 @@
 					</not>
 				</condition>
 			</fail>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="configure-elasticsearch-discovery-type-single-node">
+		<sequential>
+			<echo append="true" file="${elasticsearch.dir}/config/elasticsearch.yml">${line.separator}discovery.type: single-node</echo>
 		</sequential>
 	</macrodef>
 
@@ -587,7 +593,9 @@ ${line.separator}CATALINA_OPTS="${CATALINA_OPTS} -Djavax.net.ssl.trustStore=${el
 		<sequential>
 			<lstopwatch action="start" name="prepare.elasticsearch.ltr" />
 
-			<property name="elasticsearch.ltr.zip.name" value="ltr-plugin-v1.5.0-es${elasticsearch.version}.zip" />
+			<property name="ltr.plugin.version" value="1.5.7" />
+
+			<property name="elasticsearch.ltr.zip.name" value="ltr-plugin-v${ltr.plugin.version}-es${elasticsearch.version}.zip" />
 
 			<if>
 				<not>
@@ -597,7 +605,7 @@ ${line.separator}CATALINA_OPTS="${CATALINA_OPTS} -Djavax.net.ssl.trustStore=${el
 					<mirrors-get
 						dest="${elasticsearch.dir}/${elasticsearch.ltr.zip.name}"
 						skipChecksum="true"
-						src="http://es-learn-to-rank.labs.o19s.com/${elasticsearch.ltr.zip.name}"
+						src="https://github.com/o19s/elasticsearch-learning-to-rank/releases/download/v${ltr.plugin.version}-es${elasticsearch.version}/${elasticsearch.ltr.zip.name}"
 					/>
 				</then>
 			</if>
@@ -740,6 +748,8 @@ ${line.separator}CATALINA_OPTS="${CATALINA_OPTS} -Djavax.net.ssl.trustStore=${el
 		<sequential>
 			<set-up-standard-elasticsearch />
 
+			<configure-elasticsearch-discovery-type-single-node />
+
 			<configure-elasticsearch-ltr-properties />
 
 			<prepare-elasticsearch-ltr />
@@ -770,6 +780,8 @@ ${line.separator}CATALINA_OPTS="${CATALINA_OPTS} -Djavax.net.ssl.trustStore=${el
 	<macrodef name="start-elasticsearch-with-multiple-connections">
 		<sequential>
 			<set-up-standard-elasticsearch />
+
+			<configure-elasticsearch-discovery-type-single-node />
 
 			<prepare-additional-elasticsearch-bundles total.bundles="2" />
 
@@ -803,6 +815,8 @@ ${line.separator}CATALINA_OPTS="${CATALINA_OPTS} -Djavax.net.ssl.trustStore=${el
 	<macrodef name="start-elasticsearch-with-xpack">
 		<sequential>
 			<set-up-standard-elasticsearch />
+
+			<configure-elasticsearch-discovery-type-single-node />
 
 			<generate-x-pack-security-certificates />
 
@@ -905,7 +919,12 @@ ${line.separator}CATALINA_OPTS="${CATALINA_OPTS} -Djavax.net.ssl.trustStore=${el
 			</if>
 
 			<if>
-				<os family="unix" />
+				<and>
+					<not>
+						<os family="mac" />
+					</not>
+					<os family="unix" />
+				</and>
 				<then>
 					<if>
 						<not>
@@ -1312,6 +1331,8 @@ ${line.separator}CATALINA_OPTS="${CATALINA_OPTS} -Djavax.net.ssl.trustStore=${el
 			</case>
 			<default>
 				<set-up-standard-elasticsearch />
+
+				<configure-elasticsearch-discovery-type-single-node />
 
 				<antcall target="start-elasticsearch-node" />
 			</default>

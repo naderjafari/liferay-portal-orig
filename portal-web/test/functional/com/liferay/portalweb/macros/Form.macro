@@ -4,6 +4,60 @@ definition {
 	var formName = "Created Form Name";
 	var rowNumber = "1";
 
+	macro addFieldFromSidebarToFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToBottom(
+			key_fieldLabel = "${key_fieldLabel}",
+			key_fieldName = "${key_fieldName}",
+			locator1 = "Sidebar#ADD_FIELD_NAME",
+			locator2 = "FormFields#LABEL");
+	}
+
+	macro addFieldOutsideOfFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToBottom(
+			key_fieldName = "${fieldName}",
+			key_index = "${index}",
+			locator1 = "Sidebar#ADD_FIELD_NAME",
+			locator2 = "Form#FIELD_ROW_TARGET");
+	}
+
+	macro addFieldSameRow {
+		var key_fieldLabel = "${fieldType}";
+
+		if (isSet(formPageNumber)) {
+			key_formPageNumber = "${formPageNumber}";
+		}
+		else {
+			key_formPageNumber = "0";
+		}
+
+		if (isSet(fieldColumnNumber)) {
+			key_fieldColumnNumber = "${fieldColumnNumber}";
+		}
+		else {
+			key_fieldColumnNumber = "0";
+		}
+
+		if (isSet(fieldRowNumber)) {
+			key_fieldRowNumber = "${fieldRowNumber}";
+		}
+		else {
+			key_fieldRowNumber = "0";
+		}
+
+		DragAndDrop.javaScriptDragAndDropToObject(
+			locator1 = "FormViewBuilder#SIDEBAR_FIELD_LABEL",
+			locator2 = "Form#ADD_FIELD_SPECIFIC_POSITION",
+			value1 = "${fieldType}");
+	}
+
+	macro addFieldToFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToBottom(
+			key_fieldLabel = "${targetFieldLabel}",
+			key_fieldName = "${sourceFieldName}",
+			locator1 = "Form#PAGE_FIELD_LABEL",
+			locator2 = "FormFields#LABEL");
+	}
+
 	macro addPage {
 		var key_formAddNewPageNumber = "${formAddNewPageNumber}";
 
@@ -22,6 +76,18 @@ definition {
 		AssertClick(
 			locator1 = "Form#PAGE_CONTROLS_ADD_SUCCESS_PAGE",
 			value1 = "Add Success Page");
+	}
+
+	macro addSuccessPageForm {
+		Click(locator1 = "Form#SUCCESS_PAGE_ADD");
+
+		AssertTextEquals(
+			locator1 = "Form#SUCCESS_PAGE_TITLE_FIELD",
+			value1 = "Thank you.");
+
+		AssertTextEquals(
+			locator1 = "Form#SUCCESS_PAGE_DESCRIPTION_FIELD",
+			value1 = "Your information was successfully received. Thank you for filling out the form.");
 	}
 
 	macro addTextField {
@@ -70,6 +136,14 @@ definition {
 			value1 = "${localizedLanguage}");
 	}
 
+	macro assertFieldPositionAtFormsGroupOnPublishedForm {
+		AssertElementPresent(
+			key_formPageNumber = "${key_formPageNumber}",
+			key_rowNumber = "${key_rowNumber}",
+			key_text = "${key_text}",
+			locator1 = "Form#FIELD_SPECIFIC_POSITION_PUBLISHED_FORM");
+	}
+
 	macro assertFormWasPublished {
 		AssertVisible(locator1 = "Form#PUBLISH_URL_ICON");
 	}
@@ -91,7 +165,7 @@ definition {
 			locator1 = "Form#SETTINGS_TAB_EMAIL_NOTIFICATIONS",
 			value1 = "Notifications");
 
-		FormFields.enableSwitcher(fieldName = "sendEmailNotification");
+		FormFields.enableSwitch(fieldName = "sendEmailNotification");
 
 		FormFields.editText(
 			fieldName = "emailFromName",
@@ -112,14 +186,24 @@ definition {
 		Button.clickDone();
 	}
 
+	macro configureRedirectURL {
+		AssertClick(
+			locator1 = "Form#SETTINGS_TAB_PERSONALIZATION",
+			value1 = "Personalization");
+
+		FormFields.editText(
+			fieldName = "redirectURL",
+			fieldValue = "${URL}");
+	}
+
 	macro configureRequireAuthentication {
-		FormFields.enableSwitcher(fieldName = "requireAuthentication");
+		FormFields.enableSwitch(fieldName = "Require User Authentication");
 
 		Button.clickDone();
 	}
 
 	macro configureRequireCaptcha {
-		FormFields.enableSwitcher(fieldName = "requireCaptcha");
+		FormFields.enableSwitch(fieldName = "requireCaptcha");
 
 		Button.clickDone();
 	}
@@ -132,6 +216,8 @@ definition {
 		FormFields.editText(
 			fieldName = "submitLabel",
 			fieldValue = "${submitLabel}");
+
+		Button.clickDone();
 	}
 
 	macro configureWorkflow {
@@ -156,6 +242,21 @@ definition {
 		Alert.viewSuccessMessage();
 
 		LexiconEntry.viewNoEntry(rowEntry = "${formName}");
+	}
+
+	macro deleteCurrentLastPage {
+		var key_formDropDownNumber = "${formDropDownNumber}";
+		var key_formPageNumber = "${formPageNumber}";
+
+		//AssertElementPresent(locator1 = "FormPortlet#FORM_PAGE_ACTIVE");
+
+		Click(locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
+
+		AssertClick(
+			locator1 = "Form#PAGE_CONTROLS_DELETE_CURRENT_PAGE_LAST",
+			value1 = "Remove Page");
+
+		AssertElementNotPresent(locator1 = "FormPortlet#FORM_PAGE");
 	}
 
 	macro deleteCurrentPage {
@@ -198,17 +299,27 @@ definition {
 	}
 
 	macro disableAutocompleteConfiguration {
-		FormFields.disableSwitcher(fieldName = "Autocomplete");
-	}
-
-	macro disableAutocompleteSwitcherTextField {
-		Click(locator1 = "FormFields#SWITCHER_TEXTFIELD");
+		FormFields.disableSwitch(fieldName = "Autocomplete");
 	}
 
 	macro duplicate {
 		LexiconEntry.gotoEntryMenuItem(
 			menuItem = "Duplicate",
 			rowEntry = "${formName}");
+	}
+
+	macro duplicateFieldsGroup {
+		while (IsElementNotPresent(locator1 = "Form#SIDEBAR_MENUITEM_DUPLICATE_FIELD")) {
+			Click(
+				key_fieldName = "${fieldName}",
+				locator1 = "Form#FIELD_LABEL");
+		}
+
+		Click(locator1 = "Form#SIDEBAR_ELLIPSIS");
+
+		AssertClick(
+			locator1 = "Form#SIDEBAR_MENUITEM_DUPLICATE_FIELD",
+			value1 = "Duplicate");
 	}
 
 	macro editDescription {
@@ -222,7 +333,7 @@ definition {
 	}
 
 	macro editElementSetFieldLabel {
-		Form.openSidebar();
+		WaitForElementPresent(locator1 = "Form#SIDEBAR_CONTENT_OPEN");
 
 		while (IsTextNotEqual(key_fieldName = "label", locator1 = "FormFields#TEXT_FIELD", value1 = "") && (maxIterations = "10")) {
 			FormFields.editTextWithBackspace(fieldName = "label");
@@ -293,6 +404,10 @@ definition {
 		AssertVisible(locator1 = "Form#NAME_FIELD");
 
 		AssertVisible(locator1 = "Form#DESCRIPTION_FIELD");
+
+		if (isSet(formTitle)) {
+			formName = "${formTitle}";
+		}
 
 		Type(
 			locator1 = "Form#NAME_FIELD",
@@ -366,7 +481,7 @@ definition {
 	}
 
 	macro enableAutocompleteConfiguration {
-		Click(locator1 = "FormFields#SWITCHER_TEXTFIELD");
+		FormFields.enableSwitch(fieldName = "Autocomplete");
 	}
 
 	macro getPublishedFormPublicURL {
@@ -378,7 +493,7 @@ definition {
 	}
 
 	macro gotoAddElementSet {
-		Form.openSidebar();
+		WaitForElementPresent(locator1 = "Form#SIDEBAR_CONTENT_OPEN");
 
 		Form.gotoElementSetsTab();
 
@@ -404,9 +519,9 @@ definition {
 			value1 = "${elementSetTitle}");
 	}
 
-	@description = "Add the ${key_fieldType} field inside page ${formPageNumber} in position ${fieldPositionNumber}."
+	@summary = "Add the ${key_fieldType} field inside page ${formPageNumber} in position ${fieldPositionNumber}."
 	macro gotoAddField {
-		Form.openSidebar();
+		WaitForElementPresent(locator1 = "Form#SIDEBAR_CONTENT_OPEN");
 
 		Form.gotoFieldsTab();
 
@@ -482,11 +597,18 @@ definition {
 				locator1 = "Form#SIDEBAR_ELEMENTS_TAB_LOCALE",
 				value1 = "${key_localeElements}");
 		}
+
 		else {
 			AssertClick(
 				locator1 = "Form#SIDEBAR_ELEMENTS_TAB",
 				value1 = "Elements");
 		}
+	}
+
+	macro gotoFieldContainer {
+		Click(
+			key_fieldName = "${fieldName}",
+			locator1 = "Form#FIELD_LABEL");
 	}
 
 	macro gotoFieldsTab {
@@ -521,14 +643,48 @@ definition {
 		Pause(locator1 = "1000");
 	}
 
-	macro openSidebar {
-		if (IsElementNotPresent(locator1 = "Form#ACTIVE_BUILDER_SIDEBAR_PANEL")) {
-			MouseOver.mouseOverNotVisible(locator1 = "Form#BUILDER_SIDEBAR_PANEL");
-
-			ScrollBy(value1 = "0, 230");
-
-			Click(locator1 = "Form#BUILDER_SIDEBAR_PANEL");
+	macro moveFieldToRow {
+		if (isSet(formPageNumber)) {
+			key_formPageNumber = "${formPageNumber}";
 		}
+		else {
+			key_formPageNumber = "0";
+		}
+
+		if (isSet(fieldPositionNumber)) {
+			key_fieldPositionNumber = "${fieldPositionNumber}";
+		}
+		else {
+			key_fieldPositionNumber = "0";
+		}
+
+		DragAndDrop.javaScriptDragAndDropToUp(
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldName = "${fieldNameTarget}",
+			locator1 = "FormFields#LABEL",
+			locator2 = "Form#ADD_FIELD_POSITION");
+	}
+
+	macro movePageDown {
+		Click(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_DOWN_ENABLED");
+	}
+
+	macro movePageUp {
+		Click(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_UP_ENABLED");
+	}
+
+	macro pageReset {
+		Click(
+			key_formPageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
+
+		Click(
+			key_saveButton = "Reset Page",
+			locator1 = "Form#SAVE_FORM_BUTTON_LOCALIZED");
 	}
 
 	macro previewForm {
@@ -565,6 +721,23 @@ definition {
 		Click(locator1 = "Form#PUBLISH_FORM_BUTTON");
 
 		Form.assertFormWasPublished();
+	}
+
+	macro reorderFields {
+		DragAndDrop.javaScriptDragAndDropToObject(
+			key_fieldName = "${fieldName}",
+			key_index = "${index}",
+			locator1 = "Form#PAGE_FIELD_LABEL",
+			locator2 = "Form#FIELD_ROW_TARGET");
+	}
+
+	macro reorderFieldsFromFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToObject(
+			key_fieldName = "${key_fieldName}",
+			key_pageNumber = "${key_pageNumber}",
+			key_rowNumber = "${key_rowNumber}",
+			locator1 = "Form#PAGE_FIELD_LABEL",
+			locator2 = "Form#FIELDS_GROUP_TARGET_POSITON");
 	}
 
 	macro save {
@@ -699,7 +872,49 @@ definition {
 		AssertElementPresent(locator1 = "Form#ALT_PAGINATION_SUCCESS_PAGE");
 	}
 
+	macro viewButtonPageDisabled {
+		AssertElementPresent(
+			key_formPageName = "${formPageName}",
+			key_movePage = "Move Page ${pageMove}",
+			locator1 = "Form#PAGE_MOVE_DISABLED");
+	}
+
+	macro viewButtonPageDownEnabled {
+		AssertElementPresent(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_DOWN_ENABLED");
+	}
+
+	macro viewButtonPageUpEnabled {
+		AssertElementPresent(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_UP_ENABLED");
+	}
+
+	macro viewCollapsedCollapseButton {
+		AssertElementPresent(locator1 = "Form#FIELDS_GROUP_COLLAPSED");
+	}
+
+	macro viewExpandedCollapseButton {
+		AssertElementPresent(locator1 = "Form#FIELDS_GROUP_EXPANDED");
+	}
+
 	macro viewFieldReference {
+		key_fieldName = "${fieldName}";
+		key_fieldReference = "${fieldReference}";
+
+		Click(
+			key_fieldName = "${fieldName}",
+			locator1 = "Form#FIELD_BODY");
+
+		Form.gotoAdvancedTab();
+
+		AssertTextEquals(
+			locator1 = "Form#FIELD_REFERENCE",
+			value1 = "${fieldReference}");
+	}
+
+	macro viewFieldReferenceFromTextField {
 		Click(
 			key_fieldName = "${fieldName}",
 			locator1 = "Form#FIELD_BODY");
@@ -709,6 +924,18 @@ definition {
 		AssertTextEquals(
 			locator1 = "Form#FIELD_REFERENCE",
 			value1 = "${key_fieldReference}");
+	}
+
+	macro viewFieldsGroupCollapsedField {
+		AssertElementPresent(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "Form#FIELDS_GROUP_COLLAPSED_FIELD");
+	}
+
+	macro viewFieldsGroupNotCollapsedField {
+		AssertElementNotPresent(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "Form#FIELDS_GROUP_COLLAPSED_FIELD");
 	}
 
 	macro viewFormDescription {
@@ -739,6 +966,12 @@ definition {
 			value1 = "This form is not available or it was not published.");
 	}
 
+	macro viewFormPlaceholderPage {
+		AssertElementPresent(
+			key_pageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_DEFAULT_DESCRIPTION_BY_NUMBER");
+	}
+
 	macro viewFormPlaceholderText {
 		AssertElementPresent(
 			key_value = "${fieldPlaceholderText}",
@@ -759,10 +992,51 @@ definition {
 			fieldName = "${fieldName}");
 	}
 
+	macro viewFormTemporarilyNotAvailableMessage {
+		AssertElementPresent(locator1 = "Form#FORM_TEMPORARILY_NOT_AVAILABLE");
+	}
+
+	macro viewHiddenField {
+		AssertElementPresent(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "Form#FIELD_HIDDEN_LABEL");
+	}
+
+	macro viewPageEmptyField {
+		AssertElementPresent(
+			key_pageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_EMPTY_FORM_FIELD_BY_NUMBER");
+	}
+
+	macro viewPageName {
+		AssertElementPresent(
+			key_pageName = "${formTitleNumber}",
+			locator1 = "Form#PAGE_NAME",
+			pageName = "${formPageName}");
+	}
+
+	macro viewPageTitleDefault {
+		AssertElementPresent(
+			key_pageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_DEFAULT_TITLE_BY_NUMBER");
+	}
+
 	macro viewPublishFormSuccessMessage {
 		var key_alertMessage = "The form was published successfully! Access it with this URL";
 
 		AssertVisible(locator1 = "Form#PUBLISH_UNPUBLISH_ICON_CLOSE");
+	}
+
+	macro viewRedirectedURL {
+		WaitForElementPresent(
+			key_navItem = "Home",
+			locator1 = "NavBar#NAV_ITEM_LINK");
+
+		AssertLocation(value1 = "${friendlyURL}");
+	}
+
+	macro viewRequiredFieldIndicator {
+		AssertElementPresent(locator1 = "Form#FIELD_REQUIRED_INDICATOR");
 	}
 
 	macro viewSaveNotification {
@@ -782,6 +1056,10 @@ definition {
 		AssertTextEquals(
 			locator1 = "FormPortlet#SUBMIT_BUTTON",
 			value1 = "${key_buttonText}");
+	}
+
+	macro viewSubmitNotPresent {
+		AssertElementNotPresent(locator1 = "FormPortlet#SUBMIT_BUTTON");
 	}
 
 }

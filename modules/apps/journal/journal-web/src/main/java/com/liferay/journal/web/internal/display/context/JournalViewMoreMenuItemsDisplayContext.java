@@ -181,7 +181,7 @@ public class JournalViewMoreMenuItemsDisplayContext {
 		}
 
 		_orderByType = ParamUtil.getString(
-			_renderRequest, "orderByType", "asc");
+			_renderRequest, "orderByType", "desc");
 
 		return _orderByType;
 	}
@@ -195,7 +195,7 @@ public class JournalViewMoreMenuItemsDisplayContext {
 			"eventName", getEventName()
 		).setParameter(
 			"folderId", _folderId
-		).build();
+		).buildPortletURL();
 	}
 
 	public String getRedirect() {

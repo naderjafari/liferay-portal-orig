@@ -32,12 +32,14 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.ArrayList;
@@ -78,9 +80,10 @@ public class BatchPlannerPlanModelImpl
 		{"companyId", Types.BIGINT}, {"userId", Types.BIGINT},
 		{"userName", Types.VARCHAR}, {"createDate", Types.TIMESTAMP},
 		{"modifiedDate", Types.TIMESTAMP}, {"active_", Types.BOOLEAN},
-		{"externalType", Types.VARCHAR}, {"externalURL", Types.VARCHAR},
-		{"internalClassName", Types.VARCHAR}, {"name", Types.VARCHAR},
-		{"export", Types.BOOLEAN}
+		{"export", Types.BOOLEAN}, {"externalType", Types.VARCHAR},
+		{"externalURL", Types.VARCHAR}, {"internalClassName", Types.VARCHAR},
+		{"name", Types.VARCHAR}, {"taskItemDelegateName", Types.VARCHAR},
+		{"template", Types.BOOLEAN}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -95,15 +98,17 @@ public class BatchPlannerPlanModelImpl
 		TABLE_COLUMNS_MAP.put("createDate", Types.TIMESTAMP);
 		TABLE_COLUMNS_MAP.put("modifiedDate", Types.TIMESTAMP);
 		TABLE_COLUMNS_MAP.put("active_", Types.BOOLEAN);
+		TABLE_COLUMNS_MAP.put("export", Types.BOOLEAN);
 		TABLE_COLUMNS_MAP.put("externalType", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("externalURL", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("internalClassName", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("name", Types.VARCHAR);
-		TABLE_COLUMNS_MAP.put("export", Types.BOOLEAN);
+		TABLE_COLUMNS_MAP.put("taskItemDelegateName", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("template", Types.BOOLEAN);
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table BatchPlannerPlan (mvccVersion LONG default 0 not null,batchPlannerPlanId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,active_ BOOLEAN,externalType VARCHAR(75) null,externalURL VARCHAR(75) null,internalClassName VARCHAR(75) null,name VARCHAR(75) null,export BOOLEAN)";
+		"create table BatchPlannerPlan (mvccVersion LONG default 0 not null,batchPlannerPlanId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,active_ BOOLEAN,export BOOLEAN,externalType VARCHAR(75) null,externalURL STRING null,internalClassName VARCHAR(75) null,name VARCHAR(75) null,taskItemDelegateName VARCHAR(75) null,template BOOLEAN)";
 
 	public static final String TABLE_SQL_DROP = "drop table BatchPlannerPlan";
 
@@ -129,20 +134,32 @@ public class BatchPlannerPlanModelImpl
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long NAME_COLUMN_BITMASK = 2L;
+	public static final long EXPORT_COLUMN_BITMASK = 2L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long USERID_COLUMN_BITMASK = 4L;
+	public static final long NAME_COLUMN_BITMASK = 4L;
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
+	 */
+	@Deprecated
+	public static final long TEMPLATE_COLUMN_BITMASK = 8L;
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
+	 */
+	@Deprecated
+	public static final long USERID_COLUMN_BITMASK = 16L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
 	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long MODIFIEDDATE_COLUMN_BITMASK = 8L;
+	public static final long MODIFIEDDATE_COLUMN_BITMASK = 32L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
@@ -181,11 +198,13 @@ public class BatchPlannerPlanModelImpl
 		model.setCreateDate(soapModel.getCreateDate());
 		model.setModifiedDate(soapModel.getModifiedDate());
 		model.setActive(soapModel.isActive());
+		model.setExport(soapModel.isExport());
 		model.setExternalType(soapModel.getExternalType());
 		model.setExternalURL(soapModel.getExternalURL());
 		model.setInternalClassName(soapModel.getInternalClassName());
 		model.setName(soapModel.getName());
-		model.setExport(soapModel.isExport());
+		model.setTaskItemDelegateName(soapModel.getTaskItemDelegateName());
+		model.setTemplate(soapModel.isTemplate());
 
 		return model;
 	}
@@ -383,6 +402,10 @@ public class BatchPlannerPlanModelImpl
 		attributeSetterBiConsumers.put(
 			"active",
 			(BiConsumer<BatchPlannerPlan, Boolean>)BatchPlannerPlan::setActive);
+		attributeGetterFunctions.put("export", BatchPlannerPlan::getExport);
+		attributeSetterBiConsumers.put(
+			"export",
+			(BiConsumer<BatchPlannerPlan, Boolean>)BatchPlannerPlan::setExport);
 		attributeGetterFunctions.put(
 			"externalType", BatchPlannerPlan::getExternalType);
 		attributeSetterBiConsumers.put(
@@ -405,10 +428,17 @@ public class BatchPlannerPlanModelImpl
 		attributeSetterBiConsumers.put(
 			"name",
 			(BiConsumer<BatchPlannerPlan, String>)BatchPlannerPlan::setName);
-		attributeGetterFunctions.put("export", BatchPlannerPlan::getExport);
+		attributeGetterFunctions.put(
+			"taskItemDelegateName", BatchPlannerPlan::getTaskItemDelegateName);
 		attributeSetterBiConsumers.put(
-			"export",
-			(BiConsumer<BatchPlannerPlan, Boolean>)BatchPlannerPlan::setExport);
+			"taskItemDelegateName",
+			(BiConsumer<BatchPlannerPlan, String>)
+				BatchPlannerPlan::setTaskItemDelegateName);
+		attributeGetterFunctions.put("template", BatchPlannerPlan::getTemplate);
+		attributeSetterBiConsumers.put(
+			"template",
+			(BiConsumer<BatchPlannerPlan, Boolean>)
+				BatchPlannerPlan::setTemplate);
 
 		_attributeGetterFunctions = Collections.unmodifiableMap(
 			attributeGetterFunctions);
@@ -590,6 +620,37 @@ public class BatchPlannerPlanModelImpl
 
 	@JSON
 	@Override
+	public boolean getExport() {
+		return _export;
+	}
+
+	@JSON
+	@Override
+	public boolean isExport() {
+		return _export;
+	}
+
+	@Override
+	public void setExport(boolean export) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_export = export;
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
+	public boolean getOriginalExport() {
+		return GetterUtil.getBoolean(
+			this.<Boolean>getColumnOriginalValue("export"));
+	}
+
+	@JSON
+	@Override
 	public String getExternalType() {
 		if (_externalType == null) {
 			return "";
@@ -679,23 +740,53 @@ public class BatchPlannerPlanModelImpl
 
 	@JSON
 	@Override
-	public boolean getExport() {
-		return _export;
+	public String getTaskItemDelegateName() {
+		if (_taskItemDelegateName == null) {
+			return "";
+		}
+		else {
+			return _taskItemDelegateName;
+		}
 	}
 
-	@JSON
 	@Override
-	public boolean isExport() {
-		return _export;
-	}
-
-	@Override
-	public void setExport(boolean export) {
+	public void setTaskItemDelegateName(String taskItemDelegateName) {
 		if (_columnOriginalValues == Collections.EMPTY_MAP) {
 			_setColumnOriginalValues();
 		}
 
-		_export = export;
+		_taskItemDelegateName = taskItemDelegateName;
+	}
+
+	@JSON
+	@Override
+	public boolean getTemplate() {
+		return _template;
+	}
+
+	@JSON
+	@Override
+	public boolean isTemplate() {
+		return _template;
+	}
+
+	@Override
+	public void setTemplate(boolean template) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_template = template;
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
+	public boolean getOriginalTemplate() {
+		return GetterUtil.getBoolean(
+			this.<Boolean>getColumnOriginalValue("template"));
 	}
 
 	public long getColumnBitmask() {
@@ -762,13 +853,53 @@ public class BatchPlannerPlanModelImpl
 		batchPlannerPlanImpl.setCreateDate(getCreateDate());
 		batchPlannerPlanImpl.setModifiedDate(getModifiedDate());
 		batchPlannerPlanImpl.setActive(isActive());
+		batchPlannerPlanImpl.setExport(isExport());
 		batchPlannerPlanImpl.setExternalType(getExternalType());
 		batchPlannerPlanImpl.setExternalURL(getExternalURL());
 		batchPlannerPlanImpl.setInternalClassName(getInternalClassName());
 		batchPlannerPlanImpl.setName(getName());
-		batchPlannerPlanImpl.setExport(isExport());
+		batchPlannerPlanImpl.setTaskItemDelegateName(getTaskItemDelegateName());
+		batchPlannerPlanImpl.setTemplate(isTemplate());
 
 		batchPlannerPlanImpl.resetOriginalValues();
+
+		return batchPlannerPlanImpl;
+	}
+
+	@Override
+	public BatchPlannerPlan cloneWithOriginalValues() {
+		BatchPlannerPlanImpl batchPlannerPlanImpl = new BatchPlannerPlanImpl();
+
+		batchPlannerPlanImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		batchPlannerPlanImpl.setBatchPlannerPlanId(
+			this.<Long>getColumnOriginalValue("batchPlannerPlanId"));
+		batchPlannerPlanImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		batchPlannerPlanImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		batchPlannerPlanImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		batchPlannerPlanImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		batchPlannerPlanImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		batchPlannerPlanImpl.setActive(
+			this.<Boolean>getColumnOriginalValue("active_"));
+		batchPlannerPlanImpl.setExport(
+			this.<Boolean>getColumnOriginalValue("export"));
+		batchPlannerPlanImpl.setExternalType(
+			this.<String>getColumnOriginalValue("externalType"));
+		batchPlannerPlanImpl.setExternalURL(
+			this.<String>getColumnOriginalValue("externalURL"));
+		batchPlannerPlanImpl.setInternalClassName(
+			this.<String>getColumnOriginalValue("internalClassName"));
+		batchPlannerPlanImpl.setName(
+			this.<String>getColumnOriginalValue("name"));
+		batchPlannerPlanImpl.setTaskItemDelegateName(
+			this.<String>getColumnOriginalValue("taskItemDelegateName"));
+		batchPlannerPlanImpl.setTemplate(
+			this.<Boolean>getColumnOriginalValue("template"));
 
 		return batchPlannerPlanImpl;
 	}
@@ -884,6 +1015,8 @@ public class BatchPlannerPlanModelImpl
 
 		batchPlannerPlanCacheModel.active = isActive();
 
+		batchPlannerPlanCacheModel.export = isExport();
+
 		batchPlannerPlanCacheModel.externalType = getExternalType();
 
 		String externalType = batchPlannerPlanCacheModel.externalType;
@@ -916,7 +1049,19 @@ public class BatchPlannerPlanModelImpl
 			batchPlannerPlanCacheModel.name = null;
 		}
 
-		batchPlannerPlanCacheModel.export = isExport();
+		batchPlannerPlanCacheModel.taskItemDelegateName =
+			getTaskItemDelegateName();
+
+		String taskItemDelegateName =
+			batchPlannerPlanCacheModel.taskItemDelegateName;
+
+		if ((taskItemDelegateName != null) &&
+			(taskItemDelegateName.length() == 0)) {
+
+			batchPlannerPlanCacheModel.taskItemDelegateName = null;
+		}
+
+		batchPlannerPlanCacheModel.template = isTemplate();
 
 		return batchPlannerPlanCacheModel;
 	}
@@ -927,7 +1072,7 @@ public class BatchPlannerPlanModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -938,9 +1083,27 @@ public class BatchPlannerPlanModelImpl
 			Function<BatchPlannerPlan, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((BatchPlannerPlan)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(BatchPlannerPlan)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -1000,11 +1163,13 @@ public class BatchPlannerPlanModelImpl
 	private Date _modifiedDate;
 	private boolean _setModifiedDate;
 	private boolean _active;
+	private boolean _export;
 	private String _externalType;
 	private String _externalURL;
 	private String _internalClassName;
 	private String _name;
-	private boolean _export;
+	private String _taskItemDelegateName;
+	private boolean _template;
 
 	public <T> T getColumnValue(String columnName) {
 		columnName = _attributeNames.getOrDefault(columnName, columnName);
@@ -1043,11 +1208,14 @@ public class BatchPlannerPlanModelImpl
 		_columnOriginalValues.put("createDate", _createDate);
 		_columnOriginalValues.put("modifiedDate", _modifiedDate);
 		_columnOriginalValues.put("active_", _active);
+		_columnOriginalValues.put("export", _export);
 		_columnOriginalValues.put("externalType", _externalType);
 		_columnOriginalValues.put("externalURL", _externalURL);
 		_columnOriginalValues.put("internalClassName", _internalClassName);
 		_columnOriginalValues.put("name", _name);
-		_columnOriginalValues.put("export", _export);
+		_columnOriginalValues.put(
+			"taskItemDelegateName", _taskItemDelegateName);
+		_columnOriginalValues.put("template", _template);
 	}
 
 	private static final Map<String, String> _attributeNames;
@@ -1087,15 +1255,19 @@ public class BatchPlannerPlanModelImpl
 
 		columnBitmasks.put("active_", 128L);
 
-		columnBitmasks.put("externalType", 256L);
+		columnBitmasks.put("export", 256L);
 
-		columnBitmasks.put("externalURL", 512L);
+		columnBitmasks.put("externalType", 512L);
 
-		columnBitmasks.put("internalClassName", 1024L);
+		columnBitmasks.put("externalURL", 1024L);
 
-		columnBitmasks.put("name", 2048L);
+		columnBitmasks.put("internalClassName", 2048L);
 
-		columnBitmasks.put("export", 4096L);
+		columnBitmasks.put("name", 4096L);
+
+		columnBitmasks.put("taskItemDelegateName", 8192L);
+
+		columnBitmasks.put("template", 16384L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

@@ -135,19 +135,19 @@ groupItemSelectorCriterion.setIncludeSitesThatIAdminister(true);
 
 PortletURL itemSelectorURL = PortletURLBuilder.create(
 	itemSelector.getItemSelectorURL(RequestBackedPortletURLFactoryUtil.create(renderRequest), eventName, groupItemSelectorCriterion)
+).setPortletResource(
+	assetPublisherDisplayContext.getPortletResource()
 ).setParameter(
-	"groupId", String.valueOf(layout.getGroupId())
+	"groupId", layout.getGroupId()
 ).setParameter(
-	"plid", String.valueOf(layout.getPlid())
-).setParameter(
-	"portletResource", assetPublisherDisplayContext.getPortletResource()
-).build();
+	"plid", layout.getPlid()
+).buildPortletURL();
 %>
 
 <aui:script sandbox="<%= true %>">
-	var form = document.<portlet:namespace />fm;
+	const form = document.<portlet:namespace />fm;
 
-	var scopeSelect = document.getElementById(
+	const scopeSelect = document.getElementById(
 		'<portlet:namespace />selectManageableGroup'
 	);
 
@@ -155,20 +155,7 @@ PortletURL itemSelectorURL = PortletURLBuilder.create(
 		scopeSelect.addEventListener('click', (event) => {
 			event.preventDefault();
 
-			var searchContainer = Liferay.SearchContainer.get(
-				'<portlet:namespace />groupsSearchContainer'
-			);
-
-			var searchContainerData = searchContainer.getData();
-
-			if (!searchContainerData.length) {
-				searchContainerData = [];
-			}
-			else {
-				searchContainerData = searchContainerData.split(',');
-			}
-
-			var opener = Liferay.Util.getOpener();
+			const opener = Liferay.Util.getOpener();
 
 			opener.Liferay.Util.openSelectionModal({
 				id: '<%= eventName %>' + event.currentTarget.id,
@@ -181,7 +168,6 @@ PortletURL itemSelectorURL = PortletURLBuilder.create(
 					});
 				},
 				selectEventName: '<%= eventName %>',
-				selectedData: searchContainerData,
 				title: '<liferay-ui:message key="scopes" />',
 				url: '<%= itemSelectorURL.toString() %>',
 			});

@@ -15,7 +15,7 @@
 package com.liferay.object.service.persistence.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.object.exception.NoSuchFieldException;
+import com.liferay.object.exception.NoSuchObjectFieldException;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.service.ObjectFieldLocalServiceUtil;
 import com.liferay.object.service.persistence.ObjectFieldPersistence;
@@ -138,7 +138,13 @@ public class ObjectFieldPersistenceTest {
 
 		newObjectField.setModifiedDate(RandomTestUtil.nextDate());
 
+		newObjectField.setListTypeDefinitionId(RandomTestUtil.nextLong());
+
 		newObjectField.setObjectDefinitionId(RandomTestUtil.nextLong());
+
+		newObjectField.setDBColumnName(RandomTestUtil.randomString());
+
+		newObjectField.setDBTableName(RandomTestUtil.randomString());
 
 		newObjectField.setIndexed(RandomTestUtil.randomBoolean());
 
@@ -146,7 +152,13 @@ public class ObjectFieldPersistenceTest {
 
 		newObjectField.setIndexedLanguageId(RandomTestUtil.randomString());
 
+		newObjectField.setLabel(RandomTestUtil.randomString());
+
 		newObjectField.setName(RandomTestUtil.randomString());
+
+		newObjectField.setRelationshipType(RandomTestUtil.randomString());
+
+		newObjectField.setRequired(RandomTestUtil.randomBoolean());
 
 		newObjectField.setType(RandomTestUtil.randomString());
 
@@ -176,8 +188,17 @@ public class ObjectFieldPersistenceTest {
 			Time.getShortTimestamp(existingObjectField.getModifiedDate()),
 			Time.getShortTimestamp(newObjectField.getModifiedDate()));
 		Assert.assertEquals(
+			existingObjectField.getListTypeDefinitionId(),
+			newObjectField.getListTypeDefinitionId());
+		Assert.assertEquals(
 			existingObjectField.getObjectDefinitionId(),
 			newObjectField.getObjectDefinitionId());
+		Assert.assertEquals(
+			existingObjectField.getDBColumnName(),
+			newObjectField.getDBColumnName());
+		Assert.assertEquals(
+			existingObjectField.getDBTableName(),
+			newObjectField.getDBTableName());
 		Assert.assertEquals(
 			existingObjectField.isIndexed(), newObjectField.isIndexed());
 		Assert.assertEquals(
@@ -187,7 +208,14 @@ public class ObjectFieldPersistenceTest {
 			existingObjectField.getIndexedLanguageId(),
 			newObjectField.getIndexedLanguageId());
 		Assert.assertEquals(
+			existingObjectField.getLabel(), newObjectField.getLabel());
+		Assert.assertEquals(
 			existingObjectField.getName(), newObjectField.getName());
+		Assert.assertEquals(
+			existingObjectField.getRelationshipType(),
+			newObjectField.getRelationshipType());
+		Assert.assertEquals(
+			existingObjectField.isRequired(), newObjectField.isRequired());
 		Assert.assertEquals(
 			existingObjectField.getType(), newObjectField.getType());
 	}
@@ -211,10 +239,26 @@ public class ObjectFieldPersistenceTest {
 	}
 
 	@Test
+	public void testCountByListTypeDefinitionId() throws Exception {
+		_persistence.countByListTypeDefinitionId(RandomTestUtil.nextLong());
+
+		_persistence.countByListTypeDefinitionId(0L);
+	}
+
+	@Test
 	public void testCountByObjectDefinitionId() throws Exception {
 		_persistence.countByObjectDefinitionId(RandomTestUtil.nextLong());
 
 		_persistence.countByObjectDefinitionId(0L);
+	}
+
+	@Test
+	public void testCountByODI_DTN() throws Exception {
+		_persistence.countByODI_DTN(RandomTestUtil.nextLong(), "");
+
+		_persistence.countByODI_DTN(0L, "null");
+
+		_persistence.countByODI_DTN(0L, (String)null);
 	}
 
 	@Test
@@ -236,7 +280,7 @@ public class ObjectFieldPersistenceTest {
 		Assert.assertEquals(existingObjectField, newObjectField);
 	}
 
-	@Test(expected = NoSuchFieldException.class)
+	@Test(expected = NoSuchObjectFieldException.class)
 	public void testFindByPrimaryKeyMissing() throws Exception {
 		long pk = RandomTestUtil.nextLong();
 
@@ -253,9 +297,11 @@ public class ObjectFieldPersistenceTest {
 		return OrderByComparatorFactoryUtil.create(
 			"ObjectField", "mvccVersion", true, "uuid", true, "objectFieldId",
 			true, "companyId", true, "userId", true, "userName", true,
-			"createDate", true, "modifiedDate", true, "objectDefinitionId",
-			true, "indexed", true, "indexedAsKeyword", true,
-			"indexedLanguageId", true, "name", true, "type", true);
+			"createDate", true, "modifiedDate", true, "listTypeDefinitionId",
+			true, "objectDefinitionId", true, "dbColumnName", true,
+			"dbTableName", true, "indexed", true, "indexedAsKeyword", true,
+			"indexedLanguageId", true, "label", true, "name", true,
+			"relationshipType", true, "required", true, "type", true);
 	}
 
 	@Test
@@ -549,7 +595,13 @@ public class ObjectFieldPersistenceTest {
 
 		objectField.setModifiedDate(RandomTestUtil.nextDate());
 
+		objectField.setListTypeDefinitionId(RandomTestUtil.nextLong());
+
 		objectField.setObjectDefinitionId(RandomTestUtil.nextLong());
+
+		objectField.setDBColumnName(RandomTestUtil.randomString());
+
+		objectField.setDBTableName(RandomTestUtil.randomString());
 
 		objectField.setIndexed(RandomTestUtil.randomBoolean());
 
@@ -557,7 +609,13 @@ public class ObjectFieldPersistenceTest {
 
 		objectField.setIndexedLanguageId(RandomTestUtil.randomString());
 
+		objectField.setLabel(RandomTestUtil.randomString());
+
 		objectField.setName(RandomTestUtil.randomString());
+
+		objectField.setRelationshipType(RandomTestUtil.randomString());
+
+		objectField.setRequired(RandomTestUtil.randomBoolean());
 
 		objectField.setType(RandomTestUtil.randomString());
 

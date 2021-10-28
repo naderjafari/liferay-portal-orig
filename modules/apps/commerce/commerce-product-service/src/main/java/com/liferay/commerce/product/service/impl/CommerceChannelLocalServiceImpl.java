@@ -37,11 +37,13 @@ import com.liferay.portal.kernel.search.QueryConfig;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.spring.extender.service.ServiceReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,7 +98,7 @@ public class CommerceChannelLocalServiceImpl
 		Map<Locale, String> nameMap = Collections.singletonMap(
 			serviceContext.getLocale(), name);
 
-		groupLocalService.addGroup(
+		_groupLocalService.addGroup(
 			user.getUserId(), GroupConstants.DEFAULT_PARENT_GROUP_ID,
 			CommerceChannel.class.getName(), commerceChannelId,
 			GroupConstants.DEFAULT_LIVE_GROUP_ID, nameMap, null,
@@ -130,14 +132,16 @@ public class CommerceChannelLocalServiceImpl
 
 		// Group
 
-		Group group = getCommerceChannelGroup(
+		Group group = fetchCommerceChannelGroup(
 			commerceChannel.getCommerceChannelId());
 
 		// Commerce channel
 
 		commerceChannel = commerceChannelPersistence.remove(commerceChannel);
 
-		groupLocalService.deleteGroup(group);
+		if (group != null) {
+			_groupLocalService.deleteGroup(group);
+		}
 
 		return commerceChannel;
 	}
@@ -181,10 +185,24 @@ public class CommerceChannelLocalServiceImpl
 	}
 
 	@Override
+	public Group fetchCommerceChannelGroup(long commerceChannelId)
+		throws PortalException {
+
+		CommerceChannel commerceChannel =
+			commerceChannelLocalService.getCommerceChannel(commerceChannelId);
+
+		long classNameId = classNameLocalService.getClassNameId(
+			CommerceChannel.class.getName());
+
+		return _groupLocalService.fetchGroup(
+			commerceChannel.getCompanyId(), classNameId, commerceChannelId);
+	}
+
+	@Override
 	public CommerceChannel getCommerceChannelByGroupId(long groupId)
 		throws PortalException {
 
-		Group group = groupLocalService.getGroup(groupId);
+		Group group = _groupLocalService.getGroup(groupId);
 
 		return commerceChannelLocalService.getCommerceChannel(
 			group.getClassPK());
@@ -202,14 +220,8 @@ public class CommerceChannelLocalServiceImpl
 	public Group getCommerceChannelGroup(long commerceChannelId)
 		throws PortalException {
 
-		CommerceChannel commerceChannel =
-			commerceChannelLocalService.getCommerceChannel(commerceChannelId);
-
-		long classNameId = classNameLocalService.getClassNameId(
-			CommerceChannel.class.getName());
-
-		Group group = groupLocalService.fetchGroup(
-			commerceChannel.getCompanyId(), classNameId, commerceChannelId);
+		Group group = commerceChannelLocalService.fetchCommerceChannelGroup(
+			commerceChannelId);
 
 		if (group != null) {
 			return group;
@@ -237,16 +249,14 @@ public class CommerceChannelLocalServiceImpl
 	}
 
 	@Override
-	public List<CommerceChannel> searchCommerceChannels(long companyId)
-		throws PortalException {
-
-		return searchCommerceChannels(
+	public List<CommerceChannel> search(long companyId) throws PortalException {
+		return search(
 			companyId, StringPool.BLANK, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			null);
 	}
 
 	@Override
-	public List<CommerceChannel> searchCommerceChannels(
+	public List<CommerceChannel> search(
 			long companyId, String keywords, int start, int end, Sort sort)
 		throws PortalException {
 
@@ -255,7 +265,7 @@ public class CommerceChannelLocalServiceImpl
 
 		searchContext.setKeywords(keywords);
 
-		return searchCommerceChannels(searchContext);
+		return search(searchContext);
 	}
 
 	@Override
@@ -385,8 +395,7 @@ public class CommerceChannelLocalServiceImpl
 		return commerceChannels;
 	}
 
-	protected List<CommerceChannel> searchCommerceChannels(
-			SearchContext searchContext)
+	protected List<CommerceChannel> search(SearchContext searchContext)
 		throws PortalException {
 
 		Indexer<CommerceChannel> indexer =
@@ -424,5 +433,8 @@ public class CommerceChannelLocalServiceImpl
 	private static final String[] _SELECTED_FIELD_NAMES = {
 		Field.ENTRY_CLASS_PK, Field.COMPANY_ID
 	};
+
+	@ServiceReference(type = GroupLocalService.class)
+	private GroupLocalService _groupLocalService;
 
 }

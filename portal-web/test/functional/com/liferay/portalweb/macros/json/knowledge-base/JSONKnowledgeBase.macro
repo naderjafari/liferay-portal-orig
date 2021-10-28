@@ -35,7 +35,7 @@ definition {
 
 		var resourcePrimKey = JSONCurlUtil.post("${curl}", "$.[?(@['title'] == '${kbChildArticleTitle}')]['resourcePrimKey']");
 
-		if ("${resourcePrimKey}" == "[]") {
+		if ("${resourcePrimKey}" == "") {
 			fail("FAIL. Cannot find resourcePrimKey.");
 		}
 		else {
@@ -75,7 +75,7 @@ definition {
 
 		var resourcePrimKey = JSONCurlUtil.post("${curl}", "$.[?(@['title'] == '${kbArticleTitle}')]['resourcePrimKey']");
 
-		if ("${resourcePrimKey}" == "[]") {
+		if ("${resourcePrimKey}" == "") {
 			fail("FAIL. Cannot find resourcePrimKey.");
 		}
 		else {
@@ -105,16 +105,21 @@ definition {
 				groupName = "${groupName}");
 		}
 
+		if (!(isSet(urlTitle))) {
+			var urlTitle = "";
+		}
+
 		var parentResourceClassNameId = JSONClassname._getClassNameId(value = "com.liferay.knowledge.base.model.KBFolder");
 
 		var curl = '''
 			${portalURL}/api/jsonws/kb.kbarticle/add-kb-article \
 				-u test@liferay.com:test \
+				-d externalReferenceCode= \
 				-d portletId=0 \
 				-d parentResourceClassNameId=${parentResourceClassNameId} \
 				-d parentResourcePrimKey=${folderId} \
 				-d title=${kbArticleTitle} \
-				-d urlTitle= \
+				-d urlTitle=${urlTitle} \
 				-d content=<p>${kbArticleContent}</p> \
 				-d description= \
 				-d sourceURL= \
@@ -153,6 +158,7 @@ definition {
 		var curl = '''
 			${portalURL}/api/jsonws/kb.kbarticle/add-kb-article \
 				-u test@liferay.com:test \
+				-d externalReferenceCode= \
 				-d portletId=0 \
 				-d parentResourceClassNameId=${parentResourceClassNameId} \
 				-d parentResourcePrimKey=${parentResourcePrimKey} \
@@ -203,6 +209,7 @@ definition {
 
 		var curl = '''
 			${portalURL}/api/jsonws/kb.kbfolder/add-kb-folder \
+				-d externalReferenceCode= \
 				-u test@liferay.com:test \
 				-d groupId=${groupId} \
 				-d parentResourceClassNameId=${parentResourceClassNameId} \
@@ -243,6 +250,7 @@ definition {
 		var curl = '''
 			${portalURL}/api/jsonws/kb.kbarticle/add-kb-article \
 				-u test@liferay.com:test \
+				-d externalReferenceCode= \
 				-d portletId=0 \
 				-d parentResourceClassNameId=${parentResourceClassNameId} \
 				-d parentResourcePrimKey=${parentResourcePrimKey} \
@@ -306,7 +314,7 @@ definition {
 
 		var kbFolderId = JSONCurlUtil.post("${curl}", "$.[?(@['name'] == '${folderName}')]['kbFolderId']");
 
-		if ("${kbFolderId}" == "[]") {
+		if ("${kbFolderId}" == "") {
 			fail("FAIL. Cannot find folder.");
 		}
 		else {

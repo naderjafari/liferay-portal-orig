@@ -132,11 +132,11 @@ public class CommerceGuestCheckoutAuthenticationCommerceHealthStatus
 			"com/liferay/commerce/order/content/web/internal/dependencies/";
 
 		try {
-			String journalArticleJsonStirng = StringUtil.read(
+			String journalArticleJsonString = StringUtil.read(
 				classLoader, dependenciesFilePath + "journal-articles.json");
 
 			JSONArray jsonArray = _jsonFactory.createJSONArray(
-				journalArticleJsonStirng);
+				journalArticleJsonString);
 
 			_cpFileImporter.createJournalArticles(
 				jsonArray, classLoader,
@@ -149,15 +149,19 @@ public class CommerceGuestCheckoutAuthenticationCommerceHealthStatus
 
 			JournalArticle journalArticle = journalArticles.get(0);
 
-			AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
-				JournalArticle.class.getName(),
-				journalArticle.getResourcePrimKey());
-
 			Map<String, String[]> parameterMap = HashMapBuilder.put(
 				"articleId", new String[] {journalArticle.getArticleId()}
 			).put(
 				"assetEntryId",
-				new String[] {String.valueOf(assetEntry.getEntryId())}
+				() -> {
+					AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
+						JournalArticle.class.getName(),
+						journalArticle.getResourcePrimKey());
+
+					return new String[] {
+						String.valueOf(assetEntry.getEntryId())
+					};
+				}
 			).put(
 				"groupId",
 				new String[] {String.valueOf(journalArticle.getGroupId())}
@@ -228,7 +232,7 @@ public class CommerceGuestCheckoutAuthenticationCommerceHealthStatus
 				CommerceOrderCheckoutConfiguration.class,
 				new GroupServiceSettingsLocator(
 					commerceChannel.getGroupId(),
-					CommerceConstants.SERVICE_NAME_ORDER));
+					CommerceConstants.SERVICE_NAME_COMMERCE_ORDER));
 
 		if (!commerceOrderCheckoutConfiguration.guestCheckoutEnabled()) {
 			return true;

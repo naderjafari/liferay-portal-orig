@@ -49,6 +49,7 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.language.constants.LanguageConstants;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.KeyValuePair;
@@ -84,8 +85,8 @@ public class DDMFormFieldTemplateContextFactory {
 		DDMFormRenderingContext ddmFormRenderingContext,
 		DDMStructureLayoutLocalService ddmStructureLayoutLocalService,
 		DDMStructureLocalService ddmStructureLocalService,
-		JSONFactory jsonFactory, boolean pageEnabled,
-		DDMFormLayout parentDDMFormLayout) {
+		GroupLocalService groupLocalService, JSONFactory jsonFactory,
+		boolean pageEnabled, DDMFormLayout parentDDMFormLayout) {
 
 		_ddmFormEvaluator = ddmFormEvaluator;
 		_ddmFormFieldName = ddmFormFieldName;
@@ -95,6 +96,7 @@ public class DDMFormFieldTemplateContextFactory {
 		_ddmFormRenderingContext = ddmFormRenderingContext;
 		_ddmStructureLayoutLocalService = ddmStructureLayoutLocalService;
 		_ddmStructureLocalService = ddmStructureLocalService;
+		_groupLocalService = groupLocalService;
 		_jsonFactory = jsonFactory;
 		_pageEnabled = pageEnabled;
 		_parentDDMFormLayout = parentDDMFormLayout;
@@ -110,11 +112,9 @@ public class DDMFormFieldTemplateContextFactory {
 	protected boolean addProperty(
 		Map<String, Object> changedProperties, String propertyName) {
 
-		if (_ddmFormRenderingContext.isReturnFullContext()) {
-			return true;
-		}
+		if (_ddmFormRenderingContext.isReturnFullContext() ||
+			changedProperties.containsKey(propertyName)) {
 
-		if (changedProperties.containsKey(propertyName)) {
 			return true;
 		}
 
@@ -330,16 +330,12 @@ public class DDMFormFieldTemplateContextFactory {
 	protected String getAffixedDDMFormFieldParameterName(
 		String ddmFormFieldParameterName) {
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(_ddmFormRenderingContext.getPortletNamespace());
-		sb.append(DDMFormRendererConstants.DDM_FORM_FIELD_NAME_PREFIX);
-		sb.append(ddmFormFieldParameterName);
-		sb.append(
-			DDMFormRendererConstants.DDM_FORM_FIELD_LANGUAGE_ID_SEPARATOR);
-		sb.append(LocaleUtil.toLanguageId(_locale));
-
-		return sb.toString();
+		return StringBundler.concat(
+			_ddmFormRenderingContext.getPortletNamespace(),
+			DDMFormRendererConstants.DDM_FORM_FIELD_NAME_PREFIX,
+			ddmFormFieldParameterName,
+			DDMFormRendererConstants.DDM_FORM_FIELD_LANGUAGE_ID_SEPARATOR,
+			LocaleUtil.toLanguageId(_locale));
 	}
 
 	protected Map<String, Object> getChangedProperties(
@@ -494,6 +490,23 @@ public class DDMFormFieldTemplateContextFactory {
 		String fieldReference) {
 
 		ddmFormFieldTemplateContext.put("fieldReference", fieldReference);
+	}
+
+	protected void setDDMFormFieldTemplateContextInputMaskProperties(
+		Map<String, Object> changedProperties,
+		Map<String, Object> ddmFormFieldTemplateContext) {
+
+		if (!addProperty(changedProperties, "inputMask")) {
+			return;
+		}
+
+		ddmFormFieldTemplateContext.put(
+			"inputMask",
+			MapUtil.getBoolean(changedProperties, "inputMask", false));
+		ddmFormFieldTemplateContext.put(
+			"inputMaskFormat", changedProperties.get("inputMaskFormat"));
+		ddmFormFieldTemplateContext.put(
+			"numericInputMask", changedProperties.get("numericInputMask"));
 	}
 
 	protected void setDDMFormFieldTemplateContextInstanceId(
@@ -707,7 +720,7 @@ public class DDMFormFieldTemplateContextFactory {
 		Map<String, Object> changedProperties,
 		Map<String, Object> ddmFormFieldTemplateContext, Value value) {
 
-		if (Validator.isNotNull(changedProperties.get("value"))) {
+		if (changedProperties.get("value") != null) {
 			ddmFormFieldTemplateContext.put(
 				"value", changedProperties.get("value"));
 
@@ -875,6 +888,8 @@ public class DDMFormFieldTemplateContextFactory {
 		setDDMFormFieldTemplateContextEvaluable(
 			ddmFormFieldTemplateContext, ddmFormField, changedProperties,
 			ddmFormField.getProperty("evaluable"));
+		setDDMFormFieldTemplateContextInputMaskProperties(
+			changedProperties, ddmFormFieldTemplateContext);
 		setDDMFormFieldTemplateContextLocalizedValue(
 			ddmFormFieldTemplateContext, "requiredErrorMessage",
 			ddmFormField.getRequiredErrorMessage());
@@ -1031,7 +1046,8 @@ public class DDMFormFieldTemplateContextFactory {
 						ddmFormField.getDDMForm(), ddmFormLayout,
 						_ddmFormRenderingContext,
 						_ddmStructureLayoutLocalService,
-						_ddmStructureLocalService, _jsonFactory);
+						_ddmStructureLocalService, _groupLocalService,
+						_jsonFactory);
 
 			ddmFormPagesTemplateContextFactory.setDDMFormEvaluator(
 				_ddmFormEvaluator);
@@ -1122,6 +1138,7 @@ public class DDMFormFieldTemplateContextFactory {
 	private final DDMStructureLayoutLocalService
 		_ddmStructureLayoutLocalService;
 	private final DDMStructureLocalService _ddmStructureLocalService;
+	private final GroupLocalService _groupLocalService;
 	private final JSONFactory _jsonFactory;
 	private final Locale _locale;
 	private final boolean _pageEnabled;

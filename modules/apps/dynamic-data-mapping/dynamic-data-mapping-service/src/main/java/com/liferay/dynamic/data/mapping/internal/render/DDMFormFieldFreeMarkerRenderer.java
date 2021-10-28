@@ -17,6 +17,7 @@ package com.liferay.dynamic.data.mapping.internal.render;
 import com.liferay.dynamic.data.mapping.constants.DDMConstants;
 import com.liferay.dynamic.data.mapping.constants.DDMPortletKeys;
 import com.liferay.dynamic.data.mapping.constants.DDMTemplateConstants;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.internal.util.DDMFormFieldFreeMarkerRendererUtil;
 import com.liferay.dynamic.data.mapping.internal.util.DDMImpl;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
@@ -175,6 +176,23 @@ public class DDMFormFieldFreeMarkerRenderer implements DDMFormFieldRenderer {
 			"repeatable", Boolean.toString(ddmFormField.isRepeatable()));
 		fieldContext.put(
 			"required", Boolean.toString(ddmFormField.isRequired()));
+
+		if (Objects.equals(
+				ddmFormField.getType(), DDMFormFieldTypeConstants.DDM_IMAGE) ||
+			Objects.equals(
+				ddmFormField.getType(), DDMFormFieldTypeConstants.IMAGE)) {
+
+			if (ddmFormField.isRequired()) {
+				fieldContext.put(
+					"requiredDescription",
+					GetterUtil.getBoolean(
+						ddmFormField.getProperty("requiredDescription"), true));
+			}
+			else {
+				fieldContext.put("requiredDescription", false);
+			}
+		}
+
 		fieldContext.put(
 			"showLabel", Boolean.toString(ddmFormField.isShowLabel()));
 		fieldContext.put("type", ddmFormField.getType());
@@ -374,16 +392,15 @@ public class DDMFormFieldFreeMarkerRenderer implements DDMFormFieldRenderer {
 			if (Objects.equals(ddmFormField.getType(), "select") ||
 				Objects.equals(ddmFormField.getType(), "radio")) {
 
-				Map<String, Object> optionFreeMarkerContext = new HashMap<>(
-					freeMarkerContext);
-
-				optionFreeMarkerContext.put(
-					"parentFieldStructure", fieldStructure);
-
 				childrenHTMLSB.append(
 					getDDMFormFieldOptionHTML(
 						httpServletRequest, httpServletResponse, ddmFormField,
-						mode, readOnly, locale, optionFreeMarkerContext));
+						mode, readOnly, locale,
+						HashMapBuilder.create(
+							freeMarkerContext
+						).put(
+							"parentFieldStructure", fieldStructure
+						).build()));
 			}
 
 			fieldStructure.put("children", childrenHTMLSB.toString());
@@ -510,21 +527,21 @@ public class DDMFormFieldFreeMarkerRenderer implements DDMFormFieldRenderer {
 		DDMFormField parentDDMFormField, boolean showEmptyFieldLabel,
 		Locale locale) {
 
-		Map<String, Object> fieldContext = getFieldContext(
-			httpServletRequest, httpServletResponse, portletNamespace,
-			namespace, ddmFormField, locale);
-
-		Map<String, Object> parentFieldContext = new HashMap<>();
-
-		if (parentDDMFormField != null) {
-			parentFieldContext = getFieldContext(
-				httpServletRequest, httpServletResponse, portletNamespace,
-				namespace, parentDDMFormField, locale);
-		}
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		Map<String, Object> freeMarkerContext =
 			HashMapBuilder.<String, Object>put(
-				"ddmPortletId", DDMPortletKeys.DYNAMIC_DATA_MAPPING
+				"assetBrowserAuthToken",
+				AuthTokenUtil.getToken(
+					httpServletRequest, themeDisplay.getPlid(),
+					"com_liferay_asset_browser_web_portlet_AssetBrowserPortlet")
+			).put(
+				"ddmAuthToken",
+				AuthTokenUtil.getToken(
+					httpServletRequest, themeDisplay.getPlid(),
+					DDMPortletKeys.DYNAMIC_DATA_MAPPING)
 			).put(
 				"editorName",
 				() -> {
@@ -535,12 +552,11 @@ public class DDMFormFieldFreeMarkerRenderer implements DDMFormFieldRenderer {
 					return editor.getName();
 				}
 			).put(
-				"fieldStructure", fieldContext
+				"fieldStructure",
+				getFieldContext(
+					httpServletRequest, httpServletResponse, portletNamespace,
+					namespace, ddmFormField, locale)
 			).build();
-
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
 
 		try {
 			String itemSelectorAuthToken = AuthTokenUtil.getToken(
@@ -558,7 +574,17 @@ public class DDMFormFieldFreeMarkerRenderer implements DDMFormFieldRenderer {
 		}
 
 		freeMarkerContext.put("namespace", namespace);
+
+		Map<String, Object> parentFieldContext = new HashMap<>();
+
+		if (parentDDMFormField != null) {
+			parentFieldContext = getFieldContext(
+				httpServletRequest, httpServletResponse, portletNamespace,
+				namespace, parentDDMFormField, locale);
+		}
+
 		freeMarkerContext.put("parentFieldStructure", parentFieldContext);
+
 		freeMarkerContext.put("portletNamespace", portletNamespace);
 		freeMarkerContext.put(
 			"requestedLanguageDir",
@@ -739,15 +765,9 @@ public class DDMFormFieldFreeMarkerRenderer implements DDMFormFieldRenderer {
 			TemplateResource templateResource)
 		throws Exception {
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(_TPL_PATH);
-		sb.append(StringUtil.toLowerCase(fieldNamespace));
-		sb.append(CharPool.SLASH);
-		sb.append(templateName);
-		sb.append(_TPL_EXT);
-
-		String resource = sb.toString();
+		String resource = StringBundler.concat(
+			_TPL_PATH, StringUtil.toLowerCase(fieldNamespace), CharPool.SLASH,
+			templateName, _TPL_EXT);
 
 		URL url = getResource(resource);
 

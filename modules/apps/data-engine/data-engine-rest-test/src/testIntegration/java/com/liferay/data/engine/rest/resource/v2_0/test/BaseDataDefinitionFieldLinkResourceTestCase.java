@@ -32,7 +32,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -48,7 +47,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -197,18 +195,17 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 	public void testGetDataDefinitionDataDefinitionFieldLinkPage()
 		throws Exception {
 
-		Page<DataDefinitionFieldLink> page =
-			dataDefinitionFieldLinkResource.
-				getDataDefinitionDataDefinitionFieldLinkPage(
-					testGetDataDefinitionDataDefinitionFieldLinkPage_getDataDefinitionId(),
-					RandomTestUtil.randomString());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long dataDefinitionId =
 			testGetDataDefinitionDataDefinitionFieldLinkPage_getDataDefinitionId();
 		Long irrelevantDataDefinitionId =
 			testGetDataDefinitionDataDefinitionFieldLinkPage_getIrrelevantDataDefinitionId();
+
+		Page<DataDefinitionFieldLink> page =
+			dataDefinitionFieldLinkResource.
+				getDataDefinitionDataDefinitionFieldLinkPage(
+					dataDefinitionId, RandomTestUtil.randomString());
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantDataDefinitionId != null) {
 			DataDefinitionFieldLink irrelevantDataDefinitionFieldLink =
@@ -273,6 +270,26 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 		throws Exception {
 
 		return null;
+	}
+
+	protected void assertContains(
+		DataDefinitionFieldLink dataDefinitionFieldLink,
+		List<DataDefinitionFieldLink> dataDefinitionFieldLinks) {
+
+		boolean contains = false;
+
+		for (DataDefinitionFieldLink item : dataDefinitionFieldLinks) {
+			if (equals(dataDefinitionFieldLink, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			dataDefinitionFieldLinks + " does not contain " +
+				dataDefinitionFieldLink,
+			contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -406,7 +423,7 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.data.engine.rest.dto.v2_0.
 						DataDefinitionFieldLink.class)) {
@@ -423,12 +440,13 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -534,14 +552,16 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -754,8 +774,9 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseDataDefinitionFieldLinkResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(
+			BaseDataDefinitionFieldLinkResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

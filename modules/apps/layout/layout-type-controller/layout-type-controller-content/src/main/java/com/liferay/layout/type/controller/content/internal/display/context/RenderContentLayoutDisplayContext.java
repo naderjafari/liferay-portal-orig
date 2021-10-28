@@ -67,7 +67,7 @@ public class RenderContentLayoutDisplayContext {
 				PortletJSONUtil.populatePortletJSONObject(
 					_httpServletRequest, StringPool.BLANK, portlet, jsonObject);
 
-				PortletJSONUtil.writeHeaderPaths(
+				PortletJSONUtil.writeFooterPaths(
 					pipingServletResponse, jsonObject);
 			}
 			catch (Exception exception) {
@@ -94,7 +94,7 @@ public class RenderContentLayoutDisplayContext {
 				PortletJSONUtil.populatePortletJSONObject(
 					_httpServletRequest, StringPool.BLANK, portlet, jsonObject);
 
-				PortletJSONUtil.writeFooterPaths(
+				PortletJSONUtil.writeHeaderPaths(
 					pipingServletResponse, jsonObject);
 			}
 			catch (Exception exception) {
@@ -127,11 +127,9 @@ public class RenderContentLayoutDisplayContext {
 				_themeDisplay.getCompanyId(),
 				portletPreferences.getPortletId());
 
-			if (portlet == null) {
-				continue;
-			}
+			if ((portlet == null) || !portlet.isActive() ||
+				portlet.isUndeployedPortlet()) {
 
-			if (!portlet.isActive() || portlet.isUndeployedPortlet()) {
 				continue;
 			}
 

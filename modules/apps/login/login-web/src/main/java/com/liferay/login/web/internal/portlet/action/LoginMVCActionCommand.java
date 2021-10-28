@@ -160,9 +160,9 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 	protected String getCompleteRedirectURL(
 		HttpServletRequest httpServletRequest, String redirect) {
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		Boolean httpsInitial = (Boolean)session.getAttribute(
+		Boolean httpsInitial = (Boolean)httpSession.getAttribute(
 			WebKeys.HTTPS_INITIAL);
 
 		String portalURL = null;
@@ -282,15 +282,20 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 			PortletURLFactoryUtil.create(
 				actionRequest, liferayPortletRequest.getPortlet(), layout,
 				PortletRequest.RENDER_PHASE)
+		).setRedirect(
+			() -> {
+				String redirect = ParamUtil.getString(
+					actionRequest, "redirect");
+
+				if (Validator.isNotNull(redirect)) {
+					return redirect;
+				}
+
+				return null;
+			}
 		).setParameter(
-			"saveLastPath", Boolean.FALSE.toString()
-		).build();
-
-		String redirect = ParamUtil.getString(actionRequest, "redirect");
-
-		if (Validator.isNotNull(redirect)) {
-			portletURL.setParameter("redirect", redirect);
-		}
+			"saveLastPath", false
+		).buildPortletURL();
 
 		String login = ParamUtil.getString(actionRequest, "login");
 

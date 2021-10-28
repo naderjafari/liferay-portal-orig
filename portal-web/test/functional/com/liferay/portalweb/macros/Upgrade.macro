@@ -1,5 +1,73 @@
 definition {
 
+	macro addAndEditTranslations {
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+		Translations.gotoTranslate(webContentTitle = "WC WebContent Title Side By Side");
+
+		Translations.changeTargetLocale(
+			currentTargetLocale = "ar-SA",
+			newTargetLocale = "ja-JP");
+
+		Translations.viewBaseFields(
+			webContentContent = "WC WebContent Content",
+			webContentTitle = "WC WebContent Title");
+
+		Translations.translateFields(
+			webContentContent = "wc webcontentコンテンツ 編集",
+			webContentDescription = "wc webcontent記述 編集",
+			webContentTitle = "wc webcontentタイトルを並べて 編集");
+
+		PortletEntry.publish();
+
+		Translations.gotoTranslate(webContentTitle = "WC WebContent Title Side By Side");
+
+		Translations.changeTargetLocale(
+			currentTargetLocale = "ar-SA",
+			newTargetLocale = "es-ES");
+
+		Translations.viewBaseFields(
+			webContentContent = "WC WebContent Content",
+			webContentTitle = "WC WebContent Title");
+
+		Translations.translateFields(
+			webContentContent = "Contenido de WC WebContent",
+			webContentTitle = "Título del contenido web de WC");
+
+		PortletEntry.publish();
+	}
+
+	macro addAndViewAccountGroup {
+		ApplicationsMenu.gotoPortlet(
+			category = "Accounts",
+			panel = "Control Panel",
+			portlet = "Account Groups");
+
+		AccountGroups.addCP(
+			accountGroupDescription = "${accountGroupDescription}",
+			accountGroupName = "${accountGroupName}");
+
+		AccountGroups.openAccountGroupsAdmin();
+
+		LexiconEntry.viewEntryName(rowEntry = "${accountGroupName}");
+	}
+
+	macro addAndViewBusinessAccount {
+		ApplicationsMenu.gotoPortlet(
+			category = "Accounts",
+			panel = "Control Panel",
+			portlet = "Accounts");
+
+		Accounts.addBusinessAccount(
+			accountDescription = "${accountDescription}",
+			accountName = "${accountName}",
+			accountTaxID = "${accountTaxID}");
+
+		Accounts.openAccountsAdmin();
+
+		LexiconEntry.viewEntryName(rowEntry = "${accountName}");
+	}
+
 	macro addAutoTaggedBlogsEntry {
 		BlogsNavigator.openBlogsAdmin(siteURLKey = "site-name");
 
@@ -22,7 +90,12 @@ definition {
 	}
 
 	macro addAutoTaggedDM {
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
+		if (isSet(depotName)) {
+			DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
+		}
+		else {
+			DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
+		}
 
 		DMDocument.addCP(
 			dmDocumentDescription = "DM Document Description",
@@ -31,7 +104,12 @@ definition {
 
 		Pause(locator1 = "3000");
 
-		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
+		if (isSet(depotName)) {
+			DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
+		}
+		else {
+			DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
+		}
 
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "${dmDocumentTitle}");
 
@@ -41,7 +119,12 @@ definition {
 	}
 
 	macro addAutoTaggedWebContent {
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+		if (isSet(depotName)) {
+			DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+		}
+		else {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+		}
 
 		WebContentNavigator.gotoAddCP();
 
@@ -51,7 +134,12 @@ definition {
 
 		PortletEntry.publish();
 
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+		if (isSet(depotName)) {
+			DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+		}
+		else {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+		}
 
 		WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
 
@@ -99,29 +187,31 @@ definition {
 		}
 
 		task ("Assert the Title fragment is present") {
-			AssertVisible(
-				key_content = "Lorem ipsum dolor sit amet",
-				key_fragmentClass = "header",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "header",
+				text = "Lorem ipsum dolor sit amet");
 		}
 
 		task ("Assert the Rich Text fragment is present") {
-			AssertVisible(
-				key_content = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-				key_fragmentClass = "rich-text",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "rich-text",
+				text = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 		}
 
 		task ("Assert the Button fragment is present") {
-			AssertVisible(
-				key_content = "Submit",
-				key_fragmentClass = "footer",
-				locator1 = "Fragment#FRAGMENT");
+			var n = "1";
 
-			AssertVisible(
-				key_content = "Cancel",
-				key_fragmentClass = "footer",
-				locator1 = "Fragment#FRAGMENT");
+			for (var text : list "Submit,Cancel") {
+				ContentPages.viewFragmentText(
+					contributed = "false",
+					fragmentName = "footer",
+					position = "${n}",
+					text = "${text}");
+
+				var n = ${n} + 1;
+			}
 		}
 
 		task ("Navigate to regular content page from 7.1") {
@@ -129,14 +219,14 @@ definition {
 		}
 
 		task ("Navigate to the content page's 'Edit Mode'") {
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 		}
 
 		task ("Edit the Title fragment's editable text") {
 			PageEditor.editFragmentText(
+				className = "header",
 				contributed = "false",
 				fragmentName = "Title",
-				id = "title",
 				text = "New editable fragment text");
 		}
 
@@ -145,10 +235,10 @@ definition {
 		}
 
 		task ("Assert the Title fragment is updated") {
-			AssertVisible(
-				key_content = "New editable fragment text",
-				key_fragmentClass = "header",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "header",
+				text = "New editable fragment text");
 		}
 
 		task ("Navigate to content page created from page template from 7.1") {
@@ -156,7 +246,7 @@ definition {
 		}
 
 		task ("Navigate to the content page's 'Edit Mode'") {
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 		}
 
 		task ("Add a Rich Text fragment to the content page") {
@@ -171,26 +261,30 @@ definition {
 		}
 
 		task ("Assert the Button fragment is present") {
-			AssertVisible(
-				key_content = "Submit",
-				key_fragmentClass = "footer",
-				locator1 = "Fragment#FRAGMENT");
+			var n = "1";
 
-			AssertVisible(
-				key_content = "Cancel",
-				key_fragmentClass = "footer",
-				locator1 = "Fragment#FRAGMENT");
+			for (var text : list "Submit,Cancel") {
+				ContentPages.viewFragmentText(
+					contributed = "false",
+					fragmentName = "footer",
+					position = "${n}",
+					text = "${text}");
+
+				var n = ${n} + 1;
+			}
 		}
 
 		task ("Assert the Rich Text fragment is present") {
-			AssertVisible(
-				key_content = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-				key_fragmentClass = "rich-text",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "rich-text",
+				text = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 		}
 	}
 
 	macro addDataDefinitionWithDB2 {
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
 			portlet = "Dynamic Data Lists",
@@ -236,6 +330,28 @@ definition {
 		AssertConsoleTextNotPresent(value1 = "SQLCODE=-134");
 
 		AssertConsoleTextNotPresent(value1 = "SQLCODE=-727");
+	}
+
+	macro addDMWithDocumentTypesAndMetadataSets {
+		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
+
+		DMDocument.addCP(
+			dmDocumentDescription = "DM Document Type Description",
+			dmDocumentFile = "Document_2.doc",
+			dmDocumentTitle = "DM Document Type Title After Upgrade",
+			dmDocumentTypeName = "DM Document Type Name",
+			documentsAndMediaField = "DM Document JPG",
+			fieldFieldLabel = "Documents and Media",
+			navTab = "Documents and Media",
+			numberField = "1234");
+
+		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Type Title After Upgrade");
+
+		DMDocument.viewCP(dmDocumentTitle = "DM Document Type Title After Upgrade");
 	}
 
 	macro addForm {
@@ -343,6 +459,38 @@ definition {
 		Organization.addCP(
 			orgName = "Organization Name",
 			orgType = "Organization");
+	}
+
+	macro addStyleBook {
+		task ("Add a style book") {
+			StyleBooksAdmin.openStyleBooksAdmin(siteURLKey = "test-site-name");
+
+			StyleBooksAdmin.addStyleBooks(styleBookName = "Test Style Book Name 2");
+		}
+
+		task ("Define the Font Family") {
+			var fontFamily = '''"Courier New"''';
+
+			StyleBooks.selectForm(formName = "Typography");
+
+			StyleBooks.expandSection(sectionName = "Font Family");
+
+			PortletEntry.inputText(
+				fieldLabel = "Font Family Base",
+				text = "${fontFamily}");
+
+			StyleBooks.waitForAutoSave();
+		}
+
+		task ("Publish the style book") {
+			StyleBooks.clickPublish();
+		}
+
+		task ("Assert the Style Books") {
+			StyleBooksAdmin.viewStyleBooksPresent(styleBookName = "Test Style Book Name");
+
+			StyleBooksAdmin.viewStyleBooksPresent(styleBookName = "Test Style Book Name 2");
+		}
 	}
 
 	macro addUserAndSuborganization {
@@ -510,6 +658,24 @@ definition {
 		Organization.viewCP(
 			orgName = "Organization1 Edit",
 			orgType = "Organization");
+	}
+
+	macro addUserToBusinessAccount {
+		ApplicationsMenu.gotoPortlet(
+			category = "Accounts",
+			panel = "Control Panel",
+			portlet = "Account Users");
+
+		AccountUsers.addUser(
+			accountName = "${accountName}",
+			userEmailAddress = "${userEmailAddress}",
+			userFirstName = "${userFirstName}",
+			userLastName = "${userLastName}",
+			userScreenName = "${userScreenName}");
+
+		AccountUsers.openAccountUsersAdmin();
+
+		LexiconEntry.viewEntryName(rowEntry = "${userFirstName} ${userLastName}");
 	}
 
 	macro addWCStructureAndTemplate {
@@ -743,7 +909,7 @@ definition {
 
 			Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-fragment-content-page");
 
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			PageEditor.addFragment(
 				collectionName = "Basic Components",
@@ -772,7 +938,7 @@ definition {
 		task ("Assert could delete fragment upgrading from 7.2") {
 			Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-fragment-content-page");
 
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			PageEditor.removeFragment(fragmentName = "Fragment Name");
 		}
@@ -780,7 +946,7 @@ definition {
 		task ("Assert the experience survived and could edit") {
 			Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-experience-content-page");
 
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			PageEditor.changeExperience(newExperience = "New Experience Name");
 
@@ -807,23 +973,17 @@ definition {
 		task ("Assert layout has been converted to a section with columns inside") {
 			Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-layout-content-page");
 
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
-			AssertElementPresent(
-				key_elementType = "Container",
-				key_position = "1",
-				locator1 = "PageEditor#LAYOUT_ELEMENTS_HEADER");
-
-			AssertElementPresent(
-				key_elementType = "Grid",
-				key_position = "1",
-				locator1 = "PageEditor#LAYOUT_ELEMENTS_HEADER");
+			for (var fragmentName : list "Container,Grid") {
+				PageEditor.viewFragment(fragmentName = "${fragmentName}");
+			}
 		}
 
 		task ("Assert translation is working after migration") {
 			Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-translation-content-page");
 
-			ContentPages.clickPencil();
+			ContentPages.gotoPageEditor();
 
 			AssertVisible(
 				key_content = "New editable fragment en-US text",
@@ -888,6 +1048,127 @@ definition {
 				fragmentName = "Paragraph",
 				targetFragmentName = "Rich Text");
 		}
+	}
+
+	macro editAndDeleteBlogEntry {
+		if (isSet(video)) {
+			Navigator.gotoPage(pageName = "Blogs");
+
+			BlogsEntry.moveToRecycleBinPG(
+				assetType = "Blogs Entry",
+				entryContent = "video",
+				entryTitle = "Blogs Entry Title With Video");
+		}
+
+		Navigator.gotoPage(pageName = "Blogs");
+
+		Blogs.editEntryPG(
+			embedVideo = "https://www.youtube.com/watch?v=HOdbzGCI5MEU",
+			entryContent = "Blogs Entry Content",
+			entryContentEdit = "Blogs Entry Content Edit",
+			entryTitle = "Blogs Entry Title",
+			entryTitleEdit = "Blogs Entry Title Edit",
+			uploadFileName = "Document_2.jpg");
+
+		Navigator.gotoPage(pageName = "Blogs");
+
+		BlogsEntry.moveToRecycleBinPG(
+			assetType = "Blogs Entry",
+			entryContent = "Blogs Entry Content Edit",
+			entryTitle = "Blogs Entry Title Edit");
+	}
+
+	macro editAndDeleteDocuments {
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.editCmdPG(
+			dmDocumentDescriptionEdit = "DM Document Description Edit",
+			dmDocumentFileNameEdit = "DM Document Video Edit.mp4",
+			dmDocumentTitle = "DM Document Video",
+			dmDocumentTitleEdit = "DM Document Video Edit");
+
+		PortletEntry.publish();
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Description Edit",
+			dmDocumentFileName = "DM Document Video Edit.mp4",
+			dmDocumentTitle = "DM Document Video Edit",
+			dmDocumentVersionNumber = "1.1");
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.deletePG(dmDocumentTitle = "DM Document JPG");
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		PortletEntry.selectAll();
+
+		ClickNoError(locator1 = "Icon#DELETE");
+
+		Alert.viewSuccessMessage();
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.viewDefault();
+	}
+
+	macro editAndDeleteKBArticle {
+		Navigator.gotoPage(pageName = "Knowledge Base");
+
+		KBArticle.editPGViaKBDisplay(
+			kbArticleContentEdit = "Knowledge Base Video Content Edit",
+			kbArticleTitle = "Knowledge Base Article Title",
+			kbArticleTitleEdit = "Knowledge Base Article Title Edit");
+
+		Navigator.gotoPage(pageName = "Knowledge Base");
+
+		KBArticle.deletePG();
+
+		KBArticle.viewNoPGViaKBDisplay(kbArticleTitle = "Knowledge Base Article Title Edit");
+	}
+
+	macro editAndDeleteMessageBoard {
+		Navigator.gotoPage(pageName = "Message Boards");
+
+		MessageboardsThread.editPG(
+			threadBodyEdit = "Message Boards Body Edit",
+			threadSubject = "Message Boards Subject",
+			threadSubjectEdit = "Message Boards Subject Edit");
+
+		MessageboardsThread.viewPG(
+			threadBody = "Message Boards Body Edit",
+			threadSubject = "Message Boards Subject Edit",
+			userName = "Test Test");
+
+		Navigator.gotoPage(pageName = "Message Boards");
+
+		MessageboardsThread.deletePG(threadSubject = "Message Boards Subject Edit");
+	}
+
+	macro editAndDeleteWiki {
+		Navigator.gotoPage(pageName = "Wiki");
+
+		WikiPage.editFrontPagePG(wikiPageContentEdit = "Wiki FrontPage Content Edit");
+
+		Navigator.gotoPage(pageName = "Wiki");
+
+		WikiNavigator.gotoPG(
+			wikiPageContent = "Wiki FrontPage Content Edit",
+			wikiPageRevision = "1.2",
+			wikiPageTitle = "FrontPage",
+			wikiPageUsername = "Test Test");
+
+		WikiPage.viewPG(
+			wikiPageContent = "Wiki FrontPage Content Edit",
+			wikiPageTitle = "FrontPage");
+
+		Navigator.gotoPage(pageName = "Wiki");
+
+		WikiNavigator.gotoAllPagesPG();
+
+		WikiPage.deletePG(wikiPageTitle = "FrontPage");
 	}
 
 	macro EditWCStructureAndTemplateAndViewInWCDandAssetPublisher {
@@ -970,6 +1251,290 @@ definition {
 			assetTitle = "Web Content Title Edit");
 	}
 
+	macro exportAndImportTranslations {
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+		Translations.gotoExportTranslation(webContentTitle = "WebContentTitle");
+
+		Translations.exportTranslation(
+			defaultLanguage = "English (United States)",
+			languageList = "Japanese (Japan)");
+
+		Translations.translateFile(
+			contentTranslation = "Webコンテンツ",
+			descriptionTranslation = "",
+			encoding = "utf8",
+			titleTranslation = "Webコンテンツのタイトル",
+			translationFileName = "WebContentTitle-en_US-ja_JP",
+			translationZipFileName = "WebContentTitle-en_US.zip",
+			webContentContent = "WebContent",
+			webContentDescription = "",
+			webContentTitle = "WebContentTitle");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+		Translations.importTranslation(
+			fileName = "WebContentTitle-en_US-ja_JP.xlf",
+			webContentTitle = "WebContentTitle");
+
+		WebContentNavigator.gotoEditCP(webContentTitle = "WebContentTitle");
+
+		PortletEntry.changeLocale(locale = "ja-JP");
+
+		WebContent.viewCP(
+			webContentContent = "Webコンテンツ",
+			webContentTitle = "Webコンテンツのタイトル");
+	}
+
+	macro exportDefaultSiteIntoNewSite {
+		task ("View displayed asset on Asset Publisher on default site") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "home",
+				siteName = "Guest");
+
+			AssetPublisherPortlet.viewAssetPG(
+				assetContent = "Web Content Content Edit",
+				assetTitle = "Web Content Title 2");
+		}
+
+		task ("View the two versions of the web content on default site") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+			LexiconEntry.gotoEntryMenuItem(
+				menuItem = "View History",
+				rowEntry = "Web Content Title 2");
+
+			for (var n : list "1,2") {
+				WebContent.viewSpecificVersionHistoryCP(
+					webContentStatus = "Approved",
+					webContentTitle = "Web Content Title ${n}");
+			}
+		}
+
+		task ("Export the default site") {
+			LAR.exportSiteCP(siteScopeName = "guest");
+
+			var larFileName = LAR.getLarFileName();
+
+			LAR.downloadLar();
+		}
+
+		task ("Import the default site into the new site") {
+			LAR.importSiteCP(
+				larFileName = "${larFileName}",
+				siteName = "Test Site Name");
+		}
+
+		task ("View displayed asset on Asset Publisher on the new site") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "home",
+				siteName = "Test Site Name");
+
+			AssetPublisherPortlet.viewAssetPG(
+				assetContent = "Web Content Content Edit",
+				assetTitle = "Web Content Title 2");
+		}
+
+		task ("View the two versions of the web content on the new site") {
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			LexiconEntry.gotoEntryMenuItem(
+				menuItem = "View History",
+				rowEntry = "Web Content Title 2");
+
+			for (var n : list "1,2") {
+				WebContent.viewSpecificVersionHistoryCP(
+					webContentStatus = "Approved",
+					webContentTitle = "Web Content Title ${n}");
+			}
+		}
+	}
+
+	macro publishCollectionsInStagingDepot {
+		DepotNavigator.openDepotAssetListsAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		AssetListsAdmin.selectAsset(
+			assetListName = "Depot Manual Asset List",
+			assetName = "DM Document Title Without Publish",
+			assetType = "Basic Document",
+			itemSubtype = "Basic Document",
+			itemType = "Document");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page Collections",
+			siteName = "Site Name Local Staging");
+
+		AssertTextEquals(
+			key_assetTitle = "DM Document Title Without Publish",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
+			value1 = "DM Document Title Without Publish");
+
+		Navigator.openSiteURL(siteName = "Site Name Local Staging");
+
+		Navigator.gotoStagedView();
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.gotoSitePage(
+			pageName = "Test Page Collections",
+			siteName = "Site Name Local Staging");
+
+		AssertTextEquals(
+			key_assetTitle = "DM Document Title Without Publish",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
+			value1 = "DM Document Title Without Publish");
+
+		DepotNavigator.openDepotAssetListsAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		AssetListsAdmin.deleteEntry(assetListTitle = "Depot Manual Asset List");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page Collections",
+			siteName = "Site Name Local Staging");
+
+		AssertElementNotPresent(
+			key_assetTitle = "Document Title For Collections",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		AssertElementNotPresent(
+			key_assetTitle = "DM Document Title Without Publish",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.openSitePage(
+			pageName = "Test Page Collections",
+			siteName = "Site Name Local Staging");
+
+		AssertElementNotPresent(
+			key_assetTitle = "Document Title For Collections",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		AssertElementNotPresent(
+			key_assetTitle = "DM Document Title Without Publish",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+	}
+
+	macro publishDMsInStagingDepot {
+		DepotNavigator.openDepotDocumentsAndMediaAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page DM",
+			siteName = "Site Name Local Staging");
+
+		AssetPublisherPortlet.configureManualAssetSelectionPG(
+			assetTitle = "DM Document Title Without Publish",
+			assetType = "Basic Document",
+			depotName = "Test Depot Name Local Staging");
+
+		AssertVisible(
+			key_assetTitle = "DM Document Title Without Publish",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		Navigator.openSiteURL(siteName = "Site Name Local Staging");
+
+		Navigator.gotoStagedView();
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.openSitePage(
+			pageName = "Test Page DM",
+			siteName = "Site Name Local Staging");
+
+		AssertVisible(
+			key_assetTitle = "DM Document Title Without Publish",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		DMDocument.editCP(
+			dmDocumentFileEdit = "Document_2.jpg",
+			dmDocumentTitle = "Document_1.jpg",
+			dmDocumentTitleEdit = "Document_2.jpg");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page DM",
+			siteName = "Site Name Local Staging");
+
+		AssertVisible(
+			key_assetTitle = "Document_2.jpg",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		Navigator.openSiteURL(siteName = "Site Name Local Staging");
+
+		Navigator.gotoStagedView();
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.openSitePage(
+			pageName = "Test Page DM",
+			siteName = "Site Name Local Staging");
+
+		AssertVisible(
+			key_assetTitle = "Document_2.jpg",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		DMDocument.deleteCP(dmDocumentTitle = "Document_2.jpg");
+
+		DepotNavigator.openDepotRecycleBinAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		RecycleBin.deleteCP(
+			assetName = "Document_2.jpg",
+			assetType = "Document");
+
+		DepotNavigator.openDepotRecycleBinAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page DM",
+			siteName = "Site Name Local Staging");
+
+		AssertElementNotPresent(
+			key_assetTitle = "Document_2.jpg",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.openSitePage(
+			pageName = "Test Page DM",
+			siteName = "Site Name Local Staging");
+
+		AssertElementNotPresent(
+			key_assetTitle = "Document_2.jpg",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+	}
+
 	macro publishStagedSite {
 		Navigator.openSiteURL(siteName = "Staging Site Staging");
 
@@ -1021,6 +1586,108 @@ definition {
 			webContentContent = "Web Content Content",
 			webContentStatus = "Approved",
 			webContentTitle = "Web Content Title");
+	}
+
+	macro publishWCsInStagingDepot {
+		DepotNavigator.openDepotWebContentAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page WC",
+			siteName = "Site Name Local Staging");
+
+		AssetPublisherPortlet.configureManualAssetSelectionPG(
+			assetTitle = "WebContent Title Without Publish",
+			assetType = "Basic Web Content",
+			depotName = "Test Depot Name Local Staging");
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page WC",
+			siteName = "Site Name Local Staging");
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.openSitePage(
+			pageName = "Test Page WC",
+			siteName = "Site Name Local Staging");
+
+		AssertTextEquals(
+			key_assetTitle = "WebContent Title Without Publish",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
+			value1 = "WebContent Title Without Publish");
+
+		DepotNavigator.openDepotWebContentAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title");
+
+		WebContent.editCP(
+			webContentTitle = "WC WebContent Title",
+			webContentTitleEdit = "WC WebContent Title Edit");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page WC",
+			siteName = "Site Name Local Staging");
+
+		AssertTextEquals(
+			key_assetTitle = "WC WebContent Title Edit",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
+			value1 = "WC WebContent Title Edit");
+
+		Navigator.openSiteURL(siteName = "Site Name Local Staging");
+
+		Navigator.gotoStagedView();
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.openSitePage(
+			pageName = "Test Page WC",
+			siteName = "Site Name Local Staging");
+
+		AssertTextEquals(
+			key_assetTitle = "WC WebContent Title Edit",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
+			value1 = "WC WebContent Title Edit");
+
+		DepotNavigator.openDepotWebContentAdminStaging(depotName = "Test Depot Name Local Staging");
+
+		WebContent.deleteStagedCP(
+			depotName = "Test Depot Name Local Staging",
+			webContentTitle = "WC WebContent Title Edit");
+
+		DepotNavigator.switchStagingStatus(stagingItem = "Publish to Live");
+
+		Staging.publishToLive();
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Test Page WC",
+			siteName = "Site Name Local Staging");
+
+		AssertElementNotPresent(
+			key_assetTitle = "WC WebContent Title Edit",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		Navigator.openSitePage(
+			pageName = "Test Page WC",
+			siteName = "Site Name Local Staging");
+
+		AssertElementNotPresent(
+			key_assetTitle = "WC WebContent Title Edit",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
 	}
 
 	macro publishWorkflowDefinition {
@@ -1165,6 +1832,373 @@ definition {
 		BlogsEntry.viewEntryAsWorkflowAsset(
 			entryContent = "Blogs Entry Content",
 			entryTitle = "New Blog After Upgrade");
+	}
+
+	macro validateCollections {
+		Navigator.openSitePage(
+			pageName = "Test Page",
+			siteName = "Site Name");
+
+		AssetPublisherPortlet.selectAssetList(
+			assetListName = "Depot Dynamic Asset List",
+			depotName = "Test Depot Name");
+
+		for (var assetTitle : list "DM Document Title With DM Type,DM Document DOCX AutoTagging,DM Document Image AutoTagging,DM Document Title Sharing,DM Document Title In Site") {
+			AssertVisible(
+				key_assetTitle = "${assetTitle}",
+				locator1 = "AP#ASSET_ABSTRACT_TITLE");
+		}
+	}
+
+	macro validateDepotDMAndType {
+		Navigator.openSitePage(
+			pageName = "Test Page",
+			siteName = "Site Name");
+
+		AssertVisible(
+			key_assetTitle = "DM Document Title In Depot",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
+
+		DMDocument.editCP(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentDescriptionEdit = "DM Document Description Edit",
+			dmDocumentFileEdit = "Document_1.txt",
+			dmDocumentFileNameEdit = "DM Document Title In Depot.txt",
+			dmDocumentTitle = "DM Document Title In Depot",
+			dmDocumentTitleEdit = "DM Document Title In Depot Edit");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Title In Depot Edit");
+
+		DMDocument.viewCP(
+			dmDocumentFileName = "DM Document Title In Depot.txt",
+			dmDocumentTitle = "DM Document Title In Depot Edit");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
+
+		DMDocument.deleteCP(dmDocumentTitle = "DM Document Title In Depot Edit");
+
+		Navigator.openSitePage(
+			pageName = "Test Page",
+			siteName = "Site Name");
+
+		AssertElementNotPresent(
+			key_assetTitle = "DM Document Title In Depot Edit",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
+
+		DMDocument.addCP(
+			dmDocumentDescription = "DM Document with DM Document Type Description",
+			dmDocumentFile = "Document_1.doc",
+			dmDocumentTitle = "DM Document Title With DM Type",
+			dmDocumentTypeName = "DM Document Type Name",
+			numericField = "1234",
+			numericFieldFieldLabel = "Number");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Title With DM Type");
+
+		DMDocument.viewDocumentTypePG(
+			numericFieldLabel = "Number",
+			numericValue = "1234");
+
+		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
+
+		DMNavigator.gotoDocumentType();
+
+		DMDocumentType.edit(
+			dmDocumentTypeName = "DM Document Type Name",
+			fieldFieldLabel = "Number",
+			fieldFieldLabelEdit = "Amount");
+
+		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Title With DM Type");
+
+		DMDocument.viewDocumentTypePG(
+			numericFieldLabel = "Amount",
+			numericValue = "1234");
+	}
+
+	macro validateDepotEntries {
+		DepotNavigator.openDepotAdmin();
+
+		DepotNavigator.gotoDepot(depotName = "Test Depot Name");
+
+		DepotNavigator.openDepotSiteSettings(depotName = "Test Depot Name");
+
+		Depot.viewConnectedSite(
+			depotName = "Test Depot Name",
+			siteList = "Site Name");
+
+		DepotNavigator.openDepotAdmin();
+
+		Depot.editDepot(
+			depotDescriptionEdit = "This is an edited description of a depot",
+			depotName = "Test Depot Name",
+			depotNameEdit = "Edited Test Depot Name");
+
+		DepotNavigator.openDepotAdmin();
+
+		DepotNavigator.gotoDepot(depotName = "Edited Test Depot Name");
+
+		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "site-name");
+
+		DMDocument.deleteCP(dmDocumentTitle = "DM Document Title With DM Type");
+
+		RecycleBin.openRecycleBinAdmin(siteURLKey = "site-name");
+
+		RecycleBin.deleteCP(
+			assetName = "DM Document Title With DM Type",
+			assetType = "Document");
+
+		DepotNavigator.openDepotAdmin();
+
+		Depot.deleteCP(depotName = "Edited Test Depot Name");
+
+		AssertElementNotPresent(
+			key_card = "Edited Test Depot Name",
+			locator1 = "Card#CARD_TITLE_LINK");
+	}
+
+	macro validateDepotWCAndStructure {
+		Navigator.openSitePage(
+			pageName = "Test Page",
+			siteName = "Site Name");
+
+		AssertVisible(
+			key_assetTitle = "WC WebContent Title",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+
+		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title");
+
+		WebContent.editCP(
+			webContentContentEdit = "WC WebContent Content Edit",
+			webContentTitle = "WC WebContent Title",
+			webContentTitleEdit = "WC WebContent Title Edit");
+
+		Navigator.openSitePage(
+			pageName = "Test Page",
+			siteName = "Site Name");
+
+		AssertVisible(
+			key_assetTitle = "WC WebContent Title Edit",
+			locator1 = "AP#ASSET_ABSTRACT_TITLE");
+
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+
+		WebContent.deleteCP(
+			depotName = "Test Depot Name",
+			webContentTitle = "WC WebContent Title Edit");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
+
+		WebContent.addWithStructureCP(
+			structureName = "WC Structure Name",
+			webContentText = "This is a Text field",
+			webContentTitle = "Web Content Title With Structure");
+
+		PortletEntry.publish();
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+
+		WebContent.viewWithStructureCP(
+			webContentText = "This is a Text field",
+			webContentTitle = "Web Content Title With Structure");
+
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+
+		NavItem.gotoStructures();
+
+		WebContentNavigator.gotoEditStructure(structureName = "WC Structure Name");
+
+		DataEngine.editFieldLabel(
+			fieldFieldLabel = "Text",
+			fieldFieldLabelEdit = "Text Edit");
+
+		WebContentStructures.saveCP(structureName = "WC Structure Name");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+
+		WebContent.viewWithStructureCP(
+			webContentText = "This is a Text field",
+			webContentTextFieldLabel = "Text Edit",
+			webContentTitle = "Web Content Title With Structure");
+	}
+
+	macro viewAndAccessRedirects {
+		var portalURL = PropsUtil.get("portal.url");
+
+		Redirect.openRedirectAdmin(siteURLKey = "test-site-name");
+
+		Redirect.viewEntry(
+			destinationURL = "${portalURL}/web/test-site-name/test-destination-permanent-page",
+			redirectType = "Temporary",
+			sourceURL = "${portalURL}/web/test-site-name/test-source-permanent-page");
+
+		Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-source-permanent-page");
+
+		SelectWindow(locator1 = "title=Test Destination Permanent Page - Test Site Name - Liferay DXP");
+
+		AssertLocation(value1 = "${portalURL}/web/test-site-name/test-destination-permanent-page");
+
+		Redirect.openRedirectAdmin(siteURLKey = "test-site-name");
+
+		Redirect.viewEntry(
+			destinationURL = "${portalURL}/web/test-site-name/test-source-temporary-page",
+			redirectType = "Temporary",
+			sourceURL = "${portalURL}/web/test-site-name/test-destination-temporary-page");
+
+		Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-source-temporary-page");
+
+		AssertLocation(value1 = "${portalURL}/web/test-site-name/test-destination-temporary-page");
+
+		for (var i : list "1,2") {
+			Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-without-references-page${i}");
+
+			AssertLocation(value1 = "${portalURL}/web/test-site-name/test-without-references-page3");
+		}
+
+		for (var i : list "1,2") {
+			Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-with-references-page${i}");
+
+			AssertLocation(value1 = "${portalURL}/web/test-site-name/test-with-references-page3");
+		}
+	}
+
+	macro viewAndAddBlogEntry {
+		BlogsNavigator.openToBlogEntry(
+			entryTitle = "Blogs Entry Title",
+			layoutName = "Blogs",
+			siteURLKey = "guest");
+
+		BlogsEntry.viewEntryPG(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title",
+			uploadFileName = "Document_1.jpg");
+
+		if (isSet(video)) {
+			BlogsNavigator.openToBlogEntry(
+				entryTitle = "Blogs Entry Title With Video",
+				layoutName = "Blogs",
+				siteURLKey = "guest");
+
+			BlogsEntry.viewEntryPG(
+				embedVideo = "true",
+				entryContent = "video",
+				entryTitle = "Blogs Entry Title With Video");
+		}
+
+		Navigator.gotoPage(pageName = "Blogs");
+
+		Ratings.viewRateThumb(
+			ratingResult = "Rate this as good",
+			voteCount = "0");
+
+		Ratings.viewRateThumb(
+			ratingResult = "You have rated this as bad",
+			voteCount = "1");
+
+		Blogs.addEntry(
+			entryContent = "Blogs Entry After Upgrade Content",
+			entrySubtitle = "Blogs Entry After Upgrade Subtitle",
+			entryTitle = "Blogs Entry After Upgrade Title");
+
+		BlogsEntry.viewEntryPG(
+			entryContent = "Blogs Entry After Upgrade Content",
+			entryTitle = "Blogs Entry After Upgrade Title");
+	}
+
+	macro viewAndAddKBArticle {
+		Navigator.gotoPage(pageName = "Knowledge Base");
+
+		KBArticle.viewPG(
+			embedVideo = "true",
+			kbArticleContent = "Knowledge Base Video Content",
+			kbArticleTitle = "Knowledge Base Article Title");
+
+		Navigator.gotoPage(pageName = "Knowledge Base");
+
+		Ratings.viewRateThumb(
+			ratingResult = "You have rated this as good",
+			voteCount = "1");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		KBArticle.addCP(
+			kbArticleContent = "Knowledge Base Article Content After Upgrade",
+			kbArticleTitle = "Knowledge Base Article Title After Upgrade");
+
+		Navigator.gotoPage(pageName = "Knowledge Base");
+
+		KBArticle.gotoViaKBDisplayPG(kbArticleTitle = "Knowledge Base Article Title After Upgrade");
+
+		KBArticle.viewPG(
+			kbArticleContent = "Knowledge Base Article Content After Upgrade",
+			kbArticleTitle = "Knowledge Base Article Title After Upgrade");
+	}
+
+	macro viewAndAddMessageBoard {
+		Navigator.gotoPage(pageName = "Message Boards");
+
+		MessageboardsThread.gotoPG(
+			lastPostUserName = "Test Test",
+			replyCount = "0",
+			threadBody = "Message Boards Body",
+			threadSubject = "Message Boards Subject");
+
+		MessageboardsThread.viewPG(
+			threadBody = "Message Boards Body",
+			threadSubject = "Message Boards Subject");
+
+		Ratings.viewRateThumb(
+			ratingResult = "You have rated this as good",
+			voteCount = "1");
+
+		Navigator.gotoPage(pageName = "Message Boards");
+
+		MessageboardsThread.addPG(
+			threadBody = "Message Boards Body After Upgrade",
+			threadSubject = "Message Boards Subject After Upgrade");
+
+		MessageboardsThread.viewPG(
+			threadBody = "Message Boards Body After Upgrade",
+			threadSubject = "Message Boards Subject After Upgrade");
+	}
+
+	macro viewAndAddWiki {
+		Navigator.gotoPage(pageName = "Wiki");
+
+		WikiNavigator.gotoFrontPagePG();
+
+		WikiPage.viewFrontPagePG(
+			wikiPageContent = "Wiki Front Page Content",
+			wikiPageTitle = "FrontPage");
+
+		Navigator.gotoPage(pageName = "Wiki");
+
+		Ratings.viewRateStar(
+			averageRatingStarCount = "4.0",
+			ratingStarCount = "4");
+
+		WikiNavigator.gotoAllPagesPG();
+
+		WikiPage.addPG(
+			wikiPageContent = "Wiki Page Content After Upgrade",
+			wikiPageTitle = "Wiki Page Title After Upgrade");
+
+		WikiNavigator.gotoPG(wikiPageTitle = "Wiki Page Title After Upgrade");
+
+		WikiPage.viewPagePG(
+			wikiPageContent = "Wiki Page Content After Upgrade",
+			wikiPageTitle = "Wiki Page Title After Upgrade");
 	}
 
 	macro viewAndDeleteAutoTaggedBlogsEntry {
@@ -1333,7 +2367,7 @@ definition {
 	macro viewAndEditContentPageReview {
 		Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-content-page-name");
 
-		ContentPages.clickPencil();
+		ContentPages.gotoPageEditor();
 
 		PageEditor.gotoTab(tabName = "Comments");
 
@@ -1352,7 +2386,7 @@ definition {
 
 		Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-content-page-name");
 
-		ContentPages.clickPencil();
+		ContentPages.gotoPageEditor();
 
 		PageEditor.addComment(
 			fragmentComment = "This is a new fragment comment",
@@ -1364,7 +2398,7 @@ definition {
 
 		Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/test-content-page-name");
 
-		ContentPages.clickPencil();
+		ContentPages.gotoPageEditor();
 
 		PageEditor.gotoTab(tabName = "Comments");
 
@@ -1480,27 +2514,23 @@ definition {
 
 	macro viewAndEditOpenGraph {
 		var portalURL = PropsUtil.get("portal.url");
-		var siteName = TestCase.getSiteName(siteName = "${siteName}");
+		var siteID = JSONGroupSetter.setGroupId(groupName = "Test Site Name");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
-
-		SitePages.gotoPageMenuItem(
-			menuItem = "Configure",
-			pageName = "Test Page Name");
-
-		Navigator.gotoNavTab(navTab = "Open Graph");
+		Navigator.openToGroupPagesPortlet(
+			groupName = "Test Site Name",
+			layoutName = "Test Page Name",
+			portlet = "Open Graph",
+			siteURLKey = "test-site-name");
 
 		Page.viewPreview(
 			description = "This is a custom description",
-			htmlTitle = "This is a custom title - Test Site Name - ${siteName}",
+			htmlTitle = "This is a custom title",
 			key_imageName = "Document_1.jpg",
 			openGraph = "true",
 			portalURL = "${portalURL}",
 			siteNameURL = "test-site-name");
 
-		var siteID = Site.getSiteId();
-
-		User.logoutPG();
+		Navigator.openSpecificURL(url = "${portalURL}/c/portal/logout");
 
 		Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-page-name");
 
@@ -1510,13 +2540,11 @@ definition {
 			password = "test",
 			userEmailAddress = "test@liferay.com");
 
-		SitePages.openPagesAdmin(siteURLKey = "test-site-name");
-
-		SitePages.gotoPageMenuItem(
-			menuItem = "Configure",
-			pageName = "Test Page Name");
-
-		Navigator.gotoNavTab(navTab = "Open Graph");
+		Navigator.openToGroupPagesPortlet(
+			groupName = "Test Site Name",
+			layoutName = "Test Page Name",
+			portlet = "Open Graph",
+			siteURLKey = "test-site-name");
 
 		OpenGraph.configureOpenGraph(
 			customDescription = "This is a custom description edit",
@@ -1527,13 +2555,13 @@ definition {
 
 		Page.viewPreview(
 			description = "This is a custom description edit",
-			htmlTitle = "This is a custom title edit - Test Site Name - ${siteName}",
+			htmlTitle = "This is a custom title edit",
 			key_imageName = "Document_2.jpg",
 			openGraph = "true",
 			portalURL = "${portalURL}",
 			siteNameURL = "test-site-name");
 
-		User.logoutPG();
+		Navigator.openSpecificURL(url = "${portalURL}/c/portal/logout");
 
 		Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-page-name");
 
@@ -1542,7 +2570,6 @@ definition {
 
 	macro viewAndEditSERPPreview {
 		var portalURL = PropsUtil.get("portal.url");
-		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
 		Navigator.gotoPage(pageName = "Test Page");
 
@@ -1551,8 +2578,8 @@ definition {
 		Navigator.gotoNavTab(navTab = "SEO");
 
 		Page.viewPreview(
-			description = "Page Description",
-			htmlTitle = "Page HTML Title - ${siteName}",
+			description = "Description",
+			htmlTitle = "Page HTML Title - Liferay DXP",
 			pageName = "Test Page",
 			portalURL = "${portalURL}");
 
@@ -1560,15 +2587,15 @@ definition {
 			fieldLabel = "HTML Title",
 			text = "Page HTML Title Edit");
 
-		PortletEntry.inputTextArea(
-			fieldId = "GroupPagesPortlet_description",
+		PortletEntry.inputText(
+			fieldLabel = "Description",
 			text = "Page Description Edit");
 
 		Button.clickSave();
 
 		Page.viewPreview(
 			description = "Page Description Edit",
-			htmlTitle = "Page HTML Title Edit - ${siteName}",
+			htmlTitle = "Page HTML Title Edit - Liferay DXP",
 			pageName = "Test Page",
 			portalURL = "${portalURL}");
 	}
@@ -1939,6 +2966,25 @@ definition {
 		CalendarEvent.view(eventTitle = "Post Upgrade Calendar Event");
 	}
 
+	macro viewCardWithThreeColumnsInMobileBreakpoint {
+		task ("Select Mobile Device in simulation menu") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Content Page Name",
+				siteName = "Test Site Name");
+
+			MobileDevice.previewPG(deviceType = "smartphone");
+		}
+		task ("View Card fragment width is same as column width at mobile mode") {
+			var columnWidth	= selenium.getElementWidth("//div[contains(@class,'flex-row')]");
+
+			var cardFragmentWidth = selenium.getElementWidth("xpath=(//div[contains(@class,'col-md')])[2]");
+
+			TestUtils.assertEquals(
+				actual = "${cardFragmentWidth}",
+				expected = "${columnWidth}");
+		}
+	}
+
 	macro viewClassicSearchPortletConfiguration {
 		Navigator.gotoSitePage(
 			pageName = "Site Page",
@@ -1994,29 +3040,21 @@ definition {
 		task ("Assert styles of Container in view mode") {
 			var screenWidth	= selenium.getElementWidth("//body");
 
-			var containerWidth	= selenium.getElementWidth("//div[contains(@class,'container')][contains(@class,'pb-3 pt-3')]");
+			var containerWidth	= selenium.getElementWidth("//div[contains(@class,'container')][contains(@class,'pb-3')][contains(@class,'pt-3')]");
 
 			TestUtils.assertNotEquals(
 				actual = "${containerWidth}",
 				expected = "${screenWidth}");
 
-			var screenWidth	= selenium.getElementWidth("//body");
-
-			var containerWidth	= selenium.getElementWidth("//div[contains(@class,'container')][contains(@class,'pb-3 pt-3')]");
-
-			TestUtils.assertNotEquals(
-				actual = "${containerWidth}",
-				expected = "${screenWidth}");
-
-			AssertVisible(locator1 = "//div[contains(@class,'container')][contains(@class,'pb-3 pt-3')]");
+			AssertVisible(locator1 = "//div[contains(@class,'container')][contains(@class,'pb-3')][contains(@class,'pt-3')]");
 
 			AssertCssValue(
-				locator1 = "//div[contains(@class,'container')][contains(@class,'pb-3 pt-3')]//parent::div",
+				locator1 = "//div[contains(@class,'container')][contains(@class,'pb-3')][contains(@class,'pt-3')]//parent::div",
 				locator2 = "background-color",
 				value1 = "rgba(46, 90, 172, 1)");
 
 			AssertCssValue(
-				locator1 = "//div[contains(@class,'container')][contains(@class,'pb-3 pt-3')]",
+				locator1 = "//div[contains(@class,'container')][contains(@class,'pb-3')][contains(@class,'pt-3')]",
 				locator2 = "max-width",
 				value1 = "${containerWidth}px");
 		}
@@ -2266,6 +3304,12 @@ definition {
 	}
 
 	macro viewCustomSiteSetting {
+		task ("Get the default site name") {
+			Navigator.openURL();
+
+			var siteName = selenium.getText("Home#SITE_NAME");
+		}
+
 		task ("Navigate to Site Settings admin in custom site") {
 			ApplicationsMenu.gotoSite(site = "Test Site Name");
 
@@ -2294,7 +3338,7 @@ definition {
 			AssertTextEquals(
 				key_fieldFieldLabel = "Parent Site",
 				locator1 = "TextInput#SELECTOR_INPUT",
-				value1 = "${parentSiteName} (Open)");
+				value1 = "${siteName} (Open)");
 
 			Navigator.gotoBack();
 
@@ -2302,7 +3346,7 @@ definition {
 
 			Site.viewChildCP(
 				childSiteName = "Test Site Name",
-				siteName = "${parentSiteName}");
+				siteName = "${siteName}");
 		}
 
 		task ("View the site default language") {
@@ -2352,6 +3396,126 @@ definition {
 			metadataLabel = "Creator");
 	}
 
+	macro viewDocuments {
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Type Description",
+			dmDocumentFileName = "DM Document Type Title.doc",
+			dmDocumentTitle = "DM Document Type Title",
+			dmDocumentType = "DM Document Type Name");
+
+		DMNavigator.openToEditEntryInSite(
+			dmDocumentTitle = "DM Document Type Title",
+			groupName = "Guest",
+			siteURLKey = "guest");
+
+		DMDocument.viewEntryInEdit(
+			dmDocumentFileName = "DM Document Type Title.doc",
+			dmDocumentTitle = "DM Document Type Title");
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMNavigator.gotoDocumentPG(dmDocumentTitle = "DM Document Type Title");
+
+		DMDocument.viewDocumentTypePG(
+			booleanValue = "checked",
+			checkboxName = "Boolean",
+			numericFieldLabel = "Number",
+			numericValue = "1234");
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFileName = "DM Document Video.mp4",
+			dmDocumentTitle = "DM Document Video");
+
+		DMNavigator.openToEditEntryInSite(
+			dmDocumentTitle = "DM Document Video",
+			groupName = "Guest",
+			siteURLKey = "guest");
+
+		DMDocument.viewEntryInEdit(
+			dmDocumentFileName = "DM Document Video.mp4",
+			dmDocumentTitle = "DM Document Video");
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFileName = "DM Document JPG.jpg",
+			dmDocumentTitle = "DM Document JPG");
+
+		DMNavigator.openToEditEntryInSite(
+			dmDocumentTitle = "DM Document JPG",
+			groupName = "Guest",
+			siteURLKey = "guest");
+
+		DMDocument.viewEntryInEdit(
+			dmDocumentFileName = "DM Document JPG.jpg",
+			dmDocumentTitle = "DM Document JPG");
+
+		Navigator.gotoPage(pageName = "Documents");
+
+		DMDocument.viewPG(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFileName = "DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title.doc",
+			dmDocumentTitle = "DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title");
+
+		DMNavigator.openToEditEntryInSite(
+			dmDocumentTitle = "DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title",
+			groupName = "Guest",
+			siteURLKey = "guest");
+
+		DMDocument.viewEntryInEdit(
+			dmDocumentFileName = "DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title.doc",
+			dmDocumentTitle = "DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title DM Document DOC With A Long Title");
+	}
+
+	macro viewDocumentTypesAndMetadataSets {
+		DMNavigator.openDocumentTypesAdmin(siteURLKey = "guest");
+
+		DMDocumentType.viewCP(dmDocumentTypeName = "DM Document Type Name");
+
+		LexiconEntry.gotoEntry(rowEntry = "DM Document Type Name");
+
+		WaitForPageLoad();
+
+		DataEngine.viewField(
+			fieldFieldLabel = "Text",
+			fieldName = "Text");
+
+		DataEngine.viewField(
+			fieldFieldLabel = "Documents and Media",
+			fieldName = "Upload");
+
+		DMDocumentType.gotoTab(tabName = "Additional Metadata Fields");
+
+		AssertTextEquals(
+			key_metadataSetName = "Document Metadata Set Name",
+			locator1 = "DocumentsAndMediaDocumentTypes#METADATA_SETS_NAME",
+			value1 = "Document Metadata Set Name");
+
+		DMNavigator.openMetadataSetsAdmin(siteURLKey = "guest");
+
+		DMDocumentType.viewCP(dmDocumentTypeName = "Document Metadata Set Name");
+
+		LexiconEntry.openEntryMenu(rowEntry = "Document Metadata Set Name");
+
+		MenuItem.click(menuItem = "Edit");
+
+		WaitForPageLoad();
+
+		DataEngine.viewField(
+			fieldFieldLabel = "Boolean",
+			fieldName = "Multiple Selection");
+
+		DataEngine.viewField(
+			fieldFieldLabel = "Number",
+			fieldName = "Numeric");
+	}
+
 	macro ViewDroolsAppManager {
 		ApplicationsMenu.gotoPortlet(
 			category = "System",
@@ -2367,6 +3531,60 @@ definition {
 			appName = "Liferay Portal Rules Engine Drools",
 			appStatus = "Active",
 			searchTerm = "Drools");
+	}
+
+	macro viewEditableCardFragment {
+		task ("View the inline text of the card fragment at view mode after Upgrade") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "card",
+				text = "Test Title");
+		}
+
+		task ("View the inline text of the card fragment at edit mode after Upgrade") {
+			ContentPages.gotoPageEditor();
+
+			PageEditor.viewFragmentEditableText(
+				contributed = "false",
+				editableText = "Test Title",
+				fragmentName = "Card");
+		}
+
+		task ("Edit the inline text of the Card fragment") {
+			PageEditor.gotoTab(tabName = "Browser");
+
+			Navigator.gotoNavTab(navTab = "Page Content");
+
+			PageEditor.editFragmentTextViaPageContentPanel(
+				itemName = "Test Title",
+				text = "Editable Title");
+		}
+
+		task ("View the updated inline text of the card fragment") {
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "card",
+				text = "Editable Title");
+		}
+
+		task ("Publish the content page") {
+			PageEditor.clickPublish();
+		}
+
+		task ("View the inline text of the card fragment at view mode") {
+			ContentPagesNavigator.openViewContentPage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "card",
+				text = "Editable Title");
+		}
 	}
 
 	macro viewInstanceSettings {
@@ -2575,14 +3793,17 @@ definition {
 
 			PageTemplatesAdmin.gotoPageTemplate(pageTemplateName = "Page Template Name");
 
-			AssertVisible(
-				key_content = "Submit",
-				key_fragmentClass = "footer",
-				key_position = "1",
-				locator1 = "Fragment#PAGE_EDITOR_FRAGMENT");
+			var n = "1";
 
-			for (var button : list "Submit,Cancel") {
-				Button.viewPresent(button = "${button}");
+			for (var text : list "Submit,Cancel") {
+				PageEditor.viewFragmentEditableText(
+					className = "footer",
+					contributed = "false",
+					editableText = "${text}",
+					fragmentName = "Button",
+					position = "${n}");
+
+				var n = ${n} + 1;
 			}
 		}
 
@@ -2593,23 +3814,26 @@ definition {
 				key_pageName = "Test Template Content Page",
 				locator1 = "Home#PAGE");
 
-			AssertVisible(
-				key_content = "Submit",
-				key_fragmentClass = "footer",
-				locator1 = "Fragment#FRAGMENT");
+			var n = "1";
 
-			for (var button : list "Submit,Cancel") {
-				Button.viewPresent(button = "${button}");
+			for (var text : list "Submit,Cancel") {
+				ContentPages.viewFragmentText(
+					contributed = "false",
+					fragmentName = "footer",
+					position = "${n}",
+					text = "${text}");
+
+				var n = ${n} + 1;
 			}
 
 			Click(
 				key_pageName = "Test Regular Content Page",
 				locator1 = "Home#PAGE");
 
-			AssertVisible(
-				key_content = "Lorem ipsum dolor sit amet",
-				key_fragmentClass = "header",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "header",
+				text = "Lorem ipsum dolor sit amet");
 
 			AssertVisible(
 				key_href = "https://www.liferay.com/",
@@ -2636,27 +3860,27 @@ definition {
 		task ("Assert the web content articles that use display pages are viewable through display page template") {
 			Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/w/webcontent-title-1");
 
-			AssertVisible(
-				key_content = "Webcontent Title 1",
-				key_fragmentClass = "header",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "header",
+				text = "Webcontent Title 1");
 
-			AssertVisible(
-				key_content = "Webcontent Content 1",
-				key_fragmentClass = "rich-text",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "rich-text",
+				text = "Webcontent Content 1");
 
 			Navigator.openWithAppendToBaseURL(urlAppend = "web/test-site-name/w/webcontent-title-2");
 
-			AssertVisible(
-				key_content = "Webcontent Content 2",
-				key_fragmentClass = "rich-text",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "rich-text",
+				text = "Webcontent Content 2");
 
-			AssertVisible(
-				key_content = "Lorem ipsum dolor sit amet",
-				key_fragmentClass = "header",
-				locator1 = "Fragment#FRAGMENT");
+			ContentPages.viewFragmentText(
+				contributed = "false",
+				fragmentName = "header",
+				text = "Lorem ipsum dolor sit amet");
 		}
 
 		task ("Assert the web content article that has no display page is not viewable through display page") {
@@ -2684,7 +3908,7 @@ definition {
 	}
 
 	macro viewNotifications {
-		Navigator.gotoPage(pageName = "Welcome");
+		Navigator.openURL();
 
 		Notifications.gotoNotifications();
 
@@ -2734,6 +3958,90 @@ definition {
 			threadSubject = "Message Boards Subject 3");
 	}
 
+	macro viewOrderOfAssetsOnMostedViewedAssets {
+		task ("View order of displayed assets on Mosted Viewed Assets") {
+			Navigator.gotoSitePage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			AssetPublisherPortlet.viewAssetOrderPG(assetTitleList = "Web Content Title 3,Web Content Title 1,Web Content Title 2");
+		}
+
+		task ("View count of the assets on Mosted Viewed Assets") {
+			var n = "1";
+
+			for (var count : list "3,2,5") {
+				AssetPublisherPortlet.viewAssetViewCount(
+					assetTitle = "Web Content Title ${n}",
+					viewCount = "${count} Views");
+
+				var n = ${n} + 1;
+			}
+		}
+
+		task ("View the Web Content Title 1 twice") {
+			var count = "0";
+
+			while ("${count}" != "2") {
+				Navigator.gotoSitePage(
+					pageName = "Test Page Name",
+					siteName = "Test Site Name");
+
+				AssetPublisherPortlet.viewAssetDetailsPG(
+					assetContent = "Web Content Content 1",
+					assetTitle = "Web Content Title 1");
+
+				var count = ${count} + 1;
+			}
+		}
+
+		task ("View the Web Content Title 2 five times") {
+			var count = "0";
+
+			while ("${count}" != "5") {
+				Navigator.gotoSitePage(
+					pageName = "Test Page Name",
+					siteName = "Test Site Name");
+
+				AssetPublisherPortlet.viewAssetDetailsPG(
+					assetContent = "Web Content Content 2",
+					assetTitle = "Web Content Title 2");
+
+				var count = ${count} + 1;
+			}
+		}
+
+		task ("View the Web Content Title 3 once") {
+			Navigator.gotoSitePage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			AssetPublisherPortlet.viewAssetDetailsPG(
+				assetContent = "Web Content Content 3",
+				assetTitle = "Web Content Title 3");
+		}
+
+		task ("View the new order of displayed assets on Mosted Viewed Assets") {
+			Navigator.gotoSitePage(
+				pageName = "Test Page Name",
+				siteName = "Test Site Name");
+
+			AssetPublisherPortlet.viewAssetOrderPG(assetTitleList = "Web Content Title 2,Web Content Title 3,Web Content Title 1");
+		}
+
+		task ("View the new count of the assets on Mosted Viewed Assets") {
+			var n = "1";
+
+			for (var count : list "5,7,6") {
+				AssetPublisherPortlet.viewAssetViewCount(
+					assetTitle = "Web Content Title ${n}",
+					viewCount = "${count} Views");
+
+				var n = ${n} + 1;
+			}
+		}
+	}
+
 	macro viewOutOfDatePublications {
 		AssertTextPresent(
 			key_publicationName = "Production",
@@ -2754,18 +4062,6 @@ definition {
 		AssertTextEquals(
 			locator1 = "Publications#LIST_OUT_OF_DATE_STATUS",
 			value1 = "Out of Date");
-
-		Click(
-			key_publicationName = "Publication 2 Name",
-			locator1 = "Publications#LIST_PUBLICATION_ELLIPSIS");
-
-		AssertVisible(
-			key_menuItem = "Publish",
-			locator1 = "MenuItem#DISABLED_MENU_ITEM");
-
-		AssertVisible(
-			key_menuItem = "Schedule",
-			locator1 = "MenuItem#DISABLED_MENU_ITEM");
 
 		Publications.gotoReviewChanges(
 			gotoManagePublications = "true",
@@ -2798,28 +4094,6 @@ definition {
 		AssertVisible(
 			key_publicationName = "Publication 1 Name",
 			locator1 = "Publications#LIST_REVERT_DISABLED");
-	}
-
-	macro viewPolls {
-		Navigator.gotoPage(pageName = "Polls");
-
-		AssertElementNotPresent(locator1 = "Message#INFO");
-
-		Navigator.gotoPage(pageName = "Polls");
-
-		Polls.viewPollPG(
-			pollsQuestion = "Sample Polls Question",
-			pollsQuestionChoiceList = "Yes,No");
-
-		Polls.votePollPG(pollsQuestionChoice = "Yes");
-
-		Navigator.gotoPage(pageName = "Polls");
-
-		Polls.viewVotedPollPG(
-			pollsQuestionChoice = "Yes",
-			pollsQuestionTotalVotes = "1",
-			pollsQuestionVoteCount = "1",
-			pollsQuestionVotePercent = "100%");
 	}
 
 	macro viewPortalCORS {
@@ -3027,7 +4301,7 @@ definition {
 			password = "test",
 			userEmailAddress = "user2@liferay.com");
 
-		Notifications.viewBadgeCount(notificationCount = "1");
+		Notifications.viewBadgeCount(notificationCount = "2");
 
 		Notifications.gotoNotifications();
 
@@ -3050,19 +4324,32 @@ definition {
 			password = "test",
 			userEmailAddress = "user1@liferay.com");
 
-		Notifications.viewBadgeCount(notificationCount = "1");
+		if (isSet(depot)) {
+			var notificationCount = "1";
+		}
+		else {
+			var notificationCount = "2";
+		}
+
+		Notifications.viewBadgeCount(notificationCount = "${notificationCount}");
 
 		Notifications.gotoNotifications();
 
 		Notifications.viewNewSharedContent(
 			contentSharingPermission = "viewing",
-			contentTitle = "DM Document Title 1",
+			contentTitle = "${dmDocumentTitle}",
 			openNotification = "true",
 			ownerName = "Test Test");
 
 		DMDocumentSharing.viewDocumentViaSharedContent(
 			contentSharingPermission = "View",
-			dmDocumentTitle = "DM Document Title 1");
+			dmDocumentTitle = "${dmDocumentTitle}");
+
+		User.logoutPG();
+
+		User.loginUserPG(
+			password = "test",
+			userEmailAddress = "test@liferay.com");
 	}
 
 	macro viewStagingConfiguration {
@@ -3134,10 +4421,6 @@ definition {
 		SystemSettings.viewTextareaValue(
 			fieldName = "errorTemplateFTL",
 			fieldValue = "errortest.ftl");
-
-		SystemSettings.viewTextareaValue(
-			fieldName = "errorTemplateVM",
-			fieldValue = "errortest.vm");
 
 		FormFields.viewTextValue(
 			fieldName = "checkInterval",
@@ -3307,6 +4590,78 @@ definition {
 		FormFields.viewCheckboxNotChecked(fieldName = "autogenerateTemplateKey");*/
 	}
 
+	macro viewTranslations {
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+		WebContentNavigator.gotoEditCP(webContentTitle = "WebContentTitle");
+
+		PortletEntry.changeLocale(locale = "es-ES");
+
+		WebContent.viewCP(
+			webContentContent = "Contenidoweb",
+			webContentDescription = "Descripcion",
+			webContentTitle = "Titulodelcontenidoweb");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title Side By Side");
+
+		PortletEntry.changeLocale(locale = "ja-JP");
+
+		WebContent.viewCP(
+			webContentContent = "wc webcontentコンテンツ",
+			webContentDescription = "wc webcontent記述",
+			webContentTitle = "wc webcontentタイトルを並べて");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+		Translations.gotoTranslate(webContentTitle = "WC WebContent Title Side By Side");
+
+		Translations.changeTargetLocale(
+			currentTargetLocale = "ar-SA",
+			newTargetLocale = "ja-JP");
+
+		Translations.viewTargetFields(
+			webContentContent = "wc webcontentコンテンツ",
+			webContentDescription = "wc webcontent記述",
+			webContentTitle = "wc webcontentタイトルを並べて");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
+
+		Translations.gotoTranslate(webContentTitle = "WC WebContent Title Side By Side");
+
+		Translations.changeTargetLocale(
+			currentTargetLocale = "ar-SA",
+			newTargetLocale = "ja-JP");
+
+		Translations.viewBaseFields(
+			webContentContent = "WC WebContent Content",
+			webContentTitle = "WC WebContent Title");
+
+		Translations.translateFields(
+			webContentContent = "wc webcontentコンテンツ 編集",
+			webContentDescription = "wc webcontent記述 編集",
+			webContentTitle = "wc webcontentタイトルを並べて 編集");
+
+		PortletEntry.publish();
+
+		Translations.gotoTranslate(webContentTitle = "WC WebContent Title Side By Side");
+
+		Translations.changeTargetLocale(
+			currentTargetLocale = "ar-SA",
+			newTargetLocale = "es-ES");
+
+		Translations.viewBaseFields(
+			webContentContent = "WC WebContent Content",
+			webContentTitle = "WC WebContent Title");
+
+		Translations.translateFields(
+			webContentContent = "Contenido de WC WebContent",
+			webContentTitle = "Título del contenido web de WC");
+
+		PortletEntry.publish();
+	}
+
 	macro viewUpgrade {
 		Navigator.gotoPage(pageName = "Web Content");
 
@@ -3434,6 +4789,124 @@ definition {
 		AssertVisible(
 			key_pageName = "Site Page",
 			locator1 = "Home#PAGE_ACTIVE");
+
+		SignOut.signOut();
+
+		SignIn.signIn();
+	}
+
+	macro viewUpgradeDBPartition {
+		SignOut.signOut();
+
+		User.firstLoginUI(
+			password = "test",
+			specificURL = "http://www.able.com:8080",
+			userEmailAddress = "test@www.able.com");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Users and Organizations");
+
+		User.viewCP(
+			userEmailAddress = "test1@www.able.com",
+			userFirstName = "Test1",
+			userLastName = "Test1",
+			userScreenName = "test1");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Users and Organizations");
+
+		User.searchCP(searchTerm = "test2");
+
+		User.viewNoUsersFoundCP();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Roles");
+
+		Role.viewCP(
+			roleTitle = "Roles Regrole1 Name",
+			roleType = "Regular");
+
+		Navigator.openSpecificURL(url = "http://www.able.com:8080");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document1 Title");
+
+		DMDocument.viewCP(dmDocumentTitle = "DM Document1 Title");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent1 Title");
+
+		WebContent.viewCP(
+			webContentContent = "WC WebContent1 Content",
+			webContentTitle = "WC WebContent1 Title");
+
+		SignOut.signOut();
+
+		User.firstLoginUI(
+			password = "test",
+			specificURL = "http://www.baker.com:8080",
+			userEmailAddress = "test@www.baker.com");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Users and Organizations");
+
+		User.viewCP(
+			userEmailAddress = "test2@www.baker.com",
+			userFirstName = "Test2",
+			userLastName = "Test2",
+			userScreenName = "test2");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Users and Organizations");
+
+		User.searchCP(searchTerm = "test1");
+
+		User.viewNoUsersFoundCP();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Roles");
+
+		Role.viewCP(
+			roleTitle = "Roles Regrole2 Name",
+			roleType = "Regular");
+
+		Navigator.openSpecificURL(url = "http://www.baker.com:8080");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document2 Title");
+
+		DMDocument.viewCP(dmDocumentTitle = "DM Document2 Title");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent2 Title");
+
+		WebContent.viewCP(
+			webContentContent = "WC WebContent2 Content",
+			webContentTitle = "WC WebContent2 Title");
 
 		SignOut.signOut();
 
@@ -3633,9 +5106,10 @@ definition {
 			actual = "${imageFieldValue}",
 			expected = "");
 
-		AssertVisible(
-			key_fieldFieldLabel = "Image",
-			locator1 = "WCEditWebContent#CLEAR_BUTTON");
+		Click(
+			fieldLabel = "Image",
+			locator1 = "Button#BUTTON_LABEL",
+			text = "Clear");
 
 		AssertElementPresent(
 			key_fieldFieldLabel = "Image",
@@ -3662,12 +5136,11 @@ definition {
 	}
 
 	macro viewWebContentWithPredefinedValueInWebContentField {
-		var siteName = TestCase.getSiteName(siteName = "${siteName}");
+		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
-			portlet = "Web Content",
-			site = "${siteName}");
+			portlet = "Web Content");
 
 		for (var webContentTitle : list "Web Content Title,Web Content With Predefined Value") {
 			WebContentAdmin.viewEntryWorkflowStatus(

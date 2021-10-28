@@ -12,12 +12,15 @@
  * details.
  */
 
-import {PagesVisitor, getUid} from 'data-engine-js-components-web';
+import {
+	PagesVisitor,
+	RulesSupport,
+	getUid,
+} from 'data-engine-js-components-web';
 import {
 	INITIAL_PAGES,
 	INITIAL_STATE,
 } from 'data-engine-js-components-web/js/core/config/index.es';
-import {RulesSupport} from 'dynamic-data-mapping-form-builder';
 
 export const BUILDER_INITIAL_STATE = {
 	...INITIAL_STATE,
@@ -42,6 +45,7 @@ export const BUILDER_INITIAL_STATE = {
 			),
 		},
 	},
+	objectFields: [],
 	paginationMode: 'multi-pages',
 	rules: [],
 };

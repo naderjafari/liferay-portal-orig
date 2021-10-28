@@ -178,8 +178,6 @@ definition {
 
 			Button.clickSave();
 		}
-
-		Alert.viewSuccessMessage();
 	}
 
 	macro deleteCP {
@@ -422,13 +420,7 @@ definition {
 			PortletEntry.clickMoveToRecycleBin();
 		}
 
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Recycle Bin",
-			portlet = "Recycle Bin");
-
-		RecycleBin.emptyCP();
+		JSONRecycleBin.emptyRecycleBin();
 	}
 
 	macro tearDownPGViaMG {
@@ -444,13 +436,7 @@ definition {
 			VerifyElementPresent(locator1 = "Message#SUCCESS");
 		}
 
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Recycle Bin",
-			portlet = "Recycle Bin");
-
-		RecycleBin.emptyCP();
+		JSONRecycleBin.emptyRecycleBin();
 	}
 
 	macro viewCP {

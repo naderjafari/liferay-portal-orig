@@ -19,7 +19,7 @@
 <%
 SearchContainer<?> igSearchContainer = (SearchContainer)request.getAttribute("view.jsp-igSearchContainer");
 
-DLPortletInstanceSettingsHelper dlPortletInstanceSettingsHelper = new DLPortletInstanceSettingsHelper(igRequestHelper);
+DLPortletInstanceSettingsHelper dlPortletInstanceSettingsHelper = new DLPortletInstanceSettingsHelper(new IGRequestHelper(request));
 %>
 
 <liferay-ui:search-container
@@ -96,7 +96,7 @@ DLPortletInstanceSettingsHelper dlPortletInstanceSettingsHelper = new DLPortletI
 				%>
 
 				<liferay-ui:search-container-column-text>
-					<div class="image-link preview" <%= (hasAudio || hasVideo) ? "data-options=\"height=" + playerHeight + "&thumbnailURL=" + HtmlUtil.escapeURL(DLURLHelperUtil.getPreviewURL(fileEntry, fileVersion, themeDisplay, "&videoThumbnail=1")) + "&width=640" + dataOptions + "\"" : StringPool.BLANK %> href="<%= imageURL %>" thumbnailId="<%= thumbnailId %>" title="<%= title %>">
+					<a class="image-link preview" <%= (hasAudio || hasVideo) ? "data-options=\"height=" + playerHeight + "&thumbnailURL=" + HtmlUtil.escapeURL(DLURLHelperUtil.getPreviewURL(fileEntry, fileVersion, themeDisplay, "&videoThumbnail=1")) + "&width=640" + dataOptions + "\"" : StringPool.BLANK %> href="<%= imageURL %>" thumbnailId="<%= thumbnailId %>" title="<%= title %>">
 						<c:choose>
 							<c:when test="<%= Validator.isNull(imagePreviewURL) %>">
 								<liferay-frontend:icon-vertical-card
@@ -121,7 +121,7 @@ DLPortletInstanceSettingsHelper dlPortletInstanceSettingsHelper = new DLPortletI
 								/>
 							</c:otherwise>
 						</c:choose>
-					</div>
+					</a>
 				</liferay-ui:search-container-column-text>
 			</c:when>
 			<c:otherwise>
@@ -169,7 +169,7 @@ PortletURL embeddedPlayerURL = PortletURLBuilder.createRenderURL(
 	"/image_gallery_display/embedded_player.jsp"
 ).setWindowState(
 	LiferayWindowState.POP_UP
-).build();
+).buildPortletURL();
 %>
 
 <aui:script use="aui-image-viewer,aui-image-viewer-media">

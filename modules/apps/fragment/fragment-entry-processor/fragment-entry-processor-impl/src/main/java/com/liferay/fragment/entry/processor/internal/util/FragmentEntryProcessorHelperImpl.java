@@ -189,11 +189,9 @@ public class FragmentEntryProcessorHelperImpl
 	public long getFileEntryId(
 		Object displayObject, String fieldId, Locale locale) {
 
-		if (Validator.isNull(fieldId)) {
-			return 0;
-		}
+		if (Validator.isNull(fieldId) ||
+			!(displayObject instanceof ClassedModel)) {
 
-		if (!(displayObject instanceof ClassedModel)) {
 			return 0;
 		}
 
@@ -283,7 +281,7 @@ public class FragmentEntryProcessorHelperImpl
 		}
 
 		InfoFieldValue<Object> infoFieldValue =
-			infoItemFieldValuesProvider.getInfoItemFieldValue(
+			infoItemFieldValuesProvider.getInfoFieldValue(
 				displayObjectOptional.get(),
 				jsonObject.getString("collectionFieldId"));
 
@@ -491,7 +489,7 @@ public class FragmentEntryProcessorHelperImpl
 			return StringPool.POUND;
 		}
 
-		return _portal.getLayoutFullURL(layout, themeDisplay);
+		return _portal.getLayoutRelativeURL(layout, themeDisplay);
 	}
 
 	/**
@@ -638,7 +636,7 @@ public class FragmentEntryProcessorHelperImpl
 		}
 
 		InfoFieldValue<Object> infoFieldValue =
-			infoItemFieldValuesProvider.getInfoItemFieldValue(
+			infoItemFieldValuesProvider.getInfoFieldValue(
 				displayObject, fieldId);
 
 		Object value = StringPool.BLANK;

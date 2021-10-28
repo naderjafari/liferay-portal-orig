@@ -34,6 +34,26 @@ definition {
 		}
 	}
 
+	@description = "This is a test for LPS-137169. Verify if Hubspot can access required scopes"
+	@priority = "4"
+	test CanHubspotAccessRequiredScopes {
+		Select(
+			locator1 = "ClickToChatConfiguration#SITE_SETTINGS_STRATEGY",
+			value1 = "Always Inherit");
+
+		Select(
+			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ID",
+			value1 = "Hubspot");
+
+		Type(
+			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ACCOUNT_ID",
+			value1 = "nonexistent/b0198459-60fd-4aea-bf65-3c163efc9f8d");
+
+		SystemSettings.saveConfiguration();
+
+		Alert.viewErrorMessage(errorMessage = "This app hasn't been granted all required scopes to make this call");
+	}
+
 	@description = "This is a test for LPS-129049. Verify Chatwoot provider can be enabled and disabled."
 	@priority = "5"
 	test ChatwootCanBeEnabledAndDisabled {
@@ -118,44 +138,7 @@ definition {
 		AssertElementPresent(locator1 = "Providers#CHAT_CHATWOOT");
 	}
 
-	@description = "This is a test for LPS-129049. Verify Hubspot provider errors message"
-	@priority = "4"
-	test CheckHubspotErrorMessage {
-		Select(
-			locator1 = "ClickToChatConfiguration#SITE_SETTINGS_STRATEGY",
-			value1 = "Always Inherit");
-
-		Select(
-			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ID",
-			value1 = "Hubspot");
-
-		Type(
-			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ACCOUNT_ID",
-			value1 = "nonexistent/");
-
-		SystemSettings.saveConfiguration();
-
-		Alert.viewErrorMessage(errorMessage = "Unable to connect to HubSpot");
-
-		Type(
-			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ACCOUNT_ID",
-			value1 = "19907868/1-d096-45a1-b25d-7dab3f332167");
-
-		SystemSettings.saveConfiguration();
-
-		Alert.viewErrorMessage(errorMessage = "The API key provided is invalid");
-
-		Type(
-			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ACCOUNT_ID",
-			value1 = "nonexistent/b0198459-60fd-4aea-bf65-3c163efc9f8d");
-
-		SystemSettings.saveConfiguration();
-
-		Alert.viewErrorMessage(errorMessage = "This app hasn't been granted all required scopes to make this call");
-	}
-
 	@description = "This is a test for LPS-129049. Verify Crisp provider can be enabled and disabled."
-	@ignore = "true"
 	@priority = "5"
 	test CrispCanBeEnabledAndDisabled {
 		Select(
@@ -335,6 +318,26 @@ definition {
 		AssertElementPresent(locator1 = "Providers#CHAT_HUBSPOT");
 	}
 
+	@description = "This is a test for LPS-137169. Verify if API key is invalid for hubspot"
+	@priority = "4"
+	test IsApiKeyInvalidForHubspot {
+		Select(
+			locator1 = "ClickToChatConfiguration#SITE_SETTINGS_STRATEGY",
+			value1 = "Always Inherit");
+
+		Select(
+			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ID",
+			value1 = "Hubspot");
+
+		Type(
+			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ACCOUNT_ID",
+			value1 = "19907868/1-d096-45a1-b25d-7dab3f332167");
+
+		SystemSettings.saveConfiguration();
+
+		Alert.viewErrorMessage(errorMessage = "The API key provided is invalid");
+	}
+
 	@description = "This is a test for LPS-129049. Verify JivoChat provider can be enabled and disabled."
 	@priority = "5"
 	test JivoChatCanBeEnabledAndDisabled {
@@ -422,7 +425,6 @@ definition {
 	}
 
 	@description = "This is a test for LPS-129049. Verify LiveChat provider can be enabled and disabled."
-	@ignore = "true"
 	@priority = "5"
 	test LiveChatCanBeEnabledAndDisabled {
 		Select(
@@ -508,7 +510,7 @@ definition {
 
 	@description = "This is a test for LPS-129049. Verify LivePerson provider can be enabled and disabled."
 	@priority = "5"
-	test LivepersonCanBeEnabledAndDisabled {
+	test LivePersonCanBeEnabledAndDisabled {
 		property portal.acceptance = "true";
 
 		Select(
@@ -517,7 +519,7 @@ definition {
 
 		Select(
 			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ID",
-			value1 = "Liveperson");
+			value1 = "LivePerson");
 
 		var clickToChatLivepersonPassword = PropsUtil.get("click.to.chat.liveperson.password");
 
@@ -545,7 +547,7 @@ definition {
 
 		Select(
 			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ID",
-			value1 = "Liveperson");
+			value1 = "LivePerson");
 
 		var clickToChatLivepersonPassword = PropsUtil.get("click.to.chat.liveperson.password");
 
@@ -566,14 +568,14 @@ definition {
 
 	@description = "This is a test for LPS-133453. Verify LivePerson provider persistence after logout and login"
 	@priority = "5"
-	test LivepersonProviderKeepsEnabledAfterLogoutAndLogin {
+	test LivePersonProviderKeepsEnabledAfterLogoutAndLogin {
 		Select(
 			locator1 = "ClickToChatConfiguration#SITE_SETTINGS_STRATEGY",
 			value1 = "Always Inherit");
 
 		Select(
 			locator1 = "ClickToChatConfiguration#CHAT_PROVIDER_ID",
-			value1 = "Liveperson");
+			value1 = "LivePerson");
 
 		var clickToChatLivepersonPassword = PropsUtil.get("click.to.chat.liveperson.password");
 
@@ -761,7 +763,6 @@ definition {
 	}
 
 	@description = "This is a test for LPS-129049. Verify Tidio provider can be enabled and disabled."
-	@ignore = "true"
 	@priority = "5"
 	test TidioCanBeEnabledAndDisabled {
 		Select(
@@ -790,7 +791,6 @@ definition {
 	}
 
 	@description = "This is a test for LPS-133453. Verify if Tidio Provider Keeps Enabled After Logout"
-	@ignore = "true"
 	@priority = "5"
 	test TidioProviderKeepsEnabledAfterLogout {
 		Select(
@@ -819,7 +819,6 @@ definition {
 	}
 
 	@description = "This is a test for LPS-133453. Verify Tidio provider persistence after logout and login"
-	@ignore = "true"
 	@priority = "5"
 	test TidioProviderKeepsEnabledAfterLogoutAndLogin {
 		Select(
@@ -848,6 +847,7 @@ definition {
 	}
 
 	@description = "This is a test for LPS-129049. Verify Tolvnow provider can be enabled and disabled."
+	@ignore = "true"
 	@priority = "5"
 	test TolvnowCanBeEnabledAndDisabled {
 		Select(
@@ -876,6 +876,7 @@ definition {
 	}
 
 	@description = "This is a test for LPS-133453. Verify if Tolvnow Provider Keeps Enabled After Logout"
+	@ignore = "true"
 	@priority = "5"
 	test TolvnowProviderKeepsEnabledAfterLogout {
 		Select(
@@ -904,6 +905,7 @@ definition {
 	}
 
 	@description = "This is a test for LPS-133453. Verify Tolvnow provider persistence after logout and login"
+	@ignore = "true"
 	@priority = "5"
 	test TolvnowProviderKeepsEnabledAfterLogoutAndLogin {
 		Select(

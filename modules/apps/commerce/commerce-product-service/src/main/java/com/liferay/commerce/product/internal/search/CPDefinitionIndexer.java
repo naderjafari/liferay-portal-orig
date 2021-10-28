@@ -39,6 +39,7 @@ import com.liferay.commerce.product.model.CommerceChannelRel;
 import com.liferay.commerce.product.service.CPDefinitionLinkLocalService;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.product.service.CPInstanceLocalService;
+import com.liferay.commerce.product.service.CommerceCatalogService;
 import com.liferay.commerce.product.service.CommerceChannelRelLocalService;
 import com.liferay.commerce.util.CommerceBigDecimalUtil;
 import com.liferay.friendly.url.model.FriendlyURLEntry;
@@ -208,32 +209,34 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 			long commerceChannelId = GetterUtil.getLong(
 				attributes.get("commerceChannelGroupId"));
 
-			BooleanFilter channelBooleanFiler = new BooleanFilter();
+			BooleanFilter channelBooleanFilter = new BooleanFilter();
 
-			BooleanFilter channelFilterEnableBooleanFiler = new BooleanFilter();
+			BooleanFilter channelFilterEnableBooleanFilter =
+				new BooleanFilter();
 
-			channelFilterEnableBooleanFiler.addTerm(
+			channelFilterEnableBooleanFilter.addTerm(
 				CPField.CHANNEL_FILTER_ENABLED, Boolean.TRUE.toString(),
 				BooleanClauseOccur.MUST);
 
 			if (commerceChannelId > 0) {
-				channelFilterEnableBooleanFiler.addTerm(
-					CPField.CHANNEL_GROUP_IDS,
+				channelFilterEnableBooleanFilter.addTerm(
+					CPField.COMMERCE_CHANNEL_GROUP_IDS,
 					String.valueOf(commerceChannelId), BooleanClauseOccur.MUST);
 			}
 			else {
-				channelFilterEnableBooleanFiler.addTerm(
-					CPField.CHANNEL_GROUP_IDS, "-1", BooleanClauseOccur.MUST);
+				channelFilterEnableBooleanFilter.addTerm(
+					CPField.COMMERCE_CHANNEL_GROUP_IDS, "-1",
+					BooleanClauseOccur.MUST);
 			}
 
-			channelBooleanFiler.add(
-				channelFilterEnableBooleanFiler, BooleanClauseOccur.SHOULD);
-			channelBooleanFiler.addTerm(
+			channelBooleanFilter.add(
+				channelFilterEnableBooleanFilter, BooleanClauseOccur.SHOULD);
+			channelBooleanFilter.addTerm(
 				CPField.CHANNEL_FILTER_ENABLED, Boolean.FALSE.toString(),
 				BooleanClauseOccur.SHOULD);
 
 			contextBooleanFilter.add(
-				channelBooleanFiler, BooleanClauseOccur.MUST);
+				channelBooleanFilter, BooleanClauseOccur.MUST);
 
 			long[] commerceAccountGroupIds = GetterUtil.getLongValues(
 				searchContext.getAttribute("commerceAccountGroupIds"), null);
@@ -281,11 +284,20 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 				accountGroupsBooleanFilter, BooleanClauseOccur.MUST);
 		}
 		else {
-			long[] groupIds = searchContext.getGroupIds();
+			long[] commerceCatalogIds = _getUserCommerceCatalogIds(
+				searchContext);
 
-			if ((groupIds == null) || (groupIds.length == 0)) {
-				contextBooleanFilter.addTerm(
-					Field.GROUP_ID, "-1", BooleanClauseOccur.MUST);
+			if (commerceCatalogIds.length > 0) {
+				_addCommerceCatalogIdFilters(
+					contextBooleanFilter, commerceCatalogIds);
+			}
+			else {
+				long[] groupIds = searchContext.getGroupIds();
+
+				if ((groupIds == null) || (groupIds.length == 0)) {
+					contextBooleanFilter.addTerm(
+						Field.GROUP_ID, "-1", BooleanClauseOccur.MUST);
+				}
 			}
 		}
 	}
@@ -431,7 +443,7 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 			CPField.SHORT_DESCRIPTION,
 			cpDefinition.getShortDescription(cpDefinitionDefaultLanguageId));
 
-		List<Long> channelGroupIds = new ArrayList<>();
+		List<Long> commerceChannelGroupIds = new ArrayList<>();
 
 		for (CommerceChannelRel commerceChannelRel :
 				_commerceChannelRelLocalService.getCommerceChannelRels(
@@ -442,11 +454,12 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 			CommerceChannel commerceChannel =
 				commerceChannelRel.getCommerceChannel();
 
-			channelGroupIds.add(commerceChannel.getGroupId());
+			commerceChannelGroupIds.add(commerceChannel.getGroupId());
 		}
 
 		document.addNumber(
-			CPField.CHANNEL_GROUP_IDS, ArrayUtil.toLongArray(channelGroupIds));
+			CPField.COMMERCE_CHANNEL_GROUP_IDS,
+			ArrayUtil.toLongArray(commerceChannelGroupIds));
 
 		List<CommerceAccountGroupRel> commerceAccountGroupRels =
 			_commerceAccountGroupRelService.getCommerceAccountGroupRels(
@@ -709,7 +722,7 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 		long cpAttachmentFileEntryId = 0;
 
 		CPAttachmentFileEntry cpAttachmentFileEntry =
-			_cpDefinitionLocalService.getDefaultImage(
+			_cpDefinitionLocalService.getDefaultImageCPAttachmentFileEntry(
 				cpDefinition.getCPDefinitionId());
 
 		if (cpAttachmentFileEntry != null) {
@@ -735,11 +748,11 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 					cpAttachmentFileEntryId, false, false, false));
 		}
 
-		if ((cpDefinition.getStatus() != WorkflowConstants.STATUS_APPROVED) ||
-			((cpDefinition.getCPDefinitionId() !=
+		if ((cpDefinition.getStatus() != WorkflowConstants.STATUS_APPROVED) &&
+			(cpDefinition.getCPDefinitionId() !=
 				cProduct.getPublishedCPDefinitionId()) &&
-			 _cpDefinitionLocalService.isVersionable(
-				 cpDefinition.getCPDefinitionId()))) {
+			_cpDefinitionLocalService.isVersionable(
+				cpDefinition.getCPDefinitionId())) {
 
 			document.addKeyword(Field.HIDDEN, true);
 		}
@@ -757,7 +770,17 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 		if (cpInstances.size() == 1) {
 			CPInstance cpInstance = cpInstances.get(0);
 
-			document.addNumber(CPField.BASE_PRICE, cpInstance.getPrice());
+			BigDecimal price = cpInstance.getPrice();
+			BigDecimal promoPrice = cpInstance.getPromoPrice();
+
+			if ((promoPrice.compareTo(BigDecimal.ZERO) > 0) &&
+				CommerceBigDecimalUtil.lt(promoPrice, price)) {
+
+				document.addNumber(CPField.BASE_PRICE, promoPrice);
+			}
+			else {
+				document.addNumber(CPField.BASE_PRICE, price);
+			}
 		}
 		else if (!cpInstances.isEmpty()) {
 			CPInstance firstCPInstance = cpInstances.get(0);
@@ -778,6 +801,14 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 							CommercePriceListConstants.TYPE_PRICE_LIST);
 
 				BigDecimal price = commercePriceEntry.getPrice();
+
+				BigDecimal promoPrice = cpInstance.getPromoPrice();
+
+				if ((promoPrice.compareTo(BigDecimal.ZERO) > 0) &&
+					CommerceBigDecimalUtil.lt(promoPrice, price)) {
+
+					price = promoPrice;
+				}
 
 				if (CommerceBigDecimalUtil.lt(price, lowestPrice)) {
 					lowestPrice = price;
@@ -845,7 +876,7 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 	}
 
 	protected void reindexCPDefinitions(long companyId) throws PortalException {
-		final IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
 			_cpDefinitionLocalService.getIndexableActionableDynamicQuery();
 
 		indexableActionableDynamicQuery.setCompanyId(companyId);
@@ -869,6 +900,33 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 		indexableActionableDynamicQuery.performActions();
 	}
 
+	private void _addCommerceCatalogIdFilters(
+		BooleanFilter contextBooleanFilter, long[] commerceCatalogIds) {
+
+		TermsFilter termsFilter = new TermsFilter("commerceCatalogId");
+
+		termsFilter.addValues(ArrayUtil.toStringArray(commerceCatalogIds));
+
+		contextBooleanFilter.add(termsFilter, BooleanClauseOccur.MUST);
+	}
+
+	private long[] _getUserCommerceCatalogIds(SearchContext searchContext) {
+		List<CommerceCatalog> commerceCatalogs =
+			_commerceCatalogService.getCommerceCatalogs(
+				searchContext.getCompanyId(), QueryUtil.ALL_POS,
+				QueryUtil.ALL_POS);
+
+		if (commerceCatalogs.isEmpty()) {
+			return new long[0];
+		}
+
+		Stream<CommerceCatalog> stream = commerceCatalogs.stream();
+
+		return stream.mapToLong(
+			commerceCatalog -> commerceCatalog.getCommerceCatalogId()
+		).toArray();
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		CPDefinitionIndexer.class);
 
@@ -877,6 +935,9 @@ public class CPDefinitionIndexer extends BaseIndexer<CPDefinition> {
 
 	@Reference
 	private CommerceAccountGroupRelService _commerceAccountGroupRelService;
+
+	@Reference
+	private CommerceCatalogService _commerceCatalogService;
 
 	@Reference
 	private CommerceChannelRelLocalService _commerceChannelRelLocalService;

@@ -21,7 +21,7 @@ import com.liferay.commerce.constants.CommerceOrderConstants;
 import com.liferay.commerce.constants.CommercePortletKeys;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.order.CommerceOrderHttpHelper;
-import com.liferay.commerce.product.model.CommerceChannel;
+import com.liferay.commerce.order.CommerceOrderValidatorRegistry;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.service.CommerceOrderService;
 import com.liferay.commerce.util.CommerceCheckoutStepServicesTracker;
@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
 import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
@@ -129,8 +130,10 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 					httpServletResponse.sendRedirect(
 						getCheckoutURL(renderRequest));
 				}
-				else if (commerceOrder.isOpen() &&
-						 !isOrderApproved(commerceOrder)) {
+				else if ((commerceOrder.isOpen() &&
+						  !isOrderApproved(commerceOrder)) ||
+						 !_commerceOrderValidatorRegistry.isValid(
+							 LocaleUtil.getSiteDefault(), commerceOrder)) {
 
 					httpServletResponse.sendRedirect(
 						getOrderDetailsURL(renderRequest));
@@ -138,16 +141,11 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 				else if (!commerceOrder.isOpen() &&
 						 (continueAsGuest || commerceOrder.isGuestOrder())) {
 
-					CommerceChannel commerceChannel =
-						_commerceChannelLocalService.
-							getCommerceChannelByGroupId(
-								commerceOrder.getGroupId());
-
 					CookieKeys.deleteCookies(
 						httpServletRequest, httpServletResponse,
 						CookieKeys.getDomain(httpServletRequest),
 						CommerceOrder.class.getName() + StringPool.POUND +
-							commerceChannel.getCommerceChannelId());
+							commerceOrder.getGroupId());
 
 					CookieKeys.deleteCookies(
 						httpServletRequest, httpServletResponse,
@@ -266,6 +264,9 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 
 	@Reference
 	private CommerceOrderService _commerceOrderService;
+
+	@Reference
+	private CommerceOrderValidatorRegistry _commerceOrderValidatorRegistry;
 
 	@Reference
 	private CompanyLocalService _companyLocalService;

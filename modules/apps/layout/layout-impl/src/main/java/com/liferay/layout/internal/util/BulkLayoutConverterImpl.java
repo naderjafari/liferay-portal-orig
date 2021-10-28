@@ -345,14 +345,11 @@ public class BulkLayoutConverterImpl implements BulkLayoutConverter {
 			Layout layout, ServiceContext serviceContext)
 		throws PortalException {
 
-		if ((layout.getClassNameId() != 0) || (layout.getClassPK() != 0)) {
-			StringBundler sb = new StringBundler(3);
-
-			sb.append("Layout with PLID ");
-			sb.append(layout.getPlid());
-			sb.append(" is a draft. You cannot get the draft of a draft.");
-
-			throw new PortalException(sb.toString());
+		if (layout.isDraftLayout()) {
+			throw new PortalException(
+				StringBundler.concat(
+					"Layout with PLID ", layout.getPlid(),
+					" is a draft. You cannot get the draft of a draft."));
 		}
 
 		Layout draftLayout = layout.fetchDraftLayout();

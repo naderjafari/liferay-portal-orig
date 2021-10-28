@@ -13,10 +13,10 @@
  */
 
 import ClayIcon from '@clayui/icon';
-import {ClayTooltipProvider} from '@clayui/tooltip';
 import classNames from 'classnames';
 import Proptypes from 'prop-types';
 import React from 'react';
+import ReactDOMServer from 'react-dom/server';
 
 import {getDataRendererById} from '../utils/dataRenderers';
 import {getSchemaString} from '../utils/index';
@@ -83,9 +83,12 @@ function TooltipSummaryRenderer({itemData, options, value}) {
 	return (
 		<>
 			{value}
-			{tooltipTableRows.length && (
-				<ClayTooltipProvider
-					contentRenderer={() => (
+			{!!tooltipTableRows.length && (
+				<span
+					className="tooltip-provider"
+					data-title-set-as-html
+					data-tooltip-delay="0"
+					title={ReactDOMServer.renderToString(
 						<table className="tooltip-table">
 							<tbody>
 								{tooltipTableRows.map((rowData) => (
@@ -97,15 +100,9 @@ function TooltipSummaryRenderer({itemData, options, value}) {
 							</tbody>
 						</table>
 					)}
-					delay={0}
 				>
-					<span
-						className="tooltip-provider"
-						title={Liferay.Language.get('info')}
-					>
-						<ClayIcon symbol="info-circle" />
-					</span>
-				</ClayTooltipProvider>
+					<ClayIcon symbol="info-circle" />
+				</span>
 			)}
 		</>
 	);

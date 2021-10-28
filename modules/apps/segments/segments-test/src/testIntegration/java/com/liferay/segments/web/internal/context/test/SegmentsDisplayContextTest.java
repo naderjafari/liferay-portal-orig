@@ -15,6 +15,7 @@
 package com.liferay.segments.web.internal.context.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.portlet.bridges.mvc.constants.MVCRenderConstants;
@@ -29,14 +30,10 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portlet.test.MockLiferayPortletContext;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceTracker;
 
 import java.util.Dictionary;
 
@@ -49,6 +46,11 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * @author Cristina González
@@ -66,16 +68,17 @@ public class SegmentsDisplayContextTest {
 		_company = _companyLocalService.getCompany(
 			TestPropsValues.getCompanyId());
 
-		Registry registry = RegistryUtil.getRegistry();
+		Bundle bundle = FrameworkUtil.getBundle(
+			SegmentsDisplayContextTest.class);
 
-		com.liferay.petra.string.StringBundler sb =
-			new com.liferay.petra.string.StringBundler(3);
+		BundleContext bundleContext = bundle.getBundleContext();
 
-		sb.append("(component.name=");
-		sb.append("com.liferay.segments.web.internal.portlet.SegmentsPortlet)");
-
-		_serviceTracker = registry.trackServices(
-			registry.getFilter(sb.toString()));
+		_serviceTracker = new ServiceTracker<>(
+			bundleContext,
+			bundleContext.createFilter(
+				"(component.name=com.liferay.segments.web.internal.portlet." +
+					"SegmentsPortlet)"),
+			null);
 
 		_serviceTracker.open();
 	}

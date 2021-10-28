@@ -14,8 +14,13 @@
 
 package com.liferay.portal.workflow.metrics.internal.search.index;
 
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.PortalRunMode;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.document.Document;
 import com.liferay.portal.search.document.DocumentBuilder;
@@ -25,11 +30,16 @@ import com.liferay.portal.search.query.BooleanQuery;
 import com.liferay.portal.search.script.ScriptBuilder;
 import com.liferay.portal.search.script.ScriptType;
 import com.liferay.portal.workflow.metrics.internal.search.index.util.WorkflowMetricsIndexerUtil;
+import com.liferay.portal.workflow.metrics.model.Assignment;
+import com.liferay.portal.workflow.metrics.model.RoleAssignment;
+import com.liferay.portal.workflow.metrics.model.UserAssignment;
 import com.liferay.portal.workflow.metrics.search.index.TaskWorkflowMetricsIndexer;
 
 import java.time.Duration;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -47,7 +57,7 @@ public class TaskWorkflowMetricsIndexerImpl
 	@Override
 	public Document addTask(
 		Map<Locale, String> assetTitleMap, Map<Locale, String> assetTypeMap,
-		Long[] assigneeIds, String assigneeType, String className, long classPK,
+		List<Assignment> assignments, String className, long classPK,
 		long companyId, boolean completed, Date completionDate,
 		Long completionUserId, Date createDate, boolean instanceCompleted,
 		Date instanceCompletionDate, long instanceId, Date modifiedDate,
@@ -56,9 +66,18 @@ public class TaskWorkflowMetricsIndexerImpl
 
 		DocumentBuilder documentBuilder = documentBuilderFactory.builder();
 
-		if (assigneeIds != null) {
-			documentBuilder.setLongs("assigneeIds", assigneeIds);
-			documentBuilder.setString("assigneeType", assigneeType);
+		List<Long> assignmentGroupIds = new ArrayList<>();
+		List<Long> assignmentIds = new ArrayList<>();
+
+		_populateTaskAssignments(
+			assignmentGroupIds, assignmentIds, assignments);
+
+		String assignmentType = _getAssignmentType(assignments);
+
+		if (!assignmentIds.isEmpty()) {
+			documentBuilder.setLongs(
+				"assigneeIds", assignmentIds.toArray(new Long[0]));
+			documentBuilder.setString("assigneeType", assignmentType);
 		}
 
 		documentBuilder.setString(
@@ -130,7 +149,7 @@ public class TaskWorkflowMetricsIndexerImpl
 					return;
 				}
 
-				ScriptBuilder builder = scripts.builder();
+				ScriptBuilder scriptBuilder = scripts.builder();
 
 				UpdateDocumentRequest updateDocumentRequest =
 					new UpdateDocumentRequest(
@@ -138,7 +157,7 @@ public class TaskWorkflowMetricsIndexerImpl
 						WorkflowMetricsIndexerUtil.digest(
 							_instanceWorkflowMetricsIndex.getIndexType(),
 							companyId, instanceId),
-						builder.idOrCode(
+						scriptBuilder.idOrCode(
 							StringUtil.read(
 								getClass(),
 								"dependencies/workflow-metrics-add-task-" +
@@ -148,9 +167,13 @@ public class TaskWorkflowMetricsIndexerImpl
 						).putParameter(
 							"task",
 							HashMapBuilder.<String, Object>put(
-								"assigneeIds", assigneeIds
+								"assigneeGroupIds", assignmentGroupIds
 							).put(
-								"assigneeType", assigneeType
+								"assigneeIds", assignmentIds
+							).put(
+								"assigneeName", _getAssigneeName(assignments)
+							).put(
+								"assigneeType", assignmentType
 							).put(
 								"taskId", taskId
 							).put(
@@ -161,6 +184,10 @@ public class TaskWorkflowMetricsIndexerImpl
 						).build());
 
 				updateDocumentRequest.setScriptedUpsert(true);
+
+				if (PortalRunMode.isTestMode()) {
+					updateDocumentRequest.setRefresh(true);
+				}
 
 				searchEngineAdapter.execute(updateDocumentRequest);
 			});
@@ -255,14 +282,23 @@ public class TaskWorkflowMetricsIndexerImpl
 	@Override
 	public Document updateTask(
 		Map<Locale, String> assetTitleMap, Map<Locale, String> assetTypeMap,
-		Long[] assigneeIds, String assigneeType, long companyId,
-		Date modifiedDate, long taskId, long userId) {
+		List<Assignment> assignments, long companyId, Date modifiedDate,
+		long taskId, long userId) {
 
 		DocumentBuilder documentBuilder = documentBuilderFactory.builder();
 
-		if (assigneeIds != null) {
-			documentBuilder.setLongs("assigneeIds", assigneeIds);
-			documentBuilder.setString("assigneeType", assigneeType);
+		List<Long> assignmentGroupIds = new ArrayList<>();
+		List<Long> assignmentIds = new ArrayList<>();
+
+		_populateTaskAssignments(
+			assignmentGroupIds, assignmentIds, assignments);
+
+		String assignmentType = _getAssignmentType(assignments);
+
+		if (!assignmentIds.isEmpty()) {
+			documentBuilder.setLongs(
+				"assigneeIds", assignmentIds.toArray(new Long[0]));
+			documentBuilder.setString("assigneeType", assignmentType);
 		}
 
 		documentBuilder.setLong(
@@ -299,47 +335,60 @@ public class TaskWorkflowMetricsIndexerImpl
 				_slaTaskResultWorkflowMetricsIndexer.updateDocuments(
 					companyId,
 					HashMapBuilder.<String, Object>put(
-						"assigneeIds", assigneeIds
+						"assigneeIds", assignmentIds
 					).put(
-						"assigneeType", assigneeType
+						"assigneeType", assignmentType
 					).build(),
 					booleanQuery);
 
-				ScriptBuilder builder = scripts.builder();
+				ScriptBuilder scriptBuilder = scripts.builder();
 
-				searchEngineAdapter.execute(
+				scriptBuilder.idOrCode(
+					StringUtil.read(
+						getClass(),
+						"dependencies/workflow-metrics-update-task-" +
+							"script.painless")
+				).language(
+					"painless"
+				).putParameter(
+					"task",
+					HashMapBuilder.<String, Object>put(
+						"assigneeGroupIds", assignmentGroupIds
+					).put(
+						"assigneeIds", assignmentIds
+					).put(
+						"assigneeName", _getAssigneeName(assignments)
+					).put(
+						"assigneeType", assignmentType
+					).put(
+						"taskId", taskId
+					).build()
+				).scriptType(
+					ScriptType.INLINE
+				);
+
+				UpdateByQueryDocumentRequest updateByQueryDocumentRequest =
 					new UpdateByQueryDocumentRequest(
 						queries.nested(
 							"tasks", queries.term("tasks.taskId", taskId)),
-						builder.idOrCode(
-							StringUtil.read(
-								getClass(),
-								"dependencies/workflow-metrics-update-task-" +
-									"script.painless")
-						).language(
-							"painless"
-						).putParameter(
-							"assigneeIds", assigneeIds
-						).putParameter(
-							"assigneeType", assigneeType
-						).putParameter(
-							"taskId", taskId
-						).scriptType(
-							ScriptType.INLINE
-						).build(),
-						_instanceWorkflowMetricsIndex.getIndexName(companyId)));
+						scriptBuilder.build(),
+						_instanceWorkflowMetricsIndex.getIndexName(companyId));
+
+				updateByQueryDocumentRequest.setRefresh(true);
+
+				searchEngineAdapter.execute(updateByQueryDocumentRequest);
 			});
 
 		return document;
 	}
 
 	private void _deleteTask(long companyId, long taskId) {
-		ScriptBuilder builder = scripts.builder();
+		ScriptBuilder scriptBuilder = scripts.builder();
 
 		searchEngineAdapter.execute(
 			new UpdateByQueryDocumentRequest(
 				queries.nested("tasks", queries.term("tasks.taskId", taskId)),
-				builder.idOrCode(
+				scriptBuilder.idOrCode(
 					StringUtil.read(
 						getClass(),
 						"dependencies/workflow-metrics-delete-task-" +
@@ -354,11 +403,61 @@ public class TaskWorkflowMetricsIndexerImpl
 				_instanceWorkflowMetricsIndex.getIndexName(companyId)));
 	}
 
+	private String _getAssigneeName(List<Assignment> assignments) {
+		if (ListUtil.isEmpty(assignments) ||
+			(assignments.get(0) instanceof RoleAssignment)) {
+
+			return null;
+		}
+
+		UserAssignment userAssignment = (UserAssignment)assignments.get(0);
+
+		return userAssignment.getName();
+	}
+
+	private String _getAssignmentType(List<Assignment> assignments) {
+		if (ListUtil.isEmpty(assignments)) {
+			return null;
+		}
+
+		Assignment assignment = assignments.get(0);
+
+		if (assignment instanceof RoleAssignment) {
+			return Role.class.getName();
+		}
+
+		return User.class.getName();
+	}
+
 	private long _getDuration(Date completionDate, Date createDate) {
 		Duration duration = Duration.between(
 			createDate.toInstant(), completionDate.toInstant());
 
 		return duration.toMillis();
+	}
+
+	private void _populateTaskAssignments(
+		List<Long> assignmentGroupIds, List<Long> assignmentIds,
+		List<Assignment> assignments) {
+
+		if (ListUtil.isEmpty(assignments)) {
+			return;
+		}
+
+		Assignment firstAssignment = assignments.get(0);
+
+		if (firstAssignment instanceof RoleAssignment) {
+			for (Assignment assignment : assignments) {
+				assignmentIds.add(assignment.getAssignmentId());
+
+				RoleAssignment roleAssignment = (RoleAssignment)assignment;
+
+				assignmentGroupIds.addAll(roleAssignment.getGroupIds());
+			}
+		}
+		else {
+			assignmentIds.add(firstAssignment.getAssignmentId());
+		}
 	}
 
 	@Reference(target = "(workflow.metrics.index.entity.name=instance)")
@@ -370,5 +469,8 @@ public class TaskWorkflowMetricsIndexerImpl
 
 	@Reference(target = "(workflow.metrics.index.entity.name=task)")
 	private WorkflowMetricsIndex _taskWorkflowMetricsIndex;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

@@ -61,6 +61,17 @@ public class BatchPlannerLogLocalServiceUtil {
 		return getService().addBatchPlannerLog(batchPlannerLog);
 	}
 
+	public static BatchPlannerLog addBatchPlannerLog(
+			long userId, long batchPlannerPlanId, String batchEngineExportERC,
+			String batchEngineImportERC, String dispatchTriggerERC, int size,
+			int status)
+		throws PortalException {
+
+		return getService().addBatchPlannerLog(
+			userId, batchPlannerPlanId, batchEngineExportERC,
+			batchEngineImportERC, dispatchTriggerERC, size, status);
+	}
+
 	/**
 	 * Creates a new batch planner log with the primary key. Does not add the batch planner log to the database.
 	 *
@@ -215,6 +226,13 @@ public class BatchPlannerLogLocalServiceUtil {
 		return getService().fetchBatchPlannerLog(batchPlannerLogId);
 	}
 
+	public static BatchPlannerLog fetchBatchPlannerPlanBatchPlannerLog(
+		long batchPlannerPlanId) {
+
+		return getService().fetchBatchPlannerPlanBatchPlannerLog(
+			batchPlannerPlanId);
+	}
+
 	public static com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery
 		getActionableDynamicQuery() {
 
@@ -260,6 +278,44 @@ public class BatchPlannerLogLocalServiceUtil {
 		return getService().getBatchPlannerLogsCount();
 	}
 
+	public static int getBatchPlannerLogsCount(long batchPlannerPlanId) {
+		return getService().getBatchPlannerLogsCount(batchPlannerPlanId);
+	}
+
+	public static BatchPlannerLog getBatchPlannerPlanBatchPlannerLog(
+			long batchPlannerPlanId)
+		throws PortalException {
+
+		return getService().getBatchPlannerPlanBatchPlannerLog(
+			batchPlannerPlanId);
+	}
+
+	public static List<BatchPlannerLog> getCompanyBatchPlannerLogs(
+		long companyId, boolean export, int start, int end,
+		OrderByComparator<BatchPlannerLog> orderByComparator) {
+
+		return getService().getCompanyBatchPlannerLogs(
+			companyId, export, start, end, orderByComparator);
+	}
+
+	public static List<BatchPlannerLog> getCompanyBatchPlannerLogs(
+		long companyId, int start, int end,
+		OrderByComparator<BatchPlannerLog> orderByComparator) {
+
+		return getService().getCompanyBatchPlannerLogs(
+			companyId, start, end, orderByComparator);
+	}
+
+	public static int getCompanyBatchPlannerLogsCount(long companyId) {
+		return getService().getCompanyBatchPlannerLogsCount(companyId);
+	}
+
+	public static int getCompanyBatchPlannerLogsCount(
+		long companyId, boolean export) {
+
+		return getService().getCompanyBatchPlannerLogsCount(companyId, export);
+	}
+
 	public static
 		com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery
 			getIndexableActionableDynamicQuery() {
@@ -299,6 +355,21 @@ public class BatchPlannerLogLocalServiceUtil {
 		BatchPlannerLog batchPlannerLog) {
 
 		return getService().updateBatchPlannerLog(batchPlannerLog);
+	}
+
+	public static BatchPlannerLog updateBatchPlannerLogSize(
+			long batchPlannerLogId, int size)
+		throws PortalException {
+
+		return getService().updateBatchPlannerLogSize(batchPlannerLogId, size);
+	}
+
+	public static BatchPlannerLog updateBatchPlannerLogStatus(
+			long batchPlannerLogId, int status)
+		throws PortalException {
+
+		return getService().updateBatchPlannerLogStatus(
+			batchPlannerLogId, status);
 	}
 
 	public static BatchPlannerLogLocalService getService() {

@@ -79,7 +79,7 @@ public class MVCCommandNameCheck extends BaseCheck {
 		}
 
 		DetailAST propertyAnnotationMemberValuePairDetailAST =
-			_getAnnotationMemberValuePairDetailAST(
+			getAnnotationMemberValuePairDetailAST(
 				annotationDetailAST, "property");
 
 		if (propertyAnnotationMemberValuePairDetailAST == null) {
@@ -119,30 +119,6 @@ public class MVCCommandNameCheck extends BaseCheck {
 				log(entry.getValue(), _MSG_INCORRECT_VALUE, mvcCommandName);
 			}
 		}
-	}
-
-	private DetailAST _getAnnotationMemberValuePairDetailAST(
-		DetailAST annotationDetailAST, String key) {
-
-		List<DetailAST> annotationMemberValuePairDetailASTList =
-			getAllChildTokens(
-				annotationDetailAST, false,
-				TokenTypes.ANNOTATION_MEMBER_VALUE_PAIR);
-
-		for (DetailAST annotationMemberValuePairDetailAST :
-				annotationMemberValuePairDetailASTList) {
-
-			DetailAST firstChildDetailAST =
-				annotationMemberValuePairDetailAST.getFirstChild();
-
-			if ((firstChildDetailAST.getType() == TokenTypes.IDENT) &&
-				Objects.equals(firstChildDetailAST.getText(), key)) {
-
-				return annotationMemberValuePairDetailAST;
-			}
-		}
-
-		return null;
 	}
 
 	private String _getExpectedActionName(String className) {
@@ -248,12 +224,16 @@ public class MVCCommandNameCheck extends BaseCheck {
 		DetailAST annotationArrayInitDetailAST, String className,
 		String modulePath, boolean validateActionName) {
 
-		if (!mvcCommandName.startsWith(StringPool.SLASH)) {
+		if (!mvcCommandName.startsWith(StringPool.SLASH) &&
+			!mvcCommandName.startsWith(StringPool.TILDE)) {
+
 			return false;
 		}
 
+		char delimiter = mvcCommandName.charAt(0);
+
 		String[] parts = StringUtil.split(
-			mvcCommandName.substring(1), StringPool.SLASH);
+			mvcCommandName.substring(1), delimiter);
 
 		if (parts.length != 2) {
 			return false;
@@ -264,7 +244,8 @@ public class MVCCommandNameCheck extends BaseCheck {
 
 		if ((!validateActionName ||
 			 _hasValidActionName(actionName, path, className)) &&
-			_hasValidPath(path, annotationArrayInitDetailAST, modulePath)) {
+			_hasValidPath(
+				path, annotationArrayInitDetailAST, delimiter, modulePath)) {
 
 			return true;
 		}
@@ -281,7 +262,7 @@ public class MVCCommandNameCheck extends BaseCheck {
 			}
 
 			DetailAST targetAnnotationMemberValuePairDetailAST =
-				_getAnnotationMemberValuePairDetailAST(
+				getAnnotationMemberValuePairDetailAST(
 					annotationDetailAST, "target");
 
 			if (targetAnnotationMemberValuePairDetailAST == null) {
@@ -312,11 +293,11 @@ public class MVCCommandNameCheck extends BaseCheck {
 	}
 
 	private boolean _hasValidPath(
-		String path, DetailAST annotationArrayInitDetailAST,
+		String path, DetailAST annotationArrayInitDetailAST, char delimiter,
 		String modulePath) {
 
 		String moduleName = modulePath.substring(
-			modulePath.lastIndexOf(CharPool.SLASH) + 1);
+			modulePath.lastIndexOf(delimiter) + 1);
 
 		if (path.equals(StringUtil.replace(moduleName, '-', '_'))) {
 			return true;

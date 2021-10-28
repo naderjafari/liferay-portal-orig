@@ -248,12 +248,8 @@ public class AssetLinksTag extends IncludeTag {
 					assetLinkEntry.getClassPK());
 
 			if (!assetRenderer.hasViewPermission(
-					themeDisplay.getPermissionChecker())) {
-
-				continue;
-			}
-
-			if (!(assetLinkEntry.isVisible() ||
+					themeDisplay.getPermissionChecker()) ||
+				!(assetLinkEntry.isVisible() ||
 				  (assetRenderer.getStatus() ==
 					  WorkflowConstants.STATUS_SCHEDULED))) {
 
@@ -303,7 +299,7 @@ public class AssetLinksTag extends IncludeTag {
 				themeDisplay.getURLCurrent()
 			).setWindowState(
 				WindowState.MAXIMIZED
-			).build();
+			).buildPortletURL();
 		}
 
 		viewAssetURL.setParameter(

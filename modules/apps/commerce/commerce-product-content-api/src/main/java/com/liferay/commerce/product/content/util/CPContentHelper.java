@@ -17,7 +17,6 @@ package com.liferay.commerce.product.content.util;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.commerce.product.catalog.CPCatalogEntry;
-import com.liferay.commerce.product.catalog.CPMedia;
 import com.liferay.commerce.product.catalog.CPSku;
 import com.liferay.commerce.product.content.render.CPContentRenderer;
 import com.liferay.commerce.product.model.CPDefinitionSpecificationOptionValue;
@@ -29,6 +28,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 
 import java.util.List;
@@ -85,6 +85,10 @@ public interface CPContentHelper {
 		String type, RenderRequest renderRequest);
 
 	public List<CPContentRenderer> getCPContentRenderers(String cpType);
+
+	public FileVersion getCPDefinitionImageFileVersion(
+			long cpDefinitionId, HttpServletRequest httpServletRequest)
+		throws Exception;
 
 	public List<CPDefinitionSpecificationOptionValue>
 			getCPDefinitionSpecificationOptionValues(long cpDefinitionId)

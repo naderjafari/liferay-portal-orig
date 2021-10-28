@@ -37,9 +37,13 @@ jest.mock(
 	})
 );
 
-function renderItemSelector({mappedInfoItems = [], selectedItemTitle = ''}) {
+function renderItemSelector({
+	pageContents = [],
+	selectedItemClassPK = '',
+	selectedItemTitle = '',
+}) {
 	const state = {
-		mappedInfoItems,
+		pageContents,
 	};
 
 	Liferay.Util.sub.mockImplementation((langKey, args) =>
@@ -52,7 +56,12 @@ function renderItemSelector({mappedInfoItems = [], selectedItemTitle = ''}) {
 				label="itemSelectorLabel"
 				onItemSelect={() => {}}
 				selectedItem={
-					selectedItemTitle ? {title: selectedItemTitle} : null
+					selectedItemTitle
+						? {
+								classPK: selectedItemClassPK,
+								title: selectedItemTitle,
+						  }
+						: null
 				}
 				transformValueCallback={() => {}}
 			/>
@@ -122,12 +131,12 @@ describe('ItemSelector', () => {
 	});
 
 	it('shows recent items dropdown instead of calling openItemSelector when there are mapping items', () => {
-		const mappedInfoItems = [
+		const pageContents = [
 			{classNameId: '001', classPK: '002', title: 'Mapped Item Title'},
 		];
 
 		const {getByLabelText, getByText} = renderItemSelector({
-			mappedInfoItems,
+			pageContents,
 		});
 
 		fireEvent.click(getByLabelText('select-itemSelectorLabel'));
@@ -147,5 +156,112 @@ describe('ItemSelector', () => {
 		fireEvent.click(getByText('remove-itemSelectorLabel'));
 
 		expect(getByLabelText('itemSelectorLabel')).toBeEmpty();
+	});
+
+	it('adds addItem content-related option if possible', () => {
+		const {getByText} = renderItemSelector({
+			pageContents: [
+				{
+					actions: {
+						addItems: [
+							{
+								href: 'http://me.local/addItemOneURL',
+								label: 'Add Item One',
+							},
+						],
+					},
+					classPK: 'sampleItem-classPK',
+					title: 'itemTitle',
+				},
+			],
+			selectedItemClassPK: 'sampleItem-classPK',
+			selectedItemTitle: 'itemTitle',
+		});
+
+		const addSubMenuButton = getByText('add-items');
+
+		expect(addSubMenuButton).toBeInTheDocument();
+		expect(addSubMenuButton.tagName).toBe('BUTTON');
+
+		const addItemLink = getByText('Add Item One');
+
+		expect(addItemLink).toBeInTheDocument();
+		expect(addItemLink.href).toBe('http://me.local/addItemOneURL');
+	});
+
+	it('adds editURL content-related option if possible', () => {
+		const {getByText} = renderItemSelector({
+			pageContents: [
+				{
+					actions: {editURL: 'http://me.local/editURL'},
+					classPK: 'sampleItem-classPK',
+					title: 'itemTitle',
+				},
+			],
+			selectedItemClassPK: 'sampleItem-classPK',
+			selectedItemTitle: 'itemTitle',
+		});
+
+		const editItemLink = getByText('edit-itemSelectorLabel');
+
+		expect(editItemLink).toBeInTheDocument();
+		expect(editItemLink.href).toBe('http://me.local/editURL');
+	});
+
+	it('adds permissionsURL content-related option if possible', () => {
+		const {getByText} = renderItemSelector({
+			pageContents: [
+				{
+					actions: {permissionsURL: 'http://me.local/permissionsURL'},
+					classPK: 'sampleItem-classPK',
+					title: 'itemTitle',
+				},
+			],
+			selectedItemClassPK: 'sampleItem-classPK',
+			selectedItemTitle: 'itemTitle',
+		});
+
+		const editItemButton = getByText('edit-itemSelectorLabel-permissions');
+
+		expect(editItemButton).toBeInTheDocument();
+		expect(editItemButton.tagName).toBe('BUTTON');
+	});
+
+	it('adds viewItemsURL content-related option if possible', () => {
+		const {getByText} = renderItemSelector({
+			pageContents: [
+				{
+					actions: {viewItemsURL: 'http://me.local/viewItemsURL'},
+					classPK: 'sampleItem-classPK',
+					title: 'itemTitle',
+				},
+			],
+			selectedItemClassPK: 'sampleItem-classPK',
+			selectedItemTitle: 'itemTitle',
+		});
+
+		const viewItemsButton = getByText('view-items');
+
+		expect(viewItemsButton).toBeInTheDocument();
+		expect(viewItemsButton.tagName).toBe('BUTTON');
+	});
+
+	it('adds viewUsagesURL content-related option if possible', () => {
+		const {getByText} = renderItemSelector({
+			pageContents: [
+				{
+					actions: {viewUsagesURL: 'http://me.local/viewUsagesURL'},
+					classPK: 'sampleItem-classPK',
+					title: 'itemTitle',
+				},
+			],
+			selectedItemClassPK: 'sampleItem-classPK',
+			selectedItemTitle: 'itemTitle',
+		});
+
+		const viewUsagesButton = getByText('view-itemSelectorLabel-usages');
+
+		expect(viewUsagesButton).toBeInTheDocument();
+		expect(viewUsagesButton.tagName).toBe('BUTTON');
 	});
 });

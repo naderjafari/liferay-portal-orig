@@ -24,7 +24,6 @@ import com.liferay.dynamic.data.mapping.service.persistence.impl.constants.DDMPe
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.change.tracking.CTColumnResolutionType;
 import com.liferay.portal.kernel.configuration.Configuration;
-import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -36,7 +35,6 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -45,8 +43,10 @@ import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.change.tracking.helper.CTPersistenceHelper;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -68,12 +68,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -2917,6 +2914,8 @@ public class DDMFormInstancePersistenceImpl
 			ddmFormInstance);
 	}
 
+	private int _valueObjectFinderCacheListThreshold;
+
 	/**
 	 * Caches the ddm form instances in the entity cache if it is enabled.
 	 *
@@ -2924,6 +2923,14 @@ public class DDMFormInstancePersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<DDMFormInstance> ddmFormInstances) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (ddmFormInstances.size() >
+				 _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (DDMFormInstance ddmFormInstance : ddmFormInstances) {
 			if (ddmFormInstance.getCtCollectionId() != 0) {
 				continue;
@@ -3334,6 +3341,26 @@ public class DDMFormInstancePersistenceImpl
 			return map;
 		}
 
+		if ((databaseInMaxParameters > 0) &&
+			(primaryKeys.size() > databaseInMaxParameters)) {
+
+			Iterator<Serializable> iterator = primaryKeys.iterator();
+
+			while (iterator.hasNext()) {
+				Set<Serializable> page = new HashSet<>();
+
+				for (int i = 0;
+					 (i < databaseInMaxParameters) && iterator.hasNext(); i++) {
+
+					page.add(iterator.next());
+				}
+
+				map.putAll(fetchByPrimaryKeys(page));
+			}
+
+			return map;
+		}
+
 		StringBundler sb = new StringBundler((primaryKeys.size() * 2) + 1);
 
 		sb.append(getSelectSQL());
@@ -3595,7 +3622,8 @@ public class DDMFormInstancePersistenceImpl
 	public Set<String> getCTColumnNames(
 		CTColumnResolutionType ctColumnResolutionType) {
 
-		return _ctColumnNamesMap.get(ctColumnResolutionType);
+		return _ctColumnNamesMap.getOrDefault(
+			ctColumnResolutionType, Collections.emptySet());
 	}
 
 	@Override
@@ -3629,7 +3657,6 @@ public class DDMFormInstancePersistenceImpl
 	static {
 		Set<String> ctControlColumnNames = new HashSet<String>();
 		Set<String> ctIgnoreColumnNames = new HashSet<String>();
-		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
 		ctControlColumnNames.add("mvccVersion");
@@ -3654,7 +3681,6 @@ public class DDMFormInstancePersistenceImpl
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
-		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("formInstanceId"));
 		_ctColumnNamesMap.put(
@@ -3667,13 +3693,9 @@ public class DDMFormInstancePersistenceImpl
 	 * Initializes the ddm form instance persistence.
 	 */
 	@Activate
-	public void activate(BundleContext bundleContext) {
-		_bundleContext = bundleContext;
-
-		_argumentsResolverServiceRegistration = _bundleContext.registerService(
-			ArgumentsResolver.class,
-			new DDMFormInstanceModelArgumentsResolver(),
-			new HashMapDictionary<>());
+	public void activate() {
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
@@ -3761,8 +3783,6 @@ public class DDMFormInstancePersistenceImpl
 	@Deactivate
 	public void deactivate() {
 		entityCache.removeCache(DDMFormInstanceImpl.class.getName());
-
-		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	@Override
@@ -3790,8 +3810,6 @@ public class DDMFormInstancePersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
-
-	private BundleContext _bundleContext;
 
 	@Reference
 	protected CTPersistenceHelper ctPersistenceHelper;
@@ -3856,96 +3874,8 @@ public class DDMFormInstancePersistenceImpl
 		return finderCache;
 	}
 
-	private ServiceRegistration<ArgumentsResolver>
-		_argumentsResolverServiceRegistration;
-
-	private static class DDMFormInstanceModelArgumentsResolver
-		implements ArgumentsResolver {
-
-		@Override
-		public Object[] getArguments(
-			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
-			boolean original) {
-
-			String[] columnNames = finderPath.getColumnNames();
-
-			if ((columnNames == null) || (columnNames.length == 0)) {
-				if (baseModel.isNew()) {
-					return FINDER_ARGS_EMPTY;
-				}
-
-				return null;
-			}
-
-			DDMFormInstanceModelImpl ddmFormInstanceModelImpl =
-				(DDMFormInstanceModelImpl)baseModel;
-
-			long columnBitmask = ddmFormInstanceModelImpl.getColumnBitmask();
-
-			if (!checkColumn || (columnBitmask == 0)) {
-				return _getValue(
-					ddmFormInstanceModelImpl, columnNames, original);
-			}
-
-			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
-				finderPath);
-
-			if (finderPathColumnBitmask == null) {
-				finderPathColumnBitmask = 0L;
-
-				for (String columnName : columnNames) {
-					finderPathColumnBitmask |=
-						ddmFormInstanceModelImpl.getColumnBitmask(columnName);
-				}
-
-				_finderPathColumnBitmasksCache.put(
-					finderPath, finderPathColumnBitmask);
-			}
-
-			if ((columnBitmask & finderPathColumnBitmask) != 0) {
-				return _getValue(
-					ddmFormInstanceModelImpl, columnNames, original);
-			}
-
-			return null;
-		}
-
-		@Override
-		public String getClassName() {
-			return DDMFormInstanceImpl.class.getName();
-		}
-
-		@Override
-		public String getTableName() {
-			return DDMFormInstanceTable.INSTANCE.getTableName();
-		}
-
-		private static Object[] _getValue(
-			DDMFormInstanceModelImpl ddmFormInstanceModelImpl,
-			String[] columnNames, boolean original) {
-
-			Object[] arguments = new Object[columnNames.length];
-
-			for (int i = 0; i < arguments.length; i++) {
-				String columnName = columnNames[i];
-
-				if (original) {
-					arguments[i] =
-						ddmFormInstanceModelImpl.getColumnOriginalValue(
-							columnName);
-				}
-				else {
-					arguments[i] = ddmFormInstanceModelImpl.getColumnValue(
-						columnName);
-				}
-			}
-
-			return arguments;
-		}
-
-		private static final Map<FinderPath, Long>
-			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
-
-	}
+	@Reference
+	private DDMFormInstanceModelArgumentsResolver
+		_ddmFormInstanceModelArgumentsResolver;
 
 }

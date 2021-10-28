@@ -239,8 +239,12 @@ public class GitWorkingDirectory {
 	}
 
 	public void cherryPick(LocalGitCommit localGitCommit) {
+		cherryPick(localGitCommit.getSHA());
+	}
+
+	public void cherryPick(String localGitCommitSHA) {
 		String cherryPickCommand = JenkinsResultsParserUtil.combine(
-			"git cherry-pick " + localGitCommit.getSHA());
+			"git cherry-pick " + localGitCommitSHA);
 
 		GitUtil.ExecutionResult executionResult = executeBashCommands(
 			GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY,
@@ -249,8 +253,8 @@ public class GitWorkingDirectory {
 		if (executionResult.getExitValue() != 0) {
 			throw new RuntimeException(
 				JenkinsResultsParserUtil.combine(
-					"Unable to cherry pick commit ", localGitCommit.getSHA(),
-					"\n", executionResult.getStandardError()));
+					"Unable to cherry pick commit ", localGitCommitSHA, "\n",
+					executionResult.getStandardError()));
 		}
 	}
 
@@ -297,7 +301,7 @@ public class GitWorkingDirectory {
 
 	public void commitFileToCurrentBranch(String fileName, String message) {
 		String commitCommand = JenkinsResultsParserUtil.combine(
-			"git commit -m \"", message, "\" ", fileName);
+			"git add ", fileName, " ; git commit -m \"", message, "\"");
 
 		GitUtil.ExecutionResult executionResult = executeBashCommands(
 			GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY,
@@ -357,7 +361,7 @@ public class GitWorkingDirectory {
 
 		if (executionResult.getExitValue() != 0) {
 			throw new RuntimeException(
-				"Unable to configure git repository.\n" +
+				"Unable to configure Git repository.\n" +
 					executionResult.getStandardError());
 		}
 	}
@@ -397,53 +401,62 @@ public class GitWorkingDirectory {
 	public LocalGitBranch createLocalGitBranch(
 		String localGitBranchName, boolean force, String startPoint) {
 
-		LocalGitBranch currentLocalGitBranch = getCurrentLocalGitBranch();
+		String currentBranchName = getCurrentBranchName();
 
-		LocalGitBranch tempLocalGitBranch = null;
+		List<String> commands = new ArrayList<>();
 
-		try {
-			if ((currentLocalGitBranch == null) ||
-				localGitBranchName.equals(currentLocalGitBranch.getName())) {
+		if ((currentBranchName == null) ||
+			currentBranchName.equals(localGitBranchName)) {
 
-				tempLocalGitBranch = createLocalGitBranch(
-					"temp-" + JenkinsResultsParserUtil.getCurrentTimeMillis());
+			String tempBranchName =
+				"temp-" + JenkinsResultsParserUtil.getCurrentTimeMillis();
 
-				checkoutLocalGitBranch(tempLocalGitBranch);
+			RemoteGitBranch upstreamRemoteGitBranch =
+				getUpstreamRemoteGitBranch();
+
+			String upstreamGitBranchSHA = upstreamRemoteGitBranch.getSHA();
+
+			if (!localSHAExists(upstreamGitBranchSHA)) {
+				fetch(upstreamRemoteGitBranch);
 			}
 
-			StringBuilder sb = new StringBuilder();
+			commands.add(
+				JenkinsResultsParserUtil.combine(
+					"git branch -f ", tempBranchName, " ",
+					upstreamGitBranchSHA));
 
-			sb.append("git branch ");
-
-			if (force) {
-				sb.append("-f ");
-			}
-
-			sb.append(localGitBranchName);
-
-			if (startPoint != null) {
-				sb.append(" ");
-				sb.append(startPoint);
-			}
-
-			GitUtil.ExecutionResult executionResult = executeBashCommands(
-				GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY,
-				GitUtil.MILLIS_TIMEOUT, sb.toString());
-
-			if (executionResult.getExitValue() != 0) {
-				throw new RuntimeException(
-					JenkinsResultsParserUtil.combine(
-						"Unable to create local branch ", localGitBranchName,
-						" at ", startPoint, "\n",
-						executionResult.getStandardError()));
-			}
+			commands.add(
+				JenkinsResultsParserUtil.combine(
+					"git checkout -f ", tempBranchName));
 		}
-		finally {
-			if (tempLocalGitBranch != null) {
-				checkoutLocalGitBranch(currentLocalGitBranch);
 
-				deleteLocalGitBranch(tempLocalGitBranch);
-			}
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("git branch ");
+
+		if (force) {
+			sb.append("-f ");
+		}
+
+		sb.append(localGitBranchName);
+
+		if (startPoint != null) {
+			sb.append(" ");
+			sb.append(startPoint);
+		}
+
+		commands.add(sb.toString());
+
+		GitUtil.ExecutionResult executionResult = executeBashCommands(
+			GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY,
+			GitUtil.MILLIS_TIMEOUT, commands.toArray(new String[0]));
+
+		if (executionResult.getExitValue() != 0) {
+			throw new RuntimeException(
+				JenkinsResultsParserUtil.combine(
+					"Unable to create local branch ", localGitBranchName,
+					" at ", startPoint, "\n",
+					executionResult.getStandardError()));
 		}
 
 		return getLocalGitBranch(localGitBranchName, true);
@@ -704,7 +717,7 @@ public class GitWorkingDirectory {
 
 			throw new RuntimeException(
 				JenkinsResultsParserUtil.combine(
-					"Unable to fetch remote git ref ", remoteGitRefName,
+					"Unable to fetch remote Git ref ", remoteGitRefName,
 					" after ",
 					JenkinsResultsParserUtil.toDurationString(duration), "\n",
 					executionResult.getStandardError()));
@@ -1118,7 +1131,7 @@ public class GitWorkingDirectory {
 			if (executionResult.getExitValue() != 0) {
 				throw new RuntimeException(
 					JenkinsResultsParserUtil.combine(
-						"Unable to get list of git remotes\n",
+						"Unable to get list of Git remotes\n",
 						executionResult.getStandardError()));
 			}
 
@@ -1164,7 +1177,7 @@ public class GitWorkingDirectory {
 		try {
 			StringBuilder sb = new StringBuilder();
 
-			sb.append("Found git remotes: ");
+			sb.append("Found Git remotes: ");
 
 			for (int i = 0; i < lines.length; i = i + 2) {
 				GitRemote gitRemote = new GitRemote(
@@ -1182,7 +1195,7 @@ public class GitWorkingDirectory {
 			System.out.println(sb);
 		}
 		catch (Throwable throwable) {
-			System.out.println("Unable to parse git remotes\n" + standardOut);
+			System.out.println("Unable to parse Git remotes\n" + standardOut);
 
 			throw throwable;
 		}
@@ -2224,7 +2237,7 @@ public class GitWorkingDirectory {
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(
-				"Real .git directory could not be found", ioException);
+				"Unable to find real .git directory", ioException);
 		}
 
 		for (String line : gitFileContent.split("\n")) {
@@ -2238,7 +2251,7 @@ public class GitWorkingDirectory {
 		}
 
 		throw new IllegalArgumentException(
-			"Real Git directory could not be found in " + gitFile.getPath());
+			"Unable to find real Git directory in " + gitFile.getPath());
 	}
 
 	protected List<File> getSubdirectoriesContainingFiles(

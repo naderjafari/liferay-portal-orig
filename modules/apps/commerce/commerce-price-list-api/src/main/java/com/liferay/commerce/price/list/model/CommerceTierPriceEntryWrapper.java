@@ -232,6 +232,11 @@ public class CommerceTierPriceEntryWrapper
 	}
 
 	@Override
+	public CommerceTierPriceEntry cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	@Override
 	public CommercePriceEntry getCommercePriceEntry()
 		throws com.liferay.portal.kernel.exception.PortalException {
 
@@ -399,11 +404,11 @@ public class CommerceTierPriceEntryWrapper
 	}
 
 	@Override
-	public com.liferay.commerce.currency.model.CommerceMoney getPriceMoney(
-			long commerceCurrencyId)
+	public com.liferay.commerce.currency.model.CommerceMoney
+			getPriceCommerceMoney(long commerceCurrencyId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		return model.getPriceMoney(commerceCurrencyId);
+		return model.getPriceCommerceMoney(commerceCurrencyId);
 	}
 
 	/**
@@ -427,11 +432,11 @@ public class CommerceTierPriceEntryWrapper
 	}
 
 	@Override
-	public com.liferay.commerce.currency.model.CommerceMoney getPromoPriceMoney(
-			long commerceCurrencyId)
+	public com.liferay.commerce.currency.model.CommerceMoney
+			getPromoPriceCommerceMoney(long commerceCurrencyId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		return model.getPromoPriceMoney(commerceCurrencyId);
+		return model.getPromoPriceCommerceMoney(commerceCurrencyId);
 	}
 
 	/**

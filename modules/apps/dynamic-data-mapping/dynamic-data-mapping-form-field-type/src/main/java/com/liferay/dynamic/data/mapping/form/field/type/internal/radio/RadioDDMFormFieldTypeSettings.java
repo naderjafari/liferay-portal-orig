@@ -34,10 +34,15 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 			actions = {
 				"setOptions('predefinedValue', getValue('options'))",
 				"setRequired('options', true)",
-				"setVisible('requiredErrorMessage', false)",
-				"setVisible('validation', false)"
+				"setVisible('options', not(hasObjectField(getValue('objectFieldName'))))",
+				"setVisible('predefinedValue', not(hasObjectField(getValue('objectFieldName'))))",
+				"setVisible('requiredErrorMessage', getValue('required'))"
 			},
 			condition = "TRUE"
+		),
+		@DDMFormRule(
+			actions = "setValue('options', getListTypeEntries(getValue('objectFieldName')))",
+			condition = "hasObjectField(getValue('objectFieldName'))"
 		)
 	}
 )
@@ -69,7 +74,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"name", "fieldReference", "predefinedValue",
-								"visibilityExpression", "validation",
+								"objectFieldName", "visibilityExpression",
 								"fieldNamespace", "indexType",
 								"labelAtStructureLevel", "localizable",
 								"nativeField", "readOnly", "dataType", "type",

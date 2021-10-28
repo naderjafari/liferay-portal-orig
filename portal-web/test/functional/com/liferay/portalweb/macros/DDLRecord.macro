@@ -203,7 +203,7 @@ definition {
 
 		var key_fieldName = "${fieldName}";
 
-		if ("${ddlRecordFieldData}" == "No") {
+		if ("${ddlRecordFieldData}" == "False") {
 			if ("${fieldShowLabel}" == "No") {
 				Uncheck(locator1 = "TextInput#DDM");
 			}
@@ -211,7 +211,7 @@ definition {
 				Uncheck(locator1 = "TextInput#DDM");
 			}
 		}
-		else if ("${ddlRecordFieldData}" == "Yes") {
+		else if ("${ddlRecordFieldData}" == "True") {
 			if ("${fieldShowLabel}" == "No") {
 				Check(locator1 = "TextInput#DDM");
 			}
@@ -220,7 +220,7 @@ definition {
 			}
 		}
 		else {
-			fail("Invalid var recordFieldData. Must be (Yes|No).");
+			fail("Invalid var recordFieldData. Must be (True|False).");
 		}
 	}
 
@@ -768,12 +768,7 @@ definition {
 					locator1 = "DDLRecord#FIELD_1",
 					value1 = "${fieldFieldLabel} ${ddlRecordFieldData_1}");
 			}
-			else if ("${field}" == "Number" || "${field}" == "Boolean" || "${field}" == "Color" || "${field}" == "Documents and Media" || "${field}" == "Geolocation" || "${field}" == "Link to Page" || "${field}" == "Radio" || "${field}" == "Select" || "${field}" == "Text") {
-				AssertTextEquals(
-					locator1 = "DDLRecord#FIELD_1",
-					value1 = "${fieldFieldLabel} ${ddlRecordFieldData}");
-			}
-			else {
+			else if ("${field}" == "Decimal" || "${field}" == "Integer") {
 				AssertTextEquals(
 					locator1 = "DDLRecord#FIELD_1",
 					value1 = "${fieldFieldLabel}");
@@ -782,6 +777,11 @@ definition {
 					key_value = "${ddlRecordFieldData}",
 					locator1 = "DDLRecord#FIELD_1_VALUE",
 					value1 = "${ddlRecordFieldData}");
+			}
+			else {
+				AssertTextEquals(
+					locator1 = "DDLRecord#FIELD_1",
+					value1 = "${fieldFieldLabel} ${ddlRecordFieldData}");
 			}
 		}
 	}

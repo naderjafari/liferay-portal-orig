@@ -245,12 +245,12 @@ public class PortletConfigurationPermissionsDisplayContext {
 				PortletRequest.RENDER_PHASE)
 		).setMVCPath(
 			"/edit_permissions.jsp"
+		).setPortletResource(
+			_getPortletResource()
 		).setParameter(
 			"modelResource", getModelResource()
 		).setParameter(
-			"portletConfiguration", Boolean.TRUE.toString()
-		).setParameter(
-			"portletResource", _getPortletResource()
+			"portletConfiguration", true
 		).setParameter(
 			"resourceGroupId", _getResourceGroupId()
 		).setParameter(
@@ -261,7 +261,7 @@ public class PortletConfigurationPermissionsDisplayContext {
 			"roleTypes", _getRoleTypesParam()
 		).setWindowState(
 			LiferayWindowState.POP_UP
-		).build();
+		).buildPortletURL();
 	}
 
 	public String getModelResource() {
@@ -620,10 +620,10 @@ public class PortletConfigurationPermissionsDisplayContext {
 		Portlet portlet = PortletLocalServiceUtil.getPortletById(
 			themeDisplay.getCompanyId(), _getPortletResource());
 
-		HttpSession session = _httpServletRequest.getSession();
+		HttpSession httpSession = _httpServletRequest.getSession();
 
 		_selResourceDescription = PortalUtil.getPortletTitle(
-			portlet, session.getServletContext(), themeDisplay.getLocale());
+			portlet, httpSession.getServletContext(), themeDisplay.getLocale());
 
 		return _selResourceDescription;
 	}
@@ -640,6 +640,8 @@ public class PortletConfigurationPermissionsDisplayContext {
 			"updateRolePermissions"
 		).setMVCPath(
 			"/edit_permissions.jsp"
+		).setPortletResource(
+			_getPortletResource()
 		).setParameter(
 			"cur",
 			ParamUtil.getInteger(
@@ -653,9 +655,7 @@ public class PortletConfigurationPermissionsDisplayContext {
 		).setParameter(
 			"modelResourceDescription", getModelResourceDescription()
 		).setParameter(
-			"portletConfiguration", Boolean.TRUE.toString()
-		).setParameter(
-			"portletResource", _getPortletResource()
+			"portletConfiguration", true
 		).setParameter(
 			"resourceGroupId", _getResourceGroupId()
 		).setParameter(
@@ -666,7 +666,7 @@ public class PortletConfigurationPermissionsDisplayContext {
 			"roleTypes", _getRoleTypesParam()
 		).setWindowState(
 			LiferayWindowState.POP_UP
-		).build();
+		).buildPortletURL();
 	}
 
 	private int[] _getGroupRoleTypes(Group group, int[] defaultRoleTypes) {

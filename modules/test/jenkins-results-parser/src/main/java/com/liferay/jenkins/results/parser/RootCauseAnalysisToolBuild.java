@@ -51,7 +51,7 @@ public class RootCauseAnalysisToolBuild extends DefaultTopLevelBuild {
 	public synchronized Element getJenkinsReportElement() {
 		if (_workspaceGitRepository == null) {
 			throw new IllegalStateException(
-				"Please set the workspace git repository");
+				"Please set the workspace Git repository");
 		}
 
 		if (_downstreamBuildDataList == null) {
@@ -145,11 +145,9 @@ public class RootCauseAnalysisToolBuild extends DefaultTopLevelBuild {
 		LocalGitCommit localGitCommit, GitCommitGroup currentGitCommitGroup,
 		GitCommitGroup nextGitCommitGroup) {
 
-		if (nextGitCommitGroup == null) {
-			return getEmptyCellElement();
-		}
+		if ((nextGitCommitGroup == null) ||
+			(currentGitCommitGroup.size() <= 1)) {
 
-		if (currentGitCommitGroup.size() <= 1) {
 			return getEmptyCellElement();
 		}
 

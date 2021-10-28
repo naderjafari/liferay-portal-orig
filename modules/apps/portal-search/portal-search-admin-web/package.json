@@ -1,8 +1,16 @@
 {
 	"dependencies": {
-		"@clayui/button": "3.6.0",
-		"@clayui/icon": "3.1.0",
-		"@clayui/layout": "3.3.0",
+		"@clayui/button": "3.38.0",
+		"@clayui/form": "3.38.0",
+		"@clayui/icon": "3.38.0",
+		"@clayui/label": "3.38.0",
+		"@clayui/layout": "3.38.0",
+		"@clayui/list": "3.38.0",
+		"@clayui/management-toolbar": "3.38.0",
+		"@clayui/pagination-bar": "3.38.0",
+		"@clayui/sticker": "3.38.0",
+		"@clayui/toolbar": "3.38.0",
+		"@clayui/tooltip": "3.38.0",
 		"@liferay/frontend-js-react-web": "*",
 		"frontend-js-web": "*",
 		"prop-types": "15.7.2",
@@ -14,5 +22,5 @@
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "4.0.4"
+	"version": "4.0.10"
 }

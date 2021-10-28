@@ -2,11 +2,13 @@
 <head>
 <title>DDMEditStructure</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">DDMEditStructure</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>IFRAME</td>
@@ -73,6 +75,16 @@
 </tr>
 <!--SETTINGS-->
 <tr>
+	<td>SETTINGS_EDIT_CONECTIONS_DEFAULT</td>
+	<td>//label[contains(.,'${key_radioOption}')]/input[@type='radio' and contains(@name,'')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SETTINGS_DEFAULT</td>
+	<td>//td[contains(@class,'table-col-name') and contains(.,'Default')]//following-sibling::td[contains(@class,'table-col-value')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>SETTINGS_LINK</td>
 	<td>//*[contains(@class,'tab-label') and contains(.,'Settings')]</td>
 	<td></td>
@@ -109,7 +121,7 @@
 </tr>
 <tr>
 	<td>SETTINGS_TEXT</td>
-	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']//following-sibling::span[contains(@class,'form-text')] | //legend[normalize-space(text())='${key_fieldFieldLabel}']//following-sibling::span[contains(@class,'form-text')]</td>
+	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']//following-sibling::span[contains(@class,'form-text')] | //legend[normalize-space(text())='${key_fieldFieldLabel}']/..//following-sibling::span[contains(@class,'form-text')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -166,6 +178,16 @@
 <tr>
 	<td>FORM_FIELD_CONTAINER</td>
 	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']/parent::div[contains(@class,'form-group')] | //legend[normalize-space(text())='${key_fieldFieldLabel}']/parent::fieldset/parent::div[contains(@class,'form-group')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FORM_FIELD_CONTAINER_TARGET</td>
+	<td>//label[normalize-space(text())='${key_targetFieldLabel}']/parent::div[contains(@class,'form-group')] | //legend[normalize-space(text())='${key_targetFieldLabel}']/parent::fieldset/parent::div[contains(@class,'form-group')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FORM_FIELD_CONTAINER_ANY</td>
+	<td>//div[contains(@data-field-name,'${key_fieldFieldName}')]//label[normalize-space(text())='${key_fieldFieldLabel}']/parent::div[contains(@class,'form-group')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -362,11 +384,6 @@
 <tr>
 	<td>SETTINGS_CELL_EDITOR_WEB_CONTENT_ARTICLE_CONTENT</td>
 	<td>//form[contains(@class,'journal-article-cell-editor-content')]/span</td>
-	<td></td>
-</tr>
-<tr>
-	<td>GRID_OPTIONS_OPTION_VALUE_FIELD</td>
-	<td>//div[contains(@class,'form-group') and contains(.//label, '${key_gridField}')]//div[@class='ddm-field-options'][${key_rowNumber}]//input[contains(@class,'ddm-field-text')]</td>
 	<td></td>
 </tr>
 <tr>

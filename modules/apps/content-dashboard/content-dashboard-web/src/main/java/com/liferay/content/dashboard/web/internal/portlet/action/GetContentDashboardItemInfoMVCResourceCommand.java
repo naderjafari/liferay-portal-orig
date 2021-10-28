@@ -21,7 +21,7 @@ import com.liferay.content.dashboard.web.internal.constants.ContentDashboardPort
 import com.liferay.content.dashboard.web.internal.item.ContentDashboardItem;
 import com.liferay.content.dashboard.web.internal.item.ContentDashboardItemFactory;
 import com.liferay.content.dashboard.web.internal.item.ContentDashboardItemFactoryTracker;
-import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemType;
+import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemSubtype;
 import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.type.WebImage;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -36,6 +36,7 @@ import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Http;
@@ -44,6 +45,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -57,7 +59,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -134,11 +135,21 @@ public class GetContentDashboardItemInfoMVCResourceCommand
 					"modifiedDate",
 					_toString(contentDashboardItem.getModifiedDate())
 				).put(
+					"specificFields",
+					contentDashboardItem.getSpecificInformationJSONObject(
+						ParamUtil.getString(resourceRequest, "backURL"),
+						_portal.getLiferayPortletResponse(resourceResponse),
+						locale,
+						(ThemeDisplay)httpServletRequest.getAttribute(
+							WebKeys.THEME_DISPLAY))
+				).put(
 					"subType", _getSubtype(contentDashboardItem, locale)
 				).put(
 					"tags", _getAssetTagsJSONArray(contentDashboardItem)
 				).put(
 					"title", contentDashboardItem.getTitle(locale)
+				).put(
+					"type", contentDashboardItem.getTypeLabel(locale)
 				).put(
 					"user", _getUserJSONObject(contentDashboardItem, locale)
 				).put(
@@ -161,15 +172,13 @@ public class GetContentDashboardItemInfoMVCResourceCommand
 				_log.info(exception, exception);
 			}
 
-			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-				locale, getClass());
-
 			JSONPortletResponseUtil.writeJSON(
 				resourceRequest, resourceResponse,
 				JSONUtil.put(
 					"error",
 					ResourceBundleUtil.getString(
-						resourceBundle, "an-unexpected-error-occurred")));
+						ResourceBundleUtil.getBundle(locale, getClass()),
+						"an-unexpected-error-occurred")));
 		}
 	}
 
@@ -240,10 +249,10 @@ public class GetContentDashboardItemInfoMVCResourceCommand
 	private String _getSubtype(
 		ContentDashboardItem contentDashboardItem, Locale locale) {
 
-		ContentDashboardItemType contentDashboardItemType =
-			contentDashboardItem.getContentDashboardItemType();
+		ContentDashboardItemSubtype contentDashboardItemSubtype =
+			contentDashboardItem.getContentDashboardItemSubtype();
 
-		return contentDashboardItemType.getLabel(locale);
+		return contentDashboardItemSubtype.getLabel(locale);
 	}
 
 	private JSONObject _getUserJSONObject(

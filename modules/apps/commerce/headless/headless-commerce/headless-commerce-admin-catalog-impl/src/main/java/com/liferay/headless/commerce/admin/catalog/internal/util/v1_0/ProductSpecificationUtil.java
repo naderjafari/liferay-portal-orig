@@ -22,8 +22,8 @@ import com.liferay.headless.commerce.admin.catalog.dto.v1_0.ProductSpecification
 import com.liferay.headless.commerce.core.util.LanguageUtils;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringUtil;
 
 /**
  * @author Alessio Antonio Rendina
@@ -67,24 +67,22 @@ public class ProductSpecificationUtil {
 			ServiceContext serviceContext)
 		throws PortalException {
 
+		String specificationKey = FriendlyURLNormalizerUtil.normalize(
+			productSpecification.getSpecificationKey());
+
 		CPSpecificationOption cpSpecificationOption =
 			cpSpecificationOptionService.fetchCPSpecificationOption(
-				companyId,
-				StringUtil.toLowerCase(
-					productSpecification.getSpecificationKey()));
+				companyId, specificationKey);
 
 		if (cpSpecificationOption == null) {
 			cpSpecificationOption =
 				cpSpecificationOptionService.addCPSpecificationOption(
 					getCPOptionCategoryId(productSpecification),
 					LanguageUtils.getLocalizedMap(
-						productSpecification.getValue()),
+						productSpecification.getLabel()),
 					LanguageUtils.getLocalizedMap(
-						productSpecification.getValue()),
-					false,
-					StringUtil.toLowerCase(
-						productSpecification.getSpecificationKey()),
-					serviceContext);
+						productSpecification.getLabel()),
+					false, specificationKey, serviceContext);
 		}
 
 		return cpSpecificationOption.getCPSpecificationOptionId();

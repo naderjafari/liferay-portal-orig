@@ -14,11 +14,13 @@
 
 package com.liferay.object.internal;
 
+import com.liferay.application.list.constants.PanelCategoryKeys;
+import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.model.ObjectDefinition;
-import com.liferay.object.model.ObjectField;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
-import com.liferay.object.service.ObjectFieldLocalService;
+import com.liferay.object.util.LocalizedMapUtil;
+import com.liferay.object.util.ObjectFieldUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
@@ -41,17 +43,20 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 /**
+ * Enable this component by going to Gogo Shell and executing this command:
+ *
+ * scr:enable com.liferay.object.internal.ObjectDefinitionSampleGenerator
+ *
  * @author Marco Leo
  * @author Brian Wing Shun Chan
+ * @review
  */
-@Component(immediate = true, service = {})
+@Component(enabled = false, immediate = true, service = {})
 public class ObjectDefinitionSampleGenerator {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) throws Exception {
-		if (false) {
-			_addSampleObjectDefinition();
-		}
+		_addSampleObjectDefinition();
 	}
 
 	private void _addSampleObjectDefinition() throws Exception {
@@ -63,13 +68,6 @@ public class ObjectDefinitionSampleGenerator {
 
 		Company company = companies.get(0);
 
-		int count = _objectDefinitionLocalService.getObjectDefinitionsCount(
-			company.getCompanyId());
-
-		if (count > 0) {
-			return;
-		}
-
 		User user = _userLocalService.fetchUserByEmailAddress(
 			company.getCompanyId(), "test@liferay.com");
 
@@ -78,20 +76,49 @@ public class ObjectDefinitionSampleGenerator {
 		}
 
 		ObjectDefinition objectDefinition =
-			_objectDefinitionLocalService.addObjectDefinition(
-				user.getUserId(), "SampleObjectDefinition",
+			_objectDefinitionLocalService.fetchObjectDefinition(
+				company.getCompanyId(), "C_SampleObjectDefinition");
+
+		if (objectDefinition != null) {
+			return;
+		}
+
+		objectDefinition =
+			_objectDefinitionLocalService.addCustomObjectDefinition(
+				user.getUserId(),
+				LocalizedMapUtil.getLocalizedMap("Sample Object Definition"),
+				"SampleObjectDefinition", "100",
+				PanelCategoryKeys.CONTROL_PANEL_SITES,
+				LocalizedMapUtil.getLocalizedMap("Sample Object Definitions"),
+				ObjectDefinitionConstants.SCOPE_COMPANY,
 				Arrays.asList(
-					_createObjectField("able", "Long"),
-					_createObjectField("baker", "Boolean"),
-					_createObjectField("dog", "Date"),
-					_createObjectField("easy", "String"),
-					_createObjectField(true, true, null, "fox", "String"),
-					_createObjectField(
-						true, false, "en_US", "george", "String"),
-					_createObjectField(false, false, null, "how", "String"),
-					_createObjectField("item", "Double"),
-					_createObjectField("jig", "Integer"),
-					_createObjectField("king", "BigDecimal")));
+					ObjectFieldUtil.createObjectField(
+						true, false, null, "Able", "able", false, "Long"),
+					ObjectFieldUtil.createObjectField(
+						true, false, null, "Baker", "baker", false, "Boolean"),
+					ObjectFieldUtil.createObjectField(
+						true, false, null, "Charlie", "charlie", false, "Date"),
+					ObjectFieldUtil.createObjectField(
+						true, false, null, "Dog", "dog", false, "String"),
+					ObjectFieldUtil.createObjectField(
+						0, null, true, true, null, "Easy", "easy", false,
+						"String"),
+					ObjectFieldUtil.createObjectField(
+						0, null, true, false, "en_US", "Fox", "fox", false,
+						"String"),
+					ObjectFieldUtil.createObjectField(
+						0, null, false, false, null, "George", "george", false,
+						"String"),
+					ObjectFieldUtil.createObjectField(
+						true, false, null, "How", "how", false, "Double"),
+					ObjectFieldUtil.createObjectField(
+						true, false, null, "Item", "item", false, "Integer"),
+					ObjectFieldUtil.createObjectField(
+						true, false, null, "Jig", "jig", false, "BigDecimal")));
+
+		objectDefinition =
+			_objectDefinitionLocalService.publishCustomObjectDefinition(
+				user.getUserId(), objectDefinition.getObjectDefinitionId());
 
 		for (int i = 0; i < 100; i++) {
 			_objectEntryLocalService.addObjectEntry(
@@ -101,46 +128,27 @@ public class ObjectDefinitionSampleGenerator {
 				).put(
 					"baker", (i % 2) == 0
 				).put(
-					"dog", new Date()
+					"charlie", new Date()
 				).put(
-					"easy",
+					"dog",
 					"The quick brown fox jumps over the lazy dog. " + i + "!"
 				).put(
-					"fox", "test" + i
+					"easy", "test" + i
 				).put(
-					"george",
+					"fox",
 					"The english brown fox trusted the lazy dog. " + i + "!"
 				).put(
-					"how",
+					"george",
 					"The unsearchable brown fox jumps over the lazy dog. " + i
 				).put(
-					"item", 180.5D + i
+					"how", 180.5D + i
 				).put(
-					"jig", 5 + i
+					"item", 5 + i
 				).put(
-					"king", BigDecimal.valueOf(45L + i)
+					"jig", BigDecimal.valueOf(45L + i)
 				).build(),
 				new ServiceContext());
 		}
-	}
-
-	private ObjectField _createObjectField(
-		boolean indexed, boolean indexedAsKeyword, String indexedLanguageId,
-		String name, String type) {
-
-		ObjectField objectField = _objectFieldLocalService.createObjectField(0);
-
-		objectField.setIndexed(indexed);
-		objectField.setIndexedAsKeyword(indexedAsKeyword);
-		objectField.setIndexedLanguageId(indexedLanguageId);
-		objectField.setName(name);
-		objectField.setType(type);
-
-		return objectField;
-	}
-
-	private ObjectField _createObjectField(String name, String type) {
-		return _createObjectField(true, false, null, name, type);
 	}
 
 	@Reference
@@ -154,9 +162,6 @@ public class ObjectDefinitionSampleGenerator {
 
 	@Reference
 	private ObjectEntryLocalService _objectEntryLocalService;
-
-	@Reference
-	private ObjectFieldLocalService _objectFieldLocalService;
 
 	@Reference
 	private UserLocalService _userLocalService;

@@ -65,6 +65,22 @@ public class GitUtil {
 		return commitMessages;
 	}
 
+	public static List<String> getCurrentBranchDeletedFileNames(
+			String baseDirName, String gitWorkingBranchName)
+		throws Exception {
+
+		String gitWorkingBranchLatestCommitId = _getLatestCommitId(
+			gitWorkingBranchName, "origin/" + gitWorkingBranchName,
+			"upstream/" + gitWorkingBranchName);
+
+		List<String> deleteFileNames = new ArrayList<>();
+
+		deleteFileNames.addAll(
+			getDeletedFileNames(baseDirName, gitWorkingBranchLatestCommitId));
+
+		return deleteFileNames;
+	}
+
 	/**
 	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
 	 */
@@ -516,11 +532,9 @@ public class GitUtil {
 		int gitLevel = getGitLevel(baseDirName);
 
 		while ((line = unsyncBufferedReader.readLine()) != null) {
-			if (StringUtil.count(line, CharPool.SLASH) < gitLevel) {
-				continue;
-			}
+			if ((StringUtil.count(line, CharPool.SLASH) < gitLevel) ||
+				Validator.isNull(command) || !line.startsWith(command + " '")) {
 
-			if (Validator.isNull(command) || !line.startsWith(command + " '")) {
 				continue;
 			}
 

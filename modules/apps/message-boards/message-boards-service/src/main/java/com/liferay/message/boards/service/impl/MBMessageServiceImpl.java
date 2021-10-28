@@ -45,6 +45,8 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
+import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HtmlUtil;
@@ -249,14 +251,11 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 		if (_lockManager.isLocked(
 				MBThread.class.getName(), parentMessage.getThreadId())) {
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Thread is locked for class name ");
-			sb.append(MBThread.class.getName());
-			sb.append(" and class PK ");
-			sb.append(parentMessage.getThreadId());
-
-			throw new LockedThreadException(sb.toString());
+			throw new LockedThreadException(
+				StringBundler.concat(
+					"Thread is locked for class name ",
+					MBThread.class.getName(), " and class PK ",
+					parentMessage.getThreadId()));
 		}
 
 		if (!ModelResourcePermissionUtil.contains(
@@ -293,14 +292,11 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 		if (_lockManager.isLocked(
 				MBThread.class.getName(), message.getThreadId())) {
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Thread is locked for class name ");
-			sb.append(MBThread.class.getName());
-			sb.append(" and class PK ");
-			sb.append(message.getThreadId());
-
-			throw new LockedThreadException(sb.toString());
+			throw new LockedThreadException(
+				StringBundler.concat(
+					"Thread is locked for class name ",
+					MBThread.class.getName(), " and class PK ",
+					message.getThreadId()));
 		}
 
 		ModelResourcePermissionUtil.check(
@@ -443,7 +439,7 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 			categoryId);
 
 		if (category == null) {
-			Group group = groupLocalService.getGroup(categoryId);
+			Group group = _groupLocalService.getGroup(categoryId);
 
 			groupId = group.getGroupId();
 
@@ -531,7 +527,7 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 			ThemeDisplay themeDisplay)
 		throws PortalException {
 
-		Company company = companyLocalService.getCompany(companyId);
+		Company company = _companyLocalService.getCompany(companyId);
 
 		String name = company.getName();
 		String description = company.getName();
@@ -586,7 +582,7 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 			ThemeDisplay themeDisplay)
 		throws PortalException {
 
-		Group group = groupLocalService.getGroup(groupId);
+		Group group = _groupLocalService.getGroup(groupId);
 
 		String name = group.getDescriptiveName();
 		String description = group.getDescription(
@@ -633,7 +629,7 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 			String entryURL, ThemeDisplay themeDisplay)
 		throws PortalException {
 
-		Group group = groupLocalService.getGroup(groupId);
+		Group group = _groupLocalService.getGroup(groupId);
 
 		String name = group.getDescriptiveName();
 		String description = group.getDescription(
@@ -882,14 +878,11 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 		if (_lockManager.isLocked(
 				MBThread.class.getName(), message.getThreadId())) {
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Thread is locked for class name ");
-			sb.append(MBThread.class.getName());
-			sb.append(" and class PK ");
-			sb.append(message.getThreadId());
-
-			throw new LockedThreadException(sb.toString());
+			throw new LockedThreadException(
+				StringBundler.concat(
+					"Thread is locked for class name ",
+					MBThread.class.getName(), " and class PK ",
+					message.getThreadId()));
 		}
 
 		if (!ModelResourcePermissionUtil.contains(
@@ -1035,6 +1028,12 @@ public class MBMessageServiceImpl extends MBMessageServiceBaseImpl {
 	)
 	private ModelResourcePermission<MBCategory>
 		_categoryModelResourcePermission;
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 	@Reference
 	private Language _language;

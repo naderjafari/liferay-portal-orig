@@ -135,6 +135,20 @@ public class AccountEntryLocalServiceUtil {
 			emailAddress, logoBytes, taxIdNumber, type, status, serviceContext);
 	}
 
+	public static AccountEntry addOrUpdateAccountEntry(
+			String externalReferenceCode, long userId,
+			long parentAccountEntryId, String name, String description,
+			String[] domains, String emailAddress, byte[] logoBytes,
+			String taxIdNumber, String type, int status,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().addOrUpdateAccountEntry(
+			externalReferenceCode, userId, parentAccountEntryId, name,
+			description, domains, emailAddress, logoBytes, taxIdNumber, type,
+			status, serviceContext);
+	}
+
 	/**
 	 * Creates a new account entry with the primary key. Does not add the account entry to the database.
 	 *
@@ -471,6 +485,17 @@ public class AccountEntryLocalServiceUtil {
 			userId, parentAccountEntryId, keywords, types, status, start, end);
 	}
 
+	public static List<AccountEntry> getUserAccountEntries(
+			long userId, Long parentAccountEntryId, String keywords,
+			String[] types, Integer status, int start, int end,
+			OrderByComparator<AccountEntry> orderByComparator)
+		throws PortalException {
+
+		return getService().getUserAccountEntries(
+			userId, parentAccountEntryId, keywords, types, status, start, end,
+			orderByComparator);
+	}
+
 	public static int getUserAccountEntriesCount(
 			long userId, Long parentAccountEntryId, String keywords,
 			String[] types)
@@ -592,6 +617,22 @@ public class AccountEntryLocalServiceUtil {
 
 		return getService().updateDefaultShippingAddressId(
 			accountEntryId, addressId);
+	}
+
+	public static AccountEntry updateExternalReferenceCode(
+			AccountEntry accountEntry, String externalReferenceCode)
+		throws PortalException {
+
+		return getService().updateExternalReferenceCode(
+			accountEntry, externalReferenceCode);
+	}
+
+	public static AccountEntry updateExternalReferenceCode(
+			long accountEntryId, String externalReferenceCode)
+		throws PortalException {
+
+		return getService().updateExternalReferenceCode(
+			accountEntryId, externalReferenceCode);
 	}
 
 	public static AccountEntry updateStatus(

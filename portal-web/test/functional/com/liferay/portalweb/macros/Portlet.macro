@@ -145,6 +145,7 @@ definition {
 	macro clickPortletPlusIconPG {
 		var browserType = PropsUtil.get("browser.type");
 		var key_portletName = "${portletName}";
+
 		if ("${browserType}" == "safari") {
 			Click.javaScriptClick(locator1 = "Portlet#ICON_PLUS_SIGN");
 
@@ -168,6 +169,72 @@ definition {
 		Select(
 			locator1 = "Portlet#APPLICATION_DECORATOR_SELECT",
 			value1 = "${applicationDecorator}");
+	}
+
+	macro configureCustomBorderStylesViaLookandfeelPG {
+		Navigator.gotoNavTab(navTab = "Border Styles");
+
+		if (isSet(sameForAllFieldsetLabelList)) {
+			for (var sameForAllFieldsetLabel : list "${sameForAllFieldsetLabelList}") {
+				Check.checkToggleSwitch(
+					key_fieldLabel = "Same for All",
+					key_fieldsetLabel = "${sameForAllFieldsetLabel}",
+					locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH_IN_FIELDSET");
+			}
+		}
+
+		if (isSet(borderWidthAttributeList)) {
+			for (var borderWidthAttribute : list "${borderWidthAttributeList}") {
+				var fieldLabel = StringUtil.extractFirst("${borderWidthAttribute}", "-");
+
+				var value = StringUtil.extractLast("${borderWidthAttribute}", "-");
+
+				Type(
+					inputFieldId = "${fieldLabel}",
+					locator1 = "TextInput#INPUT_ID",
+					value1 = "${value}");
+			}
+		}
+
+		if (isSet(borderWidthUnitList)) {
+			for (var borderWidthUnit : list "${borderWidthUnitList}") {
+				var fieldLabel = StringUtil.extractFirst("${borderWidthUnit}", "-");
+
+				var value = StringUtil.extractLast("${borderWidthUnit}", "-");
+
+				Select(
+					locator1 = "Select#SELECT_ID",
+					selectFieldId = "${fieldLabel}",
+					value1 = "${value}");
+			}
+		}
+
+		if (isSet(borderStyleAttributeList)) {
+			for (var borderStyleAttribute : list "${borderStyleAttributeList}") {
+				var fieldLabel = StringUtil.extractFirst("${borderStyleAttribute}", "-");
+
+				var value = StringUtil.extractLast("${borderStyleAttribute}", "-");
+
+				Select(
+					locator1 = "Select#SELECT_ID",
+					selectFieldId = "${fieldLabel}",
+					value1 = "${value}");
+			}
+		}
+
+		if (isSet(borderColorAttributeList)) {
+			for (var borderColorAttribute : list "${borderColorAttributeList}") {
+				var fieldLabel = StringUtil.extractFirst("${borderColorAttribute}", "-");
+
+				var value = StringUtil.extractLast("${borderColorAttribute}", "-");
+
+				PageEditor.selectColorSwatchItem(
+					colorSwatchItem = "${value}",
+					fieldLabel = "${fieldLabel}");
+			}
+		}
+
+		PortletEntry.save();
 	}
 
 	macro configureCustomStylesViaLookandfeelPG {
@@ -305,7 +372,7 @@ definition {
 
 		SelectFrameTop();
 
-		Click(locator1 = "Modal#CLOSE_BUTTON");
+		Click.mouseDownMouseUp(locator1 = "Modal#CLOSE_BUTTON");
 
 		WaitForElementNotPresent(locator1 = "IFrame#MODAL_BODY");
 	}
@@ -362,12 +429,7 @@ definition {
 	macro startServer {
 		var appServerType = PropsUtil.get("app.server.type");
 
-		if ("${commerceEnabled}" == "false") {
-			AntCommand(
-				locator1 = "build-test.xml",
-				value1 = "start-app-server -Dcommerce.enabled=false -Ddelete.liferay.home=false");
-		}
-		else if ("${deleteLiferayHome}" == "false") {
+		if ("${deleteLiferayHome}" == "false") {
 			AntCommand(
 				locator1 = "build-test.xml",
 				value1 = "start-app-server -Ddelete.liferay.home=false");
@@ -381,6 +443,11 @@ definition {
 			AntCommand(
 				locator1 = "build-test.xml",
 				value1 = "start-app-server -Dkeep.osgi.state=true");
+		}
+		else if ("${noLicense}" == "true") {
+			AntCommand(
+				locator1 = "build-test.xml",
+				value1 = "start-app-server -Dlicense.not.present=true -Ddelete.liferay.home=false");
 		}
 		else {
 			AntCommand(
@@ -478,6 +545,12 @@ definition {
 			value1 = "${message}");
 	}
 
+	macro viewHomePage {
+		AssertElementPresent(
+			key_pageName = "${pageName}",
+			locator1 = "Home#PAGE");
+	}
+
 	macro viewNoPermissionPG {
 		AssertTextEquals(
 			locator1 = "Message#ERROR",
@@ -514,6 +587,18 @@ definition {
 				portletBody = "${portletBody}",
 				portletName = "${portletName}");
 		}
+	}
+
+	macro viewPortletBodyNotPresent {
+		AssertElementNotPresent(
+			key_portletName = "${portletName}",
+			locator1 = "Portlet#BODY");
+	}
+
+	macro viewPortletCouldNotBeFoundInfo {
+		AssertTextEquals(
+			locator1 = "Message#INFO_MAIN_CONTENT",
+			value1 = "This portlet could not be found. Please redeploy it or remove it from the page.");
 	}
 
 	macro viewPortletOptions {

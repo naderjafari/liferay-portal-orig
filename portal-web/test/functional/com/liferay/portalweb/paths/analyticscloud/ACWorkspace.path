@@ -2,13 +2,15 @@
 <head>
 <title>ACWorkspace</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">ACWorkspace</td></tr>
 </thead>
+
 <tbody>
-<!-- WORKSPACE LIST SCREEN FIELDS  -->
+<!-- WORKSPACE LIST SCREEN FIELDS -->
 <tr>
 	<td>USER_MENU_OPTION</td>
 	<td>//div[contains(@class,'sticker-circle')]</td>
@@ -30,8 +32,24 @@
 	<td></td>
 </tr>
 <tr>
+	<td>WORKSPACE_ERROR_DESCRIPTION</td>
+	<td>//div[contains(@class,'sheet-section description')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>FARO_DEMO_WORKSPACE</td>
 	<td>//*[contains(@class, 'workspace-link')]</td>
+	<td></td>
+</tr>
+<!--WORKSPACE_SETTINGS-->
+<tr>
+	<td>TIMEZONE_COUNTRY_SELECT_FIELD</td>
+	<td>//label[normalize-space()='Timezone']//following-sibling::div//select</td>
+	<td></td>
+</tr>
+<tr>
+	<td>TIMEZONE_COUNTRY_SELECT_OPTION</td>
+	<td>xpath=(//label[normalize-space()='Timezone']//following-sibling::div//select/option)[${index}][normalize-space(text())='${option}']</td>
 	<td></td>
 </tr>
 </tbody>

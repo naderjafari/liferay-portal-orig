@@ -204,7 +204,7 @@ export const RowStylesPanel = ({item}) => {
 					handleChange={onCustomStylesValueSelect}
 					label={Liferay.Language.get('vertical-alignment')}
 					options={VERTICAL_ALIGNMENT_OPTIONS}
-					value={rowConfig.verticalAlignment}
+					value={rowConfig.verticalAlignment || ''}
 				/>
 			</div>
 

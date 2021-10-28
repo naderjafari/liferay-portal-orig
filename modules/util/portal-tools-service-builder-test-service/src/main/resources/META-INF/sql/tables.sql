@@ -22,6 +22,13 @@ create table CacheFieldEntry (
 	name VARCHAR(75) null
 );
 
+create table CacheMissEntry (
+	mvccVersion LONG default 0 not null,
+	ctCollectionId LONG default 0 not null,
+	cacheMissEntryId LONG not null,
+	primary key (cacheMissEntryId, ctCollectionId)
+);
+
 create table DSLQueryEntry (
 	dslQueryEntryId LONG not null primary key,
 	name VARCHAR(75) null

@@ -15,6 +15,7 @@
 package com.liferay.commerce.checkout.web.internal.util;
 
 import com.liferay.commerce.account.service.CommerceAccountLocalService;
+import com.liferay.commerce.checkout.helper.CommerceCheckoutStepHttpHelper;
 import com.liferay.commerce.checkout.web.internal.display.context.BillingAddressCheckoutStepDisplayContext;
 import com.liferay.commerce.constants.CommerceAddressConstants;
 import com.liferay.commerce.constants.CommerceCheckoutWebKeys;
@@ -73,8 +74,13 @@ public class BillingAddressCommerceCheckoutStep
 			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		return _commerceCheckoutStepHelper.
-			isActiveBillingAddressCommerceCheckoutStep(httpServletRequest);
+		CommerceOrder commerceOrder =
+			(CommerceOrder)httpServletRequest.getAttribute(
+				CommerceCheckoutWebKeys.COMMERCE_ORDER);
+
+		return _commerceCheckoutStepHttpHelper.
+			isActiveBillingAddressCommerceCheckoutStep(
+				httpServletRequest, commerceOrder);
 	}
 
 	@Override
@@ -91,12 +97,9 @@ public class BillingAddressCommerceCheckoutStep
 		CommerceOrder commerceOrder =
 			billingAddressCheckoutStepDisplayContext.getCommerceOrder();
 
-		if (commerceOrder == null) {
-			return false;
-		}
-
-		if (commerceOrder.getBillingAddressId() ==
-				commerceOrder.getShippingAddressId()) {
+		if ((commerceOrder == null) ||
+			(commerceOrder.getBillingAddressId() ==
+				commerceOrder.getShippingAddressId())) {
 
 			return false;
 		}
@@ -156,7 +159,7 @@ public class BillingAddressCommerceCheckoutStep
 		if (!commerceOrder.isOpen()) {
 			httpServletRequest.setAttribute(
 				CommerceCheckoutWebKeys.COMMERCE_CHECKOUT_STEP_ORDER_DETAIL_URL,
-				_commerceCheckoutStepHelper.getOrderDetailURL(
+				_commerceCheckoutStepHttpHelper.getOrderDetailURL(
 					httpServletRequest, commerceOrder));
 
 			jspRenderer.renderJSP(
@@ -211,6 +214,6 @@ public class BillingAddressCommerceCheckoutStep
 	protected JSPRenderer jspRenderer;
 
 	@Reference
-	private CommerceCheckoutStepHelper _commerceCheckoutStepHelper;
+	private CommerceCheckoutStepHttpHelper _commerceCheckoutStepHttpHelper;
 
 }

@@ -51,15 +51,6 @@
 			<finder-column name="userId" />
 			<finder-column name="type" />
 		</finder>
-
-		<!-- References -->
-
-		<reference entity="Group" package-path="com.liferay.portal" />
-		<reference entity="Organization" package-path="com.liferay.portal" />
-		<reference entity="Resource" package-path="com.liferay.portal" />
-		<reference entity="User" package-path="com.liferay.portal" />
-		<reference entity="AssetEntry" package-path="com.liferay.portlet.asset" />
-		<reference entity="ExpandoRow" package-path="com.liferay.portlet.expando" />
 	</entity>
 	<entity local-service="true" name="AccountEntryOrganizationRel">
 
@@ -88,11 +79,6 @@
 			<finder-column name="accountEntryId" />
 			<finder-column name="organizationId" />
 		</finder>
-
-		<!-- References -->
-
-		<reference entity="AccountEntry" package-path="com.liferay.account" />
-		<reference entity="Organization" package-path="com.liferay.portal" />
 	</entity>
 	<entity local-service="true" name="AccountEntryUserRel">
 
@@ -111,21 +97,16 @@
 
 		<!-- Finder methods -->
 
-		<finder name="AEI" return-type="Collection">
+		<finder name="AccountEntryId" return-type="Collection">
 			<finder-column name="accountEntryId" />
 		</finder>
-		<finder name="AUI" return-type="Collection">
+		<finder name="AccountUserId" return-type="Collection">
 			<finder-column name="accountUserId" />
 		</finder>
 		<finder name="AEI_AUI" return-type="AccountEntryUserRel">
 			<finder-column name="accountEntryId" />
 			<finder-column name="accountUserId" />
 		</finder>
-
-		<!-- References -->
-
-		<reference entity="AccountEntry" package-path="com.liferay.account" />
-		<reference entity="User" package-path="com.liferay.portal" />
 	</entity>
 	<entity external-reference-code="true" local-service="true" name="AccountGroup" remote-service="true">
 
@@ -164,11 +145,6 @@
 			<finder-column name="companyId" />
 			<finder-column name="type" />
 		</finder>
-
-		<!-- References -->
-
-		<reference entity="AccountGroupRel" package-path="com.liferay.account" />
-		<reference entity="User" package-path="com.liferay.portal" />
 	</entity>
 	<entity local-service="true" name="AccountGroupRel">
 
@@ -179,6 +155,10 @@
 		<!-- Audit fields -->
 
 		<column name="companyId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
 
 		<!-- Other fields -->
 
@@ -227,13 +207,6 @@
 		<finder name="RoleId" return-type="AccountRole">
 			<finder-column name="roleId" />
 		</finder>
-
-		<!-- References -->
-
-		<reference entity="AccountEntry" package-path="com.liferay.account" />
-		<reference entity="Company" package-path="com.liferay.portal" />
-		<reference entity="Role" package-path="com.liferay.portal" />
-		<reference entity="UserGroupRole" package-path="com.liferay.portal" />
 	</entity>
 	<exceptions>
 		<exception>AccountEntryDomains</exception>
@@ -242,6 +215,7 @@
 		<exception>AccountEntryType</exception>
 		<exception>AccountEntryUserRelEmailAddress</exception>
 		<exception>DefaultAccountGroup</exception>
+		<exception>DuplicateAccountEntryExternalReferenceCode</exception>
 		<exception>DuplicateAccountEntryId</exception>
 		<exception>DuplicateAccountEntryOrganizationRel</exception>
 		<exception>DuplicateAccountEntryUserRel</exception>

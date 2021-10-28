@@ -15,7 +15,6 @@
 package com.liferay.portal.service.persistence.impl;
 
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
@@ -28,19 +27,18 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.exception.NoSuchServiceComponentException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.ServiceComponent;
 import com.liferay.portal.kernel.model.ServiceComponentTable;
 import com.liferay.portal.kernel.service.persistence.ServiceComponentPersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.model.impl.ServiceComponentImpl;
 import com.liferay.portal.model.impl.ServiceComponentModelImpl;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
 
 import java.io.Serializable;
 
@@ -51,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The persistence implementation for the service component service.
@@ -926,6 +923,8 @@ public class ServiceComponentPersistenceImpl
 			serviceComponent);
 	}
 
+	private int _valueObjectFinderCacheListThreshold;
+
 	/**
 	 * Caches the service components in the entity cache if it is enabled.
 	 *
@@ -933,6 +932,14 @@ public class ServiceComponentPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<ServiceComponent> serviceComponents) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (serviceComponents.size() >
+				 _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (ServiceComponent serviceComponent : serviceComponents) {
 			if (EntityCacheUtil.getResult(
 					ServiceComponentImpl.class,
@@ -1422,11 +1429,8 @@ public class ServiceComponentPersistenceImpl
 	 * Initializes the service component persistence.
 	 */
 	public void afterPropertiesSet() {
-		Registry registry = RegistryUtil.getRegistry();
-
-		_argumentsResolverServiceRegistration = registry.registerService(
-			ArgumentsResolver.class,
-			new ServiceComponentModelArgumentsResolver());
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
@@ -1471,8 +1475,6 @@ public class ServiceComponentPersistenceImpl
 
 	public void destroy() {
 		EntityCacheUtil.removeCache(ServiceComponentImpl.class.getName());
-
-		_argumentsResolverServiceRegistration.unregister();
 	}
 
 	private static final String _SQL_SELECT_SERVICECOMPONENT =
@@ -1504,118 +1506,6 @@ public class ServiceComponentPersistenceImpl
 	@Override
 	protected FinderCache getFinderCache() {
 		return FinderCacheUtil.getFinderCache();
-	}
-
-	private ServiceRegistration<ArgumentsResolver>
-		_argumentsResolverServiceRegistration;
-
-	private static class ServiceComponentModelArgumentsResolver
-		implements ArgumentsResolver {
-
-		@Override
-		public Object[] getArguments(
-			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
-			boolean original) {
-
-			String[] columnNames = finderPath.getColumnNames();
-
-			if ((columnNames == null) || (columnNames.length == 0)) {
-				if (baseModel.isNew()) {
-					return FINDER_ARGS_EMPTY;
-				}
-
-				return null;
-			}
-
-			ServiceComponentModelImpl serviceComponentModelImpl =
-				(ServiceComponentModelImpl)baseModel;
-
-			long columnBitmask = serviceComponentModelImpl.getColumnBitmask();
-
-			if (!checkColumn || (columnBitmask == 0)) {
-				return _getValue(
-					serviceComponentModelImpl, columnNames, original);
-			}
-
-			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
-				finderPath);
-
-			if (finderPathColumnBitmask == null) {
-				finderPathColumnBitmask = 0L;
-
-				for (String columnName : columnNames) {
-					finderPathColumnBitmask |=
-						serviceComponentModelImpl.getColumnBitmask(columnName);
-				}
-
-				if (finderPath.isBaseModelResult() &&
-					(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION ==
-						finderPath.getCacheName())) {
-
-					finderPathColumnBitmask |= _ORDER_BY_COLUMNS_BITMASK;
-				}
-
-				_finderPathColumnBitmasksCache.put(
-					finderPath, finderPathColumnBitmask);
-			}
-
-			if ((columnBitmask & finderPathColumnBitmask) != 0) {
-				return _getValue(
-					serviceComponentModelImpl, columnNames, original);
-			}
-
-			return null;
-		}
-
-		@Override
-		public String getClassName() {
-			return ServiceComponentImpl.class.getName();
-		}
-
-		@Override
-		public String getTableName() {
-			return ServiceComponentTable.INSTANCE.getTableName();
-		}
-
-		private static Object[] _getValue(
-			ServiceComponentModelImpl serviceComponentModelImpl,
-			String[] columnNames, boolean original) {
-
-			Object[] arguments = new Object[columnNames.length];
-
-			for (int i = 0; i < arguments.length; i++) {
-				String columnName = columnNames[i];
-
-				if (original) {
-					arguments[i] =
-						serviceComponentModelImpl.getColumnOriginalValue(
-							columnName);
-				}
-				else {
-					arguments[i] = serviceComponentModelImpl.getColumnValue(
-						columnName);
-				}
-			}
-
-			return arguments;
-		}
-
-		private static final Map<FinderPath, Long>
-			_finderPathColumnBitmasksCache = new ConcurrentHashMap<>();
-
-		private static final long _ORDER_BY_COLUMNS_BITMASK;
-
-		static {
-			long orderByColumnsBitmask = 0;
-
-			orderByColumnsBitmask |= ServiceComponentModelImpl.getColumnBitmask(
-				"buildNamespace");
-			orderByColumnsBitmask |= ServiceComponentModelImpl.getColumnBitmask(
-				"buildNumber");
-
-			_ORDER_BY_COLUMNS_BITMASK = orderByColumnsBitmask;
-		}
-
 	}
 
 }

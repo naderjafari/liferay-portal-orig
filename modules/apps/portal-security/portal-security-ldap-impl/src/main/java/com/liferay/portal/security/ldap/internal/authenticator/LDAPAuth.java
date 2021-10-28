@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.security.auth.Authenticator;
 import com.liferay.portal.kernel.security.auth.PasswordModificationThreadLocal;
 import com.liferay.portal.kernel.security.ldap.LDAPSettings;
 import com.liferay.portal.kernel.security.pwd.PasswordEncryptor;
+import com.liferay.portal.kernel.security.pwd.PasswordEncryptorUtil;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
@@ -54,6 +55,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import javax.naming.AuthenticationException;
@@ -250,7 +252,10 @@ public class LDAPAuth implements Authenticator {
 				String ldapPassword = new String((byte[])userPassword.get());
 
 				if (Validator.isNotNull(
-						ldapAuthConfiguration.passwordEncryptionAlgorithm())) {
+						ldapAuthConfiguration.passwordEncryptionAlgorithm()) &&
+					!Objects.equals(
+						ldapAuthConfiguration.passwordEncryptionAlgorithm(),
+						PasswordEncryptorUtil.TYPE_NONE)) {
 
 					ldapPassword = removeEncryptionAlgorithm(ldapPassword);
 
@@ -418,20 +423,12 @@ public class LDAPAuth implements Authenticator {
 
 			if (!ldapAuthResult.isAuthenticated()) {
 				if (_log.isDebugEnabled()) {
-					StringBundler sb = new StringBundler(10);
-
-					sb.append("Unable to authenticate with ");
-					sb.append(fullUserDN);
-					sb.append(" on LDAP server ");
-					sb.append(ldapServerId);
-					sb.append(", company ");
-					sb.append(companyId);
-					sb.append(", and LDAP context ");
-					sb.append(safeLdapContext);
-					sb.append(": ");
-					sb.append(errorMessage);
-
-					_log.debug(sb.toString());
+					_log.debug(
+						StringBundler.concat(
+							"Unable to authenticate with ", fullUserDN,
+							" on LDAP server ", ldapServerId, ", company ",
+							companyId, ", and LDAP context ", safeLdapContext,
+							": ", errorMessage));
 				}
 
 				return FAILURE;
@@ -664,15 +661,11 @@ public class LDAPAuth implements Authenticator {
 	}
 
 	protected String getKey(Map<String, Object> env) {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(MapUtil.getString(env, Context.PROVIDER_URL));
-		sb.append(StringPool.POUND);
-		sb.append(MapUtil.getString(env, Context.SECURITY_PRINCIPAL));
-		sb.append(StringPool.POUND);
-		sb.append(MapUtil.getString(env, Context.SECURITY_CREDENTIALS));
-
-		return sb.toString();
+		return StringBundler.concat(
+			MapUtil.getString(env, Context.PROVIDER_URL), StringPool.POUND,
+			MapUtil.getString(env, Context.SECURITY_PRINCIPAL),
+			StringPool.POUND,
+			MapUtil.getString(env, Context.SECURITY_CREDENTIALS));
 	}
 
 	protected long getPreferredLDAPServer(

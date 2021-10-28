@@ -65,13 +65,11 @@ import com.liferay.commerce.test.util.CommerceTestUtil;
 import com.liferay.commerce.test.util.context.TestCommerceContext;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
-import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -96,7 +94,6 @@ import org.frutilla.FrutillaRule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -115,17 +112,11 @@ public class CommerceOrderItemLocalServiceTest {
 			new LiferayIntegrationTestRule(),
 			PermissionCheckerMethodTestRule.INSTANCE);
 
-	@BeforeClass
-	public static void setUpClass() throws Exception {
-		_company = CompanyTestUtil.addCompany();
-
-		_user = UserTestUtil.addUser(_company);
-	}
-
 	@Before
 	public void setUp() throws Exception {
-		_group = GroupTestUtil.addGroup(
-			_company.getCompanyId(), _user.getUserId(), 0);
+		_group = GroupTestUtil.addGroup();
+
+		_user = UserTestUtil.addUser();
 
 		List<CommerceInventoryBookedQuantity>
 			commerceInventoryBookedQuantities =
@@ -174,7 +165,7 @@ public class CommerceOrderItemLocalServiceTest {
 	public void tearDown() throws Exception {
 		_deleteCommerceAccountTestOrderItems();
 
-		_cpOptionLocalService.deleteCPOptions(_company.getCompanyId());
+		_cpOptionLocalService.deleteCPOptions(_group.getCompanyId());
 	}
 
 	@Test
@@ -215,7 +206,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		CommerceOrderItem commerceOrderItem =
 			_commerceOrderItemLocalService.addCommerceOrderItem(
@@ -281,7 +272,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
 			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(),
@@ -330,7 +321,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
 			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(),
@@ -475,7 +466,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		String option1Key = RandomTestUtil.randomString();
 		BigDecimal option1Price = new BigDecimal("100");
@@ -985,7 +976,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		String option1Key = FriendlyURLNormalizerUtil.normalize(
 			RandomTestUtil.randomString());
@@ -1192,7 +1183,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
 			commerceOrder.getCommerceOrderId(),
@@ -1259,7 +1250,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		int nonbundleQuantity = 10;
 
@@ -1568,7 +1559,6 @@ public class CommerceOrderItemLocalServiceTest {
 		return "value-key-for-" + optionKey;
 	}
 
-	private static Company _company;
 	private static User _user;
 
 	private CommerceAccount _commerceAccount;

@@ -162,6 +162,10 @@ public class I18nServlet extends HttpServlet {
 
 		String path = GetterUtil.getString(httpServletRequest.getPathInfo());
 
+		Locale i18nLocale = LocaleUtil.fromLanguageId(i18nLanguageId);
+
+		String i18nPath = StringPool.SLASH + i18nLocale.toLanguageTag();
+
 		if (Validator.isNull(path)) {
 			path = "/";
 		}
@@ -178,6 +182,9 @@ public class I18nServlet extends HttpServlet {
 					friendlyURL);
 
 				if (siteGroup == null) {
+					httpServletRequest.setAttribute(
+						WebKeys.I18N_ERROR_PATH, i18nPath);
+
 					return null;
 				}
 
@@ -185,10 +192,6 @@ public class I18nServlet extends HttpServlet {
 					siteGroup.getGroupId(), i18nLanguageCode);
 			}
 		}
-
-		Locale i18nLocale = LocaleUtil.fromLanguageId(i18nLanguageId);
-
-		String i18nPath = StringPool.SLASH + i18nLocale.toLanguageTag();
 
 		if (siteDefaultLocale == null) {
 			if (PropsValues.LOCALE_USE_DEFAULT_IF_NOT_AVAILABLE) {
@@ -251,7 +254,8 @@ public class I18nServlet extends HttpServlet {
 		_setRequestAttributes(
 			httpServletRequest, httpServletResponse, i18nData);
 
-		Locale locale = LocaleUtil.fromLanguageId(i18nData.getLanguageId());
+		String languageId = LocaleUtil.toW3cLanguageId(
+			i18nData.getLanguageId());
 
 		httpServletResponse.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 
@@ -260,8 +264,8 @@ public class I18nServlet extends HttpServlet {
 		httpServletResponse.setHeader(
 			"Location",
 			StringBundler.concat(
-				servletContext.getContextPath(), StringPool.SLASH,
-				locale.toLanguageTag(), i18nData.getPath()));
+				servletContext.getContextPath(), StringPool.SLASH, languageId,
+				i18nData.getPath()));
 	}
 
 	protected class I18nData {
@@ -373,9 +377,9 @@ public class I18nServlet extends HttpServlet {
 		Locale locale = LocaleUtil.fromLanguageId(
 			i18nData.getLanguageId(), false, false);
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		session.setAttribute(WebKeys.LOCALE, locale);
+		httpSession.setAttribute(WebKeys.LOCALE, locale);
 
 		LanguageUtil.updateCookie(
 			httpServletRequest, httpServletResponse, locale);

@@ -16,7 +16,9 @@ package com.liferay.headless.delivery.internal.resource.v1_0;
 
 import com.liferay.headless.delivery.dto.v1_0.WikiPage;
 import com.liferay.headless.delivery.resource.v1_0.WikiPageResource;
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.search.Sort;
@@ -33,6 +35,9 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.odata.entity.EntityModel;
+import com.liferay.portal.odata.filter.ExpressionConvert;
+import com.liferay.portal.odata.filter.FilterParser;
+import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.batch.engine.VulcanBatchEngineTaskItemDelegate;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
@@ -43,13 +48,6 @@ import com.liferay.portal.vulcan.permission.PermissionUtil;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.TransformUtil;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.tags.Tags;
 
 import java.io.Serializable;
 
@@ -63,18 +61,6 @@ import javax.annotation.Generated;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import javax.validation.constraints.NotNull;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -85,7 +71,7 @@ import javax.ws.rs.core.UriInfo;
  * @generated
  */
 @Generated("")
-@Path("/v1.0")
+@javax.ws.rs.Path("/v1.0")
 public abstract class BaseWikiPageResourceImpl
 	implements EntityModelResource, VulcanBatchEngineTaskItemDelegate<WikiPage>,
 			   WikiPageResource {
@@ -95,26 +81,38 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/wiki-pages/by-external-reference-code/{externalReferenceCode}'  -u 'test@liferay.com:test'
 	 */
-	@DELETE
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Deletes the wiki page by external reference code."
 	)
-	@Override
-	@Parameters(
+	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
-			@Parameter(in = ParameterIn.PATH, name = "siteId"),
-			@Parameter(in = ParameterIn.PATH, name = "externalReferenceCode")
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "siteId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "externalReferenceCode"
+			)
 		}
 	)
-	@Path(
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.DELETE
+	@javax.ws.rs.Path(
 		"/sites/{siteId}/wiki-pages/by-external-reference-code/{externalReferenceCode}"
 	)
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public void deleteSiteWikiPageByExternalReferenceCode(
-			@NotNull @Parameter(hidden = true) @PathParam("siteId") Long siteId,
-			@NotNull @Parameter(hidden = true)
-			@PathParam("externalReferenceCode")
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("siteId")
+			Long siteId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("externalReferenceCode")
 			String externalReferenceCode)
 		throws Exception {
 	}
@@ -124,26 +122,38 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/wiki-pages/by-external-reference-code/{externalReferenceCode}'  -u 'test@liferay.com:test'
 	 */
-	@GET
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Retrieves the wiki page by external reference code"
 	)
-	@Override
-	@Parameters(
+	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
-			@Parameter(in = ParameterIn.PATH, name = "siteId"),
-			@Parameter(in = ParameterIn.PATH, name = "externalReferenceCode")
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "siteId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "externalReferenceCode"
+			)
 		}
 	)
-	@Path(
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path(
 		"/sites/{siteId}/wiki-pages/by-external-reference-code/{externalReferenceCode}"
 	)
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public WikiPage getSiteWikiPageByExternalReferenceCode(
-			@NotNull @Parameter(hidden = true) @PathParam("siteId") Long siteId,
-			@NotNull @Parameter(hidden = true)
-			@PathParam("externalReferenceCode")
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("siteId")
+			Long siteId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("externalReferenceCode")
 			String externalReferenceCode)
 		throws Exception {
 
@@ -155,27 +165,39 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/wiki-pages/by-external-reference-code/{externalReferenceCode}' -d $'{"content": ___, "customFields": ___, "description": ___, "encodingFormat": ___, "externalReferenceCode": ___, "headline": ___, "keywords": ___, "parentWikiPageId": ___, "taxonomyCategoryIds": ___, "viewableBy": ___, "wikiNodeId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Updates the wiki page with the given external reference code, or creates it if it not exists."
 	)
-	@Override
-	@Parameters(
+	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
-			@Parameter(in = ParameterIn.PATH, name = "siteId"),
-			@Parameter(in = ParameterIn.PATH, name = "externalReferenceCode")
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "siteId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "externalReferenceCode"
+			)
 		}
 	)
-	@Path(
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.Path(
 		"/sites/{siteId}/wiki-pages/by-external-reference-code/{externalReferenceCode}"
 	)
-	@Produces({"application/json", "application/xml"})
-	@PUT
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@javax.ws.rs.PUT
+	@Override
 	public WikiPage putSiteWikiPageByExternalReferenceCode(
-			@NotNull @Parameter(hidden = true) @PathParam("siteId") Long siteId,
-			@NotNull @Parameter(hidden = true)
-			@PathParam("externalReferenceCode")
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("siteId")
+			Long siteId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("externalReferenceCode")
 			String externalReferenceCode,
 			WikiPage wikiPage)
 		throws Exception {
@@ -188,32 +210,57 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-nodes/{wikiNodeId}/wiki-pages'  -u 'test@liferay.com:test'
 	 */
-	@GET
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Retrieves the wiki page's of a node. Results can be paginated, filtered, searched, and sorted."
 	)
-	@Override
-	@Parameters(
+	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
-			@Parameter(in = ParameterIn.PATH, name = "wikiNodeId"),
-			@Parameter(in = ParameterIn.QUERY, name = "search"),
-			@Parameter(in = ParameterIn.QUERY, name = "filter"),
-			@Parameter(in = ParameterIn.QUERY, name = "page"),
-			@Parameter(in = ParameterIn.QUERY, name = "pageSize"),
-			@Parameter(in = ParameterIn.QUERY, name = "sort")
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiNodeId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "search"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "filter"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "page"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "pageSize"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "sort"
+			)
 		}
 	)
-	@Path("/wiki-nodes/{wikiNodeId}/wiki-pages")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path("/wiki-nodes/{wikiNodeId}/wiki-pages")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public Page<WikiPage> getWikiNodeWikiPagesPage(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiNodeId") Long
-				wikiNodeId,
-			@Parameter(hidden = true) @QueryParam("search") String search,
-			@Context com.liferay.portal.vulcan.aggregation.Aggregation
-				aggregation,
-			@Context Filter filter, @Context Pagination pagination,
-			@Context Sort[] sorts)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiNodeId")
+			Long wikiNodeId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.ws.rs.QueryParam("search")
+			String search,
+			@javax.ws.rs.core.Context
+				com.liferay.portal.vulcan.aggregation.Aggregation aggregation,
+			@javax.ws.rs.core.Context Filter filter,
+			@javax.ws.rs.core.Context Pagination pagination,
+			@javax.ws.rs.core.Context Sort[] sorts)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
@@ -224,19 +271,30 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-nodes/{wikiNodeId}/wiki-pages' -d $'{"content": ___, "customFields": ___, "description": ___, "encodingFormat": ___, "externalReferenceCode": ___, "headline": ___, "keywords": ___, "parentWikiPageId": ___, "taxonomyCategoryIds": ___, "viewableBy": ___, "wikiNodeId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
-	@Operation(description = "Creates a new wiki page")
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "wikiNodeId")}
+	@io.swagger.v3.oas.annotations.Operation(
+		description = "Creates a new wiki page"
 	)
-	@Path("/wiki-nodes/{wikiNodeId}/wiki-pages")
-	@POST
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiNodeId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.Path("/wiki-nodes/{wikiNodeId}/wiki-pages")
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public WikiPage postWikiNodeWikiPage(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiNodeId") Long
-				wikiNodeId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiNodeId")
+			Long wikiNodeId,
 			WikiPage wikiPage)
 		throws Exception {
 
@@ -248,23 +306,34 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-nodes/{wikiNodeId}/wiki-pages/batch'  -u 'test@liferay.com:test'
 	 */
-	@Consumes("application/json")
-	@Override
-	@Parameters(
+	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
-			@Parameter(in = ParameterIn.PATH, name = "wikiNodeId"),
-			@Parameter(in = ParameterIn.QUERY, name = "callbackURL")
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiNodeId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "callbackURL"
+			)
 		}
 	)
-	@Path("/wiki-nodes/{wikiNodeId}/wiki-pages/batch")
-	@POST
-	@Produces("application/json")
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Consumes("application/json")
+	@javax.ws.rs.Path("/wiki-nodes/{wikiNodeId}/wiki-pages/batch")
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces("application/json")
+	@Override
 	public Response postWikiNodeWikiPageBatch(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiNodeId") Long
-				wikiNodeId,
-			@Parameter(hidden = true) @QueryParam("callbackURL") String
-				callbackURL,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiNodeId")
+			Long wikiNodeId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.ws.rs.QueryParam("callbackURL")
+			String callbackURL,
 			Object object)
 		throws Exception {
 
@@ -289,18 +358,29 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{parentWikiPageId}/wiki-pages'  -u 'test@liferay.com:test'
 	 */
-	@GET
-	@Operation(description = "Retrieves the child wiki page's of a wiki page.")
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "parentWikiPageId")}
+	@io.swagger.v3.oas.annotations.Operation(
+		description = "Retrieves the child wiki page's of a wiki page."
 	)
-	@Path("/wiki-pages/{parentWikiPageId}/wiki-pages")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "parentWikiPageId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path("/wiki-pages/{parentWikiPageId}/wiki-pages")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public Page<WikiPage> getWikiPageWikiPagesPage(
-			@NotNull @Parameter(hidden = true) @PathParam("parentWikiPageId")
-				Long parentWikiPageId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("parentWikiPageId")
+			Long parentWikiPageId)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
@@ -311,21 +391,30 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{parentWikiPageId}/wiki-pages' -d $'{"content": ___, "customFields": ___, "description": ___, "encodingFormat": ___, "externalReferenceCode": ___, "headline": ___, "keywords": ___, "parentWikiPageId": ___, "taxonomyCategoryIds": ___, "viewableBy": ___, "wikiNodeId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Creates a child wiki page of the parent wiki page."
 	)
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "parentWikiPageId")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "parentWikiPageId"
+			)
+		}
 	)
-	@Path("/wiki-pages/{parentWikiPageId}/wiki-pages")
-	@POST
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.Path("/wiki-pages/{parentWikiPageId}/wiki-pages")
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public WikiPage postWikiPageWikiPage(
-			@NotNull @Parameter(hidden = true) @PathParam("parentWikiPageId")
-				Long parentWikiPageId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("parentWikiPageId")
+			Long parentWikiPageId,
 			WikiPage wikiPage)
 		throws Exception {
 
@@ -337,20 +426,29 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{wikiPageId}'  -u 'test@liferay.com:test'
 	 */
-	@DELETE
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Deletes the wiki page and returns a 204 if the operation succeeds."
 	)
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "wikiPageId")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiPageId"
+			)
+		}
 	)
-	@Path("/wiki-pages/{wikiPageId}")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.DELETE
+	@javax.ws.rs.Path("/wiki-pages/{wikiPageId}")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public void deleteWikiPage(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiPageId") Long
-				wikiPageId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiPageId")
+			Long wikiPageId)
 		throws Exception {
 	}
 
@@ -359,18 +457,26 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'DELETE' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/batch'  -u 'test@liferay.com:test'
 	 */
-	@Consumes("application/json")
-	@DELETE
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "callbackURL"
+			)
+		}
 	)
-	@Path("/wiki-pages/batch")
-	@Produces("application/json")
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Consumes("application/json")
+	@javax.ws.rs.DELETE
+	@javax.ws.rs.Path("/wiki-pages/batch")
+	@javax.ws.rs.Produces("application/json")
+	@Override
 	public Response deleteWikiPageBatch(
-			@Parameter(hidden = true) @QueryParam("callbackURL") String
-				callbackURL,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.ws.rs.QueryParam("callbackURL")
+			String callbackURL,
 			Object object)
 		throws Exception {
 
@@ -395,18 +501,29 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{wikiPageId}'  -u 'test@liferay.com:test'
 	 */
-	@GET
-	@Operation(description = "Retrieves the wiki page")
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "wikiPageId")}
+	@io.swagger.v3.oas.annotations.Operation(
+		description = "Retrieves the wiki page"
 	)
-	@Path("/wiki-pages/{wikiPageId}")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiPageId"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path("/wiki-pages/{wikiPageId}")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public WikiPage getWikiPage(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiPageId") Long
-				wikiPageId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiPageId")
+			Long wikiPageId)
 		throws Exception {
 
 		return new WikiPage();
@@ -417,21 +534,30 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{wikiPageId}' -d $'{"content": ___, "customFields": ___, "description": ___, "encodingFormat": ___, "externalReferenceCode": ___, "headline": ___, "keywords": ___, "parentWikiPageId": ___, "taxonomyCategoryIds": ___, "viewableBy": ___, "wikiNodeId": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
-	@Consumes({"application/json", "application/xml"})
-	@Operation(
+	@io.swagger.v3.oas.annotations.Operation(
 		description = "Replaces the wiki page with the information sent in the request body. Any missing fields are deleted, unless they are required."
 	)
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "wikiPageId")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiPageId"
+			)
+		}
 	)
-	@Path("/wiki-pages/{wikiPageId}")
-	@Produces({"application/json", "application/xml"})
-	@PUT
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
+	@javax.ws.rs.Path("/wiki-pages/{wikiPageId}")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@javax.ws.rs.PUT
+	@Override
 	public WikiPage putWikiPage(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiPageId") Long
-				wikiPageId,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiPageId")
+			Long wikiPageId,
 			WikiPage wikiPage)
 		throws Exception {
 
@@ -443,18 +569,26 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/batch'  -u 'test@liferay.com:test'
 	 */
-	@Consumes("application/json")
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.QUERY, name = "callbackURL")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "callbackURL"
+			)
+		}
 	)
-	@Path("/wiki-pages/batch")
-	@Produces("application/json")
-	@PUT
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Consumes("application/json")
+	@javax.ws.rs.Path("/wiki-pages/batch")
+	@javax.ws.rs.Produces("application/json")
+	@javax.ws.rs.PUT
+	@Override
 	public Response putWikiPageBatch(
-			@Parameter(hidden = true) @QueryParam("callbackURL") String
-				callbackURL,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.ws.rs.QueryParam("callbackURL")
+			String callbackURL,
 			Object object)
 		throws Exception {
 
@@ -479,23 +613,34 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'GET' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{wikiPageId}/permissions'  -u 'test@liferay.com:test'
 	 */
-	@GET
-	@Override
-	@Parameters(
+	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
-			@Parameter(in = ParameterIn.PATH, name = "wikiPageId"),
-			@Parameter(in = ParameterIn.QUERY, name = "roleNames")
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiPageId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "roleNames"
+			)
 		}
 	)
-	@Path("/wiki-pages/{wikiPageId}/permissions")
-	@Produces({"application/json", "application/xml"})
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path("/wiki-pages/{wikiPageId}/permissions")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
 	public Page<com.liferay.portal.vulcan.permission.Permission>
 			getWikiPagePermissionsPage(
-				@NotNull @Parameter(hidden = true) @PathParam("wikiPageId") Long
-					wikiPageId,
-				@Parameter(hidden = true) @QueryParam("roleNames") String
-					roleNames)
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("wikiPageId")
+				Long wikiPageId,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.ws.rs.QueryParam("roleNames")
+				String roleNames)
 		throws Exception {
 
 		String resourceName = getPermissionCheckerResourceName(wikiPageId);
@@ -525,18 +670,27 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{wikiPageId}/permissions'  -u 'test@liferay.com:test'
 	 */
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "wikiPageId")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiPageId"
+			)
+		}
 	)
-	@Path("/wiki-pages/{wikiPageId}/permissions")
-	@Produces({"application/json", "application/xml"})
-	@PUT
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Path("/wiki-pages/{wikiPageId}/permissions")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@javax.ws.rs.PUT
+	@Override
 	public Page<com.liferay.portal.vulcan.permission.Permission>
 			putWikiPagePermission(
-				@NotNull @Parameter(hidden = true) @PathParam("wikiPageId") Long
-					wikiPageId,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("wikiPageId")
+				Long wikiPageId,
 				com.liferay.portal.vulcan.permission.Permission[] permissions)
 		throws Exception {
 
@@ -576,17 +730,26 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{wikiPageId}/subscribe'  -u 'test@liferay.com:test'
 	 */
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "wikiPageId")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiPageId"
+			)
+		}
 	)
-	@Path("/wiki-pages/{wikiPageId}/subscribe")
-	@Produces({"application/json", "application/xml"})
-	@PUT
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Path("/wiki-pages/{wikiPageId}/subscribe")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@javax.ws.rs.PUT
+	@Override
 	public void putWikiPageSubscribe(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiPageId") Long
-				wikiPageId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiPageId")
+			Long wikiPageId)
 		throws Exception {
 	}
 
@@ -595,17 +758,26 @@ public abstract class BaseWikiPageResourceImpl
 	 *
 	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/wiki-pages/{wikiPageId}/unsubscribe'  -u 'test@liferay.com:test'
 	 */
-	@Override
-	@Parameters(
-		value = {@Parameter(in = ParameterIn.PATH, name = "wikiPageId")}
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "wikiPageId"
+			)
+		}
 	)
-	@Path("/wiki-pages/{wikiPageId}/unsubscribe")
-	@Produces({"application/json", "application/xml"})
-	@PUT
-	@Tags(value = {@Tag(name = "WikiPage")})
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiPage")}
+	)
+	@javax.ws.rs.Path("/wiki-pages/{wikiPageId}/unsubscribe")
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@javax.ws.rs.PUT
+	@Override
 	public void putWikiPageUnsubscribe(
-			@NotNull @Parameter(hidden = true) @PathParam("wikiPageId") Long
-				wikiPageId)
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@javax.validation.constraints.NotNull
+			@javax.ws.rs.PathParam("wikiPageId")
+			Long wikiPageId)
 		throws Exception {
 	}
 
@@ -616,9 +788,12 @@ public abstract class BaseWikiPageResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		for (WikiPage wikiPage : wikiPages) {
-			postWikiNodeWikiPage(
+		UnsafeConsumer<WikiPage, Exception> wikiPageUnsafeConsumer =
+			wikiPage -> postWikiNodeWikiPage(
 				Long.parseLong((String)parameters.get("wikiNodeId")), wikiPage);
+
+		for (WikiPage wikiPage : wikiPages) {
+			wikiPageUnsafeConsumer.accept(wikiPage);
 		}
 	}
 
@@ -788,12 +963,61 @@ public abstract class BaseWikiPageResourceImpl
 		this.contextUser = contextUser;
 	}
 
+	public void setExpressionConvert(
+		ExpressionConvert<Filter> expressionConvert) {
+
+		this.expressionConvert = expressionConvert;
+	}
+
+	public void setFilterParserProvider(
+		FilterParserProvider filterParserProvider) {
+
+		this.filterParserProvider = filterParserProvider;
+	}
+
 	public void setGroupLocalService(GroupLocalService groupLocalService) {
 		this.groupLocalService = groupLocalService;
 	}
 
+	public void setResourceActionLocalService(
+		ResourceActionLocalService resourceActionLocalService) {
+
+		this.resourceActionLocalService = resourceActionLocalService;
+	}
+
+	public void setResourcePermissionLocalService(
+		ResourcePermissionLocalService resourcePermissionLocalService) {
+
+		this.resourcePermissionLocalService = resourcePermissionLocalService;
+	}
+
 	public void setRoleLocalService(RoleLocalService roleLocalService) {
 		this.roleLocalService = roleLocalService;
+	}
+
+	@Override
+	public Filter toFilter(
+		String filterString, Map<String, List<String>> multivaluedMap) {
+
+		try {
+			EntityModel entityModel = getEntityModel(multivaluedMap);
+
+			FilterParser filterParser = filterParserProvider.provide(
+				entityModel);
+
+			com.liferay.portal.odata.filter.Filter oDataFilter =
+				new com.liferay.portal.odata.filter.Filter(
+					filterParser.parse(filterString));
+
+			return expressionConvert.convert(
+				oDataFilter.getExpression(),
+				contextAcceptLanguage.getPreferredLocale(), entityModel);
+		}
+		catch (Exception exception) {
+			_log.error("Invalid filter " + filterString, exception);
+		}
+
+		return null;
 	}
 
 	protected Map<String, String> addAction(
@@ -865,11 +1089,16 @@ public abstract class BaseWikiPageResourceImpl
 	protected Object contextScopeChecker;
 	protected UriInfo contextUriInfo;
 	protected com.liferay.portal.kernel.model.User contextUser;
+	protected ExpressionConvert<Filter> expressionConvert;
+	protected FilterParserProvider filterParserProvider;
 	protected GroupLocalService groupLocalService;
 	protected ResourceActionLocalService resourceActionLocalService;
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
 	protected RoleLocalService roleLocalService;
 	protected VulcanBatchEngineImportTaskResource
 		vulcanBatchEngineImportTaskResource;
+
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseWikiPageResourceImpl.class);
 
 }

@@ -31,10 +31,10 @@ PortletURL portletURL = PortletURLBuilder.createRenderURL(
 ).setRedirect(
 	currentURL
 ).setParameter(
-	"resourcePrimKey", String.valueOf(kbArticle.getResourcePrimKey())
+	"resourcePrimKey", kbArticle.getResourcePrimKey()
 ).setParameter(
-	"sourceVersion", String.valueOf(sourceVersion)
-).build();
+	"sourceVersion", sourceVersion
+).buildPortletURL();
 %>
 
 <clay:container-fluid>

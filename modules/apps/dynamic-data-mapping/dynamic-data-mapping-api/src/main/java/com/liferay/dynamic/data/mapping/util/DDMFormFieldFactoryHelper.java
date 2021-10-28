@@ -16,14 +16,18 @@ package com.liferay.dynamic.data.mapping.util;
 
 import com.liferay.dynamic.data.mapping.annotations.DDMForm;
 import com.liferay.dynamic.data.mapping.annotations.DDMFormField;
+import com.liferay.dynamic.data.mapping.annotations.DDMFormFieldProperty;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidation;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidationExpression;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -34,6 +38,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Marcellus Tavares
@@ -60,14 +66,23 @@ public class DDMFormFieldFactoryHelper {
 
 		Map<String, Object> properties = getProperties();
 
+		properties.putAll(getDDMFormFieldProperties());
+
 		for (Map.Entry<String, Object> entry : properties.entrySet()) {
 			Object value = entry.getValue();
 
-			if (isLocalizableValue((String)value)) {
-				value = getPropertyValue(value);
+			if (value instanceof String[]) {
+				ddmFormField.setProperty(
+					entry.getKey(),
+					Stream.of(
+						(String[])value
+					).map(
+						this::getValue
+					).toArray());
 			}
-
-			ddmFormField.setProperty(entry.getKey(), value);
+			else {
+				ddmFormField.setProperty(entry.getKey(), getValue(value));
+			}
 		}
 
 		ddmFormField.setDataType(getDDMFormFieldDataType());
@@ -127,7 +142,9 @@ public class DDMFormFieldFactoryHelper {
 
 		Class<?> returnType = _getReturnType();
 
-		if (returnType.isAnnotationPresent(DDMForm.class)) {
+		if (returnType.isAnnotationPresent(DDMForm.class) ||
+			returnType.isAssignableFrom(void.class)) {
+
 			return StringPool.BLANK;
 		}
 
@@ -227,11 +244,58 @@ public class DDMFormFieldFactoryHelper {
 
 			localizedValue.addString(_defaultLocale, predefinedValue);
 		}
-		else if (fieldType.equals("checkbox")) {
+		else if (StringUtil.equals(fieldType, "checkbox")) {
 			localizedValue.addString(_defaultLocale, Boolean.FALSE.toString());
+		}
+		else if (StringUtil.equals(fieldType, "validation") &&
+				 StringUtil.equals(getDDMFormFieldDataType(), "date")) {
+
+			localizedValue.addString(
+				_defaultLocale,
+				JSONUtil.put(
+					"errorMessage", JSONFactoryUtil.createJSONObject()
+				).put(
+					"expression", JSONFactoryUtil.createJSONObject()
+				).put(
+					"parameter",
+					JSONUtil.put(
+						LocaleUtil.toLanguageId(_defaultLocale),
+						JSONUtil.put(
+							"endsOn",
+							JSONUtil.put(
+								"date", "responseDate"
+							).put(
+								"quantity", 1
+							).put(
+								"type", "responseDate"
+							).put(
+								"unit", "days"
+							)
+						).put(
+							"startsFrom",
+							JSONUtil.put(
+								"date", "responseDate"
+							).put(
+								"quantity", 1
+							).put(
+								"type", "responseDate"
+							).put(
+								"unit", "days"
+							)
+						))
+				).toString());
 		}
 
 		return localizedValue;
+	}
+
+	protected Map<String, String[]> getDDMFormFieldProperties() {
+		return Stream.of(
+			_ddmFormField.ddmFormFieldProperties()
+		).collect(
+			Collectors.toMap(
+				DDMFormFieldProperty::name, DDMFormFieldProperty::value)
+		);
 	}
 
 	protected LocalizedValue getDDMFormFieldTip() {
@@ -308,6 +372,10 @@ public class DDMFormFieldFactoryHelper {
 			_ddmFormFactoryHelper.getResourceBundle(locale), value);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected Map<String, Object> getProperties() {
 		Map<String, Object> propertiesMap = new HashMap<>();
 
@@ -320,7 +388,37 @@ public class DDMFormFieldFactoryHelper {
 		return propertiesMap;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected LocalizedValue getPropertyValue(Object value) {
+		LocalizedValue localizedValue = new LocalizedValue(_defaultLocale);
+
+		if (Validator.isNull(value)) {
+			return localizedValue;
+		}
+
+		String valueString = (String)value;
+
+		if (isLocalizableValue(valueString)) {
+			String languageKey = extractLanguageKey(valueString);
+
+			localizedValue.addString(
+				_defaultLocale, getLocalizedValue(_defaultLocale, languageKey));
+		}
+		else {
+			localizedValue.addString(_defaultLocale, valueString);
+		}
+
+		return localizedValue;
+	}
+
+	protected Object getValue(Object value) {
+		if (!isLocalizableValue(value.toString())) {
+			return value;
+		}
+
 		LocalizedValue localizedValue = new LocalizedValue(_defaultLocale);
 
 		if (Validator.isNull(value)) {

@@ -20,7 +20,6 @@ import com.liferay.exportimport.kernel.lar.PortletDataException;
 import com.liferay.exportimport.kernel.lar.PortletDataHandler;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lifecycle.ExportImportLifecycleEvent;
-import com.liferay.exportimport.kernel.lifecycle.ExportImportLifecycleEventListenerRegistryUtil;
 import com.liferay.exportimport.kernel.lifecycle.ExportImportLifecycleListener;
 import com.liferay.exportimport.kernel.lifecycle.constants.ExportImportLifecycleConstants;
 import com.liferay.exportimport.test.util.constants.DummyFolderPortletKeys;
@@ -37,6 +36,8 @@ import com.liferay.portal.kernel.zip.ZipReader;
 import com.liferay.portal.kernel.zip.ZipReaderFactoryUtil;
 import com.liferay.portal.kernel.zip.ZipWriter;
 import com.liferay.portal.kernel.zip.ZipWriterFactoryUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.io.File;
@@ -60,6 +61,11 @@ import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.model.Statement;
 
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
+
 /**
  * @author Akos Thurzo
  */
@@ -80,15 +86,19 @@ public class ExportedMissingReferenceBackwardCompatbilityExportImportTest
 		_removeAttributeFromLARExportImportLifecycleListener =
 			new RemoveAttributeFromLARExportImportLifecycleListener();
 
-		ExportImportLifecycleEventListenerRegistryUtil.register(
-			_removeAttributeFromLARExportImportLifecycleListener);
+		Bundle bundle = FrameworkUtil.getBundle(getClass());
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		_serviceRegistration = bundleContext.registerService(
+			ExportImportLifecycleListener.class,
+			_removeAttributeFromLARExportImportLifecycleListener, null);
 	}
 
 	@After
 	@Override
 	public void tearDown() throws Exception {
-		ExportImportLifecycleEventListenerRegistryUtil.unregister(
-			_removeAttributeFromLARExportImportLifecycleListener);
+		_serviceRegistration.unregister();
 
 		super.tearDown();
 	}
@@ -101,7 +111,11 @@ public class ExportedMissingReferenceBackwardCompatbilityExportImportTest
 
 		long[] layoutIds = {layout.getLayoutId()};
 
-		try {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.exportimport.internal.lifecycle." +
+					"LoggerExportImportLifecycleListener",
+				LoggerTestUtil.ERROR)) {
+
 			exportImportLayouts(layoutIds, getExportParameterMap());
 		}
 		catch (PortletDataException portletDataException) {
@@ -130,7 +144,7 @@ public class ExportedMissingReferenceBackwardCompatbilityExportImportTest
 	}
 
 	@Rule
-	public final TestRule skipParentTestsRule =
+	public final TestRule skipParentTestRule =
 		(statement, description) -> new Statement() {
 
 			@Override
@@ -284,5 +298,6 @@ public class ExportedMissingReferenceBackwardCompatbilityExportImportTest
 		getClass().getSuperclass(), Test.class);
 	private RemoveAttributeFromLARExportImportLifecycleListener
 		_removeAttributeFromLARExportImportLifecycleListener;
+	private ServiceRegistration<?> _serviceRegistration;
 
 }

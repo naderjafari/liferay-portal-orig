@@ -310,15 +310,10 @@ public class IconTag extends IncludeTag {
 		}
 
 		if (isForcePost()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("event.preventDefault();");
-			sb.append(onClick);
-			sb.append("submitForm(document.hrefFm, '");
-			sb.append(HtmlUtil.escapeJS(getUrl()));
-			sb.append("')");
-
-			onClick = sb.toString();
+			onClick = StringBundler.concat(
+				"event.preventDefault();", onClick,
+				"submitForm(document.hrefFm, '", HtmlUtil.escapeJS(getUrl()),
+				"')");
 		}
 
 		return onClick;
@@ -365,11 +360,7 @@ public class IconTag extends IncludeTag {
 	}
 
 	protected boolean isForcePost() {
-		if (StringUtil.equalsIgnoreCase(_target, "_blank")) {
-			return false;
-		}
-
-		if (_url == null) {
+		if (StringUtil.equalsIgnoreCase(_target, "_blank") || (_url == null)) {
 			return false;
 		}
 
@@ -562,7 +553,6 @@ public class IconTag extends IncludeTag {
 		}
 
 		SpriteImage spriteImage = null;
-		String spriteFileName = null;
 		String spriteFileURL = null;
 
 		String imageFileName = StringUtil.removeSubstring(_src, "common/../");
@@ -602,11 +592,10 @@ public class IconTag extends IncludeTag {
 			spriteImage = theme.getSpriteImage(imageFileName);
 
 			if (spriteImage != null) {
-				spriteFileName = spriteImage.getSpriteFileName();
-
 				String cdnBaseURL = themeDisplay.getCDNBaseURL();
 
-				spriteFileURL = cdnBaseURL.concat(spriteFileName);
+				spriteFileURL = cdnBaseURL.concat(
+					spriteImage.getSpriteFileName());
 			}
 		}
 
@@ -625,11 +614,10 @@ public class IconTag extends IncludeTag {
 				spriteImage = portletApp.getSpriteImage(imageFileName);
 
 				if (spriteImage != null) {
-					spriteFileName = spriteImage.getSpriteFileName();
-
 					String cdnBaseURL = themeDisplay.getCDNBaseURL();
 
-					spriteFileURL = cdnBaseURL.concat(spriteFileName);
+					spriteFileURL = cdnBaseURL.concat(
+						spriteImage.getSpriteFileName());
 				}
 			}
 		}
@@ -639,20 +627,13 @@ public class IconTag extends IncludeTag {
 
 			_src = themeImagesPath.concat("/spacer.png");
 
-			StringBundler sb = new StringBundler(10);
-
-			sb.append(details);
-			sb.append(" style=\"background-image: url('");
-			sb.append(HtmlUtil.escapeCSS(spriteFileURL));
-			sb.append("'); background-position: 50% -");
-			sb.append(spriteImage.getOffset());
-			sb.append("px; background-repeat: no-repeat; height: ");
-			sb.append(spriteImage.getHeight());
-			sb.append("px; width: ");
-			sb.append(spriteImage.getWidth());
-			sb.append("px;\"");
-
-			details = sb.toString();
+			details = StringBundler.concat(
+				details, " style=\"background-image: url('",
+				HtmlUtil.escapeCSS(spriteFileURL),
+				"'); background-position: 50% -", spriteImage.getOffset(),
+				"px; background-repeat: no-repeat; height: ",
+				spriteImage.getHeight(), "px; width: ", spriteImage.getWidth(),
+				"px;\"");
 		}
 
 		return details;
@@ -678,14 +659,11 @@ public class IconTag extends IncludeTag {
 			return pathThemeImages.concat("/spacer.png");
 		}
 		else if (Validator.isNotNull(_image)) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append(themeDisplay.getPathThemeImages());
-			sb.append("/common/");
-			sb.append(_image);
-			sb.append(".png");
-
-			return StringUtil.removeSubstring(sb.toString(), "common/../");
+			return StringUtil.removeSubstring(
+				StringBundler.concat(
+					themeDisplay.getPathThemeImages(), "/common/", _image,
+					".png"),
+				"common/../");
 		}
 
 		return StringPool.BLANK;
@@ -696,15 +674,8 @@ public class IconTag extends IncludeTag {
 			return _srcHover;
 		}
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(themeDisplay.getPathThemeImages());
-
-		sb.append("/common/");
-		sb.append(_imageHover);
-		sb.append(".png");
-
-		return sb.toString();
+		return StringBundler.concat(
+			themeDisplay.getPathThemeImages(), "/common/", _imageHover, ".png");
 	}
 
 	private static final String _AUI_PATH = "../aui/";

@@ -233,10 +233,6 @@ public class CommerceShippingFixedOptionSettingClayTable
 		HttpServletRequest httpServletRequest,
 		long shippingFixedOptionSettingId) {
 
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
 		return PortletURLBuilder.create(
 			_portal.getControlPanelPortletURL(
 				httpServletRequest,
@@ -247,7 +243,9 @@ public class CommerceShippingFixedOptionSettingClayTable
 		).setCMD(
 			Constants.DELETE
 		).setRedirect(
-			redirect
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
 		).setParameter(
 			"commerceShippingFixedOptionRelId", shippingFixedOptionSettingId
 		).buildString();
@@ -264,7 +262,7 @@ public class CommerceShippingFixedOptionSettingClayTable
 				PortletProvider.Action.EDIT)
 		).setMVCRenderCommandName(
 			"/commerce_shipping_methods/edit_commerce_shipping_fixed_option_rel"
-		).build();
+		).buildPortletURL();
 
 		long commerceShippingMethodId = ParamUtil.getLong(
 			httpServletRequest, "commerceShippingMethodId");

@@ -3,6 +3,7 @@ definition {
 
 	property app.server.bundles.size = "1";
 	property cluster.enabled = "true";
+	property minimum.slave.ram = "24";
 	property remote.elasticsearch.enabled = "true";
 	property test.assert.warning.exceptions = "true";
 	property test.ignore.tomcat.ext.environment = "true";
@@ -908,10 +909,10 @@ definition {
 			deleteLiferayHome = "false",
 			nodePort = "9080");
 
-		User.loginPG(
+		User.firstLoginUI(
 			authenticationMethod = "By Screen Name",
-			nodePort = "9080",
 			password = "test",
+			specificURL = "http://localhost:9080",
 			userScreenName = "test");
 
 		Page.assertNodePortPG(nodePort = "9080");
@@ -933,9 +934,9 @@ definition {
 		User.logoutPG(specificURL = "http://localhost:9080");
 
 		for (var nodePort : list "8080,10080") {
-			User.loginPG(
-				nodePort = "${nodePort}",
+			User.firstLoginUI(
 				password = "test",
+				specificURL = "http://localhost:${nodePort}",
 				userEmailAddress = "test@liferay.com");
 
 			Page.assertNodePortPG(nodePort = "${nodePort}");
@@ -962,7 +963,7 @@ definition {
 			deleteLiferayHome = "false",
 			nodePort = "8080");
 
-		User.loginPG(
+		User.firstLoginUI(
 			authenticationMethod = "By Screen Name",
 			nodePort = "8080",
 			password = "test",
@@ -988,12 +989,14 @@ definition {
 
 		Portlet.addPG(portletName = "Documents and Media");
 
+		DMDocument.enableActionsMenuOnPortlet();
+
 		User.logoutPG();
 
-		User.loginPG(
+		User.firstLoginUI(
 			authenticationMethod = "By Screen Name",
-			nodePort = "9080",
 			password = "test",
+			specificURL = "http://localhost:9080",
 			userScreenName = "test");
 
 		Page.assertNodePortPG(nodePort = "9080");
@@ -1006,9 +1009,9 @@ definition {
 
 		User.logoutPG(specificURL = "http://localhost:9080");
 
-		User.loginPG(
-			nodePort = "10080",
+		User.firstLoginUI(
 			password = "test",
+			specificURL = "http://localhost:10080",
 			userEmailAddress = "test@liferay.com");
 
 		Page.assertNodePortPG(nodePort = "10080");
@@ -1034,10 +1037,10 @@ definition {
 			deleteLiferayHome = "false",
 			nodePort = "10080");
 
-		User.loginPG(
+		User.firstLoginUI(
 			authenticationMethod = "By Screen Name",
-			nodePort = "10080",
 			password = "test",
+			specificURL = "http://localhost:10080",
 			userScreenName = "test");
 
 		Page.assertNodePortPG(nodePort = "10080");
@@ -1056,10 +1059,10 @@ definition {
 		User.logoutPG(specificURL = "http://localhost:10080");
 
 		for (var nodePort : list "8080,9080") {
-			User.loginPG(
+			User.firstLoginUI(
 				authenticationMethod = "By Screen Name",
-				nodePort = "${nodePort}",
 				password = "test",
+				specificURL = "http://localhost:${nodePort}",
 				userScreenName = "test");
 
 			Page.assertNodePortPG(nodePort = "${nodePort}");

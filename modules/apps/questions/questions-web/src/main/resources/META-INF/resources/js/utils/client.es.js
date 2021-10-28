@@ -17,7 +17,7 @@ import {GraphQLClient} from 'graphql-hooks';
 import memCache from 'graphql-hooks-memcache';
 
 const headers = {
-	Accept: 'application/json',
+	'Accept': 'application/json',
 	'Accept-Language': Liferay.ThemeDisplay.getBCP47LanguageId(),
 	'Content-Type': 'text/plain; charset=utf-8',
 };
@@ -229,9 +229,11 @@ export const getTagsOrderByDateCreatedQuery = `
 			sort: "dateCreated:desc"
 		) {
 			items {
+				actions
 				id
 				dateCreated
 				name
+				subscribed
 			}
 			lastPage
 			page
@@ -255,9 +257,11 @@ export const getTagsOrderByNumberOfUsagesQuery = `
 			siteKey: $siteKey
 		) {
 			items {
+				actions
 				id
 				keywordUsageCount
 				name
+				subscribed
 			}
 			lastPage
 			page
@@ -727,17 +731,14 @@ export const getThread = (friendlyUrlPath, siteKey) =>
 		},
 	});
 
-export const getMessages = (messageBoardThreadId, sort, page, pageSize) =>
+export const getMessages = (messageBoardThreadId, page, pageSize) =>
 	clientNestedFields.request({
 		query: getMessagesQuery,
 		variables: {
 			messageBoardThreadId,
-			page: sort === 'votes' ? 1 : page,
-			pageSize: sort === 'votes' ? 100 : pageSize,
-			sort:
-				sort === 'votes' || sort === 'active'
-					? 'dateModified:desc'
-					: 'dateCreated:desc',
+			page,
+			pageSize,
+			sort: 'dateCreated:asc',
 		},
 	});
 
@@ -877,6 +878,22 @@ export const unsubscribeSectionQuery = `
 	) {
 		updateMessageBoardSectionUnsubscribe(
 			messageBoardSectionId: $messageBoardSectionId
+		)
+	}
+`;
+
+export const subscribeTagQuery = `
+	mutation updateKeywordSubscribe($keywordId: Long!) {
+		updateKeywordSubscribe(
+			keywordId: $keywordId
+		)
+	}
+`;
+
+export const unsubscribeTagQuery = `
+	mutation updateKeywordUnsubscribe($keywordId: Long!) {
+		updateKeywordUnsubscribe(
+			keywordId: $keywordId
 		)
 	}
 `;

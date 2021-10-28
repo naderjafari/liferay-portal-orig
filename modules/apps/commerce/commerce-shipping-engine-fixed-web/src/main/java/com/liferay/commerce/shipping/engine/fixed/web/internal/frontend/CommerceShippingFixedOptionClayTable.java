@@ -192,10 +192,6 @@ public class CommerceShippingFixedOptionClayTable
 	private String _getShippingFixedOptionDeleteURL(
 		HttpServletRequest httpServletRequest, long shippingFixedOptionId) {
 
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
 		return PortletURLBuilder.create(
 			_portal.getControlPanelPortletURL(
 				httpServletRequest,
@@ -206,7 +202,9 @@ public class CommerceShippingFixedOptionClayTable
 		).setCMD(
 			Constants.DELETE
 		).setRedirect(
-			redirect
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
 		).setParameter(
 			"commerceShippingFixedOptionId", shippingFixedOptionId
 		).buildString();
@@ -224,7 +222,7 @@ public class CommerceShippingFixedOptionClayTable
 			"/commerce_shipping_methods/edit_commerce_shipping_fixed_option"
 		).setParameter(
 			"commerceShippingFixedOptionId", shippingFixedOptionId
-		).build();
+		).buildPortletURL();
 
 		long commerceShippingMethodId = ParamUtil.getLong(
 			httpServletRequest, "commerceShippingMethodId");

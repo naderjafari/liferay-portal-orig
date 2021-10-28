@@ -350,6 +350,11 @@ public class LayoutWrapper
 	}
 
 	@Override
+	public Layout cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	@Override
 	public Layout fetchDraftLayout() {
 		return model.fetchDraftLayout();
 	}
@@ -1583,6 +1588,11 @@ public class LayoutWrapper
 	@Override
 	public boolean isDraft() {
 		return model.isDraft();
+	}
+
+	@Override
+	public boolean isDraftLayout() {
+		return model.isDraftLayout();
 	}
 
 	/**

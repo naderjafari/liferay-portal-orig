@@ -94,6 +94,10 @@ definition {
 	macro addWidgetToPublicLayout {
 		Variables.assertDefined(parameterList = "${groupName},${layoutName},${widgetName}");
 
+		if (!(isSet(site))) {
+			var site = "true";
+		}
+
 		var groupId = JSONLayoutSetter.setGroupId(groupName = "${groupName}", parentGroupName = "${parentGroupName}", grandParentGroupName = "${grandParentGroupName}", site = "${site}");
 
 		var layoutId = JSONLayoutSetter.setLayoutId(
@@ -154,7 +158,11 @@ definition {
 	macro getPlid {
 		Variables.assertDefined(parameterList = "${groupName},${layoutName}");
 
-		var groupId = JSONLayoutSetter.setGroupId(groupName = "${groupName}");
+		if (!(isSet(site))) {
+			var site = "true";
+		}
+
+		var groupId = JSONLayoutSetter.setGroupId(groupName = "${groupName}", site = "${site}");
 
 		if (!(isSet(privateLayout))) {
 			privateLayout = "false";
@@ -168,7 +176,13 @@ definition {
 
 	@summary = "Publish the draft layout"
 	macro publishLayout {
-		Variables.assertDefined(parameterList = "${plid}");
+		Variables.assertDefined(parameterList = "${groupName},${layoutName}");
+
+		var plid = JSONLayout.getPlid(
+			groupName = "${groupName}",
+			layoutName = "${layoutName}",
+			privateLayout = "${privateLayout}",
+			site = "${site}");
 
 		JSONLayoutAPI._publishLayoutByPlid(plid = "${plid}");
 	}

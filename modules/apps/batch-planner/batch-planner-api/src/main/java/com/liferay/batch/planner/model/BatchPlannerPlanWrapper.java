@@ -50,11 +50,13 @@ public class BatchPlannerPlanWrapper
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("active", isActive());
+		attributes.put("export", isExport());
 		attributes.put("externalType", getExternalType());
 		attributes.put("externalURL", getExternalURL());
 		attributes.put("internalClassName", getInternalClassName());
 		attributes.put("name", getName());
-		attributes.put("export", isExport());
+		attributes.put("taskItemDelegateName", getTaskItemDelegateName());
+		attributes.put("template", isTemplate());
 
 		return attributes;
 	}
@@ -109,6 +111,12 @@ public class BatchPlannerPlanWrapper
 			setActive(active);
 		}
 
+		Boolean export = (Boolean)attributes.get("export");
+
+		if (export != null) {
+			setExport(export);
+		}
+
 		String externalType = (String)attributes.get("externalType");
 
 		if (externalType != null) {
@@ -133,11 +141,28 @@ public class BatchPlannerPlanWrapper
 			setName(name);
 		}
 
-		Boolean export = (Boolean)attributes.get("export");
+		String taskItemDelegateName = (String)attributes.get(
+			"taskItemDelegateName");
 
-		if (export != null) {
-			setExport(export);
+		if (taskItemDelegateName != null) {
+			setTaskItemDelegateName(taskItemDelegateName);
 		}
+
+		Boolean template = (Boolean)attributes.get("template");
+
+		if (template != null) {
+			setTemplate(template);
+		}
+	}
+
+	@Override
+	public BatchPlannerPlan cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	@Override
+	public BatchPlannerLog fetchBatchPlannerLog() {
+		return model.fetchBatchPlannerLog();
 	}
 
 	/**
@@ -261,6 +286,26 @@ public class BatchPlannerPlanWrapper
 	}
 
 	/**
+	 * Returns the task item delegate name of this batch planner plan.
+	 *
+	 * @return the task item delegate name of this batch planner plan
+	 */
+	@Override
+	public String getTaskItemDelegateName() {
+		return model.getTaskItemDelegateName();
+	}
+
+	/**
+	 * Returns the template of this batch planner plan.
+	 *
+	 * @return the template of this batch planner plan
+	 */
+	@Override
+	public boolean getTemplate() {
+		return model.getTemplate();
+	}
+
+	/**
 	 * Returns the user ID of this batch planner plan.
 	 *
 	 * @return the user ID of this batch planner plan
@@ -308,6 +353,16 @@ public class BatchPlannerPlanWrapper
 	@Override
 	public boolean isExport() {
 		return model.isExport();
+	}
+
+	/**
+	 * Returns <code>true</code> if this batch planner plan is template.
+	 *
+	 * @return <code>true</code> if this batch planner plan is template; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isTemplate() {
+		return model.isTemplate();
 	}
 
 	@Override
@@ -433,6 +488,26 @@ public class BatchPlannerPlanWrapper
 	@Override
 	public void setPrimaryKey(long primaryKey) {
 		model.setPrimaryKey(primaryKey);
+	}
+
+	/**
+	 * Sets the task item delegate name of this batch planner plan.
+	 *
+	 * @param taskItemDelegateName the task item delegate name of this batch planner plan
+	 */
+	@Override
+	public void setTaskItemDelegateName(String taskItemDelegateName) {
+		model.setTaskItemDelegateName(taskItemDelegateName);
+	}
+
+	/**
+	 * Sets whether this batch planner plan is template.
+	 *
+	 * @param template the template of this batch planner plan
+	 */
+	@Override
+	public void setTemplate(boolean template) {
+		model.setTemplate(template);
 	}
 
 	/**

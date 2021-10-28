@@ -51,8 +51,16 @@ public class RemoteAppEntryWrapper
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
+		attributes.put("customElementCSSURLs", getCustomElementCSSURLs());
+		attributes.put(
+			"customElementHTMLElementName", getCustomElementHTMLElementName());
+		attributes.put("customElementURLs", getCustomElementURLs());
+		attributes.put("iFrameURL", getIFrameURL());
+		attributes.put("instanceable", isInstanceable());
 		attributes.put("name", getName());
-		attributes.put("url", getUrl());
+		attributes.put("portletCategoryName", getPortletCategoryName());
+		attributes.put("properties", getProperties());
+		attributes.put("type", getType());
 
 		return attributes;
 	}
@@ -107,17 +115,67 @@ public class RemoteAppEntryWrapper
 			setModifiedDate(modifiedDate);
 		}
 
+		String customElementCSSURLs = (String)attributes.get(
+			"customElementCSSURLs");
+
+		if (customElementCSSURLs != null) {
+			setCustomElementCSSURLs(customElementCSSURLs);
+		}
+
+		String customElementHTMLElementName = (String)attributes.get(
+			"customElementHTMLElementName");
+
+		if (customElementHTMLElementName != null) {
+			setCustomElementHTMLElementName(customElementHTMLElementName);
+		}
+
+		String customElementURLs = (String)attributes.get("customElementURLs");
+
+		if (customElementURLs != null) {
+			setCustomElementURLs(customElementURLs);
+		}
+
+		String iFrameURL = (String)attributes.get("iFrameURL");
+
+		if (iFrameURL != null) {
+			setIFrameURL(iFrameURL);
+		}
+
+		Boolean instanceable = (Boolean)attributes.get("instanceable");
+
+		if (instanceable != null) {
+			setInstanceable(instanceable);
+		}
+
 		String name = (String)attributes.get("name");
 
 		if (name != null) {
 			setName(name);
 		}
 
-		String url = (String)attributes.get("url");
+		String portletCategoryName = (String)attributes.get(
+			"portletCategoryName");
 
-		if (url != null) {
-			setUrl(url);
+		if (portletCategoryName != null) {
+			setPortletCategoryName(portletCategoryName);
 		}
+
+		String properties = (String)attributes.get("properties");
+
+		if (properties != null) {
+			setProperties(properties);
+		}
+
+		String type = (String)attributes.get("type");
+
+		if (type != null) {
+			setType(type);
+		}
+	}
+
+	@Override
+	public RemoteAppEntry cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	@Override
@@ -165,9 +223,59 @@ public class RemoteAppEntryWrapper
 		return model.getCreateDate();
 	}
 
+	/**
+	 * Returns the custom element cssur ls of this remote app entry.
+	 *
+	 * @return the custom element cssur ls of this remote app entry
+	 */
+	@Override
+	public String getCustomElementCSSURLs() {
+		return model.getCustomElementCSSURLs();
+	}
+
+	/**
+	 * Returns the custom element html element name of this remote app entry.
+	 *
+	 * @return the custom element html element name of this remote app entry
+	 */
+	@Override
+	public String getCustomElementHTMLElementName() {
+		return model.getCustomElementHTMLElementName();
+	}
+
+	/**
+	 * Returns the custom element ur ls of this remote app entry.
+	 *
+	 * @return the custom element ur ls of this remote app entry
+	 */
+	@Override
+	public String getCustomElementURLs() {
+		return model.getCustomElementURLs();
+	}
+
 	@Override
 	public String getDefaultLanguageId() {
 		return model.getDefaultLanguageId();
+	}
+
+	/**
+	 * Returns the i frame url of this remote app entry.
+	 *
+	 * @return the i frame url of this remote app entry
+	 */
+	@Override
+	public String getIFrameURL() {
+		return model.getIFrameURL();
+	}
+
+	/**
+	 * Returns the instanceable of this remote app entry.
+	 *
+	 * @return the instanceable of this remote app entry
+	 */
+	@Override
+	public boolean getInstanceable() {
+		return model.getInstanceable();
 	}
 
 	/**
@@ -277,6 +385,16 @@ public class RemoteAppEntryWrapper
 	}
 
 	/**
+	 * Returns the portlet category name of this remote app entry.
+	 *
+	 * @return the portlet category name of this remote app entry
+	 */
+	@Override
+	public String getPortletCategoryName() {
+		return model.getPortletCategoryName();
+	}
+
+	/**
 	 * Returns the primary key of this remote app entry.
 	 *
 	 * @return the primary key of this remote app entry
@@ -284,6 +402,16 @@ public class RemoteAppEntryWrapper
 	@Override
 	public long getPrimaryKey() {
 		return model.getPrimaryKey();
+	}
+
+	/**
+	 * Returns the properties of this remote app entry.
+	 *
+	 * @return the properties of this remote app entry
+	 */
+	@Override
+	public String getProperties() {
+		return model.getProperties();
 	}
 
 	/**
@@ -297,13 +425,13 @@ public class RemoteAppEntryWrapper
 	}
 
 	/**
-	 * Returns the url of this remote app entry.
+	 * Returns the type of this remote app entry.
 	 *
-	 * @return the url of this remote app entry
+	 * @return the type of this remote app entry
 	 */
 	@Override
-	public String getUrl() {
-		return model.getUrl();
+	public String getType() {
+		return model.getType();
 	}
 
 	/**
@@ -344,6 +472,16 @@ public class RemoteAppEntryWrapper
 	@Override
 	public String getUuid() {
 		return model.getUuid();
+	}
+
+	/**
+	 * Returns <code>true</code> if this remote app entry is instanceable.
+	 *
+	 * @return <code>true</code> if this remote app entry is instanceable; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isInstanceable() {
+		return model.isInstanceable();
 	}
 
 	@Override
@@ -394,6 +532,58 @@ public class RemoteAppEntryWrapper
 	@Override
 	public void setCreateDate(Date createDate) {
 		model.setCreateDate(createDate);
+	}
+
+	/**
+	 * Sets the custom element cssur ls of this remote app entry.
+	 *
+	 * @param customElementCSSURLs the custom element cssur ls of this remote app entry
+	 */
+	@Override
+	public void setCustomElementCSSURLs(String customElementCSSURLs) {
+		model.setCustomElementCSSURLs(customElementCSSURLs);
+	}
+
+	/**
+	 * Sets the custom element html element name of this remote app entry.
+	 *
+	 * @param customElementHTMLElementName the custom element html element name of this remote app entry
+	 */
+	@Override
+	public void setCustomElementHTMLElementName(
+		String customElementHTMLElementName) {
+
+		model.setCustomElementHTMLElementName(customElementHTMLElementName);
+	}
+
+	/**
+	 * Sets the custom element ur ls of this remote app entry.
+	 *
+	 * @param customElementURLs the custom element ur ls of this remote app entry
+	 */
+	@Override
+	public void setCustomElementURLs(String customElementURLs) {
+		model.setCustomElementURLs(customElementURLs);
+	}
+
+	/**
+	 * Sets the i frame url of this remote app entry.
+	 *
+	 * @param iFrameURL the i frame url of this remote app entry
+	 */
+	@Override
+	public void setIFrameURL(String iFrameURL) {
+		model.setIFrameURL(iFrameURL);
+	}
+
+	/**
+	 * Sets whether this remote app entry is instanceable.
+	 *
+	 * @param instanceable the instanceable of this remote app entry
+	 */
+	@Override
+	public void setInstanceable(boolean instanceable) {
+		model.setInstanceable(instanceable);
 	}
 
 	/**
@@ -490,6 +680,16 @@ public class RemoteAppEntryWrapper
 	}
 
 	/**
+	 * Sets the portlet category name of this remote app entry.
+	 *
+	 * @param portletCategoryName the portlet category name of this remote app entry
+	 */
+	@Override
+	public void setPortletCategoryName(String portletCategoryName) {
+		model.setPortletCategoryName(portletCategoryName);
+	}
+
+	/**
 	 * Sets the primary key of this remote app entry.
 	 *
 	 * @param primaryKey the primary key of this remote app entry
@@ -497,6 +697,16 @@ public class RemoteAppEntryWrapper
 	@Override
 	public void setPrimaryKey(long primaryKey) {
 		model.setPrimaryKey(primaryKey);
+	}
+
+	/**
+	 * Sets the properties of this remote app entry.
+	 *
+	 * @param properties the properties of this remote app entry
+	 */
+	@Override
+	public void setProperties(String properties) {
+		model.setProperties(properties);
 	}
 
 	/**
@@ -510,13 +720,13 @@ public class RemoteAppEntryWrapper
 	}
 
 	/**
-	 * Sets the url of this remote app entry.
+	 * Sets the type of this remote app entry.
 	 *
-	 * @param url the url of this remote app entry
+	 * @param type the type of this remote app entry
 	 */
 	@Override
-	public void setUrl(String url) {
-		model.setUrl(url);
+	public void setType(String type) {
+		model.setType(type);
 	}
 
 	/**

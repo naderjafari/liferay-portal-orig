@@ -55,6 +55,10 @@ public class PageElement implements Serializable {
 		return ObjectMapperUtil.readValue(PageElement.class, json);
 	}
 
+	public static PageElement unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(PageElement.class, json);
+	}
+
 	@Schema(description = "The page element's definition.")
 	@Valid
 	public Object getDefinition() {
@@ -248,13 +252,17 @@ public class PageElement implements Serializable {
 
 		@JsonCreator
 		public static Type create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
 			for (Type type : values()) {
 				if (Objects.equals(type.getValue(), value)) {
 					return type;
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("Invalid enum value: " + value);
 		}
 
 		@JsonValue

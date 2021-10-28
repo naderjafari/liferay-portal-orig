@@ -15,9 +15,12 @@
 package com.liferay.jenkins.results.parser;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.net.URI;
 import java.net.URL;
+
+import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -123,6 +126,140 @@ public class JenkinsResultsParserUtilTest
 			"http://test-4-1/ABC?123=456&xyz=abc",
 			JenkinsResultsParserUtil.getLocalURL(
 				"http://test-4-1/ABC?123=456&xyz=abc"));
+		testEquals(
+			"http://release-1/1/ABC?123=456&xyz=abc",
+			JenkinsResultsParserUtil.getLocalURL(
+				"https://release.liferay.com/1/ABC?123=456&xyz=abc"));
+		testEquals(
+			"http://release-1/1/ABC?123=456&xyz=abc",
+			JenkinsResultsParserUtil.getLocalURL(
+				"http://release-1/1/ABC?123=456&xyz=abc"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/files.liferay.com/private/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"http://mirrors.lax.liferay.com/files.liferay.com/private/"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/files.liferay.com/private/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"http://mirrors.dlc.liferay.com/files.liferay.com/private/"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/files.liferay.com/private/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"http://mirrors/files.liferay.com/private/"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/files.liferay.com/private/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"https://files.liferay.com/private/"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"http://mirrors.lax.liferay.com/releases.liferay.com/portal/"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"http://mirrors.dlc.liferay.com/releases.liferay.com/portal/"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"http://mirrors/releases.liferay.com/portal/"));
+		testEquals(
+			"http://mirrors.lax.liferay.com/releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getLocalURL(
+				"https://releases.liferay.com/portal/"));
+	}
+
+	@Test
+	public void testGetProperty() throws IOException {
+		Properties properties = JenkinsResultsParserUtil.getBuildProperties();
+
+		testEquals(
+			"disable-dev-shm-usage disable-gpu password-store=basic",
+			JenkinsResultsParserUtil.getProperty(
+				properties, "portal.test.properties", "browser.chrome.bin.args",
+				"master"));
+
+		testEquals(
+			"/opt/google/chrome-stable-86/google-chrome",
+			JenkinsResultsParserUtil.getProperty(
+				properties, "portal.test.properties",
+				"browser.chrome.bin.file[86.0]", "master"));
+
+		testEquals(
+			"chrome,edge,firefox,internetexplorer,safari",
+			JenkinsResultsParserUtil.getProperty(properties, "browser.types"));
+
+		testEquals(
+			"/opt/java/zulu8",
+			JenkinsResultsParserUtil.getProperty(
+				properties, "portal.test.properties",
+				"java.jdk.home[8][x64][zulu]", "master"));
+
+		testEquals(
+			"/opt/dev/projects/github/liferay-release-tool-ee",
+			JenkinsResultsParserUtil.getProperty(
+				properties, "release.tool.dir", "7.0.x"));
+
+		testEquals(
+			"/bin/bash",
+			JenkinsResultsParserUtil.getProperty(
+				properties, "portal.build.properties", "shell.executable",
+				"master"));
+	}
+
+	@Test
+	public void testGetRemoteURL() {
+		testEquals(
+			"https://test.liferay.com/8/ABC?123=456&xyz=abc",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://test-8/8/ABC?123=456&xyz=abc"));
+		testEquals(
+			"https://test-1-20.liferay.com/ABC?123=456&xyz=abc",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://test-1-20/ABC?123=456&xyz=abc"));
+		testEquals(
+			"https://test-4-1.liferay.com/ABC?123=456&xyz=abc",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"https://test-4-1.liferay.com/ABC?123=456&xyz=abc"));
+		testEquals(
+			"https://release.liferay.com/1/ABC?123=456&xyz=abc",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"https://release.liferay.com/1/ABC?123=456&xyz=abc"));
+		testEquals(
+			"https://release.liferay.com/1/ABC?123=456&xyz=abc",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://release-1/1/ABC?123=456&xyz=abc"));
+		testEquals(
+			"https://files.liferay.com/private/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://mirrors.lax.liferay.com/files.liferay.com/private/"));
+		testEquals(
+			"https://files.liferay.com/private/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://mirrors.dlc.liferay.com/files.liferay.com/private/"));
+		testEquals(
+			"https://files.liferay.com/private/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://mirrors/files.liferay.com/private/"));
+		testEquals(
+			"https://files.liferay.com/private/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"https://files.liferay.com/private/"));
+		testEquals(
+			"https://releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://mirrors.lax.liferay.com/releases.liferay.com/portal/"));
+		testEquals(
+			"https://releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://mirrors.dlc.liferay.com/releases.liferay.com/portal/"));
+		testEquals(
+			"https://releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"http://mirrors/releases.liferay.com/portal/"));
+		testEquals(
+			"https://releases.liferay.com/portal/",
+			JenkinsResultsParserUtil.getRemoteURL(
+				"https://releases.liferay.com/portal/"));
 	}
 
 	@Test

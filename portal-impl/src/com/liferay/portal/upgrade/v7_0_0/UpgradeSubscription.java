@@ -180,14 +180,11 @@ public class UpgradeSubscription extends UpgradeProcess {
 		throws Exception {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(oldClassName)) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("update Subscription set classNameId = ");
-			sb.append(getClassNameId(newClassName));
-			sb.append(" where classNameId = ");
-			sb.append(PortalUtil.getClassNameId(oldClassName));
-
-			runSQL(sb.toString());
+			runSQL(
+				StringBundler.concat(
+					"update Subscription set classNameId = ",
+					getClassNameId(newClassName), " where classNameId = ",
+					PortalUtil.getClassNameId(oldClassName)));
 		}
 	}
 
@@ -244,6 +241,9 @@ public class UpgradeSubscription extends UpgradeProcess {
 		).put(
 			"com.liferay.calendar.model.CalendarBooking",
 			"CalendarBooking,groupId,calendarBookingId"
+		).put(
+			"com.liferay.knowledgebase.model.KBArticle",
+			"KBArticle,groupId,kbArticleId"
 		).put(
 			"com.liferay.message.boards.kernel.model.MBCategory",
 			"MBCategory,groupId,categoryId"

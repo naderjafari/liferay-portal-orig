@@ -89,11 +89,8 @@ public class CommercePriceModifierProductsScreenNavigationCategory
 	public boolean isVisible(
 		User user, CommercePriceModifier commercePriceModifier) {
 
-		if (commercePriceModifier == null) {
-			return false;
-		}
-
-		if (!CommercePriceModifierConstants.TARGET_PRODUCTS.equals(
+		if ((commercePriceModifier == null) ||
+			!CommercePriceModifierConstants.TARGET_PRODUCTS.equals(
 				commercePriceModifier.getTarget())) {
 
 			return false;
@@ -140,7 +137,7 @@ public class CommercePriceModifierProductsScreenNavigationCategory
 
 		_jspRenderer.renderJSP(
 			_setServletContext, httpServletRequest, httpServletResponse,
-			"/price_lists/price_modifier/products.jsp");
+			"/commerce_price_lists/commerce_price_modifier/products.jsp");
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

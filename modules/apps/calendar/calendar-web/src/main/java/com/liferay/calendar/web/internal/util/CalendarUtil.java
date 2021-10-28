@@ -134,10 +134,8 @@ public class CalendarUtil {
 			jsonObject.put(String.valueOf(year), monthJSONObject);
 
 			for (Integer month : months) {
-				List<Integer> days = monthsMap.get(month);
-
 				JSONObject dayJSONObject = JSONUtil.put(
-					StringUtil.merge(days), ruleName);
+					StringUtil.merge(monthsMap.get(month)), ruleName);
 
 				monthJSONObject.put(String.valueOf(month), dayJSONObject);
 			}
@@ -293,14 +291,13 @@ public class CalendarUtil {
 			ThemeDisplay themeDisplay, Calendar calendar)
 		throws PortalException {
 
-		JSONObject jsonObject = JSONUtil.put(
-			"calendarId", calendar.getCalendarId());
-
 		CalendarResource calendarResource =
 			_calendarResourceLocalService.fetchCalendarResource(
 				calendar.getCalendarResourceId());
 
-		jsonObject.put(
+		return JSONUtil.put(
+			"calendarId", calendar.getCalendarId()
+		).put(
 			"calendarResourceId", calendarResource.getCalendarResourceId()
 		).put(
 			"calendarResourceName",
@@ -333,8 +330,6 @@ public class CalendarUtil {
 		).put(
 			"userId", calendar.getUserId()
 		);
-
-		return jsonObject;
 	}
 
 	public static JSONObject toCalendarResourceJSONObject(

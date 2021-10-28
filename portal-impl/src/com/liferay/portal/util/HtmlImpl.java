@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.htmlparser.jericho.Renderer;
 import net.htmlparser.jericho.Source;
-import net.htmlparser.jericho.TextExtractor;
 
 /**
  * Provides the implementation of the HTML utility interface for escaping,
@@ -506,6 +504,8 @@ public class HtmlImpl implements Html {
 			return StringPool.BLANK;
 		}
 
+		link = StringUtil.trim(link);
+
 		if (link.indexOf(StringPool.COLON) == 10) {
 			String protocol = StringUtil.toLowerCase(link.substring(0, 10));
 
@@ -603,9 +603,7 @@ public class HtmlImpl implements Html {
 
 		Source source = new Source(html);
 
-		TextExtractor textExtractor = source.getTextExtractor();
-
-		return textExtractor.toString();
+		return String.valueOf(source.getTextExtractor());
 	}
 
 	@Override
@@ -689,9 +687,7 @@ public class HtmlImpl implements Html {
 
 		Source source = new Source(html);
 
-		Renderer renderer = source.getRenderer();
-
-		return renderer.toString();
+		return String.valueOf(source.getRenderer());
 	}
 
 	/**
@@ -764,7 +760,10 @@ public class HtmlImpl implements Html {
 
 			// Look for text enclosed by <abc></abc>
 
-			if (isTag(_TAG_SCRIPT, text, y + 1)) {
+			if (isTag(_TAG_NOSCRIPT, text, y + 1)) {
+				y = stripTag(_TAG_NOSCRIPT, text, y);
+			}
+			else if (isTag(_TAG_SCRIPT, text, y + 1)) {
 				y = stripTag(_TAG_SCRIPT, text, y);
 			}
 			else if (isTag(_TAG_STYLE, text, y + 1)) {
@@ -1009,6 +1008,10 @@ public class HtmlImpl implements Html {
 	private static final char[] _HEX_DIGITS = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
 		'e', 'f'
+	};
+
+	private static final char[] _TAG_NOSCRIPT = {
+		'n', 'o', 's', 'c', 'r', 'i', 'p', 't'
 	};
 
 	private static final char[] _TAG_SCRIPT = {'s', 'c', 'r', 'i', 'p', 't'};

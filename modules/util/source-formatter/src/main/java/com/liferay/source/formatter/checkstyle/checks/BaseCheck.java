@@ -52,6 +52,7 @@ import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,6 +128,30 @@ public abstract class BaseCheck extends AbstractCheck {
 			detailAST, recursive, tokenTypes);
 	}
 
+	protected DetailAST getAnnotationMemberValuePairDetailAST(
+		DetailAST annotationDetailAST, String key) {
+
+		List<DetailAST> annotationMemberValuePairDetailASTList =
+			getAllChildTokens(
+				annotationDetailAST, false,
+				TokenTypes.ANNOTATION_MEMBER_VALUE_PAIR);
+
+		for (DetailAST annotationMemberValuePairDetailAST :
+				annotationMemberValuePairDetailASTList) {
+
+			DetailAST firstChildDetailAST =
+				annotationMemberValuePairDetailAST.getFirstChild();
+
+			if ((firstChildDetailAST.getType() == TokenTypes.IDENT) &&
+				Objects.equals(firstChildDetailAST.getText(), key)) {
+
+				return annotationMemberValuePairDetailAST;
+			}
+		}
+
+		return null;
+	}
+
 	protected String getAttributeValue(String attributeKey) {
 		return getAttributeValue(attributeKey, StringPool.BLANK);
 	}
@@ -150,6 +175,54 @@ public abstract class BaseCheck extends AbstractCheck {
 			_attributesJSONObject, _attributeValueMap,
 			CheckstyleUtil.BASE_DIR_NAME_KEY, StringPool.BLANK, null, null,
 			true);
+	}
+
+	protected List<String> getChainedMethodNames(
+		DetailAST methodCallDetailAST) {
+
+		ChainInformation chainInformation = getChainInformation(
+			methodCallDetailAST);
+
+		return chainInformation.getMethodNames();
+	}
+
+	protected ChainInformation getChainInformation(
+		DetailAST methodCallDetailAST) {
+
+		ChainInformation chainInformation = new ChainInformation();
+
+		chainInformation.addMethodName(getMethodName(methodCallDetailAST));
+
+		while (true) {
+			DetailAST parentDetailAST = methodCallDetailAST.getParent();
+
+			if (parentDetailAST.getType() != TokenTypes.DOT) {
+				String chainReturnType = _getChainReturnType(parentDetailAST);
+
+				if (Validator.isNotNull(chainReturnType)) {
+					chainInformation.setReturnType(chainReturnType);
+				}
+
+				return chainInformation;
+			}
+
+			DetailAST grandParentDetailAST = parentDetailAST.getParent();
+
+			if (grandParentDetailAST.getType() != TokenTypes.METHOD_CALL) {
+				DetailAST siblingDetailAST =
+					methodCallDetailAST.getNextSibling();
+
+				if (siblingDetailAST.getType() == TokenTypes.IDENT) {
+					chainInformation.addMethodName(siblingDetailAST.getText());
+				}
+
+				return chainInformation;
+			}
+
+			methodCallDetailAST = grandParentDetailAST;
+
+			chainInformation.addMethodName(getMethodName(methodCallDetailAST));
+		}
 	}
 
 	protected String getClassOrVariableName(DetailAST methodCallDetailAST) {
@@ -655,6 +728,20 @@ public abstract class BaseCheck extends AbstractCheck {
 	}
 
 	protected List<DetailAST> getVariableCallerDetailASTList(
+		DetailAST variableDefinitionDetailAST) {
+
+		DetailAST identDetailAST = variableDefinitionDetailAST.findFirstToken(
+			TokenTypes.IDENT);
+
+		if (identDetailAST == null) {
+			return Collections.emptyList();
+		}
+
+		return getVariableCallerDetailASTList(
+			variableDefinitionDetailAST, identDetailAST.getText());
+	}
+
+	protected List<DetailAST> getVariableCallerDetailASTList(
 		DetailAST variableDefinitionDetailAST, String variableName) {
 
 		List<DetailAST> variableCallerDetailASTList = new ArrayList<>();
@@ -722,6 +809,129 @@ public abstract class BaseCheck extends AbstractCheck {
 		return variableCallerDetailASTList;
 	}
 
+	protected DetailAST getVariableDefinitionDetailAST(
+		DetailAST detailAST, String variableName) {
+
+		return getVariableDefinitionDetailAST(detailAST, variableName, true);
+	}
+
+	protected DetailAST getVariableDefinitionDetailAST(
+		DetailAST detailAST, String variableName,
+		boolean includeGlobalVariables) {
+
+		DetailAST previousDetailAST = detailAST;
+
+		while (true) {
+			if (includeGlobalVariables &&
+				((previousDetailAST.getType() == TokenTypes.CLASS_DEF) ||
+				 (previousDetailAST.getType() == TokenTypes.ENUM_DEF) ||
+				 (previousDetailAST.getType() == TokenTypes.INTERFACE_DEF))) {
+
+				DetailAST objBlockDetailAST = previousDetailAST.findFirstToken(
+					TokenTypes.OBJBLOCK);
+
+				List<DetailAST> variableDefinitionDetailASTList =
+					getAllChildTokens(
+						objBlockDetailAST, false, TokenTypes.VARIABLE_DEF);
+
+				for (DetailAST variableDefinitionDetailAST :
+						variableDefinitionDetailASTList) {
+
+					if (variableName.equals(
+							_getVariableName(variableDefinitionDetailAST))) {
+
+						return variableDefinitionDetailAST;
+					}
+				}
+			}
+			else if ((previousDetailAST.getType() ==
+						TokenTypes.FOR_EACH_CLAUSE) ||
+					 (previousDetailAST.getType() == TokenTypes.FOR_INIT)) {
+
+				List<DetailAST> variableDefinitionDetailASTList =
+					getAllChildTokens(
+						previousDetailAST, false, TokenTypes.VARIABLE_DEF);
+
+				for (DetailAST variableDefinitionDetailAST :
+						variableDefinitionDetailASTList) {
+
+					if (variableName.equals(
+							_getVariableName(variableDefinitionDetailAST))) {
+
+						return variableDefinitionDetailAST;
+					}
+				}
+			}
+			else if ((previousDetailAST.getType() ==
+						TokenTypes.LITERAL_CATCH) ||
+					 (previousDetailAST.getType() == TokenTypes.PARAMETERS)) {
+
+				List<DetailAST> parameterDefinitionDetailASTList =
+					getAllChildTokens(
+						previousDetailAST, false, TokenTypes.PARAMETER_DEF);
+
+				for (DetailAST parameterDefinitionDetailAST :
+						parameterDefinitionDetailASTList) {
+
+					if (variableName.equals(
+							_getVariableName(parameterDefinitionDetailAST))) {
+
+						return parameterDefinitionDetailAST;
+					}
+				}
+			}
+			else if (previousDetailAST.getType() ==
+						TokenTypes.RESOURCE_SPECIFICATION) {
+
+				DetailAST recourcesDetailAST = previousDetailAST.findFirstToken(
+					TokenTypes.RESOURCES);
+
+				List<DetailAST> resourceDetailASTList = getAllChildTokens(
+					recourcesDetailAST, false, TokenTypes.RESOURCE);
+
+				for (DetailAST resourceDetailAST : resourceDetailASTList) {
+					if (variableName.equals(
+							_getVariableName(resourceDetailAST))) {
+
+						return resourceDetailAST;
+					}
+				}
+			}
+			else if ((previousDetailAST.getType() == TokenTypes.VARIABLE_DEF) &&
+					 variableName.equals(_getVariableName(previousDetailAST))) {
+
+				DetailAST parentDetailAST = previousDetailAST.getParent();
+
+				if (includeGlobalVariables ||
+					(parentDetailAST.getType() != TokenTypes.OBJBLOCK)) {
+
+					return previousDetailAST;
+				}
+			}
+
+			DetailAST previousSiblingDetailAST =
+				previousDetailAST.getPreviousSibling();
+
+			if (previousSiblingDetailAST != null) {
+				previousDetailAST = previousSiblingDetailAST;
+
+				continue;
+			}
+
+			DetailAST parentDetailAST = previousDetailAST.getParent();
+
+			if (parentDetailAST != null) {
+				previousDetailAST = parentDetailAST;
+
+				continue;
+			}
+
+			break;
+		}
+
+		return null;
+	}
+
 	protected String getVariableName(DetailAST methodCallDetailAST) {
 		DetailAST dotDetailAST = methodCallDetailAST.findFirstToken(
 			TokenTypes.DOT);
@@ -749,118 +959,11 @@ public abstract class BaseCheck extends AbstractCheck {
 		DetailAST detailAST, String variableName,
 		boolean includeGlobalVariables) {
 
-		DetailAST previousDetailAST = detailAST;
+		DetailAST variableDefinitionDetailAST = getVariableDefinitionDetailAST(
+			detailAST, variableName, includeGlobalVariables);
 
-		while (true) {
-			if (includeGlobalVariables &&
-				((previousDetailAST.getType() == TokenTypes.CLASS_DEF) ||
-				 (previousDetailAST.getType() == TokenTypes.ENUM_DEF) ||
-				 (previousDetailAST.getType() == TokenTypes.INTERFACE_DEF))) {
-
-				DetailAST objBlockDetailAST = previousDetailAST.findFirstToken(
-					TokenTypes.OBJBLOCK);
-
-				List<DetailAST> variableDefinitionDetailASTList =
-					getAllChildTokens(
-						objBlockDetailAST, false, TokenTypes.VARIABLE_DEF);
-
-				for (DetailAST variableDefinitionDetailAST :
-						variableDefinitionDetailASTList) {
-
-					if (variableName.equals(
-							_getVariableName(variableDefinitionDetailAST))) {
-
-						return variableDefinitionDetailAST.findFirstToken(
-							TokenTypes.TYPE);
-					}
-				}
-			}
-			else if ((previousDetailAST.getType() ==
-						TokenTypes.FOR_EACH_CLAUSE) ||
-					 (previousDetailAST.getType() == TokenTypes.FOR_INIT)) {
-
-				List<DetailAST> variableDefinitionDetailASTList =
-					getAllChildTokens(
-						previousDetailAST, false, TokenTypes.VARIABLE_DEF);
-
-				for (DetailAST variableDefinitionDetailAST :
-						variableDefinitionDetailASTList) {
-
-					if (variableName.equals(
-							_getVariableName(variableDefinitionDetailAST))) {
-
-						return variableDefinitionDetailAST.findFirstToken(
-							TokenTypes.TYPE);
-					}
-				}
-			}
-			else if ((previousDetailAST.getType() ==
-						TokenTypes.LITERAL_CATCH) ||
-					 (previousDetailAST.getType() == TokenTypes.PARAMETERS)) {
-
-				List<DetailAST> parameterDefinitionDetailASTList =
-					getAllChildTokens(
-						previousDetailAST, false, TokenTypes.PARAMETER_DEF);
-
-				for (DetailAST parameterDefinitionDetailAST :
-						parameterDefinitionDetailASTList) {
-
-					if (variableName.equals(
-							_getVariableName(parameterDefinitionDetailAST))) {
-
-						return parameterDefinitionDetailAST.findFirstToken(
-							TokenTypes.TYPE);
-					}
-				}
-			}
-			else if (previousDetailAST.getType() ==
-						TokenTypes.RESOURCE_SPECIFICATION) {
-
-				DetailAST recourcesDetailAST = previousDetailAST.findFirstToken(
-					TokenTypes.RESOURCES);
-
-				List<DetailAST> resourceDetailASTList = getAllChildTokens(
-					recourcesDetailAST, false, TokenTypes.RESOURCE);
-
-				for (DetailAST resourceDetailAST : resourceDetailASTList) {
-					if (variableName.equals(
-							_getVariableName(resourceDetailAST))) {
-
-						return resourceDetailAST.findFirstToken(
-							TokenTypes.TYPE);
-					}
-				}
-			}
-			else if ((previousDetailAST.getType() == TokenTypes.VARIABLE_DEF) &&
-					 variableName.equals(_getVariableName(previousDetailAST))) {
-
-				DetailAST parentDetailAST = previousDetailAST.getParent();
-
-				if (includeGlobalVariables ||
-					(parentDetailAST.getType() != TokenTypes.OBJBLOCK)) {
-
-					return previousDetailAST.findFirstToken(TokenTypes.TYPE);
-				}
-			}
-
-			DetailAST previousSiblingDetailAST =
-				previousDetailAST.getPreviousSibling();
-
-			if (previousSiblingDetailAST != null) {
-				previousDetailAST = previousSiblingDetailAST;
-
-				continue;
-			}
-
-			DetailAST parentDetailAST = previousDetailAST.getParent();
-
-			if (parentDetailAST != null) {
-				previousDetailAST = parentDetailAST;
-
-				continue;
-			}
-
-			break;
+		if (variableDefinitionDetailAST != null) {
+			return variableDefinitionDetailAST.findFirstToken(TokenTypes.TYPE);
 		}
 
 		return null;
@@ -910,6 +1013,67 @@ public abstract class BaseCheck extends AbstractCheck {
 			TokenTypes.ARRAY_DECLARATOR);
 
 		if (arrayDeclaratorDetailAST != null) {
+			return true;
+		}
+
+		return false;
+	}
+
+	protected boolean isAssignNewArrayList(DetailAST detailAST) {
+		DetailAST assignDetailAST = detailAST.findFirstToken(TokenTypes.ASSIGN);
+
+		if (assignDetailAST == null) {
+			return false;
+		}
+
+		DetailAST firstChildDetailAST = null;
+
+		if (detailAST.getType() == TokenTypes.EXPR) {
+			firstChildDetailAST = assignDetailAST.findFirstToken(
+				TokenTypes.LITERAL_NEW);
+
+			if (firstChildDetailAST == null) {
+				return false;
+			}
+		}
+		else {
+			firstChildDetailAST = assignDetailAST.getFirstChild();
+
+			if (firstChildDetailAST.getType() != TokenTypes.EXPR) {
+				return false;
+			}
+
+			firstChildDetailAST = firstChildDetailAST.getFirstChild();
+		}
+
+		if (firstChildDetailAST.getType() != TokenTypes.LITERAL_NEW) {
+			return false;
+		}
+
+		DetailAST identDetailAST = firstChildDetailAST.getFirstChild();
+
+		if ((identDetailAST.getType() != TokenTypes.IDENT) ||
+			!Objects.equals(identDetailAST.getText(), "ArrayList")) {
+
+			return false;
+		}
+
+		DetailAST elistDetailAST = firstChildDetailAST.findFirstToken(
+			TokenTypes.ELIST);
+
+		if (elistDetailAST == null) {
+			return false;
+		}
+
+		firstChildDetailAST = elistDetailAST.getFirstChild();
+
+		if (firstChildDetailAST == null) {
+			return true;
+		}
+
+		firstChildDetailAST = firstChildDetailAST.getFirstChild();
+
+		if (firstChildDetailAST.getType() == TokenTypes.NUM_INT) {
 			return true;
 		}
 
@@ -1051,6 +1215,29 @@ public abstract class BaseCheck extends AbstractCheck {
 		TokenTypes.POST_INC, TokenTypes.UNARY_MINUS, TokenTypes.UNARY_PLUS
 	};
 
+	protected class ChainInformation {
+
+		public void addMethodName(String methodName) {
+			_methodNames.add(methodName);
+		}
+
+		public List<String> getMethodNames() {
+			return _methodNames;
+		}
+
+		public String getReturnType() {
+			return _returnType;
+		}
+
+		public void setReturnType(String returnType) {
+			_returnType = returnType;
+		}
+
+		private List<String> _methodNames = new ArrayList<>();
+		private String _returnType;
+
+	}
+
 	private List<DetailAST> _addDependentIdentDetailASTList(
 		List<DetailAST> dependentIdentDetailASTList, DetailAST detailAST,
 		List<Variable> variables, int lineNumber, boolean includeGetters) {
@@ -1073,12 +1260,17 @@ public abstract class BaseCheck extends AbstractCheck {
 
 			String name = identDetailAST.getText();
 
+			if (name.matches("[A-Z].*")) {
+				continue;
+			}
+
 			for (Variable variable : variables) {
 				if (!name.equals(variable.getName())) {
 					continue;
 				}
 
-				if (_hasPossibleValueChangeOperation(identDetailAST, false) ||
+				if (_hasPossibleValueChangeOperation(
+						identDetailAST, includeGetters) ||
 					variable.hasPossibleValueChangeOperation()) {
 
 					dependentIdentDetailASTList.add(identDetailAST);
@@ -1090,13 +1282,97 @@ public abstract class BaseCheck extends AbstractCheck {
 			if ((detailAST.getLineNo() < lineNumber) &&
 				(count != dependentIdentDetailASTList.size())) {
 
-				variables.addAll(_getVariables(detailAST, false));
+				if (getEndLineNumber(detailAST) < lineNumber) {
+					variables.addAll(_getVariables(detailAST, false));
+				}
+				else {
+					DetailAST elistDetailAST = getParentWithTokenType(
+						identDetailAST, TokenTypes.ELIST);
+
+					if (elistDetailAST == null) {
+						variables.addAll(
+							_getVariables(detailAST, includeGetters));
+					}
+					else {
+						while (true) {
+							DetailAST parentDetailAST =
+								elistDetailAST.getParent();
+
+							if (parentDetailAST.getLineNo() >= lineNumber) {
+								variables.addAll(
+									_getVariables(
+										elistDetailAST, includeGetters));
+							}
+							else {
+								break;
+							}
+
+							DetailAST parentElistDetailAST =
+								getParentWithTokenType(
+									elistDetailAST, TokenTypes.ELIST);
+
+							if ((parentElistDetailAST == null) ||
+								(parentElistDetailAST.getLineNo() >
+									elistDetailAST.getLineNo())) {
+
+								break;
+							}
+
+							elistDetailAST = parentElistDetailAST;
+						}
+					}
+				}
 			}
 		}
 
 		return _addDependentIdentDetailASTList(
 			dependentIdentDetailASTList, detailAST.getNextSibling(), variables,
 			lineNumber, includeGetters);
+	}
+
+	private String _getChainReturnType(DetailAST detailAST) {
+		if (detailAST.getType() == TokenTypes.EXPR) {
+			DetailAST parentDetailAST = detailAST.getParent();
+
+			if (parentDetailAST.getType() == TokenTypes.LITERAL_RETURN) {
+				DetailAST methodDefDetailAST = getParentWithTokenType(
+					parentDetailAST, TokenTypes.METHOD_DEF);
+
+				if (methodDefDetailAST != null) {
+					return getTypeName(
+						methodDefDetailAST.findFirstToken(TokenTypes.TYPE),
+						false);
+				}
+			}
+
+			if (parentDetailAST.getType() == TokenTypes.ASSIGN) {
+				parentDetailAST = parentDetailAST.getParent();
+
+				if (parentDetailAST.getType() == TokenTypes.VARIABLE_DEF) {
+					DetailAST identDetailAST = parentDetailAST.findFirstToken(
+						TokenTypes.IDENT);
+
+					if (identDetailAST != null) {
+						return getVariableTypeName(
+							detailAST, identDetailAST.getText(), false);
+					}
+				}
+			}
+
+			return null;
+		}
+
+		if (detailAST.getType() != TokenTypes.ASSIGN) {
+			return null;
+		}
+
+		DetailAST identDetailAST = detailAST.findFirstToken(TokenTypes.IDENT);
+
+		if (identDetailAST == null) {
+			return null;
+		}
+
+		return getVariableTypeName(detailAST, identDetailAST.getText(), false);
 	}
 
 	private List<String> _getJSPImportNames(String directoryName) {
@@ -1220,6 +1496,7 @@ public abstract class BaseCheck extends AbstractCheck {
 				typeName.equals("HttpServletRequest") ||
 				typeName.equals("RenderRequest") ||
 				typeName.equals("ResourceRequest") ||
+				typeName.equals("ThemeDisplay") ||
 				typeName.endsWith("PortletRequest")) {
 
 				String methodName = getMethodName(parentDetailAST.getParent());

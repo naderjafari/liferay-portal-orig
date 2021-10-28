@@ -125,6 +125,9 @@ public class SampleSQLBuilderTest {
 	}
 
 	private void _initProperties(Properties properties, String outputDir) {
+		properties.put(
+			BenchmarksPropsKeys.COMMERCE_LAYOUT_EXCLUDED_PORTLETS,
+			StringPool.BLANK);
 		properties.put(BenchmarksPropsKeys.DB_TYPE, "hypersonic");
 		properties.put(BenchmarksPropsKeys.MAX_ASSET_CATEGORY_COUNT, "1");
 		properties.put(
@@ -142,6 +145,9 @@ public class SampleSQLBuilderTest {
 		properties.put(BenchmarksPropsKeys.MAX_COMMERCE_GROUP_COUNT, "1");
 		properties.put(
 			BenchmarksPropsKeys.MAX_COMMERCE_INVENTORY_WAREHOUSE_COUNT, "1");
+		properties.put(
+			BenchmarksPropsKeys.MAX_COMMERCE_INVENTORY_WAREHOUSE_ITEM_QUANTITY,
+			"1");
 		properties.put(
 			BenchmarksPropsKeys.MAX_COMMERCE_ORDER_STATUS_CANCELLED_COUNT, "1");
 		properties.put(

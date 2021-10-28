@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.OrderedProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.saml.opensaml.integration.field.expression.handler.SamlSpIdpConnectionFieldExpressionHandler;
 import com.liferay.saml.opensaml.integration.processor.context.SamlSpIdpConnectionProcessorContext;
@@ -61,7 +62,8 @@ public class AttributeMappingSamlSpIdpConnectionFieldExpressionHandler
 		fieldExpressionMapper.mapUnsafeString(
 			"userAttributeMappingsPrefixes",
 			(samlSpIdpConnection, prefixes) -> {
-				Properties userAttributeMappingsProperties = new Properties();
+				Properties userAttributeMappingsProperties =
+					new OrderedProperties();
 
 				for (String prefix : StringUtil.split(prefixes)) {
 					_populate(
@@ -109,19 +111,6 @@ public class AttributeMappingSamlSpIdpConnectionFieldExpressionHandler
 					String.class,
 					prefix + ":userAttributeMappingFieldExpression-" + index));
 
-			if (Objects.equals(
-					index,
-					samlSpIdpConnectionProcessorContext.getValue(
-						String.class, "userIdentifierExpressionIndex")) &&
-				Objects.equals(
-					prefix,
-					samlSpIdpConnectionProcessorContext.getValue(
-						String.class, "userIdentifierExpressionPrefix"))) {
-
-				samlSpIdpConnection.setUserIdentifierExpression(
-					"attribute:" + fieldExpression);
-			}
-
 			String attributeName = GetterUtil.getString(
 				samlSpIdpConnectionProcessorContext.getValue(
 					String.class,
@@ -150,6 +139,19 @@ public class AttributeMappingSamlSpIdpConnectionFieldExpressionHandler
 
 			if (!Validator.isBlank(prefix)) {
 				fieldExpression = prefix + ":" + fieldExpression;
+			}
+
+			if (Objects.equals(
+					index,
+					samlSpIdpConnectionProcessorContext.getValue(
+						String.class, "userIdentifierExpressionIndex")) &&
+				Objects.equals(
+					prefix,
+					samlSpIdpConnectionProcessorContext.getValue(
+						String.class, "userIdentifierExpressionPrefix"))) {
+
+				samlSpIdpConnection.setUserIdentifierExpression(
+					"attribute:" + fieldExpression);
 			}
 
 			userAttributeMappingsProperties.put(attributeName, fieldExpression);

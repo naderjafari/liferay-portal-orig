@@ -47,6 +47,17 @@ import org.json.JSONObject;
 public abstract class BaseJob implements Job {
 
 	@Override
+	public int getAxisCount() {
+		List<AxisTestClassGroup> axisTestClassGroups = getAxisTestClassGroups();
+
+		if (axisTestClassGroups == null) {
+			return 0;
+		}
+
+		return axisTestClassGroups.size();
+	}
+
+	@Override
 	public List<AxisTestClassGroup> getAxisTestClassGroups() {
 		List<AxisTestClassGroup> axisTestClassGroups = new ArrayList<>();
 
@@ -96,6 +107,45 @@ public abstract class BaseJob implements Job {
 	@Override
 	public BuildProfile getBuildProfile() {
 		return _buildProfile;
+	}
+
+	@Override
+	public List<String> getDistNodes() {
+		try {
+			List<JenkinsMaster> jenkinsMasters =
+				JenkinsResultsParserUtil.getJenkinsMasters(
+					JenkinsResultsParserUtil.getBuildProperties(),
+					_getSlaveRAMMinimumDefault(), _getSlavesPerHostDefault(),
+					JenkinsResultsParserUtil.getCohortName());
+
+			int axisCount = getAxisCount();
+			int distNodeAxisCount = _getDistNodeAxisCount();
+
+			int distNodeCount = axisCount / distNodeAxisCount;
+
+			if ((axisCount % distNodeAxisCount) > 0) {
+				distNodeCount++;
+			}
+
+			distNodeCount = Math.min(distNodeCount, jenkinsMasters.size());
+
+			distNodeCount = Math.max(distNodeCount, _getDistNodeCountMinimum());
+
+			List<JenkinsSlave> jenkinsSlaves =
+				JenkinsResultsParserUtil.getReachableJenkinsSlaves(
+					jenkinsMasters, distNodeCount);
+
+			List<String> distNodes = new ArrayList<>();
+
+			for (JenkinsSlave jenkinsSlave : jenkinsSlaves) {
+				distNodes.add(jenkinsSlave.getName());
+			}
+
+			return distNodes;
+		}
+		catch (IOException ioException) {
+			return new ArrayList<>();
+		}
 	}
 
 	@Override
@@ -168,6 +218,8 @@ public abstract class BaseJob implements Job {
 			batchProperties.setProperty(
 				"test.batch.minimum.slave.ram",
 				String.valueOf(batchTestClassGroup.getMinimumSlaveRAM()));
+			batchProperties.setProperty(
+				"test.batch.slave.label", batchTestClassGroup.getSlaveLabel());
 
 			if (batchTestClassGroup instanceof FunctionalBatchTestClassGroup) {
 				FunctionalBatchTestClassGroup functionalBatchTestClassGroup =
@@ -213,6 +265,9 @@ public abstract class BaseJob implements Job {
 				segmentProperties.setProperty(
 					"test.batch.size",
 					String.valueOf(segmentTestClassGroup.getAxisCount()));
+				segmentProperties.setProperty(
+					"test.batch.slave.label",
+					segmentTestClassGroup.getSlaveLabel());
 
 				String testCasePropertiesContent =
 					segmentTestClassGroup.getTestCasePropertiesContent();
@@ -359,10 +414,6 @@ public abstract class BaseJob implements Job {
 							TestClassGroupFactory.newBatchTestClassGroup(
 								batchName, job);
 
-						if (batchTestClassGroup.getAxisCount() <= 0) {
-							return null;
-						}
-
 						long duration =
 							JenkinsResultsParserUtil.getCurrentTimeMillis() -
 								start;
@@ -376,6 +427,10 @@ public abstract class BaseJob implements Job {
 								" at ",
 								JenkinsResultsParserUtil.toDateString(
 									new Date())));
+
+						if (batchTestClassGroup.getAxisCount() <= 0) {
+							return null;
+						}
 
 						return batchTestClassGroup;
 					}
@@ -515,6 +570,83 @@ public abstract class BaseJob implements Job {
 	}
 
 	protected final List<File> jobPropertiesFiles = new ArrayList<>();
+
+	private int _getDistNodeAxisCount() {
+		try {
+			String distNodeAxisCount =
+				JenkinsResultsParserUtil.getBuildProperty(
+					"dist.node.axis.count");
+
+			if (!JenkinsResultsParserUtil.isNullOrEmpty(distNodeAxisCount) &&
+				distNodeAxisCount.matches("\\d+") &&
+				!distNodeAxisCount.equals("0")) {
+
+				return Integer.parseInt(distNodeAxisCount);
+			}
+		}
+		catch (IOException ioException) {
+		}
+
+		return 25;
+	}
+
+	private int _getDistNodeCountMinimum() {
+		try {
+			String distNodeCountMinimum =
+				JenkinsResultsParserUtil.getBuildProperty(
+					"dist.node.count.minimum");
+
+			if (!JenkinsResultsParserUtil.isNullOrEmpty(distNodeCountMinimum) &&
+				distNodeCountMinimum.matches("\\d+") &&
+				!distNodeCountMinimum.equals("0")) {
+
+				return Integer.parseInt(distNodeCountMinimum);
+			}
+		}
+		catch (IOException ioException) {
+		}
+
+		return 3;
+	}
+
+	private int _getSlaveRAMMinimumDefault() {
+		try {
+			String slaveRAMMinimumDefault =
+				JenkinsResultsParserUtil.getBuildProperty(
+					"slave.ram.minimum.default");
+
+			if (!JenkinsResultsParserUtil.isNullOrEmpty(
+					slaveRAMMinimumDefault) &&
+				slaveRAMMinimumDefault.matches("\\d+") &&
+				!slaveRAMMinimumDefault.equals("0")) {
+
+				return Integer.parseInt(slaveRAMMinimumDefault);
+			}
+		}
+		catch (IOException ioException) {
+		}
+
+		return 16;
+	}
+
+	private int _getSlavesPerHostDefault() {
+		try {
+			String slavesPerHostDefault =
+				JenkinsResultsParserUtil.getBuildProperty(
+					"slaves.per.host.default");
+
+			if (!JenkinsResultsParserUtil.isNullOrEmpty(slavesPerHostDefault) &&
+				slavesPerHostDefault.matches("\\d+") &&
+				!slavesPerHostDefault.equals("0")) {
+
+				return Integer.parseInt(slavesPerHostDefault);
+			}
+		}
+		catch (IOException ioException) {
+		}
+
+		return 2;
+	}
 
 	private static final Integer _THREAD_COUNT = 20;
 

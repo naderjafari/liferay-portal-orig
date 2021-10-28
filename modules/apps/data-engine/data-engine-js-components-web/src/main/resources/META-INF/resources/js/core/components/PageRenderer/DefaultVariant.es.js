@@ -16,6 +16,11 @@ import ClayLayout from '@clayui/layout';
 import classnames from 'classnames';
 import React, {forwardRef} from 'react';
 
+import {useFormState} from '../../hooks/useForm.es';
+
+const DDM_FORM_ADMIN_PORTLET_NAMESPACE =
+	'com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet';
+
 export const Container = ({
 	activePage,
 	children,
@@ -25,7 +30,7 @@ export const Container = ({
 	<div
 		className={classnames('fade tab-pane', {
 			'active show': activePage === pageIndex,
-			hide: activePage !== pageIndex,
+			'hide': activePage !== pageIndex,
 		})}
 		role="tabpanel"
 	>
@@ -45,6 +50,7 @@ export const Column = forwardRef(
 			children,
 			className,
 			column,
+			columnClassName,
 			index,
 			onClick,
 			onMouseLeave,
@@ -55,6 +61,8 @@ export const Column = forwardRef(
 		},
 		ref
 	) => {
+		const {portletId} = useFormState();
+
 		const addr = {
 			'data-ddm-field-column': index,
 			'data-ddm-field-page': pageIndex,
@@ -68,7 +76,7 @@ export const Column = forwardRef(
 		return (
 			<ClayLayout.Col
 				{...addr}
-				className="col-ddm"
+				className={classnames('col-ddm', columnClassName)}
 				key={index}
 				md={column.size}
 				onClick={onClick}
@@ -89,7 +97,12 @@ export const Column = forwardRef(
 						data-field-name={firstField.fieldName}
 					>
 						{column.fields.map((field, index) => {
-							if (viewMode) {
+							if (
+								viewMode &&
+								portletId.includes(
+									DDM_FORM_ADMIN_PORTLET_NAMESPACE
+								)
+							) {
 								field.predefinedValue = '';
 							}
 
@@ -157,7 +170,9 @@ export const Rows = ({children, rows}) => {
 	}
 
 	return rows.map((row, index) => (
-		<div key={index}>{children({index, row})}</div>
+		<div className="ddm-row" key={index}>
+			{children({index, row})}
+		</div>
 	));
 };
 

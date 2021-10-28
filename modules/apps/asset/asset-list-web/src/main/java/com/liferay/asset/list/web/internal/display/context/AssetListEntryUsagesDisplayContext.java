@@ -88,7 +88,7 @@ public class AssetListEntryUsagesDisplayContext {
 				return StringPool.BLANK;
 			}
 
-			if (!_isDraft(layout)) {
+			if (!layout.isDraftLayout()) {
 				return layout.getName(_themeDisplay.getLocale());
 			}
 
@@ -97,7 +97,7 @@ public class AssetListEntryUsagesDisplayContext {
 
 		long plid = assetListEntryUsage.getPlid();
 
-		if (_isDraft(layout)) {
+		if (layout.isDraftLayout()) {
 			plid = layout.getClassPK();
 		}
 
@@ -109,7 +109,7 @@ public class AssetListEntryUsagesDisplayContext {
 			return StringPool.BLANK;
 		}
 
-		if (!_isDraft(layout)) {
+		if (!layout.isDraftLayout()) {
 			return layoutPageTemplateEntry.getName();
 		}
 
@@ -180,7 +180,7 @@ public class AssetListEntryUsagesDisplayContext {
 			getRedirect()
 		).setParameter(
 			"assetListEntryId", getAssetListEntryId()
-		).build();
+		).buildPortletURL();
 	}
 
 	public String getRedirect() {
@@ -284,14 +284,9 @@ public class AssetListEntryUsagesDisplayContext {
 	}
 
 	private String _getName(String name) {
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(name);
-		sb.append(" (");
-		sb.append(LanguageUtil.get(_themeDisplay.getLocale(), "draft"));
-		sb.append(")");
-
-		return sb.toString();
+		return StringBundler.concat(
+			name, " (", LanguageUtil.get(_themeDisplay.getLocale(), "draft"),
+			")");
 	}
 
 	private String _getOrderByCol() {
@@ -314,16 +309,6 @@ public class AssetListEntryUsagesDisplayContext {
 			_renderRequest, "orderByType", "asc");
 
 		return _orderByType;
-	}
-
-	private boolean _isDraft(Layout layout) {
-		if (layout.getClassNameId() != PortalUtil.getClassNameId(
-				Layout.class.getName())) {
-
-			return false;
-		}
-
-		return true;
 	}
 
 	private Long _assetListEntryId;

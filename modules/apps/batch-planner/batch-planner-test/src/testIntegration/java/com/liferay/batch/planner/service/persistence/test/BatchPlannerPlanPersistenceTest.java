@@ -138,6 +138,8 @@ public class BatchPlannerPlanPersistenceTest {
 
 		newBatchPlannerPlan.setActive(RandomTestUtil.randomBoolean());
 
+		newBatchPlannerPlan.setExport(RandomTestUtil.randomBoolean());
+
 		newBatchPlannerPlan.setExternalType(RandomTestUtil.randomString());
 
 		newBatchPlannerPlan.setExternalURL(RandomTestUtil.randomString());
@@ -146,7 +148,10 @@ public class BatchPlannerPlanPersistenceTest {
 
 		newBatchPlannerPlan.setName(RandomTestUtil.randomString());
 
-		newBatchPlannerPlan.setExport(RandomTestUtil.randomBoolean());
+		newBatchPlannerPlan.setTaskItemDelegateName(
+			RandomTestUtil.randomString());
+
+		newBatchPlannerPlan.setTemplate(RandomTestUtil.randomBoolean());
 
 		_batchPlannerPlans.add(_persistence.update(newBatchPlannerPlan));
 
@@ -178,6 +183,9 @@ public class BatchPlannerPlanPersistenceTest {
 			existingBatchPlannerPlan.isActive(),
 			newBatchPlannerPlan.isActive());
 		Assert.assertEquals(
+			existingBatchPlannerPlan.isExport(),
+			newBatchPlannerPlan.isExport());
+		Assert.assertEquals(
 			existingBatchPlannerPlan.getExternalType(),
 			newBatchPlannerPlan.getExternalType());
 		Assert.assertEquals(
@@ -189,8 +197,11 @@ public class BatchPlannerPlanPersistenceTest {
 		Assert.assertEquals(
 			existingBatchPlannerPlan.getName(), newBatchPlannerPlan.getName());
 		Assert.assertEquals(
-			existingBatchPlannerPlan.isExport(),
-			newBatchPlannerPlan.isExport());
+			existingBatchPlannerPlan.getTaskItemDelegateName(),
+			newBatchPlannerPlan.getTaskItemDelegateName());
+		Assert.assertEquals(
+			existingBatchPlannerPlan.isTemplate(),
+			newBatchPlannerPlan.isTemplate());
 	}
 
 	@Test
@@ -209,12 +220,38 @@ public class BatchPlannerPlanPersistenceTest {
 	}
 
 	@Test
+	public void testCountByC_E() throws Exception {
+		_persistence.countByC_E(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
+
+		_persistence.countByC_E(0L, RandomTestUtil.randomBoolean());
+	}
+
+	@Test
 	public void testCountByC_N() throws Exception {
 		_persistence.countByC_N(RandomTestUtil.nextLong(), "");
 
 		_persistence.countByC_N(0L, "null");
 
 		_persistence.countByC_N(0L, (String)null);
+	}
+
+	@Test
+	public void testCountByC_T() throws Exception {
+		_persistence.countByC_T(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
+
+		_persistence.countByC_T(0L, RandomTestUtil.randomBoolean());
+	}
+
+	@Test
+	public void testCountByC_E_T() throws Exception {
+		_persistence.countByC_E_T(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean(),
+			RandomTestUtil.randomBoolean());
+
+		_persistence.countByC_E_T(
+			0L, RandomTestUtil.randomBoolean(), RandomTestUtil.randomBoolean());
 	}
 
 	@Test
@@ -244,9 +281,9 @@ public class BatchPlannerPlanPersistenceTest {
 		return OrderByComparatorFactoryUtil.create(
 			"BatchPlannerPlan", "mvccVersion", true, "batchPlannerPlanId", true,
 			"companyId", true, "userId", true, "userName", true, "createDate",
-			true, "modifiedDate", true, "active", true, "externalType", true,
-			"externalURL", true, "internalClassName", true, "name", true,
-			"export", true);
+			true, "modifiedDate", true, "active", true, "export", true,
+			"externalType", true, "externalURL", true, "internalClassName",
+			true, "name", true, "taskItemDelegateName", true, "template", true);
 	}
 
 	@Test
@@ -549,6 +586,8 @@ public class BatchPlannerPlanPersistenceTest {
 
 		batchPlannerPlan.setActive(RandomTestUtil.randomBoolean());
 
+		batchPlannerPlan.setExport(RandomTestUtil.randomBoolean());
+
 		batchPlannerPlan.setExternalType(RandomTestUtil.randomString());
 
 		batchPlannerPlan.setExternalURL(RandomTestUtil.randomString());
@@ -557,7 +596,9 @@ public class BatchPlannerPlanPersistenceTest {
 
 		batchPlannerPlan.setName(RandomTestUtil.randomString());
 
-		batchPlannerPlan.setExport(RandomTestUtil.randomBoolean());
+		batchPlannerPlan.setTaskItemDelegateName(RandomTestUtil.randomString());
+
+		batchPlannerPlan.setTemplate(RandomTestUtil.randomBoolean());
 
 		_batchPlannerPlans.add(_persistence.update(batchPlannerPlan));
 

@@ -39,7 +39,6 @@ import com.liferay.portal.kernel.json.JSONDeserializer;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -61,9 +60,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -225,18 +222,17 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 	@Test
 	public void testGetAssetLibraryDocumentFoldersPage() throws Exception {
-		Page<DocumentFolder> page =
-			documentFolderResource.getAssetLibraryDocumentFoldersPage(
-				testGetAssetLibraryDocumentFoldersPage_getAssetLibraryId(),
-				null, RandomTestUtil.randomString(), null, null,
-				Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long assetLibraryId =
 			testGetAssetLibraryDocumentFoldersPage_getAssetLibraryId();
 		Long irrelevantAssetLibraryId =
 			testGetAssetLibraryDocumentFoldersPage_getIrrelevantAssetLibraryId();
+
+		Page<DocumentFolder> page =
+			documentFolderResource.getAssetLibraryDocumentFoldersPage(
+				assetLibraryId, null, null, null, null, Pagination.of(1, 10),
+				null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantAssetLibraryId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -264,7 +260,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 				assetLibraryId, randomDocumentFolder());
 
 		page = documentFolderResource.getAssetLibraryDocumentFoldersPage(
-			assetLibraryId, null, null, null, null, Pagination.of(1, 2), null);
+			assetLibraryId, null, null, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -438,7 +434,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -940,18 +936,17 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 	@Test
 	public void testGetDocumentFolderDocumentFoldersPage() throws Exception {
-		Page<DocumentFolder> page =
-			documentFolderResource.getDocumentFolderDocumentFoldersPage(
-				testGetDocumentFolderDocumentFoldersPage_getParentDocumentFolderId(),
-				null, RandomTestUtil.randomString(), null, null,
-				Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long parentDocumentFolderId =
 			testGetDocumentFolderDocumentFoldersPage_getParentDocumentFolderId();
 		Long irrelevantParentDocumentFolderId =
 			testGetDocumentFolderDocumentFoldersPage_getIrrelevantParentDocumentFolderId();
+
+		Page<DocumentFolder> page =
+			documentFolderResource.getDocumentFolderDocumentFoldersPage(
+				parentDocumentFolderId, null, null, null, null,
+				Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantParentDocumentFolderId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -980,8 +975,8 @@ public abstract class BaseDocumentFolderResourceTestCase {
 				parentDocumentFolderId, randomDocumentFolder());
 
 		page = documentFolderResource.getDocumentFolderDocumentFoldersPage(
-			parentDocumentFolderId, null, null, null, null, Pagination.of(1, 2),
-			null);
+			parentDocumentFolderId, null, null, null, null,
+			Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -1155,7 +1150,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -1298,17 +1293,15 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 	@Test
 	public void testGetSiteDocumentFoldersPage() throws Exception {
-		Page<DocumentFolder> page =
-			documentFolderResource.getSiteDocumentFoldersPage(
-				testGetSiteDocumentFoldersPage_getSiteId(), null,
-				RandomTestUtil.randomString(), null, null, Pagination.of(1, 2),
-				null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long siteId = testGetSiteDocumentFoldersPage_getSiteId();
 		Long irrelevantSiteId =
 			testGetSiteDocumentFoldersPage_getIrrelevantSiteId();
+
+		Page<DocumentFolder> page =
+			documentFolderResource.getSiteDocumentFoldersPage(
+				siteId, null, null, null, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantSiteId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -1336,7 +1329,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 				siteId, randomDocumentFolder());
 
 		page = documentFolderResource.getSiteDocumentFoldersPage(
-			siteId, null, null, null, null, Pagination.of(1, 2), null);
+			siteId, null, null, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -1503,7 +1496,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -1622,7 +1615,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			new HashMap<String, Object>() {
 				{
 					put("page", 1);
-					put("pageSize", 2);
+					put("pageSize", 10);
 
 					put("siteKey", "\"" + siteId + "\"");
 				}
@@ -1645,7 +1638,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/documentFolders");
 
-		Assert.assertEquals(2, documentFoldersJSONObject.get("totalCount"));
+		Assert.assertEquals(2, documentFoldersJSONObject.getLong("totalCount"));
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(documentFolder1, documentFolder2),
@@ -1762,7 +1755,9 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 				Class<?> clazz = object.getClass();
 
-				for (Field field : getDeclaredFields(clazz.getSuperclass())) {
+				for (java.lang.reflect.Field field :
+						getDeclaredFields(clazz.getSuperclass())) {
+
 					arraySB.append(field.getName());
 					arraySB.append(": ");
 
@@ -1806,7 +1801,9 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		StringBuilder sb = new StringBuilder("{");
 
-		for (Field field : getDeclaredFields(DocumentFolder.class)) {
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(DocumentFolder.class)) {
+
 			if (!ArrayUtil.contains(
 					getAdditionalAssertFieldNames(), field.getName())) {
 
@@ -1845,6 +1842,23 @@ public abstract class BaseDocumentFolderResourceTestCase {
 						graphQLFields)),
 				"JSONObject/data", "JSONObject/createSiteDocumentFolder"),
 			DocumentFolder.class);
+	}
+
+	protected void assertContains(
+		DocumentFolder documentFolder, List<DocumentFolder> documentFolders) {
+
+		boolean contains = false;
+
+		for (DocumentFolder item : documentFolders) {
+			if (equals(documentFolder, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			documentFolders + " does not contain " + documentFolder, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -2056,7 +2070,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.DocumentFolder.
 						class)) {
@@ -2073,12 +2087,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -2297,14 +2312,16 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -2649,8 +2666,8 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseDocumentFolderResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseDocumentFolderResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

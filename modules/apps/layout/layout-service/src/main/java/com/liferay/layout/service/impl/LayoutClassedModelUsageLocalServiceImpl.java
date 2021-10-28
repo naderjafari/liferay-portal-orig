@@ -24,6 +24,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
@@ -69,7 +71,7 @@ public class LayoutClassedModelUsageLocalServiceImpl
 
 		long companyId = serviceContext.getCompanyId();
 
-		Group group = groupLocalService.fetchGroup(groupId);
+		Group group = _groupLocalService.fetchGroup(groupId);
 
 		if (group != null) {
 			companyId = group.getCompanyId();
@@ -193,13 +195,13 @@ public class LayoutClassedModelUsageLocalServiceImpl
 			return LayoutClassedModelUsageConstants.TYPE_DEFAULT;
 		}
 
-		Layout layout = layoutLocalService.fetchLayout(plid);
+		Layout layout = _layoutLocalService.fetchLayout(plid);
 
 		if (layout == null) {
 			return LayoutClassedModelUsageConstants.TYPE_DEFAULT;
 		}
 
-		if ((layout.getClassNameId() > 0) && (layout.getClassPK() > 0)) {
+		if (layout.isDraftLayout()) {
 			plid = layout.getClassPK();
 		}
 
@@ -219,6 +221,12 @@ public class LayoutClassedModelUsageLocalServiceImpl
 
 		return LayoutClassedModelUsageConstants.TYPE_PAGE_TEMPLATE;
 	}
+
+	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private LayoutLocalService _layoutLocalService;
 
 	@Reference
 	private LayoutPageTemplateEntryLocalService

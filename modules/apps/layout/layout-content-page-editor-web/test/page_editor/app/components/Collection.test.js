@@ -38,6 +38,10 @@ jest.mock(
 );
 
 function renderCollection(itemConfig = {}) {
+	Liferay.Util.sub.mockImplementation((langKey, args) =>
+		[langKey, ...args].join('-')
+	);
+
 	const state = {
 		permissions: {
 			UPDATE: true,
@@ -113,6 +117,7 @@ describe('Collection', () => {
 			Promise.resolve({
 				items: [],
 				length: 0,
+				totalNumberOfItems: 1,
 			})
 		);
 
@@ -122,10 +127,13 @@ describe('Collection', () => {
 					itemSubtype: 'CollectionItemSubtype',
 					itemType: 'CollectionItemType',
 				},
+				listStyle: '',
 			});
 		});
 
-		expect(getByText(document.body, 'title')).toBeInTheDocument();
+		expect(
+			document.body.querySelector('.page-editor__collection-item')
+		).toBeInTheDocument();
 	});
 
 	it('renders empty collection items', async () => {
@@ -138,6 +146,7 @@ describe('Collection', () => {
 			Promise.resolve({
 				items,
 				length: 2,
+				totalNumberOfItems: 2,
 			})
 		);
 
@@ -147,11 +156,49 @@ describe('Collection', () => {
 					itemSubtype: 'CollectionItemSubtype',
 					itemType: 'CollectionItemType',
 				},
+				numberOfItems: 2,
+				numberOfItemsPerPage: 2,
+				paginationType: '',
 			});
 		});
 
 		items.forEach((item) =>
 			expect(getByText(document.body, item.title)).toBeInTheDocument()
 		);
+	});
+
+	it('renders numeric pagination', async () => {
+		await act(async () => {
+			renderCollection({
+				collection: {
+					classNameId: '1',
+					classPK: '1',
+					title: 'collection1',
+				},
+				numberOfItemsPerPage: 5,
+				paginationType: 'numeric',
+			});
+		});
+
+		expect(
+			getByText(document.body, 'showing-x-to-x-of-x-entries-1-2-2')
+		).toBeInTheDocument();
+	});
+
+	it('renders simple pagination', async () => {
+		await act(async () => {
+			renderCollection({
+				collection: {
+					classNameId: '1',
+					classPK: '1',
+					title: 'collection1',
+				},
+				numberOfItemsPerPage: 5,
+				paginationType: 'simple',
+			});
+		});
+
+		expect(getByText(document.body, 'previous')).toBeInTheDocument();
+		expect(getByText(document.body, 'next')).toBeInTheDocument();
 	});
 });

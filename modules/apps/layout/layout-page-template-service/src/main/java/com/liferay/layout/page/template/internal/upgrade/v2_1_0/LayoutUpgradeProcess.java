@@ -65,17 +65,15 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected void upgradeLayout() throws Exception {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append("select layoutPageTemplateEntryId, userId, groupId, name, ");
-		sb.append("type_, layoutPrototypeId from LayoutPageTemplateEntry ");
-		sb.append("where plid is null or plid = 0");
-
 		ServiceContext serviceContext = new ServiceContext();
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
 			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(sb.toString());
+			ResultSet resultSet = s.executeQuery(
+				StringBundler.concat(
+					"select layoutPageTemplateEntryId, groupId, companyId, ",
+					"userId, name, type_, layoutPrototypeId, companyId from ",
+					"LayoutPageTemplateEntry where plid is null or plid = 0"));
 			PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
@@ -83,6 +81,7 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 							"layoutPageTemplateEntryId = ?"))) {
 
 			while (resultSet.next()) {
+				long companyId = resultSet.getLong("companyId");
 				long userId = resultSet.getLong("userId");
 				long groupId = resultSet.getLong("groupId");
 				String name = resultSet.getString("name");
@@ -90,7 +89,7 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 				long layoutPrototypeId = resultSet.getLong("layoutPrototypeId");
 
 				long plid = _getPlid(
-					userId, groupId, name, type, layoutPrototypeId,
+					companyId, userId, groupId, name, type, layoutPrototypeId,
 					serviceContext);
 
 				preparedStatement.setLong(1, plid);
@@ -144,7 +143,7 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 	}
 
 	private long _getPlid(
-			long userId, long groupId, String name, int type,
+			long companyId, long userId, long groupId, String name, int type,
 			long layoutPrototypeId, ServiceContext serviceContext)
 		throws Exception {
 
@@ -175,9 +174,9 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 			"layout.instanceable.allowed", Boolean.TRUE);
 
 		Layout layout = _layoutLocalService.addLayout(
-			userId, groupId, privateLayout, 0, titleMap, titleMap, null, null,
-			null, layoutType, StringPool.BLANK, true, true, new HashMap<>(),
-			serviceContext);
+			PortalUtil.getValidUserId(companyId, userId), groupId,
+			privateLayout, 0, titleMap, titleMap, null, null, null, layoutType,
+			StringPool.BLANK, true, true, new HashMap<>(), serviceContext);
 
 		_layoutLocalService.addLayout(
 			layout.getUserId(), layout.getGroupId(), privateLayout,

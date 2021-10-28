@@ -43,11 +43,11 @@ AUI.add(
 
 		var TPL_INPUT =
 			'<label title="{titleCurrentValue}">' +
-			'<span class="lfr-categories-selector-category-name" title="{titleCurrentValue}">' +
+			'<span class="lfr-categories-selector-category-name text-truncate" title="{titleCurrentValue}">' +
 			'<input data-categoryId="{categoryId}" data-vocabularyid="{vocabularyId}" name="{inputName}" type="{type}" value="{titleCurrentValue}" {checked} />' +
 			'{titleCurrentValue}' +
 			'</span>' +
-			'<span class="lfr-categories-selector-search-results-path" title="{path}">{path}</span>' +
+			'<span class="lfr-categories-selector-search-results-path text-truncate" title="{path}">{path}</span>' +
 			'</label>';
 
 		var TPL_MESSAGE = '<div class="lfr-categories-message">{0}</div>';
@@ -302,7 +302,7 @@ AUI.add(
 									'$childrenCount = /assetcategory/get-vocabulary-root-categories-count': {
 										'@vocabularyId':
 											'$vocabularies.vocabularyId',
-										groupId: '$vocabularies.groupId',
+										'groupId': '$vocabularies.groupId',
 									},
 									'$group[descriptiveName] = /group/get-group': {
 										'@groupId': '$vocabularies.groupId',
@@ -599,10 +599,10 @@ AUI.add(
 										'@categoryId':
 											'$display.categories.categoryId',
 									},
-									end: -1,
-									groupIds: vocabularyGroupIds,
-									start: -1,
-									title: searchValue,
+									'end': -1,
+									'groupIds': vocabularyGroupIds,
+									'start': -1,
+									'title': searchValue,
 									vocabularyIds,
 								},
 							},
@@ -784,8 +784,8 @@ AUI.add(
 
 					var matchKey = instance.get('matchKey');
 
-					instance.entries.getKey = function (obj) {
-						return obj.categoryId;
+					instance.entries.getKey = function (object) {
+						return object.categoryId;
 					};
 
 					var curEntries = instance.get('curEntries');

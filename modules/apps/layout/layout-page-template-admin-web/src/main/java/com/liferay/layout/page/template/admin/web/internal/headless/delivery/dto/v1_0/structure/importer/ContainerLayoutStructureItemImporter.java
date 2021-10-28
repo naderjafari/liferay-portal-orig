@@ -16,7 +16,10 @@ package com.liferay.layout.page.template.admin.web.internal.headless.delivery.dt
 
 import com.liferay.headless.delivery.dto.v1_0.FragmentLink;
 import com.liferay.headless.delivery.dto.v1_0.PageElement;
+import com.liferay.layout.page.template.util.AlignConverter;
 import com.liferay.layout.page.template.util.BorderRadiusConverter;
+import com.liferay.layout.page.template.util.ContentDisplayConverter;
+import com.liferay.layout.page.template.util.JustifyConverter;
 import com.liferay.layout.page.template.util.MarginConverter;
 import com.liferay.layout.page.template.util.PaddingConverter;
 import com.liferay.layout.page.template.util.ShadowConverter;
@@ -27,9 +30,9 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.List;
 import java.util.Map;
@@ -48,15 +51,17 @@ public class ContainerLayoutStructureItemImporter
 
 	@Override
 	public LayoutStructureItem addLayoutStructureItem(
-			Layout layout, LayoutStructure layoutStructure,
-			PageElement pageElement, String parentItemId, int position,
-			Set<String> warningMessages)
+			LayoutStructure layoutStructure,
+			LayoutStructureItemImporterContext
+				layoutStructureItemImporterContext,
+			PageElement pageElement, Set<String> warningMessages)
 		throws Exception {
 
 		ContainerStyledLayoutStructureItem containerStyledLayoutStructureItem =
 			(ContainerStyledLayoutStructureItem)
 				layoutStructure.addContainerStyledLayoutStructureItem(
-					parentItemId, position);
+					layoutStructureItemImporterContext.getParentItemId(),
+					layoutStructureItemImporterContext.getPosition());
 
 		JSONObject stylesJSONObject = JSONFactoryUtil.createJSONObject();
 
@@ -104,6 +109,14 @@ public class ContainerLayoutStructureItemImporter
 				(Map<String, Object>)definitionMap.get("layout");
 
 			if (containerLayout != null) {
+				String align = String.valueOf(
+					containerLayout.getOrDefault("align", StringPool.BLANK));
+
+				if (Validator.isNotNull(align)) {
+					containerStyledLayoutStructureItem.setAlign(
+						AlignConverter.convertToInternalValue(align));
+				}
+
 				stylesJSONObject.put(
 					"borderColor", (String)containerLayout.get("borderColor")
 				).put(
@@ -112,80 +125,118 @@ public class ContainerLayoutStructureItemImporter
 						(String)containerLayout.get("borderRadius"))
 				);
 
-				Integer borderWidth = (Integer)containerLayout.get(
-					"borderWidth");
+				String borderWidth = String.valueOf(
+					containerLayout.getOrDefault(
+						"borderWidth", StringPool.BLANK));
 
-				if (borderWidth != null) {
+				if (Validator.isNotNull(borderWidth)) {
 					stylesJSONObject.put("borderWidth", borderWidth);
 				}
 
-				Integer marginBottom = MarginConverter.convertToInternalValue(
-					(Integer)containerLayout.get("marginBottom"));
+				String contentDisplay = String.valueOf(
+					containerLayout.getOrDefault(
+						"contentDisplay", StringPool.BLANK));
 
-				if (marginBottom != null) {
+				if (Validator.isNotNull(contentDisplay)) {
+					containerStyledLayoutStructureItem.setContentDisplay(
+						ContentDisplayConverter.convertToInternalValue(
+							contentDisplay));
+				}
+
+				String justify = String.valueOf(
+					containerLayout.getOrDefault("justify", StringPool.BLANK));
+
+				if (Validator.isNotNull(justify)) {
+					containerStyledLayoutStructureItem.setJustify(
+						JustifyConverter.convertToInternalValue(justify));
+				}
+
+				String marginBottom = MarginConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"marginBottom", StringPool.BLANK)));
+
+				if (Validator.isNotNull(marginBottom)) {
 					stylesJSONObject.put("marginBottom", marginBottom);
 				}
 
-				Integer marginLeft = MarginConverter.convertToInternalValue(
-					(Integer)containerLayout.get("marginLeft"));
+				String marginLeft = MarginConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"marginLeft", StringPool.BLANK)));
 
-				if (marginLeft != null) {
+				if (Validator.isNotNull(marginLeft)) {
 					stylesJSONObject.put("marginLeft", marginLeft);
 				}
 
-				Integer marginRight = MarginConverter.convertToInternalValue(
-					(Integer)containerLayout.get("marginRight"));
+				String marginRight = MarginConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"marginRight", StringPool.BLANK)));
 
-				if (marginRight != null) {
+				if (Validator.isNotNull(marginRight)) {
 					stylesJSONObject.put("marginRight", marginRight);
 				}
 
-				Integer marginTop = MarginConverter.convertToInternalValue(
-					(Integer)containerLayout.get("marginTop"));
+				String marginTop = MarginConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"marginTop", StringPool.BLANK)));
 
-				if (marginTop != null) {
+				if (Validator.isNotNull(marginTop)) {
 					stylesJSONObject.put("marginTop", marginTop);
 				}
 
-				Integer opacity = (Integer)containerLayout.get("opacity");
+				String opacity = String.valueOf(
+					containerLayout.getOrDefault("opacity", StringPool.BLANK));
 
-				if (opacity != null) {
+				if (Validator.isNotNull(opacity)) {
 					stylesJSONObject.put("opacity", opacity);
 				}
 
-				Integer paddingBottom = PaddingConverter.convertToInternalValue(
-					(Integer)containerLayout.get("paddingBottom"));
+				String paddingBottom = PaddingConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"paddingBottom", StringPool.BLANK)));
 
-				if (paddingBottom != null) {
+				if (Validator.isNotNull(paddingBottom)) {
 					stylesJSONObject.put("paddingBottom", paddingBottom);
 				}
 
-				Integer paddingHorizontal =
+				String paddingHorizontal =
 					PaddingConverter.convertToInternalValue(
-						(Integer)containerLayout.get("paddingHorizontal"));
-				Integer paddingLeft = PaddingConverter.convertToInternalValue(
-					(Integer)containerLayout.get("paddingLeft"));
-				Integer paddingRight = PaddingConverter.convertToInternalValue(
-					(Integer)containerLayout.get("paddingRight"));
+						String.valueOf(
+							containerLayout.getOrDefault(
+								"paddingHorizontal", StringPool.BLANK)));
+				String paddingLeft = PaddingConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"paddingLeft", StringPool.BLANK)));
+				String paddingRight = PaddingConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"paddingRight", StringPool.BLANK)));
 
-				if (paddingLeft != null) {
+				if (Validator.isNotNull(paddingLeft)) {
 					stylesJSONObject.put("paddingLeft", paddingLeft);
 				}
-				else if (paddingHorizontal != null) {
+				else if (Validator.isNotNull(paddingHorizontal)) {
 					stylesJSONObject.put("paddingLeft", paddingHorizontal);
 				}
 
-				if (paddingRight != null) {
+				if (Validator.isNotNull(paddingRight)) {
 					stylesJSONObject.put("paddingRight", paddingRight);
 				}
-				else if (paddingHorizontal != null) {
+				else if (Validator.isNotNull(paddingHorizontal)) {
 					stylesJSONObject.put("paddingRight", paddingHorizontal);
 				}
 
-				Integer paddingTop = PaddingConverter.convertToInternalValue(
-					(Integer)containerLayout.get("paddingTop"));
+				String paddingTop = PaddingConverter.convertToInternalValue(
+					String.valueOf(
+						containerLayout.getOrDefault(
+							"paddingTop", StringPool.BLANK)));
 
-				if (paddingTop != null) {
+				if (Validator.isNotNull(paddingTop)) {
 					stylesJSONObject.put("paddingTop", paddingTop);
 				}
 
@@ -221,10 +272,10 @@ public class ContainerLayoutStructureItemImporter
 					(Map<String, Object>)fragmentLinkMap.get("href");
 
 				if (hrefMap != null) {
-					String hrefValue = (String)hrefMap.get("value");
+					Object localizedValue = getLocalizedValue(hrefMap);
 
-					if (hrefValue != null) {
-						jsonObject.put("href", hrefValue);
+					if (localizedValue != null) {
+						jsonObject.put("href", localizedValue);
 					}
 
 					processMapping(

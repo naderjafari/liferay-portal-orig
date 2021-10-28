@@ -30,8 +30,8 @@ PortletURL portletURL = PortletURLBuilder.createRenderURL(
 ).setParameter(
 	"eventName", eventName
 ).setParameter(
-	"groupId", String.valueOf(groupId)
-).build();
+	"groupId", groupId
+).buildPortletURL();
 
 RuleGroupSearch ruleGroupSearch = new RuleGroupSearch(liferayPortletRequest, portletURL);
 

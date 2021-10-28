@@ -18,7 +18,7 @@ import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../AppContext.es';
 import {deleteMessageBoardThreadQuery} from '../utils/client.es';
-import {historyPushWithSlug} from '../utils/utils.es';
+import {deleteCache, historyPushWithSlug} from '../utils/utils.es';
 import Modal from './Modal.es';
 
 export default withRouter(
@@ -41,11 +41,16 @@ export default withRouter(
 									messageBoardThreadId: question.id,
 								},
 							}).then(() => {
+								deleteCache();
 								historyPushParser(
 									`/questions/${
-										context.useTopicNamesInURL
-											? question.messageBoardSection.title
-											: question.messageBoardSection.id
+										question.messageBoardSection
+											? context.useTopicNamesInURL
+												? question.messageBoardSection
+														.title
+												: question.messageBoardSection
+														.id
+											: context.rootTopicId
 									}`
 								);
 							});

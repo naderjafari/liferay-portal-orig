@@ -33,7 +33,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -52,7 +51,6 @@ import com.liferay.portal.vulcan.resource.EntityModelResource;
 
 import java.io.File;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -350,17 +348,17 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 	public void testGetMessageBoardMessageMessageBoardAttachmentsPage()
 		throws Exception {
 
-		Page<MessageBoardAttachment> page =
-			messageBoardAttachmentResource.
-				getMessageBoardMessageMessageBoardAttachmentsPage(
-					testGetMessageBoardMessageMessageBoardAttachmentsPage_getMessageBoardMessageId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long messageBoardMessageId =
 			testGetMessageBoardMessageMessageBoardAttachmentsPage_getMessageBoardMessageId();
 		Long irrelevantMessageBoardMessageId =
 			testGetMessageBoardMessageMessageBoardAttachmentsPage_getIrrelevantMessageBoardMessageId();
+
+		Page<MessageBoardAttachment> page =
+			messageBoardAttachmentResource.
+				getMessageBoardMessageMessageBoardAttachmentsPage(
+					messageBoardMessageId);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantMessageBoardMessageId != null) {
 			MessageBoardAttachment irrelevantMessageBoardAttachment =
@@ -470,17 +468,17 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 	public void testGetMessageBoardThreadMessageBoardAttachmentsPage()
 		throws Exception {
 
-		Page<MessageBoardAttachment> page =
-			messageBoardAttachmentResource.
-				getMessageBoardThreadMessageBoardAttachmentsPage(
-					testGetMessageBoardThreadMessageBoardAttachmentsPage_getMessageBoardThreadId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long messageBoardThreadId =
 			testGetMessageBoardThreadMessageBoardAttachmentsPage_getMessageBoardThreadId();
 		Long irrelevantMessageBoardThreadId =
 			testGetMessageBoardThreadMessageBoardAttachmentsPage_getIrrelevantMessageBoardThreadId();
+
+		Page<MessageBoardAttachment> page =
+			messageBoardAttachmentResource.
+				getMessageBoardThreadMessageBoardAttachmentsPage(
+					messageBoardThreadId);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if (irrelevantMessageBoardThreadId != null) {
 			MessageBoardAttachment irrelevantMessageBoardAttachment =
@@ -592,6 +590,26 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		MessageBoardAttachment messageBoardAttachment,
+		List<MessageBoardAttachment> messageBoardAttachments) {
+
+		boolean contains = false;
+
+		for (MessageBoardAttachment item : messageBoardAttachments) {
+			if (equals(messageBoardAttachment, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			messageBoardAttachments + " does not contain " +
+				messageBoardAttachment,
+			contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -760,7 +778,7 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
+		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.
 						MessageBoardAttachment.class)) {
@@ -777,12 +795,13 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -932,14 +951,16 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		return false;
 	}
 
-	protected Field[] getDeclaredFields(Class clazz) throws Exception {
-		Stream<Field> stream = Stream.of(
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
 			ReflectionUtil.getDeclaredFields(clazz));
 
 		return stream.filter(
 			field -> !field.isSynthetic()
 		).toArray(
-			Field[]::new
+			java.lang.reflect.Field[]::new
 		);
 	}
 
@@ -1203,8 +1224,8 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseMessageBoardAttachmentResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseMessageBoardAttachmentResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

@@ -29,12 +29,21 @@ module.exports = {
 		bundler: {
 			config: {
 				imports: {
+					'@liferay/document-library-preview-css': {
+						'/': '*',
+					},
+					'@liferay/fragment-renderer-collection-filter-impl': {
+						'/': '*',
+					},
+					'@liferay/frontend-js-a11y-web': {
+						'/': '*',
+					},
 					'@liferay/frontend-js-react-web': {
 						'/': '*',
-						classnames: '*',
-						formik: '*',
+						'classnames': '*',
+						'formik': '*',
 						'prop-types': '*',
-						react: '*',
+						'react': '*',
 						'react-dnd': '*',
 						'react-dnd-html5-backend': '*',
 						'react-dom': '*',
@@ -45,7 +54,13 @@ module.exports = {
 					'@liferay/frontend-taglib': {
 						'/': '*',
 					},
-					'app-builder-web': {
+					'@liferay/map-common': {
+						'/': '*',
+					},
+					'@liferay/map-google-maps': {
+						'/': '*',
+					},
+					'@liferay/map-openstreetmap': {
 						'/': '*',
 					},
 					'asset-taglib': {
@@ -81,7 +96,7 @@ module.exports = {
 					'frontend-js-metal-web': {
 						'incremental-dom': '*',
 						'incremental-dom-string': '*',
-						metal: '*',
+						'metal': '*',
 						'metal-affix': '*',
 						'metal-ajax': '*',
 						'metal-anim': '*',
@@ -114,7 +129,7 @@ module.exports = {
 						'metal-uri': '*',
 						'metal-useragent': '*',
 						'metal-web-component': '*',
-						querystring: '*',
+						'querystring': '*',
 						'xss-filters': '*',
 					},
 					'frontend-js-node-shims': {
@@ -147,7 +162,7 @@ module.exports = {
 					'frontend-taglib-chart': {
 						'billboard.js': '*',
 						'clay-charts': '*',
-						d3: '*',
+						'd3': '*',
 						'd3-array': '*',
 						'd3-axis': '*',
 						'd3-brush': '*',
@@ -221,7 +236,7 @@ module.exports = {
 						'@clayui/time-picker': '*',
 						'@clayui/tooltip': '*',
 						'@clayui/upper-toolbar': '*',
-						clay: '*',
+						'clay': '*',
 						'clay-alert': '*',
 						'clay-autocomplete': '*',
 						'clay-badge': '*',
@@ -254,15 +269,6 @@ module.exports = {
 						'clay-tooltip': '*',
 					},
 					'item-selector-taglib': {
-						'/': '*',
-					},
-					'map-common': {
-						'/': '*',
-					},
-					'map-google-maps': {
-						'/': '*',
-					},
-					'map-openstreetmap': {
 						'/': '*',
 					},
 				},
@@ -334,18 +340,18 @@ module.exports = {
 				'@babel/traverse': true,
 				'@babel/types': true,
 				'ansi-styles': true,
-				bootstrap: true,
-				browserslist: true,
+				'bootstrap': true,
+				'browserslist': true,
 				'caniuse-lite': true,
-				chalk: true,
-				commander: true,
+				'chalk': true,
+				'commander': true,
 				'electron-to-chromium': true,
-				lodash: true,
+				'lodash': true,
 				'regenerate-unicode-properties': true,
 				'regenerator-transform': true,
 				'regexp-tree': true,
-				rw: true,
-				semver: true,
+				'rw': true,
+				'semver': true,
 				'source-map': true,
 			},
 		},
@@ -365,13 +371,5 @@ module.exports = {
 	global: {
 		check: CHECK_AND_FIX_GLOBS,
 		fix: CHECK_AND_FIX_GLOBS,
-		rules: {
-			'allowed-named-scope-exceptions': [
-
-				// LPS-129670: https://issues.liferay.com/browse/LPS-129670
-
-				'map-common',
-			],
-		},
 	},
 };

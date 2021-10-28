@@ -28,7 +28,6 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.style.book.constants.StyleBookActionKeys;
 import com.liferay.style.book.model.StyleBookEntry;
 import com.liferay.style.book.service.StyleBookEntryLocalServiceUtil;
-import com.liferay.style.book.web.internal.constants.StyleBookWebKeys;
 import com.liferay.style.book.web.internal.security.permissions.resource.StyleBookPermission;
 import com.liferay.style.book.web.internal.servlet.taglib.util.StyleBookEntryActionDropdownItemsProvider;
 
@@ -79,11 +78,6 @@ public class StyleBookVerticalCard
 	}
 
 	@Override
-	public String getDefaultEventHandler() {
-		return StyleBookWebKeys.STYLE_BOOK_ENTRY_DROPDOWN_DEFAULT_EVENT_HANDLER;
-	}
-
-	@Override
 	public String getHref() {
 		if (!StyleBookPermission.contains(
 				_themeDisplay.getPermissionChecker(),
@@ -97,8 +91,6 @@ public class StyleBookVerticalCard
 			_renderResponse
 		).setMVCRenderCommandName(
 			"/style_book/edit_style_book_entry"
-		).setRedirect(
-			_themeDisplay.getURLCurrent()
 		).setParameter(
 			"styleBookEntryId", _styleBookEntry.getStyleBookEntryId()
 		).buildString();

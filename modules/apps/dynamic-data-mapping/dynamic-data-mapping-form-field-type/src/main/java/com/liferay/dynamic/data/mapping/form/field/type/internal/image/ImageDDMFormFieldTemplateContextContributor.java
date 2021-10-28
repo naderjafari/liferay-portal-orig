@@ -36,6 +36,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.util.AggregateResourceBundle;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -93,6 +94,10 @@ public class ImageDDMFormFieldTemplateContextContributor
 			DDMFormFieldTypeUtil.getPropertyValue(
 				ddmFormField, ddmFormFieldRenderingContext.getLocale(),
 				"predefinedValue")
+		).put(
+			"requiredDescription",
+			GetterUtil.getBoolean(
+				ddmFormField.getProperty("requiredDescription"), true)
 		).put(
 			"value",
 			getValue(
@@ -219,11 +224,8 @@ public class ImageDDMFormFieldTemplateContextContributor
 
 		JSONObject valueJSONObject = _getValueJSONObject(value);
 
-		if ((valueJSONObject == null) || (valueJSONObject.length() <= 0)) {
-			return StringPool.BLANK;
-		}
-
-		if (Validator.isNull(valueJSONObject.getString("uuid")) ||
+		if ((valueJSONObject == null) || (valueJSONObject.length() <= 0) ||
+			Validator.isNull(valueJSONObject.getString("uuid")) ||
 			Validator.isNull(valueJSONObject.getLong("groupId"))) {
 
 			return StringPool.BLANK;

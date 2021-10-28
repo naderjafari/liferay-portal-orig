@@ -57,8 +57,12 @@ export function isValuesArrayChanged(prevValue = [], newValue = []) {
 		return true;
 	}
 
-	const prevValues = prevValue.map((el) => el.value || el).sort();
-	const newValues = newValue.map((el) => el.value || el).sort();
+	const prevValues = prevValue
+		.map((element) => element.value || element)
+		.sort();
+	const newValues = newValue
+		.map((element) => element.value || element)
+		.sort();
 
 	let changed = false;
 
@@ -80,7 +84,10 @@ export function getValueFromItem(item, fieldName) {
 			if (key === 'LANG') {
 				return (
 					acc[Liferay.ThemeDisplay.getLanguageId()] ||
-					acc[Liferay.ThemeDisplay.getDefaultLanguageId()]
+					acc[
+						Liferay.ThemeDisplay.getDefaultLanguageId() ||
+							acc[Liferay.ThemeDisplay.getBCP47LanguageId()]
+					]
 				);
 			}
 
@@ -107,11 +114,18 @@ export function getValueDetailsFromItem(item, fieldName) {
 			let formattedProperty = property;
 
 			if (property === 'LANG') {
-				formattedProperty = navigatedValue[
-					Liferay.ThemeDisplay.getLanguageId()
-				]
-					? Liferay.ThemeDisplay.getLanguageId()
-					: Liferay.ThemeDisplay.getDefaultLanguageId();
+				const languageId = Liferay.ThemeDisplay.getLanguageId();
+				const BCP47LanguageId = Liferay.ThemeDisplay.getBCP47LanguageId();
+
+				if (navigatedValue[languageId]) {
+					formattedProperty = languageId;
+				}
+				else if (navigatedValue[BCP47LanguageId]) {
+					formattedProperty = BCP47LanguageId;
+				}
+				else {
+					formattedProperty = Liferay.ThemeDisplay.getDefaultLanguageId();
+				}
 			}
 
 			valuePath.push(formattedProperty);
@@ -152,7 +166,7 @@ export function formatItemChanges(itemChanges) {
 export function executeAsyncAction(url, method = 'GET') {
 	return fetch(url, {
 		headers: {
-			Accept: 'application/json',
+			'Accept': 'application/json',
 			'Accept-Language': Liferay.ThemeDisplay.getBCP47LanguageId(),
 			'Content-Type': 'application/json',
 		},

@@ -16,6 +16,7 @@ package com.liferay.portal.search.web.internal.search.results.portlet;
 
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.util.AssetRendererFactoryLookup;
+import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.DisplayTerms;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -173,13 +174,29 @@ public class SearchResultsPortlet extends MVCPortlet {
 		searchResultsPortletDisplayContext.setRenderNothing(
 			isRenderNothing(renderRequest, searchRequest));
 
+		int paginationDelta = Optional.ofNullable(
+			searchRequest.getSize()
+		).orElse(
+			SearchContainer.DEFAULT_DELTA
+		);
+		int paginationStart = 0;
+
+		int from = Optional.ofNullable(
+			searchRequest.getFrom()
+		).orElse(
+			0
+		);
+
+		if (from > 0) {
+			paginationStart = (from / paginationDelta) + 1;
+		}
+
 		searchResultsPortletDisplayContext.setSearchContainer(
 			buildSearchContainer(
-				documents, searchResponse.getTotalHits(),
-				portletSharedSearchResponse.getPaginationStart(),
+				documents, searchResponse.getTotalHits(), paginationStart,
 				searchResultsPortletPreferences.
 					getPaginationStartParameterName(),
-				portletSharedSearchResponse.getPaginationDelta(),
+				paginationDelta,
 				searchResultsPortletPreferences.
 					getPaginationDeltaParameterName(),
 				renderRequest));
@@ -339,6 +356,8 @@ public class SearchResultsPortlet extends MVCPortlet {
 			language
 		).setLocale(
 			themeDisplay.getLocale()
+		).setObjectDefinitionLocalService(
+			objectDefinitionLocalService
 		).setPortletURLFactory(
 			portletURLFactory
 		).setRenderRequest(
@@ -462,6 +481,9 @@ public class SearchResultsPortlet extends MVCPortlet {
 
 	@Reference
 	protected Language language;
+
+	@Reference
+	protected ObjectDefinitionLocalService objectDefinitionLocalService;
 
 	@Reference
 	protected PortletSharedRequestHelper portletSharedRequestHelper;

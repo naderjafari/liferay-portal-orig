@@ -19,12 +19,15 @@ import com.liferay.account.exception.AccountEntryDomainsException;
 import com.liferay.account.exception.AccountEntryEmailAddressException;
 import com.liferay.account.exception.AccountEntryNameException;
 import com.liferay.account.exception.AccountEntryTypeException;
+import com.liferay.account.exception.DuplicateAccountEntryExternalReferenceCodeException;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountEntryOrganizationRelTable;
 import com.liferay.account.model.AccountEntryTable;
 import com.liferay.account.model.AccountEntryUserRelTable;
 import com.liferay.account.model.impl.AccountEntryImpl;
 import com.liferay.account.service.base.AccountEntryLocalServiceBaseImpl;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.petra.sql.dsl.DSLFunctionFactoryUtil;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.sql.dsl.expression.Predicate;
@@ -44,6 +47,7 @@ import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserTable;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
@@ -55,7 +59,12 @@ import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
@@ -81,6 +90,7 @@ import com.liferay.users.admin.kernel.file.uploads.UserFileUploadsSettings;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.apache.commons.validator.routines.DomainValidator;
@@ -186,7 +196,7 @@ public class AccountEntryLocalServiceImpl
 		AccountEntry accountEntry = accountEntryPersistence.create(
 			accountEntryId);
 
-		User user = userLocalService.getUser(userId);
+		User user = _userLocalService.getUser(userId);
 
 		accountEntry.setCompanyId(user.getCompanyId());
 		accountEntry.setUserId(user.getUserId());
@@ -231,7 +241,7 @@ public class AccountEntryLocalServiceImpl
 
 		// Group
 
-		groupLocalService.addGroup(
+		_groupLocalService.addGroup(
 			userId, GroupConstants.DEFAULT_PARENT_GROUP_ID,
 			AccountEntry.class.getName(), accountEntryId,
 			GroupConstants.DEFAULT_LIVE_GROUP_ID, getLocalizationMap(name),
@@ -241,7 +251,7 @@ public class AccountEntryLocalServiceImpl
 
 		// Resources
 
-		resourceLocalService.addResources(
+		_resourceLocalService.addResources(
 			user.getCompanyId(), 0, user.getUserId(),
 			AccountEntry.class.getName(), accountEntryId, false, false, false);
 
@@ -257,6 +267,36 @@ public class AccountEntryLocalServiceImpl
 		}
 
 		return accountEntry;
+	}
+
+	@Override
+	public AccountEntry addOrUpdateAccountEntry(
+			String externalReferenceCode, long userId,
+			long parentAccountEntryId, String name, String description,
+			String[] domains, String emailAddress, byte[] logoBytes,
+			String taxIdNumber, String type, int status,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		User user = _userLocalService.getUser(userId);
+
+		AccountEntry accountEntry = fetchAccountEntryByReferenceCode(
+			user.getCompanyId(), externalReferenceCode);
+
+		if (accountEntry != null) {
+			return updateAccountEntry(
+				accountEntry.getAccountEntryId(), parentAccountEntryId, name,
+				description, false, domains, emailAddress, logoBytes,
+				taxIdNumber, status, serviceContext);
+		}
+
+		accountEntry = addAccountEntry(
+			userId, parentAccountEntryId, name, description, domains,
+			emailAddress, logoBytes, taxIdNumber, type, status, serviceContext);
+
+		accountEntry.setExternalReferenceCode(externalReferenceCode);
+
+		return accountEntryPersistence.update(accountEntry);
 	}
 
 	@Override
@@ -302,6 +342,7 @@ public class AccountEntryLocalServiceImpl
 	}
 
 	@Override
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
 	public AccountEntry deleteAccountEntry(AccountEntry accountEntry)
 		throws PortalException {
 
@@ -311,23 +352,23 @@ public class AccountEntryLocalServiceImpl
 
 		// Group
 
-		groupLocalService.deleteGroup(accountEntry.getAccountEntryGroup());
+		_groupLocalService.deleteGroup(accountEntry.getAccountEntryGroup());
 
 		// Resources
 
-		resourceLocalService.deleteResource(
+		_resourceLocalService.deleteResource(
 			accountEntry.getCompanyId(), AccountEntry.class.getName(),
 			ResourceConstants.SCOPE_INDIVIDUAL,
 			accountEntry.getAccountEntryId());
 
 		// Asset
 
-		assetEntryLocalService.deleteEntry(
+		_assetEntryLocalService.deleteEntry(
 			AccountEntry.class.getName(), accountEntry.getAccountEntryId());
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(accountEntry.getAccountEntryId());
+		_expandoRowLocalService.deleteRows(accountEntry.getAccountEntryId());
 
 		return accountEntry;
 	}
@@ -422,7 +463,7 @@ public class AccountEntryLocalServiceImpl
 	public AccountEntry getGuestAccountEntry(long companyId)
 		throws PortalException {
 
-		User defaultUser = userLocalService.getDefaultUser(companyId);
+		User defaultUser = _userLocalService.getDefaultUser(companyId);
 
 		AccountEntryImpl accountEntryImpl = new AccountEntryImpl();
 
@@ -462,6 +503,24 @@ public class AccountEntryLocalServiceImpl
 			_getGroupByStep(
 				DSLQueryFactoryUtil.selectDistinct(AccountEntryTable.INSTANCE),
 				userId, parentAccountEntryId, keywords, types, status
+			).limit(
+				start, end
+			));
+	}
+
+	@Override
+	public List<AccountEntry> getUserAccountEntries(
+			long userId, Long parentAccountEntryId, String keywords,
+			String[] types, Integer status, int start, int end,
+			OrderByComparator<AccountEntry> orderByComparator)
+		throws PortalException {
+
+		return dslQuery(
+			_getGroupByStep(
+				DSLQueryFactoryUtil.selectDistinct(AccountEntryTable.INSTANCE),
+				userId, parentAccountEntryId, keywords, types, status
+			).orderBy(
+				AccountEntryTable.INSTANCE, orderByComparator
 			).limit(
 				start, end
 			));
@@ -659,6 +718,37 @@ public class AccountEntryLocalServiceImpl
 
 	@Indexable(type = IndexableType.REINDEX)
 	@Override
+	public AccountEntry updateExternalReferenceCode(
+			AccountEntry accountEntry, String externalReferenceCode)
+		throws PortalException {
+
+		if (Objects.equals(
+				accountEntry.getExternalReferenceCode(),
+				externalReferenceCode)) {
+
+			return accountEntry;
+		}
+
+		_validateExternalReferenceCode(
+			accountEntry.getAccountEntryId(), externalReferenceCode);
+
+		accountEntry.setExternalReferenceCode(externalReferenceCode);
+
+		return updateAccountEntry(accountEntry);
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public AccountEntry updateExternalReferenceCode(
+			long accountEntryId, String externalReferenceCode)
+		throws PortalException {
+
+		return updateExternalReferenceCode(
+			getAccountEntry(accountEntryId), externalReferenceCode);
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
 	public AccountEntry updateStatus(AccountEntry accountEntry, int status) {
 		accountEntry.setStatus(status);
 
@@ -700,55 +790,83 @@ public class AccountEntryLocalServiceImpl
 				AccountEntryUserRelTable.INSTANCE.accountEntryId
 			).or(
 				AccountEntryTable.INSTANCE.userId.eq(userId)
-			);
+			).or(
+				() -> {
+					if (ArrayUtil.isEmpty(organizationIds)) {
+						return null;
+					}
 
-		if (ArrayUtil.isNotEmpty(organizationIds)) {
-			accountEntryPredicate = accountEntryPredicate.or(
-				AccountEntryTable.INSTANCE.accountEntryId.eq(
-					AccountEntryOrganizationRelTable.INSTANCE.accountEntryId));
-		}
+					return AccountEntryTable.INSTANCE.accountEntryId.eq(
+						AccountEntryOrganizationRelTable.INSTANCE.
+							accountEntryId);
+				}
+			);
 
 		joinStep = joinStep.leftJoinOn(
 			AccountEntryTable.INSTANCE, accountEntryPredicate);
 
 		return joinStep.where(
-			() -> {
-				Predicate predicate = UserTable.INSTANCE.userId.eq(userId);
+			() -> UserTable.INSTANCE.userId.eq(
+				userId
+			).and(
+				() -> {
+					if (parentAccountId == null) {
+						return null;
+					}
 
-				if (parentAccountId != null) {
-					predicate = predicate.and(
-						AccountEntryTable.INSTANCE.parentAccountEntryId.eq(
-							parentAccountId));
+					return AccountEntryTable.INSTANCE.parentAccountEntryId.eq(
+						parentAccountId);
 				}
+			).and(
+				() -> {
+					if (Validator.isNull(keywords)) {
+						return null;
+					}
 
-				if (Validator.isNotNull(keywords)) {
-					predicate = predicate.and(
-						Predicate.withParentheses(
-							_customSQL.getKeywordsPredicate(
-								DSLFunctionFactoryUtil.lower(
-									AccountEntryTable.INSTANCE.name),
-								_customSQL.keywords(keywords, true))));
+					Predicate keywordsPredicate =
+						_customSQL.getKeywordsPredicate(
+							DSLFunctionFactoryUtil.lower(
+								AccountEntryTable.INSTANCE.name),
+							_customSQL.keywords(keywords, true));
+
+					if (Validator.isDigit(keywords)) {
+						keywordsPredicate = Predicate.or(
+							AccountEntryTable.INSTANCE.accountEntryId.eq(
+								Long.valueOf(keywords)),
+							keywordsPredicate);
+					}
+
+					keywordsPredicate = Predicate.or(
+						AccountEntryTable.INSTANCE.externalReferenceCode.eq(
+							keywords),
+						keywordsPredicate);
+
+					return Predicate.withParentheses(keywordsPredicate);
 				}
+			).and(
+				() -> {
+					if (types != null) {
+						return AccountEntryTable.INSTANCE.type.in(types);
+					}
 
-				if (types != null) {
-					predicate = predicate.and(
-						AccountEntryTable.INSTANCE.type.in(types));
+					return null;
 				}
+			).and(
+				() -> {
+					if ((status != null) &&
+						(status != WorkflowConstants.STATUS_ANY)) {
 
-				if ((status != null) &&
-					(status != WorkflowConstants.STATUS_ANY)) {
+						return AccountEntryTable.INSTANCE.status.eq(status);
+					}
 
-					predicate = predicate.and(
-						AccountEntryTable.INSTANCE.status.eq(status));
+					return null;
 				}
-
-				return predicate;
-			});
+			));
 	}
 
 	private Long[] _getOrganizationIds(long userId) {
 		List<Organization> organizations =
-			organizationLocalService.getUserOrganizations(userId);
+			_organizationLocalService.getUserOrganizations(userId);
 
 		ListIterator<Organization> listIterator = organizations.listIterator();
 
@@ -756,7 +874,7 @@ public class AccountEntryLocalServiceImpl
 			Organization organization = listIterator.next();
 
 			for (Organization curOrganization :
-					organizationLocalService.getOrganizations(
+					_organizationLocalService.getOrganizations(
 						organization.getCompanyId(),
 						organization.getTreePath() + "%")) {
 
@@ -885,10 +1003,17 @@ public class AccountEntryLocalServiceImpl
 
 		searchContext.setAttribute(Field.STATUS, status);
 
-		String type = (String)params.get("type");
+		String[] types = (String[])params.get("types");
 
-		if (Validator.isNotNull(type)) {
-			searchContext.setAttribute(Field.TYPE, type);
+		if (ArrayUtil.isNotEmpty(types)) {
+			searchContext.setAttribute("types", types);
+		}
+
+		long permissionUserId = GetterUtil.getLong(
+			params.get("permissionUserId"));
+
+		if (permissionUserId != GetterUtil.DEFAULT_LONG) {
+			searchContext.setUserId(permissionUserId);
 		}
 	}
 
@@ -899,7 +1024,7 @@ public class AccountEntryLocalServiceImpl
 		Company company = _companyLocalService.getCompany(
 			serviceContext.getCompanyId());
 
-		assetEntryLocalService.updateEntry(
+		_assetEntryLocalService.updateEntry(
 			serviceContext.getUserId(), company.getGroupId(),
 			accountEntry.getCreateDate(), accountEntry.getModifiedDate(),
 			AccountEntry.class.getName(), accountEntry.getAccountEntryId(),
@@ -937,6 +1062,28 @@ public class AccountEntryLocalServiceImpl
 		}
 	}
 
+	private void _validateExternalReferenceCode(
+			long accountEntryId, String externalReferenceCode)
+		throws PortalException {
+
+		if (Validator.isNull(externalReferenceCode)) {
+			return;
+		}
+
+		AccountEntry accountEntry = getAccountEntry(accountEntryId);
+
+		accountEntry = fetchAccountEntryByExternalReferenceCode(
+			accountEntry.getCompanyId(), externalReferenceCode);
+
+		if (accountEntry == null) {
+			return;
+		}
+
+		if (accountEntry.getAccountEntryId() != accountEntryId) {
+			throw new DuplicateAccountEntryExternalReferenceCodeException();
+		}
+	}
+
 	private void _validateName(String name) throws PortalException {
 		if (Validator.isNull(name)) {
 			throw new AccountEntryNameException();
@@ -950,13 +1097,28 @@ public class AccountEntryLocalServiceImpl
 	}
 
 	@Reference
+	private AssetEntryLocalService _assetEntryLocalService;
+
+	@Reference
 	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private CustomSQL _customSQL;
 
 	@Reference
+	private ExpandoRowLocalService _expandoRowLocalService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private OrganizationLocalService _organizationLocalService;
+
+	@Reference
 	private Portal _portal;
+
+	@Reference
+	private ResourceLocalService _resourceLocalService;
 
 	@Reference
 	private Searcher _searcher;
@@ -972,5 +1134,8 @@ public class AccountEntryLocalServiceImpl
 
 	@Reference
 	private UserFileUploadsSettings _userFileUploadsSettings;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

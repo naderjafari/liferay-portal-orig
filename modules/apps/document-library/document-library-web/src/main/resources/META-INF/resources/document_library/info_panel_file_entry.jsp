@@ -252,7 +252,7 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 
 						<div class="input-group input-group-sm">
 							<div class="input-group-item input-group-prepend">
-								<input class="form-control" id="<%= urlInputId %>" value="<%= DLURLHelperUtil.getPreviewURL(fileEntry, fileVersion, themeDisplay, StringPool.BLANK, !isLatestVersion, true) %>" />
+								<input class="form-control" id="<%= urlInputId %>" readonly value="<%= DLURLHelperUtil.getPreviewURL(fileEntry, fileVersion, themeDisplay, StringPool.BLANK, !isLatestVersion, true) %>" />
 							</div>
 
 							<span class="input-group-append input-group-item input-group-item-shrink">
@@ -270,15 +270,6 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 					<c:if test="<%= portletDisplay.isWebDAVEnabled() && fileEntry.isSupportsSocial() && isLatestVersion %>">
 
 						<%
-						String webDavHelpMessage = null;
-
-						if (BrowserSnifferUtil.isWindows(request)) {
-							webDavHelpMessage = LanguageUtil.format(request, "webdav-windows-help", new Object[] {"https://support.microsoft.com/en-us/kb/892211", "https://help.liferay.com/hc/en-us/articles/360028720352-Desktop-Access-to-Documents-and-Media"}, false);
-						}
-						else {
-							webDavHelpMessage = LanguageUtil.format(request, "webdav-help", "https://help.liferay.com/hc/en-us/articles/360028720352-Desktop-Access-to-Documents-and-Media", false);
-						}
-
 						String webDavURLInputId = liferayPortletResponse.getNamespace() + "webDavURLInput";
 						%>
 
@@ -286,12 +277,12 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 							<label for="<%= webDavURLInputId %>">
 								<liferay-ui:message key='<%= TextFormatter.format("webDavURL", TextFormatter.K) %>' />
 
-								<liferay-ui:icon-help message="<%= webDavHelpMessage %>" />
+								<liferay-ui:icon-help message='<%= LanguageUtil.get(request, "webdav-help") %>' />
 							</label>
 
 							<div class="input-group input-group-sm">
 								<div class="input-group-item input-group-prepend">
-									<input class="form-control" id="<%= webDavURLInputId %>" value="<%= DLURLHelperUtil.getWebDavURL(themeDisplay, fileEntry.getFolder(), fileEntry) %>" />
+									<input class="form-control" id="<%= webDavURLInputId %>" readonly value="<%= DLURLHelperUtil.getWebDavURL(themeDisplay, fileEntry.getFolder(), fileEntry) %>" />
 								</div>
 
 								<span class="input-group-append input-group-item input-group-item-shrink">
@@ -353,38 +344,32 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 				<dd class="sidebar-dd">
 					<liferay-ui:message arguments="<%= new Object[] {dateFormatDateTime.format(fileEntry.getCreateDate()), HtmlUtil.escape(fileEntry.getUserName())} %>" key="x-by-x" translateArguments="<%= false %>" />
 				</dd>
-
-				<c:if test="<%= FFExpirationDateReviewDateConfigurationUtil.expirationDateEnabled() %>">
-					<dt class="sidebar-dt">
-						<liferay-ui:message key="expiration-date" />
-					</dt>
-					<dd class="sidebar-dd">
-						<c:choose>
-							<c:when test="<%= fileVersion.getExpirationDate() != null %>">
-								<liferay-ui:message arguments="<%= new Object[] {dateFormatDateTime.format(fileVersion.getExpirationDate()), HtmlUtil.escape(fileVersion.getUserName())} %>" key="x-by-x" translateArguments="<%= false %>" />
-							</c:when>
-							<c:otherwise>
-								<liferay-ui:message key="never-expire" />
-							</c:otherwise>
-						</c:choose>
-					</dd>
-				</c:if>
-
-				<c:if test="<%= FFExpirationDateReviewDateConfigurationUtil.reviewDateEnabled() %>">
-					<dt class="sidebar-dt">
-						<liferay-ui:message key="review-date" />
-					</dt>
-					<dd class="sidebar-dd">
-						<c:choose>
-							<c:when test="<%= fileVersion.getReviewDate() != null %>">
-								<liferay-ui:message arguments="<%= new Object[] {dateFormatDateTime.format(fileVersion.getReviewDate()), HtmlUtil.escape(fileEntry.getUserName())} %>" key="x-by-x" translateArguments="<%= false %>" />
-							</c:when>
-							<c:otherwise>
-								<liferay-ui:message key="never-review" />
-							</c:otherwise>
-						</c:choose>
-					</dd>
-				</c:if>
+				<dt class="sidebar-dt">
+					<liferay-ui:message key="expiration-date" />
+				</dt>
+				<dd class="sidebar-dd">
+					<c:choose>
+						<c:when test="<%= fileVersion.getExpirationDate() != null %>">
+							<liferay-ui:message arguments="<%= new Object[] {dateFormatDateTime.format(fileVersion.getExpirationDate()), HtmlUtil.escape(fileVersion.getUserName())} %>" key="x-by-x" translateArguments="<%= false %>" />
+						</c:when>
+						<c:otherwise>
+							<liferay-ui:message key="never-expire" />
+						</c:otherwise>
+					</c:choose>
+				</dd>
+				<dt class="sidebar-dt">
+					<liferay-ui:message key="review-date" />
+				</dt>
+				<dd class="sidebar-dd">
+					<c:choose>
+						<c:when test="<%= fileVersion.getReviewDate() != null %>">
+							<liferay-ui:message arguments="<%= new Object[] {dateFormatDateTime.format(fileVersion.getReviewDate()), HtmlUtil.escape(fileEntry.getUserName())} %>" key="x-by-x" translateArguments="<%= false %>" />
+						</c:when>
+						<c:otherwise>
+							<liferay-ui:message key="never-review" />
+						</c:otherwise>
+					</c:choose>
+				</dd>
 
 				<%
 				request.setAttribute("info_panel_location.jsp-parentFolder", fileEntry.getFolder());

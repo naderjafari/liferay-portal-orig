@@ -33,6 +33,7 @@ taglib uri="http://liferay.com/tld/portlet" prefix="liferay-portlet" %><%@
 taglib uri="http://liferay.com/tld/ratings" prefix="liferay-ratings" %><%@
 taglib uri="http://liferay.com/tld/security" prefix="liferay-security" %><%@
 taglib uri="http://liferay.com/tld/sharing" prefix="liferay-sharing" %><%@
+taglib uri="http://liferay.com/tld/template" prefix="liferay-template" %><%@
 taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/trash" prefix="liferay-trash" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %><%@
@@ -114,7 +115,6 @@ page import="com.liferay.document.library.web.internal.display.context.DLViewFil
 page import="com.liferay.document.library.web.internal.display.context.DLViewMoreMenuItemsDisplayContext" %><%@
 page import="com.liferay.document.library.web.internal.display.context.IGDisplayContextProvider" %><%@
 page import="com.liferay.document.library.web.internal.display.context.logic.DLPortletInstanceSettingsHelper" %><%@
-page import="com.liferay.document.library.web.internal.display.context.logic.DLVisualizationHelper" %><%@
 page import="com.liferay.document.library.web.internal.display.context.util.DLRequestHelper" %><%@
 page import="com.liferay.document.library.web.internal.display.context.util.IGRequestHelper" %><%@
 page import="com.liferay.document.library.web.internal.exception.FileNameExtensionException" %><%@
@@ -165,18 +165,15 @@ page import="com.liferay.portal.kernel.portlet.LiferayWindowState" %><%@
 page import="com.liferay.portal.kernel.portlet.PortletURLUtil" %><%@
 page import="com.liferay.portal.kernel.repository.AuthenticationRepositoryException" %><%@
 page import="com.liferay.portal.kernel.repository.RepositoryConfiguration" %><%@
-page import="com.liferay.portal.kernel.repository.RepositoryException" %><%@
 page import="com.liferay.portal.kernel.repository.model.FileEntry" %><%@
 page import="com.liferay.portal.kernel.repository.model.FileShortcut" %><%@
 page import="com.liferay.portal.kernel.repository.model.FileVersion" %><%@
 page import="com.liferay.portal.kernel.repository.model.Folder" %><%@
-page import="com.liferay.portal.kernel.security.auth.PrincipalException" %><%@
 page import="com.liferay.portal.kernel.security.permission.ActionKeys" %><%@
 page import="com.liferay.portal.kernel.service.GroupLocalServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.PortletLocalServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.UserLocalServiceUtil" %><%@
-page import="com.liferay.portal.kernel.servlet.BrowserSnifferUtil" %><%@
 page import="com.liferay.portal.kernel.servlet.taglib.ui.MenuItem" %><%@
 page import="com.liferay.portal.kernel.servlet.taglib.ui.ToolbarItem" %><%@
 page import="com.liferay.portal.kernel.theme.ThemeDisplay" %><%@

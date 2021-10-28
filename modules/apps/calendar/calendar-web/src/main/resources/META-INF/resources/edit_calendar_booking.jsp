@@ -276,7 +276,7 @@ while (manageableCalendarsIterator.hasNext()) {
 			<aui:model-context bean="<%= calendarBooking %>" model="<%= CalendarBooking.class %>" />
 
 			<aui:fieldset markupView="lexicon">
-				<aui:input defaultLanguageId="<%= themeDisplay.getLanguageId() %>" name="title" />
+				<aui:input defaultLanguageId="<%= LocaleUtil.toLanguageId(themeDisplay.getSiteDefaultLocale()) %>" name="title" />
 
 				<div class="<%= allDay ? "allday-class-active" : "" %>" id="<portlet:namespace />startDateContainer">
 					<aui:input ignoreRequestValue="<%= true %>" label="starts" name="startTime" timeFormat="<%= timeFormat %>" value="<%= startTimeJCalendar %>" />
@@ -294,7 +294,7 @@ while (manageableCalendarsIterator.hasNext()) {
 					<a class="calendar-portlet-recurrence-summary" href="javascript:;" id="<portlet:namespace />summary"></a>
 				</aui:field-wrapper>
 
-				<aui:input defaultLanguageId="<%= themeDisplay.getLanguageId() %>" name="description" />
+				<aui:input defaultLanguageId="<%= LocaleUtil.toLanguageId(themeDisplay.getSiteDefaultLocale()) %>" name="description" />
 			</aui:fieldset>
 
 			<aui:fieldset markupView="lexicon">
@@ -613,7 +613,7 @@ while (manageableCalendarsIterator.hasNext()) {
 	<c:if test="<%= Validator.isNotNull(titleCurrentValue) && ((calendarBooking == null) || !Objects.equals(titleCurrentValue, calendarBooking.getTitle(locale))) %>">
 		document.<portlet:namespace />fm.<portlet:namespace />title.value =
 			'<%= HtmlUtil.escapeJS(titleCurrentValue) %>';
-		document.<portlet:namespace />fm.<portlet:namespace />title_<%= themeDisplay.getLanguageId() %>.value =
+		document.<portlet:namespace />fm.<portlet:namespace />title_<%= LocaleUtil.toLanguageId(themeDisplay.getSiteDefaultLocale()) %>.value =
 			'<%= HtmlUtil.escapeJS(titleCurrentValue) %>';
 	</c:if>
 </aui:script>
@@ -666,7 +666,7 @@ while (manageableCalendarsIterator.hasNext()) {
 
 	window.<portlet:namespace />calendarListPending = new Liferay.CalendarList({
 		after: {
-			calendarsChange: function (event) {
+			'calendarsChange': function (event) {
 				var instance = this;
 
 				A.one('#<portlet:namespace />pendingCounter').html(
@@ -690,7 +690,7 @@ while (manageableCalendarsIterator.hasNext()) {
 
 	window.<portlet:namespace />calendarListAccepted = new Liferay.CalendarList({
 		after: {
-			calendarsChange: function (event) {
+			'calendarsChange': function (event) {
 				var instance = this;
 
 				A.one('#<portlet:namespace />acceptedCounter').html(
@@ -716,7 +716,7 @@ while (manageableCalendarsIterator.hasNext()) {
 
 	window.<portlet:namespace />calendarListDeclined = new Liferay.CalendarList({
 		after: {
-			calendarRemoved: function (event) {
+			'calendarRemoved': function (event) {
 				var calendar = event.calendar;
 
 				if (calendar) {
@@ -727,7 +727,7 @@ while (manageableCalendarsIterator.hasNext()) {
 					);
 				}
 			},
-			calendarsChange: function (event) {
+			'calendarsChange': function (event) {
 				var instance = this;
 
 				A.one('#<portlet:namespace />declinedCounter').html(
@@ -752,7 +752,7 @@ while (manageableCalendarsIterator.hasNext()) {
 	<c:if test="<%= calendarBooking != null %>">
 		window.<portlet:namespace />calendarListMaybe = new Liferay.CalendarList({
 			after: {
-				calendarsChange: function (event) {
+				'calendarsChange': function (event) {
 					var instance = this;
 
 					A.one('#<portlet:namespace />maybeCounter').html(

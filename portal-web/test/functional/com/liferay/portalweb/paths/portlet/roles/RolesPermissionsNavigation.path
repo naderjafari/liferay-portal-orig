@@ -2,11 +2,13 @@
 <head>
 <title>RolesPermissionsNavigation</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">RolesPermissionsNavigation</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>PERMISSIONS_NAVITEM</td>
@@ -15,7 +17,7 @@
 </tr>
 <tr>
 	<td>PERMISSIONS_NAVITEM_COLLAPSED</td>
-	<td>//div[contains(@class,'lfr-permission-navigation')]//li[contains(@class,'permission-navigation-section')]/a[contains(.,'${key_navItem}') and contains(@class,'collapsed')]</td>
+	<td>//div[contains(@class,'lfr-permission-navigation')]//*[contains(@class,'permission-navigation-section')]/a[contains(.,'${key_navItem}') and contains(@class,'collapsed')]</td>
 	<td></td>
 </tr>
 <tr>

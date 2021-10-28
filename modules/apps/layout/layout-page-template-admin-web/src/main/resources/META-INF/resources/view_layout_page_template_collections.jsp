@@ -27,7 +27,7 @@ List<LayoutPageTemplateCollection> layoutPageTemplateCollections = layoutPageTem
 	navigationItems="<%= layoutPageTemplatesAdminDisplayContext.getNavigationItems() %>"
 />
 
-<liferay-ui:success key="layoutPageTemplatePublished" message="the-page-template-was-published-succesfully" />
+<liferay-ui:success key="layoutPageTemplatePublished" message="the-page-template-was-published-successfully" />
 
 <clay:container-fluid
 	cssClass="container-view"
@@ -177,7 +177,15 @@ List<LayoutPageTemplateCollection> layoutPageTemplateCollections = layoutPageTem
 								cssClass="inline-item-after"
 								verticalAlign="end"
 							>
-								<liferay-util:include page="/layout_page_template_collection_action.jsp" servletContext="<%= application %>" />
+
+								<%
+								LayoutPageTemplateCollectionActionDropdownItem layoutPageTemplateCollectionActionDropdownItem = new LayoutPageTemplateCollectionActionDropdownItem(request, renderResponse);
+								%>
+
+								<clay:dropdown-actions
+									dropdownItems="<%= layoutPageTemplateCollectionActionDropdownItem.getActionDropdownItems(layoutPageTemplateCollection) %>"
+									propsTransformer="js/propsTransformers/LayoutPageTemplateCollectionPropsTransformer"
+								/>
 							</clay:content-col>
 						</clay:content-row>
 					</h2>

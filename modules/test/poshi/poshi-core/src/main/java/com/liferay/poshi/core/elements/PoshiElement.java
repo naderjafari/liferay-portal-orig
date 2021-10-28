@@ -126,13 +126,10 @@ public abstract class PoshiElement
 
 		generatedPoshiScript = generatedPoshiScript.replaceAll("\\s+", "");
 
-		if ((elements().size() == 0) &&
-			!originalPoshiScript.equals(generatedPoshiScript)) {
+		if (((elements().size() == 0) &&
+			 !originalPoshiScript.equals(generatedPoshiScript)) ||
+			(originalPoshiScript.length() != generatedPoshiScript.length())) {
 
-			return false;
-		}
-
-		if (originalPoshiScript.length() != generatedPoshiScript.length()) {
 			return false;
 		}
 
@@ -670,11 +667,7 @@ public abstract class PoshiElement
 				storedIndices.clear();
 			}
 
-			if (skipBalanceCheck) {
-				continue;
-			}
-
-			if ((c != '}') && (c != ';')) {
+			if (skipBalanceCheck || ((c != '}') && (c != ';'))) {
 				continue;
 			}
 
@@ -1069,7 +1062,7 @@ public abstract class PoshiElement
 	protected static final String VAR_STATEMENT_END_REGEX = "(;|)$";
 
 	protected static final Pattern poshiScriptAnnotationPattern =
-		Pattern.compile("@[\\w-]*[\\s]*?=[\\s]\".*?\"", Pattern.DOTALL);
+		Pattern.compile("@[\\w-]*[\\s]*?=[\\s]\".*?\"(?=\\n)", Pattern.DOTALL);
 	protected static final Pattern poshiScriptBlockPattern = Pattern.compile(
 		"^[^{]*\\{[\\s\\S]*\\}$");
 

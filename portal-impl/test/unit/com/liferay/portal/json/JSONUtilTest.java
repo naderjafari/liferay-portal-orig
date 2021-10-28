@@ -93,12 +93,12 @@ public class JSONUtilTest {
 	public void testCreateCollector() {
 		List<String> strings = Arrays.asList("foo", "bar", "baz");
 
-		Stream<String> stringStream = strings.stream();
+		Stream<String> stringsStream = strings.stream();
 
 		Assert.assertTrue(
 			JSONUtil.equals(
 				JSONUtil.concat(JSONUtil.putAll("FOO", "BAR", "BAZ")),
-				stringStream.map(
+				stringsStream.map(
 					String::toUpperCase
 				).collect(
 					JSONUtil.createCollector()
@@ -107,7 +107,22 @@ public class JSONUtilTest {
 
 	@Test
 	public void testGetValue() {
+
+		// Nested JSON array
+
 		JSONObject jsonObject = JSONUtil.put(
+			"alpha",
+			JSONUtil.put("beta", JSONUtil.put(JSONUtil.put("gamma", "delta"))));
+
+		Assert.assertEquals(
+			"delta",
+			JSONUtil.getValue(
+				jsonObject, "JSONObject/alpha", "JSONArray/beta",
+				"JSONObject/0", "Object/gamma"));
+
+		// Nested JSON object
+
+		jsonObject = JSONUtil.put(
 			"alpha", JSONUtil.put("beta", JSONUtil.put("gamma")));
 
 		Assert.assertEquals(
@@ -320,6 +335,93 @@ public class JSONUtilTest {
 				),
 				jsonObject -> String.valueOf(jsonObject.getInt("foo")),
 				String.class));
+	}
+
+	@Test
+	public void testToIntegerArray() {
+		Assert.assertArrayEquals(new int[0], JSONUtil.toIntegerArray(null));
+		Assert.assertArrayEquals(
+			new int[] {1, 2}, JSONUtil.toIntegerArray(JSONUtil.putAll(1, 2)));
+	}
+
+	@Test
+	public void testToIntegerArrayWithKey() {
+		Assert.assertArrayEquals(
+			new int[0], JSONUtil.toIntegerArray(null, "alpha"));
+		Assert.assertArrayEquals(
+			new int[] {1, 2},
+			JSONUtil.toIntegerArray(
+				JSONUtil.putAll(
+					JSONUtil.put("alpha", 1), JSONUtil.put("alpha", 2),
+					JSONUtil.put("beta", 3)),
+				"alpha"));
+	}
+
+	@Test
+	public void testToIntegerList() {
+		Assert.assertEquals(
+			Collections.emptyList(), JSONUtil.toIntegerList(null));
+		Assert.assertEquals(
+			new ArrayList<Integer>() {
+				{
+					add(1);
+					add(2);
+					add(3);
+				}
+			},
+			JSONUtil.toIntegerList(JSONUtil.putAll(1, 2, 3)));
+	}
+
+	@Test
+	public void testToIntegerListWithKey() {
+		Assert.assertEquals(
+			Collections.emptyList(), JSONUtil.toIntegerList(null, "alpha"));
+		Assert.assertEquals(
+			new ArrayList<Integer>() {
+				{
+					add(1);
+					add(2);
+					add(3);
+				}
+			},
+			JSONUtil.toIntegerList(
+				JSONUtil.putAll(
+					JSONUtil.put("alpha", 1), JSONUtil.put("alpha", 2),
+					JSONUtil.put("alpha", 3)),
+				"alpha"));
+	}
+
+	@Test
+	public void testToIntegerSet() {
+		Assert.assertEquals(
+			Collections.emptySet(), JSONUtil.toIntegerSet(null));
+		Assert.assertEquals(
+			new HashSet<Integer>() {
+				{
+					add(1);
+					add(2);
+					add(3);
+				}
+			},
+			JSONUtil.toIntegerSet(JSONUtil.putAll(1, 2, 3)));
+	}
+
+	@Test
+	public void testToIntegerSetWithKey() {
+		Assert.assertEquals(
+			Collections.emptySet(), JSONUtil.toIntegerSet(null, "alpha"));
+		Assert.assertEquals(
+			new HashSet<Integer>() {
+				{
+					add(1);
+					add(2);
+				}
+			},
+			JSONUtil.toIntegerSet(
+				JSONUtil.putAll(
+					JSONUtil.put("alpha", 1), JSONUtil.put("alpha", 2),
+					JSONUtil.put("beta", 3)),
+				"alpha"));
 	}
 
 	@Test

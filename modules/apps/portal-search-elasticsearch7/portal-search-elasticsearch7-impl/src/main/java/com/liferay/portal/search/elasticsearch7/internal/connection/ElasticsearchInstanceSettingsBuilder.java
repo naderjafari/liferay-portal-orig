@@ -41,9 +41,6 @@ public class ElasticsearchInstanceSettingsBuilder {
 		return new ElasticsearchInstanceSettingsBuilder();
 	}
 
-	public ElasticsearchInstanceSettingsBuilder() {
-	}
-
 	public Settings build() {
 		load();
 
@@ -188,7 +185,7 @@ public class ElasticsearchInstanceSettingsBuilder {
 			_elasticsearchConfigurationWrapper.networkPublishHost();
 
 		if (Validator.isNotNull(networkBindHost)) {
-			put("network.bind.host", networkBindHost);
+			put("network.bind_host", networkBindHost);
 		}
 
 		if (!Validator.isBlank(_networkHost)) {
@@ -221,8 +218,6 @@ public class ElasticsearchInstanceSettingsBuilder {
 		if (Validator.isNotNull(transportTcpPort)) {
 			put("transport.port", transportTcpPort);
 		}
-
-		put("transport.type", "netty4");
 	}
 
 	protected void configurePaths() {
@@ -301,6 +296,8 @@ public class ElasticsearchInstanceSettingsBuilder {
 		configurePaths();
 
 		configureTestMode();
+
+		put("transport.type", "netty4");
 	}
 
 	protected void loadSettingsContributors() {

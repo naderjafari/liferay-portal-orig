@@ -136,16 +136,10 @@ public class JournalUtil {
 			smallImageURL = article.getSmallImageURL();
 		}
 		else if ((themeDisplay != null) && article.isSmallImage()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(themeDisplay.getPathImage());
-			sb.append("/journal/article?img_id=");
-			sb.append(article.getSmallImageId());
-			sb.append("&t=");
-			sb.append(
+			smallImageURL = StringBundler.concat(
+				themeDisplay.getPathImage(), "/journal/article?img_id=",
+				article.getSmallImageId(), "&t=",
 				WebServerServletTokenUtil.getToken(article.getSmallImageId()));
-
-			smallImageURL = sb.toString();
 		}
 
 		_addReservedEl(
@@ -433,8 +427,7 @@ public class JournalUtil {
 			ThemeDisplay themeDisplay, Map<String, String> tokens,
 			String viewMode, String languageId, Document document,
 			PortletRequestModel portletRequestModel, String script,
-			String langType, boolean propagateException,
-			Map<String, Object> contextObjects)
+			boolean propagateException, Map<String, Object> contextObjects)
 		throws Exception {
 
 		TemplateHandler templateHandler =
@@ -445,8 +438,7 @@ public class JournalUtil {
 
 		return _journalTransformer.transform(
 			themeDisplay, contextObjects, tokens, viewMode, languageId,
-			document, portletRequestModel, script, langType,
-			propagateException);
+			document, portletRequestModel, script, propagateException);
 	}
 
 	private static void _addReservedEl(

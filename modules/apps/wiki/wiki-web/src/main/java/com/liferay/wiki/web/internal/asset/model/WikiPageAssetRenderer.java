@@ -44,6 +44,7 @@ import com.liferay.wiki.constants.WikiPageConstants;
 import com.liferay.wiki.constants.WikiPortletKeys;
 import com.liferay.wiki.constants.WikiWebKeys;
 import com.liferay.wiki.engine.WikiEngineRenderer;
+import com.liferay.wiki.model.WikiNode;
 import com.liferay.wiki.model.WikiPage;
 import com.liferay.wiki.service.WikiPageLocalServiceUtil;
 import com.liferay.wiki.web.internal.security.permission.resource.WikiPagePermission;
@@ -171,11 +172,7 @@ public class WikiPageAssetRenderer
 
 	@Override
 	public String getTitle(Locale locale) {
-		if (!_page.isInTrash()) {
-			return _page.getTitle();
-		}
-
-		if (_trashHelper == null) {
+		if (!_page.isInTrash() || (_trashHelper == null)) {
 			return _page.getTitle();
 		}
 
@@ -212,7 +209,7 @@ public class WikiPageAssetRenderer
 			"nodeId", _page.getNodeId()
 		).setParameter(
 			"title", _page.getTitle()
-		).build();
+		).buildPortletURL();
 	}
 
 	@Override
@@ -220,17 +217,24 @@ public class WikiPageAssetRenderer
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse) {
 
-		return PortletURLBuilder.create(
-			PortalUtil.getControlPanelPortletURL(
-				liferayPortletRequest, WikiPortletKeys.WIKI,
-				PortletRequest.RENDER_PHASE)
-		).setMVCRenderCommandName(
+		return PortletURLBuilder.createActionURL(
+			liferayPortletResponse, WikiPortletKeys.WIKI
+		).setActionName(
 			"/wiki/export_page"
 		).setParameter(
 			"nodeId", _page.getNodeId()
 		).setParameter(
+			"nodeName",
+			() -> {
+				WikiNode node = _page.getNode();
+
+				return node.getName();
+			}
+		).setParameter(
 			"title", _page.getTitle()
-		).build();
+		).setParameter(
+			"version", _page.getVersion()
+		).buildPortletURL();
 	}
 
 	@Override
@@ -284,7 +288,7 @@ public class WikiPageAssetRenderer
 			"targetVersion", _page.getVersion()
 		).setParameter(
 			"title", _page.getTitle()
-		).build();
+		).buildPortletURL();
 	}
 
 	@Override

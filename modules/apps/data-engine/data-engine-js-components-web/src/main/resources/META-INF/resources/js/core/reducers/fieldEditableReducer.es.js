@@ -12,18 +12,25 @@
  * details.
  */
 
-import {
-	FieldSupport,
-	FieldUtil,
-	RulesSupport,
-	RulesUtil,
-	SettingsContext,
-} from 'dynamic-data-mapping-form-builder';
-import sectionAdded from 'dynamic-data-mapping-form-builder/js/components/LayoutProvider/handlers/sectionAddedHandler.es';
-
 import * as FormSupport from '../../utils/FormSupport.es';
+import {
+	addFieldToPage,
+	createField,
+	getField,
+	localizeField,
+	removeField,
+} from '../../utils/fieldSupport';
+import {formatRules} from '../../utils/rulesSupport';
+import {updateField, updateFieldReference} from '../../utils/settingsContext';
 import {PagesVisitor} from '../../utils/visitors.es';
 import {EVENT_TYPES} from '../actions/eventTypes.es';
+import {
+	createDuplicatedField,
+	findInvalidFieldReference,
+} from '../utils/fields';
+import {updateRulesReferences} from '../utils/rules';
+import sectionAdded from '../utils/sectionAddedHandler';
+import {enableSubmitButton} from '../utils/submitButtonController.es';
 
 export const deleteField = ({
 	clean = false,
@@ -37,7 +44,7 @@ export const deleteField = ({
 }) =>
 	pages.map((page, pageIndex) => {
 		if (fieldPage === pageIndex) {
-			const pagesWithFieldRemoved = FieldSupport.removeField(
+			const pagesWithFieldRemoved = removeField(
 				{
 					defaultLanguageId,
 					editingLanguageId,
@@ -78,18 +85,14 @@ const updateFieldProperty = ({
 		propertyValue !== '' &&
 		propertyValue !== focusedField.fieldName
 	) {
-		focusedField = SettingsContext.updateFieldReference(
+		focusedField = updateFieldReference(
 			focusedField,
-			FieldUtil.findInvalidFieldReference(
-				focusedField,
-				pages,
-				propertyValue
-			),
+			findInvalidFieldReference(focusedField, pages, propertyValue),
 			false
 		);
 	}
 
-	return SettingsContext.updateField(
+	return updateField(
 		{
 			defaultLanguageId,
 			editingLanguageId,
@@ -133,7 +136,7 @@ export default (state, action, config) => {
 
 			const field =
 				action.payload.newField ||
-				FieldSupport.createField(
+				createField(
 					{
 						defaultLanguageId,
 						editingLanguageId,
@@ -154,7 +157,7 @@ export default (state, action, config) => {
 					availableLanguageIds,
 					defaultLanguageId,
 					pages: settingsVisitor.mapFields((field) =>
-						FieldSupport.localizeField(
+						localizeField(
 							field,
 							defaultLanguageId,
 							editingLanguageId
@@ -163,7 +166,7 @@ export default (state, action, config) => {
 				},
 			};
 
-			return FieldSupport.addField({
+			const updatedPages = addFieldToPage({
 				defaultLanguageId,
 				editingLanguageId,
 				fieldNameGenerator,
@@ -173,6 +176,12 @@ export default (state, action, config) => {
 				pages,
 				parentFieldName,
 			});
+
+			return {
+				activePage: indexes.pageIndex,
+				focusedField: newField,
+				pages: updatedPages,
+			};
 		}
 		case EVENT_TYPES.FIELD.BLUR: {
 			const {propertyName, propertyValue} = action.payload;
@@ -183,7 +192,7 @@ export default (state, action, config) => {
 				Object.keys(focusedField).length &&
 				propertyName === 'fieldReference' &&
 				(propertyValue === '' ||
-					FieldUtil.findInvalidFieldReference(
+					findInvalidFieldReference(
 						focusedField,
 						state.pages,
 						propertyValue
@@ -191,16 +200,12 @@ export default (state, action, config) => {
 			) {
 				const {defaultLanguageId, editingLanguageId} = state;
 
-				focusedField = SettingsContext.updateField(
+				focusedField = updateField(
 					{
 						defaultLanguageId,
 						editingLanguageId,
 					},
-					SettingsContext.updateFieldReference(
-						focusedField,
-						false,
-						true
-					),
+					updateFieldReference(focusedField, false, true),
 					propertyName,
 					focusedField.fieldName
 				);
@@ -235,7 +240,7 @@ export default (state, action, config) => {
 							};
 						}
 
-						return FieldSupport.localizeField(
+						return localizeField(
 							currentfield,
 							defaultLanguageId,
 							editingLanguageId
@@ -247,11 +252,11 @@ export default (state, action, config) => {
 			return {
 				activePage,
 				focusedField,
-				previousFocusedField: focusedField,
 			};
 		}
 		case EVENT_TYPES.FIELD.CHANGE: {
-			const {fieldName, propertyName, propertyValue} = action.payload;
+			const {fieldInstance, propertyName, propertyValue} = action.payload;
+			let {fieldName} = action.payload;
 			const {
 				defaultLanguageId,
 				editingLanguageId,
@@ -273,12 +278,16 @@ export default (state, action, config) => {
 				return state;
 			}
 
+			if (!fieldName && fieldInstance) {
+				fieldName = fieldInstance.fieldName;
+			}
+
 			const newFocusedField = updateFieldProperty({
 				defaultLanguageId,
 				editingLanguageId,
 				fieldNameGenerator,
 				focusedField: fieldName
-					? FieldSupport.getField(pages, fieldName)
+					? getField(pages, fieldName)
 					: focusedField,
 				generateFieldNameUsingFieldLabel,
 				pages,
@@ -298,10 +307,10 @@ export default (state, action, config) => {
 
 						return field;
 					},
-					true,
+					false,
 					true
 				),
-				rules: RulesUtil.updateRulesReferences(
+				rules: updateRulesReferences(
 					rules || [],
 					focusedField,
 					newFocusedField
@@ -340,14 +349,17 @@ export default (state, action, config) => {
 			return {
 				focusedField: {},
 				pages: newPages,
-				rules: editRule
-					? RulesSupport.formatRules(newPages, rules)
-					: rules,
+				rules: editRule ? formatRules(newPages, rules) : rules,
 			};
 		}
 		case EVENT_TYPES.FIELD.DUPLICATE: {
 			const {fieldName, parentFieldName} = action.payload;
-			const {availableLanguageIds, defaultLanguageId, pages} = state;
+			const {
+				availableLanguageIds,
+				defaultLanguageId,
+				editingLanguageId,
+				pages,
+			} = state;
 			const {
 				generateFieldNameUsingFieldLabel,
 				getFieldNameGenerator,
@@ -364,9 +376,10 @@ export default (state, action, config) => {
 				)
 			);
 
-			const newField = FieldUtil.createDuplicatedField(originalField, {
+			const newField = createDuplicatedField(originalField, {
 				availableLanguageIds,
 				defaultLanguageId,
+				editingLanguageId,
 				fieldNameGenerator,
 				generateFieldNameUsingFieldLabel,
 			});
@@ -383,7 +396,7 @@ export default (state, action, config) => {
 								? [...field.nestedFields, newField]
 								: [newField];
 
-							field = SettingsContext.updateField(
+							field = updateField(
 								{
 									availableLanguageIds,
 									defaultLanguageId,
@@ -416,7 +429,7 @@ export default (state, action, config) => {
 								newRow
 							);
 
-							return SettingsContext.updateField(
+							return updateField(
 								{
 									availableLanguageIds,
 									defaultLanguageId,
@@ -470,13 +483,11 @@ export default (state, action, config) => {
 			const {
 				generateFieldNameUsingFieldLabel,
 				getFieldNameGenerator,
+				submitButtonId,
 			} = config;
 
-			const fieldName = FieldSupport.getField(
-				settingsContextPages,
-				'name'
-			);
-			const focusedFieldName = FieldSupport.getField(
+			const fieldName = getField(settingsContextPages, 'name');
+			const focusedFieldName = getField(
 				focusedField.settingsContext.pages,
 				'name'
 			);
@@ -529,10 +540,12 @@ export default (state, action, config) => {
 				true
 			);
 
+			enableSubmitButton(submitButtonId);
+
 			return {
 				focusedField: newFocusedField,
 				pages: newPages,
-				rules: RulesUtil.updateRulesReferences(
+				rules: updateRulesReferences(
 					rules || [],
 					focusedField,
 					newFocusedField

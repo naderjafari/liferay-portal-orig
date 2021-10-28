@@ -58,6 +58,10 @@ public class Attachment implements Serializable {
 		return ObjectMapperUtil.readValue(Attachment.class, json);
 	}
 
+	public static Attachment unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(Attachment.class, json);
+	}
+
 	@Schema(description = "Base64 enoded file")
 	public String getAttachment() {
 		return attachment;
@@ -85,6 +89,91 @@ public class Attachment implements Serializable {
 	@GraphQLField(description = "Base64 enoded file")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String attachment;
+
+	@Schema
+	public Boolean getCdnEnabled() {
+		return cdnEnabled;
+	}
+
+	public void setCdnEnabled(Boolean cdnEnabled) {
+		this.cdnEnabled = cdnEnabled;
+	}
+
+	@JsonIgnore
+	public void setCdnEnabled(
+		UnsafeSupplier<Boolean, Exception> cdnEnabledUnsafeSupplier) {
+
+		try {
+			cdnEnabled = cdnEnabledUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean cdnEnabled;
+
+	@Schema
+	public String getCdnURL() {
+		return cdnURL;
+	}
+
+	public void setCdnURL(String cdnURL) {
+		this.cdnURL = cdnURL;
+	}
+
+	@JsonIgnore
+	public void setCdnURL(
+		UnsafeSupplier<String, Exception> cdnURLUnsafeSupplier) {
+
+		try {
+			cdnURL = cdnURLUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String cdnURL;
+
+	@Schema
+	@Valid
+	public CustomField[] getCustomFields() {
+		return customFields;
+	}
+
+	public void setCustomFields(CustomField[] customFields) {
+		this.customFields = customFields;
+	}
+
+	@JsonIgnore
+	public void setCustomFields(
+		UnsafeSupplier<CustomField[], Exception> customFieldsUnsafeSupplier) {
+
+		try {
+			customFields = customFieldsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected CustomField[] customFields;
 
 	@Schema
 	public Date getDisplayDate() {
@@ -194,7 +283,7 @@ public class Attachment implements Serializable {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long id;
 
 	@Schema
@@ -405,6 +494,50 @@ public class Attachment implements Serializable {
 			sb.append(_escape(attachment));
 
 			sb.append("\"");
+		}
+
+		if (cdnEnabled != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"cdnEnabled\": ");
+
+			sb.append(cdnEnabled);
+		}
+
+		if (cdnURL != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"cdnURL\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(cdnURL));
+
+			sb.append("\"");
+		}
+
+		if (customFields != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"customFields\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < customFields.length; i++) {
+				sb.append(String.valueOf(customFields[i]));
+
+				if ((i + 1) < customFields.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
 		}
 
 		if (displayDate != null) {

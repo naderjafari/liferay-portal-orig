@@ -208,6 +208,27 @@ public interface BatchPlannerPlanModel
 	public void setActive(boolean active);
 
 	/**
+	 * Returns the export of this batch planner plan.
+	 *
+	 * @return the export of this batch planner plan
+	 */
+	public boolean getExport();
+
+	/**
+	 * Returns <code>true</code> if this batch planner plan is export.
+	 *
+	 * @return <code>true</code> if this batch planner plan is export; <code>false</code> otherwise
+	 */
+	public boolean isExport();
+
+	/**
+	 * Sets whether this batch planner plan is export.
+	 *
+	 * @param export the export of this batch planner plan
+	 */
+	public void setExport(boolean export);
+
+	/**
 	 * Returns the external type of this batch planner plan.
 	 *
 	 * @return the external type of this batch planner plan
@@ -268,24 +289,42 @@ public interface BatchPlannerPlanModel
 	public void setName(String name);
 
 	/**
-	 * Returns the export of this batch planner plan.
+	 * Returns the task item delegate name of this batch planner plan.
 	 *
-	 * @return the export of this batch planner plan
+	 * @return the task item delegate name of this batch planner plan
 	 */
-	public boolean getExport();
+	@AutoEscape
+	public String getTaskItemDelegateName();
 
 	/**
-	 * Returns <code>true</code> if this batch planner plan is export.
+	 * Sets the task item delegate name of this batch planner plan.
 	 *
-	 * @return <code>true</code> if this batch planner plan is export; <code>false</code> otherwise
+	 * @param taskItemDelegateName the task item delegate name of this batch planner plan
 	 */
-	public boolean isExport();
+	public void setTaskItemDelegateName(String taskItemDelegateName);
 
 	/**
-	 * Sets whether this batch planner plan is export.
+	 * Returns the template of this batch planner plan.
 	 *
-	 * @param export the export of this batch planner plan
+	 * @return the template of this batch planner plan
 	 */
-	public void setExport(boolean export);
+	public boolean getTemplate();
+
+	/**
+	 * Returns <code>true</code> if this batch planner plan is template.
+	 *
+	 * @return <code>true</code> if this batch planner plan is template; <code>false</code> otherwise
+	 */
+	public boolean isTemplate();
+
+	/**
+	 * Sets whether this batch planner plan is template.
+	 *
+	 * @param template the template of this batch planner plan
+	 */
+	public void setTemplate(boolean template);
+
+	@Override
+	public BatchPlannerPlan cloneWithOriginalValues();
 
 }

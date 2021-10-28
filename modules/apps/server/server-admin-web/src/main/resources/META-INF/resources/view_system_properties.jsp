@@ -29,12 +29,12 @@ PortletURL serverURL = PortletURLBuilder.createRenderURL(
 ).setTabs1(
 	tabs1
 ).setParameter(
-	"delta", String.valueOf(delta)
+	"delta", delta
 ).setParameter(
 	"screenNavigationCategoryKey", screenNavigationCategoryKey
 ).setParameter(
 	"screenNavigationEntryKey", screenNavigationEntryKey
-).build();
+).buildPortletURL();
 
 PortletURL clearResultsURL = PortletURLBuilder.create(
 	PortletURLUtil.clone(serverURL, liferayPortletResponse)
@@ -42,7 +42,7 @@ PortletURL clearResultsURL = PortletURLBuilder.create(
 	StringPool.BLANK
 ).setNavigation(
 	StringPool.NULL
-).build();
+).buildPortletURL();
 
 Map<String, String> filteredProperties = new TreeMap<String, String>();
 

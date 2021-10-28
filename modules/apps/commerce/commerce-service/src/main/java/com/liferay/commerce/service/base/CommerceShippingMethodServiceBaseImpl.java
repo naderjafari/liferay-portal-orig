@@ -19,7 +19,6 @@ import com.liferay.commerce.service.CommerceShippingMethodService;
 import com.liferay.commerce.service.CommerceShippingMethodServiceUtil;
 import com.liferay.commerce.service.persistence.CPDAvailabilityEstimatePersistence;
 import com.liferay.commerce.service.persistence.CPDefinitionInventoryPersistence;
-import com.liferay.commerce.service.persistence.CommerceAddressPersistence;
 import com.liferay.commerce.service.persistence.CommerceAddressRestrictionPersistence;
 import com.liferay.commerce.service.persistence.CommerceAvailabilityEstimatePersistence;
 import com.liferay.commerce.service.persistence.CommerceOrderFinder;
@@ -28,6 +27,8 @@ import com.liferay.commerce.service.persistence.CommerceOrderItemPersistence;
 import com.liferay.commerce.service.persistence.CommerceOrderNotePersistence;
 import com.liferay.commerce.service.persistence.CommerceOrderPaymentPersistence;
 import com.liferay.commerce.service.persistence.CommerceOrderPersistence;
+import com.liferay.commerce.service.persistence.CommerceOrderTypePersistence;
+import com.liferay.commerce.service.persistence.CommerceOrderTypeRelPersistence;
 import com.liferay.commerce.service.persistence.CommerceShipmentFinder;
 import com.liferay.commerce.service.persistence.CommerceShipmentItemFinder;
 import com.liferay.commerce.service.persistence.CommerceShipmentItemPersistence;
@@ -44,7 +45,6 @@ import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiService;
 import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
-import com.liferay.portal.kernel.service.persistence.ImagePersistence;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.spring.extender.service.ServiceReference;
@@ -118,26 +118,6 @@ public abstract class CommerceShippingMethodServiceBaseImpl
 			commerceAddressService) {
 
 		this.commerceAddressService = commerceAddressService;
-	}
-
-	/**
-	 * Returns the commerce address persistence.
-	 *
-	 * @return the commerce address persistence
-	 */
-	public CommerceAddressPersistence getCommerceAddressPersistence() {
-		return commerceAddressPersistence;
-	}
-
-	/**
-	 * Sets the commerce address persistence.
-	 *
-	 * @param commerceAddressPersistence the commerce address persistence
-	 */
-	public void setCommerceAddressPersistence(
-		CommerceAddressPersistence commerceAddressPersistence) {
-
-		this.commerceAddressPersistence = commerceAddressPersistence;
 	}
 
 	/**
@@ -566,6 +546,141 @@ public abstract class CommerceShippingMethodServiceBaseImpl
 		CommerceOrderPaymentPersistence commerceOrderPaymentPersistence) {
 
 		this.commerceOrderPaymentPersistence = commerceOrderPaymentPersistence;
+	}
+
+	/**
+	 * Returns the commerce order type local service.
+	 *
+	 * @return the commerce order type local service
+	 */
+	public com.liferay.commerce.service.CommerceOrderTypeLocalService
+		getCommerceOrderTypeLocalService() {
+
+		return commerceOrderTypeLocalService;
+	}
+
+	/**
+	 * Sets the commerce order type local service.
+	 *
+	 * @param commerceOrderTypeLocalService the commerce order type local service
+	 */
+	public void setCommerceOrderTypeLocalService(
+		com.liferay.commerce.service.CommerceOrderTypeLocalService
+			commerceOrderTypeLocalService) {
+
+		this.commerceOrderTypeLocalService = commerceOrderTypeLocalService;
+	}
+
+	/**
+	 * Returns the commerce order type remote service.
+	 *
+	 * @return the commerce order type remote service
+	 */
+	public com.liferay.commerce.service.CommerceOrderTypeService
+		getCommerceOrderTypeService() {
+
+		return commerceOrderTypeService;
+	}
+
+	/**
+	 * Sets the commerce order type remote service.
+	 *
+	 * @param commerceOrderTypeService the commerce order type remote service
+	 */
+	public void setCommerceOrderTypeService(
+		com.liferay.commerce.service.CommerceOrderTypeService
+			commerceOrderTypeService) {
+
+		this.commerceOrderTypeService = commerceOrderTypeService;
+	}
+
+	/**
+	 * Returns the commerce order type persistence.
+	 *
+	 * @return the commerce order type persistence
+	 */
+	public CommerceOrderTypePersistence getCommerceOrderTypePersistence() {
+		return commerceOrderTypePersistence;
+	}
+
+	/**
+	 * Sets the commerce order type persistence.
+	 *
+	 * @param commerceOrderTypePersistence the commerce order type persistence
+	 */
+	public void setCommerceOrderTypePersistence(
+		CommerceOrderTypePersistence commerceOrderTypePersistence) {
+
+		this.commerceOrderTypePersistence = commerceOrderTypePersistence;
+	}
+
+	/**
+	 * Returns the commerce order type rel local service.
+	 *
+	 * @return the commerce order type rel local service
+	 */
+	public com.liferay.commerce.service.CommerceOrderTypeRelLocalService
+		getCommerceOrderTypeRelLocalService() {
+
+		return commerceOrderTypeRelLocalService;
+	}
+
+	/**
+	 * Sets the commerce order type rel local service.
+	 *
+	 * @param commerceOrderTypeRelLocalService the commerce order type rel local service
+	 */
+	public void setCommerceOrderTypeRelLocalService(
+		com.liferay.commerce.service.CommerceOrderTypeRelLocalService
+			commerceOrderTypeRelLocalService) {
+
+		this.commerceOrderTypeRelLocalService =
+			commerceOrderTypeRelLocalService;
+	}
+
+	/**
+	 * Returns the commerce order type rel remote service.
+	 *
+	 * @return the commerce order type rel remote service
+	 */
+	public com.liferay.commerce.service.CommerceOrderTypeRelService
+		getCommerceOrderTypeRelService() {
+
+		return commerceOrderTypeRelService;
+	}
+
+	/**
+	 * Sets the commerce order type rel remote service.
+	 *
+	 * @param commerceOrderTypeRelService the commerce order type rel remote service
+	 */
+	public void setCommerceOrderTypeRelService(
+		com.liferay.commerce.service.CommerceOrderTypeRelService
+			commerceOrderTypeRelService) {
+
+		this.commerceOrderTypeRelService = commerceOrderTypeRelService;
+	}
+
+	/**
+	 * Returns the commerce order type rel persistence.
+	 *
+	 * @return the commerce order type rel persistence
+	 */
+	public CommerceOrderTypeRelPersistence
+		getCommerceOrderTypeRelPersistence() {
+
+		return commerceOrderTypeRelPersistence;
+	}
+
+	/**
+	 * Sets the commerce order type rel persistence.
+	 *
+	 * @param commerceOrderTypeRelPersistence the commerce order type rel persistence
+	 */
+	public void setCommerceOrderTypeRelPersistence(
+		CommerceOrderTypeRelPersistence commerceOrderTypeRelPersistence) {
+
+		this.commerceOrderTypeRelPersistence = commerceOrderTypeRelPersistence;
 	}
 
 	/**
@@ -1133,66 +1248,6 @@ public abstract class CommerceShippingMethodServiceBaseImpl
 	}
 
 	/**
-	 * Returns the image local service.
-	 *
-	 * @return the image local service
-	 */
-	public com.liferay.portal.kernel.service.ImageLocalService
-		getImageLocalService() {
-
-		return imageLocalService;
-	}
-
-	/**
-	 * Sets the image local service.
-	 *
-	 * @param imageLocalService the image local service
-	 */
-	public void setImageLocalService(
-		com.liferay.portal.kernel.service.ImageLocalService imageLocalService) {
-
-		this.imageLocalService = imageLocalService;
-	}
-
-	/**
-	 * Returns the image remote service.
-	 *
-	 * @return the image remote service
-	 */
-	public com.liferay.portal.kernel.service.ImageService getImageService() {
-		return imageService;
-	}
-
-	/**
-	 * Sets the image remote service.
-	 *
-	 * @param imageService the image remote service
-	 */
-	public void setImageService(
-		com.liferay.portal.kernel.service.ImageService imageService) {
-
-		this.imageService = imageService;
-	}
-
-	/**
-	 * Returns the image persistence.
-	 *
-	 * @return the image persistence
-	 */
-	public ImagePersistence getImagePersistence() {
-		return imagePersistence;
-	}
-
-	/**
-	 * Sets the image persistence.
-	 *
-	 * @param imagePersistence the image persistence
-	 */
-	public void setImagePersistence(ImagePersistence imagePersistence) {
-		this.imagePersistence = imagePersistence;
-	}
-
-	/**
 	 * Returns the resource local service.
 	 *
 	 * @return the resource local service
@@ -1355,9 +1410,6 @@ public abstract class CommerceShippingMethodServiceBaseImpl
 	protected com.liferay.commerce.service.CommerceAddressService
 		commerceAddressService;
 
-	@BeanReference(type = CommerceAddressPersistence.class)
-	protected CommerceAddressPersistence commerceAddressPersistence;
-
 	@BeanReference(
 		type = com.liferay.commerce.service.CommerceAddressRestrictionLocalService.class
 	)
@@ -1451,6 +1503,36 @@ public abstract class CommerceShippingMethodServiceBaseImpl
 
 	@BeanReference(type = CommerceOrderPaymentPersistence.class)
 	protected CommerceOrderPaymentPersistence commerceOrderPaymentPersistence;
+
+	@BeanReference(
+		type = com.liferay.commerce.service.CommerceOrderTypeLocalService.class
+	)
+	protected com.liferay.commerce.service.CommerceOrderTypeLocalService
+		commerceOrderTypeLocalService;
+
+	@BeanReference(
+		type = com.liferay.commerce.service.CommerceOrderTypeService.class
+	)
+	protected com.liferay.commerce.service.CommerceOrderTypeService
+		commerceOrderTypeService;
+
+	@BeanReference(type = CommerceOrderTypePersistence.class)
+	protected CommerceOrderTypePersistence commerceOrderTypePersistence;
+
+	@BeanReference(
+		type = com.liferay.commerce.service.CommerceOrderTypeRelLocalService.class
+	)
+	protected com.liferay.commerce.service.CommerceOrderTypeRelLocalService
+		commerceOrderTypeRelLocalService;
+
+	@BeanReference(
+		type = com.liferay.commerce.service.CommerceOrderTypeRelService.class
+	)
+	protected com.liferay.commerce.service.CommerceOrderTypeRelService
+		commerceOrderTypeRelService;
+
+	@BeanReference(type = CommerceOrderTypeRelPersistence.class)
+	protected CommerceOrderTypeRelPersistence commerceOrderTypeRelPersistence;
 
 	@BeanReference(
 		type = com.liferay.commerce.service.CommerceShipmentLocalService.class
@@ -1571,20 +1653,6 @@ public abstract class CommerceShippingMethodServiceBaseImpl
 
 	@ServiceReference(type = ClassNamePersistence.class)
 	protected ClassNamePersistence classNamePersistence;
-
-	@ServiceReference(
-		type = com.liferay.portal.kernel.service.ImageLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.ImageLocalService
-		imageLocalService;
-
-	@ServiceReference(
-		type = com.liferay.portal.kernel.service.ImageService.class
-	)
-	protected com.liferay.portal.kernel.service.ImageService imageService;
-
-	@ServiceReference(type = ImagePersistence.class)
-	protected ImagePersistence imagePersistence;
 
 	@ServiceReference(
 		type = com.liferay.portal.kernel.service.ResourceLocalService.class

@@ -18,6 +18,7 @@ import com.liferay.fragment.exception.FragmentEntryConfigurationException;
 import com.liferay.fragment.validator.FragmentEntryValidator;
 import com.liferay.petra.json.validator.JSONValidator;
 import com.liferay.petra.json.validator.JSONValidatorException;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -25,10 +26,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
-
-import java.io.InputStream;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -59,13 +57,8 @@ public class FragmentEntryValidatorImpl implements FragmentEntryValidator {
 			return;
 		}
 
-		InputStream configurationJSONSchemaInputStream =
-			FragmentEntryValidatorImpl.class.getResourceAsStream(
-				"dependencies/configuration-json-schema.json");
-
 		try {
-			JSONValidator.validate(
-				configuration, configurationJSONSchemaInputStream);
+			_jsonValidator.validate(configuration);
 
 			JSONObject configurationJSONObject =
 				JSONFactoryUtil.createJSONObject(configuration);
@@ -197,15 +190,14 @@ public class FragmentEntryValidatorImpl implements FragmentEntryValidator {
 		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 			"content.Language", getClass());
 
-		StringBundler sb = new StringBundler(3);
-
-		sb.append(
+		return StringBundler.concat(
 			LanguageUtil.get(
-				resourceBundle, "fragment-configuration-is-invalid"));
-		sb.append(System.lineSeparator());
-		sb.append(message);
-
-		return sb.toString();
+				resourceBundle, "fragment-configuration-is-invalid"),
+			System.lineSeparator(), message);
 	}
+
+	private static final JSONValidator _jsonValidator = new JSONValidator(
+		FragmentEntryValidatorImpl.class.getResourceAsStream(
+			"dependencies/configuration-json-schema.json"));
 
 }

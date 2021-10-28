@@ -12,12 +12,11 @@
 import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
-import {useEventListener} from '@liferay/frontend-js-react-web';
+import {ReactPortal, useEventListener} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
 import {throttle} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactDOM from 'react-dom';
 
 import {StateContext as GlobalStateContext} from './../../state/context.es';
 import {StateContext, getInitialState, reducer} from './reducer.es';
@@ -63,6 +62,18 @@ function ClickGoalPicker({allowEdit = true, onSelectClickGoalTarget, target}) {
 
 	const {isValidTarget, mode, selectedTarget} = state;
 
+	const isSelectedTargetInDOM = document.getElementById(selectedTarget);
+
+	// If the parent passes as a prop an empty target and the old selected target
+	// is not in the DOM anymore we must update it in the Context
+
+	if (!target && selectedTarget && !isSelectedTargetInDOM) {
+		dispatch({
+			selector: target,
+			type: 'selectTarget',
+		});
+	}
+
 	const [selectorInputValue, setSelectorInputValue] = useState(
 		selectedTarget
 	);
@@ -73,13 +84,12 @@ function ClickGoalPicker({allowEdit = true, onSelectClickGoalTarget, target}) {
 
 	useEffect(() => {
 		ref.current = selectedTarget;
-
 		setSelectorInputValue(selectedTarget);
 	}, [selectedTarget]);
 
 	const previousTarget = ref.current;
 
-	if (selectedTarget != previousTarget) {
+	if (selectedTarget !== previousTarget && selectedTarget !== target) {
 		if (onSelectClickGoalTarget) {
 			onSelectClickGoalTarget(selectedTarget);
 		}
@@ -417,13 +427,14 @@ function OverlayContainer({allowEdit, root}) {
 	useEventListener('mousedown', handleMouseDown, false, document);
 	useEventListener('mouseup', handleMouseUp, false, document);
 
-	return ReactDOM.createPortal(
-		<ClickGoalPicker.Overlay
-			allowEdit={allowEdit}
-			root={root}
-			targetableElements={targetableElements.current}
-		/>,
-		root
+	return (
+		<ReactPortal container={root}>
+			<ClickGoalPicker.Overlay
+				allowEdit={allowEdit}
+				root={root}
+				targetableElements={targetableElements.current}
+			/>
+		</ReactPortal>
 	);
 }
 
@@ -643,7 +654,7 @@ function TargetTopper({allowEdit, geometry, isEditing, selector}) {
 				'lfr-segments-experiment-click-goal-target-topper': true,
 				'lfr-segments-experiment-click-goal-target-topper-editing': isEditing,
 				'px-2': true,
-				small: true,
+				'small': true,
 				'text-white': true,
 			})}
 			onClick={stopImmediatePropagation}

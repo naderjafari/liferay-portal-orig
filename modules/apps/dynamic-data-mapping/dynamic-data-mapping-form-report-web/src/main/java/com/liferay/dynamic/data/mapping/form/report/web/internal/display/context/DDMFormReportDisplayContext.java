@@ -14,13 +14,15 @@
 
 package com.liferay.dynamic.data.mapping.form.report.web.internal.display.context;
 
-import com.liferay.dynamic.data.mapping.form.report.web.internal.portlet.DDMFormReportPortlet;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstance;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstanceReport;
+import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
@@ -30,6 +32,7 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.DateUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
@@ -37,7 +40,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -93,7 +95,7 @@ public class DDMFormReportDisplayContext {
 					"columns",
 					_getPropertyLabelsJSONObject(ddmFormField, "columns")
 				).put(
-					"label", _getValue(ddmFormField.getLabel())
+					"label", _getLabel(ddmFormField)
 				).put(
 					"name", ddmFormField.getName()
 				).put(
@@ -127,9 +129,6 @@ public class DDMFormReportDisplayContext {
 		ThemeDisplay themeDisplay = (ThemeDisplay)_renderRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			themeDisplay.getLocale(), DDMFormReportPortlet.class);
-
 		String languageKey = "the-last-entry-was-sent-on-x";
 
 		Date modifiedDate = _ddmFormInstanceReport.getModifiedDate();
@@ -154,7 +153,8 @@ public class DDMFormReportDisplayContext {
 		}
 
 		return LanguageUtil.format(
-			resourceBundle, languageKey, relativeTimeDescription, false);
+			themeDisplay.getLocale(), languageKey, relativeTimeDescription,
+			false);
 	}
 
 	public int getTotalItems() throws PortalException {
@@ -187,6 +187,42 @@ public class DDMFormReportDisplayContext {
 		}
 
 		return jsonObject;
+	}
+
+	private String _getLabel(DDMFormField ddmFormField) {
+		if (StringUtil.equals(
+				ddmFormField.getType(),
+				DDMFormFieldTypeConstants.SEARCH_LOCATION)) {
+
+			JSONObject jsonObject = JSONUtil.put(
+				"place", _getValue(ddmFormField.getLabel()));
+
+			LocalizedValue visibleFields =
+				(LocalizedValue)ddmFormField.getProperty("visibleFields");
+
+			Stream.of(
+				StringUtil.split(
+					StringUtil.removeChars(
+						GetterUtil.getString(
+							visibleFields.getString(
+								visibleFields.getDefaultLocale())),
+						CharPool.CLOSE_BRACKET, CharPool.OPEN_BRACKET,
+						CharPool.QUOTE))
+			).map(
+				String::trim
+			).forEach(
+				visibleField -> jsonObject.put(
+					visibleField,
+					LanguageUtil.get(
+						ResourceBundleUtil.getModuleAndPortalResourceBundle(
+							visibleFields.getDefaultLocale(), getClass()),
+						visibleField))
+			);
+
+			return jsonObject.toString();
+		}
+
+		return _getValue(ddmFormField.getLabel());
 	}
 
 	private JSONObject _getPropertyLabelsJSONObject(

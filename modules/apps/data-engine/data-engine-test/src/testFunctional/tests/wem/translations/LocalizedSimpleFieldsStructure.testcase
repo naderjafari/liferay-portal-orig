@@ -483,7 +483,7 @@ definition {
 	@description = "This test validates the creation and edition of localized fields as well as deletion of structure in different instance language"
 	@priority = "5"
 	test EditAndDeleteWithDifferentInstanceLanguage {
-		property portal.acceptance = "quarantine";
+		property portal.acceptance = "true";
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Configuration",
@@ -690,6 +690,7 @@ definition {
 		DataEngine.addFields(fieldNameList = "Web Content,Date,Rich Text,Single Selection,Grid,Select from List,Numeric,Link to Page,Image,Upload,Color,Text,Multiple Selection,Geolocation,Separator");
 
 		var index = "1";
+
 		for (var optionValue : list "Value 1,Value 2") {
 			DataEngine.addFieldOption(
 				fieldFieldLabel = "Multiple Selection",

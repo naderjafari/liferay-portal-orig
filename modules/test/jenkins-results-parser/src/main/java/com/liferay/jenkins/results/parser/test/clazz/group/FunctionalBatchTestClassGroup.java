@@ -161,6 +161,11 @@ public class FunctionalBatchTestClassGroup extends BatchTestClassGroup {
 
 		String propertyQuery = System.getenv("TEST_BATCH_RUN_PROPERTY_QUERY");
 
+		if (JenkinsResultsParserUtil.isNullOrEmpty(propertyQuery)) {
+			propertyQuery = getBuildStartProperty(
+				"TEST_BATCH_RUN_PROPERTY_QUERY");
+		}
+
 		if ((propertyQuery != null) && !propertyQuery.isEmpty()) {
 			return propertyQuery;
 		}
@@ -314,11 +319,8 @@ public class FunctionalBatchTestClassGroup extends BatchTestClassGroup {
 				File functionalRequiredModuleDir = new File(
 					modulesBaseDir, functionalRequiredModuleDirPath);
 
-				if (!functionalRequiredModuleDir.exists()) {
-					continue;
-				}
-
-				if (functionalRequiredModuleDirs.contains(
+				if (!functionalRequiredModuleDir.exists() ||
+					functionalRequiredModuleDirs.contains(
 						functionalRequiredModuleDir)) {
 
 					continue;

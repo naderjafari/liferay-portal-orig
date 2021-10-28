@@ -495,7 +495,7 @@ definition {
 			panel = "Control Panel",
 			portlet = "Search");
 
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+		SearchAdministration.executeSearchActions(actionsDescription = "Reindex search indexes.");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
@@ -602,6 +602,7 @@ definition {
 	@priority = "4"
 	test ViewUserGroupPermissionsNoAsUser {
 		property custom.properties = "jsonws.web.service.paths.excludes=";
+		property portal.acceptance = "true";
 
 		JSONRole.addRegularRole(
 			roleKey = "Roles Regrole Name",

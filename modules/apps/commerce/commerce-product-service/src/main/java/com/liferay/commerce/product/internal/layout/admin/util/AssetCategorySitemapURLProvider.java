@@ -67,7 +67,11 @@ public class AssetCategorySitemapURLProvider implements SitemapURLProvider {
 			layoutSet.getGroupId(), layoutSet.isPrivateLayout(),
 			CPPortletKeys.CP_CATEGORY_CONTENT_WEB);
 
-		Layout layout = _layoutLocalService.getLayout(plid);
+		Layout layout = _layoutLocalService.fetchLayout(plid);
+
+		if (layout == null) {
+			return;
+		}
 
 		if (layoutUuid.equals(layout.getUuid())) {
 			Group group = layoutSet.getGroup();
@@ -126,7 +130,7 @@ public class AssetCategorySitemapURLProvider implements SitemapURLProvider {
 		}
 
 		String currentSiteURL = _portal.getGroupFriendlyURL(
-			layout.getLayoutSet(), themeDisplay);
+			layout.getLayoutSet(), themeDisplay, false, false);
 
 		String urlSeparator = _cpFriendlyURL.getAssetCategoryURLSeparator(
 			themeDisplay.getCompanyId());

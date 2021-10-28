@@ -43,7 +43,6 @@ import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
-import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalServiceUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
@@ -219,11 +218,11 @@ public class WorkflowTaskDisplayContext {
 		).buildString();
 	}
 
-	public String getCreateDate(WorkflowLog workflowLog) {
+	public String getCreateDateString(WorkflowLog workflowLog) {
 		return _dateFormatDateTime.format(workflowLog.getCreateDate());
 	}
 
-	public String getCreateDate(WorkflowTask workflowTask) {
+	public String getCreateDateString(WorkflowTask workflowTask) {
 		return _dateFormatDateTime.format(workflowTask.getCreateDate());
 	}
 
@@ -397,17 +396,10 @@ public class WorkflowTaskDisplayContext {
 		).buildString();
 	}
 
-	public String getState(WorkflowTask workflowTask) throws PortalException {
-		long companyId = _getWorkflowCompanyId(workflowTask);
-		long groupId = _getWorkflowGroupId(workflowTask);
-		String className = _getWorkflowContextEntryClassName(workflowTask);
-		long classPK = getWorkflowContextEntryClassPK(workflowTask);
-
-		String state = HtmlUtil.escape(
-			WorkflowInstanceLinkLocalServiceUtil.getState(
-				companyId, groupId, className, classPK));
-
-		return LanguageUtil.get(_workflowTaskRequestHelper.getRequest(), state);
+	public String getState(WorkflowTask workflowTask) {
+		return LanguageUtil.get(
+			_workflowTaskRequestHelper.getRequest(),
+			HtmlUtil.escape(workflowTask.getName()));
 	}
 
 	public String getTaglibEditURL(WorkflowTask workflowTask)
@@ -420,10 +412,10 @@ public class WorkflowTaskDisplayContext {
 			_getEditPortletURL(workflowTask)
 		).setRedirect(
 			themeDisplay.getURLCurrent()
+		).setPortletResource(
+			getPortletResource()
 		).setParameter(
-			"hideDefaultSuccessMessage", Boolean.TRUE.toString()
-		).setParameter(
-			"portletResource", getPortletResource()
+			"hideDefaultSuccessMessage", true
 		).setParameter(
 			"refererPlid", themeDisplay.getPlid()
 		).setParameter(
@@ -438,9 +430,10 @@ public class WorkflowTaskDisplayContext {
 	public String getTaglibViewDiffsURL(WorkflowTask workflowTask)
 		throws PortalException, PortletException {
 
-		StringBundler sb = new StringBundler(7);
+		StringBundler sb = new StringBundler(8);
 
-		sb.append("javascript:Liferay.Util.openWindow({id: '");
+		sb.append("javascript:Liferay.Util.openWindow({");
+		sb.append("dialog: {destroyOnHide: true, modal: true}, id: '");
 		sb.append(_liferayPortletResponse.getNamespace());
 		sb.append("viewDiffs', title: '");
 
@@ -458,7 +451,7 @@ public class WorkflowTaskDisplayContext {
 				).setRedirect(
 					getCurrentURL()
 				).setParameter(
-					"hideControls", Boolean.TRUE.toString()
+					"hideControls", true
 				).setPortletMode(
 					PortletMode.VIEW
 				).setWindowState(
@@ -870,20 +863,22 @@ public class WorkflowTaskDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+		return PortletURLBuilder.createRenderURL(
 			_liferayPortletResponse
+		).setNavigation(
+			() -> {
+				String navigation = ParamUtil.getString(
+					_httpServletRequest, "navigation");
+
+				if (Validator.isNotNull(navigation)) {
+					return _getNavigation();
+				}
+
+				return null;
+			}
 		).setTabs1(
 			_getTabs1()
-		).build();
-
-		String navigation = ParamUtil.getString(
-			_httpServletRequest, "navigation");
-
-		if (Validator.isNotNull(navigation)) {
-			portletURL.setParameter("navigation", _getNavigation());
-		}
-
-		return portletURL;
+		).buildPortletURL();
 	}
 
 	private Role _getRole(long roleId) {
@@ -942,18 +937,6 @@ public class WorkflowTaskDisplayContext {
 			classPK, _liferayPortletRequest, _liferayPortletResponse);
 	}
 
-	private long _getWorkflowCompanyId(WorkflowTask workflowTask)
-		throws PortalException {
-
-		WorkflowInstance workflowInstance = _getWorkflowInstance(workflowTask);
-
-		Map<String, Serializable> workflowContext =
-			workflowInstance.getWorkflowContext();
-
-		return GetterUtil.getLong(
-			(String)workflowContext.get(WorkflowConstants.CONTEXT_COMPANY_ID));
-	}
-
 	private Map<String, Serializable> _getWorkflowContext(
 			WorkflowTask workflowTask)
 		throws PortalException {
@@ -971,18 +954,6 @@ public class WorkflowTaskDisplayContext {
 
 		return (String)workflowContext.get(
 			WorkflowConstants.CONTEXT_ENTRY_CLASS_NAME);
-	}
-
-	private long _getWorkflowGroupId(WorkflowTask workflowTask)
-		throws PortalException {
-
-		WorkflowInstance workflowInstance = _getWorkflowInstance(workflowTask);
-
-		Map<String, Serializable> workflowContext =
-			workflowInstance.getWorkflowContext();
-
-		return GetterUtil.getLong(
-			(String)workflowContext.get(WorkflowConstants.CONTEXT_GROUP_ID));
 	}
 
 	private WorkflowInstance _getWorkflowInstance(WorkflowTask workflowTask)
@@ -1029,8 +1000,8 @@ public class WorkflowTaskDisplayContext {
 				displayTerms.getKeywords(),
 				new String[] {displayTerms.getKeywords()},
 				_getAssetType(displayTerms.getKeywords()), null, null, null,
-				null, null, _getCompleted(), searchByUserRoles, null, null,
-				false, _workflowTaskSearch.getStart(),
+				null, null, _getCompleted(), true, searchByUserRoles, null,
+				null, false, _workflowTaskSearch.getStart(),
 				_workflowTaskSearch.getEnd(),
 				_workflowTaskSearch.getOrderByComparator());
 

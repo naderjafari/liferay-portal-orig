@@ -306,7 +306,7 @@ definition {
 			portlet = "Process Builder");
 
 		Workflow.uploadDefinition(
-			workflowDefinitionFile = "workflow_definition_legal_marketing.xml",
+			workflowDefinitionFile = "legal-marketing-workflow-definition.xml",
 			workflowDefinitionTitle = "Double Approver Definition");
 
 		ApplicationsMenu.gotoPortlet(
@@ -357,7 +357,7 @@ definition {
 		DDLRecord.addCP();
 
 		DDLRecord.populateFieldBoolean(
-			ddlRecordFieldData = "Yes",
+			ddlRecordFieldData = "True",
 			fieldFieldLabel = "Boolean",
 			fieldName = "Boolean");
 
@@ -381,7 +381,7 @@ definition {
 		DDLNavigator.gotoListRecords();
 
 		DDLRecord.viewFirstFieldCP(
-			ddlRecordFieldData = "Yes",
+			ddlRecordFieldData = "True",
 			field = "Boolean",
 			fieldFieldLabel = "Boolean",
 			fieldName = "Boolean",
@@ -406,7 +406,7 @@ definition {
 		DDLNavigator.gotoListRecords();
 
 		DDLRecord.viewFirstFieldCP(
-			ddlRecordFieldData = "Yes",
+			ddlRecordFieldData = "True",
 			field = "Boolean",
 			fieldFieldLabel = "Boolean",
 			fieldName = "Boolean",
@@ -430,7 +430,7 @@ definition {
 		DDLNavigator.gotoListRecords();
 
 		DDLRecord.viewFirstFieldCP(
-			ddlRecordFieldData = "Yes",
+			ddlRecordFieldData = "True",
 			field = "Boolean",
 			fieldFieldLabel = "Boolean",
 			fieldName = "Boolean",
@@ -455,7 +455,7 @@ definition {
 		DDLNavigator.gotoListRecords(ddlListName = "${ddlListName}");
 
 		DDLRecord.viewFirstFieldCP(
-			ddlRecordFieldData = "Yes",
+			ddlRecordFieldData = "True",
 			field = "Boolean",
 			fieldFieldLabel = "Boolean",
 			fieldName = "Boolean");
@@ -471,7 +471,7 @@ definition {
 			portlet = "Process Builder");
 
 		Workflow.uploadDefinition(
-			workflowDefinitionFile = "workflow_definition_category_specific.xml",
+			workflowDefinitionFile = "category-specific-workflow-definition.xml",
 			workflowDefinitionTitle = "Category Specific");
 
 		Workflow.viewDefinition(
@@ -802,7 +802,7 @@ definition {
 			portlet = "Process Builder");
 
 		Workflow.uploadDefinition(
-			workflowDefinitionFile = "workflow_definition_1.xml",
+			workflowDefinitionFile = "1-workflow-definition.xml",
 			workflowDefinitionTitle = "New Uploaded Definition");
 
 		Workflow.viewDefinitionPublished(workflowDefinitionTitle = "New Uploaded Definition");
@@ -1402,16 +1402,6 @@ definition {
 		WebContent.viewPGViaAP(
 			webContentContent = '''<script>alert(123);</script>''',
 			webContentTitle = "WC WebContent Title");
-
-		AssertAlertNotPresent();
-
-		var actualScript = '''<script>alert(123);</script>''';
-
-		var escapedScript = '''&lt;script&gt;alert(123);&lt;/script&gt;''';
-
-		AssertHTMLSourceTextNotPresent(value1 = "${actualScript}");
-
-		AssertHTMLSourceTextPresent(value1 = "${escapedScript}");
 	}
 
 }

@@ -67,7 +67,8 @@ public class AssetEntryModelListener extends BaseModelListener<AssetEntry> {
 	}
 
 	@Override
-	public void onBeforeUpdate(AssetEntry assetEntry)
+	public void onBeforeUpdate(
+			AssetEntry originalAssetEntry, AssetEntry assetEntry)
 		throws ModelListenerException {
 
 		AssetEntry assetEntryFromDatabase =
@@ -77,12 +78,9 @@ public class AssetEntryModelListener extends BaseModelListener<AssetEntry> {
 			TransactionCommitCallbackUtil.registerCallback(
 				(Callable<Void>)() -> {
 					if ((assetEntry.getPublishDate() == null) ||
-						!ListUtil.isEmpty(assetEntry.getTags())) {
+						!ListUtil.isEmpty(assetEntry.getTags()) ||
+						!_assetAutoTaggerHelper.isAutoTaggable(assetEntry)) {
 
-						return null;
-					}
-
-					if (!_assetAutoTaggerHelper.isAutoTaggable(assetEntry)) {
 						return null;
 					}
 

@@ -16,6 +16,7 @@ package com.liferay.dynamic.data.lists.web.internal.change.tracking.spi.display;
 
 import com.liferay.change.tracking.spi.display.BaseCTDisplayRenderer;
 import com.liferay.change.tracking.spi.display.CTDisplayRenderer;
+import com.liferay.change.tracking.spi.display.context.DisplayContext;
 import com.liferay.dynamic.data.lists.constants.DDLPortletKeys;
 import com.liferay.dynamic.data.lists.model.DDLRecord;
 import com.liferay.dynamic.data.lists.model.DDLRecordSet;
@@ -27,8 +28,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.servlet.PipingServletResponse;
@@ -52,42 +51,6 @@ import org.osgi.service.component.annotations.Reference;
 @Component(immediate = true, service = CTDisplayRenderer.class)
 public class DDLRecordCTDisplayRenderer
 	extends BaseCTDisplayRenderer<DDLRecord> {
-
-	@Override
-	public String getContent(
-			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse, DDLRecord ddlRecord)
-		throws Exception {
-
-		DDLRecordSet ddlRecordSet = ddlRecord.getRecordSet();
-
-		HTMLTag htmlTag = new HTMLTag();
-
-		htmlTag.setClassNameId(
-			_classNameLocalService.getClassNameId(DDMStructure.class));
-		htmlTag.setClassPK(ddlRecordSet.getDDMStructureId());
-		htmlTag.setDdmFormValues(ddlRecord.getDDMFormValues());
-		htmlTag.setGroupId(ddlRecord.getGroupId());
-		htmlTag.setReadOnly(true);
-		htmlTag.setRequestedLocale(_portal.getLocale(liferayPortletRequest));
-
-		try (UnsyncStringWriter unsyncStringWriter = new UnsyncStringWriter()) {
-			htmlTag.doTag(
-				liferayPortletRequest.getHttpServletRequest(),
-				new PipingServletResponse(
-					liferayPortletResponse.getHttpServletResponse(),
-					unsyncStringWriter));
-
-			return unsyncStringWriter.toString();
-		}
-		catch (Exception exception) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
-			}
-		}
-
-		return null;
-	}
 
 	@Override
 	public String getEditURL(
@@ -127,23 +90,48 @@ public class DDLRecordCTDisplayRenderer
 	}
 
 	@Override
-	public String getPreviousContent(
-			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse,
-			DDLRecord currentModel, DDLRecord previousModel)
-		throws Exception {
-
-		return getContent(
-			liferayPortletRequest, liferayPortletResponse, previousModel);
-	}
-
-	@Override
 	public String getTitle(Locale locale, DDLRecord ddlRecord) {
 		return String.valueOf(ddlRecord.getPrimaryKey());
 	}
 
 	@Override
-	public boolean hasContent() {
+	public String renderPreview(DisplayContext<DDLRecord> displayContext)
+		throws Exception {
+
+		DDLRecord ddlRecord = displayContext.getModel();
+
+		DDLRecordSet ddlRecordSet = ddlRecord.getRecordSet();
+
+		HTMLTag htmlTag = new HTMLTag();
+
+		htmlTag.setClassNameId(
+			_classNameLocalService.getClassNameId(DDMStructure.class));
+		htmlTag.setClassPK(ddlRecordSet.getDDMStructureId());
+		htmlTag.setDdmFormValues(ddlRecord.getDDMFormValues());
+		htmlTag.setGroupId(ddlRecord.getGroupId());
+		htmlTag.setReadOnly(true);
+		htmlTag.setRequestedLocale(displayContext.getLocale());
+
+		try (UnsyncStringWriter unsyncStringWriter = new UnsyncStringWriter()) {
+			htmlTag.doTag(
+				displayContext.getHttpServletRequest(),
+				new PipingServletResponse(
+					displayContext.getHttpServletResponse(),
+					unsyncStringWriter));
+
+			return unsyncStringWriter.toString();
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(exception, exception);
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public boolean showPreviewDiff() {
 		return true;
 	}
 

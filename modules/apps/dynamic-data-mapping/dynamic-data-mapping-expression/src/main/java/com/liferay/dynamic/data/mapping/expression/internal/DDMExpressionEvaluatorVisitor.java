@@ -26,7 +26,6 @@ import com.liferay.dynamic.data.mapping.expression.DDMExpressionParameterAccesso
 import com.liferay.dynamic.data.mapping.expression.DDMExpressionParameterAccessorAware;
 import com.liferay.dynamic.data.mapping.expression.GetFieldPropertyRequest;
 import com.liferay.dynamic.data.mapping.expression.GetFieldPropertyResponse;
-import com.liferay.dynamic.data.mapping.expression.LocaleAware;
 import com.liferay.dynamic.data.mapping.expression.internal.parser.DDMExpressionBaseVisitor;
 import com.liferay.dynamic.data.mapping.expression.internal.parser.DDMExpressionParser;
 import com.liferay.dynamic.data.mapping.expression.internal.parser.DDMExpressionParser.AdditionExpressionContext;
@@ -136,6 +135,13 @@ public class DDMExpressionEvaluatorVisitor
 		Object object1 = visitChild(context, 0);
 		Object object2 = visitChild(context, 2);
 
+		if ((object1 instanceof Number) && (object2 instanceof Number)) {
+			BigDecimal bigDecimal1 = (BigDecimal)object1;
+			BigDecimal bigDecimal2 = (BigDecimal)object2;
+
+			return bigDecimal1.compareTo(bigDecimal2) == 0;
+		}
+
 		return Objects.equals(object1, object2);
 	}
 
@@ -201,12 +207,6 @@ public class DDMExpressionEvaluatorVisitor
 
 			ddmExpressionFieldAccessorAware.setDDMExpressionFieldAccessor(
 				_ddmExpressionFieldAccessor);
-		}
-
-		if (ddmExpressionFunction instanceof LocaleAware) {
-			LocaleAware localeAware = (LocaleAware)ddmExpressionFunction;
-
-			localeAware.setLocale(_ddmExpressionParameterAccessor.getLocale());
 		}
 
 		Optional<Method> methodOptional = _getApplyMethodOptional(
@@ -371,6 +371,13 @@ public class DDMExpressionEvaluatorVisitor
 
 		Object object1 = visitChild(context, 0);
 		Object object2 = visitChild(context, 2);
+
+		if ((object1 instanceof Number) && (object2 instanceof Number)) {
+			BigDecimal bigDecimal1 = (BigDecimal)object1;
+			BigDecimal bigDecimal2 = (BigDecimal)object2;
+
+			return bigDecimal1.compareTo(bigDecimal2) != 0;
+		}
 
 		return !Objects.equals(object1, object2);
 	}
