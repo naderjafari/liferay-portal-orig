@@ -14,6 +14,10 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
       - name: Build with Ant
-        run: ant compile install-portal-snapshots
+        run: ant compile install-portal-snapshots deploy
         env:
           ANT_OPTS: "-Xmx2560m"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Package
+          path: bundles/osgi/modules
