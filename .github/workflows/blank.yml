@@ -35,4 +35,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Sain-Ext
-          path: ../bundles/osgi/modules/com.liferay.journal.*.jar
+          path: /home/runner/work/liferay-portal-orig/bundles/osgi/modules/com.liferay.journal.*.jar
