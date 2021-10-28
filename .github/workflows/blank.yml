@@ -15,3 +15,5 @@ jobs:
           distribution: 'adopt'
       - name: Build with Ant
         run: ant compile install-portal-snapshots
+        env:
+          ANT_OPTS: "-Xmx2560m"
