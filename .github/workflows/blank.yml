@@ -14,7 +14,12 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
       - name: Build with Ant
-        run: ant compile install-portal-snapshots deploy
+        run: ant compile install-portal-snapshots
+        env:
+          ANT_OPTS: "-Xmx8g"
+      - name: Build with Gradle
+        working-directory: ./app
+        run: ..\gradlew.bat  apps:journal:journal-service:deploy
         env:
           ANT_OPTS: "-Xmx8g"
       - uses: actions/upload-artifact@v2
