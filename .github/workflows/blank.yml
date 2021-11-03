@@ -36,3 +36,6 @@ jobs:
         with:
           name: Sain-Ext
           path: /home/runner/work/liferay-portal-orig/bundles/osgi/modules/com.liferay.journal.*.jar
+      - name: Upload to Sain
+        run: |
+          curl -v -X 'POST' 'https://repo.sain.ir/service/rest/v1/components?repository=ftp'  -H 'accept: application/json' -H 'Content-Type: multipart/form-data' -F           'raw.directory=liferay' -F 'raw.asset1=@/home/runner/work/liferay-portal-orig/bundles/osgi/modules/com.liferay.journal.service.jar' -F    'raw.asset1.filename=com.liferay.journal.service.jar' -u sain-ftp:'@sa!n@F7P@'
